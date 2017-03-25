@@ -1,0 +1,16 @@
+<script src="/utils/_test.js"></script>
+<script src="/utils/has-events.js"></script>
+<script src="/utils/indexed-db/indexed-db.js"></script>
+<script src="webrtc-connection.js"></script>
+<script src="../webrtc/certificate/webrtc-certificate.js"></script>
+<script>
+	const offer = new WebrtcSession('eyJ0eXBlIjoib2ZmZXIiLCJzZHAiOiJ2PTBcclxubz0tIDU1NDI1ODE5MDQwNDQ2OTk3MDEgMiBJTiBJUDQgMTI3LjAuMC4xXHJcbnM9LVxyXG50PTAgMFxyXG5hPWdyb3VwOkJVTkRMRSBkYXRhXHJcbmE9bXNpZC1zZW1hbnRpYzogV01TXHJcbm09YXBwbGljYXRpb24gMTczNjIgRFRMUy9TQ1RQIDUwMDBcclxuYz1JTiBJUDQgNzcuMjEuMjUxLjIyMVxyXG5hPWNhbmRpZGF0ZToyMTM4MzkzNDkzIDEgdWRwIDIxMTM5MzcxNTEgMTkyLjE2OC4wLjQgMzcxMDYgdHlwIGhvc3QgZ2VuZXJhdGlvbiAwIG5ldHdvcmstY29zdCA1MFxyXG5hPWNhbmRpZGF0ZToxOTQ3MjUwNzA5IDEgdWRwIDIxMTM5Mzk3MTEgMmEwMjo4MTBjOjg0YzA6NTc5OjJjZjg6M2JmZDo5NzFmOjRhMjggNDQ0MzEgdHlwIGhvc3QgZ2VuZXJhdGlvbiAwIG5ldHdvcmstY29zdCA1MFxyXG5hPWNhbmRpZGF0ZTo4NDIxNjMwNDkgMSB1ZHAgMTY3NzcyOTUzNSA3Ny4yMS4yNTEuMjIxIDE3MzYyIHR5cCBzcmZseCByYWRkciAxOTIuMTY4LjAuNCBycG9ydCAzNzEwNiBnZW5lcmF0aW9uIDAgbmV0d29yay1jb3N0IDUwXHJcbmE9aWNlLXVmcmFnOnpwTmFcclxuYT1pY2UtcHdkOnp0OU5uNnpTYW1mbm00bzFGNmZyaEhVVFxyXG5hPWZpbmdlcnByaW50OnNoYS0yNTYgMzQ6Q0E6RUY6RjI6QkE6ODI6MUQ6NjM6RjI6OEI6QTE6MzQ6NDI6N0Y6OTI6MjA6NTY6NUI6NzI6QzY6RTY6M0M6OTY6MkE6MTA6RjU6QUY6QTI6Njg6NUQ6MkE6NUZcclxuYT1zZXR1cDphY3RwYXNzXHJcbmE9bWlkOmRhdGFcclxuYT1zY3RwbWFwOjUwMDAgd2VicnRjLWRhdGFjaGFubmVsIDEwMjRcclxuIn0');
+
+	WebrtcConnection.createAnswer(offer).then(answer => {
+		console.log('Created answer:',answer, answer.serialized);
+		answer.channel.then(channel => {
+			channel.send('Hello sender!');
+			channel.onmessage = e => console.log('Sender says: '+e.data);
+		})
+	})
+</script>

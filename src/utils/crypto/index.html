@@ -1,0 +1,12 @@
+<script src="/utils/_test.js"></script>
+<script src="../buffer/buffer.js"></script>
+<script src="crypto.js"></script>
+<script>
+// Crypto Tests:
+const dataToSign = Buffer.fromUnicode('test data to sign');
+Crypto.generateKeys()
+    .then(keys => Crypto.exportPublic(keys.publicKey)
+        .then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
+            .then(signature => Crypto.verify(publicKey,signature,dataToSign))
+                .then(proof => console.log('Crypto Library roundtrip',proof?'successful!':'failed!'))))
+</script>

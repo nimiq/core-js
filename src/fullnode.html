@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Lovicash: A web-based peer-to-peer Electronic Cash System</title>
+	<style type="text/css">
+		body{
+			padding: 5% 12%;
+			background: teal;
+			color: white;
+			font-family: sans-serif;
+		}
+		a{
+			color: white;
+			text-decoration: none;
+		}
+	</style>
+	<!-- <meta http-equiv="Content-Security-Policy: script-src 'sha256-qznLcsROx4GACP2dm0UCKCzCG-HiZ1guq6ZZDob_Tng='"> -->
+	<!-- <link rel="manifest" href="manifest.json"> -->
+</head>
+<body>
+	<!--beginjs -->
+	<script src="utils/buffer/buffer.js"></script>
+	<script src="utils/crypto/crypto.js"></script>
+	<script src="utils/indexed-db/storage-persistence.js"></script>
+	<script src="utils/indexed-db/indexed-db.js"></script>
+	<script src="utils/has-events.js"></script>
+
+	<script src="consensus/primitive.js"></script>
+	<script src="consensus/constants.js"></script>
+	<script src="consensus/transaction/transaction.js"></script>
+	<script src="consensus/block/block-header.js"></script>
+	<script src="consensus/block/transactions-tree.js"></script>
+	<script src="consensus/block/block-body.js"></script>
+	<script src="consensus/block/block.js"></script>
+	<script src="consensus/block-chain/block-chain.js"></script>
+	<script src="consensus/block-chain/block-chains.js"></script>
+<!-- 	<script src="consensus/proof-chain/proof-chain.js"></script>
+	<script src="consensus/proof-chain/proof-chains.js"></script> -->
+	<script src="consensus/accounts/accounts-tree.js"></script>
+	<script src="consensus/accounts/accounts-state.js"></script>
+
+	<script src="p2p-db/db/databases.js"></script>
+
+	<script src="p2p-db/p2p/webrtc/certificate/webrtc-certificate.js"></script>
+	<script src="p2p-db/p2p/webrtc/connection/webrtc-connection.js"></script>
+	<script src="p2p-db/p2p/peer-portal/peer-portal.js"></script>
+	<script src="p2p-db/p2p/p2p-network.js"></script>
+	<script src="p2p-db/p2p-db.js"></script>
+
+	<script src="miner/policy.js"></script>
+	<script src="miner/miner.js"></script>
+	<script src="wallet/wallet.js"></script>
+	<script src="core.js"></script>
+	<!--endjs-->
+
+<!-- <script type="text/javascript" src="tests.js"></script> -->
+
+<h1>&#120131;ovicash</h1>
+<h3>Open the dev tools to get started.</h3>
+<a href='/'>Test Directory Index</a>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<script src="/utils/_test.js"></script>
+<script src="/utils/has-events.js"></script>
+<script src="/utils/buffer/buffer.js"></script>
+<script src="/utils/crypto/crypto.js"></script>
+<script src="block-chain.js"></script>
+<script src="block-chains.js"></script>
+<script src="/consensus/primitive.js"></script>
+<script src="/consensus/constants.js"></script>
+<script src="/consensus/block/block-header.js"></script>
+<script src="/consensus/block/transactions-tree.js"></script>
+<script src="/consensus/block/block-body.js"></script>
+<script src="/consensus/block/block.js"></script>
+
+<script>
+
+	const CreateBlock = (h, b) => BlockHeader.create(Buffer.fromBase64(h)).then(header => {
+		return new BlockBody(Buffer.fromBase64(b)).then(body => new Block(header,body)) 
+	}) 
+
+	const chains = new BlockChains();
+	const init = async () => {	
+		const block1 = await CreateBlock('ABlo+sKsuWY1iwv9vZ/EQufEyzTlrDX79+E7HZo0OQhCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQAAAIh/r1gXAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+		const block2 = await CreateBlock('ACZbawK7eSuGEcKixz64KXJctgfST0/qhkbUmFkiUiNCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTOeP5AMTu5zovnjST7Smpn99K12y3ffSVvtykXN4AY5ICAAAAK1/r1hCAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+		const block3 = await CreateBlock('AFHXCsid693gui8qVDkF45+tB22LL4ebumIzkNTa5UlCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTG/qeUw95FVCZ5YU5A/uq4OoqgwQkPlgH+9mxptXJGlWBwAAACyAr1hRAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+		const block4 = await CreateBlock('As6BG9st0sVkVRYzjqkYVOquODCNeNgEVQHvfx1zTaNCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTIUhcumqt/9ESaUsqstpuEOrIhoRc6IWxq5fxVPLirlOBgAAALOAr1gZAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+		const block5 = await CreateBlock('AGAI5uSTY0d/KuvO47r6l8cFrr85NNfPCAfZ7Vfm3qJCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTBYA2yydk0FhhrjdCEBMmUqOLceCEg3NfDUMOJajWFZaBQAAANKAr1gFAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+		const block6 = await CreateBlock('ARrZkSdpXLyVY1/zeG+3pXVzG1O2lFmysSqhKQfkeZhCIc+WyioTlvPNWHLDeCYhevc4E9EdxdnWs33qhlQpTD2s3vCRCM0qt/1noGYji/gzaAUT0QFIRT39T/2W7chOBAAAAOaAr1gGAAAAAAAAAA==','HTDy/MG9WCQYl7G6XL+LWh0/YywJQbQI');
+
+		const block2_1 = await CreateBlock('ACZbawK7eSuGEcKixz64KXJctgfST0/qhkbUmFkiUiO8AJWQ2Z70Z8l1KRPJAF6/xslfXA6JIvic3U3sHhhrVOeP5AMTu5zovnjST7Smpn99K12y3ffSVvtykXN4AY5ICAAAAK1/r1gDAAAAAAAAAA==','2KkCMka07AnVRDSQPT4yrKD+Yd/who7P');
+		const block3_1 = await CreateBlock('APzuWPxUdVZ7AkyHD+Z6WbL1+0oIFarOeOj247bCII+8AJWQ2Z70Z8l1KRPJAF6/xslfXA6JIvic3U3sHhhrVATW5XhWnBVb+sp3lMces11eUrMCISZEcJu+X1Yy8A7aBwAAAPh/r1inAAAAAAAAAA==','2KkCMka07AnVRDSQPT4yrKD+Yd/who7P');
+		const block4_1 = await CreateBlock('AN5l/Q7UGvMphFqzOTsrVXrC42hZps8mr+YkhWfCOVi8AJWQ2Z70Z8l1KRPJAF6/xslfXA6JIvic3U3sHhhrVHaNs3mJZu81kzY11x7DVyEG22DrrtGNx7euaWKAZq3xBgAAAAiAr1g1AAAAAAAAAA==','2KkCMka07AnVRDSQPT4yrKD+Yd/who7P');
+		const block5_1 = await CreateBlock('ATetN2X7LI/DB32XDMZoJnN7XtGkxBg5N52Ezg/8vm+8AJWQ2Z70Z8l1KRPJAF6/xslfXA6JIvic3U3sHhhrVDkUzS6uXb8xUpopnH9hUzLTyLXdFdycq4qdc5QitHk0BQAAABuAr1g3AAAAAAAAAA==','2KkCMka07AnVRDSQPT4yrKD+Yd/who7P');
+		chains.push(block1)
+		chains.push(block2)
+		chains.push(block3_1)
+		chains.push(block4_1)
+		chains.push(block3)
+		chains.push(block4)	
+	} 
+	init();	
+
+</script>

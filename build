@@ -1,0 +1,3 @@
+cat `find src -name '*.js'` > lovicash.js
+cp src/fullnode.html index.html
+perl -i -p0e 's/<!--beginjs.*?endjs-->/<script src="lovicash.js" async><\/script>/s' index.html

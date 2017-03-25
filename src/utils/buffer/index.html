@@ -1,0 +1,13 @@
+<script src="/utils/_test.js"></script>
+<script src="buffer.js"></script>
+<script>
+	
+// Buffer Tests
+console.log('== Buffer Tests == ')
+console.log('* Unicode:', Buffer.toUnicode(Buffer.fromUnicode('{x:"test"}'))==='{x:"test"}')
+console.log('* Base64:', Buffer.toBase64(Buffer.fromBase64('dGVzdA=='))==='dGVzdA==')
+console.log('* equals:', Buffer.equals(Buffer.fromBase64('dGVzdA=='),Buffer.fromBase64('dGVzdA=='))===true)
+console.log('* equals not:', Buffer.equals(Buffer.fromUnicode('test1test1test1'),Buffer.fromUnicode('test2test2test2')) ===false)
+console.log('* equals not:', Buffer.equals(Buffer.fromUnicode('test1test1test1'),Buffer.fromUnicode('test1test1test1test1test1test1')) ===false)
+
+</script>

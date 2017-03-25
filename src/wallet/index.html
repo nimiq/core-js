@@ -1,0 +1,14 @@
+<script src="/utils/_test.js"></script>
+<script src="/utils/indexed-db/indexed-db.js"></script>
+<script src="/utils/buffer/buffer.js"></script>
+<script src="/utils/crypto/crypto.js"></script>
+<script src="/consensus/constants.js"></script>
+<script src="/consensus/primitive.js"></script>
+<script src="/consensus/transaction/transaction.js"></script>
+<script src="wallet.js"></script>
+<script>
+	const dummyDB = {fetch: _ => ({value: Number.MAX_SAFE_INTEGER,nonce: 1})};
+	Wallet.get(dummyDB)
+		.then(wallet => wallet.createTx(Number.MAX_SAFE_INTEGER-1,'8wjPPNOW0EXl/I5KVAy6mNzo9a2ufj1l',1))
+		.then(tx => tx.log('Signed transaction'))
+</script>
