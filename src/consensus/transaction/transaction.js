@@ -1,81 +1,109 @@
 // TODO V2: Transactions may contain a payment reference such that the chain can prove existence of data
-// TODO V2: Copy 'serialized' to detach all outer references 
-class RawTx extends ArrayBuffer {
-    constructor(value, receiver, fee, nonce){
-        super(Constants.TX_SIZE_RAW);
-        const valueView = new Float64Array(this,0,1);
-        valueView[0] = value;
-        const view = new Uint32Array(this,8,2);
-        view[0] = fee;
-        view[1] = nonce;
-        const view2 = new Uint8Array(this,16,Constants.ADDRESS_SIZE);
-        view2.set(receiver,0,Constants.ADDRESS_SIZE);
+// TODO V2: Copy 'serialized' to detach all outer references
+
+class RawTransaction {
+    constructor(senderPubKey, recipientAddr, value, fee, nonce) {
+        if (value <= 0 || value > Number.MAX_SAFE_INTEGER) throw 'Malformed Value';
+        if (fee <= 0) throw 'Malformed Fee';
+        if (nonce < 0) throw 'Malformed Nonce';
+
+        this._senderPubKey = senderPubKey;
+        this._recipientAddr = recipientAddr;
+        this._value = value;
+        this._fee = fee;
+        this._nonce = nonce;
+    }
+
+    static unserialize(buf) {
+        let senderPubKey = buf.readKey();
+        let recipientAddr = buf.readAddr();
+        let value = buf.readUint64();
+        let fee = buf.readUint32();
+        let nonce = buf.readUint32();
+        return new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce);
+    }
+
+    serialize(buf) {
+        buf = buf || new Buffer();
+        buf.writeKey(this._senderPubKey);
+        buf.writeAddr(this._recipientAddr);
+        buf.writeUint64(this._value);
+        buf.writeUint32(this._fee);
+        buf.writeUint32(this._nonce);
+        return buf;
+    }
+
+    get senderPubKey() {
+        return this._senderPubKey;
+    }
+
+    senderAddr() {
+        return Crypto.publicToAddress(this._senderPubKey);
+    }
+
+    get recipientAddr() {
+        return this._recipientAddr;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    get fee() {
+        return this._fee;
+    }
+
+    get nonce() {
+        return this._nonce;
     }
 }
 
-class Transaction extends Primitive {
+class Transaction extends RawTransaction {
 
-    static create(rawTx, sender, signature){
-        const buffer = new ArrayBuffer(Constants.TX_SIZE);
-        const view = new Uint8Array(buffer);
-        view.set(new Uint8Array(rawTx), 0);
-        view.set(new Uint8Array(sender), Constants.TX_SIZE_RAW);
-        view.set(new Uint8Array(signature), Constants.TX_SIZE_RAW + Constants.PUBLIC_KEY_SIZE);
-        return new Transaction(buffer);
-    }
+    constructor(rawTransaction, signature) {
+        super(rawTransaction.senderPubKey, rawTransaction.recipientAddr,
+            rawTransaction.value, rawTransaction.fee, rawTransaction.nonce);
+        this._signature = signature;
 
-    constructor(serialized){
-        super(serialized);
-        if(this.value <= 0 || this.value > Number.MAX_SAFE_INTEGER) throw 'Malformed Value';
-        if(this.fee <= 0) throw 'Malformed Fee';
-        if(this.nonce < 0) throw 'Malformed Nonce';
         Object.freeze(this);
-        return Crypto.verify(this.sender, this.signature, this.rawTx)
-            .then( success => { 
-                if(!success) throw 'Malformed Signature';
+
+        /*
+        return Crypto.verify(this._senderPubKey, this._signature, super.serialize())
+            .then( success => {
+                if (!success) throw 'Malformed Signature';
                 return this;
             });
+        */
     }
 
-    get value(){
-        return new Float64Array(this._buffer,0,1)[0];
-    } 
-
-    get fee(){
-        return this.view32(8);
+    static unserialize(buf) {
+        const rawTransaction = RawTransaction.unserialize(buf)
+        const signature = buf.readSig();
+        return new Transaction(rawTransaction, signature);
     }
 
-    get nonce(){
-        return this.view32(12);
+    serialize(buf) {
+        buf = buf || new Buffer();
+        super.serialize(buf);
+        buf.writeSig(this._signature);
+        return buf;
     }
 
-    get receiver(){
-        return this.view8(16,Constants.ADDRESS_SIZE);
-    }    
-
-    get sender(){
-        return this.view8(Constants.TX_SIZE_RAW,Constants.PUBLIC_KEY_SIZE);
+    hash() {
+        return Crypto.sha256(this.serialize());
     }
 
-    senderAddr(){
-        return Crypto.publicToAddress(this.sender);
+    get signature() {
+        return this._signature;
     }
 
-    get signature(){
-        return this.view8(Constants.TX_SIZE_RAW+Constants.PUBLIC_KEY_SIZE,Constants.SIGNATURE_SIZE);
-    }
-
-    get rawTx(){
-        return this.view8(0,Constants.TX_SIZE_RAW);
-    }
-
-    log(desc){
+    log(desc) {
         this.senderAddr().then(addr => {
             super.log(desc,`Transaction:
             sender: ${Buffer.toBase64(addr)}
-            receiver: ${Buffer.toBase64(this.receiver)} 
-            signature: ${Buffer.toBase64(this.signature)} 
-            value: ${this.value} fee: ${this.fee}, nonce: ${this.nonce}`);
+            receiver: ${Buffer.toBase64(this._receiverAddr)}
+            signature: ${Buffer.toBase64(this._signature)}
+            value: ${this._value} fee: ${this._fee}, nonce: ${this._nonce}`);
         });
     }
 }

@@ -1,10 +1,10 @@
 // TODO: verify balances and nonces of senders
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
-class AccountsState{
+class AccountsState {
 
   constructor(db) {
-    this._db = new AccountsTree(db);
+    this._tree = new AccountsTree(db);
   }
 
   commitBlock(block) {
@@ -54,15 +54,16 @@ class AccountsState{
     account.value = operator(account.value, value);
     if (account.value < 0) throw 'BalanceError!';
     if (value < 0) account.nonce = operator(account.nonce, 1);
-    return this._db.put(addr, account);
+    return this._tree.put(addr, account);
   }
 
   fetch(address) {
     const addr = Buffer.toBase64(address);
-    return this._db.get(addr).then(account => account ? account : {value: 0, nonce: 0});
+    return this._tree.get(addr).then(account => account ?
+        new AccountState(account.balance, account.nonce) : new AccountState());
   }
 
   get stateRoot() {
-    return this._db.root;
+    return this._tree.root;
   }
 }

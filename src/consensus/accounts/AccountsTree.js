@@ -14,6 +14,7 @@ class AccountsTree {
     let childIndex;
     let nodeKey;
     let nodeKeyLen;
+
     // traverse
     traverse: while (true) {
       nodeKey = currNode[0];

@@ -22,6 +22,6 @@ class BlockChain{
   }
 
   get prevId() {
-    return this.currHead.header.prevHash;
+    return this._currHead.header.prevHash;
   }
 }

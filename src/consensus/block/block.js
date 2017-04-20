@@ -1,15 +1,27 @@
-class Block{
-	constructor(header,body){
-		if(!Buffer.equals(header.txRoot,body.txRoot)) throw 'txRoot error';
-		this.header = header;
-		this.body = body;
+class Block {
+	constructor(header, body) {
+		this._header = header;
+		this._body = body;
 	}
 
-	successorOf(block){
-		return this.header.successorOf(block.header);
+    static unserialize(buf) {
+        var header = BlockHeader.unserialize(buf);
+        var body = BlockBody.unserialize(buf);
+        return new Block(header, body);
+    }
+
+    serialize(buf) {
+        buf = buf || new Buffer();
+        this._header.serialize(buf);
+        this._body.serialize(buf);
+        return buf;
+    }
+
+	get header() {
+		return this._header;
 	}
 
-	get difficulty(){
-		return this.header.difficulty;
+	get body() {
+		return this._body;
 	}
 }
