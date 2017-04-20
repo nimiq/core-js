@@ -1,0 +1,15 @@
+'use strict';
+var objectAssign = require('object-assign'),
+    watch = require('gulp-watch'),
+    debounceHashed = require('debounce-hashed');
+
+module.exports = function (glob, opts, cb) {
+    if (typeof opts === 'function') {
+        cb = opts;
+        opts = {};
+    }
+
+    opts = objectAssign({ debounceTimeout: 100, debounceImmediate: false }, opts);
+    cb = cb || function () { };
+    return watch(glob, opts, debounceHashed(cb, function (vinyl) { vinyl.path; }, opts.debounceTimeout, opts.debounceImmediate));
+}

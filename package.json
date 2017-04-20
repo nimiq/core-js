@@ -1,0 +1,24 @@
+{
+  "name": "nimiq",
+  "version": "1.0.0",
+  "description": "Run `./serve`",
+  "main": "lovicash.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/styppo/novicash.git"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-jasmine-livereload-task": "^0.11.0",
+    "gulp-watch": "^4.3.11"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/styppo/novicash/issues"
+  },
+  "homepage": "https://github.com/styppo/novicash#readme"
+}
