@@ -1,7 +1,7 @@
 describe('PublicKey', () => {
 
     it('has an equals method', () => {
-        const pubKey1 = new PublicKey();
+        const pubKey1 = new PublicKey('MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElkXTkPlmJZuhioJshJIq+xnhhv0t918CIzhc/Ei1RpIJp1ZsKAXZfzhaJIYlpc5AEXm+5xKI6dsEfXMJDbJA4g==');
         const pubKey2 = new PublicKey();
 
         expect(pubKey1.equals(pubKey1)).toEqual(true);
