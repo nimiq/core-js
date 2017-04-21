@@ -17,9 +17,9 @@ describe('Buffer', () => {
 		expect(buffer.readUint8()).toEqual(value2);
 		expect(buffer.readUint8()).toEqual(value3);
 		expect(buffer.readUint8()).toEqual(value4);
-		
+
 	});
-	
+
 	it('can writeUint16 and readUint16',() => {
 
 		const value1 = 65535;
@@ -37,9 +37,9 @@ describe('Buffer', () => {
 		expect(buffer.readUint16()).toEqual(value2);
 		expect(buffer.readUint16()).toEqual(value3);
 		expect(buffer.readUint16()).toEqual(value4);
-		
+
 	});
-	
+
 	it('can writeUint32 and readUint32',() => {
 
 		const value1 = 4294967295;
@@ -57,9 +57,9 @@ describe('Buffer', () => {
 		expect(buffer.readUint32()).toEqual(value2);
 		expect(buffer.readUint32()).toEqual(value3);
 		expect(buffer.readUint32()).toEqual(value4);
-		
+
 	});
-	
+
 	it('can writeUint64 and readUint64',() => {
 
 		const value1 = Number.MAX_SAFE_INTEGER;
@@ -77,7 +77,73 @@ describe('Buffer', () => {
 		expect(buffer.readUint64()).toEqual(value2);
 		expect(buffer.readUint64()).toEqual(value3);
 		expect(buffer.readUint64()).toEqual(value4);
-		
+
+	});
+
+	it('can writeUint16 and readUint16 unaligned',() => {
+
+		const value1 = 65535;
+		const value2 = 2;
+		const value3 = 65535;
+		const value4 = 0;
+
+		const buffer = new Buffer(9);
+		buffer.writeUint8(0);
+		buffer.writeUint16(value1);
+		buffer.writeUint16(value2);
+		buffer.writeUint16(value3);
+		buffer.writeUint16(value4);
+
+		buffer.readUint8();
+		expect(buffer.readUint16()).toEqual(value1);
+		expect(buffer.readUint16()).toEqual(value2);
+		expect(buffer.readUint16()).toEqual(value3);
+		expect(buffer.readUint16()).toEqual(value4);
+
+	});
+
+	it('can writeUint32 and readUint32 unaligned',() => {
+
+		const value1 = 4294967295;
+		const value2 = 254;
+		const value3 = 394967295;
+		const value4 = 1;
+
+		const buffer = new Buffer(17);
+		buffer.writeUint8(0);
+		buffer.writeUint32(value1);
+		buffer.writeUint32(value2);
+		buffer.writeUint32(value3);
+		buffer.writeUint32(value4);
+
+		buffer.readUint8();
+		expect(buffer.readUint32()).toEqual(value1);
+		expect(buffer.readUint32()).toEqual(value2);
+		expect(buffer.readUint32()).toEqual(value3);
+		expect(buffer.readUint32()).toEqual(value4);
+
+	});
+
+	it('can writeUint64 and readUint64 unaligned',() => {
+
+		const value1 = Number.MAX_SAFE_INTEGER;
+		const value2 = 42;
+		const value3 = Number.MAX_SAFE_INTEGER;
+		const value4 = 1;
+
+		const buffer = new Buffer(33);
+		buffer.writeUint8(0);
+		buffer.writeUint64(value1);
+		buffer.writeUint64(value2);
+		buffer.writeUint64(value3);
+		buffer.writeUint64(value4);
+
+		buffer.readUint8();
+		expect(buffer.readUint64()).toEqual(value1);
+		expect(buffer.readUint64()).toEqual(value2);
+		expect(buffer.readUint64()).toEqual(value3);
+		expect(buffer.readUint64()).toEqual(value4);
+
 	});
 
 	it('can read and write Uint8Arrays',() => {
@@ -87,10 +153,10 @@ describe('Buffer', () => {
 
 		const buffer = new Buffer(length);
 		buffer.write(array1);
-		
+
 		const array2 = buffer.read(length);
 
-		expect(BufferUtils.equals(array1,array2)).toEqual(true);		
+		expect(BufferUtils.equals(array1,array2)).toEqual(true);
 	});
-	
+
 });

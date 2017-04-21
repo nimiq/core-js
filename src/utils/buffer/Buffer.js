@@ -1,6 +1,7 @@
 class Buffer extends Uint8Array {
     constructor(arg) {
         super(arg);
+        this._view = new DataView(this.buffer);
         this._readPos = 0;
         this._writePos = 0;
     }
@@ -16,39 +17,39 @@ class Buffer extends Uint8Array {
     }
 
     readUint8() {
-        return this[this._readPos++];
+        return this._view.getUint8(this._readPos++);
     }
     writeUint8(value) {
-        this[this._writePos++] = value;
+        this._view.setUint8(this._writePos++, value);
     }
 
     readUint16() {
-        const value = new Uint16Array(this.buffer, this._readPos, 1)[0];
+        const value = this._view.getUint16(this._readPos);
         this._readPos += 2;
         return value;
     }
     writeUint16(value) {
-        new Uint16Array(this.buffer, this._writePos, 1)[0] = value;
+        this._view.setUint16(this._writePos, value);
         this._writePos += 2;
     }
 
     readUint32() {
-        const value = new Uint32Array(this.buffer, this._readPos, 1)[0];
+        const value = this._view.getUint32(this._readPos);
         this._readPos += 4;
         return value;
     }
     writeUint32(value) {
-        new Uint32Array(this.buffer, this._writePos, 1)[0] = value;
+        this._view.setUint32(this._writePos, value);
         this._writePos += 4;
     }
 
     readUint64() {
-        const value = new Float64Array(this.buffer, this._readPos, 1)[0];
+        const value = this._view.getFloat64(this._readPos);
         this._readPos += 8;
         return value;
     }
     writeUint64(value) {
-        new Float64Array(this.buffer, this._writePos, 1)[0] = value;
+        this._view.setFloat64(this._writePos, value);
         this._writePos += 8;
     }
 }
