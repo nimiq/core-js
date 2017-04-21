@@ -1,5 +1,8 @@
 class AccountState {
     constructor(balance = 0, nonce = 0) {
+        if (!NumberUtils.isUint64(balance)) throw 'Malformed Balance';
+        if (!NumberUtils.isUint32(nonce)) throw 'Malformed Nonce';
+
         this._balance = balance;
         this._nonce = nonce;
     }
