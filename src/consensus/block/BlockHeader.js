@@ -1,9 +1,9 @@
 class BlockHeader {
 
-    constructor(prevHash, txHash, stateHash, difficulty, timestamp, nonce) {
+    constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
         this._prevHash = prevHash;
-        this._txHash = txHash;
-        this._stateHash = stateHash;
+        this._bodyHash = bodyHash;
+        this._accountsHash = accountsHash;
         this._difficulty = difficulty;
         this._timestamp = timestamp;
         this._nonce = nonce;
@@ -11,19 +11,19 @@ class BlockHeader {
 
     static unserialize(buf) {
         var prevHash = buf.readHash();
-        var txHash = buf.readHash();
-        var stateHash = buf.readHash();
+        var bodyHash = buf.readHash();
+        var accountsHash = buf.readHash();
         var difficulty = buf.readUint32();
         var timestamp = buf.readUint64();
         var nonce = buf.readUint64();
-        return new BlockHeader(prevHash, txHash, stateHash, difficulty, timestamp, nonce);
+        return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
     }
 
     serialize(buf) {
         buf = buf || new Buffer();
         buf.writeHash(this._prevHash);
-        buf.writeHash(this._txHash);
-        buf.writeHash(this._stateHash);
+        buf.writeHash(this._bodyHash);
+        buf.writeHash(this._accountsHash);
         buf.writeUint32(this._difficulty);
         buf.writeUint64(this._timestamp);
         buf.writeUint64(this._nonce);
@@ -50,12 +50,12 @@ class BlockHeader {
         return this._prevHash;
     }
 
-    get txHash() {
-        return this._txHash;
+    get bodyHash() {
+        return this._bodyHash;
     }
 
-    get stateHash() {
-        return this._stateHash;
+    get accountsHash() {
+        return this._accountsHash;
     }
 
     get difficulty() {
@@ -84,8 +84,8 @@ class BlockHeader {
     log(desc) {
         super.log(desc, `BlockHeader
             prev: ${Buffer.toBase64(this._prevHash)}
-            tx-root: ${Buffer.toBase64(this._txRoot)}
-            state-root: ${Buffer.toBase64(this._stateRoot)}
+            tx-root: ${Buffer.toBase64(this._bodyHash)}
+            state-root: ${Buffer.toBase64(this._accountsHash)}
             difficulty: ${this._difficulty}, timestamp: ${this._timestamp}, nonce: ${this._nonce}`);
     }
 

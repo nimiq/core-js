@@ -12,7 +12,7 @@
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/jasmine-html.js"></script>
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/boot.js"></script>
 
-  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/**/*.js","spec/**/*-spec.js"]}');</script>
+  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/**/*.js","specs/**/*.spec.js"]}');</script>
 
   <!-- sources:js -->
 
@@ -20,39 +20,41 @@
 
   <!-- inject:js -->
   <script src="src/core.js"></script>
-  <script src="src/miner/miner.js"></script>
-  <script src="src/miner/policy.js"></script>
-  <script src="src/wallet/wallet.js"></script>
-  <script src="src/utils/_test.js"></script>
-  <script src="src/utils/has-events.js"></script>
   <script src="src/consensus/constants.js"></script>
   <script src="src/consensus/primitive.js"></script>
+  <script src="src/miner/miner.js"></script>
+  <script src="src/miner/policy.js"></script>
   <script src="src/p2p-db/p2p-db.js"></script>
+  <script src="src/utils/has-events.js"></script>
+  <script src="src/wallet/wallet.js"></script>
+  <script src="src/consensus/accounts/AccountState.js"></script>
+  <script src="src/consensus/accounts/AccountsState.js"></script>
+  <script src="src/consensus/accounts/AccountsTree.js"></script>
+  <script src="src/consensus/accounts/Address.js"></script>
+  <script src="src/consensus/accounts/PublicKey.js"></script>
+  <script src="src/consensus/block/BlockBody.js"></script>
+  <script src="src/consensus/block/BlockHeader.js"></script>
+  <script src="src/consensus/block/block.js"></script>
+  <script src="src/consensus/block/transactions-tree.js"></script>
+  <script src="src/consensus/block-chain/BlockChain.js"></script>
+  <script src="src/consensus/block-chain/block-chains.js"></script>
+  <script src="src/consensus/transaction/Transaction.js"></script>
+  <script src="src/p2p-db/db/databases.js"></script>
+  <script src="src/p2p-db/p2p/p2p-network.js"></script>
+  <script src="src/p2p-db/p2p/p2p-protocol.js"></script>
   <script src="src/utils/buffer/BufferUtils.js"></script>
   <script src="src/utils/buffer/buffer.js"></script>
   <script src="src/utils/crypto/crypto.js"></script>
   <script src="src/utils/indexed-db/indexed-db.js"></script>
   <script src="src/utils/indexed-db/storage-persistence.js"></script>
-  <script src="src/consensus/accounts/AccountState.js"></script>
-  <script src="src/consensus/accounts/AccountsState.js"></script>
-  <script src="src/consensus/accounts/AccountsTree.js"></script>
-  <script src="src/consensus/block-chain/BlockChain.js"></script>
-  <script src="src/consensus/block-chain/block-chains.js"></script>
-  <script src="src/consensus/block/BlockBody.js"></script>
-  <script src="src/consensus/block/BlockHeader.js"></script>
-  <script src="src/consensus/block/block.js"></script>
-  <script src="src/consensus/block/transactions-tree.js"></script>
-  <script src="src/consensus/transaction/transaction.js"></script>
-  <script src="src/p2p-db/db/databases.js"></script>
-  <script src="src/p2p-db/p2p/p2p-network.js"></script>
-  <script src="src/p2p-db/p2p/p2p-protocol.js"></script>
   <script src="src/consensus/chain/mini-block-chain/mini-block-chains.js"></script>
   <script src="src/consensus/chain/proof-chain/proof-chain.js"></script>
   <script src="src/consensus/chain/proof-chain/proof-chains.js"></script>
   <script src="src/p2p-db/p2p/peer-portal/peer-portal.js"></script>
   <script src="src/p2p-db/p2p/webrtc/certificate/webrtc-certificate.js"></script>
   <script src="src/p2p-db/p2p/webrtc/connection/webrtc-connection.js"></script>
-  <script src="spec/test-spec.js"></script>
+  <script src="specs/consensus/block/BlockHeader.spec.js"></script>
+  <script src="specs/consensus/transactions/Transaction.spec.js"></script>
   <!-- endinject -->
 
   <script src="http://localhost:35729/livereload.js"></script>
