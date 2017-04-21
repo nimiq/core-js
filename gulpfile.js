@@ -16,7 +16,12 @@ var jasmine = new require('gulp-jasmine-livereload-task');
 
 gulp.task('default', function() {
     gulp.run(jasmine({
-        files: ['src/utils/**/*.js','src/consensus/primitive/**/*.js','src/**/*.js','specs/**/*.spec.js']
+        files: [
+        	'src/utils/**/*.js',
+        	'src/consensus/primitive/Primitive.js',
+        	'src/consensus/primitive/*.js',
+        	'src/**/*.js',
+        	'specs/**/*.spec.js']
     }));
 });
 

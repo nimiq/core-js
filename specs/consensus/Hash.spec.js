@@ -1,18 +1,18 @@
 describe('Hash', () => {
 
     it('has an equals method', () => {
-        const signature1 = new Hash();
+        const hash = new Hash();
         const signature2 = new Hash();
 
-        expect(signature1.equals(signature1)).toEqual(true);
-        expect(signature1.equals(signature2)).toEqual(false);
-        expect(signature1.equals(null)).toEqual(false);
-        expect(signature1.equals(1)).toEqual(false);
+        expect(hash.equals(hash)).toEqual(true);
+        expect(hash.equals(signature2)).toEqual(false);
+        expect(hash.equals(null)).toEqual(false);
+        expect(hash.equals(1)).toEqual(false);
     });
 
     it('must be 32bytes long', () => {
-        signature1 = new Hash()
-        expect(signature1.serializedSize).toEqual(32);
+        hash = new Hash()
+        expect(hash.serializedSize).toEqual(32);
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(16)); 
         }).toThrow('Invalid argument');
@@ -27,9 +27,9 @@ describe('Hash', () => {
     });
 
     it('is serializable and unserializable', () => {
-    	const signature1 = new Hash();
-    	const signature2 = Hash.unserialize(signature1.serialize());
+    	const hash = new Hash();
+    	const signature2 = Hash.unserialize(hash.serialize());
 
-		expect(signature1.equals(signature2)).toEqual(true);
+		expect(hash.equals(signature2)).toEqual(true);
     }); 
 });

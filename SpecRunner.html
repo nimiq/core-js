@@ -12,7 +12,7 @@
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/jasmine-html.js"></script>
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/boot.js"></script>
 
-  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/utils/**/*.js","src/consensus/primitive/**/*.js","src/**/*.js","specs/**/*.spec.js"]}');</script>
+  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/utils/**/*.js","src/consensus/primitive/Primitive.js","src/consensus/primitive/*.js","src/**/*.js","specs/**/*.spec.js"]}');</script>
 
   <!-- sources:js -->
 
@@ -25,9 +25,9 @@
   <script src="src/utils/crypto/crypto.js"></script>
   <script src="src/utils/indexed-db/indexed-db.js"></script>
   <script src="src/utils/indexed-db/storage-persistence.js"></script>
+  <script src="src/consensus/primitive/Primitive.js"></script>
   <script src="src/consensus/primitive/Address.js"></script>
   <script src="src/consensus/primitive/Hash.js"></script>
-  <script src="src/consensus/primitive/Primitive.js"></script>
   <script src="src/consensus/primitive/PrivateKey.js"></script>
   <script src="src/consensus/primitive/PublicKey.js"></script>
   <script src="src/consensus/primitive/Signature.js"></script>
@@ -65,9 +65,9 @@
   <script src="specs/consensus/block/BlockBody.spec.js"></script>
   <script src="specs/consensus/block/BlockHeader.spec.js"></script>
   <script src="specs/consensus/transaction/Transaction.spec.js"></script>
-  <script src="specs/utils/crypto/crypto.spec.js"></script>
   <script src="specs/utils/buffer/Buffer.spec.js"></script>
   <script src="specs/utils/buffer/BufferUtils.spec.js"></script>
+  <script src="specs/utils/crypto/crypto.spec.js"></script>
   <script src="specs/utils/indexed-db/IndexedDB.spec.js"></script>
   <!-- endinject -->
 
