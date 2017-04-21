@@ -5,6 +5,6 @@ describe('Address', () => {
 	const nonce = 0;
 
 	it('is serializable and unserializable',() => {
-		expect( '' ).toEquals( '' );
+		// expect( '' ).toEquals( '' );
 	});
 });

@@ -11,14 +11,14 @@ describe('Hash', () => {
     });
 
     it('must be 32bytes long', () => {
-        hash = new Hash()
+        hash = new Hash();
         expect(hash.serializedSize).toEqual(32);
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(16)); 
         }).toThrow('Invalid argument');
 
         expect(() => { 
-            const sign = new Hash('asd'); 
+            const sign = new Hash('test'); 
         }).toThrow('Invalid argument');
 
         expect(() => { 
