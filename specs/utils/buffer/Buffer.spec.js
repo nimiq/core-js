@@ -67,7 +67,7 @@ describe('Buffer', () => {
 		const value3 = Number.MAX_SAFE_INTEGER;
 		const value4 = 1;
 
-		const buffer = new Buffer(4);
+		const buffer = new Buffer(32);
 		buffer.writeUint64(value1);
 		buffer.writeUint64(value2);
 		buffer.writeUint64(value3);
@@ -79,5 +79,6 @@ describe('Buffer', () => {
 		expect(buffer.readUint64()).toEqual(value4);
 		
 	});
+
 	
 });
