@@ -13,7 +13,8 @@
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-jasmine-livereload-task": "^0.11.0",
-    "gulp-watch": "^4.3.11"
+    "gulp-watch": "^4.3.11",
+    "jasmine2-custom-message": "^0.8.2"
   },
   "author": "",
   "license": "ISC",
