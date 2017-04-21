@@ -9,9 +9,9 @@ describe('Buffer', () => {
 	});
 	
 	it('has an equals method',() => {
-		const buffer1 = Buffer.fromBase64('dGVzdA==');
-		const buffer2 = Buffer.fromBase64('dGVzdA==');
-		const buffer3 = Buffer.fromUnicode('test123123123');
+		const buffer1 = Buffer.fromUnicode('test1');
+		const buffer2 = Buffer.fromUnicode('test2');
+		const buffer3 = Buffer.fromUnicode('test3');
 		
 		expect(buffer1.equals(buffer2)).toEquals(true);
 		expect(buffer1.equals(buffer3)).toEquals(false);

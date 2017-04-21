@@ -11,7 +11,8 @@ describe('Signature', () => {
     });
 
     it('must be 64bytes long', () => {
-
+        signature1 = new Signature()
+        expect(signature1.serializedSize).toEqual(64);
         expect(() => { 
             const sign = new Signature(new ArrayBuffer(16)); 
         }).toThrow('Invalid argument');

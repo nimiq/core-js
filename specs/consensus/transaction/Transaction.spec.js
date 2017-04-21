@@ -1,11 +1,11 @@
 describe('RawTransaction.senderPubKey', () => {
-	const recipientAddr = new AccountAddress();
+	const recipientAddr = new Address();
 	const value = 1; 
 	const fee = 1; 
 	const nonce = 0;
 
 	it(' is set in the constructor',() => {
-		const senderPubKey = new AccountPublicKey();
+		const senderPubKey = new PublicKey();
 		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
 	});
