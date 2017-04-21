@@ -4,7 +4,7 @@
 class RawTransaction {
 
     constructor(senderPubKey, recipientAddr, value, fee, nonce) {
-        if (value <= 0 || value > Number.MAX_SAFE_INTEGER) throw 'Malformed Value';
+        if (value <= 0 || !Number.isSafeInteger(value) ) throw 'Malformed Value';
         if (fee <= 0) throw 'Malformed Fee';
         if (nonce < 0) throw 'Malformed Nonce';
 

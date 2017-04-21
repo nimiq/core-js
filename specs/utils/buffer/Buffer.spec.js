@@ -22,10 +22,10 @@ describe('Buffer', () => {
 	
 	it('can writeUint16 and readUint16',() => {
 
-		const value1 = 255;
-		const value2 = 254;
-		const value3 = 0;
-		const value4 = 1;
+		const value1 = 65535;
+		const value2 = 2;
+		const value3 = 65535;
+		const value4 = 0;
 
 		const buffer = new Buffer(8);
 		buffer.writeUint16(value1);
@@ -42,9 +42,9 @@ describe('Buffer', () => {
 	
 	it('can writeUint32 and readUint32',() => {
 
-		const value1 = 255;
+		const value1 = 4294967295;
 		const value2 = 254;
-		const value3 = 0;
+		const value3 = 394967295;
 		const value4 = 1;
 
 		const buffer = new Buffer(16);
