@@ -17,7 +17,7 @@ class BlockBody {
 	}
 
 	serialize(buf) {
-		buf = buf || new Buffer(this.serializedSize());
+		buf = buf || new Buffer(this.serializedSize);
 		buf.writeAddr(this._minerAddr);
 		buf.writeUint16(this._transactions.length);
 		for (let tx of this._transactions) {
@@ -26,10 +26,10 @@ class BlockBody {
 		return buf;
 	}
 
-	serializedSize() {
-		let size = this._minerAddr.serializedSize();
+	get serializedSize() {
+		let size = this._minerAddr.serializedSize;
 		for (let tx of this._transactions) {
-			size += tx.serializedSize();
+			size += tx.serializedSize;
 		}
 		return size;
 	}
@@ -45,9 +45,7 @@ class BlockBody {
 		const len = values.length;
 		if (len == 1) {
 			const value = values[0];
-			return value.hash ? /*transaction*/ value.hash()
-					: /*miner address*/ Crypto.sha256(value);
-			}
+			return value.hash ? /*transaction*/ value.hash() : /*miner address*/ Crypto.sha256(value);
 		}
 
 		const mid = Math.round(len / 2);

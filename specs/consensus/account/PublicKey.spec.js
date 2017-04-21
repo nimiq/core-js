@@ -1,35 +1,35 @@
 describe('PublicKey', () => {
 
     it('has an equals method', () => {
-        const signature1 = new PublicKey();
-        const signature2 = new PublicKey();
+        const pubKey1 = new PublicKey();
+        const pubKey2 = new PublicKey();
 
-        expect(signature1.equals(signature1)).toEqual(true);
-        expect(signature1.equals(signature2)).toEqual(false);
-        expect(signature1.equals(null)).toEqual(false);
-        expect(signature1.equals(1)).toEqual(false);
+        expect(pubKey1.equals(pubKey1)).toEqual(true);
+        expect(pubKey1.equals(pubKey2)).toEqual(false);
+        expect(pubKey1.equals(null)).toEqual(false);
+        expect(pubKey1.equals(1)).toEqual(false);
     });
 
     it('must be 64bytes long', () => {
-        signature1 = new PublicKey()
-        expect(signature1.serializedSize).toEqual(64);
-        expect(() => { 
-            const sign = new PublicKey(new ArrayBuffer(16)); 
+        pubKey1 = new PublicKey()
+        expect(pubKey1.serializedSize).toEqual(64);
+        expect(() => {
+            const sign = new PublicKey(new ArrayBuffer(16));
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new PublicKey('asd'); 
+        expect(() => {
+            const sign = new PublicKey('asd');
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new PublicKey(new ArrayBuffer(65)); 
+        expect(() => {
+            const sign = new PublicKey(new ArrayBuffer(65));
         }).toThrow('Invalid argument');
     });
 
     it('is serializable and unserializable', () => {
-    	const signature1 = new PublicKey();
-    	const signature2 = PublicKey.unserialize(signature1.serialize());
+    	const pubKey1 = new PublicKey();
+    	const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
 
-		expect(signature1.equals(signature2)).toEqual(true);
-    }); 
+		expect(pubKey1.equals(pubKey2)).toEqual(true);
+    });
 });

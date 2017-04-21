@@ -25,7 +25,7 @@ class RawTransaction {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize());
+        buf = buf || new Buffer(this.serializedSize);
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
@@ -34,9 +34,9 @@ class RawTransaction {
         return buf;
     }
 
-    serializedSize() {
-        return this._senderPubKey.serializedSize()
-            + this._recipientAddr.serializedSize()
+    get serializedSize() {
+        return this._senderPubKey.serializedSize
+            + this._recipientAddr.serializedSize
             + /*value*/ 8
             + /*fee*/ 4
             + /*nonce*/ 4;
@@ -92,15 +92,15 @@ class Transaction extends RawTransaction {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize());
+        buf = buf || new Buffer(this.serializedSize);
         super.serialize(buf);
         this._signature.serialize(buf);
         return buf;
     }
 
-    serializedSize() {
-        return super.serializedSize()
-                + this._signature.serializedSize()
+    get serializedSize() {
+        return super.serializedSize
+            + this._signature.serializedSize;
     }
 
     hash() {

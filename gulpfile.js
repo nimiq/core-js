@@ -7,7 +7,7 @@ var paths = {
 }
 
 /*
- * 
+ *
  * Test
  *
  */
