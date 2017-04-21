@@ -12,12 +12,12 @@ class BranchNode {
         this.children = [];
     }
 
-    getChild(prefix) {
-        return this.children[prefix[0]];
+    static getChildKey(node, prefix) {
+        return node.children[prefix[0]];
     }
 
-    putChild(prefix, nodeKey) {
-        this.children[prefix[0]] = nodeKey;
+    static putChildKey(node, prefix, nodeKey) {
+        node.children[prefix[0]] = nodeKey;
     }
 }
 
@@ -58,8 +58,8 @@ class AccountsTree {
 
             // Insert the new parent node.
             const newParent = new BranchNode(commonPrefix);
-            newParent.putChild(node.prefix, nodeKey);
-            newParent.putChild(newChild.prefix, newChildKey);
+            BranchNode.putChildKey(newParent, node.prefix, nodeKey);
+            BranchNode.putChildKey(newParent, newChild.prefix, newChildKey);
             const newParentKey = await this.db.put(newParent);
 
             return await this._updateKeys(newParent.prefix, newParentKey, rootPath);
@@ -76,8 +76,8 @@ class AccountsTree {
 
         // If the node prefix matches and there are address bytes left, descend into
         // the matching child node if one exists.
-        const childKey = node.getChild(accountAddr);
-        if (child) {
+        const childKey = BranchNode.getChildKey(node, accountAddr);
+        if (childKey) {
             const childNode = await this.db.get(childKey);
             rootPath.push(node);
             return await this._insert(childNode, accountAddr, accountState, rootPath);
@@ -88,7 +88,7 @@ class AccountsTree {
         const newChildKey = await this.db.put(newChild);
 
         await this.db.delete(node);
-        node.putChild(newChild.prefix, newChildKey);
+        BranchNode.putChildKey(node, newChild.prefix, newChildKey);
         const nodeKey = await this.db.put(node);
 
         return await this._updateKeys(node.prefix, nodeKey, rootPath);
@@ -100,7 +100,7 @@ class AccountsTree {
             const node = rootPath[i];
             await this.db.delete(node);
 
-            node.putChild(prefix, nodeKey);
+            BranchNode.putChildKey(node, prefix, nodeKey);
 
             nodeKey = await this.db.put(node);
             prefix = node.prefix;
@@ -131,9 +131,9 @@ class AccountsTree {
         // node.
         if (!accountAddr.length) return node.accountState;
 
-        // Descend into the tree if a matching child node exists
-        const childKey = node.getChild(accountAddr);
-        if (child) {
+        // Descend into the matching child node if one exists.
+        const childKey = BranchNode.getChildKey(node, accountAddr);
+        if (childKey) {
           const childNode = await this.db.get(childKey);
           return await this._retrieve(childNode, accountAddr);
         }
@@ -146,13 +146,13 @@ class AccountsTree {
         let commonPrefix = new Uint8Array(arr1.length);
         let i = 0;
         for (; i < arr1.length; ++i) {
-          if (arr1[i] !== arr2[i]) break;
-          commonPrefix[i]= arr1[i];
+            if (arr1[i] !== arr2[i]) break;
+            commonPrefix[i] = arr1[i];
         }
         return commonPrefix.slice(0, i);
     }
 
-    get hash() {
+    get root() {
         if (!this._rootKey) return new Hash();
         return Hash.fromBase64(this._rootKey);
     }

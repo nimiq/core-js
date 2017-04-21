@@ -1,9 +1,0 @@
-const Constants = {
-	TX_SIZE_RAW : 48,
-	ADDRESS_SIZE: 24,
-	PUBLIC_KEY_SIZE: 91,
-	SIGNATURE_SIZE: 64,
-	B_HEADER: 112,
-}
-
-Constants.TX_SIZE=Constants.TX_SIZE_RAW+Constants.PUBLIC_KEY_SIZE+Constants.SIGNATURE_SIZE
