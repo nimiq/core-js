@@ -19,10 +19,10 @@ class Primitive extends Uint8Array {
 
     equals(o) {
         return o instanceof Primitive
-            && BufferUtils.equals(this.buffer, o.buffer);
+            && BufferUtils.equals(this, o);
     }
 
-    toBase64(){
-        return BufferUtils.toBase64(this.buffer);
+    toBase64() {
+        return BufferUtils.toBase64(this);
     }
 }
