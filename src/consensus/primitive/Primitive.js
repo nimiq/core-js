@@ -16,4 +16,9 @@ class Primitive extends Uint8Array {
             throw 'Invalid argument';
         }
     }
+
+    equals(o){
+        return o instanceof Primitive
+            && BufferUtils.equals(this.buffer, o.buffer);
+    }
 }
