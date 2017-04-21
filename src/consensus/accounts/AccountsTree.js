@@ -167,8 +167,9 @@ class AccountsTreeNode {
             this.accountState.serialize(buf);
         } else if (this.children) {
             // branch node
-            for (let child of this.children) {
-                buf.write(BufferUtils.fromBase64(child));
+            for (let i = 0; i < this.children.length; ++i) {
+                buf.writeUint8(i);
+                buf.write(BufferUtils.fromBase64(this.children[i]));
             }
         }
         return buf;
