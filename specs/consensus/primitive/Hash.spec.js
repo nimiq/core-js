@@ -1,17 +1,21 @@
 describe('Hash', () => {
 
     it('has an equals method', () => {
-        const hash = new Hash();
-        const signature2 = new Hash();
+        const hash1 = new Hash(Dummy.hash1);
+        const hash2 = new Hash(Dummy.hash2);
 
-        expect(hash.equals(hash)).toEqual(true);
-        expect(hash.equals(signature2)).toEqual(false);
-        expect(hash.equals(null)).toEqual(false);
-        expect(hash.equals(1)).toEqual(false);
+        expect(hash1.equals(hash1))
+            .toBe(true,'because hash1 == hash1');
+        expect(hash1.equals(hash2))
+            .toBe(false,'because hash1 !== hash2');
+        expect(hash1.equals(null))
+            .toBe(false,'because hash1 !== null');
+        expect(hash1.equals(1))
+            .toBe(false,'because hash1 !== 1');
     });
 
     it('must be 32bytes long', () => {
-        hash = new Hash();
+        const hash = new Hash(Dummy.hash1);
         expect(hash.serializedSize).toEqual(32);
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(16)); 
@@ -27,9 +31,9 @@ describe('Hash', () => {
     });
 
     it('is serializable and unserializable', () => {
-    	const hash = new Hash();
-    	const signature2 = Hash.unserialize(hash.serialize());
+    	const hash1 = new Hash(Dummy.hash1);
+    	const hash2 = Hash.unserialize(hash1.serialize());
 
-		expect(hash.equals(signature2)).toEqual(true);
+		expect(hash2.toBase64()).toBe(Dummy.hash1,'because of invariance.');
     }); 
 });
