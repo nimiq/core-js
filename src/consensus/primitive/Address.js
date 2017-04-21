@@ -1,4 +1,4 @@
-class Address extends Uint8Array {
+class Address extends Primitive {
 
 	static get SERIALIZED_SIZE() {
 		return 22;
@@ -20,5 +20,10 @@ class Address extends Uint8Array {
 
 	get serializedSize() {
 		return Address.SERIALIZED_SIZE;
+	}
+
+	equals(o) {
+		return o instanceof Address
+			&& super.equals(o);
 	}
 }

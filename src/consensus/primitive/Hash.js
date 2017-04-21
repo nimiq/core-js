@@ -21,4 +21,10 @@ class Hash extends Primitive {
     get serializedSize() {
         return Hash.SERIALIZED_SIZE;
     }
+
+	equals(o) {
+		return o instanceof Hash
+			&& super.equals(o);
+	}
+
 }

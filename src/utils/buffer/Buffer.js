@@ -7,7 +7,7 @@ class Buffer extends Uint8Array {
     }
 
     read(length) {
-        var value = this.subarray(this._readPos, length);
+        var value = this.subarray(this._readPos, this._readPos + length);
         this._readPos += length;
         return value;
     }
