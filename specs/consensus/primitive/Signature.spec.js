@@ -15,17 +15,17 @@ describe('Signature', () => {
         const signature1 = new Signature(Dummy.signature1);
 
         expect(signature1.serializedSize).toEqual(64);
-        
-        expect(() => { 
-            const sign = new Signature(new ArrayBuffer(16)); 
+
+        expect(() => {
+            const sign = new Signature(new ArrayBuffer(16));
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new Signature('wrong test string'); 
+        expect(() => {
+            const sign = new Signature('wrong test string');
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new Signature(new ArrayBuffer(65)); 
+        expect(() => {
+            const sign = new Signature(new ArrayBuffer(65));
         }).toThrow('Invalid argument');
     });
 
@@ -35,5 +35,5 @@ describe('Signature', () => {
 
         expect(signature2.toBase64()).toEqual(Dummy.signature1);
 		expect(signature2.toBase64()).toEqual(Dummy.signature1);
-    }); 
+    });
 });

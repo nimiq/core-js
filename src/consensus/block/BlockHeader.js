@@ -10,9 +10,9 @@ class BlockHeader {
     }
 
     static unserialize(buf) {
-        var prevHash = buf.readHash();
-        var bodyHash = buf.readHash();
-        var accountsHash = buf.readHash();
+        var prevHash = Hash.unserialize(buf);
+        var bodyHash = Hash.unserialize(buf);
+        var accountsHash = Hash.unserialize(buf);
         var difficulty = buf.readUint32();
         var timestamp = buf.readUint64();
         var nonce = buf.readUint64();
@@ -21,9 +21,9 @@ class BlockHeader {
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
-        buf.writeHash(this._prevHash);
-        buf.writeHash(this._bodyHash);
-        buf.writeHash(this._accountsHash);
+        this._prevHash.serialize(buf);
+        this._bodyHash.serialize(buf);
+        this._accountsHash.serialize(buf);
         buf.writeUint32(this._difficulty);
         buf.writeUint64(this._timestamp);
         buf.writeUint64(this._nonce);

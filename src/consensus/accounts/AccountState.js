@@ -4,6 +4,11 @@ class AccountState {
         this._nonce = nonce;
     }
 
+    static of(o) {
+        if (!o) return undefined;
+        return new AccountState(o.balacne, o.nonce);
+    }
+
     static unserialize(buf) {
         let balance = buf.readUint64();
         let nonce = buf.readUint32();
