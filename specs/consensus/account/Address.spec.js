@@ -5,6 +5,6 @@ describe('AccountAddress', () => {
 	const nonce = 0;
 
 	it('invariant to unserialize',() => {
-		expect( ... ).toEquals( ... );
+		expect( '' ).toEquals( '' );
 	});
 });

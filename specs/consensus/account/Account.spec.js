@@ -5,6 +5,6 @@ describe(' ... ', () => {
 	const nonce = 0;
 
 	it(' ... ',() => {
-		expect( ... ).toEquals( ... );
+		expect( '...' ).toEquals( '...' );
 	});
 });

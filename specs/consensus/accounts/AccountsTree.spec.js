@@ -24,9 +24,9 @@ describe('Accounts', () => {
         const block = new Block();
 
         const accountsHash1 = Accounts.hash();
-        await Accounts.applyBlock(block);
-        await Accounts.revertBlock(block);
-        const accountsHash2 = await Accounts.hash();
+        Accounts.applyBlock(block);
+        Accounts.revertBlock(block);
+        const accountsHash2 = Accounts.hash();
 
         expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         done();

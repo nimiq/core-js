@@ -12,7 +12,7 @@
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/jasmine-html.js"></script>
   <script src="node_modules/gulp-jasmine-livereload-task/vendor/jasmine-2.2.0/boot.js"></script>
 
-  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/utils/**/*.js","src/**/*.js","specs/**/*.spec.js"]}');</script>
+  <script>var gulpJasmineLivereloadTask = {}; gulpJasmineLivereloadTask.options = JSON.parse('{"jasmine":"2.2","livereload":"35729","staticAssetsPath":".","specRunner":"SpecRunner.html","jshint":{"version":"2.6","files":[],"options":{}},"watch":{"options":{}},"files":["src/utils/**/*.js","src/consensus/primitive/**/*.js","src/**/*.js","specs/**/*.spec.js"]}');</script>
 
   <!-- sources:js -->
 
@@ -20,11 +20,20 @@
 
   <!-- inject:js -->
   <script src="src/utils/has-events.js"></script>
+  <script src="src/utils/crypto/crypto.js"></script>
   <script src="src/utils/buffer/Buffer.js"></script>
   <script src="src/utils/buffer/BufferUtils.js"></script>
-  <script src="src/utils/crypto/crypto.js"></script>
   <script src="src/utils/indexed-db/indexed-db.js"></script>
   <script src="src/utils/indexed-db/storage-persistence.js"></script>
+  <script src="src/consensus/primitive/Address.js"></script>
+  <script src="src/consensus/primitive/Hash.js"></script>
+  <script src="src/consensus/primitive/Primitive.js"></script>
+  <script src="src/consensus/primitive/PrivateKey.js"></script>
+  <script src="src/consensus/primitive/PublicKey.js"></script>
+  <script src="src/consensus/primitive/Signature.js"></script>
+  <script src="src/p2p-db/db/databases.js"></script>
+  <script src="src/p2p-db/p2p/p2p-network.js"></script>
+  <script src="src/p2p-db/p2p/p2p-protocol.js"></script>
   <script src="src/consensus/accounts/Account.js"></script>
   <script src="src/consensus/accounts/AccountState.js"></script>
   <script src="src/consensus/accounts/Accounts.js"></script>
@@ -35,18 +44,10 @@
   <script src="src/consensus/blockchain/BlockChain.js"></script>
   <script src="src/consensus/blockchain/block-chains.js"></script>
   <script src="src/consensus/transaction/Transaction.js"></script>
-  <script src="src/p2p-db/db/databases.js"></script>
-  <script src="src/p2p-db/p2p/p2p-network.js"></script>
-  <script src="src/p2p-db/p2p/p2p-protocol.js"></script>
   <script src="src/p2p-db/p2p/peer-portal/peer-portal.js"></script>
   <script src="src/p2p-db/p2p/webrtc/certificate/webrtc-certificate.js"></script>
   <script src="src/p2p-db/p2p/webrtc/connection/webrtc-connection.js"></script>
   <script src="src/core.js"></script>
-  <script src="src/consensus/Address.js"></script>
-  <script src="src/consensus/Hash.js"></script>
-  <script src="src/consensus/PrivateKey.js"></script>
-  <script src="src/consensus/PublicKey.js"></script>
-  <script src="src/consensus/Signature.js"></script>
   <script src="src/miner/miner.js"></script>
   <script src="src/miner/policy.js"></script>
   <script src="src/p2p-db/p2p-db.js"></script>
