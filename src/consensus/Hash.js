@@ -1,7 +1,7 @@
 class Hash extends Uint8Array {
 
 	constructor(arg) {
-		const buffer;
+		let buffer;
         if (!arg) {
             buffer = new ArrayBuffer(Hash.SERIALIZED_SIZE);
         }

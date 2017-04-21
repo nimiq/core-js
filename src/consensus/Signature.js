@@ -1,7 +1,7 @@
 class Signature extends Uint8Array {
 
 	constructor(arg) {
-        const buffer;
+        let buffer;
         if (!arg) {
             buffer = new ArrayBuffer(Signature.SERIALIZED_SIZE);
         }

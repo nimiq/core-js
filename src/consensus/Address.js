@@ -1,7 +1,7 @@
 class Address extends Uint8Array {
 
 	constructor(arg) {
-		const buffer;
+		let buffer;
 		if (!arg) {
 			buffer = new ArrayBuffer(Address.SERIALIZED_SIZE);
 		}

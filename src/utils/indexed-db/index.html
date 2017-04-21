@@ -1,8 +1,0 @@
-<script src="/utils/_test.js"></script>
-<script src="indexed-db.js"></script>
-<script>
-	const indexedDb = new RawIndexedDB('transactions');
-	indexedDb.put('test','test successful!').then(_=>{
-		indexedDb.get('test').then(console.log)
-	})
-</script>
