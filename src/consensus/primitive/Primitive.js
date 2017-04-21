@@ -1,22 +1,19 @@
 class Primitive extends Uint8Array {
     constructor(arg, length) {
-        let buffer;
         if (!arg) {
-            buffer = new ArrayBuffer(length);
+            super(length);
         } else if (typeof arg === 'string') {
-            buffer = BufferUtils.fromBase64(arg);
+            const buffer = BufferUtils.fromBase64(arg);
+            if (buffer.byteLength !== length) throw 'Invalid argument';
+            super(buffer);
         } else if (arg instanceof ArrayBuffer) {
-            buffer = arg;
+            if (arg.byteLength !== length) throw 'Invalid argument';
+            super(arg);
         } else if (arg instanceof Uint8Array) {
-            buffer = arg.buffer;
+            if (arg.byteLength !== length) throw 'Invalid argument';
+            super(arg.buffer, arg.byteOffset, arg.byteLength);
         } else {
             throw 'Invalid argument';
         }
-
-        if (buffer.byteLength !== length) {
-            throw 'Invalid argument';
-        }
-
-        super(buffer);
     }
 }
