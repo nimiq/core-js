@@ -80,5 +80,17 @@ describe('Buffer', () => {
 		
 	});
 
+	it('can read and write Uint8Arrays',() => {
+
+		const length = 8;
+		const array1 = new Uint8Array(length);
+
+		const buffer = new Buffer(length);
+		buffer.write(array1);
+		
+		const array2 = buffer.read(length);
+
+		expect(BufferUtils.equals(array1,array2)).toEqual(true);		
+	});
 	
 });
