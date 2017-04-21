@@ -12,15 +12,15 @@ class Block {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize());
+        buf = buf || new Buffer(this.serializedSize);
         this._header.serialize(buf);
         this._body.serialize(buf);
         return buf;
     }
 
-	serializedSize() {
-		return this._header.serializedSize()
-			+ this._body.serializedSize();
+	get serializedSize() {
+		return this._header.serializedSize
+			+ this._body.serializedSize;
 	}
 
 	get header() {

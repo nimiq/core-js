@@ -20,7 +20,7 @@ class BlockHeader {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize());
+        buf = buf || new Buffer(this.serializedSize);
         buf.writeHash(this._prevHash);
         buf.writeHash(this._bodyHash);
         buf.writeHash(this._accountsHash);
@@ -30,10 +30,10 @@ class BlockHeader {
         return buf;
     }
 
-    serializedSize() {
-        return this._prevHash.serializedSize()
-            + this._bodyHash.serializedSize()
-            + this._accountsHash.serializedSize()
+    get serializedSize() {
+        return this._prevHash.serializedSize
+            + this._bodyHash.serializedSize
+            + this._accountsHash.serializedSize
             + /*difficulty*/ 4
             + /*timestamp*/ 8
             + /*nonce*/ 8;

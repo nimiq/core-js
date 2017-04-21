@@ -7,7 +7,7 @@ var paths = {
 }
 
 /*
- * 
+ *
  * Test
  *
  */
@@ -16,7 +16,7 @@ var jasmine = new require('gulp-jasmine-livereload-task');
 
 gulp.task('default', function() {
     gulp.run(jasmine({
-        files: [paths.src, paths.spec]
+        files: ['src/utils/**/*.js', 'src/**/*.js', 'specs/**/*.spec.js']
     }));
 });
 
