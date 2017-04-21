@@ -1,4 +1,4 @@
-describe('BlockHeader.serialize', () => {
+describe('BlockHeader', () => {
 
     it('is serializable and unserializable', () => {
     	const prevHash = new Hash();
