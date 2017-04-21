@@ -1,7 +1,7 @@
 // TODO: verify balances and nonces of senders
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
-class AccountsState {
+class Accounts {
 
   constructor(db) {
     this._tree = new AccountsTree(db);

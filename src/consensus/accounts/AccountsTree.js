@@ -1,40 +1,17 @@
-// TODO: use firstchar of key as child index
-class AccountNode {
-    constructor(prefix, accountState) {
-        this.prefix = prefix;
-        this.accountState = accountState;
-    }
-}
-
-class BranchNode {
-    constructor(prefix = new Uint8Array()) {
-        this.prefix = prefix;
-        this.children = [];
-    }
-
-    static getChildKey(node, prefix) {
-        return node.children[prefix[0]];
-    }
-
-    static putChildKey(node, prefix, nodeKey) {
-        node.children[prefix[0]] = nodeKey;
-    }
-}
-
 class AccountsTree {
-    constructor(db) {
-        this._db = db;
-        this._rootKey = undefined;
+    constructor() {
+        this._store = new AccountsTreeStore();
+        this._rootKey = this._store.getRootKey();
     }
 
     async put(accountAddr, accountState) {
         // Insert root node if the tree is (initially) empty
         if (!this._rootKey) {
-            this._rootKey = await this.db.put(new BranchNode());
+            this._rootKey = await this._store.put(new AccountsTreeNode());
         }
 
-        // Insert accountState into the tree at accoutAddr.
-        const rootNode = this.db.get(this._rootKey);
+        // Insert accountState into the tree at accountAddr.
+        const rootNode = this._store.get(this._rootKey);
         return await this._insert(rootNode, accountAddr, accountState, []);
     }
 
@@ -48,19 +25,19 @@ class AccountsTree {
         // If the node prefix does not fully match the new address, split the node.
         if (commonPrefix.length !== node.prefix.length) {
             // Cut the common prefix off the existing node.
-            await this.db.delete(node);
+            await this._store.delete(node);
             node.prefix = node.prefix.slice(i);
-            const nodeKey = await this.db.put(node);
+            const nodeKey = await this._store.put(node);
 
             // Insert the new account node.
-            const newChild = new AccountNode(accountAddr, accountState);
-            const newChildKey = await this.db.put(newChild);
+            const newChild = new AccountsTreeNode(accountAddr, accountState);
+            const newChildKey = await this._store.put(newChild);
 
             // Insert the new parent node.
-            const newParent = new BranchNode(commonPrefix);
-            BranchNode.putChildKey(newParent, node.prefix, nodeKey);
-            BranchNode.putChildKey(newParent, newChild.prefix, newChildKey);
-            const newParentKey = await this.db.put(newParent);
+            const newParent = new AccountsTreeNode(commonPrefix);
+            newParent.putChild(node.prefix, nodeKey);
+            newParent.putChild(newChild.prefix, newChildKey);
+            const newParentKey = await this._store.put(newParent);
 
             return await this._updateKeys(newParent.prefix, newParentKey, rootPath);
         }
@@ -68,28 +45,28 @@ class AccountsTree {
         // If the remaining address is empty, we have found an (existing) node
         // with the given address. Update the account state.
         if (!accountAddr.length) {
-            await this.db.delete(node);
+            await this._store.delete(node);
             node.accountState = accountState;
-            const nodeKey = await this.db.put(node);
+            const nodeKey = await this._store.put(node);
             return await this._updateKeys(node.prefix, nodeKey, rootPath);
         }
 
         // If the node prefix matches and there are address bytes left, descend into
         // the matching child node if one exists.
-        const childKey = BranchNode.getChildKey(node, accountAddr);
+        const childKey = node.getChild(accountAddr);
         if (childKey) {
-            const childNode = await this.db.get(childKey);
+            const childNode = await this._store.get(childKey);
             rootPath.push(node);
             return await this._insert(childNode, accountAddr, accountState, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
-        const newChild = new AccountNode(accountAddr, accountState);
-        const newChildKey = await this.db.put(newChild);
+        const newChild = new AccountsTreeNode(accountAddr, accountState);
+        const newChildKey = await this._store.put(newChild);
 
-        await this.db.delete(node);
-        BranchNode.putChildKey(node, newChild.prefix, newChildKey);
-        const nodeKey = await this.db.put(node);
+        await this._store.delete(node);
+        node.putChild(newChild.prefix, newChildKey);
+        const nodeKey = await this._store.put(node);
 
         return await this._updateKeys(node.prefix, nodeKey, rootPath);
     }
@@ -98,21 +75,23 @@ class AccountsTree {
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
-            await this.db.delete(node);
+            await this._store.delete(node);
 
-            BranchNode.putChildKey(node, prefix, nodeKey);
+            node.putChild(prefix, nodeKey);
 
-            nodeKey = await this.db.put(node);
+            nodeKey = await this._store.put(node);
             prefix = node.prefix;
         }
 
         this._rootKey = nodeKey;
+        await this._store.setRootKey(this._rootKey);
+
         return this._rootKey;
     }
 
-    async get(key) {
+    async get(accountAddr) {
         if (!this._rootKey) return;
-        const rootNode = await this.db.get(this._rootKey);
+        const rootNode = await this._store.get(this._rootKey);
         return await _retrieve(rootNode, accountAddr);
     }
 
@@ -132,9 +111,9 @@ class AccountsTree {
         if (!accountAddr.length) return node.accountState;
 
         // Descend into the matching child node if one exists.
-        const childKey = BranchNode.getChildKey(node, accountAddr);
+        const childKey = node.getChild(accountAddr);
         if (childKey) {
-          const childNode = await this.db.get(childKey);
+          const childNode = await this._store.get(childKey);
           return await this._retrieve(childNode, accountAddr);
         }
 
@@ -155,5 +134,88 @@ class AccountsTree {
     get root() {
         if (!this._rootKey) return new Hash();
         return Hash.fromBase64(this._rootKey);
+    }
+}
+
+class AccountsTreeNode {
+    constructor(prefix = new Uint8Array(), accountState, children) {
+        this.prefix = prefix;
+        this.accountState = accountState;
+        this.children = children;
+    }
+
+    getChild(prefix) {
+        return this.children && this.children[prefix[0]];
+    }
+
+    putChild(prefix, child) {
+        this.children = this.children || [];
+        this.children[prefix[0]] = child;
+    }
+
+    serialize(buf) {
+        buf = buf || new Buffer(this.serializedSize(node));
+        // node type: branch node = 0x00, terminal node = 0xff
+        buf.writeUint8(this.accountState ? 0xff : 0x00);
+        // prefix length
+        buf.writeUint8(this.prefix.byteLength);
+        // prefix
+        buf.write(this.prefix);
+
+        if (this.accountState) {
+            // terminal node
+            this.accountState.serialize(buf);
+        } else if (this.children) {
+            // branch node
+            for (let child of this.children) {
+                buf.write(BufferUtils.fromBase64(child));
+            }
+        }
+        return buf;
+    }
+
+    serializedSize() {
+        return this.prefix.byteLength
+            + this.accountState ? this.accountState.serializedSize() : 0
+            + this.children ? this.children.length * 32 : 0;
+    }
+
+    hash() {
+        return Crypto.sha256(this.serialize());
+    }
+}
+
+class AccountsTreeStore extends RawIndexedDB {
+    constructor() {
+        super('accounts');
+    }
+
+    async _key(node) {
+        return BufferUtils.toBase64(await node.hash());
+    }
+
+    async get(key) {
+        const node = await super.get(key);
+        if (!node) return null;
+        return new AccountsTreeNode(node.prefix, node.accountState, node.children);
+    }
+
+    async put(node) {
+        const key = await this._key(node);
+        await super.put(key, node);
+        return key;
+    }
+
+    async delete(node) {
+        const key = await this._key(node);
+        return await super.delete(key);
+    }
+
+    async getRootKey() {
+        return await super.get('root');
+    }
+
+    async setRootKey(rootKey) {
+        return await super.put('root', rootKey);
     }
 }

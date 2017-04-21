@@ -11,10 +11,15 @@ class AccountState {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer();
+        buf = buf || new Buffer(this.serializedSize());
         buf.writeUint64(balance);
         buf.writeUint32(nonce);
         return buf;
+    }
+
+    serializedSize() {
+        return /*balance*/ 8
+            + /*nonce*/ 4;
     }
 
     get balance() {
