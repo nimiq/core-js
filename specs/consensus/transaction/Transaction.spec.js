@@ -10,7 +10,7 @@ describe('RawTransaction', () => {
     	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce); 
     	const tx2 = RawTransaction.unserialize(tx1.serialize());
 
-    	expect(tx1.senderPubKey.equals(tx2.senderPubKey)).toEqual(true);
+    	since('invariance of senderPubKey').expect(tx1.senderPubKey.equals(tx2.senderPubKey)).toEqual(true);
     	expect(tx1.recipientAddr.equals(tx2.recipientAddr)).toEqual(true);
     	expect(tx1.value).toEqual(value);
     	expect(tx1.fee).toEqual(fee);
@@ -27,7 +27,7 @@ describe('RawTransaction.senderPubKey', () => {
 	it(' is set in the constructor',() => {
 		const senderPubKey = new PublicKey();
 		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
-		expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
+		since('senderPubKey should be set').expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
 	});
 });
 

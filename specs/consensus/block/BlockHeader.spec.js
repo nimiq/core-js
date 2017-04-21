@@ -7,13 +7,13 @@ describe('BlockHeader', () => {
     	const difficulty = 1;
     	const timestamp = 1;
     	const nonce = 1;
-    	const bh1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
-    	const bh2 = BlockHeader.unserialize(bh1.serialize());
+    	const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
+    	const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
 
-		expect(bh1.prevHash.equals(bh2.prevHash)).toEqual(true);
-		expect(bh1.bodyHash.equals(bh2.bodyHash)).toEqual(true);
-		expect(bh1.accountsHash.equals(bh2.accountsHash)).toEqual(true);
-		expect(bh1.difficulty).toEqual(difficulty);
-		expect(bh1.timestamp).toEqual(timestamp);
+		expect(blockHeader2.prevHash.equals(prevHash)).toEqual(true);
+		expect(blockHeader2.bodyHash.equals(bodyHash)).toEqual(true);
+		expect(blockHeader2.accountsHash.equals(accountsHash)).toEqual(true);
+		expect(blockHeader2.difficulty).toEqual(difficulty);
+		expect(blockHeader2.timestamp).toEqual(timestamp);
     }); 
 });
