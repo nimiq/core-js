@@ -12,8 +12,8 @@ class AccountState {
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize());
-        buf.writeUint64(balance);
-        buf.writeUint32(nonce);
+        buf.writeUint64(this._balance);
+        buf.writeUint32(this._nonce);
         return buf;
     }
 

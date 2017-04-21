@@ -1,3 +1,23 @@
+describe('RawTransaction', () => {
+	const senderPubKey = new PublicKey();
+	const recipientAddr = new Address();
+	const value = 1;    	// Wallet.sign(rawTx);
+
+	const fee = 1; 
+	const nonce = 1;
+
+    it('is serializable and unserializable', () => {
+    	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce); 
+    	const tx2 = RawTransaction.unserialize(tx1.serialize());
+
+    	expect(tx1.senderPubKey.equals(tx2.senderPubKey)).toEqual(true);
+    	expect(tx1.recipientAddr.equals(tx2.recipientAddr)).toEqual(true);
+    	expect(tx1.value).toEqual(value);
+    	expect(tx1.fee).toEqual(fee);
+    	expect(tx1.nonce).toEqual(nonce);
+    });
+});
+
 describe('RawTransaction.senderPubKey', () => {
 	const recipientAddr = new Address();
 	const value = 1; 
@@ -105,27 +125,8 @@ describe('RawTransaction.nonce', () => {
 });
 
 
-describe('RawTransaction.serialize', () => {
-	const senderPubKey = new PublicKey();
-	const recipientAddr = new Address();
-	const value = 1;    	// Wallet.sign(rawTx);
 
-	const fee = 1; 
-	const nonce = 1;
-
-    it('is serializable and unserializable', () => {
-    	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce); 
-    	const tx2 = RawTransaction.unserialize(tx1.serialize());
-
-    	expect(tx1.senderPubKey.equals(tx2.senderPubKey)).toEqual(true);
-    	expect(tx1.recipientAddr.equals(tx2.recipientAddr)).toEqual(true);
-    	expect(tx1.value).toEqual(value);
-    	expect(tx1.fee).toEqual(fee);
-    	expect(tx1.nonce).toEqual(nonce);
-    });
-});
-
-describe('Transaction.serialize', () => {
+describe('Transaction', () => {
 
     it('is serializable and unserializable', () => {
     	const senderPubKey = new PublicKey();

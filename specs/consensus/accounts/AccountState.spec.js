@@ -11,8 +11,8 @@ describe('AccountState', () => {
     });
 
     it('may not have a negative balance', () => {
-    	const nonce = 1;
-    	const balance = -42;
+        const balance = -42;
+        const nonce = 1;
     	
     	expect( () => { 
     		const accountState = new AccountState(balance,nonce);
@@ -20,8 +20,8 @@ describe('AccountState', () => {
     });
 
     it('may not have a negative nonce', () => {
+        const balance = 1;
     	const nonce = -42;
-    	const balance = 1;
     	
     	expect( () => { 
     		const accountState = new AccountState(balance,nonce);
