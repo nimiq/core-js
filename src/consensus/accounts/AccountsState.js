@@ -8,7 +8,7 @@ class AccountsState {
   }
 
   commitBlock(block) {
-    if (!Buffer.equals(block.header.stateRoot, this.stateRoot)) throw 'stateRoot error';
+    if (!block.header.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
     return this._execute(block, (a, b) => a + b);
   }
 
@@ -63,7 +63,7 @@ class AccountsState {
         new AccountState(account.balance, account.nonce) : new AccountState());
   }
 
-  get stateRoot() {
+  get hash() {
     return this._tree.root;
   }
 }
