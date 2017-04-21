@@ -1,11 +1,11 @@
 describe('RawTransaction.senderPubKey', () => {
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const value = 1; 
 	const fee = 1; 
 	const nonce = 0;
 
 	it(' is set in the constructor',() => {
-		const senderPubKey = new PublicKey();
+		const senderPubKey = new AccountPublicKey();
 		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
 	});
@@ -17,21 +17,34 @@ describe('RawTransaction.value', () => {
 	const fee = 1; 
 	const nonce = 0;
 
-	it('may be positive',() => {
+	it('can be positive',() => {
 		const value = 1;
     	const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.value).toEqual(value);
 	});
 
-	it('may not be zero',() => {
+	it('can not be zero',() => {
 		const value = 0;
+		expect( () => { 
+    		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
+    	} ).toThrow('Malformed Value');
+	});	
+
+	it('can not be negative',() => {
+		const value = -10;
 		expect( () => { 
     		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
     	} ).toThrow('Malformed Value');
 	});
 
-	it('may not be negative',() => {
-		const value = -1;
+	it('can be equal to Number.MAX_SAFE_INTEGER',() => {
+		const value = Number.MAX_SAFE_INTEGER;
+    	const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
+		expect(tx.value).toEqual(value);
+	});
+
+	it('can not be larger then Number.MAX_SAFE_INTEGER',() => {
+		const value = Number.MAX_SAFE_INTEGER+1;
     	expect( () => { 
     		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
     	} ).toThrow('Malformed Value');
@@ -44,20 +57,20 @@ describe('RawTransaction.fee', () => {
 	const value = 1; 
 	const nonce = 0;
 
-	it('may be positive',() => {
+	it('can be positive',() => {
 		const fee = 1;
     	const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.fee).toEqual(fee);
 	});
 
-	it('may not be zero',() => {
+	it('can not be zero',() => {
 		const fee = 0;
 		expect( () => { 
     		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
     	} ).toThrow('Malformed Fee');
 	});
 
-	it('may not be negative',() => {
+	it('can not be negative',() => {
 		const fee = -1;
     	expect( () => { 
     		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
@@ -71,19 +84,19 @@ describe('RawTransaction.nonce', () => {
 	const value = 1;
 	const fee = 10; 
 
-	it('may be zero',() => {
+	it('can be zero',() => {
 		const nonce = 0;
     	const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.nonce).toEqual(nonce);
 	});
 
-	it('may be positive',() => {
+	it('can be positive',() => {
 		const nonce = 1;
     	const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
 		expect(tx.nonce).toEqual(nonce);
 	});
 
-	it('may not be negative',() => {
+	it('can not be negative',() => {
 		const nonce = -1;
     	expect( () => { 
     		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce); 
@@ -100,7 +113,7 @@ describe('RawTransaction.serialize', () => {
 	const fee = 1; 
 	const nonce = 1;
 
-    it('is invariant to unserialize', () => {
+    it('is serializable and unserializable', () => {
     	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce); 
     	const tx2 = RawTransaction.unserialize(tx1.serialize());
 
@@ -114,7 +127,7 @@ describe('RawTransaction.serialize', () => {
 
 describe('Transaction.serialize', () => {
 
-    it('is invariant to unserialize', () => {
+    it('is serializable and unserializable', () => {
     	const senderPubKey = new PublicKey();
     	const recipientAddr = new Address();
     	const value = 1;
@@ -134,7 +147,5 @@ describe('Transaction.serialize', () => {
     	expect(tx1.value).toEqual(value);
     	expect(tx1.fee).toEqual(fee);
     	expect(tx1.nonce).toEqual(nonce);
-
-
     }); 
 });

@@ -35,9 +35,8 @@
   <script src="src/consensus/block/BlockBody.js"></script>
   <script src="src/consensus/block/BlockHeader.js"></script>
   <script src="src/consensus/block/block.js"></script>
-  <script src="src/consensus/block/transactions-tree.js"></script>
-  <script src="src/consensus/block-chain/BlockChain.js"></script>
-  <script src="src/consensus/block-chain/block-chains.js"></script>
+  <script src="src/consensus/blockchain/BlockChain.js"></script>
+  <script src="src/consensus/blockchain/block-chains.js"></script>
   <script src="src/consensus/transaction/Transaction.js"></script>
   <script src="src/p2p-db/db/databases.js"></script>
   <script src="src/p2p-db/p2p/p2p-network.js"></script>
@@ -47,14 +46,24 @@
   <script src="src/utils/crypto/crypto.js"></script>
   <script src="src/utils/indexed-db/indexed-db.js"></script>
   <script src="src/utils/indexed-db/storage-persistence.js"></script>
-  <script src="src/consensus/chain/mini-block-chain/mini-block-chains.js"></script>
-  <script src="src/consensus/chain/proof-chain/proof-chain.js"></script>
-  <script src="src/consensus/chain/proof-chain/proof-chains.js"></script>
   <script src="src/p2p-db/p2p/peer-portal/peer-portal.js"></script>
   <script src="src/p2p-db/p2p/webrtc/certificate/webrtc-certificate.js"></script>
   <script src="src/p2p-db/p2p/webrtc/connection/webrtc-connection.js"></script>
+  <script src="specs/consensus/account/Account.spec.js"></script>
+  <script src="specs/consensus/account/AccountAddress.spec.js"></script>
+  <script src="specs/consensus/account/AccountPrivateKey.spec.js"></script>
+  <script src="specs/consensus/account/AccountPublicKey.spec.js"></script>
+  <script src="specs/consensus/account/AccountSignature.spec.js"></script>
+  <script src="specs/consensus/account/AccountState.spec.js"></script>
+  <script src="specs/consensus/accounts/Accounts.spec.js"></script>
+  <script src="specs/consensus/accounts/AccountsTree.spec.js"></script>
+  <script src="specs/consensus/block/Block.spec.js"></script>
+  <script src="specs/consensus/block/BlockBody.spec.js"></script>
   <script src="specs/consensus/block/BlockHeader.spec.js"></script>
-  <script src="specs/consensus/transactions/Transaction.spec.js"></script>
+  <script src="specs/consensus/transaction/Transaction.spec.js"></script>
+  <script src="specs/utils/buffer/Buffer.spec.js"></script>
+  <script src="specs/utils/crypto/crypto.spec.js"></script>
+  <script src="specs/utils/indexed-db/IndexedDB.spec.js"></script>
   <!-- endinject -->
 
   <script src="http://localhost:35729/livereload.js"></script>

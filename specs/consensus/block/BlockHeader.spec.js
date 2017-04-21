@@ -1,6 +1,6 @@
 describe('BlockHeader.serialize', () => {
 
-    it('is invariant to unserialize', () => {
+    it('is serializable and unserializable', () => {
     	const prevHash = new Hash();
     	const bodyHash = new Hash();
     	const accountsHash = new Hash();
