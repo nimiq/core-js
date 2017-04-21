@@ -21,4 +21,9 @@ class PrivateKey extends Primitive {
 	get serializedSize() {
 		return PrivateKey.SERIALIZED_SIZE;
 	}
+
+	equals(o) {
+		return o instanceof PrivateKey
+			&& super.equals(o);
+	}
 }

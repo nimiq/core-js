@@ -17,7 +17,7 @@ class Primitive extends Uint8Array {
         }
     }
 
-    equals(o){
+    equals(o) {
         return o instanceof Primitive
             && BufferUtils.equals(this.buffer, o.buffer);
     }

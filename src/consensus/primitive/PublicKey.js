@@ -24,7 +24,7 @@ class PublicKey extends Primitive {
 
 	equals(o) {
 		return o instanceof PublicKey
-			&& super.equals(this.buffer, o.buffer);
+			&& super.equals(o);
 	}
 
 	toAddress() {

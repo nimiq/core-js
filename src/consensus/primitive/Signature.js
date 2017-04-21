@@ -24,6 +24,6 @@ class Signature extends Primitive {
 
 	equals(o) {
 		return o instanceof Signature
-			&& BufferUtils.equals(this.buffer, o.buffer);
+			&& super.equals(o);
 	}
 }
