@@ -2,6 +2,7 @@
 // TODO V2: Copy 'serialized' to detach all outer references
 
 class RawTransaction {
+
     constructor(senderPubKey, recipientAddr, value, fee, nonce) {
         if (value <= 0 || value > Number.MAX_SAFE_INTEGER) throw 'Malformed Value';
         if (fee <= 0) throw 'Malformed Fee';
@@ -15,8 +16,8 @@ class RawTransaction {
     }
 
     static unserialize(buf) {
-        let senderPubKey = buf.readKey();
-        let recipientAddr = buf.readAddr();
+        let senderPubKey = PublicKey.unserialize(buf);
+        let recipientAddr = Address.unserialize(buf);
         let value = buf.readUint64();
         let fee = buf.readUint32();
         let nonce = buf.readUint32();
@@ -24,13 +25,21 @@ class RawTransaction {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer();
-        buf.writeKey(this._senderPubKey);
-        buf.writeAddr(this._recipientAddr);
+        buf = buf || new Buffer(this.serializedSize());
+        this._senderPubKey.serialize(buf);
+        this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
         buf.writeUint32(this._fee);
         buf.writeUint32(this._nonce);
         return buf;
+    }
+
+    serializedSize() {
+        return this._senderPubKey.serializedSize()
+            + this._recipientAddr.serializedSize()
+            + /*value*/ 8
+            + /*fee*/ 4
+            + /*nonce*/ 4;
     }
 
     get senderPubKey() {
@@ -38,7 +47,7 @@ class RawTransaction {
     }
 
     senderAddr() {
-        return Crypto.publicToAddress(this._senderPubKey);
+        return this._senderPubKey.toAddress();
     }
 
     get recipientAddr() {
@@ -77,16 +86,21 @@ class Transaction extends RawTransaction {
     }
 
     static unserialize(buf) {
-        const rawTransaction = RawTransaction.unserialize(buf)
-        const signature = buf.readSig();
+        const rawTransaction = RawTransaction.unserialize(buf);
+        const signature = Signature.unserialize(buf);
         return new Transaction(rawTransaction, signature);
     }
 
     serialize(buf) {
-        buf = buf || new Buffer();
+        buf = buf || new Buffer(this.serializedSize());
         super.serialize(buf);
-        buf.writeSig(this._signature);
+        this._signature.serialize(buf);
         return buf;
+    }
+
+    serializedSize() {
+        return super.serializedSize()
+                + this._signature.serializedSize()
     }
 
     hash() {

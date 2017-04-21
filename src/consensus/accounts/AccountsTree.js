@@ -146,8 +146,8 @@ class AccountsTree {
         let commonPrefix = new Uint8Array(arr1.length);
         let i = 0;
         for (; i < arr1.length; ++i) {
-          if (arr1[i] !== arr2[i]) break;
-          commonPrefix[i]= arr1[i];
+            if (arr1[i] !== arr2[i]) break;
+            commonPrefix[i] = arr1[i];
         }
         return commonPrefix.slice(0, i);
     }

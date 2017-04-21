@@ -1,4 +1,5 @@
 class BlockBody {
+
 	constructor(minerAddr, transactions) {
 		this._minerAddr = minerAddr;
 		this._transactions = transactions;
@@ -16,13 +17,21 @@ class BlockBody {
 	}
 
 	serialize(buf) {
-		buf = buf || new Buffer();
+		buf = buf || new Buffer(this.serializedSize());
 		buf.writeAddr(this._minerAddr);
 		buf.writeUint16(this._transactions.length);
 		for (let tx of this._transactions) {
 			tx.serialize(buf);
 		}
 		return buf;
+	}
+
+	serializedSize() {
+		let size = this._minerAddr.serializedSize();
+		for (let tx of this._transactions) {
+			size += tx.serializedSize();
+		}
+		return size;
 	}
 
 	hash() {
