@@ -1,17 +1,20 @@
 class AccountsTree {
     constructor() {
         this._store = new AccountsTreeStore();
-        this._rootKey = this._store.getRootKey();
+        this._rootKey = undefined;
     }
 
     async put(accountAddr, accountState) {
         // Insert root node if the tree is (initially) empty
         if (!this._rootKey) {
-            this._rootKey = await this._store.put(new AccountsTreeNode());
+            this._rootKey = await this._store.getRootKey();
+            if (!this._rootKey) {
+                this._rootKey = await this._store.put(new AccountsTreeNode());
+            }
         }
 
         // Insert accountState into the tree at accountAddr.
-        const rootNode = this._store.get(this._rootKey);
+        const rootNode = await this._store.get(this._rootKey);
         return await this._insert(rootNode, accountAddr, accountState, []);
     }
 
@@ -144,6 +147,12 @@ class AccountsTreeNode {
         this.children = children;
     }
 
+    static of(o) {
+        if (!o) return undefined;
+        return new AccountsTreeNode(o.prefix,
+            AccountState.of(o.accountState), o.children);
+    }
+
     getChild(prefix) {
         return this.children && this.children[prefix[0]];
     }
@@ -154,7 +163,7 @@ class AccountsTreeNode {
     }
 
     serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize(node));
+        buf = buf || new Buffer(this.serializedSize);
         // node type: branch node = 0x00, terminal node = 0xff
         buf.writeUint8(this.accountState ? 0xff : 0x00);
         // prefix length
@@ -175,10 +184,12 @@ class AccountsTreeNode {
         return buf;
     }
 
-    serializedSize() {
-        return this.prefix.byteLength
-            + this.accountState ? this.accountState.serializedSize() : 0
-            + this.children ? this.children.length * 32 : 0;
+    get serializedSize() {
+        return /*type*/ 1
+            + /*prefixLength*/ 1
+            + this.prefix.byteLength
+            + (this.accountState ? this.accountState.serializedSize : 0)
+            + (this.children ? this.children.length * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
     }
 
     hash() {
@@ -197,8 +208,7 @@ class AccountsTreeStore extends RawIndexedDB {
 
     async get(key) {
         const node = await super.get(key);
-        if (!node) return null;
-        return new AccountsTreeNode(node.prefix, node.accountState, node.children);
+        return AccountsTreeNode.of(node);
     }
 
     async put(node) {

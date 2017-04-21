@@ -4,17 +4,17 @@ describe('AccountsTree', () => {
 
         const balance = 20;
         const nonce = 2;
-        const accountState1 = new AccountState(balance,nonce);
+        const accountState1 = new AccountState(balance, nonce);
+        const accountAddress = new Address();
 
-        const accountAddress = new AccountAddress('88888888888888888888888888888888888888888888');
+        const tree = new AccountsTree();
+        tree.put(accountAddress, accountState1);
 
-        AccountsTree.put(accountAddress,accountState1);
+        const accountState2 = tree.get(accountAddress);
 
-        const accountState2 = AccountsTree.get(accountAddress);
-
-        expect(accountState1.balance).toEqual(accountState2.balance);
-        expect(accountState1.nonce).toEqual(accountState2.nonce);
-    }); 
+        expect(accountState2.balance).toEqual(balance);
+        expect(accountState2.nonce).toEqual(nonce);
+    });
 });
 
 
@@ -30,13 +30,13 @@ describe('Accounts', () => {
 
         expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         done();
-    }); 
+    });
 
 
 
     it('get an account state', () => {
 
-        const accountAddress = new AccountAddress('88888888888888888888888888888888888888888888');
+        const accountAddress = new Address('88888888888888888888888888888888888888888888');
         Accounts.getAccountState(accountAddress);
         expect(accountState1.nonce).toEqual(accountState2.nonce);
 
