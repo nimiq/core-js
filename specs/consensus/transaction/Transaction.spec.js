@@ -1,6 +1,6 @@
 describe('RawTransaction', () => {
 	const senderPubKey = new PublicKey();
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const value = 1;    	// Wallet.sign(rawTx);
 
 	const fee = 1;
@@ -19,7 +19,7 @@ describe('RawTransaction', () => {
 });
 
 describe('RawTransaction.senderPubKey', () => {
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const value = 1;
 	const fee = 1;
 	const nonce = 0;
@@ -33,7 +33,7 @@ describe('RawTransaction.senderPubKey', () => {
 
 describe('RawTransaction.value', () => {
 	const senderPubKey = new PublicKey();
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const fee = 1;
 	const nonce = 0;
 
@@ -73,7 +73,7 @@ describe('RawTransaction.value', () => {
 
 describe('RawTransaction.fee', () => {
 	const senderPubKey = new PublicKey();
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const value = 1;
 	const nonce = 0;
 
@@ -100,7 +100,7 @@ describe('RawTransaction.fee', () => {
 
 describe('RawTransaction.nonce', () => {
 	const senderPubKey = new PublicKey();
-	const recipientAddr = new Address();
+	const recipientAddr = new AccountAddress();
 	const value = 1;
 	const fee = 10;
 
@@ -130,7 +130,7 @@ describe('Transaction', () => {
 
     it('is serializable and unserializable', () => {
     	const senderPubKey = new PublicKey();
-    	const recipientAddr = new Address();
+    	const recipientAddr = new AccountAddress();
     	const value = 1;
     	const fee = 1;
     	const nonce = 1;
