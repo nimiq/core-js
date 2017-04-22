@@ -7,7 +7,7 @@ class BlockBody {
 	}
 
 	static unserialize(buf) {
-		const minerAddr = AccountAddress.unserialize(buf);
+		const minerAddr = Address.unserialize(buf);
 		const numTransactions = buf.readUint16();
 		const transactions = new Array(numTransactions);
 		for (let i = 0; i < numTransactions; i++) {
