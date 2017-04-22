@@ -30,16 +30,16 @@ class Crypto {
     return Crypto.lib.importKey('pkcs8', privateKey);
   }
 
-  static exportPublic(publicKey, format ='spki') {
-    return Crypto.lib.exportKey(format, publicKey);
+  static exportPublic(publicKey, format ='raw') {
+    return Crypto.lib.exportKey(format, publicKey)
   }
 
   static exportAddress(publicKey) {
     return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
   }
 
-  static importPublic(publicKey) {
-    return Crypto.lib.importKey('spki', publicKey, Crypto.settings.keys, true, ['verify']);
+  static importPublic(publicKey, format = 'raw') {
+    return Crypto.lib.importKey(format, publicKey, Crypto.settings.keys, true, ['verify']);
   }
 
   static publicToAddress(publicKey) {
@@ -55,3 +55,5 @@ class Crypto {
         .then(key => Crypto.lib.verify(Crypto.settings.sign, key, signature, data));
   }
 }
+
+

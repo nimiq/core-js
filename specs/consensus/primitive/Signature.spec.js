@@ -11,7 +11,7 @@ describe('Signature', () => {
         expect(signature1.equals(1)).toEqual(false);
     });
 
-    it('must be 64bytes long', () => {
+    it('must be 64 bytes long', () => {
         const signature1 = new Signature(Dummy.signature1);
 
         expect(signature1.serializedSize).toEqual(64);

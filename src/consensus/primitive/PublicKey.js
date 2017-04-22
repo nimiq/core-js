@@ -1,7 +1,7 @@
 class PublicKey extends Primitive {
 
 	static get SERIALIZED_SIZE() {
-		return 64;
+		return 65;
 	}
 
 	constructor(arg) {

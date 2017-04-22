@@ -16,4 +16,17 @@ describe('BufferUtils', () => {
 		expect(BufferUtils.equals(buffer1,buffer2)).toEqual(true);
 		expect(BufferUtils.equals(buffer1,buffer3)).toEqual(false);
 	});
+
+
+	it('can concat two Buffers',() => { 
+		const buffer1 = BufferUtils.fromUnicode('test1');
+		const buffer2 = BufferUtils.fromUnicode('test2');
+		
+		const concatedBuffer = BufferUtils.concat(buffer1,buffer2);
+		const buffer3 = concatedBuffer.slice(0, buffer1.byteLength); 
+		const buffer4 = concatedBuffer.slice(buffer1.byteLength);
+		
+		expect(BufferUtils.equals(buffer1,buffer3)).toEqual(true);
+		expect(BufferUtils.equals(buffer2,buffer4)).toEqual(true);
+	});
 });

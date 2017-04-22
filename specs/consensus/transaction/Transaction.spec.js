@@ -149,4 +149,8 @@ describe('Transaction', () => {
     	expect(tx1.fee).toEqual(fee);
     	expect(tx1.nonce).toEqual(nonce);
     });
+
+    it('has a verify method', ()=>{
+    	
+    })
 });

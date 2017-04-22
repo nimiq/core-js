@@ -1,5 +1,17 @@
 describe('Crypto', () => {
+
+	it('can create 65 byte publicKeys', (done) => {
+		Crypto.generateKeys()
+		    .then(keys => Crypto.exportPublic(keys.publicKey)
+		    .then(publicKey =>  {
+				expect(publicKey.byteLength).toEqual(65);
+				done();
+            }))
+    }); 
+
+
     it('can sign and verify data', (done) => {
+    	// http://www.ietf.org/rfc/rfc6090.txt
 		const dataToSign = BufferUtils.fromUnicode('test data to sign');
 		Crypto.generateKeys()
 		    .then(keys => Crypto.exportPublic(keys.publicKey)

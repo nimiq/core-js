@@ -30,10 +30,10 @@ class BufferUtils {
   }
 
   static concat(a, b)  {
-    return Buffer.concatTypedArrays(
+    return BufferUtils.concatTypedArrays(
         new Uint8Array(a.buffer || a),
         new Uint8Array(b.buffer || b)
-    ).buffer;
+    );
   }
 
   static equals(a, b) {
