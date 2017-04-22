@@ -89,34 +89,92 @@ P2PMessage.Type = {
     BALANCES: 'balances'
 }
 
-class InvP2PMessage extends P2PMessage {
-    constructor(invType, invHash) {
-        super(P2PMessage.Type.INV);
-        this._invType = invType;
-        this._invHash = invHash;
-    }
-
-    static unserialize(buf) {
-        let invType = buf.readUInt32();
-        let invHash = Hash.unserialize(buf);
-        return new InvP2PMessage(invType, invHash);
+class BaseInventoryP2PMessage extends P2PMessage {
+    constructor(type, count, vectors) {
+        super(type);
+        this._count = count;
+        this._vectors = vectors;
     }
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
-        buf.writeUint32(this._invType);
-        this._invHash.serialize(buf);
+        buf.writeUint16(this._count);
+        for (let vector of this._vectors) {
+            vector.serialize(buf);
+        }
         return buf;
     }
 
     get serializedSize() {
-        return super.serializedSize
-            + /*invType*/ 4
-            + this._invHash.serializedSize;
+        let size = super.serializedSize
+            + /*count*/ 4;
+        for (let vector of this._vectors) {
+            size += vector.serializedSize;
+        }
+        return size;
+    }
+
+    get count() {
+        return this._count;
+    }
+
+    get vectors() {
+        return this._vectors;
     }
 }
-InvP2PMessage.Type = {
-    ERROR: 0,
-    TX: 1,
-    BLOCK: 2
+
+class InvP2PMessage extends BaseInventoryP2PMessage {
+    constructor(count, vectors) {
+        super(P2PMessage.Type.INV, count, vectors);
+    }
+
+    static unserialize(buf) {
+        let count = buf.readUInt16();
+        let vectors = [];
+        for (let i = 0; i < count: ++i) {
+            vectors.push(InvVector.unserialize(buf));
+        }
+        return new InvP2PMessage(count, vectors);
+    }
+}
+
+class GetDataP2PMessage extends BaseInventoryP2PMessage {
+    constructor(count, vectors) {
+        super(P2PMessage.Type.GETDATA, count, vectors);
+    }
+
+    static unserialize(buf) {
+        let count = buf.readUInt16();
+        let vectors = [];
+        for (let i = 0; i < count: ++i) {
+            vectors.push(InvVector.unserialize(buf));
+        }
+        return new GetDataP2PMessage(count, vectors);
+    }
+}
+
+class NotFoundP2PMessage extends BaseInventoryP2PMessage {
+    constructor(count, vectors) {
+        super(P2PMessage.Type.NOTFOUND, count, vectors);
+    }
+
+    static unserialize(buf) {
+        let count = buf.readUInt16();
+        let vectors = [];
+        for (let i = 0; i < count: ++i) {
+            vectors.push(InvVector.unserialize(buf));
+        }
+        return new NotFoundP2PMessage(count, vectors);
+    }
+}
+
+class BlockP2PMessage extends P2PMessage {
+    constructor(block) {
+        super(P2PMessage.Type.BLOCK);
+        this._block = block;
+    }
+
+    get block() {
+        return this._block;
+    }
 }

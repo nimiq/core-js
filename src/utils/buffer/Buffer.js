@@ -21,7 +21,7 @@ class Buffer extends Uint8Array {
         if (value < 0 || value >= this.byteLength) throw 'Invalid argument';
         this._writePos = value;
     }
-    
+
     read(length) {
         var value = this.subarray(this._readPos, this._readPos + length);
         this._readPos += length;
