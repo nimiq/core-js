@@ -1,15 +1,15 @@
-class Address extends Primitive {
+class AccountAddress extends Primitive {
 
 	static get SERIALIZED_SIZE() {
 		return 20;
 	}
 
 	constructor(arg) {
-		super(arg, Address.SERIALIZED_SIZE);
+		super(arg, AccountAddress.SERIALIZED_SIZE);
 	}
 
 	static unserialize(buf) {
-		return new Address(buf.read(Address.SERIALIZED_SIZE));
+		return new AccountAddress(buf.read(AccountAddress.SERIALIZED_SIZE));
 	}
 
 	serialize(buf) {
@@ -19,11 +19,11 @@ class Address extends Primitive {
 	}
 
 	get serializedSize() {
-		return Address.SERIALIZED_SIZE;
+		return AccountAddress.SERIALIZED_SIZE;
 	}
 
 	equals(o) {
-		return o instanceof Address
+		return o instanceof AccountAddress
 			&& super.equals(o);
 	}
 }

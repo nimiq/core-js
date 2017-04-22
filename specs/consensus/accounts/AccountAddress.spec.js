@@ -1,8 +1,8 @@
-describe('Address', () => {
+describe('AccountAddress', () => {
 
     it('has an equals method', () => {
-        const address1 = new Address(Dummy.address1);
-        const address2 = new Address(Dummy.address2);
+        const address1 = new AccountAddress(Dummy.address1);
+        const address2 = new AccountAddress(Dummy.address2);
 
         expect(address1.equals(address1))
             .toBe(true,'because address1 == address1');
@@ -15,25 +15,25 @@ describe('Address', () => {
     });
 
     it('must be 20 bytes long', () => {
-        const address = new Address(Dummy.address1);
+        const address = new AccountAddress(Dummy.address1);
         expect(address.serializedSize).toEqual(20);
-        expect(() => { 
-            const sign = new Address(new ArrayBuffer(16)); 
+        expect(() => {
+            const sign = new AccountAddress(new ArrayBuffer(16));
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new Address('test'); 
+        expect(() => {
+            const sign = new AccountAddress('test');
         }).toThrow('Invalid argument');
 
-        expect(() => { 
-            const sign = new Address(new ArrayBuffer(33)); 
+        expect(() => {
+            const sign = new AccountAddress(new ArrayBuffer(33));
         }).toThrow('Invalid argument');
     });
 
     it('is serializable and unserializable', () => {
-    	const address1 = new Address(Dummy.address1);
-    	const address2 = Address.unserialize(address1.serialize());
+    	const address1 = new AccountAddress(Dummy.address1);
+    	const address2 = AccountAddress.unserialize(address1.serialize());
 
 		expect(address2.toBase64()).toBe(Dummy.address1,'because of invariance.');
-    }); 
+    });
 });
