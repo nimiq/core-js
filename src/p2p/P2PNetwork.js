@@ -12,7 +12,7 @@ class P2PNetwork extends Observable {
         const channel = peer.channel;
         console.log('peer added', peer.userId);
         this.peerChannels[peer.userId] = channel;
-        channel.onmessage = m => this.fire(m.data);
+        channel.onmessage = m => this.fire('message', m.data);
         channel.onclose = _ => this._removePeer(peer.userId);
         channel.onerror = _ => this._removePeer(peer.userId);
     }
