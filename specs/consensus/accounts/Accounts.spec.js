@@ -4,6 +4,7 @@ describe('Accounts', () => {
     it('can apply and revert a block', (done) => {
         expect(true).toBe(false);
         done();
+
         const block = new Block();
 
         const accountsHash1 = Accounts.hash();
@@ -19,11 +20,11 @@ describe('Accounts', () => {
         done();
         const balance = 42;
         const nonce = 192049;
-        const accountState1 = new AccountState(balance, nonce);
-        const accountAddress = new AccountAddress(Dummy.address2);
+        const accountState1 = new Balance(balance, nonce);
+        const accountAddress = new Address(Dummy.address2);
 
         async function test() {
-            const account = await Accounts.getAccountState(accountAddress);
+            const account = await Accounts.getBalance(accountAddress);
             expect(accountState1.nonce).tobe(accountState2.nonce);
             done();
         }

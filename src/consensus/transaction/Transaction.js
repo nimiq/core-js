@@ -5,7 +5,7 @@ class RawTransaction {
 
     constructor(senderPubKey, recipientAddr, value, fee, nonce) {
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed PublicKey';
-        if (!(recipientAddr instanceof AccountAddress)) throw 'Malformed AccountAddress';
+        if (!(recipientAddr instanceof Address)) throw 'Malformed Address';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed Value';
         if (!NumberUtils.isUint32(fee) || fee == 0) throw 'Malformed Fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed Nonce';
@@ -19,7 +19,7 @@ class RawTransaction {
 
     static unserialize(buf) {
         let senderPubKey = PublicKey.unserialize(buf);
-        let recipientAddr = AccountAddress.unserialize(buf);
+        let recipientAddr = Address.unserialize(buf);
         let value = buf.readUint64();
         let fee = buf.readUint32();
         let nonce = buf.readUint32();

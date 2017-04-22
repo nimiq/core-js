@@ -1,4 +1,4 @@
-// TODO: verify balances and nonces of senders
+// TODO: verify values and nonces of senders
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
 class Accounts {
@@ -68,7 +68,7 @@ class Accounts {
     fetch(address) {
         const addr = Buffer.toBase64(address);
         return this._tree.get(addr).then(account => account ?
-            new AccountState(account.balance, account.nonce) : new AccountState());
+            new Balance(account.value, account.nonce) : new Balance());
     }
 
     get hash() {

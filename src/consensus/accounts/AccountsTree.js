@@ -150,7 +150,7 @@ class AccountsTreeNode {
     static of(o) {
         if (!o) return undefined;
         return new AccountsTreeNode(o.prefix,
-            AccountState.of(o.accountState), o.children);
+            Balance.of(o.accountState), o.children);
     }
 
     getChild(prefix) {

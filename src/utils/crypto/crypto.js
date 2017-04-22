@@ -46,7 +46,7 @@ class Crypto {
 
   static publicToAddress(publicKey) {
     return Crypto.sha256(publicKey).then(hash => hash.slice(0, 24))
-      .then(address => new AccountAddress(address));
+      .then(address => new Account(address));
   }
 
   static sign(privateKey, data) {

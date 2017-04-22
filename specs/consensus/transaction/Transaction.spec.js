@@ -1,6 +1,6 @@
 describe('RawTransaction', () => {
 	const senderPubKey = new PublicKey(Dummy.publicKey1);
-	const recipientAddr = new AccountAddress(Dummy.address1);
+	const recipientAddr = new Address(Dummy.address1);
 	const value = 1;
 
 	const fee = 1;
@@ -19,7 +19,7 @@ describe('RawTransaction', () => {
 });
 
 describe('RawTransaction.senderPubKey', () => {
-	const recipientAddr = new AccountAddress(Dummy.address1);
+	const recipientAddr = new Address(Dummy.address1);
 	const value = 1;
 	const fee = 1;
 	const nonce = 0;
@@ -33,7 +33,7 @@ describe('RawTransaction.senderPubKey', () => {
 
 describe('RawTransaction.value', () => {
 	const senderPubKey = new PublicKey(Dummy.publicKey1);
-	const recipientAddr = new AccountAddress(Dummy.address1);
+	const recipientAddr = new Address(Dummy.address1);
 	const fee = 1;
 	const nonce = 0;
 
@@ -73,7 +73,7 @@ describe('RawTransaction.value', () => {
 
 describe('RawTransaction.fee', () => {
 	const senderPubKey = new PublicKey(Dummy.publicKey1);
-	const recipientAddr = new AccountAddress(Dummy.address1);
+	const recipientAddr = new Address(Dummy.address1);
 	const value = 1;
 	const nonce = 0;
 
@@ -100,7 +100,7 @@ describe('RawTransaction.fee', () => {
 
 describe('RawTransaction.nonce', () => {
 	const senderPubKey = new PublicKey(Dummy.publicKey1);
-	const recipientAddr = new AccountAddress(Dummy.address1);
+	const recipientAddr = new Address(Dummy.address1);
 	const value = 1;
 	const fee = 10;
 
@@ -127,15 +127,32 @@ describe('RawTransaction.nonce', () => {
 
 
 describe('Transaction', () => {
+	const senderPubKey = new PublicKey(Dummy.publicKey1);
+	const recipientAddr = new Address(Dummy.address1);
+	const value = 1;
+	const fee = 1;
+	const nonce = 1;
+	const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
+	const sign = new Signature(Dummy.signature1);
+
+	 it('is 165 bytes long', ()=>{
+	 	/*
+            65 bytes senderPublicKey
+            20 bytes recipientAddress
+             8 bytes value
+             4 bytes fee
+             4 bytes nonce
+            64 bytes signature
+           ---------------------------- 
+           165 bytes
+	 	*/
+	 	
+    	const transaction1 = new Transaction(rawTx,sign);
+    	const serialized = transaction1.serialize();
+        expect(serialized.byteLength).toBe(165);
+    });
 
     it('is serializable and unserializable', () => {
-    	const senderPubKey = new PublicKey(Dummy.publicKey1);
-    	const recipientAddr = new AccountAddress(Dummy.address1);
-    	const value = 1;
-    	const fee = 1;
-    	const nonce = 1;
-    	const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
-    	const sign = new Signature();
 
     	// Wallet.sign(rawTx);
 

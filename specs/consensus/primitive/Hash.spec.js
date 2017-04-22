@@ -1,4 +1,4 @@
-describe('Hash (32 bytes)', () => {
+describe('Hash', () => {
 
     it('is 32 bytes long', () => {
         const hash = new Hash(Dummy.hash1);
