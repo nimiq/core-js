@@ -79,16 +79,15 @@ class BlockHeader {
         return this._nonce;
     }
 
-    hash() {
-        return Crypto.sha256(this.serialize());
+    async hash() {
+        this._hash = this._hash || await Crypto.sha256(this.serialize());
+        return this._hash;
     }
 
-    /*
-    isSuccessorOf(header) {
+    async isSuccessorOf(header) {
         // TODO: check if difficulty matches
-        return Buffer.equals(header.id, this.prevHash);
+        return this.prevHash.equals(await header.hash());
     }
-    */
 
     log(desc) {
         super.log(desc, `BlockHeader

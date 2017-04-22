@@ -30,4 +30,12 @@ class Block {
 	get body() {
 		return this._body;
 	}
+
+	hash() {
+		return this._header.hash();
+	}
+
+	isSuccessorOf(block) {
+		return this._header.isSuccessorOf(block.header);
+	}
 }
