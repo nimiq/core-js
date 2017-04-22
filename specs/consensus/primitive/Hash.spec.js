@@ -16,6 +16,13 @@ describe('Hash', () => {
         }).toThrow('Invalid argument');
     });
 
+    it('is serializable and unserializable', () => {
+        const hash1 = new Hash(Dummy.hash1);
+        const hash2 = Hash.unserialize(hash1.serialize());
+
+        expect(hash2.toBase64()).toBe(Dummy.hash1,'because of invariance.');
+    }); 
+
     it('has an equals method', () => {
         const hash1 = new Hash(Dummy.hash1);
         const hash2 = new Hash(Dummy.hash2);
@@ -29,11 +36,4 @@ describe('Hash', () => {
         expect(hash1.equals(1))
             .toBe(false,'because hash1 !== 1');
     });
-
-    it('is serializable and unserializable', () => {
-    	const hash1 = new Hash(Dummy.hash1);
-    	const hash2 = Hash.unserialize(hash1.serialize());
-
-		expect(hash2.toBase64()).toBe(Dummy.hash1,'because of invariance.');
-    }); 
 });

@@ -28,4 +28,22 @@ describe('BlockBody', () => {
       const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
       expect(BufferUtils.equals(blockBody1,blockBody2)).toBe(true);
     }); 
+
+    it('transactions must be well defined', () => {
+      expect( () => {
+        const test1 = new BlockBody(minerAddress,null);
+      }).toThrow('Malformed transaction');
+      expect( () => {
+        const test2 = new BlockBody(minerAddress,undefined);
+      }).toThrow('Malformed transaction');
+      expect( () => {
+        const test3 = new BlockBody(minerAddress,[null]);
+      }).toThrow('Malformed transaction');
+      expect( () => {
+        const test4 = new BlockBody(minerAddress,[undefined]);
+      }).toThrow('Malformed transaction');
+      expect( () => {
+        const test5 = new BlockBody(minerAddress,[true]);
+      }).toThrow('Malformed transaction');
+    }); 
 });

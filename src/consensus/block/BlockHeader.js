@@ -1,6 +1,9 @@
 class BlockHeader {
 
     constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
+        if(!Hash.isHash(prevHash)) throw 'Malformed prevHash';
+        if(!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
+        if(!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
         this._prevHash = prevHash;
         this._bodyHash = bodyHash;
         this._accountsHash = accountsHash;

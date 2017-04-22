@@ -4,11 +4,11 @@
 class RawTransaction {
 
     constructor(senderPubKey, recipientAddr, value, fee, nonce) {
-        if (!(senderPubKey instanceof PublicKey)) throw 'Malformed PublicKey';
-        if (!(recipientAddr instanceof Address)) throw 'Malformed Address';
-        if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed Value';
-        if (!NumberUtils.isUint32(fee) || fee == 0) throw 'Malformed Fee';
-        if (!NumberUtils.isUint32(nonce)) throw 'Malformed Nonce';
+        if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
+        if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
+        if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
+        if (!NumberUtils.isUint32(fee) || fee == 0) throw 'Malformed fee';
+        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
 
         this._senderPubKey = senderPubKey;
         this._recipientAddr = recipientAddr;
