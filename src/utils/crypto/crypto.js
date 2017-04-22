@@ -15,7 +15,8 @@ class Crypto {
   }
 
   static sha256(buffer) {
-    return Crypto.lib.digest(Crypto.settings.hashAlgo, buffer);
+    return Crypto.lib.digest(Crypto.settings.hashAlgo, buffer)
+      .then(hash => new Hash(hash));
   }
 
   static generateKeys() {
@@ -32,10 +33,11 @@ class Crypto {
 
   static exportPublic(publicKey, format ='raw') {
     return Crypto.lib.exportKey(format, publicKey)
+      .then(key => new PublicKey(key));
   }
 
   static exportAddress(publicKey) {
-    return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
+    return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress)
   }
 
   static importPublic(publicKey, format = 'raw') {
@@ -43,11 +45,13 @@ class Crypto {
   }
 
   static publicToAddress(publicKey) {
-    return Crypto.sha256(publicKey).then(hash => hash.slice(0, 24));
+    return Crypto.sha256(publicKey).then(hash => hash.slice(0, 24))
+      .then(address => new AccountAddress(address));
   }
 
   static sign(privateKey, data) {
-    return Crypto.lib.sign(Crypto.settings.sign, privateKey, data);
+    return Crypto.lib.sign(Crypto.settings.sign, privateKey, data)
+      .then(sign => new Signature(sign));
   }
 
   static verify(publicKey, signature, data) {

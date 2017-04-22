@@ -1,6 +1,6 @@
 describe('Hash (32 bytes)', () => {
 
-    it('is exactly 32 bytes long', () => {
+    it('is 32 bytes long', () => {
         const hash = new Hash(Dummy.hash1);
         expect(hash.serializedSize).toEqual(32);
         expect(() => { 

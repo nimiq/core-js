@@ -10,10 +10,8 @@ describe('BlockBody', () => {
     const minerAddress = new AccountAddress(Dummy.address1);
 
     it('is serializable and unserializable', () => {
-
       const blockBody1 = new BlockBody(minerAddress,[transaction1,transaction2,transaction3,transaction4]);
       const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
-
-    	expect(BufferUtils.equals(blockBody1,blockBody2)).toBe(true);
+      expect(BufferUtils.equals(blockBody1,blockBody2)).toBe(true);
     }); 
 });
