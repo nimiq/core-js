@@ -4,15 +4,21 @@ class Primitive extends Uint8Array {
             super(length);
         } else if (typeof arg === 'string') {
             const buffer = BufferUtils.fromBase64(arg);
-            if (buffer.byteLength !== length) throw 'Invalid argument';
+            Primitive._enforceLength(buffer, length);
             super(buffer);
         } else if (arg instanceof ArrayBuffer) {
-            if (arg.byteLength !== length) throw 'Invalid argument';
+            Primitive._enforceLength(arg, length);
             super(arg);
         } else if (arg instanceof Uint8Array) {
-            if (arg.byteLength !== length) throw 'Invalid argument';
+            Primitive._enforceLength(arg, length);
             super(arg.buffer, arg.byteOffset, arg.byteLength);
         } else {
+            throw 'Invalid argument';
+        }
+    }
+
+    static _enforceLength(buffer, length) {
+        if (length !== undefined && buffer.byteLength !== length) {
             throw 'Invalid argument';
         }
     }

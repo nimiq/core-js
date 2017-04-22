@@ -9,14 +9,15 @@ describe('AccountsTree', () => {
         const tree = new AccountsTree();
 
         async function test(){
-            await AccountsTree.put(accountAddress,accountState1);
+            await tree.put(accountAddress,accountState1);
 
-            const accountState2 = await AccountsTree.get(accountAddress);
+            const accountState2 = await tree.get(accountAddress);
 
-            expect(accountState1.balance).toEqual(accountState2.balance);
-            expect(accountState1.nonce).toEqual(accountState2.nonce);
+            expect(accountState2.balance).toEqual(balance);
+            expect(accountState2.nonce).toEqual(nonce);
             done();
         }
 
+        test();
     });
 });

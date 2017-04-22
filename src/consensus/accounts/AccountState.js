@@ -1,12 +1,15 @@
 class AccountState {
     constructor(balance = 0, nonce = 0) {
+        if (!NumberUtils.isUint64(balance)) throw 'Malformed Balance';
+        if (!NumberUtils.isUint32(nonce)) throw 'Malformed Nonce';
+
         this._balance = balance;
         this._nonce = nonce;
     }
 
     static of(o) {
         if (!o) return undefined;
-        return new AccountState(o.balacne, o.nonce);
+        return new AccountState(o._balance, o._nonce);
     }
 
     static unserialize(buf) {

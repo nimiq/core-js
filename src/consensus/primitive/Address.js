@@ -1,7 +1,7 @@
 class Address extends Primitive {
 
 	static get SERIALIZED_SIZE() {
-		return 22;
+		return 20;
 	}
 
 	constructor(arg) {

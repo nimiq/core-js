@@ -95,7 +95,7 @@ class AccountsTree {
     async get(accountAddr) {
         if (!this._rootKey) return;
         const rootNode = await this._store.get(this._rootKey);
-        return await _retrieve(rootNode, accountAddr);
+        return await this._retrieve(rootNode, accountAddr);
     }
 
     async _retrieve(node, accountAddr) {
@@ -177,8 +177,10 @@ class AccountsTreeNode {
         } else if (this.children) {
             // branch node
             for (let i = 0; i < this.children.length; ++i) {
-                buf.writeUint8(i);
-                buf.write(BufferUtils.fromBase64(this.children[i]));
+                if (this.children[i]) {
+                    buf.writeUint8(i);
+                    buf.write(BufferUtils.fromBase64(this.children[i]));
+                }
             }
         }
         return buf;
