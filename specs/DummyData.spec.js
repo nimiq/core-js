@@ -23,22 +23,24 @@ Dummy.signature3 = 'mU04AuXE5QcLPPvQbtdWzjHeB6oNVjxdfPRXfPWmJx/YgBAIFfogOT7wasBi
 
 # Dummy Generators 
 
-
-## Address
-
-Crypto
-	.sha256(BufferUtils.fromUnicode('hello'))
-    .then(hash => hash.slice(0,20))
-    .then(BufferUtils.toBase64)
-    .then(copy)
-
-
 ## sha256 hash
 
 Crypto
 	.sha256(BufferUtils.fromUnicode('hello'))
     .then(BufferUtils.toBase64)
     .then(copy)
+
+
+
+## Address
+
+Crypto
+	.sha256(BufferUtils.fromUnicode('should be the public key'))
+    .then(hash => hash.slice(0,20))
+    .then(BufferUtils.toBase64)
+    .then(copy)
+
+
 
 ## publicKey
 

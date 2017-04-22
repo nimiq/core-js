@@ -27,4 +27,7 @@ class Hash extends Primitive {
 			&& super.equals(o);
 	}
 
+	static fromBase64(base64){
+		return new Hash(BufferUtils.fromBase64(base64));
+	}
 }

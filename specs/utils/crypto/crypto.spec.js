@@ -15,12 +15,12 @@ describe('Crypto', () => {
 		const dataToSign = BufferUtils.fromUnicode('test data to sign');
 		Crypto.generateKeys()
 		    .then(keys => Crypto.exportPublic(keys.publicKey)
-		    .then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
-		    .then(signature => Crypto.verify(publicKey,signature,dataToSign))
-            .then(proof => {
-				expect(proof).toEqual(true);
-				done();
-            })))
+		    	.then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
+		    		.then(signature => Crypto.verify(publicKey,signature,dataToSign))
+			            .then(proof => {
+							expect(proof).toEqual(true);
+							done();
+			            })))
     }); 
 
 	it('can detect wrong signatures', (done) => {
@@ -28,21 +28,20 @@ describe('Crypto', () => {
 		const wrongData = BufferUtils.fromUnicode('wrong test data to sign');
 		Crypto.generateKeys()
 		    .then(keys => Crypto.exportPublic(keys.publicKey)
-		    .then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
-		    .then(signature => Crypto.verify(publicKey,signature,wrongData))
-            .then(proof => {
-				expect(proof).toEqual(false);
-				done();
-            })))
+		    	.then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
+		    		.then(signature => Crypto.verify(publicKey,signature,wrongData))
+			            .then(proof => {
+							expect(proof).toEqual(false);
+							done();
+			            })))
     });     
 
     it('can hash data with sha256', (done) => {
 		const dataToHash = BufferUtils.fromUnicode('hello');
-		const expectedHash = BufferUtils.fromUnicode('5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03')
-		Crypto.sha256(dataToHash)
-            .then(hash => {
-				expect(BufferUtils.equals(buffer,expectedHash)).toEqual(true);
-				done();
-            })
+		const expectedHash = Dummy.hash1;
+		Crypto.sha256(dataToHash).then( hash => {
+			expect( BufferUtils.toBase64(hash) ).toBe(expectedHash);
+			done();
+        })
     }); 
 });
