@@ -1,27 +1,23 @@
-class BlockChain{
+class BlockChain {
 
-  constructor(head, totalWork) {
-    this._currHead = head || {header: {id: Buffer.fromBase64('ABlo+sKsuWY1iwv9vZ/EQufEyzTlrDX79+E7HZo0OQg=')}};
-    this._totalWork = totalWork || 10;
-  }
-
-  push(block) {
-    if (block.successorOf(this._currHead)) {
-      this._currHead = block;
-      this._totalWork += block.difficulty;
+    constructor(head, totalWork) {
+        this._head = head;
+        this._totalWork = totalWork;
     }
-    return this._totalWork;
-  }
 
-  get currHead() {
-    return this._currHead;
-  }
+    push(block) {
+        if (block.successorOf(this._currHead)) {
+            this._currHead = block;
+            this._totalWork += block.difficulty;
+        }
+        return this._totalWork;
+    }
 
-  get totalWork() {
-    return this._totalWork;
-  }
+    get head() {
+        return this._head;
+    }
 
-  get prevId() {
-    return this._currHead.header.prevHash;
-  }
+    get totalWork() {
+        return this._totalWork;
+    }
 }

@@ -15,7 +15,7 @@ class ObjectDB extends IndexedDB {
 
 class BlockHeaderDB extends ObjectDB {constructor() {super('headers', BlockHeader);}}
 
-class BlockBodyDB extends ObjectDB {constructor() {super('bodies', BlockBody);}}
+class BlockBodyDB 	extends ObjectDB {constructor() {super('bodies', BlockBody);}}
 
 class Databases{
   constructor() {

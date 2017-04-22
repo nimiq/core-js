@@ -7,7 +7,7 @@ class BlockBody {
 	}
 
 	static unserialize(buf) {
-		const minerAddr = buf.readAddr();
+		const minerAddr = AccountAddress.unserialize(buf);
 		const numTransactions = buf.readUint16();
 		const transactions = new Array(numTransactions);
 		for (let i = 0; i < numTransactions; i++) {
@@ -18,7 +18,7 @@ class BlockBody {
 
 	serialize(buf) {
 		buf = buf || new Buffer(this.serializedSize);
-		buf.writeAddr(this._minerAddr);
+		this._minerAddr.serialize(buf);
 		buf.writeUint16(this._transactions.length);
 		for (let tx of this._transactions) {
 			tx.serialize(buf);
@@ -27,7 +27,8 @@ class BlockBody {
 	}
 
 	get serializedSize() {
-		let size = this._minerAddr.serializedSize;
+		let size = this._minerAddr.serializedSize
+			+ /*transactionsLength*/ 2;
 		for (let tx of this._transactions) {
 			size += tx.serializedSize;
 		}
