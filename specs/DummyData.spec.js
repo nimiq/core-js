@@ -4,9 +4,10 @@ Dummy.hash1 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ='; // "hello"
 Dummy.hash2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V6YvaycThUE6hb0huQ='; // "hello2"
 Dummy.hash3 = 'R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA='; // "hello3"
 
-Dummy.publicKey1 = 'q7fOuowiDsCY9ScBMye1BFIL8OqgAzhKhtmt9ekPLdSO+hnvpoJ26ENwPpZ1lSYA7sYLye4AIEzBTKYrgYWLgA=='; // "hello1"
-Dummy.publicKey2 = 'dMix+J868YX/8Mu8CSo2muRk+nm+kbtARLK/c1b7QsY+udhv35ppjbQaWdauBt7PWvIX4NeNwt0TMMfT7XXr/A=='; // "hello1"
-Dummy.publicKey3 = '41gtV3yVcTDtEhsKtQVdm63WATyCd9aTR2FVCW6xbSiM47/YgNjYtLHO1zNG32TFADIkWFF/0hHrz3Ovo3cduQ=='; // "hello1"
+Dummy.publicKey1 = 'BI8wpNk41BMNGjOW3t4VBccrf3Wsn5uA0a1+Nos587EFFzdKKQgDTwEVJhEPYqihOA/605GNxH09X3xGIrKwP68=';
+Dummy.publicKey2 = 'BHM/60qPtA1UfFO+pJgy1ATkRUEOT7h0bdAU+mZYoqtDJGFAC2PZlggzxkm7pYuLzkQHc+wC405fHV1W5jDX6QA=';
+Dummy.publicKey3 = 'BHKblaL8o+wwiO2vEe8MnP7MGcpfkuSGIXWQXJ2SVaESgq6KR61qP+HREu4nrKNo5WbXjswHbOHXXVqQvx/hJSE=';
+Dummy.publicKey4 = 'BN6UN00jbveCq4kqFgjGaKwBOzdRIWLDk2MVngpGbfX/MfxVL6teoEaiu03tdl66oI9oQ+QyWUqLpMZcIpmuVtE=';
 
 Dummy.address1 = 'kekkD0FSI5gu3DRVMmMHEOlKf1I='; // "hello1"
 Dummy.address2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V4='; // "hello2"

@@ -1,20 +1,6 @@
-describe('Hash', () => {
+describe('Hash (32 bytes)', () => {
 
-    it('has an equals method', () => {
-        const hash1 = new Hash(Dummy.hash1);
-        const hash2 = new Hash(Dummy.hash2);
-
-        expect(hash1.equals(hash1))
-            .toBe(true,'because hash1 == hash1');
-        expect(hash1.equals(hash2))
-            .toBe(false,'because hash1 !== hash2');
-        expect(hash1.equals(null))
-            .toBe(false,'because hash1 !== null');
-        expect(hash1.equals(1))
-            .toBe(false,'because hash1 !== 1');
-    });
-
-    it('must be 32bytes long', () => {
+    it('is exactly 32 bytes long', () => {
         const hash = new Hash(Dummy.hash1);
         expect(hash.serializedSize).toEqual(32);
         expect(() => { 
@@ -28,6 +14,20 @@ describe('Hash', () => {
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(33)); 
         }).toThrow('Invalid argument');
+    });
+
+    it('has an equals method', () => {
+        const hash1 = new Hash(Dummy.hash1);
+        const hash2 = new Hash(Dummy.hash2);
+
+        expect(hash1.equals(hash1))
+            .toBe(true,'because hash1 == hash1');
+        expect(hash1.equals(hash2))
+            .toBe(false,'because hash1 !== hash2');
+        expect(hash1.equals(null))
+            .toBe(false,'because hash1 !== null');
+        expect(hash1.equals(1))
+            .toBe(false,'because hash1 !== 1');
     });
 
     it('is serializable and unserializable', () => {
