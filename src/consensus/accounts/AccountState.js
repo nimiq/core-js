@@ -9,7 +9,7 @@ class AccountState {
 
     static of(o) {
         if (!o) return undefined;
-        return new AccountState(o.balacne, o.nonce);
+        return new AccountState(o._balance, o._nonce);
     }
 
     static unserialize(buf) {
