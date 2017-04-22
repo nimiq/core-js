@@ -13,6 +13,8 @@ describe('PublicKey', () => {
     });
 
     it('must be 65 bytes long (for now, because of WebCrypto API)', () => {
+        // See: https://w3c.github.io/webcrypto/Overview.html#subtlecrypto-interface-datatypes
+
         const pubKey1 = new PublicKey(Dummy.publicKey1);
         expect(pubKey1.serializedSize).toEqual(65);
         expect(() => {

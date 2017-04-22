@@ -13,18 +13,19 @@ describe('Accounts', () => {
         done();
     });
 
-
-    it('put and get an account', () => {
+    it('put and get an account', (done) => {
         const balance = 42;
         const nonce = 192049;
         const accountState1 = new AccountState(balance, nonce);
-        const accountAddress = new Address(Dummy.address2);
+        const accountAddress = new AccountAddress(Dummy.address2);
 
         async function test() {
-            const account = await Accounts.getAccount(accountAddress);
-            expect(accountState1.nonce).toEqual(accountState2.nonce);
-
+            const account = await Accounts.getAccountState(accountAddress);
+            expect(accountState1.nonce).tobe(accountState2.nonce);
+            done();
         }
 
+        //test();
+        expect(true).toBe(false);
     });
 });

@@ -1,22 +1,19 @@
 describe('BlockBody', () => {
+    const rawTransaction = new RawTransaction(new PublicKey(Dummy.publicKey1), new AccountAddress(Dummy.address1), 8888,42,0); 
+    const signature = new Signature(Dummy.signature1);
+
+    const transaction1 = new Transaction(rawTransaction,signature);
+    const transaction2 = new Transaction(rawTransaction,signature);
+    const transaction3 = new Transaction(rawTransaction,signature);
+    const transaction4 = new Transaction(rawTransaction,signature);
+
+    const minerAddress = new AccountAddress(Dummy.address1);
 
     it('is serializable and unserializable', () => {
-  //   	expect(false).toEqual(true);
-  //       const prevHash = new Hash();
-  //   	const bodyHash = new Hash();
-  //   	const accountsHash = new Hash();
-  //   	const difficulty = 1;
-  //   	const timestamp = 1;
-  //   	const nonce = 1;
 
-  //   	const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
-    	
-  //       const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
+      const blockBody1 = new BlockBody(minerAddress,[transaction1,transaction2,transaction3,transaction4]);
+      const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
 
-		// expect(blockHeader2.prevHash.equals(prevHash)).toEqual(true);
-		// expect(blockHeader2.bodyHash.equals(bodyHash)).toEqual(true);
-		// expect(blockHeader2.accountsHash.equals(accountsHash)).toEqual(true);
-		// expect(blockHeader2.difficulty).toEqual(difficulty);
-		// expect(blockHeader2.timestamp).toEqual(timestamp);
+    	expect(BufferUtils.equals(blockBody1,blockBody2)).toBe(true);
     }); 
 });

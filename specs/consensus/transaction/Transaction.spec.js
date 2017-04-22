@@ -1,7 +1,7 @@
 describe('RawTransaction', () => {
-	const senderPubKey = new PublicKey();
-	const recipientAddr = new AccountAddress();
-	const value = 1;    	// Wallet.sign(rawTx);
+	const senderPubKey = new PublicKey(Dummy.publicKey1);
+	const recipientAddr = new AccountAddress(Dummy.address1);
+	const value = 1;
 
 	const fee = 1;
 	const nonce = 1;
@@ -19,21 +19,21 @@ describe('RawTransaction', () => {
 });
 
 describe('RawTransaction.senderPubKey', () => {
-	const recipientAddr = new AccountAddress();
+	const recipientAddr = new AccountAddress(Dummy.address1);
 	const value = 1;
 	const fee = 1;
 	const nonce = 0;
 
 	it(' is set in the constructor',() => {
-		const senderPubKey = new PublicKey();
+		const senderPubKey = new PublicKey(Dummy.publicKey1);
 		const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce);
 		expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
 	});
 });
 
 describe('RawTransaction.value', () => {
-	const senderPubKey = new PublicKey();
-	const recipientAddr = new AccountAddress();
+	const senderPubKey = new PublicKey(Dummy.publicKey1);
+	const recipientAddr = new AccountAddress(Dummy.address1);
 	const fee = 1;
 	const nonce = 0;
 
@@ -72,8 +72,8 @@ describe('RawTransaction.value', () => {
 });
 
 describe('RawTransaction.fee', () => {
-	const senderPubKey = new PublicKey();
-	const recipientAddr = new AccountAddress();
+	const senderPubKey = new PublicKey(Dummy.publicKey1);
+	const recipientAddr = new AccountAddress(Dummy.address1);
 	const value = 1;
 	const nonce = 0;
 
@@ -99,8 +99,8 @@ describe('RawTransaction.fee', () => {
 });
 
 describe('RawTransaction.nonce', () => {
-	const senderPubKey = new PublicKey();
-	const recipientAddr = new AccountAddress();
+	const senderPubKey = new PublicKey(Dummy.publicKey1);
+	const recipientAddr = new AccountAddress(Dummy.address1);
 	const value = 1;
 	const fee = 10;
 
@@ -129,8 +129,8 @@ describe('RawTransaction.nonce', () => {
 describe('Transaction', () => {
 
     it('is serializable and unserializable', () => {
-    	const senderPubKey = new PublicKey();
-    	const recipientAddr = new AccountAddress();
+    	const senderPubKey = new PublicKey(Dummy.publicKey1);
+    	const recipientAddr = new AccountAddress(Dummy.address1);
     	const value = 1;
     	const fee = 1;
     	const nonce = 1;
@@ -151,6 +151,6 @@ describe('Transaction', () => {
     });
 
     it('has a verify method', ()=>{
-    	
+    	expect(true).toBe(false);
     })
 });
