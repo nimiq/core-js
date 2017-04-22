@@ -153,7 +153,7 @@ describe('Transaction', () => {
 	const fee = 1;
 	const nonce = 1;
 	const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
-	const sign = new Signature(Dummy.signature1);
+	const signature = new Signature(Dummy.signature1);
 
 	 it('is 165 bytes long', ()=>{
 	 	
@@ -168,24 +168,21 @@ describe('Transaction', () => {
            165 bytes
 	 	*/
 	 	
-    	const transaction1 = new Transaction(rawTx,sign);
+    	const transaction1 = new Transaction(rawTx,signature);
     	const serialized = transaction1.serialize();
         expect(serialized.byteLength).toBe(165);
     });
 
     it('is serializable and unserializable', () => {
-
-    	// Wallet.sign(rawTx);
-
-    	const tx1 = new Transaction(rawTx,sign);
+    	const tx1 = new Transaction(rawTx,signature);
     	const tx2 = Transaction.unserialize(tx1.serialize());
 
-		expect(tx1.senderPubKey.equals(tx2.senderPubKey)).toEqual(true);
-    	expect(tx1.recipientAddr.equals(tx2.recipientAddr)).toEqual(true);
-    	expect(tx1.signature.equals(tx2.signature)).toEqual(true);
-    	expect(tx1.value).toEqual(value);
-    	expect(tx1.fee).toEqual(fee);
-    	expect(tx1.nonce).toEqual(nonce);
+		expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
+    	expect(tx2.recipientAddr.equals(recipientAddr)).toEqual(true);
+    	expect(tx2.signature.equals(signature)).toEqual(true);
+    	expect(tx2.value).toEqual(value);
+    	expect(tx2.fee).toEqual(fee);
+    	expect(tx2.nonce).toEqual(nonce);
     });
 
     it('has a verify method', ()=>{

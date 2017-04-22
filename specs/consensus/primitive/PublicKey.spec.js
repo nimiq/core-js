@@ -22,6 +22,13 @@ describe('PublicKey', () => {
         }).toThrow('Invalid argument');
     });
     
+    it('is serializable and unserializable', () => {
+        const pubKey1 = new PublicKey();
+        const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
+
+        expect(pubKey1.equals(pubKey2)).toEqual(true);
+    });
+    
     it('has an equals method', () => {
         const pubKey1 = new PublicKey(Dummy.publicKey1);
         const pubKey2 = new PublicKey(Dummy.publicKey2);
@@ -32,13 +39,5 @@ describe('PublicKey', () => {
         expect(pubKey1.equals(pubKey1)).toEqual(true);
         expect(pubKey1.equals(pubKey2)).toEqual(false);
         expect(pubKey2.equals(pubKey3)).toEqual(true);
-    });
-
-
-    it('is serializable and unserializable', () => {
-    	const pubKey1 = new PublicKey();
-    	const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
-
-		expect(pubKey1.equals(pubKey2)).toEqual(true);
     });
 });
