@@ -1,6 +1,8 @@
 describe('Miner', () => {
 
     it('can mine a next BlockHeader', (done) => {
+        const minerAddress = new Address(Dummy.address1);
+
         const prevHash = new Hash(Dummy.hash1);
         const bodyHash = new Hash(Dummy.hash2);
         const accountsHash = new Hash(Dummy.hash3);
@@ -18,13 +20,16 @@ describe('Miner', () => {
             expect(nextHeader.prevHash.equals(currPrevHash)).toBe(true);    
             expect(nextHeader.accountsHash.equals(currAccountsHash)).toBe(true);    
             const isPOW = await nextHeader.verify();
-            expect(isPOW).toBe(true);    
+            expect(isPOW).toBe(true);
+    
+            const nextBody = nextBlock.body;
+            expect(nextBody.minerAddr.equals(minerAddress)).toBe(true);    
             done();
         }
 
         const currAccountsHash = new Hash(Dummy.hash1); 
         const spy = new BlockchainSpy(pushBlockTest, currAccountsHash);
-        const miner = new Miner(spy);
+        const miner = new Miner(spy,minerAddress);
 
         spy.fire('head',currHeader);
     });

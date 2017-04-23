@@ -1,9 +1,14 @@
 class Miner{
-	constructor(blockchain){
+	constructor(blockchain, minerAddress){
 		this._blockchain = blockchain;
-		this._worker = null;
-
 		blockchain.on('head', b => this._onChainHead(b));
+
+		this._address = minerAddress || new Address();
+		if(!minerAddress || ! minerAddress instanceof Address){
+			console.warn('No Miner Address set');
+		}
+		
+		this._worker = null;
 	}
 
 	async _onChainHead(currHeader){
@@ -40,7 +45,7 @@ class Miner{
 	}
 
 	_getNextBody(){
-		return new BlockBody(new Address(),[]);
+		return new BlockBody(this._address,[]);
 	}
 
 	_getNextTimestamp(){
