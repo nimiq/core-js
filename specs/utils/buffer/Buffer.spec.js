@@ -161,14 +161,21 @@ describe('Buffer', () => {
 
 	it('can read and write fixed length Strings',() => {
 		const string1 = 'this is a test';
-		const length = string1.length;
+		const length1 = string1.length;
 
-		const buffer = new Buffer(length);
-		buffer.writeFixedString(string1, length);
+		const string2 = 'this is another test';
+		const length2 = string2.length;
 
-		const string2 = buffer.readFixedString(length);
+		const buffer = new Buffer(length1 + length2);
+		buffer.writeFixedString(string1, length1);
+		buffer.writeFixedString(string2, length2);
 
-		expect(string2.byteLength).toBe(length);
-		expect(string2).toBe(string1);
+		const testString1 = buffer.readFixedString(length1);
+		expect(testString1.length).toBe(length1);
+		expect(testString1).toBe(string1);
+
+		const testString2 = buffer.readFixedString(length2);
+		expect(testString2.length).toBe(length2);
+		expect(testString2).toBe(string2);
 	});
 });
