@@ -159,4 +159,16 @@ describe('Buffer', () => {
 		expect(BufferUtils.equals(array1,array2)).toEqual(true);
 	});
 
+	it('can read and write fixed length Strings',() => {
+		const string1 = 'this is a test';
+		const length = string1.length;
+
+		const buffer = new Buffer(length);
+		buffer.writeFixedString(string1, 12);
+
+		const string2 = buffer.readFixedString(length);
+
+		expect(string2.byteLength).toBe(length);
+		expect(string2).toBe(string1);
+	});
 });
