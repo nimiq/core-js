@@ -164,7 +164,7 @@ describe('Buffer', () => {
 		const length = string1.length;
 
 		const buffer = new Buffer(length);
-		buffer.writeFixedString(string1, 12);
+		buffer.writeFixedString(string1, length);
 
 		const string2 = buffer.readFixedString(length);
 
