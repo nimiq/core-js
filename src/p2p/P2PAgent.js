@@ -8,14 +8,42 @@ class ConsensusP2PAgent {
         p2pClient.on('getdata', (msg, sender) => this._onGetData(msg, sender));
         p2pClient.on('notfound', (msg, sender) => this._onNotFound(msg, sender));
         p2pClient.on('block', (msg, sender) => this._onBlock(msg, sender));
+
+        // Notify peers when our blockchain head changes.
+        // TODO Only do this if our local blockchain has caught up with the consensus height.
+        blockchain.on('change', head => {
+            this._channel.inv([InvVector.fromBlock(head)]);
+        });
     }
 
     _onInv(msg, sender) {
         // check which of the advertised objects we know
         // request unknown objects
+        const unknownVectors = []
+        for (let vector of msg.vectors) {
+            switch (vector.type) {
+                case InvVector.Type.BLOCK:
+                    const block = this._blockchain.getBlock(vector.hash);
+                    if (!block) {
+                        // We don't know this block, save it in unknownVectors
+                        // to request it later.
+                        unknownVectors.push(vector);
+                    } else {
+                        // We already know this block, ignore it.
+                    }
+                    break;
 
-        // XXX test: request all objects
-        sender.getdata(msg.vectors);
+                case InvVector.Type.TRANSACTION:
+                    // TODO
+                    break;
+
+                default:
+                    throw 'Invalid inventory type: ' + vector.type;
+            }
+        }
+
+        // Request all unknown objects.
+        sender.getdata(unknownVectors);
     }
 
     _onGetData(msg, sender) {

@@ -12,6 +12,15 @@ class BlockHeader {
         this._nonce = nonce;
     }
 
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, BlockHeader);
+        Hash.cast(o._prevHash);
+        Hash.cast(o._bodyHash);
+        Hash.cast(o._accountsHash);
+        return o;
+	}
+
     static unserialize(buf) {
         var prevHash = Hash.unserialize(buf);
         var bodyHash = Hash.unserialize(buf);
@@ -42,7 +51,7 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
-    
+
     verify() {   // verify: trailingZeros(hash) == difficulty
         return this.hash().then(hash => {
             const view = new Uint8Array(hash);
@@ -55,7 +64,7 @@ class BlockHeader {
             return true;
         })
     }
-    
+
 
     get prevHash() {
         return this._prevHash;
@@ -80,7 +89,6 @@ class BlockHeader {
     get nonce() {
         return this._nonce;
     }
-
 
     async hash() {
         this._hash = this._hash || await Crypto.sha256(this.serialize());

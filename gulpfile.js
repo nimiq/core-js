@@ -17,6 +17,8 @@ var jasmine = new require('gulp-jasmine-livereload-task');
 gulp.task('default', function() {
     gulp.run(jasmine({
         files: [
+            'src/utils/indexed-db/indexed-db.js',
+            'src/utils/indexed-db/*.js',
         	'src/utils/**/*.js',
         	'src/consensus/primitive/Primitive.js',
         	'src/consensus/primitive/*.js',

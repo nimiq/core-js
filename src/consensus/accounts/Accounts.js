@@ -26,52 +26,47 @@ class Accounts {
         return this._execute(block, (a, b) => a - b);
     }
 
-
-    _execute(block, operator) {
-        return this._executeTransactions(block.body, operator)
-            .then(_ => this._rewardMiner(block.body, operator));
+    getBalance(address) {
+        return this._tree.get(addr);
     }
 
-    _rewardMiner(body, op) {
-        return body.transactions()
-            .then(txs => txs.reduce((sum, tx) => sum + tx.fee, 0))  // Sum up transaction fees
-            .then(txFees => this._updateAccount(body.miner, txFees + Policy.BLOCK_REWARD, op));
+    async _execute(block, operator) {
+        await this._executeTransactions(block.body, operator);
+        await this._rewardMiner(block.body, operator);
+    }
+
+    async _rewardMiner(body, op) {
+          // Sum up transaction fees.
+        const txFees = body.transactions().reduce( (sum, tx) => sum + tx.fee, 0);
+        this._updateAccount(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
     async _executeTransactions(body, op) {
-        const txs = await body.transactions();
-        for (let tx of txs) {
-          await this._executeTransaction(tx, op);
+        for (let tx of body.transactions) {
+            await this._executeTransaction(tx, op);
         }
     }
 
-    _executeTransaction(tx, op) {
-        return this._updateSender(tx, op)
-            .then(_ => this._updateReceiver(tx, op));
+    async _executeTransaction(tx, op) {
+        await this._updateSender(tx, op);
+        await this._updateReceiver(tx, op);
     }
 
-    _updateSender(tx, op) {
-        return tx.senderAddr()
-            .then(addr => this._updateAccount(addr, -tx.value - tx.fee, op));
+    async _updateSender(tx, op) {
+        const addr = await tx.senderAddr();
+        await this._updateBalance(addr, -tx.value - tx.fee, op);
     }
 
-    _updateReceiver(tx, op) {
-        return this._updateAccount(tx.receiver, tx.value, op);
+    async _updateReceiver(tx, op) {
+        await this._updateBalance(tx.receiverAddr, tx.value, op);
     }
 
-    async _updateAccount(address, value, operator) {
-        const addr = Buffer.toBase64(address);
-        const account = await this.fetch(address);
-        account.value = operator(account.value, value);
-        if (account.value < 0) throw 'BalanceError!';
-        if (value < 0) account.nonce = operator(account.nonce, 1);
-        return this._tree.put(addr, account);
-    }
-
-    fetch(address) {
-        const addr = Buffer.toBase64(address);
-        return this._tree.get(addr).then(account => account ?
-            new Balance(account.value, account.nonce) : new Balance());
+    async _updateBalance(address, value, operator) {
+        const balance = await this.getBalance(address);
+        balance.value = operator(balance.value, value);
+        if (balance.value < 0) throw 'BalanceError!';
+        if (value < 0) balance.nonce = operator(account.nonce, 1);
+        return this._tree.put(address, balance);
     }
 
     get hash() {

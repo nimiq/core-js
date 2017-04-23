@@ -1,13 +1,25 @@
-class BlockChain extends Observable {
+class Blockchain extends Observable {
 
-    constructor(accounts) {
+    static getPersistent(accounts) {
+        const store = BlockStore.getPersistent();
+        return new Blockchain(store, accounts);
+    }
+
+    static createVolatile(accounts) {
+        const store = BlockStore.createVolatile();
+        return new Blockchain(store, accounts);
+    }
+
+    constructor(blockStore, accounts) {
         super();
+        this._store = blockStore;
         this._accounts = accounts;
+
         this._chains = [new Chain(Block.GENESIS)];
         this._hardestChain = this._chains[0];
     }
 
-    pushBlock(block) {
+    async pushBlock(block) {
         // determine from header timestamp, if header is a "current" header
           // if so, it is a candidate for the next chain head
           // else
@@ -35,18 +47,23 @@ class BlockChain extends Observable {
 
         // If the block does not extend any known chain, create a fork.
         if (!found) {
-            return this._createFork(block);
+            await this._createFork(block);
+            return;
         }
 
         // If we have found a new hardest chain, rebranch to the new chain.
         if (hardestChain !== this._hardestChain) {
-            return this._rebranch(hardestChain)
-                .then( _ => this.fire('change', this.head));
+            await this._rebranch(hardestChain);
+            this.fire('change', this.head);
+            return;
         }
 
-        // We have extended the current hardest chain, update the account state.
-        // TODO handle failure case
-        this.accounts.commitBlock(block)
+        // We have extended the current hardest chain. Store the block.
+        this._store.put(block);
+
+        // Update the account state.
+        // TODO handle failure case (remove block from chain?)
+        await this.accounts.commitBlock(block)
 
         // Notify that we have a new head.
         this.fire('change', this.head);
@@ -55,11 +72,15 @@ class BlockChain extends Observable {
     async _createFork(block) {
         console.log('Forking BlockChain...');
 
-        const prevTotalWork = this._hardestChain.totalWork - this._hardestChain.head.difficulty;	// Define here to prevent race condition
-        const prevHead = await this._p2pDB.blocks.get(this._hardestChain.head.prevHash);
+        const prevTotalWork = this.totalWork - this.head.difficulty;	// Define here to prevent race condition
+        const prevHead = await this._store.get(this.head.prevHash);
 
         if (block.isSuccessorOf(prevHead)) {
-            this._chains.push(new BlockChain(block, prevTotalWork + block.difficulty));
+            // Put new block in block store.
+            this._store.put(block);
+
+            // Create a new chain.
+            this._chains.push(new Chain(block, prevTotalWork + block.difficulty));
         } else {
             block.header.log('Invalid Block');
         }
@@ -68,6 +89,8 @@ class BlockChain extends Observable {
     async _rebranch(newHead) {
         console.log('Rebranching BlockChain...');
         throw 'BlockChain.rebranch() not implemented';
+
+        // TODO store block
 
         /*
         let oldHead = this._hardestChain.head;
@@ -87,7 +110,7 @@ class BlockChain extends Observable {
     }
 
     getBlock(hash) {
-
+        return this._store.get(hash);
     }
 
     get head() {
