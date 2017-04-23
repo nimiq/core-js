@@ -1,8 +1,8 @@
 class Consensus {
-    static test() {
+    static async test() {
         // Model
-        const accounts = Accounts.getPersistent();
-        const blockchain = Blockchain.getPersistent(accounts);
+        const accounts = await Accounts.getPersistent();
+        const blockchain = await Blockchain.getPersistent(accounts);
 
         // P2P
         const network = new P2PNetwork();

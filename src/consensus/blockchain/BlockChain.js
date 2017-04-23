@@ -1,13 +1,13 @@
 class Blockchain extends Observable {
 
-    static getPersistent(accounts) {
+    static async getPersistent(accounts) {
         const store = BlockStore.getPersistent();
-        return new Blockchain(store, accounts);
+        return await new Blockchain(store, accounts);
     }
 
-    static createVolatile(accounts) {
+    static async createVolatile(accounts) {
         const store = BlockStore.createVolatile();
-        return new Blockchain(store, accounts);
+        return await new Blockchain(store, accounts);
     }
 
     constructor(blockStore, accounts) {
@@ -15,8 +15,16 @@ class Blockchain extends Observable {
         this._store = blockStore;
         this._accounts = accounts;
 
+        return this._initChain();
+    }
+
+    async _initChain() {
+        // Initialize blockchain with genesis block.
         this._chains = [new Chain(Block.GENESIS)];
         this._hardestChain = this._chains[0];
+        await this._accounts.commitBlock(this._hardestChain.head);
+
+        return this;
     }
 
     async pushBlock(block) {

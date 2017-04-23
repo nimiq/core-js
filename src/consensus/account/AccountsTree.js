@@ -3,6 +3,18 @@ class AccountsTree {
         this._store = treeStore;
         this._rootKey = undefined;
         this._synchronizer = new Synchronizer();
+
+        // Initialize root node.
+        return this._initRoot();
+    }
+
+    async _initRoot() {
+        this._rootKey = await this._store.getRootKey();
+        if (!this._rootKey) {
+            this._rootKey = await this._store.put(new AccountsTreeNode());
+            await this._store.setRootKey(this._rootKey);
+        };
+        return this;
     }
 
     put(accountAddr, accountState) {
@@ -14,15 +26,6 @@ class AccountsTree {
     }
 
     async _put(accountAddr, accountState) {
-        // Insert root node if the tree is (initially) empty
-        if (!this._rootKey) {
-            this._rootKey = await this._store.getRootKey();
-            if (!this._rootKey) {
-                this._rootKey = await this._store.put(new AccountsTreeNode());
-                await this._store.setRootKey(this._rootKey);
-            }
-        }
-
         // Fetch the root node. This should never fail.
         const rootNode = await this._store.get(this._rootKey);
 

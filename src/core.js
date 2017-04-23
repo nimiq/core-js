@@ -24,7 +24,7 @@ class Core {
 }
 
 //const $ = new Core();
-const $ = Consensus.test();
+Consensus.test().then( c => window.$ = c);
 
 console.log('%cWelcome to \uD835\uDD43ovicash', 'font-size:24px; color:teal;');
 console.log(

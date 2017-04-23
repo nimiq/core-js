@@ -2,14 +2,14 @@
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
 class Accounts {
-    static getPersistent() {
+    static async getPersistent() {
         const store = AccountsTreeStore.getPersistent();
-        return new Accounts(new AccountsTree(store));
+        return new Accounts(await new AccountsTree(store));
     }
 
-    static createVolatile() {
+    static async createVolatile() {
         const store = AccountsTreeStore.createVolatile();
-        return new Accounts(new AccountsTree(store));
+        return new Accounts(await new AccountsTree(store));
     }
 
     constructor(accountsTree) {
@@ -26,7 +26,7 @@ class Accounts {
     }
 
     getBalance(address) {
-        return this._tree.get(addr);
+        return this._tree.get(address);
     }
 
     async _execute(block, operator) {
@@ -36,8 +36,8 @@ class Accounts {
 
     async _rewardMiner(body, op) {
           // Sum up transaction fees.
-        const txFees = body.transactions().reduce( (sum, tx) => sum + tx.fee, 0);
-        this._updateAccount(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+        const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
+        this._updateBalance(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
     async _executeTransactions(body, op) {
@@ -61,11 +61,18 @@ class Accounts {
     }
 
     async _updateBalance(address, value, operator) {
-        const balance = await this.getBalance(address);
-        balance.value = operator(balance.value, value);
-        if (balance.value < 0) throw 'BalanceError!';
-        if (value < 0) balance.nonce = operator(account.nonce, 1);
-        return this._tree.put(address, balance);
+        // XXX If we don't find a balance, we assume the account is empty for now.
+        let balance = await this.getBalance(address);
+        if (!balance) {
+            balance = new Balance();
+        }
+
+        const newValue = operator(balance.value, value);
+        if (newValue < 0) throw 'Balance Error!';
+        const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
+        const newBalance = new Balance(newValue, newNonce);
+
+        return this._tree.put(address, newBalance);
     }
 
     get hash() {
