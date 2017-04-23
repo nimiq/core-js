@@ -4,10 +4,10 @@ class ConsensusP2PAgent {
         this._blockchain = blockchain;
         this._channel = p2pChannel;
 
-        p2pClient.on('inv', (msg, sender) => this._onInv(msg, sender));
-        p2pClient.on('getdata', (msg, sender) => this._onGetData(msg, sender));
-        p2pClient.on('notfound', (msg, sender) => this._onNotFound(msg, sender));
-        p2pClient.on('block', (msg, sender) => this._onBlock(msg, sender));
+        p2pChannel.on('inv', (msg, sender) => this._onInv(msg, sender));
+        p2pChannel.on('getdata', (msg, sender) => this._onGetData(msg, sender));
+        p2pChannel.on('notfound', (msg, sender) => this._onNotFound(msg, sender));
+        p2pChannel.on('block', (msg, sender) => this._onBlock(msg, sender));
 
         // Notify peers when our blockchain head changes.
         // TODO Only do this if our local blockchain has caught up with the consensus height.

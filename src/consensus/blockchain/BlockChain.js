@@ -125,7 +125,7 @@ class Blockchain extends Observable {
 class Chain {
     constructor(head, totalWork) {
         this._head = head;
-        this._totalWork = totalWork ? totalWork : head.difficulty;
+        this._totalWork = totalWork ? totalWork : head.header.difficulty;
     }
 
     push(block) {
