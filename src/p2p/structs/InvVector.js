@@ -16,7 +16,7 @@ class InvVector {
 
     static unserialize(buf) {
         let type = buf.readUInt32();
-        let type = Hash.unserialize(buf);
+        let hash = Hash.unserialize(buf);
         return new InvVector(type, hash);
     }
 
@@ -39,8 +39,6 @@ class InvVector {
     get hash() {
         return this._hash;
     }
-}
-
 }
 InvVector.Type = {
     ERROR: 0,
