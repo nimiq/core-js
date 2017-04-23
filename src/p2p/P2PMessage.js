@@ -111,7 +111,7 @@ class BaseInventoryP2PMessage extends P2PMessage {
     }
 
     get serializedSize() {
-        let size = super.serializedSize
+        const size = super.serializedSize
             + /*count*/ 4;
         for (let vector of this._vectors) {
             size += vector.serializedSize;
@@ -135,8 +135,8 @@ class InvP2PMessage extends BaseInventoryP2PMessage {
 
     static unserialize(buf) {
 		P2PMessage.unserialize(buf);
-        let count = buf.readUint16();
-        let vectors = [];
+        const count = buf.readUint16();
+        const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
@@ -151,8 +151,8 @@ class GetDataP2PMessage extends BaseInventoryP2PMessage {
 
     static unserialize(buf) {
 		P2PMessage.unserialize(buf);
-        let count = buf.readUint16();
-        let vectors = [];
+        const count = buf.readUint16();
+        const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
@@ -167,8 +167,8 @@ class NotFoundP2PMessage extends BaseInventoryP2PMessage {
 
     static unserialize(buf) {
 		P2PMessage.unserialize(buf);
-        let count = buf.readUint16();
-        let vectors = [];
+        const count = buf.readUint16();
+        const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
@@ -182,6 +182,12 @@ class BlockP2PMessage extends P2PMessage {
         // TODO Bitcoin block messages start with a block version
         this._block = block;
     }
+
+	static unserialize(buf) {
+		P2PMessage.unserialize(buf);
+		const block = Block.unserialize(buf);
+		return new BlockP2PMessage(block);
+	}
 
     get block() {
         return this._block;
