@@ -35,10 +35,6 @@ describe('BlockHeader', () => {
         expect(blockHeader2.timestamp).toBe(timestamp);
     }); 
 
-    it('can verify its proof-of-work', ()=>{
-        expect(true).toBe(false);
-    });
-
     it('nonce is 8 bytes long', () => {
         const nonce1 = NumberUtils.UINT64_MAX;
         const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce1);
@@ -128,4 +124,18 @@ describe('BlockHeader', () => {
             const test5 = new BlockHeader(prevHash,bodyHash,new Uint8Array(32),difficulty, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
     });  
+
+    it('can falsify an invalid proof-of-work', (done) => {
+        const blockHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+        blockHeader.verify()
+            .then( () => {})
+            .catch(e => {
+                expect(e).toEqual('Invalid proof-of-work');
+                done();
+            })
+    });
+
+    it('can verify its proof-of-work', () => {
+         expect(true).toBe(false,'because we need to hardcode a valid blockHeader into the specs')
+    });
 });

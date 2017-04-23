@@ -141,23 +141,24 @@ describe('RawTransaction', () => {
         expect( () => {
             const test5 = new RawTransaction(senderPubKey, recipientAddr, value, fee, Number.MAX_SAFE_INTEGER-1);
         }).toThrow('Malformed nonce');
+
     });  
 });
 
 
 
 describe('Transaction', () => {
-	const senderPubKey = new PublicKey(Dummy.publicKey1);
-	const recipientAddr = new Address(Dummy.address1);
-	const value = 1;
-	const fee = 1;
-	const nonce = 1;
-	const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
-	const signature = new Signature(Dummy.signature1);
+    const senderPubKey = new PublicKey(Dummy.publicKey1);
+    const recipientAddr = new Address(Dummy.address1);
+    const value = 1;
+    const fee = 1;
+    const nonce = 1;
+    const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
+    const signature = new Signature(Dummy.signature1);
 
-	 it('is 165 bytes long', ()=>{
-	 	
-	 	/*
+     it('is 165 bytes long', ()=>{
+        
+        /*
             65 bytes senderPubKey
             20 bytes recipientAddress
              8 bytes value
@@ -166,26 +167,37 @@ describe('Transaction', () => {
             64 bytes signature
            ---------------------------- 
            165 bytes
-	 	*/
-	 	
-    	const transaction1 = new Transaction(rawTx,signature);
-    	const serialized = transaction1.serialize();
+        */
+        
+        const transaction1 = new Transaction(rawTx,signature);
+        const serialized = transaction1.serialize();
         expect(serialized.byteLength).toBe(165);
     });
 
     it('is serializable and unserializable', () => {
-    	const tx1 = new Transaction(rawTx,signature);
-    	const tx2 = Transaction.unserialize(tx1.serialize());
+        const tx1 = new Transaction(rawTx,signature);
+        const tx2 = Transaction.unserialize(tx1.serialize());
 
-		expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
-    	expect(tx2.recipientAddr.equals(recipientAddr)).toEqual(true);
-    	expect(tx2.signature.equals(signature)).toEqual(true);
-    	expect(tx2.value).toEqual(value);
-    	expect(tx2.fee).toEqual(fee);
-    	expect(tx2.nonce).toEqual(nonce);
+        expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
+        expect(tx2.recipientAddr.equals(recipientAddr)).toEqual(true);
+        expect(tx2.signature.equals(signature)).toEqual(true);
+        expect(tx2.value).toEqual(value);
+        expect(tx2.fee).toEqual(fee);
+        expect(tx2.nonce).toEqual(nonce);
     });
 
-    it('can verify its signature', ()=>{
-    	expect(true).toBe(false);
+    it('can falsify an invalid signature', (done) => {
+        const tx1 = new Transaction(rawTx,signature);
+        
+        tx1.verify()
+            .then( () => {})
+            .catch(e => {
+                expect(e).toEqual('Invalid signature');
+                done();
+            })
+    })
+
+    it('verify a valid signature', (done) => {
+        expect(true).toBe(false,'because we need to hardcode a signed signature into the specs')
     })
 });

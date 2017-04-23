@@ -42,21 +42,20 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
-    /*
-    _proofOfWork() {   // verify: trailingZeros(hash) == difficulty
+    
+    verify() {   // verify: trailingZeros(hash) == difficulty
         return this.hash().then(hash => {
             const view = new Uint8Array(hash);
             const zeroBytes = Math.floor(this.difficulty / 8);
             for(let i = 0; i < zeroBytes; i++){
-                if(view[i] !== 0) return false;
+                if(view[i] !== 0) throw 'Invalid proof-of-work';
             }
             const zeroBits = this.difficulty % 8;
-            if(zeroBits && view[zeroBytes] > Math.pow(2, 8 - zeroBits )) return false;
-            this.id = view;
+            if(zeroBits && view[zeroBytes] > Math.pow(2, 8 - zeroBits )) throw 'Invalid proof-of-work';
             return true;
-        });
+        })
     }
-    */
+    
 
     get prevHash() {
         return this._prevHash;

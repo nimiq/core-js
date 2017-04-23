@@ -78,20 +78,19 @@ class Transaction extends RawTransaction {
         this._signature = signature;
 
         Object.freeze(this);
-
-        /*
-        return Crypto.verify(this._senderPubKey, this._signature, super.serialize())
-            .then( success => {
-                if (!success) throw 'Malformed Signature';
-                return this;
-            });
-        */
     }
 
     static unserialize(buf) {
         const rawTransaction = RawTransaction.unserialize(buf);
         const signature = Signature.unserialize(buf);
         return new Transaction(rawTransaction, signature);
+    }
+
+    verify(){
+        return Crypto.verify(this._senderPubKey, this._signature, super.serialize())
+            .then( success => {
+                if (!success) throw 'Invalid signature';
+            });
     }
 
     serialize(buf) {
