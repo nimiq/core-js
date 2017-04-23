@@ -12,7 +12,7 @@ describe('P2PChannel',() => {
         		expect(invMsg.vectors[0].equals(vec1)).toBe(true);
 				done();
 			});
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 		client.inv([vec1]);
 	})
 
@@ -23,7 +23,7 @@ describe('P2PChannel',() => {
         		expect(notFoundMsg.vectors[0].equals(vec1)).toBe(true);
 				done();
 			});
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 		client.notfound([vec1]);
 	})
 
@@ -34,7 +34,7 @@ describe('P2PChannel',() => {
         		expect(getDataMsg.vectors[0].equals(vec1)).toBe(true);
 				done();
 			});
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 		client.getdata([vec1]);
 	})
 
@@ -45,14 +45,14 @@ describe('P2PChannel',() => {
         		expect(blockMsg.block.body.equals(Dummy.block1.body)).toBe(true);
 				done();
 			});
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 		client.block(Dummy.block1);
 	})
 
 	it('can receive a InvP2PMessage', (done) => {
 		const message = new InvP2PMessage(count, [vec1]);
 		const spy = new SpyP2PChannel();
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 
 		client.on(message.type, invMsgTest => {
 			expect(invMsgTest.count).toBe(count);
@@ -65,7 +65,7 @@ describe('P2PChannel',() => {
 	it('can receive a NotFoundP2PMessage', (done) => {
 		const message = new NotFoundP2PMessage(count, [vec1]);
 		const spy = new SpyP2PChannel();
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 
 		client.on(message.type, notfoundMsgTest => {
 			expect(notfoundMsgTest.count).toBe(count);
@@ -78,7 +78,7 @@ describe('P2PChannel',() => {
 	it('can receive a GetDataP2PMessage', (done) => {
 		const message = new GetDataP2PMessage(count, [vec1]);
 		const spy = new SpyP2PChannel();
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 
 		client.on(message.type, getDataMsgTest => {
 			expect(getDataMsgTest.count).toBe(count);
@@ -91,7 +91,7 @@ describe('P2PChannel',() => {
 	it('can receive a BlockP2PMessage', (done) => {
 		const message = new BlockP2PMessage(Dummy.block1);
 		const spy = new SpyP2PChannel();
-		const client = new P2PChannel(spy);
+		const client = new P2PChannel(spy, '<TEST>');
 		client.on(message.type, blockMsgTest => {
         	expect(blockMsgTest.block.header.equals(Dummy.block1.header)).toBe(true);
         	expect(blockMsgTest.block.body.equals(Dummy.block1.body)).toBe(true);

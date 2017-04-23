@@ -4,8 +4,8 @@ class AccountsTreeStore {
     }
 
     static createVolatile() {
-        //return new VolatileAccountsTreeStore();
-        return new PersistentAccountsTreeStore();
+        return new VolatileAccountsTreeStore();
+        //return new PersistentAccountsTreeStore();
     }
 }
 

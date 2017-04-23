@@ -2,15 +2,14 @@
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
 class Accounts {
-
     static getPersistent() {
         const store = AccountsTreeStore.getPersistent();
-        return new Accounts(new AccountTree(store));
+        return new Accounts(new AccountsTree(store));
     }
 
     static createVolatile() {
         const store = AccountsTreeStore.createVolatile();
-        return new Accounts(new AccountTree(store));
+        return new Accounts(new AccountsTree(store));
     }
 
     constructor(accountsTree) {

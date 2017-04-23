@@ -33,24 +33,31 @@ class P2PChannel extends Observable {
         }
     }
 
-    inv(vectors) {
-        const msg = new InvP2PMessage(vectors.length, vectors);
+    _send(msg) {
+        console.log('Sending message to peer ' + this._peerId, msg);
         this._channel.send(msg.serialize());
+    }
+
+    // XXX For logging only
+    fire(type, msg, sender) {
+        console.log('Received message from peer ' + this._peerId, msg);
+        super.fire(type, msg, sender);
+    }
+
+    inv(vectors) {
+        this._send(new InvP2PMessage(vectors.length, vectors));
     }
 
     notfound(vectors) {
-        const msg = new NotFoundP2PMessage(vectors.length, vectors);
-        this._channel.send(msg.serialize());
+        this._send(new NotFoundP2PMessage(vectors.length, vectors));
     }
 
     getdata(vectors) {
-        const msg = new GetDataP2PMessage(vectors.length, vectors);
-        this._channel.send(msg.serialize());
+        this._send(new GetDataP2PMessage(vectors.length, vectors));
     }
 
     block(block) {
-        const msg = new BlockP2PMessage(block);
-        this._channel.send(msg.serialize());
+        this._send(new BlockP2PMessage(block));
     }
 
     get peerId() {

@@ -9,7 +9,7 @@ class P2PNetwork {
 
         const portal = new PeerPortal();
         portal.on('peer-connected', peer => this._addPeer(peer));
-    }
+     }
 
     _addPeer(peer) {
         console.log('peer added', peer.userId);
@@ -37,6 +37,7 @@ class P2PNetwork {
     }
 
     broadcast(msg) {
+        console.log('broadcast', msg);
         for (let key in this.peerChannels) {
             this._peerChannels[key].send(msg._buffer);
         }

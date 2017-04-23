@@ -1,6 +1,6 @@
-class PeerPortal extends Observable{
-	
-	static get CONFIG(){
+class PeerPortal extends Observable {
+
+	static get CONFIG() {
 		return {
 			iceServers: [
 		        { urls: 'stun:stun.services.mozilla.com' },
@@ -9,19 +9,19 @@ class PeerPortal extends Observable{
 		};
 	}
 
-	static get URL(){
-		return 'wss://alpacash.com'; 
+	static get URL() {
+		return 'wss://alpacash.com';
 		// return 'ws://localhost:8080';
 	}
 
-	constructor(){
+	constructor() {
 		super();
 		this._serverConnection = new WebSocket(PeerPortal.URL);
     	this._serverConnection.onmessage = e => this._onMessageFromServer(e);
     	this._serverConnection.onopen = e => this.createOffer();
 	}
 
-	createOffer(){
+	createOffer() {
 		this._start(true);
 	}
 
@@ -29,8 +29,8 @@ class PeerPortal extends Observable{
 	    const conn = new RTCPeerConnection(PeerPortal.CONFIG);
 	    this._peerConnection = conn;
 	    conn.onicecandidate = e => this._gotIceCandidate(e);
-	    
-	    if(isCaller) {
+
+	    if (isCaller) {
 	    	const channel = conn.createDataChannel('data-channel');
 	    	channel.binaryType = 'arraybuffer';
 	        channel.onopen = e => this._onRemoteChannel(e);
@@ -48,18 +48,18 @@ class PeerPortal extends Observable{
     	}
     	this._peerConnection = null;
     	console.log('established channel:', peer);
-    	this.fire('peer-connected',peer);
+    	this.fire('peer-connected', peer);
 	}
 
 	_onDescription(description) {
     	// console.log('got description');
     	this._peerConnection.setLocalDescription(description,  () => {
         	this._serverConnection.send(JSON.stringify({'sdp': description}));
-    	},this._errorLog);
+    	}, this._errorLog);
 	}
 
 	_gotIceCandidate(event) {
-    	if(event.candidate != null) {
+    	if (event.candidate != null) {
         	this._serverConnection.send(JSON.stringify({'ice': event.candidate}));
     	}
 	}
@@ -68,29 +68,29 @@ class PeerPortal extends Observable{
     	console.error(error);
 	}
 
-	_onMessageFromServer(message){
+	_onMessageFromServer(message) {
 		// console.log(message);
-		if(!this._peerConnection){
+		if(!this._peerConnection) {
 		 	this._start(false)
 		};
 	    const signal = JSON.parse(message.data);
-	    if(signal.sdp) {
+	    if (signal.sdp) {
 	        this._peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp), e => {
-	            if(signal.sdp.type == 'offer') {
+	            if (signal.sdp.type == 'offer') {
 	                this._peerConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
 	            }
 	        });
-	    } else if(signal.ice) {
+	    } else if (signal.ice) {
 	        this._peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice));
 	    }
 	}
 
-	_getUserId(){
+	_getUserId() {
 		const desc = this._peerConnection.remoteDescription;
 		return desc.sdp 								// get session description
 			.match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
-			.replace(/:/g,'') 							// replace colons 
-			.slice(1,32); 								// truncate hash to 16 bytes 
+			.replace(/:/g,'') 							// replace colons
+			.slice(1,32); 								// truncate hash to 16 bytes
 	}
 }
 
