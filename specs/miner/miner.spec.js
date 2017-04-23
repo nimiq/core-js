@@ -1,10 +1,10 @@
 describe('Miner', () => {
 
-    it('can mine a block', (done) => {
+    it('can mine a next BlockHeader', (done) => {
         const prevHash = new Hash(Dummy.hash1);
         const bodyHash = new Hash(Dummy.hash2);
         const accountsHash = new Hash(Dummy.hash3);
-        const difficulty = 3;
+        const difficulty = 5;
         const timestamp = 88888888;
         const nonce = 0;
         const currHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty,timestamp,nonce);

@@ -92,6 +92,7 @@ class BlockHeader {
 
     set nonce(n){
         this._nonce = n;
+        this._hash = null;
     }
 
     async hash() {
