@@ -26,7 +26,8 @@ gulp.task('default', function() {
             'src/consensus/block/BlockBody.js',
             'src/consensus/block/BlockHeader.js',
             'src/consensus/block/*.js',
-        	'src/**/*.js',
+            'src/*/**/*.js',
+        	'src/*.js',
         	'specs/**/*.spec.js']
     }));
 });

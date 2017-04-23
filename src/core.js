@@ -23,11 +23,13 @@ class Core {
   }
 }
 
-const $ = new Core();
+//const $ = new Core();
+const $ = Consensus.test();
+
 console.log('%cWelcome to \uD835\uDD43ovicash', 'font-size:24px; color:teal;');
 console.log(
 `Options:
-  1: $._miner._genesis() 
+  1: $._miner._genesis()
   2: $.transfer(4000,'8wjPPNOW0EXl/I5KVAy6mNzo9a2ufj1l',55)
   3: PeerPortal.setWebSocket('ws://localhost:8000')
 `);

@@ -21,6 +21,17 @@ class PersistentAccountsTreeStore extends ObjectDB {
     async setRootKey(rootKey) {
         return await super.putRaw('root', rootKey);
     }
+
+    transaction() {
+        const tx = super.transaction();
+        tx.getRootKey = async function(rootKey) {
+            tx.get('root');
+        }
+        tx.setRootKey = async function(rootKey) {
+            tx.putRaw('root', rootKey);
+        }
+        return tx;
+    }
 }
 
 class VolatileAccountsTreeStore {
@@ -46,6 +57,10 @@ class VolatileAccountsTreeStore {
     async delete(node) {
         const key = await this._key(node);
         delete this._store[key];
+    }
+
+    transaction() {
+        return this;
     }
 
     getRootKey() {

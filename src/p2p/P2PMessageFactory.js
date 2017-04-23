@@ -1,5 +1,6 @@
 class P2PMessageFactory {
-    static parse(buf) {
+    static parse(buffer) {
+        const buf = new Buffer(buffer);
         const type = P2PMessage.peekType(buf);
         const clazz = P2PMessageFactory.CLASSES[type];
         if (!clazz) throw 'Invalid message type: ' + type;

@@ -5,7 +5,7 @@ class P2PNetwork {
         this._peerChannels = {};
 
         // Create broadcast channel.
-        this._broadcastChannel = new P2PChannel({send: this.broadcast}, '<BROADCAST>');
+        this._broadcastChannel = new P2PChannel({send: this.broadcast.bind(this)}, '<BROADCAST>');
 
         const portal = new PeerPortal();
         portal.on('peer-connected', peer => this._addPeer(peer));
@@ -16,7 +16,7 @@ class P2PNetwork {
 
         // Add peer to channel list.
         const channel = new P2PChannel(peer.channel, peer.userId);
-        this.peerChannels[peer.userId] = channel;
+        this._peerChannels[peer.userId] = channel;
 
         // Connect peer to broadcast channel by forwarding any events received
         // on the peer channel to the broadcast channel.
@@ -31,21 +31,21 @@ class P2PNetwork {
         channel.on('error', _ => this._removePeer(peer.userId));
     }
 
-    _removePeer(userId) {
-        console.log('disconnected', userId);
-        delete this._peerChannels[userId];
+    _removePeer(peerId) {
+        console.log('disconnected', peerId);
+        delete this._peerChannels[peerId];
     }
 
-    broadcast(msg) {
-        console.log('broadcast', msg);
-        for (let key in this.peerChannels) {
-            this._peerChannels[key].send(msg._buffer);
+    broadcast(rawMsg) {
+        console.log('broadcast', rawMsg);
+        for (let peerId in this._peerChannels) {
+            this._peerChannels[peerId].rawChannel.send(rawMsg);
         }
     }
 
-    sendTo(peerId, msg) {
-        console.log('sendTo', peerId, msg);
-        this._peerChannels[peerId].send(msg._buffer || msg);
+    sendTo(peerId, rawMsg) {
+        console.log('sendTo', peerId, rawMsg);
+        this._peerChannels[peerId].rawChannel.send(rawMsg);
     }
 
     get broadcastChannel() {

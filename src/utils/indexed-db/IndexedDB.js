@@ -68,6 +68,13 @@ class RawIndexedDB {
             getAllTx.onerror = error;
           }));
   }
+
+  transaction() {
+      return RawIndexedDB.db.then( db =>
+          db.transaction([this.tableName], 'readwrite')
+                .objectStore(this.tableName)
+      );
+  }
 }
 
 class IndexedDB extends RawIndexedDB {

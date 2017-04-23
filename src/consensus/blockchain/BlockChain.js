@@ -36,7 +36,7 @@ class Blockchain extends Observable {
                 chain.push(block);
                 found = true;
 
-                if (chain.totalWork > hardestHead.totalWork) {
+                if (chain.totalWork > hardestChain.totalWork) {
                     hardestChain = chain;
                 }
 
@@ -63,7 +63,7 @@ class Blockchain extends Observable {
 
         // Update the account state.
         // TODO handle failure case (remove block from chain?)
-        await this.accounts.commitBlock(block)
+        await this._accounts.commitBlock(block)
 
         // Notify that we have a new head.
         this.fire('change', this.head);
@@ -109,8 +109,12 @@ class Blockchain extends Observable {
         */
     }
 
-    getBlock(hash) {
-        return this._store.get(hash);
+    async getBlock(hash) {
+        if (hash.equals(await Block.GENESIS.hash())) {
+            return Block.GENESIS;
+        } else {
+            return await this._store.get(hash.toBase64());
+        }
     }
 
     get head() {
@@ -129,7 +133,7 @@ class Chain {
     }
 
     push(block) {
-        if (block.successorOf(this._head)) {
+        if (block.isSuccessorOf(this._head)) {
             this._head = block;
             this._totalWork += block.difficulty;
         }
