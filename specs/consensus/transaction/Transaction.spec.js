@@ -185,7 +185,7 @@ describe('Transaction', () => {
     	expect(tx2.nonce).toEqual(nonce);
     });
 
-    it('has a verify method', ()=>{
+    it('can verify its signature', ()=>{
     	expect(true).toBe(false);
     })
 });

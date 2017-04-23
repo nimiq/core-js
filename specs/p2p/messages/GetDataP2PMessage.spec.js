@@ -1,7 +1,7 @@
 describe('GetDataP2PMessage', () => {
     
     const vectorType = 23;
-    const vectorHash = new Hash();
+    const vectorHash = new Hash(Dummy.hash1);
     const vector1 = new InvVector(vectorType,vectorHash);
     const vector2 = new InvVector(vectorType,vectorHash);
     const vector3 = new InvVector(vectorType,vectorHash);

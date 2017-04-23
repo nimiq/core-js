@@ -35,7 +35,7 @@ describe('BlockHeader', () => {
         expect(blockHeader2.timestamp).toBe(timestamp);
     }); 
 
-    it('has a verify method', ()=>{
+    it('can verify its proof-of-work', ()=>{
         expect(true).toBe(false);
     });
 

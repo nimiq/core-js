@@ -103,4 +103,46 @@ describe('AccountsTree', () => {
 
         test();
     });
+
+
+    it('can handle concurrency', (done) => {
+        const value1 = 8;
+        const nonce1 = 8;
+        const balance1 = new Balance(value1, nonce1);
+        const address1 = new Address(Dummy.address1);
+
+        const value2 = 88;
+        const nonce2 = 88;
+        const balance2 = new Balance(value2, nonce2);
+        const address2 = new Address(Dummy.address2);
+
+        const value3 = 88888888;
+        const nonce3 = 88888888;
+        const balance3 = new Balance(value3, nonce3);
+        const address3 = new Address(Dummy.address3);
+
+        const tree = new AccountsTree();
+
+        async function test(){
+            tree.put(address1, balance1);
+            tree.put(address2, balance2);
+            tree.put(address3, balance3);
+
+            const balance1_test = await tree.get(address1);
+            expect(balance1_test.value).toEqual(value1);
+            expect(balance1_test.nonce).toEqual(nonce1);
+
+            const balance2_test = await tree.get(address2);
+            expect(balance2_test.value).toEqual(value2);
+            expect(balance2_test.nonce).toEqual(nonce2);
+
+            const balance3_test = await tree.get(address3);
+            expect(balance3_test.value).toEqual(value3);
+            expect(balance3_test.nonce).toEqual(nonce3);
+
+            done();
+        }
+
+        test();
+    });
 });

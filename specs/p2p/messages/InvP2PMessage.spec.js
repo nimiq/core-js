@@ -1,6 +1,6 @@
 describe('InvP2PMessage', () => {
     const vectorType = 23;
-    const vectorHash = new Hash();
+    const vectorHash = new Hash(Dummy.hash1);
     const vector1 = new InvVector(vectorType,vectorHash);
     const vector2 = new InvVector(vectorType,vectorHash);
     const vector3 = new InvVector(vectorType,vectorHash);
@@ -57,7 +57,7 @@ describe('InvP2PMessage', () => {
         }).toThrow('Malformed count');
     });
 
-    it('must have a well defined vectors', () => {
+    it('must have well defined vectors', () => {
         expect( () => {
             const test1 = new InvP2PMessage(count,undefined)
         }).toThrow('Malformed vectors');
