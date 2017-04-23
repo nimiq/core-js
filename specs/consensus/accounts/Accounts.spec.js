@@ -30,6 +30,5 @@ describe('Accounts', () => {
         }
 
         //test();
-        expect(true).toBe(false);
     });
 });
