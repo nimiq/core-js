@@ -193,23 +193,27 @@ describe('AccountsTree', () => {
         const tree = new AccountsTree();
 
         async function test(){
-            tree.put(address1, balance1);
-            tree.put(address2, balance2);
-            tree.put(address3, balance3);
+            await Promise.all([
+                    tree.put(address1, balance1),
+                    tree.put(address2, balance2),
+                    tree.put(address3, balance3)
+                ]);
 
-            const balanceTest1 = tree.get(address1);
+            const balanceTest1 = await tree.get(address1);
             expect(balanceTest1.value).toEqual(value1);
             expect(balanceTest1.nonce).toEqual(nonce1);
 
-            const balanceTest2 = tree.get(address2);
+            const balanceTest2 = await tree.get(address2);
             expect(balanceTest2.value).toEqual(value2);
             expect(balanceTest2.nonce).toEqual(nonce2);
 
-            const balanceTest3 = tree.get(address3);
+            const balanceTest3 = await tree.get(address3);
             expect(balanceTest3.value).toEqual(value3);
             expect(balanceTest3.nonce).toEqual(nonce3);
 
             done();
+
+            //TODO: remove await from tree.get call 
         }
 
         test();
