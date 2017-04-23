@@ -20,7 +20,7 @@ class P2PNetwork {
 
         // Remove peer on error
         channel.on('close',  _ => this._removePeer(peer.userId));
-        channel.on('error', _ => this._removePeer(peer.userId);
+        channel.on('error', _ => this._removePeer(peer.userId));
     }
 
     _removePeer(userId) {
@@ -43,7 +43,7 @@ class P2PNetwork {
 class P2PChannel extends Observable {
     constructor(channel, peerId) {
         super();
-        this._channel = channel:
+        this._channel = channel;
         this._peerId = peerId;
 
         // XXX Check if we want to expose the P2PClient to the P2PChannel
