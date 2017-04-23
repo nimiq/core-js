@@ -1,6 +1,8 @@
 class Block {
 
 	constructor(header, body) {
+		if (!(header instanceof BlockHeader)) throw 'Malformed header';
+		if (!(body instanceof BlockBody)) throw 'Malformed body';
 		this._header = header;
 		this._body = body;
 	}

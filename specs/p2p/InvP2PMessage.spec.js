@@ -3,16 +3,16 @@ describe('InvP2PMessage', () => {
     const vectors = [];
 
     // it('is 24 bytes long', () => {
-        
-        
+
+
     //          4 bytes magic
     //         12 bytes type
     //          4 bytes length
     //          4 bytes checksum
-    //        ---------------------------- 
+    //        ----------------------------
     //         24 bytes
-        
-        
+
+
     //     const msg1 = new InvP2PMessage(count,vectors);
     //     const serialized = msg1.serialize();
     //     expect(serialized.byteLength).toBe(24);
@@ -48,12 +48,12 @@ describe('InvP2PMessage', () => {
         expect( () => {
             const test6 = new InvP2PMessage(Number.MAX_SAFE_INTEGER,vectors)
         }).toThrow('Malformed count');
-    });  
-	
+    });
+
     it('must have a well defined vectors', () => {
         expect( () => {
             const test1 = new InvP2PMessage(type,undefined)
         }).toThrow('Malformed vectors');
-    }); 
+    });
 
 });

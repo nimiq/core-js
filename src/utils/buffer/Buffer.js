@@ -78,7 +78,7 @@ class Buffer extends Uint8Array {
     }
     writeFixedString(value, length) {
         var bytes = BufferUtils.fromUnicode(value);
-        if (bytes.byteLength > length) throw 'Invalid argument';
+        if (bytes.byteLength > length) throw 'Invalid length';
         this.write(bytes);
         var padding = length - bytes.byteLength;
         this.write(new Uint8Array(padding));

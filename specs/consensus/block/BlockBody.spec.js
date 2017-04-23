@@ -1,5 +1,5 @@
 describe('BlockBody', () => {
-    const rawTransaction = new RawTransaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0); 
+    const rawTransaction = new RawTransaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0);
     const signature = new Signature(Dummy.signature1);
 
     const transaction1 = new Transaction(rawTransaction,signature);
@@ -14,7 +14,7 @@ describe('BlockBody', () => {
                   transaction1,transaction2,transaction3,transaction4,
                   transaction1,transaction2,transaction3,transaction4,
                   transaction1,transaction2,transaction3,transaction4 ]);
-      
+
       async function test(){
           const bodyHash = await blockBody1.hash()
           expect(bodyHash.byteLength).toBe(32);
@@ -27,23 +27,23 @@ describe('BlockBody', () => {
       const blockBody1 = new BlockBody(minerAddress,[transaction1,transaction2,transaction3,transaction4]);
       const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
       expect(BufferUtils.equals(blockBody1,blockBody2)).toBe(true);
-    }); 
+    });
 
     it('transactions must be well defined', () => {
       expect( () => {
         const test1 = new BlockBody(minerAddress,null);
-      }).toThrow('Malformed transaction');
+      }).toThrow('Malformed transactions');
       expect( () => {
         const test2 = new BlockBody(minerAddress,undefined);
-      }).toThrow('Malformed transaction');
+      }).toThrow('Malformed transactions');
       expect( () => {
         const test3 = new BlockBody(minerAddress,[null]);
-      }).toThrow('Malformed transaction');
+      }).toThrow('Malformed transactions');
       expect( () => {
         const test4 = new BlockBody(minerAddress,[undefined]);
-      }).toThrow('Malformed transaction');
+      }).toThrow('Malformed transactions');
       expect( () => {
         const test5 = new BlockBody(minerAddress,[true]);
-      }).toThrow('Malformed transaction');
-    }); 
+      }).toThrow('Malformed transactions');
+    });
 });

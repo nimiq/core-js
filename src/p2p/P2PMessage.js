@@ -1,8 +1,7 @@
 class P2PMessage {
-	constructor(type, length, checksum) {
+	constructor(type) {
+        if (!type || !type.length || type.length > 12) throw 'Malformed type';
         this._type = type;
-        this._length = length;
-        this._checksum = checksum;
 	}
 
     static peekType(buf) {
@@ -23,7 +22,7 @@ class P2PMessage {
 
     static unserialize(buf) {
         let magic = buf.readUint32();
-        if (magic !== P2PMessage.MAGIC) throw 'Malformed Magic';
+        if (magic !== P2PMessage.MAGIC) throw 'Malformed magic';
         let type = buf.readFixedString(12);
         let length = buf.readUint32();
         let checksum = buf.readUint32();
@@ -92,6 +91,8 @@ P2PMessage.Type = {
 class BaseInventoryP2PMessage extends P2PMessage {
     constructor(type, count, vectors) {
         super(type);
+        if (!NumberUtils.isUint16(count)) throw 'Malformed count';
+        if (!vectors || vectors.length !== count) throw 'Malformed vectors';
         this._count = count;
         this._vectors = vectors;
     }
