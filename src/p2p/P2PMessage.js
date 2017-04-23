@@ -28,8 +28,7 @@ class P2PMessage {
         let checksum = buf.readUint32();
 		// TODO validate checksum
 
-		// XXX This is never used yet
-		//return new P2PMessage(type, length, checksum);
+		return new P2PMessage(type, length, checksum);
     }
 
     serialize(buf) {
