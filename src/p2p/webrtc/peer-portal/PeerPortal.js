@@ -18,6 +18,7 @@ class PeerPortal extends Observable{
 		super();
 		this._serverConnection = new WebSocket(PeerPortal.URL);
     	this._serverConnection.onmessage = e => this._onMessageFromServer(e);
+    	this._serverConnection.onopen = e => this.createOffer();
 	}
 
 	createOffer(){
