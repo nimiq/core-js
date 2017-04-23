@@ -42,17 +42,17 @@ class PeerPortal extends Observable{
 
 	_onRemoteChannel(event) {
     	const channel = event.channel || event.target;
-    	console.log('established channel:', channel);
     	const peer = {
     		channel : channel,
     		userId : this._getUserId()
     	}
     	this._peerConnection = null;
+    	console.log('established channel:', peer);
     	this.fire('peer-connected',peer);
 	}
 
 	_onDescription(description) {
-    	console.log('got description');
+    	// console.log('got description');
     	this._peerConnection.setLocalDescription(description,  () => {
         	this._serverConnection.send(JSON.stringify({'sdp': description}));
     	},this._errorLog);
@@ -69,7 +69,7 @@ class PeerPortal extends Observable{
 	}
 
 	_onMessageFromServer(message){
-		console.log(message);
+		// console.log(message);
 		if(!this._peerConnection){
 		 	this._start(false)
 		};
