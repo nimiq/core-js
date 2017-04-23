@@ -1,10 +1,16 @@
 describe('GetDataP2PMessage', () => {
-    const count = 42;
-    const vectors = [];
+    
+    const vectorType = 23;
+    const vectorHash = new Hash();
+    const vector1 = new InvVector(vectorType,vectorHash);
+    const vector2 = new InvVector(vectorType,vectorHash);
+    const vector3 = new InvVector(vectorType,vectorHash);
+
+    const count = 3;
+    const vectors = [vector1,vector2,vector3];
 
     // it('is X bytes long', () => {
-        
-        
+    //
     //          4 bytes magic
     //         12 bytes type
     //          4 bytes length
@@ -24,9 +30,10 @@ describe('GetDataP2PMessage', () => {
         const msg1 = new GetDataP2PMessage(count,vectors);
         const msg2 = GetDataP2PMessage.unserialize(msg1.serialize());
 
-        expect(msg2.type).toEqual(type);
-        expect(msg2.length).toEqual(length);
-        expect(msg2.checksum).toEqual(checksum);
+        expect(msg2.count).toEqual(count);
+        expect(msg2.vectors[0].equals(vector1)).toBe(true);
+        expect(msg2.vectors[1].equals(vector2)).toBe(true);
+        expect(msg2.vectors[2].equals(vector3)).toBe(true);
     });
 
     it('must have a well defined count (4 bytes)', () => {
@@ -50,9 +57,12 @@ describe('GetDataP2PMessage', () => {
         }).toThrow('Malformed count');
     });  
 	
-    it('must have a well defined vectors', () => {
+    it('must have well defined vectors', () => {
         expect( () => {
-            const test1 = new GetDataP2PMessage(type,undefined)
+            const test1 = new GetDataP2PMessage(count,undefined)
+        }).toThrow('Malformed vectors');
+        expect( () => {
+            const test1 = new GetDataP2PMessage(count,[undefined])
         }).toThrow('Malformed vectors');
     }); 
 
