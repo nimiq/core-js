@@ -38,6 +38,7 @@ describe('P2PClient',() => {
 	    const vector1 = new InvVector(vectorType, vectorHash);
 
 
+		const message = new InvP2PMessage(count, [vector1]);
 		const client = new P2PClient(spy);
 		client.on(message.type, invMsgTest => {
 			expect(invMsgTest.count).toBe(count);
@@ -45,7 +46,6 @@ describe('P2PClient',() => {
 			done();
 		});
 
-		const message = new InvP2PMessage(count, [vector1]);
 		spy.fire('message', message.serialize());
 	})
 })
