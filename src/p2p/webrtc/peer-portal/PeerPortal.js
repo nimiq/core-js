@@ -11,14 +11,13 @@ class PeerPortal extends Observable{
 
 	static get URL(){
 		return 'wss://alpacash.com'; 
-		// return 'ws://localhost:8080';
 	}
 
 	constructor(){
 		super();
 		this._serverConnection = new WebSocket(PeerPortal.URL);
     	this._serverConnection.onmessage = e => this._onMessageFromServer(e);
-    	this._serverConnection.onopen = e => this.createOffer();
+    	//this._serverConnection.onopen = e => this.createOffer();
 	}
 
 	createOffer(){
@@ -26,6 +25,7 @@ class PeerPortal extends Observable{
 	}
 
 	_start(isCaller) {
+		if(this._peerConnection) return;
 	    const conn = new RTCPeerConnection(PeerPortal.CONFIG);
 	    this._peerConnection = conn;
 	    conn.onicecandidate = e => this._gotIceCandidate(e);
@@ -52,7 +52,6 @@ class PeerPortal extends Observable{
 	}
 
 	_onDescription(description) {
-    	// console.log('got description');
     	this._peerConnection.setLocalDescription(description,  () => {
         	this._serverConnection.send(JSON.stringify({'sdp': description}));
     	},this._errorLog);
@@ -66,14 +65,17 @@ class PeerPortal extends Observable{
 
 	_errorLog(error) {
     	console.error(error);
+    	this.start(true);
 	}
 
 	_onMessageFromServer(message){
-		// console.log(message);
+	    const signal = JSON.parse(message.data);
+	    if(signal.usersCount > 1){
+	    	return this._start(true);
+	    }
 		if(!this._peerConnection){
 		 	this._start(false)
 		};
-	    const signal = JSON.parse(message.data);
 	    if(signal.sdp) {
 	        this._peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp), e => {
 	            if(signal.sdp.type == 'offer') {
@@ -94,5 +96,5 @@ class PeerPortal extends Observable{
 	}
 }
 
-// const portal = new PeerPortal();
-// portal.on('peer-connected',console.log)
+const portal = new PeerPortal();
+portal.on('peer-connected',console.log)

@@ -12,6 +12,7 @@ wss.broadcast = function broadcast(data) {
 };
 
 wss.on('connection', function connection(ws) {
+  ws.send(JSON.stringify({usersCount:wss.clients.size}));
   ws.on('message', function incoming(data) {
     // Broadcast to everyone else.
     wss.clients.forEach(function each(client) {
@@ -21,3 +22,4 @@ wss.on('connection', function connection(ws) {
     });
   });
 });
+~
