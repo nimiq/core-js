@@ -37,14 +37,16 @@ describe('P2PClient',() => {
 	    const vectorHash = new Hash(Dummy.hash2);
 	    const vector1 = new InvVector(vectorType, vectorHash);
 
-		const message = new InvP2PMessage(count, [vector1]);
 
 		const client = new P2PClient(spy);
-		client.on(message.type, messageTest => {
+		client.on(message.type, invMsgTest => {
+			expect(invMsgTest.count).toBe(count);
+        	expect(invMsgTest.vectors[0].equals(vec1)).toBe(true);
 			done();
-
 		});
-		spy.fire('message', message);
+
+		const message = new InvP2PMessage(count, [vector1]);
+		spy.fire('message', message.serialize());
 	})
 })
 
