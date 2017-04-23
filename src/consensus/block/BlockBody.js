@@ -61,6 +61,12 @@ class BlockBody {
 			.then( hashes => Crypto.sha256(BufferUtils.concat(hashes[0], hashes[1])));
 	}
 
+	equals(o) {
+		return o instanceof BlockBody
+			&& this._minerAddr.equals(o.minerAddr)
+			&& this._transactions.every( (tx, i) => tx.equals(o.transactions[i]) );
+    }
+
 	/*
 	static prove(strings, root){
 		return TransactionsTree.computeRoot(strings)
@@ -79,13 +85,6 @@ class BlockBody {
 	get numTransactions() {
 		return this._transactions.length;
 	}
-
-	equals(o){
-        if(o instanceof BlockBody){
-            return BufferUtils.equals(this.serialize(), o.serialize())
-        }
-        return false;
-    }
 
 	log(desc) {
         super.log(desc,`BlockBody

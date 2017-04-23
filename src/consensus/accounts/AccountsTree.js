@@ -1,6 +1,6 @@
 class AccountsTree {
-    constructor() {
-        this._store = new AccountsTreeStore();
+    constructor(store) {
+        this._store = store;
         this._rootKey = undefined;
         this._synchronizer = new Synchronizer();
     }
@@ -205,39 +205,5 @@ class AccountsTreeNode {
 
     hash() {
         return Crypto.sha256(this.serialize());
-    }
-}
-
-class AccountsTreeStore extends RawIndexedDB {
-    constructor() {
-        super('accounts');
-    }
-
-    async _key(node) {
-        return BufferUtils.toBase64(await node.hash());
-    }
-
-    async get(key) {
-        const node = await super.get(key);
-        return AccountsTreeNode.of(node);
-    }
-
-    async put(node) {
-        const key = await this._key(node);
-        await super.put(key, node);
-        return key;
-    }
-
-    async delete(node) {
-        const key = await this._key(node);
-        return await super.delete(key);
-    }
-
-    async getRootKey() {
-        return await super.get('root');
-    }
-
-    async setRootKey(rootKey) {
-        return await super.put('root', rootKey);
     }
 }

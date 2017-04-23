@@ -41,3 +41,9 @@ class Block {
 		return this._header.isSuccessorOf(block.header);
 	}
 }
+
+/* Genesis Block */
+Block.GENESIS = new Block(
+	new BlockHeader(new Hash(), new Hash(), new Hash(), 1, 0, 0),
+	new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
+);

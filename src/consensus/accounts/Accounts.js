@@ -3,17 +3,19 @@
 // TODO V2: hide all private functions in constructor scope
 class Accounts {
 
-    static get tree() {
-        if (!this._tree) {
-            this._tree = new AccountsTree();
-        }
-        return this._tree;
+    static getPersistent() {
+        const store = AccountsTreeStore.getPersistent();
+        return new Accounts(new AccountTree(store));
     }
 
-    constructor() {
-        this._tree = new AccountsTree();
+    static createVolatile() {
+        const store = AccountsTreeStore.createVolatile();
+        return new Accounts(new AccountTree(store));
     }
 
+    constructor(accountsTree) {
+        this._tree = accountsTree;
+    }
 
     commitBlock(block) {
         if (!block.header.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
@@ -23,6 +25,7 @@ class Accounts {
     revertBlock(block) {
         return this._execute(block, (a, b) => a - b);
     }
+
 
     _execute(block, operator) {
         return this._executeTransactions(block.body, operator)

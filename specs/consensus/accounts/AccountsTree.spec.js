@@ -5,7 +5,7 @@ describe('AccountsTree', () => {
         const balance2 = new Balance(8000000, 8);
         const address = new Address(Dummy.address1);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
             await tree.put(address, balance1);
@@ -23,7 +23,7 @@ describe('AccountsTree', () => {
         const balance1 = new Balance(value, nonce);
         const address = new Address(Dummy.address1);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
             await tree.put(address, balance1);
@@ -54,7 +54,7 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
             await tree.put(address1, balance1);
@@ -84,7 +84,7 @@ describe('AccountsTree', () => {
         const balance2 = new Balance(8000000, 8);
         const address = new Address(Dummy.address1);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
             await tree.put(address, balance1);
@@ -120,7 +120,7 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
 
@@ -141,7 +141,7 @@ describe('AccountsTree', () => {
             await tree.put(address2, balance1);
             const state2 = tree.root.toBase64();
 
-            
+
             // "reset"
             await tree.put(address1, balance2);
             await tree.put(address3, balance2);
@@ -190,7 +190,7 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        const tree = new AccountsTree();
+        const tree = new AccountsTree(AccountsTreeStore.createVolatile());
 
         async function test(){
             await Promise.all([
@@ -213,7 +213,7 @@ describe('AccountsTree', () => {
 
             done();
 
-            //TODO: remove await from tree.get call 
+            //TODO: remove await from tree.get call
         }
 
         test();

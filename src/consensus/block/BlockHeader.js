@@ -93,13 +93,16 @@ class BlockHeader {
         return this.prevHash.equals(await header.hash());
     }
 
-    equals(o){
-        if(o instanceof BlockHeader){
-            return BufferUtils.equals(this.serialize(), o.serialize())
-        }
-        return false;
+    equals(o) {
+        return o instanceof BlockHeader
+            && this._prevHash.equals(o.prevHash)
+            && this._bodyHash.equals(o.bodyHash)
+            && this._accountsHash.equals(o.accountsHash)
+            && this._difficulty === o.difficulty
+            && this._timestamp === o.timestamp
+            && this._nonce === o.nonce;
     }
-    
+
     log(desc) {
         super.log(desc, `BlockHeader
             prev: ${Buffer.toBase64(this._prevHash)}
