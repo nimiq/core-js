@@ -12,7 +12,7 @@ class P2PMessage {
         buf.readPos = 4;
 
         // Read the type string.
-        let type = buf.readFixedString(12);
+        const type = buf.readFixedString(12);
 
         // Reset the read position to original.
         buf.readPos = pos;
@@ -21,14 +21,14 @@ class P2PMessage {
     }
 
     static unserialize(buf) {
-        let magic = buf.readUint32();
+        const magic = buf.readUint32();
         if (magic !== P2PMessage.MAGIC) throw 'Malformed magic';
-        let type = buf.readFixedString(12);
-        let length = buf.readUint32();
-        let checksum = buf.readUint32();
+        const type = buf.readFixedString(12);
+        const length = buf.readUint32();
+        const checksum = buf.readUint32();
 		// TODO validate checksum
 
-		return new P2PMessage(type, length, checksum);
+		return new P2PMessage(type);
     }
 
     serialize(buf) {
@@ -111,7 +111,7 @@ class BaseInventoryP2PMessage extends P2PMessage {
     }
 
     get serializedSize() {
-        const size = super.serializedSize
+        let size = super.serializedSize
             + /*count*/ 4;
         for (let vector of this._vectors) {
             size += vector.serializedSize;
