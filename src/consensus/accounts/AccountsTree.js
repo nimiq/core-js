@@ -2,9 +2,18 @@ class AccountsTree {
     constructor() {
         this._store = new AccountsTreeStore();
         this._rootKey = undefined;
+        this._synchronizer = new Synchronizer();
     }
 
-    async put(accountAddr, accountState) {
+    put(accountAddr, accountState) {
+        return new Promise( (resolve, error) => {
+            this._synchronizer.push( _ => {
+                return this._put(accountAddr, accountState);
+            }, resolve, error);
+        })
+    }
+
+    async _put(accountAddr, accountState) {
         // Insert root node if the tree is (initially) empty
         if (!this._rootKey) {
             this._rootKey = await this._store.getRootKey();
