@@ -109,6 +109,15 @@ class Transaction extends RawTransaction {
         return Crypto.sha256(this.serialize());
     }
 
+    equals(o) {
+        return o instanceof Transaction
+            && this._senderPubKey.equals(o.senderPubKey)
+            && this._recipientAddr.equals(o.recipientAddr)
+            && this._value === o.value
+            && this._fee === o.fee
+            && this._nonce === o.nonce;
+    }
+
     get signature() {
         return this._signature;
     }
