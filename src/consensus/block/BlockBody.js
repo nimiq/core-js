@@ -1,6 +1,8 @@
 class BlockBody {
 
 	constructor(minerAddr, transactions) {
+		if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
+		if (!transactions || transactions.some( it => !(it instanceof Transaction) )) throw 'Malformed transactions';
 		this._minerAddr = minerAddr;
 		this._transactions = transactions;
 		this._numTransactions = transactions.length;
