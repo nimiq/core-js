@@ -5,23 +5,23 @@ class P2PChannel extends Observable {
         this._channel = channel;
         this._peerId = peerId;
 
-        if (this._channel.onmessage) {
-            this._channel.onmessage = msg => this._onMessage(msg);
+        if (this._channel.onmessage !== undefined) {
+            this._channel.onmessage = rawMsg => this._onMessage(rawMsg.data || rawMsg);
         }
-        if (this._channel.onclose) {
+        if (this._channel.onclose !== undefined) {
             this._channel.onclose = _ => this.fire('close');
         }
-        if (this._channel.onerror) {
+        if (this._channel.onerror !== undefined) {
             this._channel.onerror = e => this.fire('error', e);
         }
     }
 
-    _onMessage(rawMessage) {
+    _onMessage(rawMsg) {
         let msg;
         try {
-            msg = P2PMessageFactory.parse(rawMessage);
+            msg = P2PMessageFactory.parse(rawMsg);
         } catch(e) {
-            console.log('Failed to parse message: ' + rawMessage, e);
+            console.log('Failed to parse message: ' + rawMsg, e);
         }
 
         if (!msg) return;
@@ -58,6 +58,10 @@ class P2PChannel extends Observable {
 
     block(block) {
         this._send(new BlockP2PMessage(block));
+    }
+
+    get rawChannel() {
+        return this._channel;
     }
 
     get peerId() {

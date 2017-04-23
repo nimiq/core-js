@@ -109,8 +109,12 @@ class Blockchain extends Observable {
         */
     }
 
-    getBlock(hash) {
-        return this._store.get(hash);
+    async getBlock(hash) {
+        if (hash.equals(await Block.GENESIS.hash())) {
+            return Block.GENESIS;
+        } else {
+            return await this._store.get(hash.toBase64());
+        }
     }
 
     get head() {
@@ -129,7 +133,7 @@ class Chain {
     }
 
     push(block) {
-        if (block.successorOf(this._head)) {
+        if (block.isSuccessorOf(this._head)) {
             this._head = block;
             this._totalWork += block.difficulty;
         }

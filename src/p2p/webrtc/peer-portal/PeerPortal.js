@@ -9,14 +9,8 @@ class PeerPortal extends Observable {
 		};
 	}
 
-<<<<<<< HEAD
 	static get URL(){
-		return 'wss://alpacash.com'; 
-=======
-	static get URL() {
 		return 'wss://alpacash.com';
-		// return 'ws://localhost:8080';
->>>>>>> 96cffb41b95155fb1936eef976dab310a60a3628
 	}
 
 	constructor() {

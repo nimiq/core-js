@@ -1,5 +1,5 @@
 class Consensus {
-    constructor() {
+    static test() {
         // Model
         const accounts = Accounts.getPersistent();
         const blockchain = Blockchain.getPersistent(accounts);
@@ -7,5 +7,12 @@ class Consensus {
         // P2P
         const network = new P2PNetwork();
         const agent = new ConsensusP2PAgent(blockchain, network.broadcastChannel);
+
+        return {
+            accounts: accounts,
+            blockchain: blockchain,
+            network: network,
+            agent: agent
+        };
     }
 }

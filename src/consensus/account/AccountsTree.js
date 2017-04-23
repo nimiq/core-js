@@ -23,8 +23,10 @@ class AccountsTree {
             }
         }
 
-        // Insert accountState into the tree at accountAddr.
+        // Fetch the root node. This should never fail.
         const rootNode = await this._store.get(this._rootKey);
+
+        // Insert accountState into the tree at accountAddr.
         return await this._insert(rootNode, accountAddr, accountState, []);
     }
 
