@@ -26,7 +26,10 @@ class P2PMessage {
         let type = buf.readFixedString(12);
         let length = buf.readUint32();
         let checksum = buf.readUint32();
-        return new P2PMessage(type, length, checksum);
+		// TODO validate checksum
+
+		// XXX This is never used yet
+		//return new P2PMessage(type, length, checksum);
     }
 
     serialize(buf) {
@@ -100,6 +103,7 @@ class BaseInventoryP2PMessage extends P2PMessage {
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
+		super.serialize(buf);
         buf.writeUint16(this._count);
         for (let vector of this._vectors) {
             vector.serialize(buf);
@@ -131,6 +135,7 @@ class InvP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
+		P2PMessage.unserialize(buf);
         let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {
@@ -146,6 +151,7 @@ class GetDataP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
+		P2PMessage.unserialize(buf);
         let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {
@@ -161,6 +167,7 @@ class NotFoundP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
+		P2PMessage.unserialize(buf);
         let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {

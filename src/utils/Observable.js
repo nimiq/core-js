@@ -12,7 +12,7 @@ class Observable {
         if (!arguments.length) throw 'Obserable.fire() needs type argument';
         const type = arguments[0];
         if (this._listeners[type]) {
-            const args = arguments.slice(1);
+            const args = Array.prototype.slice.call(arguments, 1);  // <3 u JS
             for (let listener of this._listeners[type]) {
                 listener.apply(null, args);
             }

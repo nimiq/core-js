@@ -3,7 +3,7 @@ class P2PClient extends Observable {
     constructor(p2pChannel) {
         super();
         this._channel = p2pChannel;
-        this._channel.on('message', msg => this._onMessage(msg, senderChannel));
+        this._channel.on('message', (msg, sender) => this._onMessage(msg, sender));
     }
 
     _onMessage(rawMessage, senderChannel) {
@@ -12,9 +12,9 @@ class P2PClient extends Observable {
 
             // Consumers of this API are more interested in the sender client
             // than the channel.
-            this.fire(msg.type, msg, senderChannel.client);
+            this.fire(msg.type, msg, senderChannel ? senderChannel.client : undefined);
         } catch(e) {
-            console.log('Failed to parse message: ' + msg);
+            console.log('Failed to parse message: ' + rawMessage, e);
         }
     }
 

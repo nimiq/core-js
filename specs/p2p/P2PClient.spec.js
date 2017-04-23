@@ -60,7 +60,7 @@ describe('P2PClient',() => {
 		
 		client.on(message.type, invMsgTest => {
 			expect(invMsgTest.count).toBe(count);
-        	expect(invMsgTest.vectors[0].equals(vec1)).toBe(true);
+        	expect(invMsgTest.vectors[0].equals(vector1)).toBe(true);
 			done();
 		});
 		spy.fire('message', message.serialize());

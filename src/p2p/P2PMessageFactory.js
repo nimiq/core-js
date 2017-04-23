@@ -2,7 +2,7 @@ class P2PMessageFactory {
     static parse(buf) {
         const type = P2PMessage.peekType(buf);
         const clazz = P2PMessageFactory.CLASSES[type];
-        if (!clazz) throw 'Invalid message type';
+        if (!clazz) throw 'Invalid message type: ' + type;
         return clazz.unserialize(buf);
     }
 }
