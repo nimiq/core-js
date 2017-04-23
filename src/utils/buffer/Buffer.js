@@ -73,12 +73,12 @@ class Buffer extends Uint8Array {
         let bytes = this.read(length);
         let i = 0;
         while (i < length && bytes[i] != 0x0) i++;
-        let view = new Uint8Array(bytes, 0, i);
+        let view = new Uint8Array(bytes.buffer, bytes.byteOffset, i);
         return BufferUtils.toUnicode(view);
     }
     writeFixedString(value, length) {
         var bytes = BufferUtils.fromUnicode(value);
-        if (bytes.byteLength > length) throw 'Invalid length';
+        if (bytes.byteLength > length) throw 'Malformed length';
         this.write(bytes);
         var padding = length - bytes.byteLength;
         this.write(new Uint8Array(padding));
