@@ -57,10 +57,10 @@ class BlockHeader {
             const view = new Uint8Array(hash);
             const zeroBytes = Math.floor(this.difficulty / 8);
             for(let i = 0; i < zeroBytes; i++){
-                if(view[i] !== 0) throw 'Invalid proof-of-work';
+                if(view[i] !== 0) return false;
             }
             const zeroBits = this.difficulty % 8;
-            if(zeroBits && view[zeroBytes] > Math.pow(2, 8 - zeroBits )) throw 'Invalid proof-of-work';
+            if(zeroBits && view[zeroBytes] > Math.pow(2, 8 - zeroBits )) return false;
             return true;
         })
     }
@@ -88,6 +88,10 @@ class BlockHeader {
 
     get nonce() {
         return this._nonce;
+    }
+
+    set nonce(n){
+        this._nonce = n;
     }
 
     async hash() {
