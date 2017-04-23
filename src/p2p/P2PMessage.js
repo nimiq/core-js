@@ -22,11 +22,11 @@ class P2PMessage {
     }
 
     static unserialize(buf) {
-        let magic = buf.readUInt32();
+        let magic = buf.readUint32();
         if (magic !== P2PMessage.MAGIC) throw 'Malformed Magic';
         let type = buf.readFixedString(12);
-        let length = buf.readUInt32();
-        let checksum = buf.readUInt32();
+        let length = buf.readUint32();
+        let checksum = buf.readUint32();
         return new P2PMessage(type, length, checksum);
     }
 
@@ -131,7 +131,7 @@ class InvP2PMessage extends BaseInventoryP2PMessage {
     static unserialize(buf) {
         let count = buf.readUInt16();
         let vectors = [];
-        for (let i = 0; i < count: ++i) {
+        for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
         return new InvP2PMessage(count, vectors);
@@ -146,7 +146,7 @@ class GetDataP2PMessage extends BaseInventoryP2PMessage {
     static unserialize(buf) {
         let count = buf.readUInt16();
         let vectors = [];
-        for (let i = 0; i < count: ++i) {
+        for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
         return new GetDataP2PMessage(count, vectors);
@@ -161,7 +161,7 @@ class NotFoundP2PMessage extends BaseInventoryP2PMessage {
     static unserialize(buf) {
         let count = buf.readUInt16();
         let vectors = [];
-        for (let i = 0; i < count: ++i) {
+        for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
         return new NotFoundP2PMessage(count, vectors);
@@ -171,6 +171,7 @@ class NotFoundP2PMessage extends BaseInventoryP2PMessage {
 class BlockP2PMessage extends P2PMessage {
     constructor(block) {
         super(P2PMessage.Type.BLOCK);
+        // TODO Bitcoin block messages start with a block version
         this._block = block;
     }
 

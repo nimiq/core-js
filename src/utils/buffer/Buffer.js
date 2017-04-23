@@ -71,8 +71,8 @@ class Buffer extends Uint8Array {
 
     readFixedString(length) {
         let bytes = this.read(length);
-        let i;
-        while (bytes[i] !== 0x0) i++;
+        let i = 0;
+        while (i < length && bytes[i] != 0x0) i++;
         let view = new Uint8Array(bytes, 0, i);
         return BufferUtils.toUnicode(view);
     }
