@@ -93,5 +93,5 @@ class PeerPortal extends Observable{
 	}
 }
 
-const portal = new PeerPortal();
-portal.on('peer-connected',console.log)
+// const portal = new PeerPortal();
+// portal.on('peer-connected',console.log)
