@@ -10,30 +10,34 @@ describe('Miner', () => {
         const currHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty,timestamp,nonce);
         currHeader.difficulty = difficulty;
 
-        const spy = new BlockchainSpy();
-        const miner = new Miner(spy);
 
-        async function test(nextHeader){
+        async function pushBlockTest(nextBlock){
+            const nextHeader = nextBlock.header;
             expect(nextHeader.difficulty).toBe(difficulty-1);    
-            const currHash = await currHeader.hash();
-            expect(nextHeader.prevHash.equals(currHash)).toBe(true);    
+            const currPrevHash = await currHeader.hash();
+            expect(nextHeader.prevHash.equals(currPrevHash)).toBe(true);    
+            expect(nextHeader.accountsHash.equals(currAccountsHash)).toBe(true);    
             const isPOW = await nextHeader.verify();
             expect(isPOW).toBe(true);    
             done();
         }
 
-        miner.on('mined-header', test);
+        const currAccountsHash = new Hash(Dummy.hash1); 
+        const spy = new BlockchainSpy(pushBlockTest, currAccountsHash);
+        const miner = new Miner(spy);
 
         spy.fire('head',currHeader);
     });
 });
 
 class BlockchainSpy extends Observable{
-    constructor(){
+    constructor(pushBlock, accountsHash){
         super();
+        this.pushBlock = pushBlock;
+        this._hash = accountsHash; 
     }
 
     getAccountsHash(){
-        return new Hash(Dummy.hash1);
+        return this._hash;
     }
 }
