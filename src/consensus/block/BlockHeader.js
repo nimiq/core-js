@@ -82,6 +82,7 @@ class BlockHeader {
         return this._nonce;
     }
 
+
     async hash() {
         this._hash = this._hash || await Crypto.sha256(this.serialize());
         return this._hash;
@@ -92,6 +93,13 @@ class BlockHeader {
         return this.prevHash.equals(await header.hash());
     }
 
+    equals(o){
+        if(o instanceof BlockHeader){
+            return BufferUtils.equals(this.serialize(), o.serialize())
+        }
+        return false;
+    }
+    
     log(desc) {
         super.log(desc, `BlockHeader
             prev: ${Buffer.toBase64(this._prevHash)}

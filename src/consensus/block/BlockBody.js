@@ -80,6 +80,13 @@ class BlockBody {
 		return this._transactions.length;
 	}
 
+	equals(o){
+        if(o instanceof BlockBody){
+            return BufferUtils.equals(this.serialize(), o.serialize())
+        }
+        return false;
+    }
+
 	log(desc) {
         super.log(desc,`BlockBody
             tx-root: ${Buffer.toBase64(this.txRoot)}

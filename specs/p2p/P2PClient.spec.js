@@ -41,8 +41,8 @@ describe('P2PClient',() => {
 	it('can send a BlockP2PMessage', (done) => {
 		const spy = new SpyP2PChannel( msg => {
 				const blockMsg = BlockP2PMessage.unserialize(msg);
-        		expect(blockMsg.header.equals(Dummy.block1.header)).toBe(true);
-        		expect(blockMsg.body.equals(Dummy.block1.body)).toBe(true);
+        		expect(blockMsg.block.header.equals(Dummy.block1.header)).toBe(true);
+        		expect(blockMsg.block.body.equals(Dummy.block1.body)).toBe(true);
 				done();
 			});
 		const client = new P2PClient(spy);
@@ -93,7 +93,6 @@ describe('P2PClient',() => {
 		const spy = new SpyP2PChannel();
 		const client = new P2PClient(spy);
 		client.on(message.type, blockMsgTest => {
-			expect(blockMsgTest.count).toBe(count);
         	expect(blockMsgTest.block.header.equals(Dummy.block1.header)).toBe(true);
         	expect(blockMsgTest.block.body.equals(Dummy.block1.body)).toBe(true);
 			done();
