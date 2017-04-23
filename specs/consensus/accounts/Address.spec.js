@@ -16,6 +16,13 @@ describe('Address', () => {
         }).toThrow('Invalid argument');
     });
 
+    it('is serializable and unserializable', () => {
+        const address1 = new Address(Dummy.address1);
+        const address2 = Address.unserialize(address1.serialize());
+
+        expect(address2.toBase64()).toBe(Dummy.address1,'because of invariance.');
+    });
+
     it('has an equals method', () => {
         const address1 = new Address(Dummy.address1);
         const address2 = new Address(Dummy.address2);
@@ -28,12 +35,5 @@ describe('Address', () => {
             .toBe(false,'because address1 !== null');
         expect(address1.equals(1))
             .toBe(false,'because address1 !== 1');
-    });
-
-    it('is serializable and unserializable', () => {
-    	const address1 = new Address(Dummy.address1);
-    	const address2 = Address.unserialize(address1.serialize());
-
-		expect(address2.toBase64()).toBe(Dummy.address1,'because of invariance.');
     });
 });
