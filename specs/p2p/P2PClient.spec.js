@@ -19,9 +19,9 @@ describe('P2PClient',() => {
 	it('can send notfound messages', (done) => {
 		const client = new P2PClient({
 			send: msg => {
-				const invMsg = NotFoundP2PMessage.unserialize(msg);
-        		expect(invMsg.count).toBe(1);
-        		expect(invMsg.vectors[0].equals(vec1)).toBe(true);
+				const notFoundMsg = NotFoundP2PMessage.unserialize(msg);
+        		expect(notFoundMsg.count).toBe(1);
+        		expect(notFoundMsg.vectors[0].equals(vec1)).toBe(true);
 				done();
 			},
 			on: () => {}
@@ -29,7 +29,7 @@ describe('P2PClient',() => {
 		client.notfound([vec1]);
 	})
 
-	it('can receive notfound messages', (done) => {
+	it('can receive inv messages', (done) => {
 		const spy = new SpyP2PChannel();
 
 		const count = 1;
