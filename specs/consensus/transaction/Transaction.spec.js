@@ -197,7 +197,7 @@ describe('Transaction', () => {
             })
     })
 
-    it('verify a valid signature', (done) => {
+    it('can verify a valid signature', (done) => {
         expect(true).toBe(false,'because we need to hardcode a signed signature into the specs')
     })
 });
