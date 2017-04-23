@@ -19,6 +19,7 @@ class AccountsTree {
             this._rootKey = await this._store.getRootKey();
             if (!this._rootKey) {
                 this._rootKey = await this._store.put(new AccountsTreeNode());
+                await this._store.setRootKey(this._rootKey);
             }
         }
 
@@ -156,10 +157,11 @@ class AccountsTreeNode {
         this.children = children;
     }
 
-    static of(o) {
-        if (!o) return undefined;
-        return new AccountsTreeNode(o.prefix,
-            Balance.of(o.accountState), o.children);
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, AccountsTreeNode);
+        Balance.cast(o.accountState);
+        return o;
     }
 
     getChild(prefix) {

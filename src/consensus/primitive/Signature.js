@@ -8,6 +8,10 @@ class Signature extends Primitive {
         super(arg, Signature.SERIALIZED_SIZE);
 	}
 
+	static cast(o) {
+		return ObjectUtils.cast(o, Signature);
+	}
+
 	static unserialize(buf) {
 		return new Signature(buf.read(Signature.SERIALIZED_SIZE));
 	}

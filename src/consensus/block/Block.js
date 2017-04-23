@@ -7,6 +7,14 @@ class Block {
 		this._body = body;
 	}
 
+	static cast(o) {
+		if (!o) return o;
+		ObjectUtils.cast(o, Block);
+		BlockHeader.cast(o._header);
+		BlockBody.cast(o._body);
+		return o;
+	}
+
     static unserialize(buf) {
         var header = BlockHeader.unserialize(buf);
         var body = BlockBody.unserialize(buf);

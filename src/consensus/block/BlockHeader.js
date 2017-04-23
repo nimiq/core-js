@@ -12,6 +12,15 @@ class BlockHeader {
         this._nonce = nonce;
     }
 
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, BlockHeader);
+        Hash.cast(o._prevHash);
+        Hash.cast(o._bodyHash);
+        Hash.cast(o._accountsHash);
+        return o;
+	}
+
     static unserialize(buf) {
         var prevHash = Hash.unserialize(buf);
         var bodyHash = Hash.unserialize(buf);

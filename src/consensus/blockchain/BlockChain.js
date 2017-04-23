@@ -45,7 +45,7 @@ class BlockChain extends Observable {
         }
 
         // We have extended the current hardest chain, update the account state.
-        // TODO handle failure case
+        // TODO handle failure case (remove block from chain?)
         this.accounts.commitBlock(block)
 
         // Notify that we have a new head.

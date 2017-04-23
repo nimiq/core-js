@@ -7,9 +7,8 @@ class Balance {
         this._nonce = nonce;
     }
 
-    static of(o) {
-        if (!o) return undefined;
-        return new Balance(o._value, o._nonce);
+    static cast(o) {
+        return ObjectUtils.cast(o, Balance);
     }
 
     static unserialize(buf) {

@@ -4,33 +4,14 @@ class AccountsTreeStore {
     }
 
     static createVolatile() {
-        return new VolatileAccountsTreeStore();
+        //return new VolatileAccountsTreeStore();
+        return new PersistentAccountsTreeStore();
     }
 }
 
-class PersistentAccountsTreeStore extends RawIndexedDB {
+class PersistentAccountsTreeStore extends ObjectDB {
     constructor() {
-        super('accounts');
-    }
-
-    async _key(node) {
-        return BufferUtils.toBase64(await node.hash());
-    }
-
-    async get(key) {
-        const node = await super.get(key);
-        return AccountsTreeNode.of(node);
-    }
-
-    async put(node) {
-        const key = await this._key(node);
-        await super.put(key, node);
-        return key;
-    }
-
-    async delete(node) {
-        const key = await this._key(node);
-        return await super.delete(key);
+        super('accounts', AccountsTreeNode);
     }
 
     async getRootKey() {
@@ -38,7 +19,7 @@ class PersistentAccountsTreeStore extends RawIndexedDB {
     }
 
     async setRootKey(rootKey) {
-        return await super.put('root', rootKey);
+        return await super.putRaw('root', rootKey);
     }
 }
 

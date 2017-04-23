@@ -17,6 +17,13 @@ class RawTransaction {
         this._nonce = nonce;
     }
 
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, RawTransaction);
+        PublicKey.cast(o._senderPubKey);
+        Address.cast(o._recipientAddr);
+        return o;
+    }
     static unserialize(buf) {
         let senderPubKey = PublicKey.unserialize(buf);
         let recipientAddr = Address.unserialize(buf);
@@ -78,6 +85,14 @@ class Transaction extends RawTransaction {
         this._signature = signature;
 
         Object.freeze(this);
+    }
+
+    static cast(o) {
+        if (!o) return o;
+        RawTransaction.cast(o);
+        ObjectUtils.cast(o, Transaction);
+        Signature.cast(o._signature);
+        return o;
     }
 
     static unserialize(buf) {

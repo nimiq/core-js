@@ -8,6 +8,14 @@ class BlockBody {
 		this._numTransactions = transactions.length;
 	}
 
+	static cast(o) {
+		if (!o) return o;
+		ObjectUtils.cast(o, BlockBody);
+		Address.cast(o._minerAddr);
+		o._transactions.forEach( tx => Transaction.cast(tx));
+		return o;
+	}
+
 	static unserialize(buf) {
 		const minerAddr = Address.unserialize(buf);
 		const numTransactions = buf.readUint16();

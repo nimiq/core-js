@@ -18,8 +18,13 @@ class P2PNetwork {
         const channel = new P2PChannel(peer.channel, peer.userId);
         this.peerChannels[peer.userId] = channel;
 
-        // Connect peer to broadcast channel.
-        channel.on('*', (type, msg, sender) => this._broadcastChannel.fire(type, msg, sender));
+        // Connect peer to broadcast channel by forwarding any events received
+        // on the peer channel to the broadcast channel.
+        channel.on('*', (type, msg, sender) => {
+            // Filter out close and error messages.
+            if (['close', 'error'].indexOf(type) >= 0) return;
+            this._broadcastChannel.fire(type, msg, sender)
+        });
 
         // Remove peer on error.
         channel.on('close',  _ => this._removePeer(peer.userId));
