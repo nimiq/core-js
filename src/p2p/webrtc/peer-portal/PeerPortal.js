@@ -42,9 +42,12 @@ class PeerPortal extends Observable{
 	_onRemoteChannel(event) {
     	const channel = event.channel || event.target;
     	console.log('established channel:', channel);
+    	const peer = {
+    		channel : channel,
+    		userId : this._getUserId()
+    	}
     	this._peerConnection = null;
-
-    	this.fire('peer-connected',channel);
+    	this.fire('peer-connected',peer);
 	}
 
 	_onDescription(description) {
@@ -80,4 +83,15 @@ class PeerPortal extends Observable{
 	        this._peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice));
 	    }
 	}
+
+	_getUserId(){
+		const desc = this._peerConnection.remoteDescription;
+		return desc.sdp 								// get session description
+			.match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
+			.replace(/:/g,'') 							// replace colons 
+			.slice(1,32); 								// truncate hash to 16 bytes 
+	}
 }
+
+const portal = new PeerPortal();
+portal.on('peer-connected',console.log)

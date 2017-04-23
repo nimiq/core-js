@@ -135,7 +135,7 @@ describe('BlockHeader', () => {
             })
     });
 
-    it('can verify its proof-of-work', () => {
+    it('can verify a valid proof-of-work', () => {
          expect(true).toBe(false,'because we need to hardcode a valid blockHeader into the specs')
     });
 });
