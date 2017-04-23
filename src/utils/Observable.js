@@ -5,7 +5,7 @@ class Observable {
 
     on(type, callback) {
         this._listeners[type] = this._listeners[type] || [];
-        this._listeners.push(callback);
+        this._listeners[type].push(callback);
     }
 
     fire() {
