@@ -22,6 +22,10 @@ gulp.task('default', function() {
         	'src/utils/**/*.js',
         	'src/consensus/primitive/Primitive.js',
         	'src/consensus/primitive/*.js',
+            'src/consensus/account/*.js',
+            'src/consensus/block/BlockBody.js',
+            'src/consensus/block/BlockHeader.js',
+            'src/consensus/block/*.js',
         	'src/**/*.js',
         	'specs/**/*.spec.js']
     }));
