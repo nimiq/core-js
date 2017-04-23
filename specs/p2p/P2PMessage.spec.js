@@ -58,11 +58,38 @@ describe('P2PMessage', () => {
         expect( () => {
             const test1 = new P2PMessage(type,undefined,checksum)
         }).toThrow('Malformed length');
+        expect( () => {
+            const test1 = new P2PMessage(type,-1,checksum)
+        }).toThrow('Malformed length');
+        expect( () => {
+            const test1 = new P2PMessage(type,-100,checksum)
+        }).toThrow('Malformed length');
+        expect( () => {
+            const test1 = new P2PMessage(type,Math.E,checksum)
+        }).toThrow('Malformed length');
+        expect( () => {
+            const test1 = new P2PMessage(type,Number.MAX_SAFE_INTEGER,checksum)
+        }).toThrow('Malformed length');
     }); 
 
     it('must have a well defined checksum (4 bytes)', () => {
         expect( () => {
             const test1 = new P2PMessage(type,length,undefined)
+        }).toThrow('Malformed checksum');
+        expect( () => {
+            const test1 = new P2PMessage(type,length,null)
+        }).toThrow('Malformed checksum');
+        expect( () => {
+            const test1 = new P2PMessage(type,length,-1)
+        }).toThrow('Malformed checksum');
+        expect( () => {
+            const test1 = new P2PMessage(type,length,-100)
+        }).toThrow('Malformed checksum');
+        expect( () => {
+            const test1 = new P2PMessage(type,length,Math.E)
+        }).toThrow('Malformed checksum');
+        expect( () => {
+            const test1 = new P2PMessage(type,length,Number.MAX_SAFE_INTEGER)
         }).toThrow('Malformed checksum');
     }); 
 
