@@ -36,7 +36,7 @@ class Blockchain extends Observable {
                 chain.push(block);
                 found = true;
 
-                if (chain.totalWork > hardestHead.totalWork) {
+                if (chain.totalWork > hardestChain.totalWork) {
                     hardestChain = chain;
                 }
 
@@ -63,7 +63,7 @@ class Blockchain extends Observable {
 
         // Update the account state.
         // TODO handle failure case (remove block from chain?)
-        await this.accounts.commitBlock(block)
+        await this._accounts.commitBlock(block)
 
         // Notify that we have a new head.
         this.fire('change', this.head);
