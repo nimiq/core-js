@@ -92,7 +92,8 @@ class BaseInventoryP2PMessage extends P2PMessage {
     constructor(type, count, vectors) {
         super(type);
         if (!NumberUtils.isUint16(count)) throw 'Malformed count';
-        if (!vectors || vectors.length !== count) throw 'Malformed vectors';
+        if (!vectors || vectors.length !== count
+			|| vectors.some( it => !(it instanceof InvVector) )) throw 'Malformed vectors';
         this._count = count;
         this._vectors = vectors;
     }
@@ -130,7 +131,7 @@ class InvP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
-        let count = buf.readUInt16();
+        let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
@@ -145,7 +146,7 @@ class GetDataP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
-        let count = buf.readUInt16();
+        let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
@@ -160,7 +161,7 @@ class NotFoundP2PMessage extends BaseInventoryP2PMessage {
     }
 
     static unserialize(buf) {
-        let count = buf.readUInt16();
+        let count = buf.readUint16();
         let vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));

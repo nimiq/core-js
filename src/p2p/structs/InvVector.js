@@ -15,7 +15,7 @@ class InvVector {
     }
 
     static unserialize(buf) {
-        let type = buf.readUInt32();
+        let type = buf.readUint32();
         let hash = Hash.unserialize(buf);
         return new InvVector(type, hash);
     }
@@ -27,9 +27,15 @@ class InvVector {
         return buf;
     }
 
+    equals(o) {
+        return o instanceof InvVector
+            && this._type == o.type
+            && this._hash.equals(o.hash);
+    }
+
     get serializedSize() {
         return /*invType*/ 4
-            + this._invHash.serializedSize;
+            + this._hash.serializedSize;
     }
 
     get type() {
