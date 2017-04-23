@@ -94,7 +94,8 @@ describe('P2PClient',() => {
 		const client = new P2PClient(spy);
 		client.on(message.type, blockMsgTest => {
 			expect(blockMsgTest.count).toBe(count);
-        	expect(blockMsgTest.vectors[0].equals(vec1)).toBe(true);
+        	expect(blockMsgTest.header.equals(Dummy.block1.header)).toBe(true);
+        	expect(blockMsgTest.body.equals(Dummy.block1.body)).toBe(true);
 			done();
 		});
 		spy.fire('message', message.serialize());
