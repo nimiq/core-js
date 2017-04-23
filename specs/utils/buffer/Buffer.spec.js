@@ -166,16 +166,20 @@ describe('Buffer', () => {
 		const string2 = 'this is another test';
 		const length2 = string2.length;
 
-		const buffer = new Buffer(length1 + length2);
-		buffer.writeFixedString(string1, length1);
-		buffer.writeFixedString(string2, length2);
+		const buffer = new Buffer(length1 + 1 + length2 + 2);
+		buffer.writeFixedString(string1, length1 + 1);
+		buffer.writeFixedString(string2, length2 + 2);
 
-		const testString1 = buffer.readFixedString(length1);
+		const testString1 = buffer.readFixedString(length1 + 1);
 		expect(testString1.length).toBe(length1);
 		expect(testString1).toBe(string1);
 
-		const testString2 = buffer.readFixedString(length2);
+		const testString2 = buffer.readFixedString(length2 + 2);
 		expect(testString2.length).toBe(length2);
 		expect(testString2).toBe(string2);
+
+		expect( () => {
+			buffer.writeFixedString(string1, length1 - 2);
+        }).toThrow('Malformed length');
 	});
 });
