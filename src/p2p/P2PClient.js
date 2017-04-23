@@ -1,13 +1,18 @@
 class P2PClient extends Observable {
 
     constructor(p2pChannel) {
-        p2pChannel.on('message', msg => this._onMessage(msg));
+        super();
+        this._channel = p2pChannel;
+        this._channel.on('message', msg => this._onMessage(msg, senderChannel));
     }
 
-    _onMessage(rawMessage) {
+    _onMessage(rawMessage, senderChannel) {
         try {
             const msg = P2PMessageFactory.parse(rawMessage);
-            this.fire(msg.type, msg);
+
+            // Consumers of this API are more interested in the sender client
+            // than the channel.
+            this.fire(msg.type, msg, senderChannel.client);
         } catch(e) {
             console.log('Failed to parse message: ' + msg);
         }

@@ -61,7 +61,7 @@ class P2PMessage {
         return this._checksum;
 	}
 }
-P2PMessage.MAGIC = 0xbeeeeeef;
+P2PMessage.MAGIC = 0x42042042;
 P2PMessage.Type = {
     VERSION: 'version',
 	VERACK: 'verack',
@@ -93,7 +93,7 @@ class BaseInventoryP2PMessage extends P2PMessage {
         super(type);
         if (!NumberUtils.isUint16(count)) throw 'Malformed count';
         if (!vectors || vectors.length !== count
-			|| vectors.some( it => !(it instanceof InvVector) )) throw 'Malformed vectors';
+			|| vectors.some( it => !(it instanceof InvVector))) throw 'Malformed vectors';
         this._count = count;
         this._vectors = vectors;
     }

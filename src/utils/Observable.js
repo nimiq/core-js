@@ -8,10 +8,13 @@ class Observable {
         this._listeners.push(callback);
     }
 
-    fire(type, obj) {
+    fire() {
+        if (!arguments.length) throw 'Obserable.fire() needs type argument';
+        const type = arguments[0];
         if (this._listeners[type]) {
+            const args = arguments.slice(1);
             for (let listener of this._listeners[type]) {
-                listener(obj);
+                listener.apply(null, args);
             }
         }
     }
