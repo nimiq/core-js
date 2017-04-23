@@ -1,6 +1,6 @@
 class AccountsTree {
-    constructor(store) {
-        this._store = store;
+    constructor(treeStore) {
+        this._store = treeStore;
         this._rootKey = undefined;
         this._synchronizer = new Synchronizer();
     }

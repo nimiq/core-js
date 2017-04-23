@@ -51,7 +51,7 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
-    
+
     verify() {   // verify: trailingZeros(hash) == difficulty
         return this.hash().then(hash => {
             const view = new Uint8Array(hash);
@@ -64,7 +64,7 @@ class BlockHeader {
             return true;
         })
     }
-    
+
 
     get prevHash() {
         return this._prevHash;
@@ -89,7 +89,6 @@ class BlockHeader {
     get nonce() {
         return this._nonce;
     }
-
 
     async hash() {
         this._hash = this._hash || await Crypto.sha256(this.serialize());

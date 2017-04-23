@@ -15,8 +15,9 @@ class RawIndexedDB {
 
         request.onupgradeneeded = event => {
             const db = event.target.result;
-            db.createObjectStore('headers');
-            db.createObjectStore('bodies');
+            //db.createObjectStore('headers');
+            //db.createObjectStore('bodies');
+            db.createObjectStore('blocks');
             db.createObjectStore('certificate');
             db.createObjectStore('accounts');
             db.createObjectStore('wallet');

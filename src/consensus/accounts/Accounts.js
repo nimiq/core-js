@@ -30,15 +30,15 @@ class Accounts {
         return this._tree.get(addr);
     }
 
-    _execute(block, operator) {
-        return this._executeTransactions(block.body, operator)
-            .then(_ => this._rewardMiner(block.body, operator));
+    async _execute(block, operator) {
+        await this._executeTransactions(block.body, operator);
+        await this._rewardMiner(block.body, operator);
     }
 
-    _rewardMiner(body, op) {
-        return body.transactions()
-            .then(txs => txs.reduce((sum, tx) => sum + tx.fee, 0))  // Sum up transaction fees
-            .then(txFees => this._updateAccount(body.miner, txFees + Policy.BLOCK_REWARD, op));
+    async _rewardMiner(body, op) {
+          // Sum up transaction fees.
+        const txFees = body.transactions().reduce( (sum, tx) => sum + tx.fee, 0);
+        this._updateAccount(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
     async _executeTransactions(body, op) {
