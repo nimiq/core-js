@@ -147,7 +147,7 @@ class Chain {
     push(block) {
         if (block.isSuccessorOf(this._head)) {
             this._head = block;
-            this._totalWork += block.difficulty;
+            this._totalWork += block.header.difficulty;
         }
         return this._totalWork;
     }
