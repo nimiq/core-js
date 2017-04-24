@@ -8,10 +8,6 @@ class Address extends Primitive {
 		super(arg, Address.SERIALIZED_SIZE);
 	}
 
-	static cast(o) {
-		return ObjectUtils.cast(o, Address);
-	}
-
 	static unserialize(buf) {
 		return new Address(buf.read(Address.SERIALIZED_SIZE));
 	}

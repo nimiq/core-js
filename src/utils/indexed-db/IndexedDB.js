@@ -17,7 +17,10 @@ class RawIndexedDB {
             const db = event.target.result;
             //db.createObjectStore('headers');
             //db.createObjectStore('bodies');
-            db.createObjectStore('blocks');
+            const blocks = db.createObjectStore('blocks');
+            blocks.createIndex('height', '_height');
+            blocks.createIndex('totalWork', '_totalWork');
+
             db.createObjectStore('certificate');
             db.createObjectStore('accounts');
             db.createObjectStore('wallet');
@@ -69,19 +72,46 @@ class RawIndexedDB {
           }));
   }
 
+  getBy(indexName, key) {
+      return RawIndexedDB.db.then(db => new Promise((resolve,error) => {
+              const tx = db.transaction([this.tableName])
+                  .objectStore(this.tableName)
+                  .index(indexName)
+                  .get(key);
+              tx.onsuccess = event => resolve(event.target.result ?
+                  event.target.result.value : null);
+              tx.onerror = error;
+            }));
+  }
+
+  getAllBy(indexName, key) {
+      return RawIndexedDB.db.then(db => new Promise((resolve,error) => {
+              const tx = db.transaction([this.tableName])
+                  .objectStore(this.tableName)
+                  .index(indexName)
+                  .getAll(key);
+              tx.onsuccess = event => resolve(event.target.result ?
+                  event.target.result.value : null);
+              tx.onerror = error;
+            }));
+  }
+
+  getMax(indexName) {
+      return RawIndexedDB.db.then(db => new Promise((resolve,error) => {
+              const tx = db.transaction([this.tableName])
+                  .objectStore(this.tableName)
+                  .index(indexName)
+                  .openCursor(null, 'prev');
+              tx.onsuccess = event => resolve(event.target.result ?
+                  event.target.result.value : null);
+              tx.onerror = error;
+            }));
+  }
+
   transaction() {
       return RawIndexedDB.db.then( db =>
           db.transaction([this.tableName], 'readwrite')
                 .objectStore(this.tableName)
       );
   }
-}
-
-class IndexedDB extends RawIndexedDB {
-  constructor(tableName) {super(tableName);}
-  put(key, value) {return super.put(IndexedDB.serializeKey(key), value);}
-  get(key) {return super.get(IndexedDB.serializeKey(key));}
-  delete(key) {return super.delete(IndexedDB.serializeKey(key));}
-
-  static serializeKey(key) { return Buffer.toBase64(key); }
 }

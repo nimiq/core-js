@@ -20,8 +20,8 @@ class RawTransaction {
     static cast(o) {
         if (!o) return o;
         ObjectUtils.cast(o, RawTransaction);
-        PublicKey.cast(o._senderPubKey);
-        Address.cast(o._recipientAddr);
+        o._senderPubKey = new PublicKey(o._senderPubKey);
+        o._recipientAddr = new Address(o._recipientAddr);
         return o;
     }
     static unserialize(buf) {
@@ -91,7 +91,7 @@ class Transaction extends RawTransaction {
         if (!o) return o;
         RawTransaction.cast(o);
         ObjectUtils.cast(o, Transaction);
-        Signature.cast(o._signature);
+        o._signature = new Signature(o._signature);
         return o;
     }
 

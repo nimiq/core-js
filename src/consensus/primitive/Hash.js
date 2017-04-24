@@ -8,10 +8,6 @@ class Hash extends Primitive {
 		super(arg, Hash.SERIALIZED_SIZE);
 	}
 
-	static cast(o) {
-		return ObjectUtils.cast(o, Hash);
-	}
-
 	static unserialize(buf) {
 		return new Hash(buf.read(Hash.SERIALIZED_SIZE));
 	}

@@ -11,8 +11,8 @@ class ConsensusP2PAgent {
 
         // Notify peers when our blockchain head changes.
         // TODO Only do this if our local blockchain has caught up with the consensus height.
-        blockchain.on('head', head => {
-            console.log('Blockchain head has changed - announcing', head);
+        blockchain.on('head-changed', head => {
+            //console.log('Blockchain head has changed - announcing', head);
             InvVector.fromBlock(head)
                 .then( vector => this._channel.inv([vector]));
         });
@@ -95,7 +95,7 @@ class ConsensusP2PAgent {
     _onBlock(msg, sender) {
         // verify block
         // put block into blockchain
-        console.log('Received block, pushing into blockchain');
+        console.log('[BLOCK] Received block, pushing into blockchain');
         this._blockchain.pushBlock(msg.block);
     }
 

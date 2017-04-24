@@ -8,10 +8,6 @@ class PublicKey extends Primitive {
 		super(arg, PublicKey.SERIALIZED_SIZE);
 	}
 
-	static cast(o) {
-		return ObjectUtils.cast(o, PublicKey);
-	}
-
 	static unserialize(buf) {
 		return new PublicKey(buf.read(PublicKey.SERIALIZED_SIZE));
 	}

@@ -35,7 +35,7 @@ describe('Miner', () => {
         const spy = new BlockchainSpy(pushBlockTest, currAccountsHash);
         const miner = new Miner(spy,minerAddress);
 
-        spy.fire('head',currHeader);
+        spy.fire('head-changed',currHeader);
     });
 });
 

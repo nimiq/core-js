@@ -26,6 +26,16 @@ class ObjectDB extends RawIndexedDB {
         return key;
     }
 
+    async getBy(indexName, key) {
+        const value = await super.getBy(indexName, key);
+        return this._type.cast(value);
+    }
+
+    async getMax(indexName) {
+        const value = await super.getMax(indexName);
+        return this._type.cast(value);
+    }
+
     async delete(obj) {
         const key = await this.key(obj);
         return await super.delete(key);

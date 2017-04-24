@@ -15,9 +15,10 @@ class BlockHeader {
     static cast(o) {
         if (!o) return o;
         ObjectUtils.cast(o, BlockHeader);
-        Hash.cast(o._prevHash);
-        Hash.cast(o._bodyHash);
-        Hash.cast(o._accountsHash);
+        o._prevHash = new Hash(o._prevHash);
+        o._bodyHash = new Hash(o._bodyHash);
+        o._accountsHash = new Hash(o._accountsHash);
+        o._hash = undefined;
         return o;
 	}
 

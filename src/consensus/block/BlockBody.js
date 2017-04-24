@@ -11,7 +11,7 @@ class BlockBody {
 	static cast(o) {
 		if (!o) return o;
 		ObjectUtils.cast(o, BlockBody);
-		Address.cast(o._minerAddr);
+		o._minerAddr = new Address(o._minerAddr);
 		o._transactions.forEach( tx => Transaction.cast(tx));
 		return o;
 	}

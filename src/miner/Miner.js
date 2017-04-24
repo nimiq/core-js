@@ -1,14 +1,14 @@
-class Miner{
+class Miner {
 	constructor(blockchain, minerAddress){
 		this._blockchain = blockchain;
 		this._address = minerAddress || new Address();
-		if(!minerAddress || ! minerAddress instanceof Address){
+		if (!minerAddress || ! minerAddress instanceof Address) {
 			console.warn('No Miner Address set');
 		}
 
 		this._worker = null;
 
-		blockchain.on('head', b => this._onChainHead(b));
+		blockchain.on('head-changed', b => this._onChainHead(b));
 	}
 
 	startWork() {
