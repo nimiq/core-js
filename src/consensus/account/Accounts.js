@@ -3,13 +3,13 @@
 // TODO V2: hide all private functions in constructor scope
 class Accounts {
     static async getPersistent() {
-        const store = AccountsTreeStore.getPersistent();
-        return new Accounts(await new AccountsTree(store));
+        const tree = await AccountsTree.getPersistent();
+        return new Accounts(tree);
     }
 
     static async createVolatile() {
-        const store = AccountsTreeStore.createVolatile();
-        return new Accounts(await new AccountsTree(store));
+        const tree = await AccountsTree.createVolatile();
+        return new Accounts(tree);
     }
 
     constructor(accountsTree) {

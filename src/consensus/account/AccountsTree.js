@@ -1,4 +1,14 @@
 class AccountsTree {
+    static async getPersistent() {
+        const store = AccountsTreeStore.getPersistent();
+        return await new AccountsTree(store);
+    }
+
+    static async createVolatile() {
+        const store = AccountsTreeStore.createVolatile();
+        return await new AccountsTree(store);
+    }
+
     constructor(treeStore) {
         this._store = treeStore;
         this._rootKey = undefined;
