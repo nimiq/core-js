@@ -7,11 +7,10 @@ class Miner {
 		}
 
 		this._worker = null;
-
-		blockchain.on('head-changed', b => this._onChainHead(b));
 	}
 
 	startWork() {
+		this._blockchain.on('head-changed', b => this._onChainHead(b));
 		this._onChainHead(this._blockchain.head);
 	}
 

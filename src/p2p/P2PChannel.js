@@ -9,10 +9,10 @@ class P2PChannel extends Observable {
             this._channel.onmessage = rawMsg => this._onMessage(rawMsg.data || rawMsg);
         }
         if (this._channel.onclose !== undefined) {
-            this._channel.onclose = _ => this.fire('close');
+            this._channel.onclose = _ => this.fire('peer-left');
         }
         if (this._channel.onerror !== undefined) {
-            this._channel.onerror = e => this.fire('error', e);
+            this._channel.onerror = e => this.fire('peer-error', e);
         }
     }
 
@@ -34,14 +34,11 @@ class P2PChannel extends Observable {
     }
 
     _send(msg) {
-        //console.log('Sending message to peer ' + this._peerId, msg);
         this._channel.send(msg.serialize());
     }
 
-    // XXX For logging only
-    fire(type, msg, sender) {
-        //console.log('Received message from peer ' + this._peerId, msg);
-        super.fire(type, msg, sender);
+    version(startHeight) {
+        this._send(new VersionP2PMessage(1, 0, Date.now(), startHeight));
     }
 
     inv(vectors) {
@@ -58,6 +55,10 @@ class P2PChannel extends Observable {
 
     block(block) {
         this._send(new BlockP2PMessage(block));
+    }
+
+    getblocks(hashes, hashStop = new Hash()) {
+        this._send(new GetBlocksP2PMessage(hashes.length, hashes, hashStop));
     }
 
     get rawChannel() {

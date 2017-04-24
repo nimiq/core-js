@@ -18,6 +18,7 @@ class BlockHeader {
         o._prevHash = new Hash(o._prevHash);
         o._bodyHash = new Hash(o._bodyHash);
         o._accountsHash = new Hash(o._accountsHash);
+        // XXX clear out cached hash
         o._hash = undefined;
         return o;
 	}
@@ -98,11 +99,6 @@ class BlockHeader {
     async hash() {
         this._hash = this._hash || await Crypto.sha256(this.serialize());
         return this._hash;
-    }
-
-    async isSuccessorOf(header) {
-        // TODO: check if difficulty matches
-        return this.prevHash.equals(await header.hash());
     }
 
     equals(o) {

@@ -41,12 +41,32 @@ class Block {
 		return this._body;
 	}
 
-	hash() {
-		return this._header.hash();
+	get prevHash() {
+		return this._header.prevHash;
 	}
 
-	isSuccessorOf(block) {
-		return this._header.isSuccessorOf(block.header);
+	get bodyHash() {
+		return this._header.bodyHash;
+	}
+
+	get accountsHash() {
+		return this._header.accountsHash;
+	}
+
+	get difficulty() {
+		return this._header.difficulty;
+	}
+
+	get timestamp() {
+		return this._header.timestamp;
+	}
+
+	get nonce() {
+		return this._header.nonce;
+	}
+
+	hash() {
+		return this._header.hash();
 	}
 }
 
@@ -55,3 +75,8 @@ Block.GENESIS = new Block(
 	new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('lqKW0iTyhcZ77pPDD4owkVfw2qNdxbh+QQt4YwoJz8c='), 10, 0, 0),
 	new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
 );
+// Store hash for synchronous access
+Block.GENESIS.hash().then( hash => {
+	Block.GENESIS.HASH = hash;
+	Object.freeze(Block.GENESIS);
+});

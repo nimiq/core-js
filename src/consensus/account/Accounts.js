@@ -17,8 +17,7 @@ class Accounts {
     }
 
     commitBlock(block) {
-        console.log('Trying to commit block: currentHash=' + this.hash.toBase64() + ', blockHash=' + block.header.accountsHash.toBase64());
-        if (!block.header.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
+        if (!block.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
         return this._execute(block, (a, b) => a + b);
     }
 

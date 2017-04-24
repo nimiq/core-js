@@ -12,7 +12,7 @@ class P2PNetwork {
      }
 
     _addPeer(peer) {
-        console.log('peer added', peer.userId);
+        console.log('[PEER-JOINED]', peer.userId);
 
         // Add peer to channel list.
         const channel = new P2PChannel(peer.channel, peer.userId);
@@ -21,18 +21,19 @@ class P2PNetwork {
         // Connect peer to broadcast channel by forwarding any events received
         // on the peer channel to the broadcast channel.
         channel.on('*', (type, msg, sender) => {
-            // Filter out close and error messages.
-            if (['close', 'error'].indexOf(type) >= 0) return;
             this._broadcastChannel.fire(type, msg, sender)
         });
 
+        // Notify listeners on the broadcast channel that a new peer has joined.
+        this._broadcastChannel.fire('peer-joined', channel);
+
         // Remove peer on error.
-        channel.on('close',  _ => this._removePeer(peer.userId));
-        channel.on('error', _ => this._removePeer(peer.userId));
+        channel.on('peer-left',  _ => this._removePeer(peer.userId));
+        channel.on('peer-error', _ => this._removePeer(peer.userId));
     }
 
     _removePeer(peerId) {
-        console.log('disconnected', peerId);
+        console.log('[PEER-LEFT]', peerId);
         delete this._peerChannels[peerId];
     }
 
@@ -43,7 +44,6 @@ class P2PNetwork {
     }
 
     sendTo(peerId, rawMsg) {
-        console.log('sendTo', peerId, rawMsg);
         this._peerChannels[peerId].rawChannel.send(rawMsg);
     }
 

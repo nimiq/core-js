@@ -26,6 +26,10 @@ gulp.task('default', function() {
             'src/consensus/block/BlockBody.js',
             'src/consensus/block/BlockHeader.js',
             'src/consensus/block/*.js',
+            'src/p2p/message/P2PMessage.js',
+            'src/p2p/message/*P2PMessage.js',
+            'src/p2p/message/*.js',
+            'src/p2p/**/*.js',
             'src/*/**/*.js',
         	'src/*.js',
         	'specs/**/*.spec.js']

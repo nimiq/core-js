@@ -13,7 +13,7 @@ class PersistentBlockchainStore extends ObjectDB {
         super('blocks', Chain);
     }
 
-    getHardestChain() {
+    getMainChain() {
         return super.getMax('totalWork');
     }
 }
@@ -21,7 +21,7 @@ class PersistentBlockchainStore extends ObjectDB {
 class VolatileBlockchainStore {
     constructor() {
         this._store = {};
-        this._hardestChain = null;
+        this._mainChain = null;
     }
 
     async _key(value) {
@@ -35,8 +35,8 @@ class VolatileBlockchainStore {
     async put(value) {
         const key = await this._key(value);
         this._store[key] = value;
-        if (!this._hardestChain || value.totalWork > this._hardestChain.totalWork) {
-            this._hardestChain = value;
+        if (!this._mainChain || value.totalWork > this._mainChain.totalWork) {
+            this._mainChain = value;
         }
         return key;
     }
@@ -46,7 +46,7 @@ class VolatileBlockchainStore {
         delete this._store[key];
     }
 
-    getHardestChain() {
-        return this._hardestChain;
+    getMainChain() {
+        return this._mainChain;
     }
 }
