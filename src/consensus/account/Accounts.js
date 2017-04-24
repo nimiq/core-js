@@ -17,6 +17,7 @@ class Accounts {
     }
 
     commitBlock(block) {
+        console.log('Trying to commit block: currentHash=' + this.hash.toBase64() + ', blockHash=' + block.header.accountsHash.toBase64());
         if (!block.header.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
         return this._execute(block, (a, b) => a + b);
     }
@@ -37,7 +38,7 @@ class Accounts {
     async _rewardMiner(body, op) {
           // Sum up transaction fees.
         const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
-        this._updateBalance(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+        await this._updateBalance(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
     async _executeTransactions(body, op) {
@@ -72,7 +73,7 @@ class Accounts {
         const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
         const newBalance = new Balance(newValue, newNonce);
 
-        return this._tree.put(address, newBalance);
+        await this._tree.put(address, newBalance);
     }
 
     get hash() {

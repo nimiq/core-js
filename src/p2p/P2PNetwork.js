@@ -37,7 +37,6 @@ class P2PNetwork {
     }
 
     broadcast(rawMsg) {
-        console.log('broadcast', rawMsg);
         for (let peerId in this._peerChannels) {
             this._peerChannels[peerId].rawChannel.send(rawMsg);
         }

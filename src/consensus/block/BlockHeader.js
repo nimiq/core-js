@@ -53,16 +53,15 @@ class BlockHeader {
 
 
     verify() {   // verify: trailingZeros(hash) == difficulty
-        return this.hash().then(hash => {
-            const view = new Uint8Array(hash);
+        return this.hash().then( hash => {
             const zeroBytes = Math.floor(this.difficulty / 8);
-            for(let i = 0; i < zeroBytes; i++){
-                if(view[i] !== 0) return false;
+            for (let i = 0; i < zeroBytes; i++) {
+                if (hash[i] !== 0) return false;
             }
             const zeroBits = this.difficulty % 8;
-            if(zeroBits && view[zeroBytes] > Math.pow(2, 8 - zeroBits )) return false;
+            if (zeroBits && hash[zeroBytes] > Math.pow(2, 8 - zeroBits)) return false;
             return true;
-        })
+        });
     }
 
 

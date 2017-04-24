@@ -34,13 +34,13 @@ class P2PChannel extends Observable {
     }
 
     _send(msg) {
-        console.log('Sending message to peer ' + this._peerId, msg);
+        //console.log('Sending message to peer ' + this._peerId, msg);
         this._channel.send(msg.serialize());
     }
 
     // XXX For logging only
     fire(type, msg, sender) {
-        console.log('Received message from peer ' + this._peerId, msg);
+        //console.log('Received message from peer ' + this._peerId, msg);
         super.fire(type, msg, sender);
     }
 

@@ -62,7 +62,7 @@ class Blockchain extends Observable {
         // If we have found a new hardest chain, rebranch to the new chain.
         if (hardestChain !== this._hardestChain) {
             await this._rebranch(hardestChain);
-            this.fire('change', this.head);
+            this.fire('head', this.head);
             return;
         }
 
@@ -74,7 +74,7 @@ class Blockchain extends Observable {
         await this._accounts.commitBlock(block)
 
         // Notify that we have a new head.
-        this.fire('change', this.head);
+        this.fire('head', this.head);
     }
 
     async _createFork(block) {
@@ -131,6 +131,10 @@ class Blockchain extends Observable {
 
     get totalWork() {
         return this._hardestChain.totalWork;
+    }
+
+    get accountsHash() {
+        return this._accounts.hash;
     }
 }
 

@@ -11,7 +11,7 @@ class ConsensusP2PAgent {
 
         // Notify peers when our blockchain head changes.
         // TODO Only do this if our local blockchain has caught up with the consensus height.
-        blockchain.on('change', head => {
+        blockchain.on('head', head => {
             console.log('Blockchain head has changed - announcing', head);
             InvVector.fromBlock(head)
                 .then( vector => this._channel.inv([vector]));
@@ -28,8 +28,7 @@ class ConsensusP2PAgent {
                     const block = await this._blockchain.getBlock(vector.hash);
                     console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block, block);
 
-                    // XXX Test
-                    if (true || !block) {
+                    if (!block) {
                         // We don't know this block, save it in unknownVectors
                         // to request it later.
                         unknownVectors.push(vector);

@@ -52,6 +52,6 @@ class Block {
 
 /* Genesis Block */
 Block.GENESIS = new Block(
-	new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('lqKW0iTyhcZ77pPDD4owkVfw2qNdxbh+QQt4YwoJz8c='), 1, 0, 0),
+	new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('lqKW0iTyhcZ77pPDD4owkVfw2qNdxbh+QQt4YwoJz8c='), 10, 0, 0),
 	new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
 );
