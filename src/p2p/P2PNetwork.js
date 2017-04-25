@@ -1,7 +1,8 @@
 // TODO: Implement get and answerToGet
-class P2PNetwork {
+class P2PNetwork extends Observable {
 
     constructor() {
+        super();
         this._peerChannels = {};
 
         // Create broadcast channel.
@@ -30,11 +31,16 @@ class P2PNetwork {
         // Remove peer on error.
         channel.on('peer-left',  _ => this._removePeer(peer.userId));
         channel.on('peer-error', _ => this._removePeer(peer.userId));
+
+        // Tell listeners that our peers changed.
+        this.fire('peers-changed');
     }
 
     _removePeer(peerId) {
         console.log('[PEER-LEFT]', peerId);
         delete this._peerChannels[peerId];
+
+        this.fire('peers-changed');
     }
 
     broadcast(rawMsg) {
@@ -49,5 +55,9 @@ class P2PNetwork {
 
     get broadcastChannel() {
         return this._broadcastChannel;
+    }
+
+    get peerCount() {
+        return Object.keys(this._peerChannels).length;
     }
 }

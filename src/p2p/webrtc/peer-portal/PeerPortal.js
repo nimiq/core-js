@@ -1,6 +1,7 @@
 class ServerConnection extends Observable {
 	static get URL() {
 		return 'wss://alpacash.com';
+		//return 'ws://localhost:8080';
 	}
 
 	constructor(myPeerId) {
@@ -26,18 +27,20 @@ class ServerConnection extends Observable {
 	_onMessageFromServer(e) {
 		const msg = JSON.parse(e.data);
 		if (msg.type == 'peerIds') {
-			this._onListOfPeers(msg);
+			this._onPeersList(msg);
 			return;
 		}
-		if (msg.payload && msg.payload.type === 'offer') {
+
+		if (msg.payload && msg.payload.type == 'offer') {
 			this._onOffer(msg);
 			return;
 		}
+
 		this._onMessage(msg);
 	}
 
-	_onListOfPeers(msg) {
-		this.fire('peers-list', msg.list);
+	_onPeersList(msg) {
+		this.fire('peers-list', msg.payload);
 	}
 
 	_onOffer(msg) {
@@ -107,12 +110,11 @@ class PeerConnector extends Observable {
 	        this._peerConnection.setRemoteDescription(new RTCSessionDescription(signal), e => {
 	            if (signal.type == 'offer') {
 	                this._peerConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
-	            } else {
-					console.error('Unexpected signal type ' + signal.type, signal);
 				}
 	        });
 	    } else if (signal.candidate) {
-	        this._peerConnection.addIceCandidate(new RTCIceCandidate(signal));
+			this._peerConnection.addIceCandidate(new RTCIceCandidate(signal))
+				.catch( e => e );
 	    }
 	}
 
@@ -124,7 +126,7 @@ class PeerConnector extends Observable {
 
 	_onDescription(description) {
     	this._peerConnection.setLocalDescription(description, () => {
-        	this._sendToServer('description', description);
+        	this._sendToServer('sdp', description);
     	}, this._errorLog);
 	}
 
@@ -134,8 +136,6 @@ class PeerConnector extends Observable {
     		channel: channel,
     		userId: this._getUserId()
     	}
-
-    	console.log('established channel:', peer);
     	this.fire('peer-connected', peer);
 	}
 
@@ -189,7 +189,7 @@ class AnswerCreator extends PeerConnector {
 
 class PeerPortal extends Observable {
 
-	constructor() {
+	constructor(desiredPeerCount) {
 		super();
 		this.getMyPeerId().then(peerId => {
 			this._myPeerId = peerId;
@@ -200,7 +200,11 @@ class PeerPortal extends Observable {
 	}
 
 	_onPeersList(peersList) {
-		console.log('peers', peersList);
+		if (!peersList) {
+			console.log('Invalid peers list received');
+			return;
+		}
+
 		// const list = peersList.sort( () => 0.5 - Math.random()).slice(0,12);
 		peersList.map(peerId => this.createOffer(peerId));
 	}
