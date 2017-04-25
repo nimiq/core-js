@@ -1,16 +1,8 @@
 const WebSocket = require('ws');
 wss = new WebSocket.Server({ port: 8080 });
-console.log('Signaling server listening...');
+console.log('Signaling server listening ...');
 
 wss.channels = {};
-
-function broadcast(conn, data) {
-	wss.clients.forEach(function each(client) {
-		if (client !== conn && client.readyState === WebSocket.OPEN) {
-			client.send(data);
-		}
-    });
-}
 
 function peerList(peers) {
 	return JSON.stringify({
@@ -32,9 +24,14 @@ wss.on('connection', conn => {
 			conn.peerId = sender;
 			wss.channels[sender] = conn;
 
-			//broadcast(conn, peerList([sender]));
+			console.log('Client ' + conn.peerId + ' registered | ' + Object.keys(wss.channels).length + ' clients total');
 		} else if (wss.channels[receiver]) {
-			wss.channels[receiver].send(data);
+			try {
+				wss.channels[receiver].send(data);
+			} catch (e) {
+				console.error('Error sending data to ' + receiver + ', closing channel');
+				wss.channels[receiver].close();
+			}
 		}
 	});
 
@@ -42,5 +39,6 @@ wss.on('connection', conn => {
 		if (conn.peerId) {
 			delete wss.channels[conn.peerId];
 		}
+		console.log('Client ' + conn.peerId + ' disconnected | ' + Object.keys(wss.channels).length + ' clients total');
 	});
 });

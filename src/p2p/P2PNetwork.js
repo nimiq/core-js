@@ -13,11 +13,20 @@ class P2PNetwork extends Observable {
      }
 
     _addPeer(peer) {
-        console.log('[PEER-JOINED]', peer.userId);
+        // XXX Throw out duplicate connections.
+        // TODO Prevent them from being established in the first place => Cleanup PeerPortal/P2PNetwork
+        let channel = this._peerChannels[peer.peerId];
+        if (channel && channel.rawChannel.readyState === 'open') {
+            console.warn('Duplicate connection to ' + peer.peerId + ', closing it.');
+            peer.channel.close();
+            return;
+        }
+
+        console.log('[PEER-JOINED]', peer.peerId);
 
         // Add peer to channel list.
-        const channel = new P2PChannel(peer.channel, peer.userId);
-        this._peerChannels[peer.userId] = channel;
+        channel = new P2PChannel(peer.channel, peer.peerId);
+        this._peerChannels[peer.peerId] = channel;
 
         // Connect peer to broadcast channel by forwarding any events received
         // on the peer channel to the broadcast channel.
@@ -29,8 +38,8 @@ class P2PNetwork extends Observable {
         this._broadcastChannel.fire('peer-joined', channel);
 
         // Remove peer on error.
-        channel.on('peer-left',  _ => this._removePeer(peer.userId));
-        channel.on('peer-error', _ => this._removePeer(peer.userId));
+        channel.on('peer-left',  _ => this._removePeer(peer.peerId));
+        channel.on('peer-error', _ => this._removePeer(peer.peerId));
 
         // Tell listeners that our peers changed.
         this.fire('peers-changed');

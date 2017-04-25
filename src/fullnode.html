@@ -62,19 +62,141 @@
 			display: flex;
 			flex-direction: column-reverse;
 		}
+
+		.info-title {
+			font-size: 20pt;
+			margin: 10px 0;
+		}
+
+		hash {
+			font-size: 12px;
+		}
+	
 	</style>
-	<div id="lastBlocks"></div>
+	<button id="startButton">Start Mining</button>
+	<div class="info">
+		<div class="info-title">Blockchain</div>
+
+		<div class="info-block"></div>
+			<strong>Total work</strong>
+			<span id="bcTotalWork"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Height</strong>
+			<span id="bcHeight"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Accounts Hash</strong>
+			<hash id="bcAccountsHash"></hash>
+		</div>
+	</div>
+
+	<div class="info">
+		<div class="info-title">Head Block</div>
+
+		<div class="info-block"></div>
+			<strong>Hash</strong>
+			<hash id="hdHash"></hash>
+		</div>
+		<div class="info-block"></div>
+			<strong>Prev Hash</strong>
+			<hash id="hdPrevHash"></hash>
+		</div>
+		<div class="info-block"></div>
+			<strong>Accounts Hash</strong>
+			<hash id="hdAccountsHash"></hash>
+		</div>
+		<div class="info-block"></div>
+			<strong>Difficulty</strong>
+			<span id="hdDifficulty"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Timestamp</strong>
+			<span id="hdTimestamp"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Nonce</strong>
+			<span id="hdNonce"></span>
+		</div>
+	</div>
+
+	<div class="info">
+		<div class="info-title">Network</div>
+
+		<div class="info-block"></div>
+			<strong>Peers</strong>
+			<span id="netPeerCount"></span>
+		</div>
+	</div>
+
+	<div class="info">
+		<div class="info-title">Block History</div>
+		<div id="lastBlocks"></div>
+	</div>
+
 
 	<script type="text/javascript">
-		class MinerUI{
-			constructor($){
+		class MinerUI {
+			constructor($) {
 				$.blockchain.on('head-changed', head => this._headChanged(head));
+				$.network.on('peers-changed', () => this._peersChanged());
+
+				this._bcTotalWork = document.querySelector('#bcTotalWork');
+				this._bcHeight = document.querySelector('#bcHeight');
+				this._bcAccountsHash = document.querySelector('#bcAccountsHash');
+
+				this._hdHash = document.querySelector('#hdHash');
+				this._hdPrevHash = document.querySelector('#hdPrevHash');
+				this._hdAccountsHash = document.querySelector('#hdAccountsHash');
+				this._hdDifficulty = document.querySelector('#hdDifficulty');
+				this._hdTimestamp = document.querySelector('#hdTimestamp');
+				this._hdNonce = document.querySelector('#hdNonce');
+
+				this._netPeerCount = document.querySelector('#netPeerCount');
+
 				this._lastBlocks = document.querySelector('#lastBlocks');
+
+				this._headChanged($.blockchain.head);
+				this._peersChanged();
+
+				this._startButton = document.querySelector('#startButton');
+				this._startButton.onclick = e => this._toggleMining($);
 			}
-			_headChanged(head){
+
+			_headChanged(head) {
+				this._bcTotalWork.innerText = $.blockchain.totalWork;
+				this._bcHeight.innerText = $.blockchain.height;
+				this._bcAccountsHash.innerText = $.blockchain.accountsHash.toBase64();
+
+				this._hdHash.innerText = $.blockchain.headHash.toBase64();
+				this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
+				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
+				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
+				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
+				this._hdNonce.innerText = $.blockchain.head.nonce;
+
 				const el = document.createElement('div');
-				el.innerHTML =`<b> ${head.timestamp}</b> prev: ${head.prevHash.toBase64()}`;
+				const date = new Date(head.timestamp * 1000);
+				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
+					+ `nonce=${head.nonce}`;
 				this._lastBlocks.appendChild(el);
+			}
+
+			_toggleMining($){
+				if(!this._isMining){
+					this._isMining = true;
+					$.miner.startWork();
+					this._startButton.innerText = 'Stop Mining';
+				}else{
+					this._isMining = false;
+					$.miner.stopWork();
+					this._startButton.innerText = 'Start Mining';
+				}
+			}
+
+			_peersChanged() {
+				this._netPeerCount.innerText = $.network.peerCount;
 			}
 		}
 		Consensus.test().then( $ => {
