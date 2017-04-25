@@ -1,21 +1,21 @@
-const WebSocket = require('ws');
-
-const wss = new WebSocket.Server({ port: 8080 });
-
-const clients = {};
+wss.channels = {};
 
 wss.on('connection', function connection(ws) {
-  // ws.send(JSON.stringify({usersCount:wss.clients.size}));
-      // send list of connected peers
+  const peerIds = {
+        type: 'peerIds',
+        list: Object.keys(wss.channels)
+  };
+  ws.send(JSON.stringify(peerIds));
+
   ws.on('message', function incoming(data) {
     const message = JSON.parse(data);
     const receiver = message.receiver;
 
     if(message.type === 'register'){
       const sender = message.sender;
-      clients[sender] = ws;
-    } else if(clients[receiver]) {
-      clients[receiver].send(data);
+      wss.channels[sender] = ws;
+    } else if(wss.channels[receiver]) {
+      wss.channels[receiver].send(data);
     }
   });
 
