@@ -62,6 +62,15 @@
 			display: flex;
 			flex-direction: column-reverse;
 		}
+
+		.info-title {
+			font-size: 20pt;
+			margin: 10px 0;
+		}
+
+		hash {
+			font-size: 12px;
+		}
 	</style>
 
 	<div class="info">
@@ -77,24 +86,24 @@
 		</div>
 		<div class="info-block"></div>
 			<strong>Accounts Hash</strong>
-			<span id="bcAccountsHash"></span>
+			<hash id="bcAccountsHash"></hash>
 		</div>
 	</div>
 
 	<div class="info">
-		<div class="info-title">Head</div>
+		<div class="info-title">Head Block</div>
 
 		<div class="info-block"></div>
 			<strong>Hash</strong>
-			<span id="hdHash"></span>
+			<hash id="hdHash"></hash>
 		</div>
 		<div class="info-block"></div>
 			<strong>Prev Hash</strong>
-			<span id="hdPrevHash"></span>
+			<hash id="hdPrevHash"></hash>
 		</div>
 		<div class="info-block"></div>
 			<strong>Accounts Hash</strong>
-			<span id="hdAccountsHash"></span>
+			<hash id="hdAccountsHash"></hash>
 		</div>
 		<div class="info-block"></div>
 			<strong>Difficulty</strong>
@@ -119,8 +128,10 @@
 		</div>
 	</div>
 
-	<div id="lastBlocks"></div>
-
+	<div class="info">
+		<div class="info-title">Block History</div>
+		<div id="lastBlocks"></div>
+	</div>
 
 
 	<script type="text/javascript">
@@ -162,8 +173,8 @@
 
 				const el = document.createElement('div');
 				const date = new Date(head.timestamp * 1000);
-				el.innerHTML =`<b>${date}</b> hash=${$.blockchain.headHash.toBase64()}, `
-					+ `prev=${head.prevHash.toBase64()}, difficulty=${head.difficulty}, `
+				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
 					+ `nonce=${head.nonce}`;
 				this._lastBlocks.appendChild(el);
 			}
