@@ -4,11 +4,38 @@ class ServerConnection extends Observable {
 		//return 'ws://localhost:8080';
 	}
 
+	static get WAIT_TIME_INITIAL() {
+		return 500; // ms
+	}
+	static get WAIT_TIME_MAX() {
+		return 30000; // ms
+	}
+
 	constructor(myPeerId) {
 		super();
-    	this._websocket = new WebSocket(ServerConnection.URL);
-    	this._websocket.onopen = () => this._register(myPeerId);
+		this._myPeerId = myPeerId;
+		this._waitTime = ServerConnection.WAIT_TIME_INITIAL;
+
+		this._connect();
+	}
+
+	_connect() {
+		this._websocket = new WebSocket(ServerConnection.URL);
+    	this._websocket.onopen = () => this._register(this._myPeerId);
     	this._websocket.onmessage = e => this._onMessageFromServer(e);
+
+		// Automatically reconnect to server.
+		this._websocket.onclose = e => this._reconnect();
+		this._websocket.onerror = e => this._reconnect();
+	}
+
+	_reconnect() {
+		// Don't hammer the server with requests, back off.
+		console.log('Disconnected from signaling server, reconnecting in ' + this._waitTime + 'ms');
+
+		setTimeout(this._connect.bind(this), this._waitTime);
+
+		this._waitTime = Math.min(this._waitTime * 2, ServerConnection.WAIT_TIME_MAX);
 	}
 
 	_register(myPeerId) {
@@ -17,7 +44,10 @@ class ServerConnection extends Observable {
 		this.send({
 			type: 'register',
 			sender: myPeerId
-		})
+		});
+
+		// Reset reconnect wait time.
+		this._waitTime = ServerConnection.WAIT_TIME_INITIAL;
 	}
 
 	send(msg) {
@@ -85,20 +115,10 @@ class SignalingChannel extends Observable {
 
 class PeerConnector extends Observable {
 
-	static get CONFIG() {
-		return {
-			iceServers: [
-		        { urls: 'stun:stun.services.mozilla.com' },
-		        { urls: 'stun:stun.l.google.com:19302' }
-		    ]
-		};
-	}
-
 	constructor(signalingChannel) {
 		super();
 		this._signalingChannel = signalingChannel;
     	this._signalingChannel.on('message', msg => this._onMessageFromServer(msg));
-
 		this._peerConnection = new RTCPeerConnection(PeerConnector.CONFIG);
 	    this._peerConnection.onicecandidate = e => this._onIceCandidate(e);
 
@@ -134,7 +154,7 @@ class PeerConnector extends Observable {
     	const channel = event.channel || event.target;
     	const peer = {
     		channel: channel,
-    		userId: this._getUserId()
+    		peerId: this._getPeerId()
     	}
     	this.fire('peer-connected', peer);
 	}
@@ -143,7 +163,7 @@ class PeerConnector extends Observable {
     	console.error(error);
 	}
 
-	_getUserId() {
+	_getPeerId() {
 		const desc = this._peerConnection.remoteDescription;
 		return PeerConnector.sdpToPeerId(desc.sdp);
 	}
@@ -159,6 +179,7 @@ class PeerConnector extends Observable {
 			.slice(1, 32); 								// truncate hash to 16 bytes
 	}
 }
+
 
 
 class OfferCreator extends PeerConnector {
@@ -191,12 +212,27 @@ class PeerPortal extends Observable {
 
 	constructor(desiredPeerCount) {
 		super();
-		this.getMyPeerId().then(peerId => {
-			this._myPeerId = peerId;
-			this.serverConnection = new ServerConnection(this._myPeerId);
-			this.serverConnection.on('offer', offer => this._onOffer(offer));
-			this.serverConnection.on('peers-list', peersList => this._onPeersList(peersList));
-		})
+		this._init();
+	}
+
+	async _init(){
+		this._myCert = await WebrtcCertificate.get();
+
+		// XXX Hack, cleanup!
+		PeerConnector.CONFIG = {
+			iceServers: [
+				{ urls: 'stun:stun.services.mozilla.com' },
+				{ urls: 'stun:stun.l.google.com:19302' }
+			],
+			certificates : [this._myCert]
+		}
+		this._myPeerId = await this.getMyPeerId();
+
+		this.serverConnection = new ServerConnection(this._myPeerId);
+		this.serverConnection.on('offer', offer => this._onOffer(offer));
+		this.serverConnection.on('peers-list', peersList => this._onPeersList(peersList));
+
+		console.log('My PeerId', this._myPeerId);
 	}
 
 	_onPeersList(peersList) {
@@ -205,7 +241,9 @@ class PeerPortal extends Observable {
 			return;
 		}
 
-		// const list = peersList.sort( () => 0.5 - Math.random()).slice(0,12);
+		//console.log('New peers', peersList);
+
+		// TODO Don't connect to already connected peers.
 		peersList.map(peerId => this.createOffer(peerId));
 	}
 
