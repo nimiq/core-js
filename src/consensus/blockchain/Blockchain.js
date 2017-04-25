@@ -56,7 +56,7 @@ class Blockchain extends Observable {
         let hash = await block.hash();
         const path = [hash];
 
-        while (maxBlocks-- && !Block.GENESIS.HASH.equals(hash)) {
+        do {
             const prevChain = await this._store.get(block.prevHash.toBase64());
             if (!prevChain) throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
 
@@ -65,9 +65,9 @@ class Blockchain extends Observable {
             path.unshift(block.prevHash);
 
             // Advance to the predecessor block.
-            block = prevChain.head;
             hash = block.prevHash;
-        }
+            block = prevChain.head;
+        } while (--maxBlocks && !Block.GENESIS.HASH.equals(hash));
 
         return new IndexedArray(path);
     }
@@ -140,7 +140,7 @@ class Blockchain extends Observable {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
             console.log('Blockchain rejecting block, AccountsHash mismatch: current='
-                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), block);
+                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), newChain.head);
             return;
         }
 
@@ -186,7 +186,7 @@ class Blockchain extends Observable {
         // up to the genesis block.
         let forkHead = newChain.head;
         const forkChain = [newChain];
-        while (this._mainChain.indexOf(forkHead.prevHash) < 0) {
+        while (this._mainPath.indexOf(forkHead.prevHash) < 0) {
             const prevChain = await this._store.get(forkHead.prevHash.toBase64());
             if (!prevChain) throw 'Failed to find predecessor block ' + forkHead.prevHash.toBase64() + ' while rebranching';
 
