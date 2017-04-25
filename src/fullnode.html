@@ -145,6 +145,12 @@
 			<strong>Hashrate</strong>
 			<span id="mnrHashrate"></span> H/s
 		</div>
+
+		<div class="info-block"></div>
+			<strong>Last block mined at</strong>
+			<span id="mnrLastBlockTs"></span>
+		</div>
+
 	</div>
 
 
@@ -159,9 +165,11 @@
 			constructor($) {
 				$.blockchain.on('head-changed', head => this._headChanged(head));
 				$.network.on('peers-changed', () => this._peersChanged());
+
 				$.miner.on('start', () => this._minerChanged());
 				$.miner.on('stop', () => this._minerChanged());
 				$.miner.on('hashrate-changed', () => this._minerChanged());
+				$.miner.on('block-mined', () => this._blockMined());
 
 				this._bcTotalWork = document.querySelector('#bcTotalWork');
 				this._bcHeight = document.querySelector('#bcHeight');
@@ -178,6 +186,7 @@
 
 				this._mnrWorking = document.querySelector('#mnrWorking');
 				this._mnrHashrate = document.querySelector('#mnrHashrate');
+				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
 				this._lastBlocks = document.querySelector('#lastBlocks');
 
@@ -228,6 +237,13 @@
 			_minerChanged() {
 				this._mnrWorking.innerText = $.miner.working;
 				this._mnrHashrate.innerText = $.miner.hashrate;
+				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
+					new Date(this._lastBlockMinedTs) : '-';
+			}
+
+			_blockMined() {
+				this._lastBlockMinedTs = Date.now();
+				this._minerChanged();
 			}
 		}
 		Consensus.test().then( $ => {

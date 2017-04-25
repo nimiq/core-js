@@ -108,6 +108,10 @@ class Miner extends Observable {
 				const hash = await nextHeader.hash();
 				console.log('MINED BLOCK!!! nonce=' + nextHeader.nonce + ', difficulty=' + nextHeader.difficulty + ', hash=' + hash.toBase64());
 
+				// Tell listeners that we've mined a block.
+				// TODO we should pass the block here.
+				this.fire('block-mined', nextHeader, this);
+
 				await this._blockchain.pushBlock(new Block(nextHeader,nextBody));
 				return;
 			}
