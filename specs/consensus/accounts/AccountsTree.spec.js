@@ -216,8 +216,8 @@ describe('AccountsTree', () => {
         test();
     });
 
-    it('represents an empty account implicitly',(done) => {
-        //TODO: { value:0, nonce:0 } should not be stored explicitly!!
+    it('represents the inital balance of an account implicitly',(done) => {
+        // Balance { value:0, nonce:0 } may not be stored explicitly
 
         async function test(){
             const tree = await AccountsTree.createVolatile();

@@ -2,7 +2,7 @@
 describe('Accounts', () => {
 
     it('can apply and revert a block', (done) => {
-        expect(true).toBe(false);
+        expect(true).toBe(false,'because we need to hardcode valid blocks into the specs to test this');
         done();
 
         const block = new Block();
@@ -16,7 +16,7 @@ describe('Accounts', () => {
     });
 
     it('put and get an account', (done) => {
-        expect(true).toBe(false);
+        expect(true).toBe(false,'because we need to hardcode valid blocks into the specs to test this');
         done();
         const balance = 42;
         const nonce = 192049;
