@@ -3,7 +3,7 @@ class Miner {
 		this._blockchain = blockchain;
 		this._address = minerAddress || new Address();
 		if (!minerAddress || ! minerAddress instanceof Address) {
-			console.warn('No Miner Address set');
+			console.warn('No miner address set');
 		}
 
 		this._worker = null;
@@ -12,6 +12,12 @@ class Miner {
 	startWork() {
 		this._blockchain.on('head-changed', b => this._onChainHead(b));
 		this._onChainHead(this._blockchain.head);
+	}
+
+	stopWork() {
+		// TODO unregister from head-changed events
+		this._stopWork();
+		console.log('Miner stopped work');
 	}
 
 	async _onChainHead(head) {

@@ -167,7 +167,7 @@ class ConsensusP2PAgent {
             if (!block) continue;
 
             // If the block is not on our main chain, try the next one.
-            // XXX Get rid of linear search on chain.
+            // The mainPath is an IndexedArray with constant-time .indexOf()
             startIndex = mainPath.lastIndexOf(hash);
             if (startIndex < 0) continue;
 

@@ -1,4 +1,4 @@
-// TODO: Implement Block Size Limit 
+// TODO: Implement Block Size Limit
 // TODO V2: Implement total coins limit
 class Policy{
 	static get GENESIS_BLOCK(){
@@ -9,6 +9,6 @@ class Policy{
 			10,1486745275,77)
 	}
 	static get BLOCK_TIME(){return 10 /* in seconds */}
-	static get BLOCK_REWARD(){return Policy.COINS_TO_LOVI(10)}
+	static get BLOCK_REWARD(){return 1}
 	static COINS_TO_LOVI(coins){return coins*1e8}
 }

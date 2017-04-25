@@ -60,12 +60,16 @@ class Blockchain extends Observable {
             const prevChain = await this._store.get(block.prevHash.toBase64());
             if (!prevChain) throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
 
+            // TODO unshift() is inefficient. We should build the array with push()
+            // instead and iterate over it in reverse order.
             path.unshift(block.prevHash);
+
+            // Advance to the predecessor block.
             block = prevChain.head;
             hash = block.prevHash;
         }
 
-        return path;
+        return new IndexedArray(path);
     }
 
     pushBlock(block) {
@@ -102,63 +106,115 @@ class Blockchain extends Observable {
 
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
-            // Check if the block matches the account state.
-            if (this.accountsHash.equals(block.accountsHash)) {
-                // AccountsHash matches, commit the block.
-                await this._accounts.commitBlock(block);
+            // Append new block to the main chain.
+            await this._extend(newChain);
 
-                // Update main chain.
-                this._mainChain = newChain;
-                this._headHash = await newChain.hash();
-                this._mainPath.push(this._headHash);
+            // Tell listeners that the head of the chain has changed.
+            this.fire('head-changed', this.head);
 
-                // Tell listeners that the head of the chain has changed.
-                this.fire('head-changed', this.head);
-            } else {
-                // AccountsHash mismatch.
-                // TODO error handling
-                console.log('Blockchain rejecting block, AccountsHash mismatch: current=' + this.accountsHash.toBase64() + ', block=' + block.accountsHash, block);
-            }
+            return;
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
-        else if (newChain.totalWork > this.totalWork) {
-            // TODO rebranch blockchain
-            throw 'Blockchain rebranching NOT IMPLEMENTED';
+        if (newChain.totalWork > this.totalWork) {
+            // A fork has become the hardest chain, rebranch to it.
+            await this._rebranch(newChain);
+
+            // Tell listeners that the head of the chain has changed.
+            this.fire('head-changed', this.head);
+
+            return;
         }
 
-        // Otherwise, we are creating/extending a fork.
-        else {
-            console.log('Forking blockchain', newChain);
-        }
+        // Otherwise, we are creating/extending a fork. We have stored the block,
+        // the head didn't change, nothing else to do.
+        console.log('Creating/extending fork with block ' + hash.toBase64()
+            + ', height=' + newChain.height + ', totalWork='
+            + newChain.totalWork, newChain);
     }
 
-    async _rebranch(newHead) {
-        console.log('Rebranching BlockChain...');
-        throw 'BlockChain.rebranch() not implemented';
-
-        /*
-        let oldHead = this._mainChain.head;
-        let newBranch = [newHead];
-        while (!oldHead.isSuccessorOf(newBranch[0])) {
-            await this._p2pDB.accounts.revertBlock(oldHead);
-            oldHead = await this._p2pDB.blocks.get(newBranch[0].header.prevHash);
-            newBranch.unshift(oldHead);
+    async _extend(newChain) {
+        // Validate that the block matches the current account state.
+        // XXX This is also enforced by Accounts.commitBlock()
+        if (!this.accountsHash.equals(newChain.head.accountsHash)) {
+            // AccountsHash mismatch. This can happen if someone gives us an
+            // invalid block. TODO error handling
+            console.log('Blockchain rejecting block, AccountsHash mismatch: current='
+                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), block);
+            return;
         }
 
-        for (let block of newBranch) {
-            await this._p2pDB.accounts.commitBlock(block);
+        // AccountsHash matches, commit the block.
+        await this._accounts.commitBlock(newChain.head);
+
+        // Update main chain.
+        const hash = await newChain.hash();
+        this._mainChain = newChain;
+        this._mainPath.push(hash);
+        this._headHash = hash;
+    }
+
+    async _revert() {
+        // Revert the head block of the main chain.
+        await this._accounts.revertBlock(this.head);
+
+        // XXX Sanity check: Assert that the accountsHash now matches the
+        // accountsHash of the current head.
+        if (!this._accounts.hash.equals(this.head.accountsHash)) {
+            throw 'Failed to revert main chain - inconsistent state';
         }
 
-        this._mainChain = newHead;
-        */
+        // Load the predecessor chain.
+        const prevHash = this.head.prevHash;
+        const prevChain = await this._store.get(prevHash.toBase64());
+        if (!prevChain) throw 'Failed to find predecessor block ' + prevHash.toBase64() + ' while reverting';
+
+        // Update main chain.
+        this._mainChain = prevChain;
+        this._mainPath.pop();
+        this._headHash = prevHash;
+    }
+
+    async _rebranch(newChain) {
+        const hash = await newChain.hash();
+        console.log('Rebranching to fork ' + hash.toBase64() + ', height='
+            + newChain.height + ', totalWork=' + newChain.totalWork, newChain);
+
+        // Find the common ancestor between our current main chain and the fork chain.
+        // Walk up the fork chain until we find a block that is part of the main chain.
+        // Store the chain along the way. In the worst case, this walks all the way
+        // up to the genesis block.
+        let forkHead = newChain.head;
+        const forkChain = [newChain];
+        while (this._mainChain.indexOf(forkHead.prevHash) < 0) {
+            const prevChain = await this._store.get(forkHead.prevHash.toBase64());
+            if (!prevChain) throw 'Failed to find predecessor block ' + forkHead.prevHash.toBase64() + ' while rebranching';
+
+            forkHead = prevChain.head;
+            forkChain.unshift(prevChain);
+        }
+
+        // The predecessor of forkHead is the desired common ancestor.
+        const commonAncestor = forkHead.prevHash;
+
+        console.log('Found common ancestor ' + commonAncestor.toBase64() + ' ' + forkChain.length + ' blocks up');
+
+        // Revert all blocks on the current main chain until the common ancestor.
+        while (!this.headHash.equals(commonAncestor)) {
+            await this._revert();
+        }
+
+        // We have reverted to the common ancestor state. Apply all blocks on
+        // the fork chain until we reach the new head.
+        for (let block of forkChain) {
+            await this._extend(block);
+        }
     }
 
     async getBlock(hash) {
         const chain = await this._store.get(hash.toBase64());
         return chain ? chain.head : null;
     }
-
 
     get head() {
         return this._mainChain.head;
