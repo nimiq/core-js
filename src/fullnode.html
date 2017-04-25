@@ -6,65 +6,82 @@
 	<style type="text/css">
 		body{
 			padding: 5% 12%;
-			background: teal;
+			background: #efefef;
 			color: white;
 			font-family: sans-serif;
 		}
-		a{
-			color: white;
-			text-decoration: none;
-		}
 	</style>
-	<!-- <meta http-equiv="Content-Security-Policy: script-src 'sha256-qznLcsROx4GACP2dm0UCKCzCG-HiZ1guq6ZZDob_Tng='"> -->
-	<!-- <link rel="manifest" href="manifest.json"> -->
 </head>
 <body>
-	<script src="src/utils/indexed-db/indexed-db.js"></script>
-	<script src="src/utils/indexed-db/ObjectDB.js"></script>
-	<script src="src/utils/indexed-db/storage-persistence.js"></script>
-	<script src="src/utils/Observable.js"></script>
-	<script src="src/utils/Synchronizer.js"></script>
-	<script src="src/utils/buffer/Buffer.js"></script>
-	<script src="src/utils/buffer/BufferUtils.js"></script>
-	<script src="src/utils/crypto/crypto.js"></script>
-	<script src="src/utils/number/NumberUtils.js"></script>
-	<script src="src/utils/object/ObjectUtils.js"></script>
 
-	<script src="src/consensus/primitive/Primitive.js"></script>
-	<script src="src/consensus/primitive/Hash.js"></script>
-	<script src="src/consensus/primitive/PrivateKey.js"></script>
-	<script src="src/consensus/primitive/PublicKey.js"></script>
-	<script src="src/consensus/primitive/Signature.js"></script>
-	<script src="src/consensus/account/Accounts.js"></script>
-	<script src="src/consensus/account/AccountsTree.js"></script>
-	<script src="src/consensus/account/AccountsTreeStore.js"></script>
-	<script src="src/consensus/account/Address.js"></script>
-	<script src="src/consensus/account/Balance.js"></script>
-	<script src="src/consensus/block/BlockBody.js"></script>
-	<script src="src/consensus/block/BlockHeader.js"></script>
-	<script src="src/consensus/block/Block.js"></script>
-	<script src="src/consensus/blockchain/BlockStore.js"></script>
-	<script src="src/consensus/blockchain/Blockchain.js"></script>
-	<script src="src/consensus/transaction/Transaction.js"></script>
-	<script src="src/consensus/Consensus.js"></script>
 
-	<script src="src/p2p/peer-portal/PeerPortal.js"></script>
-	<script src="src/p2p/structs/InvVector.js"></script>
-	<script src="src/p2p/webrtc/certificate/webrtc-certificate.js"></script>
-	<script src="src/p2p/webrtc/connection/webrtc-connection.js"></script>
-	<script src="src/p2p/P2PAgent.js"></script>
-	<script src="src/p2p/P2PChannel.js"></script>
-	<script src="src/p2p/P2PMessage.js"></script>
-	<script src="src/p2p/P2PMessageFactory.js"></script>
-	<script src="src/p2p/P2PNetwork.js"></script>
-	<script src="src/wallet/wallet.js"></script>
-	<script src="src/miner/miner.js"></script>
-	<script src="src/miner/policy.js"></script>
 
-	<script src="src/core.js"></script>
 
-	<h1>&#120131;ovicash</h1>
-	<h3>Open the dev tools to get started.</h3>
-	<a href='/'>Test Directory Index</a>
+
+
+
+
+
+
+	<script src="utils/indexed-db/IndexedDB.js"></script>
+	<script src="utils/indexed-db/ObjectDB.js"></script>
+	<script src="utils/indexed-db/storage-persistence.js"></script>
+	<script src="utils/Observable.js"></script>
+	<script src="utils/Synchronizer.js"></script>
+	<script src="utils/array/IndexedArray.js"></script>
+	<script src="utils/buffer/Buffer.js"></script>
+	<script src="utils/buffer/BufferUtils.js"></script>
+	<script src="utils/crypto/crypto.js"></script>
+	<script src="utils/number/NumberUtils.js"></script>
+	<script src="utils/object/ObjectUtils.js"></script>
+	<script src="consensus/primitive/Primitive.js"></script>
+	<script src="consensus/primitive/Hash.js"></script>
+	<script src="consensus/primitive/PrivateKey.js"></script>
+	<script src="consensus/primitive/PublicKey.js"></script>
+	<script src="consensus/primitive/Signature.js"></script>
+	<script src="consensus/account/Accounts.js"></script>
+	<script src="consensus/account/AccountsTree.js"></script>
+	<script src="consensus/account/AccountsTreeStore.js"></script>
+	<script src="consensus/account/Address.js"></script>
+	<script src="consensus/account/Balance.js"></script>
+	<script src="consensus/block/BlockBody.js"></script>
+	<script src="consensus/block/BlockHeader.js"></script>
+	<script src="consensus/block/Block.js"></script>
+	<script src="p2p/message/P2PMessage.js"></script>
+	<script src="p2p/message/BlockP2PMessage.js"></script>
+	<script src="p2p/message/GetBlocksP2PMessage.js"></script>
+	<script src="p2p/message/InventoryP2PMessage.js"></script>
+	<script src="p2p/message/VersionP2PMessage.js"></script>
+	<script src="p2p/message/P2PMessageFactory.js"></script>
+	<script src="p2p/webrtc/certificate/webrtc-certificate.js"></script>
+	<script src="p2p/webrtc/peer-portal/PeerPortal.js"></script>
+	<script src="p2p/P2PAgent.js"></script>
+	<script src="p2p/P2PChannel.js"></script>
+	<script src="p2p/P2PNetwork.js"></script>
+	<script src="p2p/struct/InvVector.js"></script>
+	<script src="consensus/Consensus.js"></script>
+	<script src="miner/Miner.js"></script>
+	<script src="miner/old-miner.js"></script>
+	<script src="miner/policy.js"></script>
+	<script src="wallet/Wallet.js"></script>
+	<script src="consensus/blockchain/Blockchain.js"></script>
+	<script src="consensus/blockchain/BlockchainStore.js"></script>
+	<script src="consensus/transaction/Transaction.js"></script>
+	<script src="core.js"></script>
+	
+
+
+
+	<script type="text/javascript">
+		class MinerUI{
+			constructor($){
+				
+				$.blockchain.on('head-changed', head => this._headChanged(head));
+			}
+			_headChanged(head){
+
+			}
+		}	
+	</script>
 </body>
 </html>

@@ -224,9 +224,3 @@ class PeerPortal extends Observable{
 	}
 }
 
-
-
-const portal = new PeerPortal();
-
-
-
