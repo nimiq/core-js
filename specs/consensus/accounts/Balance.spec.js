@@ -1,5 +1,25 @@
 describe('Balance', () => {
 
+    it('must have a well defined value (8 bytes)', () => {
+        const value = -42;
+        const nonce = 1;
+        
+        expect( () => { 
+            const balance = new Balance(value,nonce);
+        }).toThrow('Malformed value');
+    });
+
+    it('must have a well defined nonce (4 bytes)', () => {
+        const value = 1;
+        
+        expect( () => { 
+            const balance = new Balance(value,-1);
+        }).toThrow('Malformed nonce');
+        expect( () => { 
+            const balance = new Balance(value,Number.MAX_SAFE_INTEGER);
+        }).toThrow('Malformed nonce');
+    });
+
     it('is serializable and unserializable', () => {
     	const value = 42;
     	const nonce = 1;
@@ -9,23 +29,4 @@ describe('Balance', () => {
 		expect(balance2.value).toEqual(value);
 		expect(balance2.nonce).toEqual(nonce);
     });
-
-    it('may not have a negative value', () => {
-        const value = -42;
-        const nonce = 1;
-    	
-    	expect( () => { 
-    		const balance = new Balance(value,nonce);
-    	}).toThrow('Malformed value');
-    });
-
-    it('may not have a negative nonce', () => {
-        const value = 1;
-    	const nonce = -42;
-    	
-    	expect( () => { 
-    		const balance = new Balance(value,nonce);
-    	}).toThrow('Malformed nonce');
-    });
-
 });

@@ -24,43 +24,6 @@ describe('BlockHeader', () => {
         expect(serialized.byteLength).toBe(116);
     });
 
-    it('is serializable and unserializable', () => {
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
-        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-
-        expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);
-        expect(blockHeader2.bodyHash.equals(bodyHash)).toBe(true);
-        expect(blockHeader2.accountsHash.equals(accountsHash)).toBe(true);
-        expect(blockHeader2.difficulty).toBe(difficulty);
-        expect(blockHeader2.timestamp).toBe(timestamp);
-    }); 
-
-    it('nonce is 8 bytes long', () => {
-        const nonce1 = NumberUtils.UINT64_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce1);
-        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-        const nonce2 = blockHeader2.nonce;
-
-        expect(nonce2).toBe(nonce1);
-    });   
-
-    it('difficulty is 4 bytes long', () => {
-        const difficulty1 = NumberUtils.UINT32_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty1, timestamp, nonce);
-        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-        const difficulty2 = blockHeader2.difficulty;
-
-        expect(difficulty2).toBe(difficulty1);
-    });  
-
-     it('timestamp is 8 bytes long', () => {
-        const timestamp1 = NumberUtils.UINT64_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp1, nonce);
-        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-        const timestamp2 = blockHeader2.timestamp;
-
-        expect(timestamp2).toBe(timestamp1);
-    });
 
     it('must have a well defined prevHash (32 bytes)', () => {
         expect( () => {
@@ -124,6 +87,44 @@ describe('BlockHeader', () => {
             const test5 = new BlockHeader(prevHash,bodyHash,new Uint8Array(32),difficulty, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
     });  
+
+    it('must have a well defined nonce (8 bytes)', () => {
+        const nonce1 = NumberUtils.UINT64_MAX;
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce1);
+        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
+        const nonce2 = blockHeader2.nonce;
+
+        expect(nonce2).toBe(nonce1);
+    });   
+
+    it('must have a well defined difficulty (4 bytes)', () => {
+        const difficulty1 = NumberUtils.UINT32_MAX;
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty1, timestamp, nonce);
+        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
+        const difficulty2 = blockHeader2.difficulty;
+
+        expect(difficulty2).toBe(difficulty1);
+    });  
+
+     it('must have a well defined timestamp (8 bytes)', () => {
+        const timestamp1 = NumberUtils.UINT64_MAX;
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp1, nonce);
+        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
+        const timestamp2 = blockHeader2.timestamp;
+
+        expect(timestamp2).toBe(timestamp1);
+    });
+
+    it('is serializable and unserializable', () => {
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
+        const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
+
+        expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);
+        expect(blockHeader2.bodyHash.equals(bodyHash)).toBe(true);
+        expect(blockHeader2.accountsHash.equals(accountsHash)).toBe(true);
+        expect(blockHeader2.difficulty).toBe(difficulty);
+        expect(blockHeader2.timestamp).toBe(timestamp);
+    }); 
 
     it('can falsify an invalid proof-of-work', (done) => {
         const blockHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);

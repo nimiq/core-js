@@ -21,16 +21,6 @@ describe('RawTransaction', () => {
         expect(serialized.byteLength).toBe(101);
     });
 
-    it('is serializable and unserializable', () => {
-    	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
-    	const tx2 = RawTransaction.unserialize(tx1.serialize());
-
-    	expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
-    	expect(tx2.recipientAddr.equals(recipientAddr)).toEqual(true);
-    	expect(tx2.value).toEqual(value);
-    	expect(tx2.fee).toEqual(fee);
-    	expect(tx2.nonce).toEqual(nonce);
-    });
     
     it('must have a well defined senderPubKey (65 bytes)', () => {
         expect( () => {
@@ -50,6 +40,9 @@ describe('RawTransaction', () => {
         }).toThrow('Malformed senderPubKey');
         expect( () => {
             const test5 = new RawTransaction(new Uint8Array(65),recipientAddr,value,fee,nonce);
+        }).toThrow('Malformed senderPubKey');
+        expect( () => {
+            const test5 = new RawTransaction(new ArrayBuffer(65),recipientAddr,value,fee,nonce);
         }).toThrow('Malformed senderPubKey');
     });  
 
@@ -143,6 +136,17 @@ describe('RawTransaction', () => {
         }).toThrow('Malformed nonce');
 
     });  
+   
+    it('is serializable and unserializable', () => {
+    	const tx1 = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
+    	const tx2 = RawTransaction.unserialize(tx1.serialize());
+
+    	expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
+    	expect(tx2.recipientAddr.equals(recipientAddr)).toEqual(true);
+    	expect(tx2.value).toEqual(value);
+    	expect(tx2.fee).toEqual(fee);
+    	expect(tx2.nonce).toEqual(nonce);
+    });
 });
 
 
@@ -174,6 +178,27 @@ describe('Transaction', () => {
         expect(serialized.byteLength).toBe(165);
     });
 
+    it('must have a well defined signature (64 bytes)', () => {
+        expect( () => {
+            const test1 = new Transaction(rawTx, undefined);
+        }).toThrow('Malformed signature');
+        expect( () => {
+            const test2 = new Transaction(rawTx, null);
+        }).toThrow('Malformed signature');
+        expect( () => {
+            const test3 = new Transaction(rawTx, true);
+        }).toThrow('Malformed signature');
+        expect( () => {
+            const test4 = new Transaction(rawTx, -20);
+        }).toThrow('Malformed signature');
+        expect( () => {
+            const test5 = new Transaction(rawTx, new Uint8Array(64));
+        }).toThrow('Malformed signature');
+        expect( () => {
+            const test5 = new Transaction(rawTx, new ArrayBuffer(64));
+        }).toThrow('Malformed signature');
+    });  
+
     it('is serializable and unserializable', () => {
         const tx1 = new Transaction(rawTx,signature);
         const tx2 = Transaction.unserialize(tx1.serialize());
@@ -186,18 +211,26 @@ describe('Transaction', () => {
         expect(tx2.nonce).toEqual(nonce);
     });
 
+    it('can serialize its RawTransaction data to verify its signature', () => {
+        const tx1 = new Transaction(rawTx,signature);
+        const serialized1 = rawTx.serialize();
+        const serialized2 = tx1.serializeRawTransaction();
+        expect(serialized2.byteLength).toBe(serialized1.byteLength);
+        expect(BufferUtils.equals(serialized1,serialized2)).toBe(true);
+    });
+
     it('can falsify an invalid signature', (done) => {
         const tx1 = new Transaction(rawTx,signature);
-        
         tx1.verify()
-            .then( () => {})
-            .catch(e => {
-                expect(e).toEqual('Invalid signature');
-                done();
+            .then( isValid => {
+                expect(isValid).toBe(false); 
+                done(); 
             })
     })
 
     it('can verify a valid signature', (done) => {
-        expect(true).toBe(false,'because we need to hardcode a signed signature into the specs')
-    })
+        expect(true).toBe(false,'because we need to hardcode a signed signature into the specs');
+        done();
+    });
+
 });

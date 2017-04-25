@@ -1,13 +1,5 @@
 describe('Block', () => {
 
-    it('is serializable and unserializable', () => {
-      const block1 = Dummy.block1;
-      const size = block1.header.serializedSize + block1.body.serializedSize;
-      const block2 = Block.unserialize(block1.serialize());
-
-      expect(block2.serializedSize).toBe(size);
-      expect(BufferUtils.equals(block1,block2)).toBe(true);
-    });
 
     it('must have a well defined header (116 bytes)', () => {
         expect( () => {
@@ -51,5 +43,14 @@ describe('Block', () => {
         expect( () => {
             const test1 = new Block(Dummy.header1, Dummy.block1);
         }).toThrow('Malformed body');
+    });
+
+    it('is serializable and unserializable', () => {
+      const block1 = Dummy.block1;
+      const size = block1.header.serializedSize + block1.body.serializedSize;
+      const block2 = Block.unserialize(block1.serialize());
+
+      expect(block2.serializedSize).toBe(size);
+      expect(BufferUtils.equals(block1,block2)).toBe(true);
     });
 });

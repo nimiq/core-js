@@ -81,7 +81,7 @@ class Transaction extends RawTransaction {
     constructor(rawTransaction, signature) {
         super(rawTransaction.senderPubKey, rawTransaction.recipientAddr,
             rawTransaction.value, rawTransaction.fee, rawTransaction.nonce);
-        if (!(signature instanceof Signature)) throw 'Malformed Signature';
+        if (!(signature instanceof Signature)) throw 'Malformed signature';
         this._signature = signature;
 
         Object.freeze(this);
@@ -102,10 +102,13 @@ class Transaction extends RawTransaction {
     }
 
     verify(){
-        return Crypto.verify(this._senderPubKey, this._signature, super.serialize())
-            .then( success => {
-                if (!success) throw 'Invalid signature';
-            });
+        return Crypto.verify(this._senderPubKey, this._signature, this.serializeRawTransaction());
+    }
+
+    serializeRawTransaction(){
+        // TODO: this is an ugly fix. 
+        // RawTransaction.serialize calls this.serializedSize and creates a Buffer for a full Transaction 
+        return super.serialize(new Buffer(101));
     }
 
     serialize(buf) {

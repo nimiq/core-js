@@ -1,11 +1,5 @@
 var gulp = require('gulp');
 
-var paths = {
-    src: ['src/**/*.js'],
-    spec: 'specs/**/*.spec.js',
-    build: ' TODO '
-}
-
 /*
  *
  * Test
@@ -32,7 +26,9 @@ gulp.task('default', function() {
             'src/p2p/**/*.js',
             'src/*/**/*.js',
         	'src/*.js',
-        	'specs/**/*.spec.js']
+            'specs/**/Dummy.spec.js',
+        	'specs/**/*.spec.js'
+        ]
     }));
 });
 
