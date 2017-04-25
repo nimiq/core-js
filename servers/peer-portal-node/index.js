@@ -2,23 +2,21 @@ const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Broadcast to all.
-wss.broadcast = function broadcast(data) {
-  wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  });
-};
+const clients = {};
 
 wss.on('connection', function connection(ws) {
-  ws.send(JSON.stringify({usersCount:wss.clients.size}));
+  // ws.send(JSON.stringify({usersCount:wss.clients.size}));
+      // send list of connected peers
   ws.on('message', function incoming(data) {
-    // Broadcast to everyone else.
-    wss.clients.forEach(function each(client) {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
+    const message = JSON.parse(data);
+    const receiver = message.receiver;
+
+    if(message.type === 'register'){
+      const sender = message.sender;
+      clients[sender] = ws;
+    } else if(clients[receiver]) {
+      clients[receiver].send(data);
+    }
   });
+
 });
