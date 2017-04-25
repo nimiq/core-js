@@ -56,6 +56,24 @@ gulp.task('sectests', function() {
     }));
 });
 
+
+var concat = require('gulp-concat');
+ 
+gulp.task('build', function() {
+  return gulp.src([
+        './src/utils/**/*.js',
+        './src/consensus/primitive/Primitive.js', 
+        './src/consensus/primitive/**/*.js', 
+        './src/consensus/block/BlockHeader.js', 
+        './src/consensus/block/BlockBody.js', 
+        './src/p2p/message/P2PMessage.js', 
+        './src/p2p/message/VersionP2PMessage.js', 
+        './src/consensus/account/Address.js', 
+        './src/**/*.js'])
+    .pipe(concat('nimiq.js'))
+    .pipe(gulp.dest('./'));
+});
+
 // gulp.task('watch', function() {
 //     gulp.run('build');
 //     gulp.watch(paths.src, ['build']);

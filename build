@@ -1,3 +1,10 @@
-cat `find src -name '*.js'` > lovicash.js
-cp src/fullnode.html index.html
-perl -i -p0e 's/<!--beginjs.*?endjs-->/<script src="lovicash.js" async><\/script>/s' index.html
+cat `find src/utils -name '*.js'` > nimiq.js
+cat `find src/consensus/primitive -name '*.js'` >> nimiq.js
+cat `find src/consensus -name '*.js'` >> nimiq.js
+cat `find src/p2p -name '*.js'` >> nimiq.js
+cat `find src/wallet -name '*.js'` >> nimiq.js
+cat `find src/miner -name '*.js'` >> nimiq.js
+
+
+# cp src/fullnode.html index.html
+# perl -i -p0e 's/<!--beginjs.*?endjs-->/<script src="nimiq.js" async><\/script>/s' index.html
