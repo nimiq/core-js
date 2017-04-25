@@ -12,6 +12,7 @@ class ServerConnection extends Observable{
 
 	_register(myPeerId){
 		this._myPeerId = myPeerId;
+		this.fire('ready');
 		this.send({
 			type:'register',
 			sender: myPeerId

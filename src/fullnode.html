@@ -3,26 +3,8 @@
 <head>
 	<meta charset="utf-8"/>
 	<title>Lovicash: A web-based peer-to-peer Electronic Cash System</title>
-	<style type="text/css">
-		body{
-			padding: 5% 12%;
-			background: #efefef;
-			color: white;
-			font-family: sans-serif;
-		}
-	</style>
 </head>
 <body>
-
-
-
-
-
-
-
-
-
-
 	<script src="utils/indexed-db/IndexedDB.js"></script>
 	<script src="utils/indexed-db/ObjectDB.js"></script>
 	<script src="utils/indexed-db/storage-persistence.js"></script>
@@ -67,21 +49,41 @@
 	<script src="consensus/blockchain/Blockchain.js"></script>
 	<script src="consensus/blockchain/BlockchainStore.js"></script>
 	<script src="consensus/transaction/Transaction.js"></script>
-	<script src="core.js"></script>
+	<!-- <script src="core.js"></script> -->
 	
 
+	<style type="text/css">
+		body{
+			padding: 5% 12%;
+			background: #efefef;
+			font-family: sans-serif;
+		}
 
+		#lastBlocks{
+			display: flex;
+			flex-direction: column-reverse;
+		}
+	</style>
+	<div id="lastBlocks"></div>
 
 	<script type="text/javascript">
 		class MinerUI{
 			constructor($){
-				
 				$.blockchain.on('head-changed', head => this._headChanged(head));
+				this._lastBlocks = document.querySelector('#lastBlocks');
 			}
 			_headChanged(head){
-
+				console.log('UIUUIUIUI',head);
+				const el = document.createElement('div');
+				el.innerHTML =`<b> ${head.timestamp}</b> prev: ${head.prevHash.toBase64()}`;
+				this._lastBlocks.appendChild(el);
 			}
 		}	
+		Consensus.test().then( $ => {
+			window.$ = $;
+			const ui = new MinerUI($);
+		});
+
 	</script>
 </body>
 </html>
