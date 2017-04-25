@@ -216,5 +216,36 @@ describe('AccountsTree', () => {
         test();
     });
 
+    it('represents an empty account implicitly',(done) => {
+        //TODO: { value:0, nonce:0 } should not be stored explicitly!!
+
+        async function test(){
+            const tree = await AccountsTree.createVolatile();
+
+            const value1 = 8;
+            const nonce1 = 8;
+            const balance1 = new Balance(value1, nonce1);
+            const address1 = new Address(Dummy.address1);
+
+            const value2 = 88;
+            const nonce2 = 88;
+            const balance2 = new Balance(value2, nonce2);
+            const address2 = new Address(Dummy.address2);
+
+
+            await tree.put(address1,balance1);
+            const root1 = tree.root.toBase64();
+
+            await tree.put(address2,balance2);
+            await tree.put(address2,new Balance(0,0));
+
+            const root2 = tree.root.toBase64();
+            expect(root2).toEqual(root1);
+
+            done();
+        }
+
+        test();
+    })
 
 });
