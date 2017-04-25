@@ -73,12 +73,11 @@
 				this._lastBlocks = document.querySelector('#lastBlocks');
 			}
 			_headChanged(head){
-				console.log('UIUUIUIUI',head);
 				const el = document.createElement('div');
 				el.innerHTML =`<b> ${head.timestamp}</b> prev: ${head.prevHash.toBase64()}`;
 				this._lastBlocks.appendChild(el);
 			}
-		}	
+		}
 		Consensus.test().then( $ => {
 			window.$ = $;
 			const ui = new MinerUI($);
