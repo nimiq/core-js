@@ -16,13 +16,13 @@ class IndexedArray {
 
     get(target, key) {
         // Forward index access (e.g. arr[5]) to underlying array.
-        if (Number.isInteger(key)) {
+        if (!isNaN(key)) {
             return target[key];
         }
 
         // Forward "public" properties of IndexedArray to 'this' (push(), pop() ...).
         if (this[key] && key[0] !== '_') {
-            return this[key].bind(this);
+            return this[key].bind ? this[key].bind(this) : this[key];
         }
     }
 
@@ -41,5 +41,9 @@ class IndexedArray {
 
     indexOf(value) {
         return this._index[value] >= 0 ? this._index[value] : -1;
+    }
+
+    get length() {
+        return this._array.length;
     }
 }

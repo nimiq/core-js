@@ -168,7 +168,7 @@ class ConsensusP2PAgent {
 
             // If the block is not on our main chain, try the next one.
             // The mainPath is an IndexedArray with constant-time .indexOf()
-            startIndex = mainPath.lastIndexOf(hash);
+            startIndex = mainPath.indexOf(hash);
             if (startIndex < 0) continue;
 
             // We found a block, ignore remaining block locator hashes.
