@@ -38,7 +38,8 @@ class ObjectDB extends RawIndexedDB {
 
     async delete(obj) {
         const key = await this.key(obj);
-        return await super.delete(key);
+        await super.delete(key);
+        return key;
     }
 
     async transaction() {

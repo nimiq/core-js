@@ -65,6 +65,14 @@ class Block {
 		return this._header.nonce;
 	}
 
+	get minerAddr() {
+		return this._body.minerAddr;
+	}
+
+	get transactions() {
+		return this._body.transactions;
+	}
+
 	hash() {
 		return this._header.hash();
 	}

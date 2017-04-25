@@ -27,28 +27,28 @@ class AccountsTree {
         return this;
     }
 
-    put(accountAddr, accountState) {
+    put(address, balance) {
         return new Promise( (resolve, error) => {
             this._synchronizer.push( _ => {
-                return this._put(accountAddr, accountState);
+                return this._put(address, balance);
             }, resolve, error);
         })
     }
 
-    async _put(accountAddr, accountState) {
+    async _put(address, balance) {
         // Fetch the root node. This should never fail.
         const rootNode = await this._store.get(this._rootKey);
 
-        // Insert accountState into the tree at accountAddr.
-        return await this._insert(rootNode, accountAddr, accountState, []);
+        // Insert balance into the tree at address.
+        return await this._insert(rootNode, address, balance, []);
     }
 
-    async _insert(node, accountAddr, accountState, rootPath) {
+    async _insert(node, address, balance, rootPath) {
         // Find common prefix between node and new address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, accountAddr);
+        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
 
         // Cut common prefix off the new address.
-        accountAddr = accountAddr.subarray(commonPrefix.length);
+        address = address.subarray(commonPrefix.length);
 
         // If the node prefix does not fully match the new address, split the node.
         if (commonPrefix.length !== node.prefix.length) {
@@ -58,7 +58,7 @@ class AccountsTree {
             const nodeKey = await this._store.put(node);
 
             // Insert the new account node.
-            const newChild = new AccountsTreeNode(accountAddr, accountState);
+            const newChild = new AccountsTreeNode(address, balance);
             const newChildKey = await this._store.put(newChild);
 
             // Insert the new parent node.
@@ -71,25 +71,37 @@ class AccountsTree {
         }
 
         // If the remaining address is empty, we have found an (existing) node
-        // with the given address. Update the account state.
-        if (!accountAddr.length) {
+        // with the given address. Update the balance.
+        if (!address.length) {
+            // Delete the existing node.
             await this._store.delete(node);
-            node.accountState = accountState;
+
+            // Special case: If the new balance is the initial balance
+            // (i.e. balance=0, nonce=0), it is like the account never existed
+            // in the first place. Delete the node in this case.
+            if (Balance.INITIAL.equals(balance)) {
+                // We have already deleted the node, remove the subtree it was on.
+                return await this._prune(node.prefix, rootPath);
+            }
+
+            // Update the balance.
+            node.balance = balance;
             const nodeKey = await this._store.put(node);
+
             return await this._updateKeys(node.prefix, nodeKey, rootPath);
         }
 
         // If the node prefix matches and there are address bytes left, descend into
         // the matching child node if one exists.
-        const childKey = node.getChild(accountAddr);
+        const childKey = node.getChild(address);
         if (childKey) {
             const childNode = await this._store.get(childKey);
             rootPath.push(node);
-            return await this._insert(childNode, accountAddr, accountState, rootPath);
+            return await this._insert(childNode, address, balance, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
-        const newChild = new AccountsTreeNode(accountAddr, accountState);
+        const newChild = new AccountsTreeNode(address, balance);
         const newChildKey = await this._store.put(newChild);
 
         await this._store.delete(node);
@@ -99,7 +111,32 @@ class AccountsTree {
         return await this._updateKeys(node.prefix, nodeKey, rootPath);
     }
 
+    async _prune(prefix, rootPath) {
+        // Walk along the rootPath towards the root node starting with the
+        // immediate predecessor of the node specified by 'prefix'.
+        let i = rootPath.length - 1;
+        for (; i >= 0; --i) {
+            const node = rootPath[i];
+            let nodeKey = await this._store.delete(node);
+
+            node.removeChild(prefix);
+
+            // If the node has children left, update it and all keys on the
+            // remaining root path. Pruning finished.
+            // XXX Special case: We start with an empty root node. Don't delete it.
+            if (node.hasChildren() || nodeKey === this._rootKey) {
+                nodeKey = await this._store.put(node);
+                return await this._updateKeys(node.prefix, nodeKey, rootPath.slice(0, i));
+            }
+
+            // The node has no children left, continue pruning.
+            prefix = node.prefix;
+        }
+    }
+
     async _updateKeys(prefix, nodeKey, rootPath) {
+        // Walk along the rootPath towards the root node starting with the
+        // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
@@ -117,32 +154,32 @@ class AccountsTree {
         return this._rootKey;
     }
 
-    async get(accountAddr) {
+    async get(address) {
         if (!this._rootKey) return;
         const rootNode = await this._store.get(this._rootKey);
-        return await this._retrieve(rootNode, accountAddr);
+        return await this._retrieve(rootNode, address);
     }
 
-    async _retrieve(node, accountAddr) {
+    async _retrieve(node, address) {
         // Find common prefix between node and requested address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, accountAddr);
+        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
 
         // If the prefix does not fully match, the requested address is not part
         // of this node.
         if (commonPrefix.length !== node.prefix.length) return false;
 
         // Cut common prefix off the new address.
-        accountAddr = accountAddr.subarray(commonPrefix.length);
+        address = address.subarray(commonPrefix.length);
 
         // If the address remaining address is empty, we have found the requested
         // node.
-        if (!accountAddr.length) return node.accountState;
+        if (!address.length) return node.balance;
 
         // Descend into the matching child node if one exists.
-        const childKey = node.getChild(accountAddr);
+        const childKey = node.getChild(address);
         if (childKey) {
           const childNode = await this._store.get(childKey);
-          return await this._retrieve(childNode, accountAddr);
+          return await this._retrieve(childNode, address);
         }
 
         // No matching child exists, the requested address is not part of this node.
@@ -166,16 +203,16 @@ class AccountsTree {
 }
 
 class AccountsTreeNode {
-    constructor(prefix = new Uint8Array(), accountState, children) {
+    constructor(prefix = new Uint8Array(), balance, children) {
         this.prefix = prefix;
-        this.accountState = accountState;
+        this.balance = balance;
         this.children = children;
     }
 
     static cast(o) {
         if (!o) return o;
         ObjectUtils.cast(o, AccountsTreeNode);
-        Balance.cast(o.accountState);
+        Balance.cast(o.balance);
         return o;
     }
 
@@ -188,18 +225,26 @@ class AccountsTreeNode {
         this.children[prefix[0]] = child;
     }
 
+    removeChild(prefix) {
+        if (this.children) delete this.children[prefix[0]];
+    }
+
+    hasChildren() {
+        return this.children && this.children.some( child => !!child);
+    }
+
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
         // node type: branch node = 0x00, terminal node = 0xff
-        buf.writeUint8(this.accountState ? 0xff : 0x00);
+        buf.writeUint8(this.balance ? 0xff : 0x00);
         // prefix length
         buf.writeUint8(this.prefix.byteLength);
         // prefix
         buf.write(this.prefix);
 
-        if (this.accountState) {
+        if (this.balance) {
             // terminal node
-            this.accountState.serialize(buf);
+            this.balance.serialize(buf);
         } else if (this.children) {
             // branch node
             for (let i = 0; i < this.children.length; ++i) {
@@ -216,8 +261,11 @@ class AccountsTreeNode {
         return /*type*/ 1
             + /*prefixLength*/ 1
             + this.prefix.byteLength
-            + (this.accountState ? this.accountState.serializedSize : 0)
-            + (this.children ? this.children.length * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
+            + (this.balance ? this.balance.serializedSize : 0)
+            // The children array contains undefined values for non existant children.
+            // Only count existing ones.
+            + (this.children ? this.children.reduce( (count, val) => count + !!val, 0)
+                * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
     }
 
     hash() {

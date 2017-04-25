@@ -36,4 +36,11 @@ class Balance {
     get nonce() {
         return this._nonce;
     }
+
+    equals(o) {
+        return o instanceof Balance
+            && this._value === o.value
+            && this._nonce === o.nonce;
+    }
 }
+Balance.INITIAL = new Balance();
