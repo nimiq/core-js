@@ -191,7 +191,7 @@ class ConsensusP2PAgent {
         // after the identified block on the main chain.
         const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
         const vectors = [];
-        for (let i = startIndex; i <= stopIndex; ++i) {
+        for (let i = startIndex + 1; i <= stopIndex; ++i) {
             vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
         }
 

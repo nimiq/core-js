@@ -26,13 +26,13 @@ class ServerConnection extends Observable{
 		const msg = JSON.parse(e.data);
 		if(msg.type == 'peerIds'){
 			this._onListofPeers(msg);
-			return; 
-		}
-		if(msg.payload && msg.payload.type === 'offer'){
-			this._onOffer(msg); 
 			return;
 		}
-		this._onMessage(msg); 
+		if(msg.payload && msg.payload.type === 'offer'){
+			this._onOffer(msg);
+			return;
+		}
+		this._onMessage(msg);
 	}
 
 	_onListofPeers(msg){
@@ -220,13 +220,6 @@ class PeerPortal extends Observable{
 		conn.createDataChannel('test');
 		return conn.createOffer().then(desc => {
 			return PeerConnector.sdpToPeerId(desc.sdp);
-		})		
+		})
 	}
 }
-
-
-
-const portal = new PeerPortal();
-
-
-

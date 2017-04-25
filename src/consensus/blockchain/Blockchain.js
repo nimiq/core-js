@@ -56,6 +56,10 @@ class Blockchain extends Observable {
         let hash = await block.hash();
         const path = [hash];
 
+        if (Block.GENESIS.HASH.equals(hash)) {
+            return new IndexedArray(path);
+        }
+
         do {
             const prevChain = await this._store.get(block.prevHash.toBase64());
             if (!prevChain) throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
