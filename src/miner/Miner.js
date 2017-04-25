@@ -7,10 +7,18 @@ class Miner {
 		}
 
 		this._worker = null;
+
+		this._hashCount = 0;
+		this._hashrate = 0;
+		this._hashrateWorker = null;
 	}
 
 	startWork() {
-		this._blockchain.on('head-changed', b => this._onChainHead(b));
+		this._blockchain.on('head-changed', head => this._onChainHead(head));
+
+		this._hashCount = 0;
+		this._hashrateWorker = setInterval( () => this._updateHashrate(), 5000);
+
 		this._onChainHead(this._blockchain.head);
 	}
 
@@ -20,8 +28,24 @@ class Miner {
 		console.log('Miner stopped work');
 	}
 
+	_stopWork() {
+		if (this._worker) {
+			clearTimeout(this._worker);
+			this._worker = null;
+		}
+		if (this._hashrateWorker) {
+			clearInterval(this._hashrateWorker);
+			this._hashrateWorker = null;
+		}
+
+		this._hashCount = 0;
+		this._hashrate = 0;
+	}
+
 	async _onChainHead(head) {
-		this._stopWork();
+		if (this._worker) {
+			clearTimeout(this._worker);
+		}
 
 		const nextBody = await this._getNextBody();
 
@@ -36,26 +60,37 @@ class Miner {
 
 		const nextHeader = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
 
-		this._worker = setInterval( () => this._workOnHeader(nextHeader, nextBody), 0);
+		this._worker = setTimeout( () => this._workOnHeader(nextHeader, nextBody), 0);
 	}
 
 	async _workOnHeader(nextHeader, nextBody) {
-		const isPoW = await nextHeader.verify();
-		if (isPoW) {
-			const hash = await nextHeader.hash();
-			console.log('MINED BLOCK!!! nonce=' + nextHeader.nonce + ', difficulty=' + nextHeader.difficulty + ', hash=' + hash.toBase64());
+		// If the blockchain head has changed in the meantime, abort.
+		if (!this._blockchain.headHash.equals(nextHeader.prevHash)) {
+			return;
+		}
 
-			this._stopWork();
-			await this._blockchain.pushBlock(new Block(nextHeader,nextBody));
-		} else {
+		for (let i = 0; i < 75; ++i) {
+			let isPoW = await nextHeader.verify();
+			this._hashCount++;
+
+			if (isPoW) {
+				const hash = await nextHeader.hash();
+				console.log('MINED BLOCK!!! nonce=' + nextHeader.nonce + ', difficulty=' + nextHeader.difficulty + ', hash=' + hash.toBase64());
+
+				await this._blockchain.pushBlock(new Block(nextHeader,nextBody));
+				return;
+			}
+
 			nextHeader.nonce += 1;
 		}
+
+		this._worker = setTimeout( () => this._workOnHeader(nextHeader, nextBody), 0);
 	}
 
-	_stopWork() {
-		if(this._worker) {
-			clearInterval(this._worker);
-		}
+	_updateHashrate() {
+		// Called in 5 second intervals
+		this._hashrate = Math.round(this._hashCount / 5);
+		this._hashCount = 0;
 	}
 
 	_getNextBody() {
@@ -68,6 +103,10 @@ class Miner {
 
 	_getNextDifficulty(header) {
 		return (this._getNextTimestamp() - header.timestamp) > Policy.BLOCK_TIME ? header.difficulty - 1 : header.difficulty + 1;
+	}
+
+	get hashrate() {
+		return this._hashrate;
 	}
 
 }
