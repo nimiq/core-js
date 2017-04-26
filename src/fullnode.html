@@ -47,7 +47,6 @@
 	<script src="p2p/struct/InvVector.js"></script>
 	<script src="consensus/Consensus.js"></script>
 	<script src="miner/Miner.js"></script>
-	<script src="miner/old-miner.js"></script>
 	<script src="miner/policy.js"></script>
 	<script src="wallet/Wallet.js"></script>
 	<!--endjs-->
@@ -65,17 +64,20 @@
 			flex-direction: column-reverse;
 		}
 
+		#startButton {
+			margin-bottom: 5px;
+		}
+
 		.info-title {
 			font-size: 20pt;
-			margin: 10px 0;
+			margin: 15px 0 10px 0;
 		}
 
 		hash {
 			font-size: 12px;
 		}
-	
 	</style>
-	<button id="startButton">Start Mining</button>
+
 	<div class="info">
 		<div class="info-title">Blockchain</div>
 
@@ -132,6 +134,29 @@
 	</div>
 
 	<div class="info">
+		<div class="info-title">Miner</div>
+
+		<button id="startButton">Start Mining</button>
+
+		<div class="info-block"></div>
+			<strong>Working</strong>
+			<span id="mnrWorking"></span>
+		</div>
+
+		<div class="info-block"></div>
+			<strong>Hashrate</strong>
+			<span id="mnrHashrate"></span> H/s
+		</div>
+
+		<div class="info-block"></div>
+			<strong>Last block mined at</strong>
+			<span id="mnrLastBlockTs"></span>
+		</div>
+
+	</div>
+
+
+	<div class="info">
 		<div class="info-title">Block History</div>
 		<div id="lastBlocks"></div>
 	</div>
@@ -142,6 +167,11 @@
 			constructor($) {
 				$.blockchain.on('head-changed', head => this._headChanged(head));
 				$.network.on('peers-changed', () => this._peersChanged());
+
+				$.miner.on('start', () => this._minerChanged());
+				$.miner.on('stop', () => this._minerChanged());
+				$.miner.on('hashrate-changed', () => this._minerChanged());
+				$.miner.on('block-mined', () => this._blockMined());
 
 				this._bcTotalWork = document.querySelector('#bcTotalWork');
 				this._bcHeight = document.querySelector('#bcHeight');
@@ -156,10 +186,15 @@
 
 				this._netPeerCount = document.querySelector('#netPeerCount');
 
+				this._mnrWorking = document.querySelector('#mnrWorking');
+				this._mnrHashrate = document.querySelector('#mnrHashrate');
+				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
+
 				this._lastBlocks = document.querySelector('#lastBlocks');
 
 				this._headChanged($.blockchain.head);
 				this._peersChanged();
+				this._minerChanged();
 
 				this._startButton = document.querySelector('#startButton');
 				this._startButton.onclick = e => this._toggleMining($);
@@ -199,6 +234,18 @@
 
 			_peersChanged() {
 				this._netPeerCount.innerText = $.network.peerCount;
+			}
+
+			_minerChanged() {
+				this._mnrWorking.innerText = $.miner.working;
+				this._mnrHashrate.innerText = $.miner.hashrate;
+				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
+					new Date(this._lastBlockMinedTs) : '-';
+			}
+
+			_blockMined() {
+				this._lastBlockMinedTs = Date.now();
+				this._minerChanged();
 			}
 		}
 		Consensus.test().then( $ => {
