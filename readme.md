@@ -9,4 +9,8 @@
 
 
 ### Run Testsuite
-`gulp`
+`gulp` runs the testsuite in your browser 
+
+
+### Build
+`gulp build` concatenates all sources into `/nimiq.js`
