@@ -1,53 +1,58 @@
 // TODO V2: Store private key encrypted
-class Wallet{
+class Wallet {
 
-	static get(){
+	static async getPersistent() {
 		const db = new RawIndexedDB('wallet');
-		return db.get('keys').then(keys => {
-			if(keys) return new Wallet(keys);
-			return Crypto.generateKeys()
-				.then(keys => db.put('keys',keys)
-					.then( _ => new Wallet(keys)));
-		});
-	}
-	
-	constructor(keys){
-		this._keys = keys;
+		let keys = await db.get('keys');
+		if (!keys) {
+			keys = await Crypto.generateKeys();
+			await db.put('keys', keys);
+		}
+		return await new Wallet(keys);
 	}
 
-	importPrivate(privateKey){
+	static async createVolatile() {
+		const keys = await Crypto.generateKeys();
+		return await new Wallet(keys);
+	}
+
+	constructor(keys) {
+		this._keys = keys;
+		return this._init();
+	}
+
+	async _init() {
+		this._publicKey = await Crypto.exportPublic(this._keys.publicKey);
+		this._address = await Crypto.exportAddress(this._keys.publicKey);
+		return this;
+	}
+
+	importPrivate(privateKey) {
 		return Crypto.importPrivate(privateKey)
 	}
 
-	exportPrivate(){
-		return Crypto.exportPrivate(this._keys.privateKey)
-			.then( buffer => Buffer.toHex(buffer));
+	exportPrivate() {
+		return Crypto.exportPrivate(this._keys.privateKey);
 	}
 
-	exportPublic(){
-		return Crypto.exportPublic(this._keys.publicKey);
+	createTransaction(recipientAddr, value, fee, nonce) {
+		const transaction = new Transaction(this._publicKey, recipientAddr, value, fee, nonce);
+		return this._signTransaction(transaction);
 	}
 
-	exportAddress(){
-		return Crypto.exportAddress(this._keys.publicKey);
-	}
-
-	_signTransaction(rawTransaction){
-		return Crypto.sign(this._keys.privateKey, rawTransaction.serialize())
-			.then(signature => new Transaction(rawTransaction, signature));
-	}
-
-	_getAccount(){
-		return this.exportAddress()
-			.then(addr => this._accounts.fetch(addr));
-	}
-
-	createTransaction(recipientAddr, value, fee, nonce){
-		return this.exportPublic()
-			.then(publicKey => {
-				const rawTransaction = new RawTransaction(publicKey, recipientAddr, value, fee, nonce);
-				return this._signTransaction(rawTransaction);
+	async _signTransaction(transaction) {
+		return Crypto.sign(this._keys.privateKey, transaction.serializeContent())
+			.then(signature => {
+				transaction.signature = signature;
+				return transaction;
 			});
 	}
-}
 
+	get address() {
+		return this._address;
+	}
+
+	get publicKey() {
+		return this._publicKey;
+	}
+}

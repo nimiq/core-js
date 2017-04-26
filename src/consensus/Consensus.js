@@ -3,19 +3,24 @@ class Consensus {
         // Model
         const accounts = await Accounts.getPersistent();
         const blockchain = await Blockchain.getPersistent(accounts);
+        const mempool = new Mempool(blockchain, accounts);
 
         // P2P
         const network = new P2PNetwork();
-        const agent = new ConsensusP2PAgent(blockchain, network.broadcastChannel);
+        const agent = new ConsensusP2PAgent(network.broadcastChannel, blockchain, mempool);
+
+        // Wallet
+        const wallet = await Wallet.getPersistent();
 
         // Miner
-        const miner = new Miner(blockchain, new Address('hymMwvMfunMYHqKp5u8Q3OIe2V4'));
+        const miner = new Miner(wallet.address, blockchain, mempool);
 
         return {
             accounts: accounts,
             blockchain: blockchain,
+            mempool: mempool,
             network: network,
-            agent: agent,
+            wallet: wallet,
             miner: miner
         };
     }

@@ -1,40 +1,59 @@
 // TODO V2: Transactions may contain a payment reference such that the chain can prove existence of data
 // TODO V2: Copy 'serialized' to detach all outer references
-
-class RawTransaction {
-
-    constructor(senderPubKey, recipientAddr, value, fee, nonce) {
+class Transaction {
+    constructor(senderPubKey, recipientAddr, value, fee, nonce, signature) {
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
         if (!NumberUtils.isUint32(fee) || fee == 0) throw 'Malformed fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
+        // Signature may be initially empty and can be set later.
+        if (signature !== undefined && !(signature instanceof Signature)) throw 'Malformed signature';
+
+        // Note that the signature is NOT verified here.
+        // Callers must explicitly invoke verifySignature() to check it.
 
         this._senderPubKey = senderPubKey;
         this._recipientAddr = recipientAddr;
         this._value = value;
         this._fee = fee;
         this._nonce = nonce;
+        this._signature = signature;
     }
 
     static cast(o) {
         if (!o) return o;
-        ObjectUtils.cast(o, RawTransaction);
+        ObjectUtils.cast(o, Transaction);
         o._senderPubKey = new PublicKey(o._senderPubKey);
         o._recipientAddr = new Address(o._recipientAddr);
+        o._signature = new Signature(o.signature);
         return o;
     }
+
     static unserialize(buf) {
-        let senderPubKey = PublicKey.unserialize(buf);
-        let recipientAddr = Address.unserialize(buf);
-        let value = buf.readUint64();
-        let fee = buf.readUint32();
-        let nonce = buf.readUint32();
-        return new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce);
+        const senderPubKey = PublicKey.unserialize(buf);
+        const recipientAddr = Address.unserialize(buf);
+        const value = buf.readUint64();
+        const fee = buf.readUint32();
+        const nonce = buf.readUint32();
+        const signature = Signature.unserialize(buf);
+        return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
     }
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
+        this.serializeContent(buf);
+        this._signature.serialize(buf);
+        return buf;
+    }
+
+    get serializedSize() {
+        return this.serializedContentSize
+            + this._signature.serializedSize;
+    }
+
+    serializeContent(buf) {
+        buf = buf || new Buffer(this.serializedContentSize);
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
@@ -43,12 +62,30 @@ class RawTransaction {
         return buf;
     }
 
-    get serializedSize() {
+    get serializedContentSize() {
         return this._senderPubKey.serializedSize
             + this._recipientAddr.serializedSize
             + /*value*/ 8
             + /*fee*/ 4
             + /*nonce*/ 4;
+    }
+
+    verifySignature() {
+        return Crypto.verify(this._senderPubKey, this._signature, this.serializeContent());
+    }
+
+    hash() {
+        return Crypto.sha256(this.serialize());
+    }
+
+    equals(o) {
+        return o instanceof Transaction
+            && this._senderPubKey.equals(o.senderPubKey)
+            && this._recipientAddr.equals(o.recipientAddr)
+            && this._value === o.value
+            && this._fee === o.fee
+            && this._nonce === o.nonce
+            && this._signature.equals(o.signature);
     }
 
     get senderPubKey() {
@@ -74,79 +111,13 @@ class RawTransaction {
     get nonce() {
         return this._nonce;
     }
-}
-
-class Transaction extends RawTransaction {
-
-    constructor(rawTransaction, signature) {
-        super(rawTransaction.senderPubKey, rawTransaction.recipientAddr,
-            rawTransaction.value, rawTransaction.fee, rawTransaction.nonce);
-        if (!(signature instanceof Signature)) throw 'Malformed signature';
-        this._signature = signature;
-
-        Object.freeze(this);
-    }
-
-    static cast(o) {
-        if (!o) return o;
-        RawTransaction.cast(o);
-        ObjectUtils.cast(o, Transaction);
-        o._signature = new Signature(o._signature);
-        return o;
-    }
-
-    static unserialize(buf) {
-        const rawTransaction = RawTransaction.unserialize(buf);
-        const signature = Signature.unserialize(buf);
-        return new Transaction(rawTransaction, signature);
-    }
-
-    verify(){
-        return Crypto.verify(this._senderPubKey, this._signature, this.serializeRawTransaction());
-    }
-
-    serializeRawTransaction(){
-        // TODO: this is an ugly fix. 
-        // RawTransaction.serialize calls this.serializedSize and creates a Buffer for a full Transaction 
-        return super.serialize(new Buffer(101));
-    }
-
-    serialize(buf) {
-        buf = buf || new Buffer(this.serializedSize);
-        super.serialize(buf);
-        this._signature.serialize(buf);
-        return buf;
-    }
-
-    get serializedSize() {
-        return super.serializedSize
-            + this._signature.serializedSize;
-    }
-
-    hash() {
-        return Crypto.sha256(this.serialize());
-    }
-
-    equals(o) {
-        return o instanceof Transaction
-            && this._senderPubKey.equals(o.senderPubKey)
-            && this._recipientAddr.equals(o.recipientAddr)
-            && this._value === o.value
-            && this._fee === o.fee
-            && this._nonce === o.nonce;
-    }
 
     get signature() {
         return this._signature;
     }
 
-    log(desc) {
-        this.senderAddr().then(addr => {
-            super.log(desc,`Transaction:
-            sender: ${Buffer.toBase64(addr)}
-            receiver: ${Buffer.toBase64(this._receiverAddr)}
-            signature: ${Buffer.toBase64(this._signature)}
-            value: ${this._value} fee: ${this._fee}, nonce: ${this._nonce}`);
-        });
+    // Signature is set by the Wallet after signing a transaction.
+    set signature(sig) {
+        this._signature = sig;
     }
 }

@@ -14,7 +14,7 @@
 	<script src="utils/array/IndexedArray.js"></script>
 	<script src="utils/buffer/Buffer.js"></script>
 	<script src="utils/buffer/BufferUtils.js"></script>
-	<script src="utils/crypto/crypto.js"></script>
+	<script src="utils/crypto/Crypto.js"></script>
 	<script src="utils/number/NumberUtils.js"></script>
 	<script src="utils/object/ObjectUtils.js"></script>
 	<script src="consensus/primitive/Primitive.js"></script>
@@ -33,11 +33,14 @@
 	<script src="consensus/blockchain/Blockchain.js"></script>
 	<script src="consensus/blockchain/BlockchainStore.js"></script>
 	<script src="consensus/transaction/Transaction.js"></script>
+	<script src="consensus/mempool/Mempool.js"></script>
 	<script src="p2p/message/P2PMessage.js"></script>
 	<script src="p2p/message/BlockP2PMessage.js"></script>
 	<script src="p2p/message/GetBlocksP2PMessage.js"></script>
 	<script src="p2p/message/InventoryP2PMessage.js"></script>
 	<script src="p2p/message/VersionP2PMessage.js"></script>
+	<script src="p2p/message/TxP2PMessage.js"></script>
+	<script src="p2p/message/MempoolP2PMessage.js"></script>
 	<script src="p2p/message/P2PMessageFactory.js"></script>
 	<script src="p2p/webrtc/certificate/webrtc-certificate.js"></script>
 	<script src="p2p/webrtc/peer-portal/PeerPortal.js"></script>
@@ -134,6 +137,23 @@
 	</div>
 
 	<div class="info">
+		<div class="info-title">Wallet</div>
+
+		<div class="info-block"></div>
+			<strong>Address</strong>
+			<span id="wltAddress"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Balance</strong>
+			<span id="wltBalance"></span>
+		</div>
+		<div class="info-block"></div>
+			<strong>Nonce</strong>
+			<span id="wltNonce"></span>
+		</div>
+	</div>
+
+	<div class="info">
 		<div class="info-title">Miner</div>
 
 		<button id="startButton">Start Mining</button>
@@ -186,6 +206,10 @@
 
 				this._netPeerCount = document.querySelector('#netPeerCount');
 
+				this._wltAddress = document.querySelector('#wltAddress');
+				this._wltBalance = document.querySelector('#wltBalance');
+				this._wltNonce = document.querySelector('#wltNonce');
+
 				this._mnrWorking = document.querySelector('#mnrWorking');
 				this._mnrHashrate = document.querySelector('#mnrHashrate');
 				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
@@ -195,6 +219,7 @@
 				this._headChanged($.blockchain.head);
 				this._peersChanged();
 				this._minerChanged();
+				this._walletChanged();
 
 				this._startButton = document.querySelector('#startButton');
 				this._startButton.onclick = e => this._toggleMining($);
@@ -220,12 +245,12 @@
 				this._lastBlocks.appendChild(el);
 			}
 
-			_toggleMining($){
-				if(!this._isMining){
+			_toggleMining($) {
+				if (!this._isMining) {
 					this._isMining = true;
 					$.miner.startWork();
 					this._startButton.innerText = 'Stop Mining';
-				}else{
+				} else {
 					this._isMining = false;
 					$.miner.stopWork();
 					this._startButton.innerText = 'Start Mining';
@@ -246,6 +271,17 @@
 			_blockMined() {
 				this._lastBlockMinedTs = Date.now();
 				this._minerChanged();
+				this._walletChanged();
+			}
+
+			// TODO wallet changed
+			_walletChanged() {
+				this._wltAddress.innerText = $.wallet.address.toBase64();
+				$.accounts.getBalance($.wallet.address).then( balance => {
+					if (!balance) balance = Balance.INITIAL;
+					this._wltBalance.innerText = balance.value;
+					this._wltNonce.innerText = balance.nonce;
+				});
 			}
 		}
 		Consensus.test().then( $ => {

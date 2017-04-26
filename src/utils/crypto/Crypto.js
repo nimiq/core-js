@@ -37,16 +37,16 @@ class Crypto {
   }
 
   static exportAddress(publicKey) {
-    return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress)
+    return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
   }
 
   static importPublic(publicKey, format = 'raw') {
     return Crypto.lib.importKey(format, publicKey, Crypto.settings.keys, true, ['verify']);
   }
 
-  static publicToAddress(publicKey) {
-    return Crypto.sha256(publicKey).then(hash => hash.slice(0, 24))
-      .then(address => new Account(address));
+  static async publicToAddress(publicKey) {
+    return Crypto.sha256(publicKey).then(hash => hash.subarray(0, 20))
+      .then(address => new Address(address));
   }
 
   static sign(privateKey, data) {
@@ -59,5 +59,3 @@ class Crypto {
         .then(key => Crypto.lib.verify(Crypto.settings.sign, key, signature, data));
   }
 }
-
-

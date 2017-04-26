@@ -5,7 +5,6 @@ class BlockBody {
 		if (!transactions || transactions.some( it => !(it instanceof Transaction))) throw 'Malformed transactions';
 		this._minerAddr = minerAddr;
 		this._transactions = transactions;
-		this._numTransactions = transactions.length;
 	}
 
 	static cast(o) {
@@ -75,13 +74,6 @@ class BlockBody {
 			&& this._transactions.every( (tx, i) => tx.equals(o.transactions[i]) );
     }
 
-	/*
-	static prove(strings, root){
-		return TransactionsTree.computeRoot(strings)
-			.then( treeRoot => (root === treeRoot) )
-	}
-	*/
-
 	get minerAddr() {
 		return this._minerAddr;
 	}
@@ -90,13 +82,7 @@ class BlockBody {
 		return this._transactions;
 	}
 
-	get numTransactions() {
+	get transactionCount() {
 		return this._transactions.length;
 	}
-
-	log(desc) {
-        super.log(desc,`BlockBody
-            tx-root: ${Buffer.toBase64(this.txRoot)}
-            tx-count: ${this.txLength}`);
-    }
 }

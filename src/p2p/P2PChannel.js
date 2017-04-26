@@ -57,8 +57,16 @@ class P2PChannel extends Observable {
         this._send(new BlockP2PMessage(block));
     }
 
+    tx(transaction) {
+        this._send(new TxP2PMessage(transaction));
+    }
+
     getblocks(hashes, hashStop = new Hash()) {
         this._send(new GetBlocksP2PMessage(hashes.length, hashes, hashStop));
+    }
+
+    mempool() {
+        this._send(new MempoolP2PMessage());
     }
 
     get rawChannel() {

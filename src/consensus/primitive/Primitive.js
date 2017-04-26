@@ -13,13 +13,13 @@ class Primitive extends Uint8Array {
             Primitive._enforceLength(arg, length);
             super(arg.buffer, arg.byteOffset, arg.byteLength);
         } else {
-            throw 'Invalid argument';
+            throw 'Primitive: Invalid argument ' + arg;
         }
     }
 
     static _enforceLength(buffer, length) {
         if (length !== undefined && buffer.byteLength !== length) {
-            throw 'Invalid argument';
+            throw 'Primitive: Invalid length';
         }
     }
 
@@ -30,5 +30,9 @@ class Primitive extends Uint8Array {
 
     toBase64() {
         return BufferUtils.toBase64(this);
+    }
+
+    toHex() {
+        return BufferUtils.toHex(this);
     }
 }

@@ -1,8 +1,9 @@
 class ConsensusP2PAgent {
 
-    constructor(blockchain, p2pChannel) {
-        this._blockchain = blockchain;
+    constructor(p2pChannel, blockchain, mempool) {
         this._channel = p2pChannel;
+        this._blockchain = blockchain;
+        this._mempool = mempool;
 
         p2pChannel.on('peer-joined', peer => this._onPeerJoined(peer));
 
@@ -11,12 +12,20 @@ class ConsensusP2PAgent {
         p2pChannel.on('getdata',    (msg, sender) => this._onGetData(msg, sender));
         p2pChannel.on('notfound',   (msg, sender) => this._onNotFound(msg, sender));
         p2pChannel.on('block',      (msg, sender) => this._onBlock(msg, sender));
+        p2pChannel.on('tx',         (msg, sender) => this._onTx(msg, sender));
         p2pChannel.on('getblocks',  (msg, sender) => this._onGetBlocks(msg, sender));
+        p2pChannel.on('mempool',    (msg, sender) => this._onMempool(msg, sender));
 
         // Notify peers when our blockchain head changes.
         // TODO Only do this if our local blockchain has caught up with the consensus height.
         blockchain.on('head-changed', head => {
             InvVector.fromBlock(head)
+                .then( vector => this._channel.inv([vector]));
+        });
+
+        // Relay new (verified) transactions to peers.
+        mempool.on('transaction-added', tx => {
+            InvVector.fromTransaction(tx)
                 .then( vector => this._channel.inv([vector]));
         });
     }
@@ -58,26 +67,25 @@ class ConsensusP2PAgent {
     }
 
     async _onInv(msg, sender) {
-        // check which of the advertised objects we know
-        // request unknown objects
+        // Check which of the advertised objects we know
+        // Request unknown objects, ignore known ones.
         const unknownVectors = []
         for (let vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK:
                     const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block, block);
-
+                    console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (!block) {
-                        // We don't know this block, save it in unknownVectors
-                        // to request it later.
                         unknownVectors.push(vector);
-                    } else {
-                        // We already know this block, ignore it.
                     }
                     break;
 
                 case InvVector.Type.TRANSACTION:
-                    // TODO
+                    const tx = await this._mempool.getTransaction(vector.hash);
+                    console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
+                    if (!tx) {
+                        unknownVectors.push(vector);
+                    }
                     break;
 
                 default:
@@ -100,8 +108,7 @@ class ConsensusP2PAgent {
             switch (vector.type) {
                 case InvVector.Type.BLOCK:
                     const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block, block);
-
+                    console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (block) {
                         // We have found a requested block, send it back to the sender.
                         sender.block(block);
@@ -112,8 +119,15 @@ class ConsensusP2PAgent {
                     break;
 
                 case InvVector.Type.TRANSACTION:
-                    // TODO
-                    unknownVectors.push(vector);
+                    const tx = await this._mempool.getTransaction(vector.hash);
+                    console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
+                    if (tx) {
+                        // We have found a requested transaction, send it back to the sender.
+                        sender.tx(tx);
+                    } else {
+                        // Requested transaction is unknown.
+                        unknownVectors.push(vector);
+                    }
                     break;
 
                 default:
@@ -134,10 +148,18 @@ class ConsensusP2PAgent {
     async _onBlock(msg, sender) {
         // TODO verify block
         const hash = await msg.block.hash();
-        console.log('[BLOCK] Received block ' + hash.toBase64() + ', pushing into blockchain');
+        console.log('[BLOCK] Received block ' + hash.toBase64(), msg.block);
 
         // put block into blockchain
         await this._blockchain.pushBlock(msg.block);
+    }
+
+    async _onTx(msg, sender) {
+        // TODO verify transaction
+        const hash = await msg.transaction.hash();
+        console.log('[TX] Received transaction ' + hash.toBase64(), msg.transaction);
+
+        await this._mempool.pushTransaction(msg.transaction);
     }
 
     async _onGetBlocks(msg, sender) {
@@ -197,5 +219,15 @@ class ConsensusP2PAgent {
 
         // Send the vectors back to the requesting peer.
         sender.inv(vectors);
+    }
+
+    async _onMempool(msg, sender) {
+        // Query mempool for transactions
+        const transactions = await this._mempool.getTransactions();
+
+        // Send transactions back to sender.
+        for (let tx of transactions) {
+            sender.tx(tx);
+        }
     }
 }

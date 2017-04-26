@@ -1,9 +1,13 @@
 class BlockHeader {
 
     constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
-        if(!Hash.isHash(prevHash)) throw 'Malformed prevHash';
-        if(!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
-        if(!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
+        if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
+        if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
+        if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
+        if (!NumberUtils.isUint32(difficulty)) throw 'Malformed difficulty';
+        if (!NumberUtils.isUint64(timestamp)) throw 'Malformed timestamp';
+        if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
+
         this._prevHash = prevHash;
         this._bodyHash = bodyHash;
         this._accountsHash = accountsHash;
@@ -53,8 +57,8 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
-
-    verify() {   // verify: trailingZeros(hash) == difficulty
+    verifyProofOfWork() {
+        // Verify that trailingZeros(hash) == difficulty
         return this.hash().then( hash => {
             const zeroBytes = Math.floor(this.difficulty / 8);
             for (let i = 0; i < zeroBytes; i++) {
@@ -66,6 +70,20 @@ class BlockHeader {
         });
     }
 
+    async hash() {
+        this._hash = this._hash || await Crypto.sha256(this.serialize());
+        return this._hash;
+    }
+
+    equals(o) {
+        return o instanceof BlockHeader
+            && this._prevHash.equals(o.prevHash)
+            && this._bodyHash.equals(o.bodyHash)
+            && this._accountsHash.equals(o.accountsHash)
+            && this._difficulty === o.difficulty
+            && this._timestamp === o.timestamp
+            && this._nonce === o.nonce;
+    }
 
     get prevHash() {
         return this._prevHash;
@@ -91,24 +109,11 @@ class BlockHeader {
         return this._nonce;
     }
 
-    set nonce(n){
+    // XXX The miner changes the nonce of an existing BlockHeader during the
+    // mining process.
+    set nonce(n) {
         this._nonce = n;
         this._hash = null;
-    }
-
-    async hash() {
-        this._hash = this._hash || await Crypto.sha256(this.serialize());
-        return this._hash;
-    }
-
-    equals(o) {
-        return o instanceof BlockHeader
-            && this._prevHash.equals(o.prevHash)
-            && this._bodyHash.equals(o.bodyHash)
-            && this._accountsHash.equals(o.accountsHash)
-            && this._difficulty === o.difficulty
-            && this._timestamp === o.timestamp
-            && this._nonce === o.nonce;
     }
 
     log(desc) {

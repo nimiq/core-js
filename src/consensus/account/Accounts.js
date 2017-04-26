@@ -62,6 +62,7 @@ class Accounts {
 
     async _updateBalance(address, value, operator) {
         // XXX If we don't find a balance, we assume the account is empty for now.
+        // TODO retrieve the account balance by asking the network.
         let balance = await this.getBalance(address);
         if (!balance) {
             balance = new Balance();
@@ -69,9 +70,11 @@ class Accounts {
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) throw 'Balance Error!';
-        const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
-        const newBalance = new Balance(newValue, newNonce);
 
+        const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
+        if (newNonce < 0) throw 'Nonce Error!';
+
+        const newBalance = new Balance(newValue, newNonce);
         await this._tree.put(address, newBalance);
     }
 

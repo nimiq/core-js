@@ -93,6 +93,8 @@ class Blockchain extends Observable {
             return;
         }
 
+        // TODO verify intrinsic block invariants
+
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {

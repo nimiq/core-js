@@ -28,7 +28,6 @@ class PublicKey extends Primitive {
 	}
 
 	toAddress() {
-		return Crypto.publicToAddress(this)
-					.then( address => new Address(address));
+		return Crypto.publicToAddress(this);
 	}
 }
