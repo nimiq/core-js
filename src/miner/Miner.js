@@ -45,9 +45,9 @@ class Miner extends Observable {
 			return;
 		}
 
-		// XXX Necessary?
+		// Don't re-enter.
 		if (this._worker) {
-			clearTimeout(this._worker);
+			return;
 		}
 
 		// Construct next block.
@@ -83,7 +83,14 @@ class Miner extends Observable {
 				// Tell listeners that we've mined a block.
 				this.fire('block-mined', block, this);
 
+				// Reset worker state.
+				clearTimeout(this._worker);
+				this._worker = null;
+
+				// Push block into blockchain.
 				await this._blockchain.pushBlock(block);
+
+				// We will resume work when the blockchain updates.
 				return;
 			}
 
@@ -117,8 +124,7 @@ class Miner extends Observable {
 	}
 
 	_getNextTimestamp() {
-		// TODO Use UTC Date
-		return Math.round(Date.now() / 1000);
+		return Math.floor(Date.now() / 1000);
 	}
 
 	stopWork() {
