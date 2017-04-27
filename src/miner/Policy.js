@@ -12,4 +12,12 @@ class Policy {
 	static get BLOCK_SIZE_MAX() {
 		return 1e6; // 1 MB
 	}
+
+	static get DIFFICULTY_MIN() {
+		return 10;
+	}
+
+	static get DIFFICULTY_ADJUSTMENT_BLOCKS() {
+		return 5; // Blocks
+	}
 }

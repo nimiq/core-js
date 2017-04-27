@@ -105,10 +105,12 @@ class Blockchain extends Observable {
             return;
         }
 
-        // TODO validate that the difficulty matches
-        // TODO validate timestamp
+        // Check that the block is a valid extension of its previous block.
+        if (!await this._isValidExtension(prevChain, block)) {
+            return;
+        }
 
-        // Block looks Compute the new total work & height.
+        // Block looks good, compute the new total work & height.
         const totalWork = prevChain.totalWork + block.difficulty;
         const height = prevChain.height + 1;
 
@@ -150,27 +152,27 @@ class Blockchain extends Observable {
         // Check that the maximum block size is not exceeded.
         if (block.serializedSize > Policy.BLOCK_SIZE_MAX) {
             console.warn('Blockchain rejected block - max block size exceeded');
-            return;
+            return false;
         }
 
         // Check that header bodyHash matches the actual bodyHash.
         const bodyHash = await block.body.hash();
         if (!block.header.bodyHash.equals(bodyHash)) {
             console.warn('Blockchain rejecting block - body hash mismatch');
-            return;
+            return false;
         }
 
         // Check that the headerHash matches the difficulty.
         if (!await block.header.verifyProofOfWork()) {
             console.warn('Blockchain rejected block - PoW verification failed');
-            return;
+            return false;
         }
 
         // Check that all transaction signatures are valid.
         for (let tx of block.body.transactions) {
             if (!await tx.verifySignature()) {
                 console.warn('Blockchain rejected block - invalid transaction signature');
-                return;
+                return false;
             }
         }
 
@@ -179,9 +181,27 @@ class Blockchain extends Observable {
         for (let tx of block.body.transactions) {
             if (pubKeys[tx.publicKey]) {
                 console.warn('Blockchain rejected block - more than one transaction per sender');
-                return;
+                return false;
             }
             pubKeys[tx.publicKey] = true;
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    async _isValidExtension(chain, block) {
+        // Check that the difficulty matches.
+        const nextDifficulty = await this.getNextDifficulty(chain);
+        if (nextDifficulty !== block.difficulty) {
+            console.warn('Blockchain rejecting block - difficulty mismatch');
+            return false;
+        }
+
+        // Check that the timestamp is after (or equal) the previous block's timestamp.
+        if (chain.head.timestamp > block.timestamp) {
+            console.warn('Blockchain rejecting block - timestamp mismatch');
+            return false;
         }
 
         // Everything checks out.
@@ -198,8 +218,6 @@ class Blockchain extends Observable {
                 + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), newChain.head);
             return;
         }
-
-        // TODO check that the difficulty matches
 
         // AccountsHash matches, commit the block.
         await this._accounts.commitBlock(newChain.head);
@@ -271,6 +289,32 @@ class Blockchain extends Observable {
     async getBlock(hash) {
         const chain = await this._store.get(hash.toBase64());
         return chain ? chain.head : null;
+    }
+
+    async getNextDifficulty(chain) {
+        chain = chain || this._mainChain;
+
+        // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
+        if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS == 0) {
+            // Compute the actual time it took to mine the last DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
+            const startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1, 0);
+            const startChain = await this._store.get(this._mainPath[startHeight].toBase64());
+            const actualTime = chain.head.timestamp - startChain.head.timestamp;
+
+            // Compute the next difficulty.
+            const expectedTime = (chain.height - startHeight) * Policy.BLOCK_TIME;
+            let nextDifficulty = chain.head.difficulty;
+            if (expectedTime < actualTime) {
+                nextDifficulty--;
+            } else if (expectedTime > actualTime) {
+                nextDifficulty++;
+            }
+            return Math.max(nextDifficulty, Policy.DIFFICULTY_MIN);
+        }
+
+        // If the difficulty is not adjusted at this height, the next difficulty
+        // is the current difficulty.
+        return chain.head.difficulty;
     }
 
     get head() {

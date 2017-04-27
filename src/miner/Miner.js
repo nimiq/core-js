@@ -104,7 +104,7 @@ class Miner extends Observable {
 		const accountsHash = this._blockchain.accountsHash;
 		const bodyHash = await body.hash();
 		const timestamp = this._getNextTimestamp();
-		const difficulty = this._getNextDifficulty(this._blockchain.head.header);
+		const difficulty = await this._blockchain.getNextDifficulty();
 		const nonce = Math.round(Math.random() * 100000);
 		return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
 	}
@@ -117,11 +117,8 @@ class Miner extends Observable {
 	}
 
 	_getNextTimestamp() {
-		return Math.round(Date.now() / 1000)
-	}
-
-	_getNextDifficulty(header) {
-		return (this._getNextTimestamp() - header.timestamp) > Policy.BLOCK_TIME ? header.difficulty - 1 : header.difficulty + 1;
+		// TODO Use UTC Date
+		return Math.round(Date.now() / 1000);
 	}
 
 	stopWork() {
