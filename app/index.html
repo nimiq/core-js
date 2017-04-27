@@ -3,144 +3,64 @@
 <head>
 	<meta charset="utf-8"/>
 	<title>Nimiq Web Client</title>
-</head>
-<body>
-	<!--beginjs-->
-	<script src="utils/indexed-db/IndexedDB.js"></script>
-	<script src="utils/indexed-db/ObjectDB.js"></script>
-	<script src="utils/indexed-db/storage-persistence.js"></script>
-	<script src="utils/Observable.js"></script>
-	<script src="utils/Synchronizer.js"></script>
-	<script src="utils/array/IndexedArray.js"></script>
-	<script src="utils/buffer/Buffer.js"></script>
-	<script src="utils/buffer/BufferUtils.js"></script>
-	<script src="utils/crypto/Crypto.js"></script>
-	<script src="utils/number/NumberUtils.js"></script>
-	<script src="utils/object/ObjectUtils.js"></script>
-	<script src="consensus/primitive/Primitive.js"></script>
-	<script src="consensus/primitive/Hash.js"></script>
-	<script src="consensus/primitive/PrivateKey.js"></script>
-	<script src="consensus/primitive/PublicKey.js"></script>
-	<script src="consensus/primitive/Signature.js"></script>
-	<script src="consensus/account/Accounts.js"></script>
-	<script src="consensus/account/AccountsTree.js"></script>
-	<script src="consensus/account/AccountsTreeStore.js"></script>
-	<script src="consensus/account/Address.js"></script>
-	<script src="consensus/account/Balance.js"></script>
-	<script src="consensus/block/BlockBody.js"></script>
-	<script src="consensus/block/BlockHeader.js"></script>
-	<script src="consensus/block/Block.js"></script>
-	<script src="consensus/blockchain/Blockchain.js"></script>
-	<script src="consensus/blockchain/BlockchainStore.js"></script>
-	<script src="consensus/transaction/Transaction.js"></script>
-	<script src="consensus/mempool/Mempool.js"></script>
-	<script src="p2p/message/P2PMessage.js"></script>
-	<script src="p2p/message/BlockP2PMessage.js"></script>
-	<script src="p2p/message/GetBlocksP2PMessage.js"></script>
-	<script src="p2p/message/InventoryP2PMessage.js"></script>
-	<script src="p2p/message/VersionP2PMessage.js"></script>
-	<script src="p2p/message/TxP2PMessage.js"></script>
-	<script src="p2p/message/MempoolP2PMessage.js"></script>
-	<script src="p2p/message/P2PMessageFactory.js"></script>
-	<script src="p2p/webrtc/certificate/webrtc-certificate.js"></script>
-	<script src="p2p/webrtc/peer-portal/PeerPortal.js"></script>
-	<script src="p2p/P2PAgent.js"></script>
-	<script src="p2p/P2PChannel.js"></script>
-	<script src="p2p/P2PNetwork.js"></script>
-	<script src="p2p/struct/InvVector.js"></script>
-	<script src="miner/Miner.js"></script>
-	<script src="miner/Policy.js"></script>
-	<script src="wallet/Wallet.js"></script>
-	<script src="Core.js"></script>
-	<!--endjs-->
 
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-	<style type="text/css">
-		body{
-			background: #efefef;
-			font-family: 'Roboto', sans-serif;
-			color: #333;
-			max-width: 1200px;
-			margin: auto;
-			padding: 20px;
-		}
+	<link href="style.css" rel="stylesheet">
+</head>
+<body>
+	<header>
+		<span class="name"><span class="icon-nimiq"></span>nimiq</span>
 
-		#blockHistory {
-			display: flex;
-			flex-direction: column-reverse;
-		}
+	</header>
 
-		.left, .right {
-			float: left;
-			width: 50%;
-		}
-		@media screen and (max-width: 760px) {
-			.left, .right {
-				width: 100%;
-			}
-		}
-
-		.info {
-			margin: 0 10px 15px 10px;
-			background: #fff;
-			border-radius: 3px;
-		}
-
-		.info-block {
-			padding: 5px;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-		.info-block:empty {
-			padding: 0;
-		}
-		.info-block strong {
-			display: inline-block;
-		}
-
-		.info-title {
-			font-size: 14pt;
-			padding: 5px;
-			background: #3949AB;
-			color: white;
-			border-top-left-radius: 3px;
-			border-top-right-radius: 3px;
-		}
-
-		.input-group {
-			padding: 5px 0;
-		}
-		.input-group label {
-			width: 75px;
-			display: inline-block;
-			font-weight: bold;
-		}
-
-		button {
-		    border: 0;
-			border: 1px solid #FFC107;
-		    border-radius: 3px;
-		    padding: 5px 10px;
-		    display: block;
-		    text-align: center;
-		    background: #FFC107;
-		    color: white;
-		    box-sizing: border-box;
-			font-size: 12px;
-			line-height: 12px;
-		}
-		button:hover {
-			background: white;
-			color: #FFC107;
-		}
-		input.error {
-			border: 1px solid #f44336;
-		}
-
-		hash {
-			font-size: 12px;
-		}
-	</style>
+	<!--beginjs-->
+	<script src="../src/utils/indexed-db/IndexedDB.js"></script>
+	<script src="../src/utils/indexed-db/ObjectDB.js"></script>
+	<script src="../src/utils/indexed-db/storage-persistence.js"></script>
+	<script src="../src/utils/Observable.js"></script>
+	<script src="../src/utils/Synchronizer.js"></script>
+	<script src="../src/utils/array/IndexedArray.js"></script>
+	<script src="../src/utils/buffer/Buffer.js"></script>
+	<script src="../src/utils/buffer/BufferUtils.js"></script>
+	<script src="../src/utils/crypto/Crypto.js"></script>
+	<script src="../src/utils/number/NumberUtils.js"></script>
+	<script src="../src/utils/object/ObjectUtils.js"></script>
+	<script src="../src/consensus/primitive/Primitive.js"></script>
+	<script src="../src/consensus/primitive/Hash.js"></script>
+	<script src="../src/consensus/primitive/PrivateKey.js"></script>
+	<script src="../src/consensus/primitive/PublicKey.js"></script>
+	<script src="../src/consensus/primitive/Signature.js"></script>
+	<script src="../src/consensus/account/Accounts.js"></script>
+	<script src="../src/consensus/account/AccountsTree.js"></script>
+	<script src="../src/consensus/account/AccountsTreeStore.js"></script>
+	<script src="../src/consensus/account/Address.js"></script>
+	<script src="../src/consensus/account/Balance.js"></script>
+	<script src="../src/consensus/block/BlockBody.js"></script>
+	<script src="../src/consensus/block/BlockHeader.js"></script>
+	<script src="../src/consensus/block/Block.js"></script>
+	<script src="../src/consensus/blockchain/Blockchain.js"></script>
+	<script src="../src/consensus/blockchain/BlockchainStore.js"></script>
+	<script src="../src/consensus/transaction/Transaction.js"></script>
+	<script src="../src/consensus/mempool/Mempool.js"></script>
+	<script src="../src/p2p/message/P2PMessage.js"></script>
+	<script src="../src/p2p/message/BlockP2PMessage.js"></script>
+	<script src="../src/p2p/message/GetBlocksP2PMessage.js"></script>
+	<script src="../src/p2p/message/InventoryP2PMessage.js"></script>
+	<script src="../src/p2p/message/VersionP2PMessage.js"></script>
+	<script src="../src/p2p/message/TxP2PMessage.js"></script>
+	<script src="../src/p2p/message/MempoolP2PMessage.js"></script>
+	<script src="../src/p2p/message/P2PMessageFactory.js"></script>
+	<script src="../src/p2p/webrtc/certificate/webrtc-certificate.js"></script>
+	<script src="../src/p2p/webrtc/peer-portal/PeerPortal.js"></script>
+	<script src="../src/p2p/P2PAgent.js"></script>
+	<script src="../src/p2p/P2PChannel.js"></script>
+	<script src="../src/p2p/P2PNetwork.js"></script>
+	<script src="../src/p2p/struct/InvVector.js"></script>
+	<script src="../src/miner/Miner.js"></script>
+	<script src="../src/miner/Policy.js"></script>
+	<script src="../src/wallet/Wallet.js"></script>
+	<script src="../src/Core.js"></script>
+	<!--endjs-->
 
 	<div class="left">
 		<div class="info">
@@ -162,7 +82,7 @@
 
 		<div class="info">
 			<div class="info-title">Transaction</div>
-			<form class="info-block">
+			<form>
 				<div class="input-group">
 					<label for="recipientAddr">Recipient</label>
 					<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
@@ -384,14 +304,14 @@
 				}
 
 				$.accounts.getBalance($.wallet.address).then( balance => {
+					// XXX Coin to cent conversion
+					value = Math.round(value * 1e4);
+					fee = Math.round(fee * 1e4);
+
 					if (balance.value < value + fee) {
 						elValue.className = 'error';
 						return;
 					}
-
-					// XXX Coin to cent conversion
-					value = Math.round(value * 1e4);
-					fee = Math.round(fee * 1e4);
 
 					$.wallet.createTransaction(new Address(recipientAddr), value, fee, balance.nonce).then( tx => {
 						$.mempool.pushTransaction(tx);
