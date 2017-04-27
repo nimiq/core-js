@@ -67,10 +67,14 @@
 			flex-direction: column-reverse;
 		}
 
-		#startButton {
+		#mnrStartBtn {
 			margin-bottom: 5px;
 		}
 
+		form {
+			margin-top: 10px;
+		}
+		
 		.info-title {
 			font-size: 20pt;
 			margin: 15px 0 10px 0;
@@ -151,12 +155,40 @@
 			<strong>Nonce</strong>
 			<span id="wltNonce"></span>
 		</div>
+
+		<form>
+			<strong>Transaction</strong>
+			<div class="input-group">
+				<label for="recipientAddr">Recipient</label>
+				<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+			</div>
+			<div class="input-group">
+				<label for="value">Value</label>
+				<input id="txValue" name="value" type="number">
+			</div>
+			<div class="input-group">
+				<label for="fee">Fee</label>
+				<input id="txFee" name="fee" type="number">
+			</div>
+			<button type="button" id="txSubmitBtn">Send</button>
+		</form>
+	</div>
+
+	<div class="info">
+		<div class="info-title">Mempool</div>
+
+		<div class="info-block"></div>
+			<strong>Transaction Count</strong>
+			<span id="mplTransactionCount"></span>
+		</div>
+
+		<div class="info-list" id="mplTransactions"></div>
 	</div>
 
 	<div class="info">
 		<div class="info-title">Miner</div>
 
-		<button id="startButton">Start Mining</button>
+		<button id="mnrStartBtn">Start Mining</button>
 
 		<div class="info-block"></div>
 			<strong>Working</strong>
@@ -175,10 +207,9 @@
 
 	</div>
 
-
 	<div class="info">
 		<div class="info-title">Block History</div>
-		<div id="lastBlocks"></div>
+		<div id="blockHistory"></div>
 	</div>
 
 
@@ -186,17 +217,24 @@
 		class MinerUI {
 			constructor($) {
 				$.blockchain.on('head-changed', head => this._headChanged(head));
+
 				$.network.on('peers-changed', () => this._peersChanged());
+
+				$.accounts.on($.wallet.address, (balance) => this._balanceChanged(balance));
+
+				$.mempool.on('*', () => this._mempoolChanged());
 
 				$.miner.on('start', () => this._minerChanged());
 				$.miner.on('stop', () => this._minerChanged());
 				$.miner.on('hashrate-changed', () => this._minerChanged());
 				$.miner.on('block-mined', () => this._blockMined());
 
+				// Blockchain
 				this._bcTotalWork = document.querySelector('#bcTotalWork');
 				this._bcHeight = document.querySelector('#bcHeight');
 				this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
+				// Head block
 				this._hdHash = document.querySelector('#hdHash');
 				this._hdPrevHash = document.querySelector('#hdPrevHash');
 				this._hdAccountsHash = document.querySelector('#hdAccountsHash');
@@ -204,25 +242,85 @@
 				this._hdTimestamp = document.querySelector('#hdTimestamp');
 				this._hdNonce = document.querySelector('#hdNonce');
 
+				// Network
 				this._netPeerCount = document.querySelector('#netPeerCount');
 
+				// Wallet
 				this._wltAddress = document.querySelector('#wltAddress');
 				this._wltBalance = document.querySelector('#wltBalance');
 				this._wltNonce = document.querySelector('#wltNonce');
 
+				this._wltAddress.innerText = $.wallet.address.toBase64();
+				$.accounts.getBalance($.wallet.address).then( balance => this._balanceChanged(balance));
+
+				const txSubmitBtn = document.querySelector('#txSubmitBtn');
+				txSubmitBtn.onclick = (e) => this._submitTransaction(e);
+
+				// Mempool
+				this._mplTransactionCount = document.querySelector('#mplTransactionCount');
+				this._mplTransactions = document.querySelector('#mplTransactions');
+
+				// Miner
 				this._mnrWorking = document.querySelector('#mnrWorking');
 				this._mnrHashrate = document.querySelector('#mnrHashrate');
 				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
-				this._lastBlocks = document.querySelector('#lastBlocks');
+				this._mnrStartBtn = document.querySelector('#mnrStartBtn');
+				this._mnrStartBtn.onclick = () => this._toggleMining();
 
+				// Block history
+				this._blockHistory = document.querySelector('#blockHistory');
+
+				// Init values.
 				this._headChanged($.blockchain.head);
 				this._peersChanged();
 				this._minerChanged();
-				this._walletChanged();
+				this._mempoolChanged();
+			}
 
-				this._startButton = document.querySelector('#startButton');
-				this._startButton.onclick = e => this._toggleMining($);
+			_submitTransaction(e) {
+				const recipientAddr = document.querySelector('#txRecipientAddr').value;
+				let value = parseFloat(document.querySelector('#txValue').value);
+				let fee = parseInt(document.querySelector('#txFee').value);
+
+				try {
+					new Address(recipientAddr);
+				} catch (e) {
+					alert('Invalid recipient');
+					return;
+				}
+
+				if (isNaN(value) || value <= 0) {
+					alert('Invalid value');
+					return;
+				}
+
+				if (isNaN(fee) || fee < 0) {
+					alert('Invalid fee');
+					return;
+				}
+
+				$.accounts.getBalance($.wallet.address).then( balance => {
+					if (balance.value < value + fee) {
+						alert('Insufficient funds.');
+						return;
+					}
+
+					if (!confirm('Confirm transaction to ' + recipientAddr + ', value ' + value + ', fee ' + fee)) {
+						return;
+					}
+
+					// XXX Coin to cent conversion
+					value = Math.round(value * 1e4);
+					fee = Math.round(fee * 1e4);
+
+					$.wallet.createTransaction(new Address(recipientAddr), value, fee, balance.nonce).then( tx => {
+						$.mempool.pushTransaction(tx);
+					});
+				});
+
+				e.preventDefault();
+				return false;
 			}
 
 			_headChanged(head) {
@@ -242,18 +340,18 @@
 				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
 					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
 					+ `nonce=${head.nonce}, transactionCount=${head.transactionCount}`;
-				this._lastBlocks.appendChild(el);
+				this._blockHistory.appendChild(el);
 			}
 
-			_toggleMining($) {
+			_toggleMining() {
 				if (!this._isMining) {
 					this._isMining = true;
 					$.miner.startWork();
-					this._startButton.innerText = 'Stop Mining';
+					this._mnrStartBtn.innerText = 'Stop Mining';
 				} else {
 					this._isMining = false;
 					$.miner.stopWork();
-					this._startButton.innerText = 'Start Mining';
+					this._mnrStartBtn.innerText = 'Start Mining';
 				}
 			}
 
@@ -271,16 +369,28 @@
 			_blockMined() {
 				this._lastBlockMinedTs = Date.now();
 				this._minerChanged();
-				this._walletChanged();
 			}
 
-			// TODO wallet changed
-			_walletChanged() {
-				this._wltAddress.innerText = $.wallet.address.toBase64();
-				$.accounts.getBalance($.wallet.address).then( balance => {
-					if (!balance) balance = Balance.INITIAL;
-					this._wltBalance.innerText = (balance.value / 1e4).toFixed(4);
-					this._wltNonce.innerText = balance.nonce;
+			_balanceChanged(balance) {
+				if (!balance) balance = Balance.INITIAL;
+				this._wltBalance.innerText = (balance.value / 1e4).toFixed(4);
+				this._wltNonce.innerText = balance.nonce;
+			}
+
+			_mempoolChanged() {
+				// XXX inefficient
+				$.mempool.getTransactions().then( txs => {
+					this._mplTransactionCount.innerText = txs.length;
+
+					while (this._mplTransactions.firstChild) {
+						this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+					}
+
+					for (let tx of txs) {
+						const el = document.createElement('div');
+						el.innerText = tx.toString();
+						this._mplTransactions.appendChild(el);
+					}
 				});
 			}
 		}

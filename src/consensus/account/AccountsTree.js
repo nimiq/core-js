@@ -1,4 +1,4 @@
-class AccountsTree {
+class AccountsTree extends Observable {
     static async getPersistent() {
         const store = AccountsTreeStore.getPersistent();
         return await new AccountsTree(store);
@@ -10,6 +10,7 @@ class AccountsTree {
     }
 
     constructor(treeStore) {
+        super();
         this._store = treeStore;
         this._rootKey = undefined;
         this._synchronizer = new Synchronizer();
@@ -40,7 +41,10 @@ class AccountsTree {
         const rootNode = await this._store.get(this._rootKey);
 
         // Insert balance into the tree at address.
-        return await this._insert(rootNode, address, balance, []);
+        await this._insert(rootNode, address, balance, []);
+
+        // Tell listeners that the balance of address has changed.
+        this.fire(address, balance, address);
     }
 
     async _insert(node, address, balance, rootPath) {

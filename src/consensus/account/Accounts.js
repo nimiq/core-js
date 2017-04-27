@@ -1,7 +1,7 @@
 // TODO: verify values and nonces of senders
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
-class Accounts {
+class Accounts extends Observable {
     static async getPersistent() {
         const tree = await AccountsTree.getPersistent();
         return new Accounts(tree);
@@ -13,7 +13,13 @@ class Accounts {
     }
 
     constructor(accountsTree) {
+        super();
         this._tree = accountsTree;
+
+        // Forward balance change events to listeners registered on this Observable.
+        this._tree.on('*', function() {
+            this.fire.apply(this, arguments)
+        }.bind(this));
     }
 
     commitBlock(block) {
