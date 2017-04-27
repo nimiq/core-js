@@ -35,7 +35,7 @@ class Mempool extends Observable {
         const transactions = [];
         for (let hash in this._transactions) {
             if (transactions.length >= maxCount) break;
-            transactons.push(this._transactions[hash]);
+            transactions.push(this._transactions[hash]);
         }
         return transactions;
     }
@@ -51,24 +51,24 @@ class Mempool extends Observable {
         return await this._verifyTransactionBalance(transaction);
     }
 
-    async _verifyTransactionBalance(transaction) {
+    async _verifyTransactionBalance(transaction, quiet) {
         // Verify balance and nonce:
         // - sender account balance must be greater or equal the transaction value.
         // - sender account nonce must match the transaction nonce.
         const senderAddr = await transaction.senderAddr();
         const senderBalance = await this._accounts.getBalance(senderAddr);
         if (!senderBalance) {
-            console.warn('Mempool rejected transaction - sender account unknown');
+            if (!quiet) console.warn('Mempool rejected transaction - sender account unknown');
             return;
         }
-        
+
         if (senderBalance.value < transaction.value) {
-            console.warn('Mempool rejected transaction - insufficient funds', transaction);
+            if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
             return false;
         }
 
         if (senderBalance.nonce !== transaction.nonce) {
-            console.warn('Mempool rejected transaction - invalid nonce', transaction);
+            if (!quiet) console.warn('Mempool rejected transaction - invalid nonce', transaction);
             return false;
         }
 
@@ -82,7 +82,7 @@ class Mempool extends Observable {
         // in a newly mined block). No need to re-check signatures.
         for (let hash in this._transactions) {
             const transaction = this._transactions[hash];
-            if (!await this._verifyTransactionBalance(transaction)) {
+            if (!await this._verifyTransactionBalance(transaction, true)) {
                 delete this._transactions[hash];
             }
         }

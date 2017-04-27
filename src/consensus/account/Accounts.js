@@ -48,7 +48,7 @@ class Accounts {
 
     async _executeTransaction(tx, op) {
         await this._updateSender(tx, op);
-        await this._updateReceiver(tx, op);
+        await this._updateRecipient(tx, op);
     }
 
     async _updateSender(tx, op) {
@@ -56,8 +56,8 @@ class Accounts {
         await this._updateBalance(addr, -tx.value - tx.fee, op);
     }
 
-    async _updateReceiver(tx, op) {
-        await this._updateBalance(tx.receiverAddr, tx.value, op);
+    async _updateRecipient(tx, op) {
+        await this._updateBalance(tx.recipientAddr, tx.value, op);
     }
 
     async _updateBalance(address, value, operator) {

@@ -77,6 +77,10 @@ class Block {
 		return this._body.transactions;
 	}
 
+	get transactionCount() {
+		return this._body.transactionCount;
+	}
+
 	hash() {
 		return this._header.hash();
 	}

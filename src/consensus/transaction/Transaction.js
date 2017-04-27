@@ -5,7 +5,7 @@ class Transaction {
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
-        if (!NumberUtils.isUint32(fee) || fee == 0) throw 'Malformed fee';
+        if (!NumberUtils.isUint32(fee)) throw 'Malformed fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw 'Malformed signature';

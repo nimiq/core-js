@@ -241,7 +241,7 @@
 				const date = new Date(head.timestamp * 1000);
 				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
 					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
-					+ `nonce=${head.nonce}`;
+					+ `nonce=${head.nonce}, transactionCount=${head.transactionCount}`;
 				this._lastBlocks.appendChild(el);
 			}
 
@@ -279,7 +279,7 @@
 				this._wltAddress.innerText = $.wallet.address.toBase64();
 				$.accounts.getBalance($.wallet.address).then( balance => {
 					if (!balance) balance = Balance.INITIAL;
-					this._wltBalance.innerText = balance.value;
+					this._wltBalance.innerText = (balance.value / 1e4).toFixed(4);
 					this._wltNonce.innerText = balance.nonce;
 				});
 			}
