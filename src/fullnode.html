@@ -48,10 +48,10 @@
 	<script src="p2p/P2PChannel.js"></script>
 	<script src="p2p/P2PNetwork.js"></script>
 	<script src="p2p/struct/InvVector.js"></script>
-	<script src="consensus/Consensus.js"></script>
 	<script src="miner/Miner.js"></script>
-	<script src="miner/policy.js"></script>
+	<script src="miner/Policy.js"></script>
 	<script src="wallet/Wallet.js"></script>
+	<script src="Core.js"></script>
 	<!--endjs-->
 
 
@@ -306,10 +306,6 @@
 						return;
 					}
 
-					if (!confirm('Confirm transaction to ' + recipientAddr + ', value ' + value + ', fee ' + fee)) {
-						return;
-					}
-
 					// XXX Coin to cent conversion
 					value = Math.round(value * 1e4);
 					fee = Math.round(fee * 1e4);
@@ -394,11 +390,11 @@
 				});
 			}
 		}
-		Consensus.test().then( $ => {
+
+		Core.get().then( $ => {
 			window.$ = $;
 			const ui = new MinerUI($);
 		});
-
 	</script>
 </body>
 </html>

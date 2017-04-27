@@ -93,16 +93,19 @@ class Blockchain extends Observable {
             return;
         }
 
-        // TODO verify intrinsic block invariants
-
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
-            console.log('Blockchain discarding block ' + hash.toBase64() + ', previous block ' + block.prevHash.toBase64() + ' unknown', block);
+            console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown', block);
             return;
         }
 
-        // Compute the new total work & height.
+        // Check all intrinsic block invariants.
+        if (!await this._verifyBlock(block)) {
+            return;
+        }
+
+        // Block looks Compute the new total work & height.
         const totalWork = prevChain.totalWork + block.difficulty;
         const height = prevChain.height + 1;
 
@@ -137,6 +140,16 @@ class Blockchain extends Observable {
         console.log('Creating/extending fork with block ' + hash.toBase64()
             + ', height=' + newChain.height + ', totalWork='
             + newChain.totalWork, newChain);
+    }
+
+    async _verifyBlock(block) {
+        // - Check that the maximum block size is not exceeded.
+        // - Check that header.bodyHash matches the actual bodyHash.
+        // - Check that the headerHash matches the difficulty.
+        // - Check that all transaction signatures are valid.
+        // - XXX Check that there is only one transaction per sender per block.
+
+        return true;
     }
 
     async _extend(newChain) {
