@@ -24,7 +24,7 @@ class Miner extends Observable {
 
 		// Listen to changes in the mempool which evicts invalid transactions
 		// after every blockchain head change and then fires 'transactions-ready'
-		// when the eviction process finishes. Re-start work on the next block
+		// when the eviction process finishes. Restart work on the next block
 		// with fresh transactions when this fires.
 		this._mempool.on('transactions-ready', () => this._startWork());
 

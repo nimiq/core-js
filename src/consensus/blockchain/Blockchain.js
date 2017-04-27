@@ -105,6 +105,9 @@ class Blockchain extends Observable {
             return;
         }
 
+        // TODO validate that the difficulty matches
+        // TODO validate timestamp
+
         // Block looks Compute the new total work & height.
         const totalWork = prevChain.totalWork + block.difficulty;
         const height = prevChain.height + 1;
@@ -125,6 +128,7 @@ class Blockchain extends Observable {
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
+        // TODO Compare timestamp if totalWork is equal.
         if (newChain.totalWork > this.totalWork) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(newChain);
@@ -143,12 +147,44 @@ class Blockchain extends Observable {
     }
 
     async _verifyBlock(block) {
-        // - Check that the maximum block size is not exceeded.
-        // - Check that header.bodyHash matches the actual bodyHash.
-        // - Check that the headerHash matches the difficulty.
-        // - Check that all transaction signatures are valid.
-        // - XXX Check that there is only one transaction per sender per block.
+        // Check that the maximum block size is not exceeded.
+        if (block.serializedSize > Policy.BLOCK_SIZE_MAX) {
+            console.warn('Blockchain rejected block - max block size exceeded');
+            return;
+        }
 
+        // Check that header bodyHash matches the actual bodyHash.
+        const bodyHash = await block.body.hash();
+        if (!block.header.bodyHash.equals(bodyHash)) {
+            console.warn('Blockchain rejecting block - body hash mismatch');
+            return;
+        }
+
+        // Check that the headerHash matches the difficulty.
+        if (!await block.header.verifyProofOfWork()) {
+            console.warn('Blockchain rejected block - PoW verification failed');
+            return;
+        }
+
+        // Check that all transaction signatures are valid.
+        for (let tx of block.body.transactions) {
+            if (!await tx.verifySignature()) {
+                console.warn('Blockchain rejected block - invalid transaction signature');
+                return;
+            }
+        }
+
+        // XXX Check that there is only one transaction per sender per block.
+        const pubKeys = {};
+        for (let tx of block.body.transactions) {
+            if (pubKeys[tx.publicKey]) {
+                console.warn('Blockchain rejected block - more than one transaction per sender');
+                return;
+            }
+            pubKeys[tx.publicKey] = true;
+        }
+
+        // Everything checks out.
         return true;
     }
 
@@ -162,6 +198,8 @@ class Blockchain extends Observable {
                 + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), newChain.head);
             return;
         }
+
+        // TODO check that the difficulty matches
 
         // AccountsHash matches, commit the block.
         await this._accounts.commitBlock(newChain.head);
