@@ -75,7 +75,10 @@ class Transaction {
     }
 
     hash() {
-        return Crypto.sha256(this.serialize());
+        // Exclude the signature, we don't want transactions to be malleable.
+        // TODO Think about this! This means that the signatures will not be
+        // captured by the proof of work!
+        return Crypto.sha256(this.serializeContent());
     }
 
     equals(o) {

@@ -3,7 +3,12 @@ class Mempool extends Observable {
         super();
         this._blockchain = blockchain;
         this._accounts = accounts;
+
+        // Our pool of transactions.
         this._transactions = {};
+
+        // All public keys of transaction senders currently in the pool.
+        this._publicKeys = {};
 
         // Listen for changes in the blockchain head to evict transactions that
         // have become invalid.
@@ -15,6 +20,14 @@ class Mempool extends Observable {
         if (!await this._verifyTransaction(transaction)) {
             return;
         }
+
+        // Only allow one transaction per publicKey at a time.
+        // TODO This is a major limitation!
+        if (this._publicKeys[transaction.publicKey]) {
+            console.warn('Mempool rejecting transaction - duplicate public key');
+            return;
+        }
+        this._publicKeys[transaction.publicKey] = true;
 
         // Transaction is valid, add it to the mempool.
         const hash = await transaction.hash();
@@ -84,6 +97,7 @@ class Mempool extends Observable {
             const transaction = this._transactions[hash];
             if (!await this._verifyTransactionBalance(transaction, true)) {
                 delete this._transactions[hash];
+                delete this._publicKeys[transaction.publicKey];
             }
         }
 
