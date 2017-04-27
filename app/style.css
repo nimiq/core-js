@@ -40,21 +40,25 @@ header {
     width: 250px;
     max-width: 100%;
     margin: auto;
-    margin-bottom: 10px;
+    margin-bottom: 25px;
     text-align: center;
 }
 
 header .name {
-	line-height: 96px;
+	line-height: 85px;
 	font-size: 70px;
 	font-weight: lighter;
-    font-family: sans-serif;
+	font-family: sans-serif;
 }
 
 header .name span {
 	color: #FFC107;
 	margin-right: 10px;
 	font-size: 54px;
+}
+header .subtitle {
+    font-size: 15px;
+    letter-spacing: 2px;
 }
 
 /* Main UI */
