@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8"/>
-	<title>Lovicash: A web-based peer-to-peer Electronic Cash System</title>
+	<title>Nimiq Web Client</title>
 </head>
 <body>
 	<!--beginjs-->
@@ -54,12 +54,15 @@
 	<script src="Core.js"></script>
 	<!--endjs-->
 
-
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 	<style type="text/css">
 		body{
-			padding: 5% 12%;
 			background: #efefef;
-			font-family: sans-serif;
+			font-family: 'Roboto', sans-serif;
+			color: #333;
+			max-width: 1200px;
+			margin: auto;
+			padding: 20px;
 		}
 
 		#blockHistory {
@@ -67,17 +70,71 @@
 			flex-direction: column-reverse;
 		}
 
-		#mnrStartBtn {
-			margin-bottom: 5px;
+		.left, .right {
+			float: left;
+			width: 50%;
+		}
+		@media screen and (max-width: 760px) {
+			.left, .right {
+				width: 100%;
+			}
 		}
 
-		form {
-			margin-top: 10px;
+		.info {
+			margin: 0 10px 15px 10px;
+			background: #fff;
+			border-radius: 3px;
+		}
+
+		.info-block {
+			padding: 5px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.info-block:empty {
+			padding: 0;
+		}
+		.info-block strong {
+			display: inline-block;
 		}
 
 		.info-title {
-			font-size: 20pt;
-			margin: 15px 0 10px 0;
+			font-size: 14pt;
+			padding: 5px;
+			background: #3949AB;
+			color: white;
+			border-top-left-radius: 3px;
+			border-top-right-radius: 3px;
+		}
+
+		.input-group {
+			padding: 5px 0;
+		}
+		.input-group label {
+			width: 75px;
+			display: inline-block;
+			font-weight: bold;
+		}
+
+		button {
+		    border: 0;
+			border: 1px solid #FFC107;
+		    border-radius: 3px;
+		    padding: 5px 10px;
+		    display: block;
+		    text-align: center;
+		    background: #FFC107;
+		    color: white;
+		    box-sizing: border-box;
+			font-size: 12px;
+			line-height: 12px;
+		}
+		button:hover {
+			background: white;
+			color: #FFC107;
+		}
+		input.error {
+			border: 1px solid #f44336;
 		}
 
 		hash {
@@ -85,140 +142,151 @@
 		}
 	</style>
 
-	<div class="info">
-		<div class="info-title">Blockchain</div>
+	<div class="left">
+		<div class="info">
+			<div class="info-title">Wallet</div>
 
-		<div class="info-block"></div>
-			<strong>Total work</strong>
-			<span id="bcTotalWork"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Height</strong>
-			<span id="bcHeight"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Accounts Hash</strong>
-			<hash id="bcAccountsHash"></hash>
-		</div>
-	</div>
-
-	<div class="info">
-		<div class="info-title">Head Block</div>
-
-		<div class="info-block"></div>
-			<strong>Hash</strong>
-			<hash id="hdHash"></hash>
-		</div>
-		<div class="info-block"></div>
-			<strong>Prev Hash</strong>
-			<hash id="hdPrevHash"></hash>
-		</div>
-		<div class="info-block"></div>
-			<strong>Accounts Hash</strong>
-			<hash id="hdAccountsHash"></hash>
-		</div>
-		<div class="info-block"></div>
-			<strong>Difficulty</strong>
-			<span id="hdDifficulty"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Timestamp</strong>
-			<span id="hdTimestamp"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Nonce</strong>
-			<span id="hdNonce"></span>
-		</div>
-	</div>
-
-	<div class="info">
-		<div class="info-title">Network</div>
-
-		<div class="info-block"></div>
-			<strong>Peers</strong>
-			<span id="netPeerCount"></span>
-		</div>
-	</div>
-
-	<div class="info">
-		<div class="info-title">Wallet</div>
-
-		<div class="info-block"></div>
-			<strong>Address</strong>
-			<span id="wltAddress"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Balance</strong>
-			<span id="wltBalance"></span>
-		</div>
-		<div class="info-block"></div>
-			<strong>Nonce</strong>
-			<span id="wltNonce"></span>
-		</div>
-
-		<form>
-			<strong>Transaction</strong>
-			<div class="input-group">
-				<label for="recipientAddr">Recipient</label>
-				<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+			<div class="info-block">
+				<strong>Address</strong>
+				<span id="wltAddress"></span>
 			</div>
-			<div class="input-group">
-				<label for="value">Value</label>
-				<input id="txValue" name="value" type="number">
+			<div class="info-block">
+				<strong>Balance</strong>
+				<span id="wltBalance"></span>
 			</div>
-			<div class="input-group">
-				<label for="fee">Fee</label>
-				<input id="txFee" name="fee" type="number">
+			<div class="info-block">
+				<strong>Nonce</strong>
+				<span id="wltNonce"></span>
 			</div>
-			<button type="button" id="txSubmitBtn">Send</button>
-		</form>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Transaction</div>
+			<form class="info-block">
+				<div class="input-group">
+					<label for="recipientAddr">Recipient</label>
+					<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+				</div>
+				<div class="input-group">
+					<label for="value">Value</label>
+					<input id="txValue" name="value" type="number">
+				</div>
+				<div class="input-group">
+					<label for="fee">Fee</label>
+					<input id="txFee" name="fee" type="number">
+				</div>
+				<div class="input-group">
+					<button type="button" id="txSubmitBtn">Send</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Miner</div>
+
+			<div class="info-block">
+				<strong>Working</strong>
+				<span id="mnrWorking"></span>
+			</div>
+			<div class="info-block">
+				<strong>Hashrate</strong>
+				<span id="mnrHashrate"></span> H/s
+			</div>
+			<div class="info-block">
+				<strong>Last block mined at</strong>
+				<span id="mnrLastBlockTs"></span>
+			</div>
+			<div class="info-block">
+				<button id="mnrStartBtn">Start Mining</button>
+			</div>
+		</div>
 	</div>
 
-	<div class="info">
+	<div class="right">
+		<div class="info">
+			<div class="info-title">Blockchain</div>
+
+			<div class="info-block">
+				<strong>Total work</strong>
+				<span id="bcTotalWork"></span>
+			</div>
+			<div class="info-block">
+				<strong>Height</strong>
+				<span id="bcHeight"></span>
+			</div>
+			<div class="info-block">
+				<strong>Accounts Hash</strong>
+				<hash id="bcAccountsHash"></hash>
+			</div>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Head Block</div>
+
+			<div class="info-block">
+				<strong>Hash</strong>
+				<hash id="hdHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Prev Hash</strong>
+				<hash id="hdPrevHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Accounts Hash</strong>
+				<hash id="hdAccountsHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Difficulty</strong>
+				<span id="hdDifficulty"></span>
+			</div>
+			<div class="info-block">
+				<strong>Timestamp</strong>
+				<span id="hdTimestamp"></span>
+			</div>
+			<div class="info-block">
+				<strong>Nonce</strong>
+				<span id="hdNonce"></span>
+			</div>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Network</div>
+
+			<div class="info-block">
+				<strong>Peers</strong>
+				<span id="netPeerCount"></span>
+			</div>
+			<div class="info-block">
+				<strong>Bytes received</strong>
+				<span id="netBytesReceived"></span>
+			</div>
+			<div class="info-block">
+				<strong>Bytes sent</strong>
+				<span id="netBytesSent"></span>
+			</div>
+		</div>
+	</div>
+
+	<div class="info" style="clear: left;">
 		<div class="info-title">Mempool</div>
-
-		<div class="info-block"></div>
+		<div class="info-block">
 			<strong>Transaction Count</strong>
 			<span id="mplTransactionCount"></span>
 		</div>
-
-		<div class="info-list" id="mplTransactions"></div>
-	</div>
-
-	<div class="info">
-		<div class="info-title">Miner</div>
-
-		<button id="mnrStartBtn">Start Mining</button>
-
-		<div class="info-block"></div>
-			<strong>Working</strong>
-			<span id="mnrWorking"></span>
-		</div>
-
-		<div class="info-block"></div>
-			<strong>Hashrate</strong>
-			<span id="mnrHashrate"></span> H/s
-		</div>
-
-		<div class="info-block"></div>
-			<strong>Last block mined at</strong>
-			<span id="mnrLastBlockTs"></span>
-		</div>
-
+		<div class="info-block" id="mplTransactions"></div>
 	</div>
 
 	<div class="info">
 		<div class="info-title">Block History</div>
-		<div id="blockHistory"></div>
+		<div class="info-block" id="blockHistory"></div>
 	</div>
-
 
 	<script type="text/javascript">
 		class MinerUI {
 			constructor($) {
 				$.blockchain.on('head-changed', head => this._headChanged(head));
 
-				$.network.on('peers-changed', () => this._peersChanged());
+				$.network.on('peers-changed', () => this._networkChanged());
 
 				$.accounts.on($.wallet.address, (balance) => this._balanceChanged(balance));
 
@@ -244,6 +312,10 @@
 
 				// Network
 				this._netPeerCount = document.querySelector('#netPeerCount');
+				this._netBytesReceived = document.querySelector('#netBytesReceived');
+				this._netBytesSent = document.querySelector('#netBytesSent');
+
+				setInterval(() => this._networkChanged(), 2500);
 
 				// Wallet
 				this._wltAddress = document.querySelector('#wltAddress');
@@ -273,36 +345,47 @@
 
 				// Init values.
 				this._headChanged($.blockchain.head);
-				this._peersChanged();
+				this._networkChanged();
 				this._minerChanged();
 				this._mempoolChanged();
 			}
 
 			_submitTransaction(e) {
-				const recipientAddr = document.querySelector('#txRecipientAddr').value;
-				let value = parseFloat(document.querySelector('#txValue').value);
-				let fee = parseInt(document.querySelector('#txFee').value);
+				const elRecipientAddr = document.querySelector('#txRecipientAddr');
+				const elValue = document.querySelector('#txValue');
+				const elFee = document.querySelector('#txFee');
+				elRecipientAddr.className = null;
+				elValue.className = null;
+				elFee.className = null;
 
+				const recipientAddr = elRecipientAddr.value;
+				let value = parseFloat(elValue.value);
+				let fee = parseInt(elFee.value);
+
+				if (!recipientAddr) {
+					elRecipientAddr.className = 'error';
+					return;
+				}
 				try {
 					new Address(recipientAddr);
 				} catch (e) {
-					alert('Invalid recipient');
+					elRecipientAddr.className = 'error';
 					return;
 				}
 
 				if (isNaN(value) || value <= 0) {
-					alert('Invalid value');
+					elValue.className = 'error';
 					return;
 				}
 
 				if (isNaN(fee) || fee < 0) {
-					alert('Invalid fee');
+					elFee.className = 'error';
 					return;
 				}
 
 				$.accounts.getBalance($.wallet.address).then( balance => {
 					if (balance.value < value + fee) {
-						alert('Insufficient funds.');
+						elValue.className = 'error';
 						return;
 					}
 
@@ -351,8 +434,11 @@
 				}
 			}
 
-			_peersChanged() {
+			_networkChanged() {
 				this._netPeerCount.innerText = $.network.peerCount;
+				// XXX Hack
+				this._netBytesReceived.innerText = P2PChannel.bytesReceived;
+				this._netBytesSent.innerText = P2PChannel.bytesSent;
 			}
 
 			_minerChanged() {

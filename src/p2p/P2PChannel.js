@@ -17,6 +17,9 @@ class P2PChannel extends Observable {
     }
 
     _onMessage(rawMsg) {
+        // XXX Keep track of bytes received.
+        P2PChannel.bytesReceived += rawMsg.byteLength;
+
         let msg;
         try {
             msg = P2PMessageFactory.parse(rawMsg);
@@ -35,6 +38,9 @@ class P2PChannel extends Observable {
 
     _send(msg) {
         this._channel.send(msg.serialize());
+
+        // XXX Keep track of bytes sent.
+        P2PChannel.bytesSent += msg.serializedSize;
     }
 
     version(startHeight) {
@@ -77,3 +83,7 @@ class P2PChannel extends Observable {
         return this._peerId;
     }
 }
+
+// XXX Global bytes sent/received tracking for testing
+P2PChannel.bytesReceived = 0;
+P2PChannel.bytesSent = 0;
