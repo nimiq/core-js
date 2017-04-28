@@ -1,42 +1,143 @@
-class ConsensusP2PAgent {
+class P2PAgent {
 
-    constructor(p2pChannel, blockchain, mempool) {
-        this._channel = p2pChannel;
+    /*
+
+    Types:
+    1. [A] Announcement -> (no response)
+    2. [REQ] Request -> [RES] Response
+    3. [REQ] Request -> [A] Announcement
+
+    1. [A] INV
+    2. [REQ] VERSION    ->  [RES] VERACK
+    2. [REQ] GETDATA    ->  [RES] BLOCK
+                            [RES] TX
+                            [RES] NOTFOUND
+    2. [REQ] GETHEADERS ->  [RES] HEADERS
+    3. [REQ] GETBLOCKS  ->  [A] INV
+    3. [REQ] MEMPOOL    ->  [A] INV
+
+    [State: Initial]
+    Version Handshake
+    - (to peer) send VERSION
+    - expect: VERSION
+    -- timeout: drop peer
+    - (from peer) receive VERSION
+    - (to peer) send VERACK
+    - expect: VERACK
+    -- timeout: drop peer
+    -> State: Established
+
+    No other messages allowed in this state.
+
+
+    [State: Established]
+    new properties: peer.chainHeight (VERSION)
+
+    If peer.chainHeight > ourChainHeight Then: Request blocks
+      - (to peer) send GETBLOCKS (including genesis block locator)
+      - expect: INV
+      -- timeout: ignore/retry/drop peer?
+      - (from peer) receive INV
+      Put inventory vectors in INV_TO_REQUEST pool
+      Trigger GETDATA request immediately (don't wait for pool to fill up)
+    Else:
+      TODO What to do here? Do we just assume the peer has the same chain as us?
+      -> State: Synched
+
+    If INV_IN_FLIGHT pool-empty fires: (after potential blockchain head update)
+      If peer.chainHeight > ourChainHeight Then:
+        Request more blocks (see above)
+      Else:
+        -> State: Synched
+
+
+    OnBlock: {
+      if it is not in the INV_IN_FLIGHT pool, we received the block unsolicited. TODO what to do here?
+      try to push block into blockchain
+      send REJECT message if that fails
+      remove block from INV_IN_FLIGHT pool (fire pool-empty event)
+    }
+
+    OnTx: {
+      if it is not in the INV_IN_FLIGHT pool, we received the transaction unsolicited. TODO what to do here?
+      try to push tx into mempool
+      send REJECT message if that fails
+      remove tx from INV_IN_FLIGHT pool (fire pool-empty event)
+    }
+
+    OnInv: {
+
+    }
+    
+    inv: {
+      Check known objects and drop inv message if we think that the peer already knows that object.
+    }
+
+    getdata: {
+
+    }
+
+    getblocks {
+
+    }
+    mempool: {
+
+    }
+
+    INV_TO_REQUEST POOL:
+    Ordering is important!!!
+    Inv Pool Processing:
+      setInterval() on inv message if not already running
+      send current inv vectors when timer triggers
+
+    When putting inv vectors into the pool:
+    if (INV_TO_REQUEST.length > THRESHOLD) {
+        send GETDATA request with all queued inv vectors
+        put inv vectors into INV_IN_FLIGHT pool
+        clear out INV_TO_REQUEST pool
+    }
+
+    INV_IN_FLIGHT POOL:
+
+
+
+    Known objects:
+    1. Peer -> Us
+    - (from peer) announced via inv
+    - (to peer) requested via getdata
+    - (from peer) received via block/tx
+    2. Us -> Peer
+    - (to peer) announced via inv
+    - (from peer) requested via getdata
+    - (to peer) sent via block/tx
+
+    */
+
+    constructor(peer, blockchain, mempool) {
+        this._peer = peer;
         this._blockchain = blockchain;
         this._mempool = mempool;
 
-        p2pChannel.on('peer-joined', peer => this._onPeerJoined(peer));
+        peer.on('version',    msg => this._onVersion(msg));
+        peer.on('inv',        msg => this._onInv(msg));
+        peer.on('getdata',    msg => this._onGetData(msg));
+        peer.on('notfound',   msg => this._onNotFound(msg));
+        peer.on('block',      msg => this._onBlock(msg));
+        peer.on('tx',         msg => this._onTx(msg));
+        peer.on('getblocks',  msg => this._onGetBlocks(msg));
+        peer.on('mempool',    msg => this._onMempool(msg));
 
-        p2pChannel.on('version',    (msg, sender) => this._onVersion(msg, sender));
-        p2pChannel.on('inv',        (msg, sender) => this._onInv(msg, sender));
-        p2pChannel.on('getdata',    (msg, sender) => this._onGetData(msg, sender));
-        p2pChannel.on('notfound',   (msg, sender) => this._onNotFound(msg, sender));
-        p2pChannel.on('block',      (msg, sender) => this._onBlock(msg, sender));
-        p2pChannel.on('tx',         (msg, sender) => this._onTx(msg, sender));
-        p2pChannel.on('getblocks',  (msg, sender) => this._onGetBlocks(msg, sender));
-        p2pChannel.on('mempool',    (msg, sender) => this._onMempool(msg, sender));
-
-        // Notify peers when our blockchain head changes.
-        // TODO Only do this if our local blockchain has caught up with the consensus height.
-        blockchain.on('head-changed', head => {
-            InvVector.fromBlock(head)
-                .then( vector => this._channel.inv([vector]));
-        });
-
-        // Relay new (verified) transactions to peers.
-        mempool.on('transaction-added', tx => {
-            InvVector.fromTransaction(tx)
-                .then( vector => this._channel.inv([vector]));
-        });
+        // Start speaking our P2P protocol with this peer.
+        this._startProtocol();
     }
 
-    async _onPeerJoined(peer) {
-        // When a new peer connects, tell it our version.
-        peer.version(this._blockchain.height);
+    async _startProtocol() {
+        // Kick off the protocol by telling the peer our version & blockchain height.
+        this._peer.version(this._blockchain.height);
     }
 
-    async _onVersion(msg, sender) {
-        // A new peer has told us his version.
+    async _onVersion(msg) {
+        // The peer told us his version.
         console.log('[VERSION] startHeight=' + msg.startHeight);
 
         // Check if it claims to have a longer chain.
