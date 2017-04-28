@@ -51,6 +51,7 @@ class P2PAgent {
         -> State: Synched
 
 
+
     OnBlock: {
       if it is not in the INV_IN_FLIGHT pool, we received the block unsolicited. TODO what to do here?
       try to push block into blockchain
@@ -66,15 +67,21 @@ class P2PAgent {
     }
 
     OnInv: {
-
+      put vectors into request pool
+      send GETDATA if pool size reaches threshold
     }
-    
+
     inv: {
       Check known objects and drop inv message if we think that the peer already knows that object.
     }
 
     getdata: {
+      Grab all inv vectors from INV_TO_REQUEST pool (in order!!!!)
+      Put vectors into INV_IN_FLIGHT pool
+      Clear INV_TO_REQUEST pool
+      send request(s) for inv vectors
 
+      // TODO setup timer to watch for failed requests
     }
 
     getblocks {
