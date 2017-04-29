@@ -10,6 +10,18 @@ class BufferUtils {
     return encoder.encode(string);
   }
 
+  static toAscii(buffer) {
+      return String.fromCharCode.apply(null, new Uint8Array(buffer));
+  }
+
+  static fromAscii(string) {
+      var buf = new ArrayBuffer(string.length);
+      for (let i = 0; i < string.length; ++i) {
+          buf[i] = string.charCodeAt(i);
+      }
+      return buf;
+  }
+
   static toBase64(buffer) {
     return btoa(String.fromCharCode(...new Uint8Array(buffer)));
   }

@@ -24,6 +24,12 @@ class P2PChannel extends Observable {
         try {
             msg = P2PMessageFactory.parse(rawMsg);
         } catch(e) {
+            // TODO Drop client if it keeps sending junk.
+            // TODO Bitcoin sends a reject message if the message can't be decoded.
+            // From the Bitcoin Reference:
+            //  "Be careful of reject message feedback loops where two peers
+            //   each don’t understand each other’s reject messages and so keep
+            //   sending them back and forth forever."
             console.log('Failed to parse message: ' + rawMsg, e);
         }
 
@@ -45,6 +51,10 @@ class P2PChannel extends Observable {
 
     version(startHeight) {
         this._send(new VersionP2PMessage(1, 0, Date.now(), startHeight));
+    }
+
+    verack() {
+        this._send(new VerAckP2PMessage());
     }
 
     inv(vectors) {
@@ -73,6 +83,10 @@ class P2PChannel extends Observable {
 
     mempool() {
         this._send(new MempoolP2PMessage());
+    }
+
+    reject(messageType, code, reason, extraData) {
+        this._send(new RejectP2PMessage(messageType, code, reason, extraData));
     }
 
     get rawChannel() {

@@ -10,6 +10,7 @@ class P2PMessageFactory {
 
 P2PMessageFactory.CLASSES = {};
 P2PMessageFactory.CLASSES[P2PMessage.Type.VERSION] = VersionP2PMessage;
+P2PMessageFactory.CLASSES[P2PMessage.Type.VERACK] = VerAckP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.INV] = InvP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.GETDATA] = GetDataP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.NOTFOUND] = NotFoundP2PMessage;
@@ -17,3 +18,4 @@ P2PMessageFactory.CLASSES[P2PMessage.Type.BLOCK] = BlockP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.TX] = TxP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.GETBLOCKS] = GetBlocksP2PMessage;
 P2PMessageFactory.CLASSES[P2PMessage.Type.MEMPOOL] = MempoolP2PMessage;
+P2PMessageFactory.CLASSES[P2PMessage.Type.REJECT] = RejectP2PMessage;

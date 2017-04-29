@@ -1,6 +1,6 @@
 class P2PMessage {
 	constructor(type) {
-        if (!type || !type.length || type.length > 12) throw 'Malformed type';
+        if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12)) throw 'Malformed type';
         this._type = type;
 	}
 
@@ -12,7 +12,7 @@ class P2PMessage {
         buf.readPos = 4;
 
         // Read the type string.
-        const type = buf.readFixedString(12);
+        const type = buf.readFixLengthString(12);
 
         // Reset the read position to original.
         buf.readPos = pos;
@@ -23,7 +23,7 @@ class P2PMessage {
     static unserialize(buf) {
         const magic = buf.readUint32();
         if (magic !== P2PMessage.MAGIC) throw 'Malformed magic';
-        const type = buf.readFixedString(12);
+        const type = buf.readFixLengthString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
 		// TODO validate checksum
@@ -34,7 +34,7 @@ class P2PMessage {
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
         buf.writeUint32(P2PMessage.MAGIC);
-        buf.writeFixedString(this._type, 12);
+        buf.writeFixLengthString(this._type, 12);
         buf.writeUint32(this._length);
         buf.writeUint32(this._checksum);
         return buf;

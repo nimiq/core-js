@@ -69,18 +69,31 @@ class Buffer extends Uint8Array {
         this._writePos += 8;
     }
 
-    readFixedString(length) {
-        let bytes = this.read(length);
+    readFixLengthString(length) {
+        const bytes = this.read(length);
         let i = 0;
         while (i < length && bytes[i] != 0x0) i++;
-        let view = new Uint8Array(bytes.buffer, bytes.byteOffset, i);
-        return BufferUtils.toUnicode(view);
+        const view = new Uint8Array(bytes.buffer, bytes.byteOffset, i);
+        return BufferUtils.toAscii(view);
     }
-    writeFixedString(value, length) {
-        var bytes = BufferUtils.fromUnicode(value);
-        if (bytes.byteLength > length) throw 'Malformed length';
+    writeFixLengthString(value, length) {
+        if (StringUtils.isMultibyte(value) || value.length > length) throw 'Malformed value/length';
+        const bytes = BufferUtils.fromAscii(value);
         this.write(bytes);
-        var padding = length - bytes.byteLength;
+        const padding = length - bytes.byteLength;
         this.write(new Uint8Array(padding));
+    }
+
+    readVarLengthString() {
+        const length = this.readUint8();
+        if (this._readPos + length > this.length) throw 'Malformed length';
+        const bytes = this.read(length);
+        return BufferUtils.toAscii(bytes);
+    }
+    writeVarLengthString(value) {
+        if (StringUtils.isMultibyte(value) || !NumberUtils.isUint8(value.length)) throw 'Malformed value';
+        const bytes = BufferUtils.fromAscii(value);
+        this.writeUint8(bytes.byteLength);
+        this.write(bytes);
     }
 }
