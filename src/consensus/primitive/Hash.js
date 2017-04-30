@@ -27,11 +27,11 @@ class Hash extends Primitive {
 			&& super.equals(o);
 	}
 
-	static fromBase64(base64){
+	static fromBase64(base64) {
 		return new Hash(BufferUtils.fromBase64(base64));
 	}
 
-	static isHash(o){
+	static isHash(o) {
 		return o instanceof Hash;
 	}
 }

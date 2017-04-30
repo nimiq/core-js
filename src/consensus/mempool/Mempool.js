@@ -18,14 +18,14 @@ class Mempool extends Observable {
     async pushTransaction(transaction) {
         // Fully verify the transaction against the current accounts state.
         if (!await this._verifyTransaction(transaction)) {
-            return;
+            return false;
         }
 
         // Only allow one transaction per publicKey at a time.
         // TODO This is a major limitation!
         if (this._publicKeys[transaction.publicKey]) {
             console.warn('Mempool rejecting transaction - duplicate public key');
-            return;
+            return false;
         }
         this._publicKeys[transaction.publicKey] = true;
 
@@ -35,6 +35,8 @@ class Mempool extends Observable {
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
+
+        return true;
     }
 
     // Currently not asynchronous, but might be in the future.

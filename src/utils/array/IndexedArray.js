@@ -26,9 +26,11 @@ class IndexedArray {
         }
     }
 
+    // TODO index access set, e.g. arr[5] = 42
+
     push(value) {
-        const length = this._array.push(value);
         if (this._index[value] !== undefined) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+        const length = this._array.push(value);
         this._index[value] = length - 1;
         return length;
     }
@@ -39,8 +41,22 @@ class IndexedArray {
         return value;
     }
 
+    delete(value) {
+        const index = this._index[value];
+        if (index !== undefined) {
+            delete this._array[this._index[value]];
+            delete this._index[value];
+            return index;
+        }
+        return -1;
+    }
+
     indexOf(value) {
         return this._index[value] >= 0 ? this._index[value] : -1;
+    }
+
+    isEmpty() {
+        return Object.keys(this._index).length == 0;
     }
 
     get length() {

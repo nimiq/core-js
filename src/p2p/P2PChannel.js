@@ -49,6 +49,11 @@ class P2PChannel extends Observable {
         P2PChannel.bytesSent += msg.serializedSize;
     }
 
+    close() {
+        if (!this._channel.close) throw 'Underlying channel is not closeable';
+        this._channel.close();
+    }
+
     version(startHeight) {
         this._send(new VersionP2PMessage(1, 0, Date.now(), startHeight));
     }

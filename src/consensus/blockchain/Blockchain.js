@@ -78,7 +78,7 @@ class Blockchain extends Observable {
 
     pushBlock(block) {
         return new Promise( (resolve, error) => {
-            this._synchronizer.push( _ => {
+            this._synchronizer.push( () => {
                 return this._pushBlock(block);
             }, resolve, error);
         });
@@ -90,24 +90,24 @@ class Blockchain extends Observable {
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
             console.log('Blockchain ignoring known block', block);
-            return;
+            return true;
         }
 
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
             console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown', block);
-            return;
+            return false;
         }
 
         // Check all intrinsic block invariants.
         if (!await this._verifyBlock(block)) {
-            return;
+            return false;
         }
 
         // Check that the block is a valid extension of its previous block.
         if (!await this._isValidExtension(prevChain, block)) {
-            return;
+            return false;
         }
 
         // Block looks good, compute the new total work & height.
@@ -126,7 +126,7 @@ class Blockchain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return;
+            return true;
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
@@ -138,7 +138,7 @@ class Blockchain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return;
+            return true;
         }
 
         // Otherwise, we are creating/extending a fork. We have stored the block,
@@ -146,6 +146,8 @@ class Blockchain extends Observable {
         console.log('Creating/extending fork with block ' + hash.toBase64()
             + ', height=' + newChain.height + ', totalWork='
             + newChain.totalWork, newChain);
+
+        return true;
     }
 
     async _verifyBlock(block) {

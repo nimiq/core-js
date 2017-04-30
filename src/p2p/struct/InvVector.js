@@ -33,6 +33,10 @@ class InvVector {
             && this._hash.equals(o.hash);
     }
 
+    toString() {
+        return "InvVector{type=" + this._type + ", hash=" + this.hash + "}";
+    }
+    
     get serializedSize() {
         return /*invType*/ 4
             + this._hash.serializedSize;
