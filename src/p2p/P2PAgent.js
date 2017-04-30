@@ -194,6 +194,27 @@ class P2PAgent extends Observable {
         this._handshake();
     }
 
+    /* Public API */
+    async relayBlock(block) {
+        // Don't relay block to this peer if it already knows it.
+        const hash = await block.hash();
+        if (this._knownObjects[hash]) return;
+
+        // Relay block to peer.
+        const vector = new InvVector(InvVector.Type.BLOCK, hash);
+        this._peer.inv([vector]);
+    }
+
+    async relayTransaction(transaction) {
+        // Don't relay transaction to this peer if it already knows it.
+        const hash = await transaction.hash();
+        if (this._knownObjects[hash]) return;
+
+        // Relay transaction to peer.
+        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+        this._peer.inv([vector]);
+    }
+
     /* Initial State: Handshake */
 
     async _handshake() {
@@ -231,7 +252,7 @@ class P2PAgent extends Observable {
         this._startHeight = msg.startHeight;
     }
 
-    _onVerAck() {
+    _onVerAck(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) return;
 
@@ -252,7 +273,7 @@ class P2PAgent extends Observable {
         this.fire('connected');
 
         // Initiate blockchain sync.
-        _sync();
+        this._sync();
     }
 
 
@@ -350,7 +371,7 @@ class P2PAgent extends Observable {
             this._timers.clearTimeout('inv');
 
             // If there are enough objects queued up, send out a getdata request.
-            if (this._objectsToRequest.length >= REQUEST_THRESHOLD) {
+            if (this._objectsToRequest.length >= P2PAgent.REQUEST_THRESHOLD) {
                 this._requestData();
             }
             // Otherwise, wait a short time for more inv messages to arrive, then request.
@@ -384,6 +405,9 @@ class P2PAgent extends Observable {
             console.warn(missingObjects + ' missing objects for request ' + requestId, objects);
             // TODO what to do here?
         }
+
+        // Cancel the request timeout timer.
+        this._timers.clearTimeout('getdata_' + requestId);
 
         // Delete the request.
         this._inFlightRequests.deleteRequest(requestId);
@@ -460,10 +484,10 @@ class P2PAgent extends Observable {
 
     _onObjectReceived(hash) {
         // Mark the getdata request for this object as complete.
+        const requestId = this._inFlightRequests.getRequestId(hash);
         this._inFlightRequests.deleteObject(hash);
 
         // Check if we have received all objects for this request.
-        const requestId = this._inFlightRequests.getRequestId(hash);
         const objects = this._inFlightRequests.getObjects(requestId);
         const moreObjects = Object.keys(objects).length > 0;
 
@@ -493,7 +517,7 @@ class P2PAgent extends Observable {
                     console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (block) {
                         // We have found a requested block, send it back to the sender.
-                        sender.block(block);
+                        this._peer.block(block);
                     } else {
                         // Requested block is unknown.
                         unknownObjects.push(vector);
@@ -505,7 +529,7 @@ class P2PAgent extends Observable {
                     console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
-                        sender.tx(tx);
+                        this._peer.tx(tx);
                     } else {
                         // Requested transaction is unknown.
                         unknownObjects.push(vector);
@@ -519,10 +543,9 @@ class P2PAgent extends Observable {
 
         // Report any unknown objects back to the sender.
         if (unknownObjects.length) {
-            sender.notfound(unknownObjects);
+            this._peer.notfound(unknownObjects);
         }
     }
-
 
     async _onGetBlocks(msg) {
         console.log('[GETBLOCKS] Request for blocks, ' + msg.hashes.length + ' block locators');
@@ -583,7 +606,7 @@ class P2PAgent extends Observable {
         }
 
         // Send the vectors back to the requesting peer.
-        sender.inv(vectors);
+        this._peer.inv(vectors);
     }
 
     async _onMempool(msg) {
@@ -595,7 +618,7 @@ class P2PAgent extends Observable {
 
         // Send transactions back to sender.
         for (let tx of transactions) {
-            sender.tx(tx);
+            this._peer.tx(tx);
         }
     }
 
@@ -672,7 +695,7 @@ class InFlightRequests {
     push(objects) {
         this._array[this._requestId] = {};
         for (let obj of objects) {
-            this._index[obj.hash] = requestId;
+            this._index[obj.hash] = this._requestId;
             this._array[this._requestId][obj.hash] = obj;
         }
         return this._requestId++;

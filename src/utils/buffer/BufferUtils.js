@@ -15,7 +15,7 @@ class BufferUtils {
   }
 
   static fromAscii(string) {
-      var buf = new ArrayBuffer(string.length);
+      var buf = new Uint8Array(string.length);
       for (let i = 0; i < string.length; ++i) {
           buf[i] = string.charCodeAt(i);
       }

@@ -43,7 +43,12 @@ class P2PChannel extends Observable {
     }
 
     _send(msg) {
-        this._channel.send(msg.serialize());
+        try {
+            this._channel.send(msg.serialize());
+        } catch (e) {
+            console.error('Failed to send data to peer ' + this._peerId, e);
+            return;
+        }
 
         // XXX Keep track of bytes sent.
         P2PChannel.bytesSent += msg.serializedSize;
@@ -101,6 +106,10 @@ class P2PChannel extends Observable {
 
     get peerId() {
         return this._peerId;
+    }
+
+    toString() {
+        return 'Peer{id=' + this._peerId + '}';
     }
 }
 

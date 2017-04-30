@@ -5,8 +5,9 @@ class Consensus extends Observable {
         this._agents = {};
         this._state = Consensus.State.UNKNOWN;
 
+        // Create a P2PAgent for each peer that connects.
         broadcastChannel.on('peer-joined', peer => {
-            const agent = new P2PAgent(peer);
+            const agent = new P2PAgent(peer, blockchain, mempool);
             this._agents[peer.peerId] = agent;
             agent.on('consensus', () => this._onPeerConsensus(agent));
         });
@@ -15,21 +16,26 @@ class Consensus extends Observable {
         });
 
         // Notify peers when our blockchain head changes.
-        // TODO Only do this if our local blockchain has caught up with the consensus height.
         blockchain.on('head-changed', head => {
-            InvVector.fromBlock(head)
-                .then( vector => this._channel.inv([vector]));
+            for (let peerId in this._agents) {
+                this._agents[peerId].relayBlock(head);
+            }
         });
 
         // Relay new (verified) transactions to peers.
         mempool.on('transaction-added', tx => {
-            InvVector.fromTransaction(tx)
-                .then( vector => this._channel.inv([vector]));
+            for (let peerId in this._agents) {
+                this._agents[peerId].relayTransaction(tx);
+            }
         });
     }
 
     _onPeerConsensus(agent) {
+        // TODO Derive consensus state from several peers.
+        this._state = Consensus.State.ESTABLISHED;
         this.fire('established');
+
+        console.log('Consensus established');
     }
 
     get state() {
@@ -39,6 +45,8 @@ class Consensus extends Observable {
     get established() {
         return this._state === Consensus.State.ESTABLISHED;
     }
+
+    // TODO confidence level?
 }
 Consensus.State = {};
 Consensus.State.UNKNOWN = 'unknown';
