@@ -56,4 +56,5 @@ class RejectP2PMessage extends P2PMessage {
         return this._extraData;
     }
 }
+RejectP2PMessage.Code = {};
 RejectP2PMessage.Code.DUPLICATE = 0x12;

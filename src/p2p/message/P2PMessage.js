@@ -1,6 +1,6 @@
 class P2PMessage {
 	constructor(type) {
-        if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12)) throw 'Malformed type';
+        if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
         this._type = type;
 	}
 

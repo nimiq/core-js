@@ -19,8 +19,9 @@ class Core {
 
         // P2P
         this.network = new P2PNetwork();
-        // XXX This is currently the main controller, naming?
-        this.agent = new ConsensusP2PAgent(this.network.broadcastChannel, this.blockchain, this.mempool);
+
+        // Consensus
+        this.consensus = new Consensus(this.network.broadcastChannel, this.blockchain, this.mempool);
 
         // Wallet
         this.wallet = await Wallet.getPersistent();

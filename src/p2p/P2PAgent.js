@@ -135,22 +135,22 @@ class P2PAgent extends Observable {
 
     */
 
-    static get HANDSHAKE_TIMEOUT {
+    static get HANDSHAKE_TIMEOUT() {
         return 10000; // [ms]
     }
 
     // Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
-    static get REQUEST_THRESHOLD {
+    static get REQUEST_THRESHOLD() {
         return 50;
     }
 
     // Time to wait after the last received inv message before sending getdata.
-    static get REQUEST_THROTTLE {
+    static get REQUEST_THROTTLE() {
         return 500; // ms
     }
 
     // Maximum time to wait after sending out getdata or receiving the last object for this request.
-    static get REQUEST_TIMEOUT {
+    static get REQUEST_TIMEOUT() {
         return 5000; // ms
     }
 
@@ -249,6 +249,9 @@ class P2PAgent extends Observable {
 
         // Handshake completed, connection established.
         this._state = P2PAgent.State.CONNECTED;
+        this.fire('connected');
+
+        // Initiate blockchain sync.
         _sync();
     }
 
@@ -266,12 +269,14 @@ class P2PAgent extends Observable {
 
             // XXX assume consensus state?
             this._state = P2PAgent.State.CONSENSUS;
+            this.fire('consensus');
         } else {
             // We have the same chain height as the peer.
             // TODO Do we need to check that we have the same head???
 
             // Consensus established.
             this._state = P2PAgent.State.CONSENSUS;
+            this.fire('consensus');
         }
     }
 
@@ -294,11 +299,17 @@ class P2PAgent extends Observable {
 
         // Request blocks from peer.
         this._peer.getblocks(hashes);
+
+        // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
+        this._timers.setTimeout('getblocks', () => this._peer.close(), P2PAgent.REQUEST_TIMEOUT);
     }
 
     async _onInv(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) return;
+
+        // Clear the getblocks timeout.
+        this._timers.clearTimeout('getblocks');
 
         // Check which of the advertised objects we know
         // Request unknown objects, ignore known ones.
@@ -431,7 +442,7 @@ class P2PAgent extends Observable {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) return;
 
-        console.log('[NOTFOUND] ' + msg.vectors.length ' unknown objects', msg.vectors);
+        console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects', msg.vectors);
 
         // Remove unknown objects from in-flight list.
         for (let obj of msg.vectors) {
@@ -607,9 +618,10 @@ class P2PAgent extends Observable {
         }
     }
 }
-P2PAgent.State.INITIAL = 0;
-P2PAgent.State.CONNECTED = 1;
-P2PAgent.State.CONSENSUS = 2;
+P2PAgent.State = {};
+P2PAgent.State.INITIAL = 'initial';
+P2PAgent.State.CONNECTED = 'connected';
+P2PAgent.State.CONSENSUS = 'consensus';
 //P2PAgent.State.DISCORD = 3;
 
 

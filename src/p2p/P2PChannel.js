@@ -9,10 +9,10 @@ class P2PChannel extends Observable {
             this._channel.onmessage = rawMsg => this._onMessage(rawMsg.data || rawMsg);
         }
         if (this._channel.onclose !== undefined) {
-            this._channel.onclose = _ => this.fire('peer-left');
+            this._channel.onclose = _ => this.fire('peer-left', this._peerId);
         }
         if (this._channel.onerror !== undefined) {
-            this._channel.onerror = e => this.fire('peer-error', e);
+            this._channel.onerror = e => this.fire('peer-error', this._peerId, e);
         }
     }
 
@@ -51,6 +51,7 @@ class P2PChannel extends Observable {
 
     close() {
         if (!this._channel.close) throw 'Underlying channel is not closeable';
+        console.log('Closing channel to peer ' + this.peerId);
         this._channel.close();
     }
 
