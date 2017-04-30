@@ -280,11 +280,15 @@ class P2PAgent extends Observable {
     /* Connected State: Sync blockchain */
 
     _sync() {
+        // TODO Don't loop forver here!!
+        // Save the last blockchain height when we issuing getblocks and when we get here again, see if it changed.
+        // If it didn't the peer didn't give us any valid blocks. Try again or drop him!
+
         if (this._blockchain.height < this._startHeight) {
             // If the peer has a longer chain than us, request blocks from it.
             this._requestBlocks();
         } else if (this._blockchain.height > this._startHeight) {
-            // The peer has a shorter than us.
+            // The peer has a shorter chain than us.
             // TODO what do we do here?
             console.log('Peer ' + this._peer + ' has a shorter chain (' + this._startHeight + ') than us');
 

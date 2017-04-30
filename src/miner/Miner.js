@@ -45,11 +45,6 @@ class Miner extends Observable {
 			return;
 		}
 
-		// Don't re-enter.
-		if (this._worker) {
-			return;
-		}
-
 		// Construct next block.
 		const nextBlock = await this._getNextBlock();
 
