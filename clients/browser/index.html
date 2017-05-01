@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Nimiq Blockchain Cockpit &ndash; Beta</title>
+
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+</head>
+<body>
+	<header>
+		<span class="name"><span class="icon-nimiq"></span>nimiq</span>
+		<span class="subtitle">Blockchain Cockpit &mdash; Beta</span>
+	</header>
+
+	<!--beginjs-->
+	<script src="../../src/main/platform/browser/Class.js"></script>
+	<script src="../../src/main/platform/browser/database/IndexedDB.js"></script>
+	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
+	<script src="../../src/main/platform/browser/database/storage-persistence.js"></script>
+	<script src="../../src/main/generic/utils/array/IndexedArray.js"></script>
+	<script src="../../src/main/generic/utils/buffer/SerialBuffer.js"></script>
+	<script src="../../src/main/generic/utils/buffer/BufferUtils.js"></script>
+	<script src="../../src/main/generic/utils/crypto/Crypto.js"></script>
+	<script src="../../src/main/generic/utils/number/NumberUtils.js"></script>
+	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
+	<script src="../../src/main/generic/utils/string/StringUtils.js"></script>
+	<script src="../../src/main/generic/utils/Observable.js"></script>
+	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
+	<script src="../../src/main/generic/utils/Timers.js"></script>
+	<script src="../../src/main/generic/consensus/primitive/Primitive.js"></script>
+	<script src="../../src/main/generic/consensus/primitive/Hash.js"></script>
+	<script src="../../src/main/generic/consensus/primitive/PrivateKey.js"></script>
+	<script src="../../src/main/generic/consensus/primitive/PublicKey.js"></script>
+	<script src="../../src/main/generic/consensus/primitive/Signature.js"></script>
+	<script src="../../src/main/generic/consensus/account/Accounts.js"></script>
+	<script src="../../src/main/generic/consensus/account/AccountsTree.js"></script>
+	<script src="../../src/main/generic/consensus/account/AccountsTreeStore.js"></script>
+	<script src="../../src/main/generic/consensus/account/Address.js"></script>
+	<script src="../../src/main/generic/consensus/account/Balance.js"></script>
+	<script src="../../src/main/generic/consensus/block/BlockBody.js"></script>
+	<script src="../../src/main/generic/consensus/block/BlockHeader.js"></script>
+	<script src="../../src/main/generic/consensus/block/Block.js"></script>
+	<script src="../../src/main/generic/consensus/blockchain/Blockchain.js"></script>
+	<script src="../../src/main/generic/consensus/blockchain/BlockchainStore.js"></script>
+	<script src="../../src/main/generic/consensus/transaction/Transaction.js"></script>
+	<script src="../../src/main/generic/consensus/mempool/Mempool.js"></script>
+	<script src="../../src/main/generic/consensus/Consensus.js"></script>
+	<script src="../../src/main/generic/p2p/message/P2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/BlockP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/GetBlocksP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/InventoryP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/VersionP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/VerAckP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/TxP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/MempoolP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/RejectP2PMessage.js"></script>
+	<script src="../../src/main/generic/p2p/message/P2PMessageFactory.js"></script>
+	<script src="../../src/main/generic/p2p/struct/InvVector.js"></script>
+	<script src="../../src/main/platform/browser/network/certificate/webrtc-certificate.js"></script>
+	<script src="../../src/main/platform/browser/network/peer-portal/PeerPortal.js"></script>
+	<script src="../../src/main/generic/p2p/P2PAgent.js"></script>
+	<script src="../../src/main/generic/p2p/P2PChannel.js"></script>
+	<script src="../../src/main/generic/p2p/P2PNetwork.js"></script>
+	<script src="../../src/main/generic/miner/Miner.js"></script>
+	<script src="../../src/main/generic/miner/Policy.js"></script>
+	<script src="../../src/main/generic/wallet/Wallet.js"></script>
+	<script src="../../src/main/generic/Core.js"></script>
+	<!--endjs-->
+
+	<div class="left">
+		<div class="info">
+			<div class="info-title">Wallet</div>
+
+			<div class="info-block">
+				<strong>Address</strong>
+				<span id="wltAddress"></span>
+			</div>
+			<div class="info-block">
+				<strong>Balance</strong>
+				<span id="wltBalance"></span>
+			</div>
+			<div class="info-block">
+				<strong>Nonce</strong>
+				<span id="wltNonce"></span>
+			</div>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Transaction</div>
+			<form>
+				<div class="input-group">
+					<label for="recipientAddr">Recipient</label>
+					<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+				</div>
+				<div class="input-group">
+					<label for="value">Value</label>
+					<input id="txValue" name="value" type="number">
+				</div>
+				<div class="input-group">
+					<label for="fee">Fee</label>
+					<input id="txFee" name="fee" type="number">
+				</div>
+				<div class="input-group">
+					<button type="button" id="txSubmitBtn">Send</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Miner</div>
+
+			<div class="info-block">
+				<strong>Working</strong>
+				<span id="mnrWorking"></span>
+			</div>
+			<div class="info-block">
+				<strong>Hashrate</strong>
+				<span id="mnrHashrate"></span> H/s
+			</div>
+			<div class="info-block">
+				<strong>Last block mined at</strong>
+				<span id="mnrLastBlockTs"></span>
+			</div>
+			<div class="info-block">
+				<button id="mnrStartBtn">Start Mining</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="right">
+		<div class="info">
+			<div class="info-title">Blockchain</div>
+
+			<div class="info-block">
+				<strong>Total work</strong>
+				<span id="bcTotalWork"></span>
+			</div>
+			<div class="info-block">
+				<strong>Height</strong>
+				<span id="bcHeight"></span>
+			</div>
+			<div class="info-block">
+				<strong>Accounts Hash</strong>
+				<hash id="bcAccountsHash"></hash>
+			</div>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Head Block</div>
+
+			<div class="info-block">
+				<strong>Hash</strong>
+				<hash id="hdHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Prev Hash</strong>
+				<hash id="hdPrevHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Accounts Hash</strong>
+				<hash id="hdAccountsHash"></hash>
+			</div>
+			<div class="info-block">
+				<strong>Difficulty</strong>
+				<span id="hdDifficulty"></span>
+			</div>
+			<div class="info-block">
+				<strong>Timestamp</strong>
+				<span id="hdTimestamp"></span>
+			</div>
+			<div class="info-block">
+				<strong>Nonce</strong>
+				<span id="hdNonce"></span>
+			</div>
+		</div>
+
+		<div class="info">
+			<div class="info-title">Network</div>
+
+			<div class="info-block">
+				<strong>Peers</strong>
+				<span id="netPeerCount"></span>
+			</div>
+			<div class="info-block">
+				<strong>Bytes received</strong>
+				<span id="netBytesReceived"></span>
+			</div>
+			<div class="info-block">
+				<strong>Bytes sent</strong>
+				<span id="netBytesSent"></span>
+			</div>
+		</div>
+	</div>
+
+	<div class="info" style="clear: left;">
+		<div class="info-title">Mempool</div>
+		<div class="info-block">
+			<strong>Transaction Count</strong>
+			<span id="mplTransactionCount"></span>
+		</div>
+		<div class="info-block" id="mplTransactions"></div>
+	</div>
+
+	<div class="info">
+		<div class="info-title">Block History</div>
+		<div class="info-block" id="blockHistory"></div>
+	</div>
+
+	<script type="text/javascript">
+		class MinerUI {
+			constructor($) {
+				$.blockchain.on('head-changed', head => this._headChanged(head));
+
+				$.network.on('peers-changed', () => this._networkChanged());
+
+				$.accounts.on($.wallet.address, (balance) => this._balanceChanged(balance));
+
+				$.mempool.on('*', () => this._mempoolChanged());
+
+				$.miner.on('start', () => this._minerChanged());
+				$.miner.on('stop', () => this._minerChanged());
+				$.miner.on('hashrate-changed', () => this._minerChanged());
+				$.miner.on('block-mined', () => this._blockMined());
+
+				// Blockchain
+				this._bcTotalWork = document.querySelector('#bcTotalWork');
+				this._bcHeight = document.querySelector('#bcHeight');
+				this._bcAccountsHash = document.querySelector('#bcAccountsHash');
+
+				// Head block
+				this._hdHash = document.querySelector('#hdHash');
+				this._hdPrevHash = document.querySelector('#hdPrevHash');
+				this._hdAccountsHash = document.querySelector('#hdAccountsHash');
+				this._hdDifficulty = document.querySelector('#hdDifficulty');
+				this._hdTimestamp = document.querySelector('#hdTimestamp');
+				this._hdNonce = document.querySelector('#hdNonce');
+
+				// Network
+				this._netPeerCount = document.querySelector('#netPeerCount');
+				this._netBytesReceived = document.querySelector('#netBytesReceived');
+				this._netBytesSent = document.querySelector('#netBytesSent');
+
+				setInterval(() => this._networkChanged(), 2500);
+
+				// Wallet
+				this._wltAddress = document.querySelector('#wltAddress');
+				this._wltBalance = document.querySelector('#wltBalance');
+				this._wltNonce = document.querySelector('#wltNonce');
+
+				this._wltAddress.innerText = $.wallet.address.toBase64();
+				$.accounts.getBalance($.wallet.address).then( balance => this._balanceChanged(balance));
+
+				const txSubmitBtn = document.querySelector('#txSubmitBtn');
+				txSubmitBtn.onclick = (e) => this._submitTransaction(e);
+
+				// Mempool
+				this._mplTransactionCount = document.querySelector('#mplTransactionCount');
+				this._mplTransactions = document.querySelector('#mplTransactions');
+
+				// Miner
+				this._mnrWorking = document.querySelector('#mnrWorking');
+				this._mnrHashrate = document.querySelector('#mnrHashrate');
+				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
+
+				this._mnrStartBtn = document.querySelector('#mnrStartBtn');
+				this._mnrStartBtn.onclick = () => this._toggleMining();
+
+				// Block history
+				this._blockHistory = document.querySelector('#blockHistory');
+
+				// Init values.
+				this._headChanged($.blockchain.head);
+				this._networkChanged();
+				this._minerChanged();
+				this._mempoolChanged();
+			}
+
+			_submitTransaction(e) {
+				const elRecipientAddr = document.querySelector('#txRecipientAddr');
+				const elValue = document.querySelector('#txValue');
+				const elFee = document.querySelector('#txFee');
+				elRecipientAddr.className = null;
+				elValue.className = null;
+				elFee.className = null;
+
+				const recipientAddr = elRecipientAddr.value;
+				let value = parseFloat(elValue.value);
+				let fee = parseInt(elFee.value);
+
+				if (!recipientAddr) {
+					elRecipientAddr.className = 'error';
+					return;
+				}
+				try {
+					new Address(recipientAddr);
+				} catch (e) {
+					elRecipientAddr.className = 'error';
+					return;
+				}
+
+				if (isNaN(value) || value <= 0) {
+					elValue.className = 'error';
+					return;
+				}
+
+				if (isNaN(fee) || fee < 0) {
+					elFee.className = 'error';
+					return;
+				}
+
+				$.accounts.getBalance($.wallet.address).then( balance => {
+					// XXX Coin to cent conversion
+					value = Math.round(value * 1e4);
+					fee = Math.round(fee * 1e4);
+
+					if (balance.value < value + fee) {
+						elValue.className = 'error';
+						return;
+					}
+
+					$.wallet.createTransaction(new Address(recipientAddr), value, fee, balance.nonce).then( tx => {
+						$.mempool.pushTransaction(tx);
+					});
+				});
+
+				e.preventDefault();
+				return false;
+			}
+
+			_headChanged(head) {
+				this._bcTotalWork.innerText = $.blockchain.totalWork;
+				this._bcHeight.innerText = $.blockchain.height;
+				this._bcAccountsHash.innerText = $.blockchain.accountsHash.toBase64();
+
+				this._hdHash.innerText = $.blockchain.headHash.toBase64();
+				this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
+				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
+				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
+				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
+				this._hdNonce.innerText = $.blockchain.head.nonce;
+
+				const el = document.createElement('div');
+				const date = new Date(head.timestamp * 1000);
+				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
+					+ `nonce=${head.nonce}, transactionCount=${head.transactionCount}`;
+				this._blockHistory.appendChild(el);
+			}
+
+			_toggleMining() {
+				if (!this._isMining) {
+					this._isMining = true;
+					$.miner.startWork();
+					this._mnrStartBtn.innerText = 'Stop Mining';
+				} else {
+					this._isMining = false;
+					$.miner.stopWork();
+					this._mnrStartBtn.innerText = 'Start Mining';
+				}
+			}
+
+			_networkChanged() {
+				this._netPeerCount.innerText = $.network.peerCount;
+				// XXX Hack
+				this._netBytesReceived.innerText = P2PChannel.bytesReceived;
+				this._netBytesSent.innerText = P2PChannel.bytesSent;
+			}
+
+			_minerChanged() {
+				this._mnrWorking.innerText = $.miner.working;
+				this._mnrHashrate.innerText = $.miner.hashrate;
+				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
+					new Date(this._lastBlockMinedTs) : '-';
+			}
+
+			_blockMined() {
+				this._lastBlockMinedTs = Date.now();
+				this._minerChanged();
+			}
+
+			_balanceChanged(balance) {
+				if (!balance) balance = Balance.INITIAL;
+				this._wltBalance.innerText = (balance.value / 1e4).toFixed(4);
+				this._wltNonce.innerText = balance.nonce;
+			}
+
+			_mempoolChanged() {
+				// XXX inefficient
+				$.mempool.getTransactions().then( txs => {
+					this._mplTransactionCount.innerText = txs.length;
+
+					while (this._mplTransactions.firstChild) {
+						this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+					}
+
+					for (let tx of txs) {
+						const el = document.createElement('div');
+						el.innerText = tx.toString();
+						this._mplTransactions.appendChild(el);
+					}
+				});
+			}
+		}
+
+		Core.get().then( $ => {
+			window.$ = $;
+			const ui = new MinerUI($);
+		});
+	</script>
+</body>
+</html>
