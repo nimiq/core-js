@@ -1,6 +1,6 @@
-class RejectP2PMessage extends P2PMessage {
+class RejectMessage extends Message {
     constructor(messageType, code, reason, extraData) {
-        super(P2PMessage.Type.REJECT);
+        super(Message.Type.REJECT);
         if (StringUtils.isMultibyte(messageType) || messageType.length > 12) throw 'Malformed type';
         if (!NumberUtils.isUint8(code)) throw 'Malformed code';
         if (StringUtils.isMultibyte(reason) || reason.length > 255) throw 'Malformed reason';
@@ -13,12 +13,12 @@ class RejectP2PMessage extends P2PMessage {
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const messageType = buf.readVarLengthString();
         const code = buf.readUint8();
         const reason = buf.readVarLengthString();
         // TODO extraData
-		return new BlockP2PMessage(block);
+		return new BlockMessage(block);
 	}
 
 	serialize(buf) {
@@ -56,6 +56,6 @@ class RejectP2PMessage extends P2PMessage {
         return this._extraData;
     }
 }
-RejectP2PMessage.Code = {};
-RejectP2PMessage.Code.DUPLICATE = 0x12;
-Class.register(RejectP2PMessage);
+RejectMessage.Code = {};
+RejectMessage.Code.DUPLICATE = 0x12;
+Class.register(RejectMessage);

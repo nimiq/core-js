@@ -17,9 +17,7 @@ class Accounts extends Observable {
         this._tree = accountsTree;
 
         // Forward balance change events to listeners registered on this Observable.
-        this._tree.on('*', function() {
-            this.fire.apply(this, arguments)
-        }.bind(this));
+        this.bubble(this._tree, '*');
     }
 
     commitBlock(block) {

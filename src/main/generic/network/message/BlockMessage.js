@@ -1,14 +1,14 @@
-class BlockP2PMessage extends P2PMessage {
+class BlockMessage extends Message {
     constructor(block) {
-        super(P2PMessage.Type.BLOCK);
+        super(Message.Type.BLOCK);
         // TODO Bitcoin block messages start with a block version
         this._block = block;
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const block = Block.unserialize(buf);
-		return new BlockP2PMessage(block);
+		return new BlockMessage(block);
 	}
 
 	serialize(buf) {
@@ -27,4 +27,4 @@ class BlockP2PMessage extends P2PMessage {
         return this._block;
     }
 }
-Class.register(BlockP2PMessage);
+Class.register(BlockMessage);

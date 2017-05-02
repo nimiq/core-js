@@ -1,6 +1,6 @@
-class VersionP2PMessage extends P2PMessage {
+class VersionMessage extends Message {
     constructor(version, services, timestamp, startHeight) {
-        super(P2PMessage.Type.VERSION);
+        super(Message.Type.VERSION);
         this._version = version;
         this._services = services;
         this._timestamp = timestamp;
@@ -8,12 +8,12 @@ class VersionP2PMessage extends P2PMessage {
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const version = buf.readUint32();
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const startHeight = buf.readUint32();
-		return new VersionP2PMessage(version, services, timestamp, startHeight);
+		return new VersionMessage(version, services, timestamp, startHeight);
 	}
 
 	serialize(buf) {
@@ -50,4 +50,4 @@ class VersionP2PMessage extends P2PMessage {
         return this._startHeight;
     }
 }
-Class.register(VersionP2PMessage);
+Class.register(VersionMessage);

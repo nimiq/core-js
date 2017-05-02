@@ -1,4 +1,4 @@
-describe('P2PMessage', () => {
+describe('Message', () => {
     const type = 'aaaaaaaaaaaa';
 
     it('is 24 bytes long', () => {
@@ -12,7 +12,7 @@ describe('P2PMessage', () => {
             24 bytes
         */
 
-        const msg1 = new P2PMessage(type);
+        const msg1 = new Message(type);
         const serialized = msg1.serialize();
         expect(serialized.byteLength).toBe(24);
         expect(msg1.serializedSize).toBe(24);
@@ -20,8 +20,8 @@ describe('P2PMessage', () => {
 
 
     it('is serializable and unserializable', () => {
-        const msg1 = new P2PMessage(type);
-        const msg2 = P2PMessage.unserialize(msg1.serialize());
+        const msg1 = new Message(type);
+        const msg2 = Message.unserialize(msg1.serialize());
 
         expect(msg2.type).toEqual(type);
         // TODO check length
@@ -30,63 +30,63 @@ describe('P2PMessage', () => {
 
     it('must have a well defined type (12 bytes)', () => {
         expect( () => {
-            const test1 = new P2PMessage(undefined)
+            const test1 = new Message(undefined)
         }).toThrow('Malformed type');
         expect( () => {
-            const test2 = new P2PMessage(null)
+            const test2 = new Message(null)
         }).toThrow('Malformed type');
         expect( () => {
-            const test3 = new P2PMessage(false)
+            const test3 = new Message(false)
         }).toThrow('Malformed type');
         expect( () => {
-            const test4 = new P2PMessage(true)
+            const test4 = new Message(true)
         }).toThrow('Malformed type');
         expect( () => {
-            const test5 = new P2PMessage('')
+            const test5 = new Message('')
         }).toThrow('Malformed type');
         expect( () => {
-            const test7 = new P2PMessage('aaaaaaaaaaaaa')
+            const test7 = new Message('aaaaaaaaaaaaa')
         }).toThrow('Malformed type');
     });
 
-    // TOD P2PMessage.length || P2PMessage.checksum 
+    // TOD Message.length || Message.checksum 
     /*
     it('must have a well defined length (4 bytes)', () => {
         expect( () => {
-            const test1 = new P2PMessage(type,undefined,checksum)
+            const test1 = new Message(type,undefined,checksum)
         }).toThrow('Malformed length');
         expect( () => {
-            const test1 = new P2PMessage(type,-1,checksum)
+            const test1 = new Message(type,-1,checksum)
         }).toThrow('Malformed length');
         expect( () => {
-            const test1 = new P2PMessage(type,-100,checksum)
+            const test1 = new Message(type,-100,checksum)
         }).toThrow('Malformed length');
         expect( () => {
-            const test1 = new P2PMessage(type,Math.E,checksum)
+            const test1 = new Message(type,Math.E,checksum)
         }).toThrow('Malformed length');
         expect( () => {
-            const test1 = new P2PMessage(type,Number.MAX_SAFE_INTEGER,checksum)
+            const test1 = new Message(type,Number.MAX_SAFE_INTEGER,checksum)
         }).toThrow('Malformed length');
     });
 
     it('must have a well defined checksum (4 bytes)', () => {
         expect( () => {
-            const test1 = new P2PMessage(type,length,undefined)
+            const test1 = new Message(type,length,undefined)
         }).toThrow('Malformed checksum');
         expect( () => {
-            const test1 = new P2PMessage(type,length,null)
+            const test1 = new Message(type,length,null)
         }).toThrow('Malformed checksum');
         expect( () => {
-            const test1 = new P2PMessage(type,length,-1)
+            const test1 = new Message(type,length,-1)
         }).toThrow('Malformed checksum');
         expect( () => {
-            const test1 = new P2PMessage(type,length,-100)
+            const test1 = new Message(type,length,-100)
         }).toThrow('Malformed checksum');
         expect( () => {
-            const test1 = new P2PMessage(type,length,Math.E)
+            const test1 = new Message(type,length,Math.E)
         }).toThrow('Malformed checksum');
         expect( () => {
-            const test1 = new P2PMessage(type,length,Number.MAX_SAFE_INTEGER)
+            const test1 = new Message(type,length,Number.MAX_SAFE_INTEGER)
         }).toThrow('Malformed checksum');
     });
     */

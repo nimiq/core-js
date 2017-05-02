@@ -1,17 +1,15 @@
-class BaseInventoryP2PMessage extends P2PMessage {
-    constructor(type, count, vectors) {
+class BaseInventoryMessage extends Message {
+    constructor(type, vectors) {
         super(type);
-        if (!NumberUtils.isUint16(count)) throw 'Malformed count';
-        if (!vectors || vectors.length !== count
+        if (!vectors || !NumberUtils.isUint16(vectors.length)
 			|| vectors.some( it => !(it instanceof InvVector))) throw 'Malformed vectors';
-        this._count = count;
         this._vectors = vectors;
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
 		super.serialize(buf);
-        buf.writeUint16(this._count);
+        buf.writeUint16(this._vectors.length);
         for (let vector of this._vectors) {
             vector.serialize(buf);
         }
@@ -20,71 +18,67 @@ class BaseInventoryP2PMessage extends P2PMessage {
 
     get serializedSize() {
         let size = super.serializedSize
-            + /*count*/ 4;
+            + /*count*/ 2;
         for (let vector of this._vectors) {
             size += vector.serializedSize;
         }
         return size;
     }
 
-    get count() {
-        return this._count;
-    }
-
     get vectors() {
         return this._vectors;
     }
 }
-Class.register(BaseInventoryP2PMessage);
+Class.register(BaseInventoryMessage);
 
-class InvP2PMessage extends BaseInventoryP2PMessage {
-    constructor(count, vectors) {
-        super(P2PMessage.Type.INV, count, vectors);
+class InvMessage extends BaseInventoryMessage {
+    constructor(vectors) {
+        super(Message.Type.INV, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new InvP2PMessage(count, vectors);
+        return new InvMessage(vectors);
     }
 }
-Class.register(InvP2PMessage);
+Class.register(InvMessage);
 
-class GetDataP2PMessage extends BaseInventoryP2PMessage {
-    constructor(count, vectors) {
-        super(P2PMessage.Type.GETDATA, count, vectors);
+class GetDataMessage extends BaseInventoryMessage {
+    constructor(vectors) {
+        super(Message.Type.GETDATA, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new GetDataP2PMessage(count, vectors);
+        return new GetDataMessage(vectors);
     }
 }
 
-Class.register(GetDataP2PMessage);
+Class.register(GetDataMessage);
 
-class NotFoundP2PMessage extends BaseInventoryP2PMessage {
-    constructor(count, vectors) {
-        super(P2PMessage.Type.NOTFOUND, count, vectors);
+class NotFoundMessage extends BaseInventoryMessage {
+    constructor(vectors) {
+        super(Message.Type.NOTFOUND, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new NotFoundP2PMessage(count, vectors);
+        return new NotFoundMessage(vectors);
     }
 }
-Class.register(NotFoundP2PMessage);
+Class.register(NotFoundMessage);

@@ -1,4 +1,4 @@
-class P2PMessage {
+class Message {
 	constructor(type) {
         if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
         this._type = type;
@@ -22,18 +22,18 @@ class P2PMessage {
 
     static unserialize(buf) {
         const magic = buf.readUint32();
-        if (magic !== P2PMessage.MAGIC) throw 'Malformed magic';
+        if (magic !== Message.MAGIC) throw 'Malformed magic';
         const type = buf.readFixLengthString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
 		// TODO validate checksum
 
-		return new P2PMessage(type);
+		return new Message(type);
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint32(P2PMessage.MAGIC);
+        buf.writeUint32(Message.MAGIC);
         buf.writeFixLengthString(this._type, 12);
         buf.writeUint32(this._length);
         buf.writeUint32(this._checksum);
@@ -63,11 +63,10 @@ class P2PMessage {
         return this._checksum;
 	}
 }
-P2PMessage.MAGIC = 0x42042042;
-P2PMessage.Type = {
+Message.MAGIC = 0x42042042;
+Message.Type = {
     VERSION: 'version',
 	VERACK: 'verack',
-	ADDR: 'addr',
 	INV: 'inv',
 	GETDATA: 'getdata',
 	NOTFOUND: 'notfound',
@@ -76,12 +75,15 @@ P2PMessage.Type = {
 	TX: 'tx',
 	BLOCK: 'block',
 	HEADERS: 'headers',
-	GETADDR: 'getaddr',
 	MEMPOOL: 'mempool',
+	REJECT: 'reject',
 
+	ADDR: 'addr',
+	GETADDR: 'getaddr',
 	PING: 'ping',
 	PONG: 'pong',
-	REJECT: 'reject',
+
+	SIGNAL: 'signal',
 
 	SENDHEADERS: 'sendheaders',
 
@@ -89,4 +91,4 @@ P2PMessage.Type = {
     GETBALANCES: 'getbalances',
     BALANCES: 'balances'
 }
-Class.register(P2PMessage);
+Class.register(Message);

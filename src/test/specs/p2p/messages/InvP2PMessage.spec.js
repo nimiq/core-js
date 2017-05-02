@@ -1,4 +1,4 @@
-describe('InvP2PMessage', () => {
+describe('InvMessage', () => {
     const vectorType = 23;
     const vectorHash = new Hash(Dummy.hash1);
     const vector1 = new InvVector(vectorType,vectorHash);
@@ -19,7 +19,7 @@ describe('InvP2PMessage', () => {
     //         24 bytes
 
 
-    //     const msg1 = new InvP2PMessage(count,vectors);
+    //     const msg1 = new InvMessage(count,vectors);
     //     const serialized = msg1.serialize();
     //     expect(serialized.byteLength).toBe(24);
     //     expect(msg1.serializedSize).toBe(24);
@@ -27,8 +27,8 @@ describe('InvP2PMessage', () => {
 
 
     it('is serializable and unserializable', () => {
-        const msg1 = new InvP2PMessage(count,vectors);
-        const msg2 = InvP2PMessage.unserialize(msg1.serialize());
+        const msg1 = new InvMessage(count,vectors);
+        const msg2 = InvMessage.unserialize(msg1.serialize());
 
         expect(msg2.count).toEqual(count);
         expect(msg2.vectors[0].equals(vector1)).toBe(true);
@@ -38,34 +38,34 @@ describe('InvP2PMessage', () => {
 
     it('must have a well defined count (4 bytes)', () => {
         expect( () => {
-            const test1 = new InvP2PMessage(undefined,vectors)
+            const test1 = new InvMessage(undefined,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test2 = new InvP2PMessage(null,vectors)
+            const test2 = new InvMessage(null,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test3 = new InvP2PMessage(false,vectors)
+            const test3 = new InvMessage(false,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test4 = new InvP2PMessage(true,vectors)
+            const test4 = new InvMessage(true,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test5 = new InvP2PMessage(-1,vectors)
+            const test5 = new InvMessage(-1,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test6 = new InvP2PMessage(Number.MAX_SAFE_INTEGER,vectors)
+            const test6 = new InvMessage(Number.MAX_SAFE_INTEGER,vectors)
         }).toThrow('Malformed count');
     });
 
     it('must have well defined vectors', () => {
         expect( () => {
-            const test1 = new InvP2PMessage(count,undefined)
+            const test1 = new InvMessage(count,undefined)
         }).toThrow('Malformed vectors');
         expect( () => {
-            const test1 = new GetDataP2PMessage(count,[undefined])
+            const test1 = new GetDataMessage(count,[undefined])
         }).toThrow('Malformed vectors');
         expect( () => {
-            const test1 = new GetDataP2PMessage(count,[undefined,undefined,undefined])
+            const test1 = new GetDataMessage(count,[undefined,undefined,undefined])
         }).toThrow('Malformed vectors');
     });
 

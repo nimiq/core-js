@@ -1,26 +1,26 @@
-class GetBlocksP2PMessage extends P2PMessage {
-    constructor(count, hashes, hashStop) {
-        super(P2PMessage.Type.GETBLOCKS);
-        this._count = count;
+class GetBlocksMessage extends Message {
+    constructor(hashes, hashStop) {
+        super(Message.Type.GETBLOCKS);
+        if (!NumberUtils.isUint16(hashes.length)) throw 'Malformed hashes';
         this._hashes = hashes;
         this._hashStop = hashStop;
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const hashes = [];
         for (let i = 0; i < count; i++) {
             hashes.push(Hash.unserialize(buf));
         }
         const hashStop = Hash.unserialize(buf);
-		return new GetBlocksP2PMessage(count, hashes, hashStop);
+		return new GetBlocksMessage(hashes, hashStop);
 	}
 
 	serialize(buf) {
 		buf = buf || new SerialBuffer(this.serializedSize);
 		super.serialize(buf);
-        buf.writeUint16(this._count);
+        buf.writeUint16(this._hashes.length);
         for (let hash of this._hashes) {
             hash.serialize(buf);
         }
@@ -38,10 +38,6 @@ class GetBlocksP2PMessage extends P2PMessage {
         return size;
 	}
 
-    get count() {
-        return this._count;
-    }
-
     get hashes() {
         return this._hashes;
     }
@@ -50,4 +46,4 @@ class GetBlocksP2PMessage extends P2PMessage {
         return this._hashStop;
     }
 }
-Class.register(GetBlocksP2PMessage);
+Class.register(GetBlocksMessage);

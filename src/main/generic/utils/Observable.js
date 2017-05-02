@@ -31,5 +31,25 @@ class Observable {
             }
         }
     }
+
+    bubble() {
+        if (arguments.length < 2) throw 'Obserable.bubble() needs observable and at least 1 type argument';
+
+        const observable = arguments[0];
+        const types = Array.prototype.slice.call(arguments, 1);
+        for (let type of types) {
+            let callback;
+            if (type == Observable.WILDCARD) {
+                callback = function() {
+                    this.fire.apply(this, arguments);
+                };
+            } else {
+                callback = function() {
+                    this.fire.apply(this, [type, ...arguments]);
+                };
+            }
+            observable.on(type, callback.bind(this));
+        }
+    }
 }
 Class.register(Observable);

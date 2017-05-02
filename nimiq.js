@@ -821,7 +821,7 @@ class BlockBody {
 	}
 }
 
-class P2PMessage {
+class Message {
 	constructor(type) {
         if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
         this._type = type;
@@ -845,18 +845,18 @@ class P2PMessage {
 
     static unserialize(buf) {
         const magic = buf.readUint32();
-        if (magic !== P2PMessage.MAGIC) throw 'Malformed magic';
+        if (magic !== Message.MAGIC) throw 'Malformed magic';
         const type = buf.readFixLengthString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
 		// TODO validate checksum
 
-		return new P2PMessage(type);
+		return new Message(type);
     }
 
     serialize(buf) {
         buf = buf || new Buffer(this.serializedSize);
-        buf.writeUint32(P2PMessage.MAGIC);
+        buf.writeUint32(Message.MAGIC);
         buf.writeFixLengthString(this._type, 12);
         buf.writeUint32(this._length);
         buf.writeUint32(this._checksum);
@@ -886,8 +886,8 @@ class P2PMessage {
         return this._checksum;
 	}
 }
-P2PMessage.MAGIC = 0x42042042;
-P2PMessage.Type = {
+Message.MAGIC = 0x42042042;
+Message.Type = {
     VERSION: 'version',
 	VERACK: 'verack',
 	ADDR: 'addr',
@@ -913,9 +913,9 @@ P2PMessage.Type = {
     BALANCES: 'balances'
 }
 
-class VersionP2PMessage extends P2PMessage {
+class VersionMessage extends Message {
     constructor(version, services, timestamp, startHeight) {
-        super(P2PMessage.Type.VERSION);
+        super(Message.Type.VERSION);
         this._version = version;
         this._services = services;
         this._timestamp = timestamp;
@@ -923,12 +923,12 @@ class VersionP2PMessage extends P2PMessage {
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const version = buf.readUint32();
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const startHeight = buf.readUint32();
-		return new VersionP2PMessage(version, services, timestamp, startHeight);
+		return new VersionMessage(version, services, timestamp, startHeight);
 	}
 
 	serialize(buf) {
@@ -2264,17 +2264,17 @@ class Transaction {
     }
 }
 
-class BlockP2PMessage extends P2PMessage {
+class BlockMessage extends Message {
     constructor(block) {
-        super(P2PMessage.Type.BLOCK);
+        super(Message.Type.BLOCK);
         // TODO Bitcoin block messages start with a block version
         this._block = block;
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const block = Block.unserialize(buf);
-		return new BlockP2PMessage(block);
+		return new BlockMessage(block);
 	}
 
 	serialize(buf) {
@@ -2294,23 +2294,23 @@ class BlockP2PMessage extends P2PMessage {
     }
 }
 
-class GetBlocksP2PMessage extends P2PMessage {
+class GetBlocksMessage extends Message {
     constructor(count, hashes, hashStop) {
-        super(P2PMessage.Type.GETBLOCKS);
+        super(Message.Type.GETBLOCKS);
         this._count = count;
         this._hashes = hashes;
         this._hashStop = hashStop;
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const hashes = [];
         for (let i = 0; i < count; i++) {
             hashes.push(Hash.unserialize(buf));
         }
         const hashStop = Hash.unserialize(buf);
-		return new GetBlocksP2PMessage(count, hashes, hashStop);
+		return new GetBlocksMessage(count, hashes, hashStop);
 	}
 
 	serialize(buf) {
@@ -2347,7 +2347,7 @@ class GetBlocksP2PMessage extends P2PMessage {
     }
 }
 
-class BaseInventoryP2PMessage extends P2PMessage {
+class BaseInventoryMessage extends Message {
     constructor(type, count, vectors) {
         super(type);
         if (!NumberUtils.isUint16(count)) throw 'Malformed count';
@@ -2385,90 +2385,90 @@ class BaseInventoryP2PMessage extends P2PMessage {
     }
 }
 
-class InvP2PMessage extends BaseInventoryP2PMessage {
+class InvMessage extends BaseInventoryMessage {
     constructor(count, vectors) {
-        super(P2PMessage.Type.INV, count, vectors);
+        super(Message.Type.INV, count, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new InvP2PMessage(count, vectors);
+        return new InvMessage(count, vectors);
     }
 }
 
-class GetDataP2PMessage extends BaseInventoryP2PMessage {
+class GetDataMessage extends BaseInventoryMessage {
     constructor(count, vectors) {
-        super(P2PMessage.Type.GETDATA, count, vectors);
+        super(Message.Type.GETDATA, count, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new GetDataP2PMessage(count, vectors);
+        return new GetDataMessage(count, vectors);
     }
 }
 
-class NotFoundP2PMessage extends BaseInventoryP2PMessage {
+class NotFoundMessage extends BaseInventoryMessage {
     constructor(count, vectors) {
-        super(P2PMessage.Type.NOTFOUND, count, vectors);
+        super(Message.Type.NOTFOUND, count, vectors);
     }
 
     static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
             vectors.push(InvVector.unserialize(buf));
         }
-        return new NotFoundP2PMessage(count, vectors);
+        return new NotFoundMessage(count, vectors);
     }
 }
 
-class MempoolP2PMessage extends P2PMessage {
+class MempoolMessage extends Message {
     constructor() {
-        super(P2PMessage.Type.MEMPOOL);
+        super(Message.Type.MEMPOOL);
     }
 
     static unserialize(buf) {
-        P2PMessage.unserialize(buf);
-        return new MempoolP2PMessage();
+        Message.unserialize(buf);
+        return new MempoolMessage();
     }
 }
 
-class P2PMessageFactory {
+class MessageFactory {
     static parse(buffer) {
         const buf = new Buffer(buffer);
-        const type = P2PMessage.peekType(buf);
-        const clazz = P2PMessageFactory.CLASSES[type];
+        const type = Message.peekType(buf);
+        const clazz = MessageFactory.CLASSES[type];
         if (!clazz || !clazz.unserialize) throw 'Invalid message type: ' + type;
         return clazz.unserialize(buf);
     }
 }
 
-P2PMessageFactory.CLASSES = {};
-P2PMessageFactory.CLASSES[P2PMessage.Type.VERSION] = VersionP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.VERACK] = VerAckP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.INV] = InvP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.GETDATA] = GetDataP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.NOTFOUND] = NotFoundP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.BLOCK] = BlockP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.TX] = TxP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.GETBLOCKS] = GetBlocksP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.MEMPOOL] = MempoolP2PMessage;
-P2PMessageFactory.CLASSES[P2PMessage.Type.REJECT] = RejectP2PMessage;
+MessageFactory.CLASSES = {};
+MessageFactory.CLASSES[Message.Type.VERSION] = VersionMessage;
+MessageFactory.CLASSES[Message.Type.VERACK] = VerAckMessage;
+MessageFactory.CLASSES[Message.Type.INV] = InvMessage;
+MessageFactory.CLASSES[Message.Type.GETDATA] = GetDataMessage;
+MessageFactory.CLASSES[Message.Type.NOTFOUND] = NotFoundMessage;
+MessageFactory.CLASSES[Message.Type.BLOCK] = BlockMessage;
+MessageFactory.CLASSES[Message.Type.TX] = TxMessage;
+MessageFactory.CLASSES[Message.Type.GETBLOCKS] = GetBlocksMessage;
+MessageFactory.CLASSES[Message.Type.MEMPOOL] = MempoolMessage;
+MessageFactory.CLASSES[Message.Type.REJECT] = RejectMessage;
 
-class RejectP2PMessage extends P2PMessage {
+class RejectMessage extends Message {
     constructor(messageType, code, reason, extraData) {
-        super(P2PMessage.Type.REJECT);
+        super(Message.Type.REJECT);
         if (StringUtils.isMultibyte(messageType) || messageType.length > 12) throw 'Malformed type';
         if (!NumberUtils.isUint8(code)) throw 'Malformed code';
         if (StringUtils.isMultibyte(reason) || reason.length > 255) throw 'Malformed reason';
@@ -2481,12 +2481,12 @@ class RejectP2PMessage extends P2PMessage {
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const messageType = buf.readVarLengthString();
         const code = buf.readUint8();
         const reason = buf.readVarLengthString();
         // TODO extraData
-		return new BlockP2PMessage(block);
+		return new BlockMessage(block);
 	}
 
 	serialize(buf) {
@@ -2524,19 +2524,19 @@ class RejectP2PMessage extends P2PMessage {
         return this._extraData;
     }
 }
-RejectP2PMessage.Code = {};
-RejectP2PMessage.Code.DUPLICATE = 0x12;
+RejectMessage.Code = {};
+RejectMessage.Code.DUPLICATE = 0x12;
 
-class TxP2PMessage extends P2PMessage {
+class TxMessage extends Message {
     constructor(transaction) {
-        super(P2PMessage.Type.TX);
+        super(Message.Type.TX);
         this._transaction = transaction;
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const transaction = Transaction.unserialize(buf);
-		return new TxP2PMessage(transaction);
+		return new TxMessage(transaction);
 	}
 
 	serialize(buf) {
@@ -2556,14 +2556,14 @@ class TxP2PMessage extends P2PMessage {
     }
 }
 
-class VerAckP2PMessage extends P2PMessage {
+class VerAckMessage extends Message {
     constructor() {
-        super(P2PMessage.Type.VERACK);
+        super(Message.Type.VERACK);
     }
 
     static unserialize(buf) {
-        P2PMessage.unserialize(buf);
-        return new VerAckP2PMessage();
+        Message.unserialize(buf);
+        return new VerAckMessage();
     }
 }
 
@@ -3304,7 +3304,7 @@ class P2PAgent extends Observable {
 
         // Reject duplicate version messages.
         if (this._startHeight) {
-            this._peer.reject('version', RejectP2PMessage.Code.DUPLICATE);
+            this._peer.reject('version', RejectMessage.Code.DUPLICATE);
             return;
         }
 
@@ -3696,8 +3696,8 @@ class P2PAgent extends Observable {
 
     _canAcceptMessage(msg) {
         const isHandshakeMsg =
-            msg.type == P2PMessage.Type.VERSION
-            || msg.type == P2PMessage.Type.VERACK;
+            msg.type == Message.Type.VERSION
+            || msg.type == Message.Type.VERACK;
 
         switch (this._state) {
             case P2PAgent.State.INITIAL:
@@ -3783,7 +3783,7 @@ class P2PChannel extends Observable {
 
         let msg;
         try {
-            msg = P2PMessageFactory.parse(rawMsg);
+            msg = MessageFactory.parse(rawMsg);
         } catch(e) {
             // TODO Drop client if it keeps sending junk.
             // TODO Bitcoin sends a reject message if the message can't be decoded.
@@ -3822,43 +3822,43 @@ class P2PChannel extends Observable {
     }
 
     version(startHeight) {
-        this._send(new VersionP2PMessage(1, 0, Date.now(), startHeight));
+        this._send(new VersionMessage(1, 0, Date.now(), startHeight));
     }
 
     verack() {
-        this._send(new VerAckP2PMessage());
+        this._send(new VerAckMessage());
     }
 
     inv(vectors) {
-        this._send(new InvP2PMessage(vectors.length, vectors));
+        this._send(new InvMessage(vectors.length, vectors));
     }
 
     notfound(vectors) {
-        this._send(new NotFoundP2PMessage(vectors.length, vectors));
+        this._send(new NotFoundMessage(vectors.length, vectors));
     }
 
     getdata(vectors) {
-        this._send(new GetDataP2PMessage(vectors.length, vectors));
+        this._send(new GetDataMessage(vectors.length, vectors));
     }
 
     block(block) {
-        this._send(new BlockP2PMessage(block));
+        this._send(new BlockMessage(block));
     }
 
     tx(transaction) {
-        this._send(new TxP2PMessage(transaction));
+        this._send(new TxMessage(transaction));
     }
 
     getblocks(hashes, hashStop = new Hash()) {
-        this._send(new GetBlocksP2PMessage(hashes.length, hashes, hashStop));
+        this._send(new GetBlocksMessage(hashes.length, hashes, hashStop));
     }
 
     mempool() {
-        this._send(new MempoolP2PMessage());
+        this._send(new MempoolMessage());
     }
 
     reject(messageType, code, reason, extraData) {
-        this._send(new RejectP2PMessage(messageType, code, reason, extraData));
+        this._send(new RejectMessage(messageType, code, reason, extraData));
     }
 
     get rawChannel() {

@@ -1,13 +1,13 @@
-class TxP2PMessage extends P2PMessage {
+class TxMessage extends Message {
     constructor(transaction) {
-        super(P2PMessage.Type.TX);
+        super(Message.Type.TX);
         this._transaction = transaction;
     }
 
 	static unserialize(buf) {
-		P2PMessage.unserialize(buf);
+		Message.unserialize(buf);
 		const transaction = Transaction.unserialize(buf);
-		return new TxP2PMessage(transaction);
+		return new TxMessage(transaction);
 	}
 
 	serialize(buf) {
@@ -26,4 +26,4 @@ class TxP2PMessage extends P2PMessage {
         return this._transaction;
     }
 }
-Class.register(TxP2PMessage);
+Class.register(TxMessage);

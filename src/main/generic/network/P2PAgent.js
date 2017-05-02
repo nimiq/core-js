@@ -100,7 +100,7 @@ class P2PAgent extends Observable {
 
         // Reject duplicate version messages.
         if (this._startHeight) {
-            this._peer.reject('version', RejectP2PMessage.Code.DUPLICATE);
+            this._peer.reject('version', RejectMessage.Code.DUPLICATE);
             return;
         }
 
@@ -492,8 +492,8 @@ class P2PAgent extends Observable {
 
     _canAcceptMessage(msg) {
         const isHandshakeMsg =
-            msg.type == P2PMessage.Type.VERSION
-            || msg.type == P2PMessage.Type.VERACK;
+            msg.type == Message.Type.VERSION
+            || msg.type == Message.Type.VERACK;
 
         switch (this._state) {
             case P2PAgent.State.INITIAL:

@@ -1,10 +1,10 @@
-describe('P2PMessageFactory',()=>{
+describe('MessageFactory',()=>{
 	
 	it('whitelists valid Message types',() => {
 		const maliciousType = '__proto__'
-		const maliciousMsg = new P2PMessage(maliciousType).serialize();
+		const maliciousMsg = new Message(maliciousType).serialize();
 		expect( () => {
-			P2PMessageFactory.parse(maliciousMsg);
+			MessageFactory.parse(maliciousMsg);
         }).toThrow('Invalid message type: '+maliciousType);
 		expect(true).toBe(false);
 	});

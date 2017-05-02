@@ -1,4 +1,4 @@
-describe('GetDataP2PMessage', () => {
+describe('GetDataMessage', () => {
     
     const vectorType = 23;
     const vectorHash = new Hash(Dummy.hash1);
@@ -19,7 +19,7 @@ describe('GetDataP2PMessage', () => {
     //         X bytes
         
         
-    //     const msg1 = new GetDataP2PMessage(count,vectors);
+    //     const msg1 = new GetDataMessage(count,vectors);
     //     const serialized = msg1.serialize();
     //     expect(serialized.byteLength).toBe(X);
     //     expect(msg1.serializedSize).toBe(X);
@@ -27,8 +27,8 @@ describe('GetDataP2PMessage', () => {
 
 
     it('is serializable and unserializable', () => {
-        const msg1 = new GetDataP2PMessage(count,vectors);
-        const msg2 = GetDataP2PMessage.unserialize(msg1.serialize());
+        const msg1 = new GetDataMessage(count,vectors);
+        const msg2 = GetDataMessage.unserialize(msg1.serialize());
 
         expect(msg2.count).toEqual(count);
         expect(msg2.vectors[0].equals(vector1)).toBe(true);
@@ -38,31 +38,31 @@ describe('GetDataP2PMessage', () => {
 
     it('must have a well defined count (4 bytes)', () => {
         expect( () => {
-            const test1 = new GetDataP2PMessage(undefined,vectors)
+            const test1 = new GetDataMessage(undefined,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test2 = new GetDataP2PMessage(null,vectors)
+            const test2 = new GetDataMessage(null,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test3 = new GetDataP2PMessage(false,vectors)
+            const test3 = new GetDataMessage(false,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test4 = new GetDataP2PMessage(true,vectors)
+            const test4 = new GetDataMessage(true,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test5 = new GetDataP2PMessage(-1,vectors)
+            const test5 = new GetDataMessage(-1,vectors)
         }).toThrow('Malformed count');
         expect( () => {
-            const test6 = new GetDataP2PMessage(Number.MAX_SAFE_INTEGER,vectors)
+            const test6 = new GetDataMessage(Number.MAX_SAFE_INTEGER,vectors)
         }).toThrow('Malformed count');
     });  
 	
     it('must have well defined vectors', () => {
         expect( () => {
-            const test1 = new GetDataP2PMessage(count,undefined)
+            const test1 = new GetDataMessage(count,undefined)
         }).toThrow('Malformed vectors');
         expect( () => {
-            const test1 = new GetDataP2PMessage(count,[undefined])
+            const test1 = new GetDataMessage(count,[undefined])
         }).toThrow('Malformed vectors');
     }); 
 
