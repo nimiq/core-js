@@ -9,7 +9,7 @@ require("../../generic/utils/database/ObjectDB.js");
 require("../../generic/utils/array/IndexedArray.js");
 require("../../generic/utils/buffer/SerialBuffer.js");
 require("../../generic/utils/buffer/BufferUtils.js");
-require("../../generic/utils/crypto/Crypto.js");
+require("../../platform/nodejs/crypto/Crypto.js");
 require("../../generic/utils/number/NumberUtils.js");
 require("../../generic/utils/object/ObjectUtils.js");
 require("../../generic/utils/string/StringUtils.js");
