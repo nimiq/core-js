@@ -1,5 +1,5 @@
 // TODO: Implement get and answerToGet
-class P2PNetwork extends Observable {
+class Network extends Observable {
 
     constructor() {
         super();
@@ -14,7 +14,7 @@ class P2PNetwork extends Observable {
 
     _addPeer(peer) {
         // XXX Throw out duplicate connections.
-        // TODO Prevent them from being established in the first place => Cleanup PeerPortal/P2PNetwork
+        // TODO Prevent them from being established in the first place => Cleanup PeerPortal/Network
         let channel = this._peerChannels[peer.peerId];
         if (channel && channel.rawChannel.readyState === 'open') {
             console.warn('Duplicate connection to ' + peer.peerId + ', closing it.');
@@ -70,4 +70,4 @@ class P2PNetwork extends Observable {
         return Object.keys(this._peerChannels).length;
     }
 }
-Class.register(P2PNetwork);
+Class.register(Network);

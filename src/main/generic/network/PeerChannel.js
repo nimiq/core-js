@@ -35,7 +35,8 @@ class PeerChannel extends Observable {
         this._conn.send(msg.serialize());
     }
 
-    close() {
+    close(reason) {
+        console.log('Closing peer connection ' + this._conn + (reason ? ' - ' + reason : ''));
         this._conn.close();
     }
 
@@ -77,6 +78,26 @@ class PeerChannel extends Observable {
 
     reject(messageType, code, reason, extraData) {
         this._send(new RejectMessage(messageType, code, reason, extraData));
+    }
+
+    addr(addresses) {
+        this._send(new AddrMessage(addresses));
+    }
+
+    getaddr(serviceMask) {
+        this._send(new GetAddrMessage(serviceMask));
+    }
+
+    ping(nonce) {
+        this._send(new PingMessage(nonce));
+    }
+
+    pong(nonce) {
+        this._send(new PongMessage(nonce));
+    }
+
+    signal(senderId, recipientId, payload) {
+        this._send(new SignalMessage(senderId, recipientId, payload));
     }
 
     get connection() {

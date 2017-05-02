@@ -1,8 +1,4 @@
-class P2PAgent extends Observable {
-    static get HANDSHAKE_TIMEOUT() {
-        return 10000; // [ms]
-    }
-
+class ConsensusAgent extends Observable {
     // Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
     static get REQUEST_THRESHOLD() {
         return 50;
@@ -24,11 +20,8 @@ class P2PAgent extends Observable {
         this._blockchain = blockchain;
         this._mempool = mempool;
 
-        // The main state of the agent: INITAL, CONNECTED, CONSENSUS
-        this._state = P2PAgent.State.INITIAL;
-
-        // The announced height of the peer's best chain.
-        this._startHeight = null;
+        // Flag indicating that we have sync'd our blockchain with the peer's.
+        this._synced = false;
 
         // Invectory of all objects that we think the remote peer knows.
         this._knownObjects = {};
@@ -44,8 +37,6 @@ class P2PAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.on('version',    msg => this._onVersion(msg));
-        peer.on('verack',     msg => this._onVerAck(msg));
         peer.on('inv',        msg => this._onInv(msg));
         peer.on('getdata',    msg => this._onGetData(msg));
         peer.on('notfound',   msg => this._onNotFound(msg));
@@ -54,11 +45,12 @@ class P2PAgent extends Observable {
         peer.on('getblocks',  msg => this._onGetBlocks(msg));
         peer.on('mempool',    msg => this._onMempool(msg));
 
-        // Initiate the protocol with the new peer.
-        this._handshake();
+        // Start syncing our blockchain with the peer.
+        this._syncBlockchain();
     }
 
     /* Public API */
+
     async relayBlock(block) {
         // Don't relay block to this peer if it already knows it.
         const hash = await block.hash();
@@ -66,7 +58,7 @@ class P2PAgent extends Observable {
 
         // Relay block to peer.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        this._peer.inv([vector]);
+        this._peer.channel.inv([vector]);
     }
 
     async relayTransaction(transaction) {
@@ -76,95 +68,31 @@ class P2PAgent extends Observable {
 
         // Relay transaction to peer.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        this._peer.inv([vector]);
+        this._peer.channel.inv([vector]);
     }
 
-    /* Initial State: Handshake */
-
-    async _handshake() {
-        // Kick off the handshake by telling the peer our version & blockchain height.
-        this._peer.version(this._blockchain.height);
-
-        // Drop the peer if it doesn't acknowledge our version message.
-        this._timers.setTimeout('verack', () => this._peer.close(), P2PAgent.HANDSHAKE_TIMEOUT);
-
-        // Drop the peer if it doesn't send us a version message.
-        this._timers.setTimeout('version', () => this._peer.close(), P2PAgent.HANDSHAKE_TIMEOUT);
-    }
-
-    async _onVersion(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
-        console.log('[VERSION] startHeight=' + msg.startHeight);
-
-        // Reject duplicate version messages.
-        if (this._startHeight) {
-            this._peer.reject('version', RejectMessage.Code.DUPLICATE);
-            return;
-        }
-
-        // TODO actually check version, services and stuff.
-
-        // Clear the version timeout.
-        this._timers.clearTimeout('version');
-
-        // Acknowledge the receipt of the version message.
-        this._peer.verack();
-
-        // Store the announced chain height.
-        this._startHeight = msg.startHeight;
-    }
-
-    _onVerAck(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
-        console.log('[VERACK]');
-
-        // Clear the version message timeout.
-        this._timers.clearTimeout('verack');
-
-        // Fail if the peer didn't send a version message first.
-        if (!this._startHeight) {
-            console.warn('Dropping peer ' + this._peer + ' - no version message received (verack)');
-            this._peer.close();
-            return;
-        }
-
-        // Handshake completed, connection established.
-        this._state = P2PAgent.State.CONNECTED;
-        this.fire('connected');
-
-        // Initiate blockchain sync.
-        this._sync();
-    }
-
-
-    /* Connected State: Sync blockchain */
-
-    _sync() {
+    _syncBlockchain() {
         // TODO Don't loop forver here!!
         // Save the last blockchain height when we issuing getblocks and when we get here again, see if it changed.
         // If it didn't the peer didn't give us any valid blocks. Try again or drop him!
 
-        if (this._blockchain.height < this._startHeight) {
+        if (this._blockchain.height < this._peer.startHeight) {
             // If the peer has a longer chain than us, request blocks from it.
             this._requestBlocks();
-        } else if (this._blockchain.height > this._startHeight) {
+        } else if (this._blockchain.height > this._peer.startHeight) {
             // The peer has a shorter chain than us.
             // TODO what do we do here?
-            console.log('Peer ' + this._peer + ' has a shorter chain (' + this._startHeight + ') than us');
+            console.log('Peer ' + this._peer + ' has a shorter chain (' + this._peer.startHeight + ') than us');
 
             // XXX assume consensus state?
-            this._state = P2PAgent.State.CONSENSUS;
+            this._synced = true;
             this.fire('consensus');
         } else {
             // We have the same chain height as the peer.
             // TODO Do we need to check that we have the same head???
 
             // Consensus established.
-            this._state = P2PAgent.State.CONSENSUS;
+            this._synced = true;
             this.fire('consensus');
         }
     }
@@ -187,16 +115,13 @@ class P2PAgent extends Observable {
         hashes.push(Block.GENESIS.HASH);
 
         // Request blocks from peer.
-        this._peer.getblocks(hashes);
+        this._peer.channel.getblocks(hashes);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
-        this._timers.setTimeout('getblocks', () => this._peer.close(), P2PAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getblocks', () => this._peer.channel.close('getblocks timeout'), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
     async _onInv(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         // Clear the getblocks timeout.
         this._timers.clearTimeout('getblocks');
 
@@ -239,12 +164,12 @@ class P2PAgent extends Observable {
             this._timers.clearTimeout('inv');
 
             // If there are enough objects queued up, send out a getdata request.
-            if (this._objectsToRequest.length >= P2PAgent.REQUEST_THRESHOLD) {
+            if (this._objectsToRequest.length >= ConsensusAgent.REQUEST_THRESHOLD) {
                 this._requestData();
             }
             // Otherwise, wait a short time for more inv messages to arrive, then request.
             else {
-                this._timers.setTimeout('inv', () => this._requestData(), P2PAgent.REQUEST_THROTTLE);
+                this._timers.setTimeout('inv', () => this._requestData(), ConsensusAgent.REQUEST_THROTTLE);
             }
         }
     }
@@ -253,7 +178,7 @@ class P2PAgent extends Observable {
         // Request all queued objects from the peer.
         // TODO depending in the REQUEST_THRESHOLD, we might need to split up
         // the getdata request into multiple ones.
-        this._peer.getdata(this._objectsToRequest);
+        this._peer.channel.getdata(this._objectsToRequest);
 
         // Keep track of this request.
         const requestId = this._inFlightRequests.push(this._objectsToRequest);
@@ -262,7 +187,7 @@ class P2PAgent extends Observable {
         this._objectsToRequest = [];
 
         // Set timer to detect end of request / missing objects
-        this._timers.setTimeout('getdata_' + requestId, () => this._noMoreData(requestId), P2PAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
     _noMoreData(requestId) {
@@ -280,16 +205,13 @@ class P2PAgent extends Observable {
         // Delete the request.
         this._inFlightRequests.deleteRequest(requestId);
 
-        // If we are still in connected state, keep on synching.
-        if (this._state == P2PAgent.State.CONNECTED) {
-            this._sync();
+        // If we haven't fully sync'ed the blockchain yet, keep on syncing.
+        if (!this._synced) {
+            this._syncBlockchain();
         }
     }
 
     async _onBlock(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         const hash = await msg.block.hash();
         console.log('[BLOCK] Received block ' + hash.toBase64(), msg.block);
 
@@ -309,9 +231,6 @@ class P2PAgent extends Observable {
     }
 
     async _onTx(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         const hash = await msg.transaction.hash();
         console.log('[TX] Received transaction ' + hash.toBase64(), msg.transaction);
 
@@ -331,9 +250,6 @@ class P2PAgent extends Observable {
     }
 
     _onNotFound(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects', msg.vectors);
 
         // Remove unknown objects from in-flight list.
@@ -353,15 +269,23 @@ class P2PAgent extends Observable {
     _onObjectReceived(hash) {
         // Mark the getdata request for this object as complete.
         const requestId = this._inFlightRequests.getRequestId(hash);
+        if (!requestId) {
+            console.warn('Could not find requestId for ' + hash);
+            return;
+        }
         this._inFlightRequests.deleteObject(hash);
 
         // Check if we have received all objects for this request.
         const objects = this._inFlightRequests.getObjects(requestId);
+        if (!objects) {
+            console.warn('Could not find objects for requestId ' + requestId);
+            return;
+        }
         const moreObjects = Object.keys(objects).length > 0;
 
         // Reset the request timeout if we expect more objects to come.
         if (moreObjects) {
-            this._timers.resetTimeout('getdata_' + requestId, () => this._noMoreData(requestId), P2PAgent.REQUEST_TIMEOUT);
+            this._timers.resetTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
         } else {
             this._noMoreData(requestId);
         }
@@ -371,9 +295,6 @@ class P2PAgent extends Observable {
     /* Request endpoints */
 
     async _onGetData(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         // check which of the requested objects we know
         // send back all known objects
         // send notfound for unknown objects
@@ -385,7 +306,7 @@ class P2PAgent extends Observable {
                     console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (block) {
                         // We have found a requested block, send it back to the sender.
-                        this._peer.block(block);
+                        this._peer.channel.block(block);
                     } else {
                         // Requested block is unknown.
                         unknownObjects.push(vector);
@@ -397,7 +318,7 @@ class P2PAgent extends Observable {
                     console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
-                        this._peer.tx(tx);
+                        this._peer.channel.tx(tx);
                     } else {
                         // Requested transaction is unknown.
                         unknownObjects.push(vector);
@@ -411,15 +332,12 @@ class P2PAgent extends Observable {
 
         // Report any unknown objects back to the sender.
         if (unknownObjects.length) {
-            this._peer.notfound(unknownObjects);
+            this._peer.channel.notfound(unknownObjects);
         }
     }
 
     async _onGetBlocks(msg) {
         console.log('[GETBLOCKS] Request for blocks, ' + msg.hashes.length + ' block locators');
-
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main
@@ -474,46 +392,20 @@ class P2PAgent extends Observable {
         }
 
         // Send the vectors back to the requesting peer.
-        this._peer.inv(vectors);
+        this._peer.channel.inv(vectors);
     }
 
     async _onMempool(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
         // Query mempool for transactions
         const transactions = await this._mempool.getTransactions();
 
         // Send transactions back to sender.
         for (let tx of transactions) {
-            this._peer.tx(tx);
-        }
-    }
-
-    _canAcceptMessage(msg) {
-        const isHandshakeMsg =
-            msg.type == Message.Type.VERSION
-            || msg.type == Message.Type.VERACK;
-
-        switch (this._state) {
-            case P2PAgent.State.INITIAL:
-                if (!isHandshakeMsg) {
-                    console.warn('Discarding message ' + msg.type + ' from peer ' + this._peer + ' - not acceptable in state ' + this._state, msg);
-                }
-                return isHandshakeMsg;
-            default:
-                if (isHandshakeMsg) {
-                    console.warn('Discarding message ' + msg.type + ' from peer ' + this._peer + ' - not acceptable in state ' + this._state, msg);
-                }
-                return !isHandshakeMsg;
+            this._peer.channel.tx(tx);
         }
     }
 }
-P2PAgent.State = {};
-P2PAgent.State.INITIAL = 'initial';
-P2PAgent.State.CONNECTED = 'connected';
-P2PAgent.State.CONSENSUS = 'consensus';
-Class.register(P2PAgent);
+Class.register(ConsensusAgent);
 
 class InFlightRequests {
     constructor() {

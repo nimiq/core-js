@@ -7,7 +7,7 @@ class Consensus extends Observable {
 
         // Create a P2PAgent for each peer that connects.
         broadcastChannel.on('peer-joined', peer => {
-            const agent = new P2PAgent(peer, blockchain, mempool);
+            const agent = new ConsensusAgent(peer, blockchain, mempool);
             this._agents[peer.peerId] = agent;
             agent.on('consensus', () => this._onPeerConsensus(agent));
         });
