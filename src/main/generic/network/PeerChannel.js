@@ -36,12 +36,11 @@ class PeerChannel extends Observable {
     }
 
     close(reason) {
-        console.log('Closing peer connection ' + this._conn + (reason ? ' - ' + reason : ''));
-        this._conn.close();
+        this._conn.close(reason);
     }
 
-    version(startHeight) {
-        this._send(new VersionMessage(1, Services.myServices(), Date.now(), startHeight));
+    version(netAddress, startHeight) {
+        this._send(new VersionMessage(1, netAddress, startHeight));
     }
 
     verack() {
@@ -100,12 +99,18 @@ class PeerChannel extends Observable {
         this._send(new SignalMessage(senderId, recipientId, payload));
     }
 
-    get connection() {
-        return this._conn;
+    equals(o) {
+        return o instanceof PeerChannel
+            && this._conn.equals(o.connection);
     }
 
     toString() {
         return 'PeerChannel{conn=' + this._conn + '}';
     }
+
+    get connection() {
+        return this._conn;
+    }
+
 }
 Class.register(PeerChannel);

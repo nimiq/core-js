@@ -18,7 +18,7 @@ class Core {
         this.mempool = new Mempool(this.blockchain, this.accounts);
 
         // P2P
-        this.network = new P2PNetwork();
+        this.network = new Network(this.blockchain);
 
         // Consensus
         this.consensus = new Consensus(this.network.broadcastChannel, this.blockchain, this.mempool);

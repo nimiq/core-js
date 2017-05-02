@@ -1,10 +1,11 @@
 class NetAddress {
-    constructor(services, timestamp, host, port, signalId) {
+    constructor(services, timestamp, host, port, signalId, distance) {
         this._services = services;
         this._timestamp = timestamp;
         this._host = host;
         this._port = port;
         this._signalId = signalId;
+        this._distance = distance;
     }
 
     static unserialize(buf) {
@@ -12,7 +13,8 @@ class NetAddress {
         const timestamp = buf.readUint64();
         const host = buf.readVarLenString();
         const port = buf.readUint16();
-        const signalId = buf.readUint32();
+        const signalId = buf.readUint64();
+        const distance = buf.readUint8();
         return new NetAddress(services, timestamp, ipAddress, port, signalId);
     }
 
@@ -22,7 +24,8 @@ class NetAddress {
         buf.writeUint64(this._timestamp);
         buf.writeVarLenString(this._host);
         buf.writeUint16(this._port);
-        buf.writeUint32(signalId);
+        buf.writeUint64(this._signalId);
+        buf.writeUint8(this._distance);
         return buf;
     }
 
@@ -32,7 +35,8 @@ class NetAddress {
             + /*extra byte VarLenString host*/ 1
             + this._host.length
             + /*port*/ 2
-            + /*signalId*/ 4;
+            + /*signalId*/ 8
+            + /*distance*/ 1;
     }
 
     equals(o) {
@@ -44,9 +48,8 @@ class NetAddress {
     }
 
     toString() {
-        return "NetAddress{services=" + this._services + ", timestamp="
-            + this._timestamp + ", host=" + this._host + ", port="
-            + this._port + ", signalId=" + this._signalId + "}"
+        return "NetAddress{services=" + this._services + ", host=" + this._host
+            + ", port=" + this._port + ", signalId=" + this._signalId + "}"
     }
 
     get services() {
@@ -68,4 +71,9 @@ class NetAddress {
     get signalId() {
         return this._signalId;
     }
+
+    get distance() {
+        return this._distance;
+    }
 }
+Class.register(NetAddress);

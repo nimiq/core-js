@@ -1,27 +1,24 @@
 class VersionMessage extends Message {
-    constructor(version, services, timestamp, startHeight) {
+    constructor(version, netAddress, startHeight) {
         super(Message.Type.VERSION);
         this._version = version;
-        this._services = services;
-        this._timestamp = timestamp;
+        this._netAddress = netAddress;
         this._startHeight = startHeight;
     }
 
     static unserialize(buf) {
 		Message.unserialize(buf);
         const version = buf.readUint32();
-        const services = buf.readUint32();
-        const timestamp = buf.readUint64();
+        const netAddress = NetAddress.unserialize(buf);
         const startHeight = buf.readUint32();
-		return new VersionMessage(version, services, timestamp, startHeight);
+		return new VersionMessage(version, netAddress, startHeight);
 	}
 
 	serialize(buf) {
 		buf = buf || new SerialBuffer(this.serializedSize);
 		super.serialize(buf);
 		buf.writeUint32(this._version);
-        buf.writeUint32(this._services);
-        buf.writeUint64(this._timestamp);
+        this._netAddress.serialize(buf);
         buf.writeUint32(this._startHeight);
 		return buf;
 	}
@@ -29,8 +26,7 @@ class VersionMessage extends Message {
 	get serializedSize() {
 		return super.serializedSize
 			+ /*version*/ 4
-            + /*services*/ 4
-            + /*timestamp*/ 8
+            + this._netAddress.serializedSize
             + /*startHeight*/ 4;
 	}
 
@@ -38,14 +34,10 @@ class VersionMessage extends Message {
         return this._version;
     }
 
-    get services() {
-        return this._services;
+    get netAddress() {
+        return this._netAddress;
     }
-
-    get timestamp() {
-        return this._timestamp;
-    }
-
+    
     get startHeight() {
         return this._startHeight;
     }

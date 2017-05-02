@@ -10,7 +10,7 @@ class Services {
         return services & Services.WEBSOCKET !== 0;
     }
 
-    static isWebRTC(services) {
+    static isWebRtc(services) {
         return services & Services.WEBRTC !== 0;
     }
 }

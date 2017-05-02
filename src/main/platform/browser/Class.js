@@ -1,5 +1,5 @@
-class Class{
-	static register(){
+class Class {
+	static register() {
 		// Required for our custom NodeJS isomorphism
 	}
 }

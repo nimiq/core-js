@@ -1,8 +1,8 @@
 class SignalMessage extends Message {
     constructor(senderId, recipientId, payload) {
         super(Message.Type.SIGNAL);
-        if (!NumberUtils.isUint32(senderId)) throw 'Malformed senderId';
-        if (!NumberUtils.isUint32(recipientId)) throw 'Malformed recipientId';
+        if (!senderId || !NumberUtils.isUint32(senderId)) throw 'Malformed senderId';
+        if (!recipientId || !NumberUtils.isUint32(recipientId)) throw 'Malformed recipientId';
         if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         this._senderId = senderId;
         this._recipientId = recipientId;

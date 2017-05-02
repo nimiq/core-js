@@ -9,12 +9,14 @@ class PeerConnection extends Observable {
         this._bytesReceived = 0;
         this._bytesSent = 0;
 
-        this._channel.onmessage = msg => this._onMessage(msg));
-        this._channel.onclose = () => this.fire('close', this);
-        this._channel.onerror = e => this.fire('error', e, this);
-
-        if (this._channel.onopen !== undefined) {
-            this._channel.onopen = () => this.fire('open', this);
+        if (this._channel.on) {
+            this._channel.on('message', msg => this._onMessage(msg));
+            this._channel.on('close', () => this.fire('close', this));
+            this._channel.on('error', e => this.fire('error', e, this));
+        } else {
+            this._channel.onmessage = msg => this._onMessage(msg);
+            this._channel.onclose = () => this.fire('close', this);
+            this._channel.onerror = e => this.fire('error', e, this);
         }
     }
 
@@ -32,14 +34,19 @@ class PeerConnection extends Observable {
         }
     }
 
-    close() {
-        console.log('Closing connection to peer ' + this._host + ':' + this._port);
+    close(reason) {
+        console.log('Closing peer connection ' + this + (reason ? ' - ' + reason : ''));
         this._channel.close();
     }
 
+    equals(o) {
+        return o instanceof PeerConnection
+            && this.host === o.host
+            && this.port === o.port;
+    }
+
     toString() {
-        return "PeerConnection{host=" + this._host + ", port=" + this._port
-            + ", bytesReceived=" + this._bytesReceived + ", bytesSent=" + this._bytesSent + "}";
+        return "PeerConnection{host=" + this._host + ", port=" + this._port + "}";
     }
 
     get host() {

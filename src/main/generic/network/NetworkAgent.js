@@ -15,11 +15,11 @@ class NetworkAgent extends Observable {
         return 60000; // ms
     }
 
-    constructor(channel, blockchain, addresses) {
+    constructor(blockchain, addresses, channel) {
         super();
-        this._channel = channel;
         this._blockchain = blockchain;
         this._addresses = addresses;
+        this._channel = channel;
 
         // Flag indicating that we have completed handshake with the peer.
         this._connected = false;
@@ -54,8 +54,8 @@ class NetworkAgent extends Observable {
     /* Handshake */
 
     async _handshake() {
-        // Kick off the handshake by telling the peer our version & blockchain height.
-        this._channel.version(this._blockchain.height);
+        // Kick off the handshake by telling the peer our version, network address & blockchain height.
+        this._channel.version(NetworkUtils.myNetAddress(), this._blockchain.height);
 
         // Drop the peer if it doesn't acknowledge our version message.
         this._timers.setTimeout('verack', () => this._channel.close('verack timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
@@ -78,6 +78,13 @@ class NetworkAgent extends Observable {
         }
 
         // TODO actually check version, services and stuff.
+
+        // Distance to self must always be zero.
+        if (msg.netAddress.distance !== 0) {
+            console.warn('Invalid version message from ' + this._channel + ' - distance != 0');
+            this._channel.close('invalid version');
+            return;
+        }
 
         // Clear the version timeout.
         this._timers.clearTimeout('version');
@@ -111,11 +118,13 @@ class NetworkAgent extends Observable {
         const peer = new Peer(
             this._channel,
             this._version.version,
-            this._version.services,
-            /*TODO netAddress*/ "TODO",
+            this._version.netAddress,
             this._version.startHeight
         );
-        this.fire('connected', peer, this);
+        this.fire('handshake', peer, this);
+
+        // Store/Update the peer's netAddress.
+        this._addresses.push(this._channel, this._version.netAddress);
 
         // Setup regular connectivity check.
         // TODO randomize interval?
@@ -163,7 +172,7 @@ class NetworkAgent extends Observable {
         await this._addresses.push(this._channel, msg.addresses);
 
         // Tell listeners that we have received new addresses.
-        this.fire('addresses', msg.addresses, this);
+        this.fire('addr', msg.addresses, this);
     }
 
     _onGetAddr(msg) {
