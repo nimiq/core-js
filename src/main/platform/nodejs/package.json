@@ -13,6 +13,7 @@
     "btoa": "^1.1.2",
     "leveldown": "^1.6.0",
     "levelup": "^1.3.5",
-    "node-webcrypto-ossl": "^1.0.21"
+    "node-webcrypto-ossl": "^1.0.21",
+    "ws": "^2.3.1"
   }
 }

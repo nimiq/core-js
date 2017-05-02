@@ -1,0 +1,22 @@
+{
+    "spec_files": [
+            "./src/main/platform/database/indexed-db.js",
+            "./src/main/generic/utils/database/*.js",
+            "./src/main/generic/utils/**/*.js",
+            "./src/main/generic/consensus/primitive/Primitive.js",
+            "./src/main/generic/consensus/primitive/*.js",
+            "./src/main/generic/consensus/account/*.js",
+            "./src/main/generic/consensus/block/BlockBody.js",
+            "./src/main/generic/consensus/block/BlockHeader.js",
+            "./src/main/generic/consensus/block/*.js",
+            "./src/main/generic/p2p/message/P2PMessage.js",
+            "./src/main/generic/p2p/message/*P2PMessage.js",
+            "./src/main/generic/p2p/message/*.js",
+            "./src/main/generic/p2p/**/*.js",
+            "./src/main/generic/*/**/*.js",
+            "./src/main/generic/*.js",
+            "./src/test/specs/**/Dummy.spec.js",
+            "./src/test/specs/**/*.spec.js"
+        ],
+    "stopSpecOnExpectationFailure": false
+}
