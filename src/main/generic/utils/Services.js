@@ -18,11 +18,11 @@ class Services {
     }
 
     static isWebSocket(services) {
-        return services & Services.WEBSOCKET !== 0;
+        return (services & Services.WEBSOCKET) !== 0;
     }
 
     static isWebRtc(services) {
-        return services & Services.WEBRTC !== 0;
+        return (services & Services.WEBRTC) !== 0;
     }
 }
 Services.WEBSOCKET = 1;

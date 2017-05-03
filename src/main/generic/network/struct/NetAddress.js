@@ -11,7 +11,7 @@ class NetAddress {
     static unserialize(buf) {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
-        const host = buf.readVarLenString();
+        const host = buf.readVarLengthString();
         const port = buf.readUint16();
         const signalId = buf.readUint64();
         const distance = buf.readUint8();
@@ -22,7 +22,7 @@ class NetAddress {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint32(this._services);
         buf.writeUint64(this._timestamp);
-        buf.writeVarLenString(this._host);
+        buf.writeVarLengthString(this._host);
         buf.writeUint16(this._port);
         buf.writeUint64(this._signalId);
         buf.writeUint8(this._distance);
@@ -32,7 +32,7 @@ class NetAddress {
     get serializedSize() {
         return /*services*/ 4
             + /*timestamp*/ 8
-            + /*extra byte VarLenString host*/ 1
+            + /*extra byte VarLengthString host*/ 1
             + this._host.length
             + /*port*/ 2
             + /*signalId*/ 8

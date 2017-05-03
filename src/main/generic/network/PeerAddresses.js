@@ -76,12 +76,17 @@ class PeerAddresses {
         return addresses;
     }
 
+    delete(peerAddress) {
+        delete this._store[peerAddress];
+    }
+    
     // Delete all webrtc-only peer addresses that are signalable over the given channel.
-    delete(channel) {
+    deleteBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (let key in this._store) {
             const addr = this._store[key];
-            if (add.channel.equals(channel) && Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
+            if (addr.signalChannel && addr.signalChannel.equals(channel)
+                    && Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 delete this._store[key];
             }

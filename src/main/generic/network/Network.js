@@ -103,13 +103,17 @@ class Network extends Observable {
     // Connection to this peer address failed.
     _onError(peerAddr) {
         console.warn('Connection to ' + peerAddr + ' failed');
+
+        // Remove peer address from addresses.
+        this._addresses.delete(peerAddr);
+
         this._checkPeerCount();
     }
 
     // This peer channel was closed.
     _onClose(peer, channel) {
         // Remove all peer addresses that were reachable via this channel.
-        this._addresses.deleteSignalChannel(channel);
+        this._addresses.deleteBySignalChannel(channel);
 
         // Remove connection & agent.
         delete this._agents[channel.connection];
