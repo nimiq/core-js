@@ -15,6 +15,10 @@ class IndexedArray {
     }
 
     get(target, key) {
+        if (typeof key == 'symbol') {
+            return undefined;
+        }
+
         // Forward index access (e.g. arr[5]) to underlying array.
         if (!isNaN(key)) {
             return target[key];
