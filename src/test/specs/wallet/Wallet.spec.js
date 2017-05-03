@@ -1,3 +1,4 @@
+
 describe('Wallet',() => {
 	const recipient = new Address(Dummy.address1);
 	const value = 8888888;

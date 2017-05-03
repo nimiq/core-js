@@ -229,6 +229,7 @@ class Blockchain extends Observable {
         this._mainChain = newChain;
         this._mainPath.push(hash);
         this._headHash = hash;
+        await this._store.setMainChain(this._mainChain);
     }
 
     async _revert() {
@@ -250,6 +251,7 @@ class Blockchain extends Observable {
         this._mainChain = prevChain;
         this._mainPath.pop();
         this._headHash = prevHash;
+        await this._store.setMainChain(this._mainChain);
     }
 
     async _rebranch(newChain) {

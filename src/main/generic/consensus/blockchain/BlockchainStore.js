@@ -13,8 +13,14 @@ class PersistentBlockchainStore extends ObjectDB {
         super('blocks', Chain);
     }
 
-    getMainChain() {
-        return super.getMax('totalWork');
+    async setMainChain(chainHead) {
+        const headKey = await chainHead.hash()
+        return await super.putRaw('chainhead', headKey);
+    }
+
+    async getMainChain() {
+        const headKey = await super.get('chainhead');
+        return super.get(headKey);
     }
 }
 
@@ -35,15 +41,16 @@ class VolatileBlockchainStore {
     async put(value) {
         const key = await this._key(value);
         this._store[key] = value;
-        if (!this._mainChain || value.totalWork > this._mainChain.totalWork) {
-            this._mainChain = value;
-        }
         return key;
     }
 
     async delete(value) {
         const key = await this._key(value);
         delete this._store[key];
+    }
+
+    setMainChain(chain) {
+        this._mainChain = chain;
     }
 
     getMainChain() {

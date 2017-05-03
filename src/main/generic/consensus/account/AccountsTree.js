@@ -221,6 +221,30 @@ class AccountsTreeNode {
         return o;
     }
 
+    static unserialize(buf) {
+        const type = buf.readUint8();
+        const prefixLength = buf.readUint8();
+        const prefix = buf.read(prefixLength);
+
+        let balance = undefined;
+        let children = undefined;
+        if (type == 0xff) {
+            // Terminal node
+            balance = Balance.unserialize(buf);
+        } else {
+            // Branch node
+            children = [];
+            const childCount = buf.readUint8();
+            for (let i = 0; i < childCount; ++i) {
+                const childIndex = buf.readUint8();
+                const child = BufferUtils.toBase64(buf.read(32));
+                children[childIndex] = child;
+            }
+        }
+
+        return new AccountsTreeNode(prefix, balance, children);
+    }
+
     getChild(prefix) {
         return this.children && this.children[prefix[0]];
     }
@@ -252,6 +276,9 @@ class AccountsTreeNode {
             this.balance.serialize(buf);
         } else if (this.children) {
             // branch node
+            const childCount = this.children.reduce( (count, val) => count + !!val, 0);
+            buf.writeUint8(childCount);
+
             for (let i = 0; i < this.children.length; ++i) {
                 if (this.children[i]) {
                     buf.writeUint8(i);
@@ -270,7 +297,7 @@ class AccountsTreeNode {
             // The children array contains undefined values for non existant children.
             // Only count existing ones.
             + (this.children ? this.children.reduce( (count, val) => count + !!val, 0)
-                * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
+                * (/*keySize*/ 32 + /*childIndex*/ 1) + /*childCount*/ 1 : 0);
     }
 
     hash() {

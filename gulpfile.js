@@ -26,8 +26,8 @@ gulp.task('default', function() {
             'src/generic/p2p/**/*.js',
             'src/generic/*/**/*.js',
         	'src/generic/*.js',
-            'test/specs/**/Dummy.spec.js',
-        	'test/specs/**/*.spec.js'
+            'src/test/specs/**/Dummy.spec.js',
+        	'src/test/specs/**/*.spec.js'
         ]
     }));
 });
