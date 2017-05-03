@@ -11,6 +11,6 @@ module.exports = Core;
 
 Core.get().then( $ => {
 	console.log('Nimiq Core initialized');
-	$.network.connect();
-	$.miner.startWork();
+	global.$ = $;
+	//$.network.connect();
 })

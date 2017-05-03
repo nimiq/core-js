@@ -7,11 +7,8 @@ class NetworkUtils {
     }
 
     static myNetAddress() {
-        // TODO NodeJS: Get host (domain) + port
-        // XXX Browser address
         return new NetAddress(Services.myServices(), Date.now(),
             /*host*/ "", /*port*/ 0,
             NetworkUtils.mySignalId(), /*distance*/ 0);
     }
 }
-Class.register(NetworkUtils);
