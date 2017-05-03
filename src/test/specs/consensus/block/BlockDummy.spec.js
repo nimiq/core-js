@@ -1,3 +1,7 @@
+if(typeof Dummy ==='undefined'){
+    Dummy = {}
+}
+
 Dummy.block1 = (() => {
 
     function dummyTransaction(index){	

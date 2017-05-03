@@ -22,5 +22,6 @@
   "bugs": {
     "url": "https://github.com/styppo/novicash/issues"
   },
-  "homepage": "https://github.com/styppo/novicash#readme"
+  "homepage": "https://github.com/styppo/novicash#readme",
+  "dependencies": {}
 }
