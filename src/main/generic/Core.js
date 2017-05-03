@@ -18,7 +18,7 @@ class Core {
         this.mempool = new Mempool(this.blockchain, this.accounts);
 
         // Network
-        this.network = new Network(this.blockchain);
+        this.network = await new Network(this.blockchain);
 
         // Consensus
         this.consensus = new Consensus(this.blockchain, this.mempool, this.network);

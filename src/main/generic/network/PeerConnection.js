@@ -1,9 +1,9 @@
 class PeerConnection extends Observable {
-    constructor(nativeChannel, ipAddress, port) {
+    constructor(nativeChannel, host, port) {
         super();
         this._channel = nativeChannel;
 
-        this._ipAddress = ipAddress;
+        this._host = host;
         this._port = port;
 
         this._bytesReceived = 0;
@@ -41,16 +41,16 @@ class PeerConnection extends Observable {
 
     equals(o) {
         return o instanceof PeerConnection
-            && this.ipAddress === o.ipAddress
+            && this.host === o.host
             && this.port === o.port;
     }
 
     toString() {
-        return "PeerConnection{ipAddress=" + this._ipAddress + ", port=" + this._port + "}";
+        return "PeerConnection{host=" + this._host + ", port=" + this._port + "}";
     }
 
-    get ipAddress() {
-        return this._ipAddress;
+    get host() {
+        return this._host;
     }
 
     get port() {

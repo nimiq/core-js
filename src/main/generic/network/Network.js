@@ -10,7 +10,10 @@ class Network extends Observable {
     constructor(blockchain) {
         super();
         this._blockchain = blockchain;
+        return this._init();
+    }
 
+    async _init() {
         this._peerCount = 0;
         this._agents = {};
         this._activeAddresses = {}
@@ -21,12 +24,22 @@ class Network extends Observable {
         this._wsConnector.on('connection', conn => this._onConnection(conn));
         this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
 
-        this._rtcConnector = new WebRtcConnector();
+        this._rtcConnector = await new WebRtcConnector();
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
 
+        return this;
+    }
+
+    connect() {
         // Start connecting to peers.
         this._checkPeerCount();
+    }
+
+    disconnect() {
+        for (let conn in this._agents) {
+            conn.close('manual network disconnect');
+        }
     }
 
     _checkPeerCount() {
@@ -107,6 +120,14 @@ class Network extends Observable {
 
             // Tell listeners that this peer has gone away.
             this.fire('peer-left', peer);
+
+            // Increment the peerCount.
+            this._peerCount--;
+
+            // Let listeners know that the peers changed.
+            this.fire('peers-changed');
+
+            console.log('[PEER-LEFT] ' + peer, peer);
         }
 
         this._checkPeerCount();
@@ -119,6 +140,14 @@ class Network extends Observable {
 
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
+
+        // Increment the peerCount.
+        this._peerCount++;
+
+        // Let listeners know that the peers changed.
+        this.fire('peers-changed');
+
+        console.log('[PEER-JOINED] ' + peer, peer);
     }
 
     // A peer has sent us new addresses.
@@ -132,7 +161,7 @@ class Network extends Observable {
     _onSignal(channel, msg) {
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === NetworkUtils.mySignalId()) {
-            this._rtcConnector.signal(channel, msg);
+            this._rtcConnector.onSignal(channel, msg);
         }
         // Otherwise, try to forward the signal to the intented recipient.
         else {

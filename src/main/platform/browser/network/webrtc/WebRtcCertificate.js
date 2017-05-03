@@ -1,7 +1,7 @@
 // TODO V2: should be a singleton
 // TODO V2: should cache the certificate in it's scope
 window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
-class WebrtcCertificate {
+class WebRtcCertificate {
 	static get() {
 		// TODO the certificate is going to expire eventually. Automatically renew it.
 		const db = new RawIndexedDB('certificate');
