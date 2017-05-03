@@ -3,3 +3,4 @@ class ArrayUtils {
         return arr[Math.floor(Math.random() * arr.length)];
     }
 }
+Class.register(ArrayUtils);

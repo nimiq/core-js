@@ -125,7 +125,7 @@ class Network extends Observable {
             // Tell listeners that this peer has gone away.
             this.fire('peer-left', peer);
 
-            // Increment the peerCount.
+            // Decrement the peerCount.
             this._peerCount--;
 
             // Let listeners know that the peers changed.

@@ -65,3 +65,4 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 }
+Class.register(PeerConnection);

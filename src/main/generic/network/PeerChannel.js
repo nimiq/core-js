@@ -1,5 +1,4 @@
 class PeerChannel extends Observable {
-
     constructor(connection) {
         super();
         this._conn = connection;

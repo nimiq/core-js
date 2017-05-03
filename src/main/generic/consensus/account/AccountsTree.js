@@ -245,23 +245,6 @@ class AccountsTreeNode {
         return new AccountsTreeNode(prefix, balance, children);
     }
 
-    getChild(prefix) {
-        return this.children && this.children[prefix[0]];
-    }
-
-    putChild(prefix, child) {
-        this.children = this.children || [];
-        this.children[prefix[0]] = child;
-    }
-
-    removeChild(prefix) {
-        if (this.children) delete this.children[prefix[0]];
-    }
-
-    hasChildren() {
-        return this.children && this.children.some( child => !!child);
-    }
-
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         // node type: branch node = 0x00, terminal node = 0xff
@@ -278,7 +261,6 @@ class AccountsTreeNode {
             // branch node
             const childCount = this.children.reduce( (count, val) => count + !!val, 0);
             buf.writeUint8(childCount);
-
             for (let i = 0; i < this.children.length; ++i) {
                 if (this.children[i]) {
                     buf.writeUint8(i);
@@ -294,10 +276,28 @@ class AccountsTreeNode {
             + /*prefixLength*/ 1
             + this.prefix.byteLength
             + (this.balance ? this.balance.serializedSize : 0)
+            + (!this.balance ? /*childCount*/ 1 : 0)
             // The children array contains undefined values for non existant children.
             // Only count existing ones.
             + (this.children ? this.children.reduce( (count, val) => count + !!val, 0)
-                * (/*keySize*/ 32 + /*childIndex*/ 1) + /*childCount*/ 1 : 0);
+                * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
+    }
+
+    getChild(prefix) {
+        return this.children && this.children[prefix[0]];
+    }
+
+    putChild(prefix, child) {
+        this.children = this.children || [];
+        this.children[prefix[0]] = child;
+    }
+
+    removeChild(prefix) {
+        if (this.children) delete this.children[prefix[0]];
+    }
+
+    hasChildren() {
+        return this.children && this.children.some( child => !!child);
     }
 
     hash() {

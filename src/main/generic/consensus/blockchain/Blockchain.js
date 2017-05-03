@@ -32,6 +32,7 @@ class Blockchain extends Observable {
         if (!this._mainChain) {
             this._mainChain = new Chain(Block.GENESIS);
             await this._store.put(this._mainChain);
+            await this._store.setMainChain(this._mainChain);
         }
 
         // Cache the hash of the head of the current main chain.
@@ -359,6 +360,27 @@ class Chain {
         ObjectUtils.cast(o, Chain);
         Block.cast(o._head);
         return o;
+    }
+
+    static unserialize(buf) {
+        const head = Block.unserialize(buf);
+        const totalWork = buf.readUint64();
+        const height = buf.readUint32();
+        return new Chain(head, totalWork, height);
+    }
+
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        this._head.serialize(buf);
+        buf.writeUint64(this._totalWork);
+        buf.writeUint32(this._height);
+        return buf;
+    }
+
+    get serializedSize() {
+        return this._head.serializedSize
+            + /*totalWork*/ 8
+            + /*height*/ 4;
     }
 
     get head() {

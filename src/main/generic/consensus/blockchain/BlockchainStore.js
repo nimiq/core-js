@@ -13,14 +13,15 @@ class PersistentBlockchainStore extends ObjectDB {
         super('blocks', Chain);
     }
 
-    async setMainChain(chainHead) {
-        const headKey = await chainHead.hash()
-        return await super.putRaw('chainhead', headKey);
+    async getMainChain() {
+        const mainKey = await super.get('main');
+        if (!mainKey) return undefined;
+        return super.get(mainKey);
     }
 
-    async getMainChain() {
-        const headKey = await super.get('chainhead');
-        return super.get(headKey);
+    async setMainChain(mainChain) {
+        const mainKey = await mainChain.hash()
+        return await super.putRaw('main', mainKey);
     }
 }
 

@@ -27,3 +27,4 @@ class Services {
 }
 Services.WEBSOCKET = 1;
 Services.WEBRTC = 2;
+Class.register(Services);

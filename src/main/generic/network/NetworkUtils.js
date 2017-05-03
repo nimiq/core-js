@@ -14,3 +14,4 @@ class NetworkUtils {
             NetworkUtils.mySignalId(), /*distance*/ 0);
     }
 }
+Class.register(NetworkUtils);

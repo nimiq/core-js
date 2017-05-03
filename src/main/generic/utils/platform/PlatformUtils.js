@@ -3,3 +3,4 @@ class PlatformUtils {
         return typeof window !== "undefined";
     }
 }
+Class.register(PlatformUtils);

@@ -1,7 +1,7 @@
 class ObjectDB extends RawIndexedDB {
     constructor(tableName, type) {
         if (!type.cast) throw 'Type needs a .cast() method';
-        super(tableName);
+        super(tableName, type);
         this._type = type;
     }
 
@@ -12,7 +12,7 @@ class ObjectDB extends RawIndexedDB {
 
     async get(key) {
         const value = await super.get(key);
-        return this._type.cast(value);
+        return value instanceof this._type ? value : this._type.cast(value);    
     }
 
     async put(obj) {
