@@ -10,5 +10,7 @@ require('./classes.js');
 module.exports = Core;
 
 Core.get().then( $ => {
-	console.log('Got Nimiq Core',$);
+	console.log('Nimiq Core initialized');
+	$.network.connect();
+	$.miner.startWork();
 })

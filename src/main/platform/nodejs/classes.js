@@ -4,7 +4,7 @@ global.Class = {
 	}
 }
 
-require("./database/Database.js");
+require("./database/TypedDB.js");
 require("../../generic/utils/database/ObjectDB.js");
 require("../../generic/utils/array/IndexedArray.js");
 require("../../generic/utils/array/ArrayUtils.js");

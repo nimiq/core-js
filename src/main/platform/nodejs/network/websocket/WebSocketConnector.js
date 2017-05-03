@@ -1,3 +1,5 @@
+const WebSocket = require('ws');
+
 class WebSocketConnector extends Observable {
     constructor() {
         super();

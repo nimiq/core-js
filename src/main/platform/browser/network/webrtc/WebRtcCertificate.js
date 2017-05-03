@@ -4,15 +4,15 @@ window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConne
 class WebRtcCertificate {
 	static get() {
 		// TODO the certificate is going to expire eventually. Automatically renew it.
-		const db = new RawIndexedDB('certificate');
-		return db.get('certKey').then( value => {
+		const db = new TypedDB('certificate');
+		return db.getObject('certKey').then( value => {
 			if (value) return value;
 			return RTCPeerConnection.generateCertificate({
 		  			name: 'ECDSA',
 			    	namedCurve: 'P-256'
 				})
 				.then(cert => {
-					db.put('certKey',cert);
+					db.putObject('certKey', cert);
 					return cert;
 				});
 			});

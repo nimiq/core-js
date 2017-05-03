@@ -15,13 +15,14 @@ class PersistentAccountsTreeStore extends ObjectDB {
     }
 
     async getRootKey() {
-        return await super.get('root');
+        return await super.getString('root');
     }
 
     async setRootKey(rootKey) {
-        return await super.putRaw('root', rootKey);
+        return await super.putString('root', rootKey);
     }
 
+    /*
     transaction() {
         const tx = super.transaction();
         tx.getRootKey = async function(rootKey) {
@@ -32,6 +33,7 @@ class PersistentAccountsTreeStore extends ObjectDB {
         }
         return tx;
     }
+    */
 }
 
 class VolatileAccountsTreeStore {
@@ -40,7 +42,7 @@ class VolatileAccountsTreeStore {
         this._rootKey = undefined;
     }
 
-    async _key(node) {
+    async key(node) {
         return BufferUtils.toBase64(await node.hash());
     }
 
@@ -49,19 +51,21 @@ class VolatileAccountsTreeStore {
     }
 
     async put(node) {
-        const key = await this._key(node);
+        const key = await this.key(node);
         this._store[key] = node;
         return key;
     }
 
     async delete(node) {
-        const key = await this._key(node);
+        const key = await this.key(node);
         delete this._store[key];
     }
 
+    /*
     transaction() {
         return this;
     }
+    */
 
     getRootKey() {
         return this._rootKey;
