@@ -6,6 +6,17 @@ class Services {
         return PlatformUtils.isBrowser() ? Services.WEBRTC : Services.WEBSOCKET;
     }
 
+    // Used for filtering peer addresses by services.
+    // XXX cleanup
+    static myServiceMask() {
+        // Always get WebSocket peers. If we are in a browser, get WebRTC peers as well.
+        let serviceMask = Services.WEBSOCKET;
+        if (PlatformUtils.isBrowser()) {
+            serviceMask |= Services.WEBRTC;
+        }
+        return serviceMask;
+    }
+
     static isWebSocket(services) {
         return services & Services.WEBSOCKET !== 0;
     }

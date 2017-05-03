@@ -27,6 +27,9 @@ class NetworkAgent extends Observable {
         // The version message announced by the peer.
         this._version = null;
 
+        // The peer object we create after the handshake completes.
+        this._peer = null;
+
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
 
@@ -48,6 +51,9 @@ class NetworkAgent extends Observable {
     _onClose() {
         // Clear connectivity check interval when peer disconnects.
         this._timers.clearInterval('connectivity');
+
+        // Tell listeners that the peer has disconnected.
+        this.fire('close', this._peer, this._channel, this);
     }
 
 
@@ -115,13 +121,13 @@ class NetworkAgent extends Observable {
         this._connected = true;
 
         // Tell listeners about the new peer that connected.
-        const peer = new Peer(
+        this._peer = new Peer(
             this._channel,
             this._version.version,
             this._version.netAddress,
             this._version.startHeight
         );
-        this.fire('handshake', peer, this);
+        this.fire('handshake', this._peer, this);
 
         // Store/Update the peer's netAddress.
         this._addresses.push(this._channel, this._version.netAddress);
@@ -140,16 +146,9 @@ class NetworkAgent extends Observable {
     /* Addresses */
 
     _requestAddresses() {
-        // Set mask for getaddr request:
-        // - always get WebSocket peers
-        // - if we are in a browser, get WebRTC peers as well
-        let serviceMask = Services.WEBSOCKET;
-        if (PlatformUtils.isBrowser()) {
-            serviceMask |= Services.WEBRTC;
-        }
 
         // Request addresses from peer.
-        this._channel.getaddr(serviceMask);
+        this._channel.getaddr(Services.myServiceMask());
 
         // If the peer doesn't send addresses within the specified timeout,
         // fire the address event with empty addresses.
@@ -182,7 +181,7 @@ class NetworkAgent extends Observable {
         console.log('[GETADDR] serviceMask=' + msg.serviceMask);
 
         // Find addresses that match the given serviceMask.
-        const addresses = this._addresses.find(msg.serviceMask);
+        const addresses = this._addresses.findByServices(msg.serviceMask);
 
         // Send the addresses back to the peer.
         this._channel.addr(addresses);
@@ -219,7 +218,6 @@ class NetworkAgent extends Observable {
         this._timers.clearTimeout('ping_' + msg.nonce);
     }
 
-
     _canAcceptMessage(msg) {
         const isHandshakeMsg =
             msg.type == Message.Type.VERSION
@@ -233,6 +231,10 @@ class NetworkAgent extends Observable {
                 + ' - not acceptable in state connected=' + this._connected, msg);
         }
         return accept;
+    }
+
+    get peer() {
+        return this._peer;
     }
 }
 Class.register(NetworkAgent);

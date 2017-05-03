@@ -12,8 +12,10 @@ class Network extends Observable {
         this._blockchain = blockchain;
 
         this._peerCount = 0;
+        this._agents = {};
+        this._activeAddresses = {}
+
         this._addresses = new PeerAddresses();
-        this._timers = new Timers();
 
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -23,16 +25,20 @@ class Network extends Observable {
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
 
+        // Start connecting to peers.
         this._checkPeerCount();
     }
 
     _checkPeerCount() {
         if (this._peerCount < Network.PEER_COUNT_DESIRED) {
             // Pick a random peer address that we are not connected to yet.
-            const peerAddress = ...;
+            let candidates = this._addresses.findByServices(Services.myServiceMask());
+            candidates = candidates.filter(addr => !this._activeAddresses[addr]);
+            const peerAddress = ArrayUtils.randomElement(candidates);
 
             // If we are connected to all addresses we know, wait for more.
             if (!peerAddress) {
+                console.warn('Not connecting to more peers - no addresses left');
                 return;
             }
 
@@ -40,7 +46,6 @@ class Network extends Observable {
             this._connect(peerAddress);
         }
     }
-
 
     _connect(peerAddress) {
         console.log('Connecting to ' + peerAddress + ' ...');
@@ -62,15 +67,24 @@ class Network extends Observable {
             return;
         }
 
+        // Check if we already have a connection to the same remote host(+port).
+        if (this._agents[conn]) {
+            conn.close('duplicate connection');
+            return;
+        }
+
         console.log('Connection established: ' + conn);
 
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
-        channel.on('close', () => this._onClose(channel));
 
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
         agent.on('handshake', peer => this._onHandshake(peer));
+        agent.on('close', (peer, channel) => this._onClose(peer, channel));
         agent.on('addr', () => this._onAddr());
+
+        // Store the agent for this connection.
+        this._agents[conn] = agent;
     }
 
     // Connection to this peer address failed.
@@ -80,15 +94,29 @@ class Network extends Observable {
     }
 
     // This peer channel was closed.
-    _onClose(channel) {
+    _onClose(peer, channel) {
         // Remove all peer addresses that were reachable via this channel.
         this._addresses.deleteSignalChannel(channel);
+
+        // Remove connection & agent.
+        delete this._agents[channel.connection];
+
+        if (peer) {
+            // Mark this peer's address as inactive.
+            delete this._activeAddresses[peer.netAddress];
+
+            // Tell listeners that this peer has gone away.
+            this.fire('peer-left', peer);
+        }
 
         this._checkPeerCount();
     }
 
     // Handshake with this peer was successful.
     _onHandshake(peer) {
+        // Store the net address of the peer to prevent duplicate connections.
+        this._activeAddresses[peer.netAddress] = true;
+
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
     }

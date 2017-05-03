@@ -1,18 +1,18 @@
 class Consensus extends Observable {
 
-    constructor(broadcastChannel, blockchain, mempool) {
+    constructor(blockchain, mempool, network) {
         super();
         this._agents = {};
         this._state = Consensus.State.UNKNOWN;
 
         // Create a P2PAgent for each peer that connects.
-        broadcastChannel.on('peer-joined', peer => {
+        network.on('peer-joined', peer => {
             const agent = new ConsensusAgent(peer, blockchain, mempool);
-            this._agents[peer.peerId] = agent;
+            this._agents[peer.netAddress] = agent;
             agent.on('consensus', () => this._onPeerConsensus(agent));
         });
-        broadcastChannel.on('peer-left', peerId => {
-            delete this._agents[peerId];
+        network.on('peer-left', peer => {
+            delete this._agents[peer.netAddress];
         });
 
         // Notify peers when our blockchain head changes.

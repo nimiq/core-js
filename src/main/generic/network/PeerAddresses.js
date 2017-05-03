@@ -1,22 +1,74 @@
 class PeerAddresses {
+    static get MAX_AGE() {
+        return 1000 * 60 * 60 * 3; // 3 hours
+    }
+
+    static get MAX_DISTANCE() {
+        return 4;
+    }
+
+    static get SEED_PEERS() {
+        return [
+            new NetAddress(Services.WEBSOCKET, 0, "alpacash.com", 443, 0, 0)
+        ];
+    }
+
     constructor() {
-        this._store = [];
+        this._store = {};
+        this.push(null, PeerAddresses.SEED_PEERS);
     }
 
     push(channel, arg) {
         const netAddresses = arg.length ? arg : [arg];
-        const peerAddresses = netAddresses.map(addr => new PeerAddress(addr, channel));
-        Array.prototype.push.apply(this._store, peerAddresses);
+
+        for (let addr of netAddresses) {
+            // Ignore addresses that are too old.
+            if (Date.now() - addr.timestamp > PeerAddresses.MAX_AGE) {
+                console.log('Ignoring address ' + addr + ' - too old', addr);
+                continue;
+            }
+
+            // Increment distance values for signaling addresses.
+            // XXX use a more robust condition here.
+            if (addr.signalId) {
+                addr.distance++;
+
+                // Ignore addresses that exceed max distance.
+                if (addr.distance > PeerAddresses.MAX_DISTANCE) {
+                    console.log('Ignoring address ' + addr + ' - max distance exceeded', addr);
+                    continue;
+                }
+
+                // Ignore address if we already know a better route to this address.
+                // TODO save anyways to have a backup route?
+                const knownAddr = this._store[addr];
+                if (knownAddr && knownAddr.distance < addr.distance) {
+                    console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
+                    continue;
+                }
+            }
+
+            // Store the address.
+            this._store[addr] = new PeerAddress(addr, channel);
+        }
     }
 
     findBySignalId(signalId) {
-
+        // XXX inefficient linear scan
+        for (let key in this._store) {
+            const addr = this._store[key];
+            if (addr.signalId === signalId) {
+                return addr;
+            }
+        }
+        return null;
     }
 
-    findActive(serviceMask) {
+    findByServices(serviceMask) {
         // XXX inefficient linear scan
         const addresses = [];
-        for (let addr of this._store) {
+        for (let key in this._store) {
+            const addr = this._store[key];
             if (addr.services & serviceMask !== 0) {
                 addresses.push(addr);
             }
@@ -27,20 +79,17 @@ class PeerAddresses {
     // Delete all webrtc-only peer addresses that are signalable over the given channel.
     delete(channel) {
         // XXX inefficient linear scan
-        for (let i = 0; i < this._store.length; i++) {
-            const addr = this._store[i];
-            if (Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
+        for (let key in this._store) {
+            const addr = this._store[key];
+            if (add.channel.equals(channel) && Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
-                delete this._store[i];
+                delete this._store[key];
             }
         }
-
-        // Remove undefined values from store after deleting.
-        this._store = this._store.filter(addr => !!addr);
     }
 
     cleanup() {
-        // Delete all peer addresses that are older than 3 hours.
+        // Delete all peer addresses that are older than MAX_AGE.
         // Special case: don't delete addresses without timestamps (timestamp == 0)
 
     }

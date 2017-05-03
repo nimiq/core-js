@@ -75,5 +75,10 @@ class NetAddress {
     get distance() {
         return this._distance;
     }
+
+    // Changed when passed on to other peers.
+    set distance(value) {
+        this._distance = value;
+    }
 }
 Class.register(NetAddress);

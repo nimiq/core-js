@@ -17,11 +17,11 @@ class Core {
         this.blockchain = await Blockchain.getPersistent(this.accounts);
         this.mempool = new Mempool(this.blockchain, this.accounts);
 
-        // P2P
+        // Network
         this.network = new Network(this.blockchain);
 
         // Consensus
-        this.consensus = new Consensus(this.network.broadcastChannel, this.blockchain, this.mempool);
+        this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
 
         // Wallet
         this.wallet = await Wallet.getPersistent();
