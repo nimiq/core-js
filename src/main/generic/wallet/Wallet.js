@@ -2,7 +2,7 @@
 class Wallet {
 
 	static async getPersistent() {
-		const db = new RawIndexedDB('wallet');
+		const db = new WalletStore();
 		let keys = await db.get('keys');
 		if (!keys) {
 			keys = await Crypto.generateKeys();

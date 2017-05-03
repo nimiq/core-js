@@ -1,5 +1,7 @@
 var WebCrypto = require("node-webcrypto-ossl");
-var webcrypto = new WebCrypto();
+var webcrypto = new WebCrypto({
+    directory: "database/keys"
+});
 
 class Crypto {
   static get lib() { return webcrypto.subtle; }
