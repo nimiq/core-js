@@ -39,7 +39,7 @@ class WebRtcConnector extends Observable {
         }
 
         if (!payload) {
-            console.warn('Discarding signal from ' + msg.senderId ' - empty payload', msg);
+            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload', msg);
             return;
         }
 
@@ -107,8 +107,8 @@ class PeerConnector extends Observable {
         this._signalChannel.signal(
             NetworkUtils.mySignalId(),
             this._remoteId,
-            JSON.stringify(signal);
-        )
+            JSON.stringify(signal)
+        );
     }
 
 	_onIceCandidate(event) {

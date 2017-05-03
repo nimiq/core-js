@@ -19,13 +19,16 @@
 	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
 	<script src="../../src/main/platform/browser/database/storage-persistence.js"></script>
 	<script src="../../src/main/generic/utils/array/IndexedArray.js"></script>
+	<script src="../../src/main/generic/utils/array/ArrayUtils.js"></script>
 	<script src="../../src/main/generic/utils/buffer/SerialBuffer.js"></script>
 	<script src="../../src/main/generic/utils/buffer/BufferUtils.js"></script>
 	<script src="../../src/main/generic/utils/crypto/Crypto.js"></script>
 	<script src="../../src/main/generic/utils/number/NumberUtils.js"></script>
 	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
+	<script src="../../src/main/generic/utils/platform/PlatformUtils.js"></script>
 	<script src="../../src/main/generic/utils/string/StringUtils.js"></script>
 	<script src="../../src/main/generic/utils/Observable.js"></script>
+	<script src="../../src/main/generic/utils/Services.js"></script>
 	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
 	<script src="../../src/main/generic/utils/Timers.js"></script>
 	<script src="../../src/main/generic/consensus/primitive/Primitive.js"></script>
@@ -45,23 +48,36 @@
 	<script src="../../src/main/generic/consensus/blockchain/BlockchainStore.js"></script>
 	<script src="../../src/main/generic/consensus/transaction/Transaction.js"></script>
 	<script src="../../src/main/generic/consensus/mempool/Mempool.js"></script>
+	<script src="../../src/main/generic/consensus/ConsensusAgent.js"></script>
 	<script src="../../src/main/generic/consensus/Consensus.js"></script>
-	<script src="../../src/main/generic/p2p/message/Message.js"></script>
-	<script src="../../src/main/generic/p2p/message/BlockMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/GetBlocksMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/InventoryMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/VersionMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/VerAckMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/TxMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/MempoolMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/RejectMessage.js"></script>
-	<script src="../../src/main/generic/p2p/message/MessageFactory.js"></script>
-	<script src="../../src/main/generic/p2p/struct/InvVector.js"></script>
-	<script src="../../src/main/platform/browser/network/certificate/webrtc-certificate.js"></script>
-	<script src="../../src/main/platform/browser/network/peer-portal/PeerPortal.js"></script>
-	<script src="../../src/main/generic/p2p/P2PAgent.js"></script>
-	<script src="../../src/main/generic/p2p/P2PChannel.js"></script>
-	<script src="../../src/main/generic/p2p/P2PNetwork.js"></script>
+	<script src="../../src/main/generic/network/message/Message.js"></script>
+	<script src="../../src/main/generic/network/message/AddrMessage.js"></script>
+	<script src="../../src/main/generic/network/message/BlockMessage.js"></script>
+	<script src="../../src/main/generic/network/message/GetAddrMessage.js"></script>
+	<script src="../../src/main/generic/network/message/GetBlocksMessage.js"></script>
+	<script src="../../src/main/generic/network/message/InventoryMessage.js"></script>
+	<script src="../../src/main/generic/network/message/MempoolMessage.js"></script>
+	<script src="../../src/main/generic/network/message/PingMessage.js"></script>
+	<script src="../../src/main/generic/network/message/PongMessage.js"></script>
+	<script src="../../src/main/generic/network/message/RejectMessage.js"></script>
+	<script src="../../src/main/generic/network/message/SignalMessage.js"></script>
+	<script src="../../src/main/generic/network/message/TxMessage.js"></script>
+	<script src="../../src/main/generic/network/message/VerAckMessage.js"></script>
+	<script src="../../src/main/generic/network/message/VersionMessage.js"></script>
+	<script src="../../src/main/generic/network/message/MessageFactory.js"></script>
+	<script src="../../src/main/generic/network/struct/InvVector.js"></script>
+	<script src="../../src/main/generic/network/struct/NetAddress.js"></script>
+	<script src="../../src/main/platform/browser/network/webrtc/WebRtcCertificate.js"></script>
+	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConfig.js"></script>
+	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConnector.js"></script>
+	<script src="../../src/main/platform/browser/network/websocket/WebSocketConnector.js"></script>
+	<script src="../../src/main/generic/network/PeerConnection.js"></script>
+	<script src="../../src/main/generic/network/PeerChannel.js"></script>
+	<script src="../../src/main/generic/network/PeerAddresses.js"></script>
+	<script src="../../src/main/generic/network/Peer.js"></script>
+	<script src="../../src/main/generic/network/NetworkUtils.js"></script>
+	<script src="../../src/main/generic/network/NetworkAgent.js"></script>
+	<script src="../../src/main/generic/network/Network.js"></script>
 	<script src="../../src/main/generic/miner/Miner.js"></script>
 	<script src="../../src/main/generic/miner/Policy.js"></script>
 	<script src="../../src/main/generic/wallet/Wallet.js"></script>
@@ -362,9 +378,6 @@
 
 			_networkChanged() {
 				this._netPeerCount.innerText = $.network.peerCount;
-				// XXX Hack
-				this._netBytesReceived.innerText = P2PChannel.bytesReceived;
-				this._netBytesSent.innerText = P2PChannel.bytesSent;
 			}
 
 			_minerChanged() {
