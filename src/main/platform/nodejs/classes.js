@@ -66,5 +66,6 @@ require("../../generic/network/NetworkAgent.js");
 require("../../generic/network/Network.js");
 require("../../generic/miner/Miner.js");
 require("../../generic/miner/Policy.js");
+require("./wallet/WalletStore.js");
 require("../../generic/wallet/Wallet.js");
 require("../../generic/Core.js");

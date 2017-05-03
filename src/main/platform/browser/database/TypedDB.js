@@ -22,14 +22,15 @@ class TypedDB {
         });
     }
 
-    constructor(tableName) {
-        this.tableName = tableName;
+    constructor(tableName, type) {
+        this._tableName = tableName;
+        this._type = type;
     }
 
     _get(key) {
-        return RawIndexedDB.db.then(db => new Promise( (resolve,error) => {
-            const getTx = db.transaction([this.tableName])
-                .objectStore(this.tableName)
+        return TypedDB.db.then( db => new Promise( (resolve,error) => {
+            const getTx = db.transaction([this._tableName])
+                .objectStore(this._tableName)
                 .get(key);
             getTx.onsuccess = event => resolve(event.target.result);
             getTx.onerror = error;
@@ -37,9 +38,9 @@ class TypedDB {
     }
 
     _put(key, value) {
-        return RawIndexedDB.db.then(db => new Promise( (resolve,error) => {
-            const putTx = db.transaction([this.tableName], 'readwrite')
-                .objectStore(this.tableName)
+        return TypedDB.db.then( db => new Promise( (resolve,error) => {
+            const putTx = db.transaction([this._tableName], 'readwrite')
+                .objectStore(this._tableName)
                 .put(value, key);
             putTx.onsuccess = event => resolve(event.target.result);
             putTx.onerror = error;
@@ -47,7 +48,8 @@ class TypedDB {
     }
 
     getObject(key) {
-        return this._get(key);
+        return this._get(key)
+            .then( value => this._type && this._type.cast && !(value instanceof this._type) ? this._type.cast(value) : value);
     }
 
     putObject(key, value) {
@@ -63,9 +65,9 @@ class TypedDB {
     }
 
     delete(key) {
-        return RawIndexedDB.db.then(db => new Promise((resolve,error) => {
-            const deleteTx = db.transaction([this.tableName], 'readwrite')
-                .objectStore(this.tableName)
+        return TypedDB.db.then(db => new Promise((resolve,error) => {
+            const deleteTx = db.transaction([this._tableName], 'readwrite')
+                .objectStore(this._tableName)
                 .delete(key);
             deleteTx.onsuccess = event => resolve(event.target.result);
             deleteTx.onerror = error;
