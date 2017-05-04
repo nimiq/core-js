@@ -3,3 +3,5 @@ SpecRunner.html
 servers/peer-portal-node/node_modules
 src/main/platform/nodejs/database/tables
 src/main/platform/nodejs/database/keys
+clients/nodejs/node_modules
+clients/nodejs/database

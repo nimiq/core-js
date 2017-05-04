@@ -51,7 +51,7 @@ class PeerAddresses {
 
             // Store the address.
             this._store[addr] = new PeerAddress(addr, channel);
-            console.log('Adding new peer address: ' + this._store[addr]);
+            //console.log('Adding new peer address: ' + this._store[addr]);
         }
     }
 

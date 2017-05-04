@@ -3,7 +3,7 @@ var levelup = require('levelup');
 class TypedDB {
     constructor(tableName, type) {
         if (!type || !type.unserialize) 'NodeJS TypedDB requires type with .unserialize()';
-        this._db = levelup('./database/tables/' + tableName, {
+        this._db = levelup('./database/' + tableName, {
             keyEncoding: 'ascii'
         });
         this._type = type;

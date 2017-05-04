@@ -73,7 +73,7 @@ class Miner extends Observable {
 
 			if (isPoW) {
 				const hash = await block.hash();
-				console.log('MINED BLOCK!!! nonce=' + block.nonce + ', difficulty=' + block.difficulty + ', hash=' + hash.toBase64());
+				console.log('MINED BLOCK!!! nonce=' + block.nonce + ', difficulty=' + block.difficulty + ', hash=' + hash.toBase64() + ', hashrate=' + this._hashrate + ' H/s');
 
 				// Tell listeners that we've mined a block.
 				this.fire('block-mined', block, this);

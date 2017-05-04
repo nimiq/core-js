@@ -4,10 +4,15 @@ class NetworkUtils {
     }
 
     static myNetAddress() {
-        // XXX load host + port from config file
+        if (!NetworkUtils._myHost || !NetworkUtils._myPort) throw 'NetAddress is not configured.';
         return new NetAddress(Services.myServices(), Date.now(),
-            /*host*/ "localhost", /*port*/ 8080,
+            NetworkUtils._myHost, NetworkUtils._myPort,
             NetworkUtils.mySignalId(), /*distance*/ 0);
+    }
+
+    static configureNetAddress(host, port) {
+        NetworkUtils._myHost = host;
+        NetworkUtils._myPort = port;
     }
 }
 Class.register(NetworkUtils);

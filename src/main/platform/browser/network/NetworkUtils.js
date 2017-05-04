@@ -11,4 +11,8 @@ class NetworkUtils {
             /*host*/ "", /*port*/ 0,
             NetworkUtils.mySignalId(), /*distance*/ 0);
     }
+
+    static configureNetAddress() {
+        // Ignored on browser platform.
+    }
 }

@@ -8,9 +8,3 @@ global.btoa = require('btoa');
 require('./classes.js');
 
 module.exports = Core;
-
-Core.get().then( $ => {
-	console.log('Nimiq Core initialized');
-	global.$ = $;
-	//$.network.connect();
-})
