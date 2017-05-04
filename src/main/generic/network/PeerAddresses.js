@@ -9,7 +9,7 @@ class PeerAddresses {
 
     static get SEED_PEERS() {
         return [
-            new NetAddress(Services.WEBSOCKET, Date.now(), "localhost", 8080, 0, 0)
+            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0)
         ];
     }
 
