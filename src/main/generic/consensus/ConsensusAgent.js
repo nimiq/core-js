@@ -222,7 +222,7 @@ class ConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         if (!this._inFlightRequests.getRequestId(hash)) {
-            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer + ', discarding', msg.block);
+            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer + ', discarding');
             return;
         }
 
@@ -237,11 +237,11 @@ class ConsensusAgent extends Observable {
 
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        console.log('[TX] Received transaction ' + hash.toBase64(), msg.transaction);
+        console.log('[TX] Received transaction ' + hash.toBase64());
 
         // Check if we have requested this transaction.
         if (!this._inFlightRequests.getRequestId(hash)) {
-            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer + ', discarding', msg.block);
+            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer + ', discarding');
             return;
         }
 
