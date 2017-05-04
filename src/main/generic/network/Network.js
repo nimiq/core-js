@@ -95,8 +95,10 @@ class Network extends Observable {
         console.log('Connecting to ' + peerAddress + ' ...');
 
         if (Services.isWebSocket(peerAddress.services)) {
+            this._activeAddresses[peerAddress] = true;
             this._wsConnector.connect(peerAddress);
         } else if (Services.isWebRtc(peerAddress.services)) {
+            this._activeAddresses[peerAddress] = true;
             this._rtcConnector.connect(peerAddress);
         } else {
             console.error('Cannot connect to ' + peerAddress + ' - neither WS nor RTC supported');
@@ -137,6 +139,7 @@ class Network extends Observable {
 
         // Remove peer address from addresses.
         this._addresses.delete(peerAddr);
+        delete this._activeAddresses[peerAddr];
 
         this._checkPeerCount();
     }
@@ -148,6 +151,8 @@ class Network extends Observable {
 
         // Remove agent.
         delete this._agents[channel.connection];
+
+        // XXX TODO remove peer address from activeAddresses, even if the handshake didn't finish.
 
         if (peer) {
             // Mark this peer's address as inactive.
@@ -209,7 +214,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ': ' + BufferUtils.toAscii(msg.payload));
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId);
         }
     }
 

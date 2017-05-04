@@ -43,13 +43,26 @@ class WebRtcConnector extends Observable {
             return;
         }
 
-        // If we are already establishing a connection with the sender of this
-        // signal, forward it to the corresponding connector.
-        if (this._connectors[msg.senderId]) {
-            this._connectors[msg.senderId].onSignal(payload);
-        }
-        // Otherwise, start establishing a connection if the signal is a RTC offer.
-        else if (payload.type == 'offer') {
+        if (payload.type == 'offer') {
+            // Check if we have received an offer on an ongoing connection.
+            // This can happen if two peers initiate connections to one another
+            // simultaneously. Resolve this by having the peer with the higher
+            // signalId discard the offer while the one with the lower signalId
+            // accepts it.
+            if (this._connectors[msg.senderId]) {
+                if (msg.recipientId > msg.senderId) {
+                    // Discard the offer.
+                    console.log('Simultaneous connection, discarding offer from ' + msg.senderId + ' (<' + msg.recipientId + ')');
+                    return;
+                } else {
+                    // We are going to accept the offer. Clear the connect timeout
+                    // from our previous outgoing connection attempt to this peer.
+                    console.log('Simultaneous connection, accepting offer from ' + msg.senderId + ' (>' + msg.recipientId + ')');
+                    this._timers.clearTimeout('connect_' + msg.senderId);
+                }
+            }
+
+            // Accept the offer.
             const connector = new IncomingPeerConnector(this._config, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors[msg.senderId] = connector;
@@ -58,6 +71,13 @@ class WebRtcConnector extends Observable {
                 delete this._connectors[msg.senderId];
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
+
+        // If we are already establishing a connection with the sender of this
+        // signal, forward it to the corresponding connector.
+        else if (this._connectors[msg.senderId]) {
+            this._connectors[msg.senderId].onSignal(payload);
+        }
+        
         // Invalid signal.
         else {
             console.warn('Discarding invalid signal received from ' + msg.sender + ' via ' + channel, msg, channel);

@@ -47,14 +47,14 @@ class PeerAddresses extends Observable {
                 // Ignore address if we already know a better route to this address.
                 // TODO save anyways to have a backup route?
                 if (knownAddr && knownAddr.distance < addr.distance) {
-                    console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
+                    //console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
                     continue;
                 }
             }
 
             // Check if we already know this address with a more recent timestamp.
             if (knownAddr && knownAddr.timestamp > addr.timestamp) {
-                console.log('Ignoring addr ' + addr + ' - older than existing one');
+                //console.log('Ignoring addr ' + addr + ' - older than existing one');
                 continue;
             }
 
