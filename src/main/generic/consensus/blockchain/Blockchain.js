@@ -90,7 +90,7 @@ class Blockchain extends Observable {
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
-            console.log('Blockchain ignoring known block', block);
+            console.log('Blockchain ignoring known block ' + hash.toBase64());
             return true;
         }
 
