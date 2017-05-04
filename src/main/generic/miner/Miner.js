@@ -28,6 +28,9 @@ class Miner extends Observable {
 		// with fresh transactions when this fires.
 		this._mempool.on('transactions-ready', () => this._startWork());
 
+		// Immediately start processing transactions when they come in.
+		this._mempool.on('transaction-added', () => this._startWork());
+
 		// Initialize hashrate computation.
 		this._hashCount = 0;
 		this._hashrateWorker = setInterval( () => this._updateHashrate(), 5000);
@@ -43,6 +46,10 @@ class Miner extends Observable {
 		// XXX Needed as long as we cannot unregister from transactions-ready events.
 		if (!this.working) {
 			return;
+		}
+
+		if (this._worker) {
+			clearTimeout(this._worker);
 		}
 
 		// Construct next block.
