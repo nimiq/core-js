@@ -14,14 +14,17 @@ class ConsensusAgent extends Observable {
         return 5000; // ms
     }
 
-    constructor(peer, blockchain, mempool) {
+    constructor(blockchain, mempool, peer) {
         super();
-        this._peer = peer;
         this._blockchain = blockchain;
         this._mempool = mempool;
+        this._peer = peer;
 
         // Flag indicating that we have sync'd our blockchain with the peer's.
         this._synced = false;
+
+        // The height of our blockchain when we last attempted to sync the chain.
+        this._lastChainHeight = 0;
 
         // Invectory of all objects that we think the remote peer knows.
         this._knownObjects = {};
@@ -47,11 +50,6 @@ class ConsensusAgent extends Observable {
 
         // Clean up when the peer disconnects.
         peer.channel.on('close',      () => this._onClose());
-
-        // Start syncing our blockchain with the peer.
-        // _syncBlockchain() might immediately emit events, so yield control flow
-        // first to give listeners the chance to register first.
-        setTimeout(this._syncBlockchain.bind(this), 0);
     }
 
     /* Public API */
@@ -76,13 +74,14 @@ class ConsensusAgent extends Observable {
         this._peer.channel.inv([vector]);
     }
 
-    _syncBlockchain() {
-        // TODO Don't loop forver here!!
-        // Save the last blockchain height when we issuing getblocks and when we get here again, see if it changed.
-        // If it didn't the peer didn't give us any valid blocks. Try again or drop him!
-
-        if (this._blockchain.height < this._peer.startHeight) {
+    syncBlockchain() {
+        if (this._lastChainHeight == this._blockchain.height) {
+            // We already requested blocks from the peer but it didn't give us any good ones.
+            // Abort sync and drop peer.
+            this._peer.channel.close('blockchain sync failed');
+        } else if (this._blockchain.height < this._peer.startHeight) {
             // If the peer has a longer chain than us, request blocks from it.
+            this._lastChainHeight = this._blockchain.height;
             this._requestBlocks();
         } else if (this._blockchain.height > this._peer.startHeight) {
             // The peer has a shorter chain than us.
@@ -91,14 +90,14 @@ class ConsensusAgent extends Observable {
 
             // XXX assume consensus state?
             this._synced = true;
-            this.fire('consensus');
+            this.fire('sync');
         } else {
             // We have the same chain height as the peer.
             // TODO Do we need to check that we have the same head???
 
             // Consensus established.
             this._synced = true;
-            this.fire('consensus');
+            this.fire('sync');
         }
     }
 
@@ -137,7 +136,7 @@ class ConsensusAgent extends Observable {
             switch (vector.type) {
                 case InvVector.Type.BLOCK:
                     const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
+                    //console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (!block) {
                         unknownObjects.push(vector);
                     }
@@ -145,7 +144,7 @@ class ConsensusAgent extends Observable {
 
                 case InvVector.Type.TRANSACTION:
                     const tx = await this._mempool.getTransaction(vector.hash);
-                    console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
+                    //console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (!tx) {
                         unknownObjects.push(vector);
                     }
@@ -155,6 +154,8 @@ class ConsensusAgent extends Observable {
                     throw 'Invalid inventory type: ' + vector.type;
             }
         }
+
+        console.log('[INV] ' + msg.vectors.length + ' vectors, ' + unknownObjects.length + ' previously unknown');
 
         // Keep track of the objects the peer knows.
         for (let obj of unknownObjects) {
@@ -212,13 +213,13 @@ class ConsensusAgent extends Observable {
 
         // If we haven't fully sync'ed the blockchain yet, keep on syncing.
         if (!this._synced) {
-            this._syncBlockchain();
+            this.syncBlockchain();
         }
     }
 
     async _onBlock(msg) {
         const hash = await msg.block.hash();
-        console.log('[BLOCK] Received block ' + hash.toBase64());
+        //console.log('[BLOCK] Received block ' + hash.toBase64());
 
         // Check if we have requested this block.
         if (!this._inFlightRequests.getRequestId(hash)) {
@@ -237,7 +238,7 @@ class ConsensusAgent extends Observable {
 
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        console.log('[TX] Received transaction ' + hash.toBase64());
+        //console.log('[TX] Received transaction ' + hash.toBase64());
 
         // Check if we have requested this transaction.
         if (!this._inFlightRequests.getRequestId(hash)) {
@@ -413,6 +414,16 @@ class ConsensusAgent extends Observable {
     _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
+
+        this.fire('close', this);
+    }
+
+    get peer() {
+        return this._peer;
+    }
+
+    get synced() {
+        return this._synced;
     }
 }
 Class.register(ConsensusAgent);
