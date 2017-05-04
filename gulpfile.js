@@ -11,21 +11,21 @@ var jasmine = new require('gulp-jasmine-livereload-task');
 gulp.task('default', function() {
     gulp.run(jasmine({
         files: [
-            'src/generic/utils/indexed-db/indexed-db.js',
-            'src/generic/utils/indexed-db/*.js',
-        	'src/generic/utils/**/*.js',
-        	'src/generic/consensus/primitive/Primitive.js',
-        	'src/generic/consensus/primitive/*.js',
-            'src/generic/consensus/account/*.js',
-            'src/generic/consensus/block/BlockBody.js',
-            'src/generic/consensus/block/BlockHeader.js',
-            'src/generic/consensus/block/*.js',
-            'src/generic/p2p/message/Message.js',
-            'src/generic/p2p/message/*Message.js',
-            'src/generic/p2p/message/*.js',
-            'src/generic/p2p/**/*.js',
-            'src/generic/*/**/*.js',
-        	'src/generic/*.js',
+            'src/main/generic/utils/indexed-db/indexed-db.js',
+            'src/main/generic/utils/indexed-db/*.js',
+        	'src/main/generic/utils/**/*.js',
+        	'src/main/generic/consensus/primitive/Primitive.js',
+        	'src/main/generic/consensus/primitive/*.js',
+            'src/main/generic/consensus/account/*.js',
+            'src/main/generic/consensus/block/BlockBody.js',
+            'src/main/generic/consensus/block/BlockHeader.js',
+            'src/main/generic/consensus/block/*.js',
+            'src/main/generic/network/message/Message.js',
+            'src/main/generic/network/message/*Message.js',
+            'src/main/generic/network/message/*.js',
+            'src/main/generic/network/**/*.js',
+            'src/main/generic/*/**/*.js',
+        	'src/main/generic/*.js',
             'src/test/specs/**/Dummy.spec.js',
         	'src/test/specs/**/*.spec.js'
         ]
@@ -35,21 +35,22 @@ gulp.task('default', function() {
 gulp.task('sectests', function() {
     gulp.run(jasmine({
         files: [
-            'src/generic/utils/indexed-db/indexed-db.js',
-            'src/generic/utils/indexed-db/*.js',
-            'src/generic/utils/**/*.js',
-            'src/generic/consensus/primitive/Primitive.js',
-            'src/generic/consensus/primitive/*.js',
-            'src/generic/consensus/account/*.js',
-            'src/generic/consensus/block/BlockBody.js',
-            'src/generic/consensus/block/BlockHeader.js',
-            'src/generic/consensus/block/*.js',
-            'src/generic/p2p/message/Message.js',
-            'src/generic/p2p/message/*Message.js',
-            'src/generic/p2p/message/*.js',
-            'src/generic/p2p/**/*.js',
-            'src/generic/*/**/*.js',
-            'src/generic/*.js',
+            'src/main/generic/utils/indexed-db/indexed-db.js',
+            'src/main/generic/utils/indexed-db/*.js',
+            'src/main/generic/utils/**/*.js',
+            'src/main/generic/consensus/primitive/Primitive.js',
+            'src/main/generic/consensus/primitive/*.js',
+            'src/main/generic/consensus/account/*.js',
+            'src/main/generic/consensus/block/BlockBody.js',
+            'src/main/generic/consensus/block/BlockHeader.js',
+            'src/main/generic/consensus/block/*.js',
+            'src/main/generic/network/message/VerAckMessage.js',
+            'src/main/generic/network/message/Message.js',
+            'src/main/generic/network/message/*Message.js',
+            'src/main/generic/network/message/*.js',
+            'src/main/generic/network/**/*.js',
+            'src/main/generic/*/**/*.js',
+            'src/main/generic/*.js',
             'sectests/**/Dummy.sectest.js',
             'sectests/**/*.sectest.js'
         ]
@@ -61,31 +62,35 @@ var concat = require('gulp-concat');
  
 gulp.task('build', function() {
   return gulp.src([
-        './src/generic/utils/**/*.js',
-        './src/generic/consensus/primitive/Primitive.js', 
-        './src/generic/consensus/primitive/**/*.js', 
-        './src/generic/consensus/block/BlockHeader.js', 
-        './src/generic/consensus/block/BlockBody.js', 
-        './src/generic/p2p/message/Message.js', 
-        './src/generic/p2p/message/VersionMessage.js', 
-        './src/generic/consensus/account/Address.js', 
-        './src/generic/**/*.js'])
-    .pipe(concat('nimiq.js'))
+        './src/main/platform/browser/Class.js',
+        './src/main/generic/utils/Observable.js',
+        './src/main/platform/browser/**/*.js',
+        './src/main/generic/utils/**/*.js',
+        './src/main/generic/consensus/primitive/Primitive.js', 
+        './src/main/generic/consensus/primitive/**/*.js', 
+        './src/main/generic/consensus/block/BlockHeader.js', 
+        './src/main/generic/consensus/block/BlockBody.js', 
+        './src/main/generic/network/struct/*.js', 
+        './src/main/generic/network/message/Message.js', 
+        './src/main/generic/network/message/*Message.js', 
+        './src/main/generic/consensus/account/Address.js', 
+        './src/main/generic/**/*.js'])
+    .pipe(concat('dist/nimiq.js'))
     .pipe(gulp.dest('./'));
 });
 
 gulp.task('build-node', function() {
   return gulp.src([
-        './src/generic/utils/**/*.js',
-        './src/generic/consensus/primitive/Primitive.js', 
-        './src/generic/consensus/primitive/**/*.js', 
-        './src/generic/consensus/block/BlockHeader.js', 
-        './src/generic/consensus/block/BlockBody.js', 
-        './src/generic/p2p/message/Message.js', 
-        './src/generic/p2p/message/VersionMessage.js', 
-        './src/generic/consensus/account/Address.js', 
-        './src/generic/**/*.js',
-        '!./src/generic/utils/indexed-db/**/*.js'])
+        './src/main/generic/utils/**/*.js',
+        './src/main/generic/consensus/primitive/Primitive.js', 
+        './src/main/generic/consensus/primitive/**/*.js', 
+        './src/main/generic/consensus/block/BlockHeader.js', 
+        './src/main/generic/consensus/block/BlockBody.js', 
+        './src/main/generic/network/message/Message.js', 
+        './src/main/generic/network/message/VersionMessage.js', 
+        './src/main/generic/consensus/account/Address.js', 
+        './src/main/generic/**/*.js',
+        '!./src/main/generic/utils/indexed-db/**/*.js'])
     .pipe(concat('nimiq.js'))
     .pipe(gulp.dest('./'));
 });
