@@ -1,1 +1,0 @@
-ssh -R 8002:localhost:8080 ubuntu@ec2-52-26-109-180.us-west-2.compute.amazonaws.com

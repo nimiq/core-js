@@ -10,10 +10,13 @@ const host = argv.host;
 const port = parseInt(argv.port);
 const miner = argv.miner;
 const passive = argv.passive;
+const key = argv.key;
+const cert = argv.cert;
 
 console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ', miner=' + !!miner + ', passive=' + !!passive + ')');
 
 NetworkUtils.configureNetAddress(host, port);
+NetworkUtils.configureSSL(key, cert);
 Core.get().then( $ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 

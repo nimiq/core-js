@@ -1,10 +1,24 @@
 const WebSocket = require('ws');
+const https = require('https');
+const fs = require('fs');
+
 
 class WebSocketConnector extends Observable {
     constructor() {
         super();
         const port = NetworkUtils.myNetAddress().port;
-        this._wss = new WebSocket.Server({port: port});
+
+        const options = {
+          key: fs.readFileSync(NetworkUtils.getSSLConfig().key),
+          cert: fs.readFileSync(NetworkUtils.getSSLConfig().cert)
+        };
+
+        const httpsServer = https.createServer(options, (req, res) => {
+          res.writeHead(200);
+          res.end('hello world\n');
+        }).listen(port);
+
+        this._wss = new WebSocket.Server(httpsServer);
         this._wss.on('connection', ws => this._onConnection(ws));
 
         console.log('WebSocketConnector listening on port ' + port);

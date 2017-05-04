@@ -14,5 +14,17 @@ class NetworkUtils {
         NetworkUtils._myHost = host;
         NetworkUtils._myPort = port;
     }
+
+    static configureSSL(key,cert){
+        NetworkUtils._myKey = key;
+        NetworkUtils._myCert = cert;
+    }
+
+    static getSSLConfig(){
+        return {
+            key : NetworkUtils._myKey,
+            cert: NetworkUtils._myCert
+        }
+    }
 }
 Class.register(NetworkUtils);

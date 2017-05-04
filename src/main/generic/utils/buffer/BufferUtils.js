@@ -31,7 +31,7 @@ class BufferUtils {
   }
 
   static toBase64Clean(buffer) {
-    return Buffer.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+    return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
   }
 
   static concatTypedArrays(a, b) {
