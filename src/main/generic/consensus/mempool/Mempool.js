@@ -16,6 +16,13 @@ class Mempool extends Observable {
     }
 
     async pushTransaction(transaction) {
+        // Check if we already know this transaction.
+        const hash = await transaction.hash();
+        if (this._transactions[hash]) {
+            console.log('Mempool ignoring known transaction ' + hash.toBase64());
+            return;
+        }
+
         // Fully verify the transaction against the current accounts state.
         if (!await this._verifyTransaction(transaction)) {
             return false;
@@ -30,7 +37,6 @@ class Mempool extends Observable {
         this._publicKeys[transaction.publicKey] = true;
 
         // Transaction is valid, add it to the mempool.
-        const hash = await transaction.hash();
         this._transactions[hash] = transaction;
 
         // Tell listeners about the new valid transaction we received.

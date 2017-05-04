@@ -90,14 +90,14 @@ class Blockchain extends Observable {
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
-            console.log('Blockchain ignoring known block', block);
+            console.log('Blockchain ignoring known block ' + hash.toBase64());
             return true;
         }
 
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
-            console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown', block);
+            console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown');
             return false;
         }
 
@@ -146,7 +146,7 @@ class Blockchain extends Observable {
         // the head didn't change, nothing else to do.
         console.log('Creating/extending fork with block ' + hash.toBase64()
             + ', height=' + newChain.height + ', totalWork='
-            + newChain.totalWork, newChain);
+            + newChain.totalWork);
 
         return true;
     }
@@ -218,7 +218,7 @@ class Blockchain extends Observable {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
             console.log('Blockchain rejecting block, AccountsHash mismatch: current='
-                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64(), newChain.head);
+                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64());
             return;
         }
 

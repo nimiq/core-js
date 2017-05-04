@@ -16,6 +16,11 @@ class Miner extends Observable {
 		this._hashrateWorker = null;
 	}
 
+	// XXX Cleanup
+	static configureSpeed(iterations) {
+		Miner._iterations = iterations || 75;
+	}
+
 	startWork() {
 		if (this.working) {
 			console.warn('Miner already working');
@@ -27,6 +32,9 @@ class Miner extends Observable {
 		// when the eviction process finishes. Restart work on the next block
 		// with fresh transactions when this fires.
 		this._mempool.on('transactions-ready', () => this._startWork());
+
+		// Immediately start processing transactions when they come in.
+		this._mempool.on('transaction-added', () => this._startWork());
 
 		// Initialize hashrate computation.
 		this._hashCount = 0;
@@ -45,10 +53,14 @@ class Miner extends Observable {
 			return;
 		}
 
+		if (this._worker) {
+			clearTimeout(this._worker);
+		}
+
 		// Construct next block.
 		const nextBlock = await this._getNextBlock();
 
-		console.log('Miner starting work on prevHash=' + nextBlock.prevHash.toBase64() + ', accountsHash=' + nextBlock.accountsHash.toBase64() + ', difficulty=' + nextBlock.difficulty);
+		console.log('Miner starting work on prevHash=' + nextBlock.prevHash.toBase64() + ', accountsHash=' + nextBlock.accountsHash.toBase64() + ', difficulty=' + nextBlock.difficulty + ', hashrate=' + this._hashrate + ' H/s');
 
 		// Start hashing.
 		this._worker = setTimeout( () => this._tryNonces(nextBlock), 0);
@@ -65,9 +77,8 @@ class Miner extends Observable {
 			return;
 		}
 
-		// Play with this number to adjust hashrate vs. responsiveness.
-		const iterations = 75;
-		for (let i = 0; i < iterations; ++i) {
+		// Play with the number of iterations to adjust hashrate vs. responsiveness.
+		for (let i = 0; i < Miner._iterations; ++i) {
 			let isPoW = await block.header.verifyProofOfWork();
 			this._hashCount++;
 
@@ -169,4 +180,6 @@ class Miner extends Observable {
 		return this._hashrate;
 	}
 }
+// XXX Move to configuration
+Miner._iterations = 75;
 Class.register(Miner);
