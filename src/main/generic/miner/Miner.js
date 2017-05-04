@@ -180,4 +180,6 @@ class Miner extends Observable {
 		return this._hashrate;
 	}
 }
+// XXX Move to configuration
+Miner._iterations = 75;
 Class.register(Miner);
