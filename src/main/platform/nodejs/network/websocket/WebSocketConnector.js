@@ -15,7 +15,7 @@ class WebSocketConnector extends Observable {
 
         const httpsServer = https.createServer(options, (req, res) => {
           res.writeHead(200);
-          res.end('hello world\n');
+          res.end('Nimiq NodeJS Client\n');
         }).listen(port);
 
         this._wss = new WebSocket.Server({server: httpsServer});
@@ -27,7 +27,7 @@ class WebSocketConnector extends Observable {
     connect(peerAddress) {
         if (!Services.isWebSocket(peerAddress.services)) throw 'Malformed peerAddress';
 
-        const ws = new WebSocket('ws://' + peerAddress.host + ':' + peerAddress.port);
+        const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
     	ws.onopen = () => this._onConnection(ws);
         ws.onerror = e => this.fire('error', peerAddress, e);
     }
