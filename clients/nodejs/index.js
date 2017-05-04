@@ -2,7 +2,7 @@ const Core = require('../../src/main/platform/nodejs/index.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> [--miner] [--miner-speed=75] [--passive]');
+    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--miner] [--miner-speed=75] [--passive]');
     process.exit();
 }
 
