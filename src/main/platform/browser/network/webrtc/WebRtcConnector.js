@@ -60,7 +60,7 @@ class WebRtcConnector extends Observable {
         }
         // Invalid signal.
         else {
-            console.warn('Discaring invalid signal received from ' + msg.sender + ' via ' + channel, msg, channel);
+            console.warn('Discarding invalid signal received from ' + msg.sender + ' via ' + channel, msg, channel);
         }
     }
 

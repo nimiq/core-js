@@ -53,6 +53,19 @@ class Network extends Observable {
         }
     }
 
+    // XXX For testing
+    disconnectWS() {
+        this._enabled = false;
+
+        // Close all websocket connections.
+        for (let key in this._agents) {
+            const agent = this._agents[key];
+            if (Services.isWebSocket(agent.peer.netAddress.services)) {
+                agent.channel.close('manual websocket disconnect');
+            }
+        }
+    }
+
     _checkPeerCount() {
         if (this._enabled && this._peerCount < Network.PEER_COUNT_DESIRED) {
             // Pick a random peer address that we are not connected to yet.
