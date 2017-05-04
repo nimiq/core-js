@@ -9,13 +9,14 @@ class PeerAddresses {
 
     static get SEED_PEERS() {
         return [
-            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 443, 0, 0)
+            new NetAddress(Services.WEBSOCKET, Date.now(), "localhost", 8080, 0, 0)
         ];
     }
 
     constructor() {
         this._store = {};
         this.push(null, PeerAddresses.SEED_PEERS);
+        this.push(null, NetworkUtils.myNetAddress());
     }
 
     push(channel, arg) {
@@ -30,7 +31,7 @@ class PeerAddresses {
 
             // Increment distance values for signaling addresses.
             // XXX use a more robust condition here.
-            if (addr.signalId) {
+            if (channel && addr.signalId) {
                 addr.distance++;
 
                 // Ignore addresses that exceed max distance.
@@ -50,6 +51,7 @@ class PeerAddresses {
 
             // Store the address.
             this._store[addr] = new PeerAddress(addr, channel);
+            console.log('Adding new peer address: ' + this._store[addr]);
         }
     }
 
@@ -69,7 +71,7 @@ class PeerAddresses {
         const addresses = [];
         for (let key in this._store) {
             const addr = this._store[key];
-            if (addr.services & serviceMask !== 0) {
+            if ((addr.services & serviceMask) !== 0) {
                 addresses.push(addr);
             }
         }
@@ -79,7 +81,7 @@ class PeerAddresses {
     delete(peerAddress) {
         delete this._store[peerAddress];
     }
-    
+
     // Delete all webrtc-only peer addresses that are signalable over the given channel.
     deleteBySignalChannel(channel) {
         // XXX inefficient linear scan

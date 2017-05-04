@@ -7,7 +7,7 @@ class PongMessage extends Message {
     static unserialize(buf) {
         Message.unserialize(buf);
         const nonce = buf.readUint32();
-        return new PingMessage(nonce);
+        return new PongMessage(nonce);
     }
 
     serialize(buf) {

@@ -32,7 +32,7 @@ class WebRtcConnector extends Observable {
     onSignal(channel, msg) {
         let payload;
         try {
-            payload = JSON.parse(msg.payload)
+            payload = JSON.parse(BufferUtils.toAscii(msg.payload));
         } catch (e) {
             console.error('Failed to parse signal payload from ' + msg.senderId, msg);
             return;
@@ -50,7 +50,7 @@ class WebRtcConnector extends Observable {
         }
         // Otherwise, start establishing a connection if the signal is a RTC offer.
         else if (payload.type == 'offer') {
-            const connector = new IncomingPeerConnector(this._config, channel, msg.senderId);
+            const connector = new IncomingPeerConnector(this._config, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors[msg.senderId] = connector;
 
@@ -107,7 +107,7 @@ class PeerConnector extends Observable {
         this._signalChannel.signal(
             NetworkUtils.mySignalId(),
             this._remoteId,
-            JSON.stringify(signal)
+            BufferUtils.fromAscii(JSON.stringify(signal))
         );
     }
 

@@ -233,6 +233,10 @@ class NetworkAgent extends Observable {
         return accept;
     }
 
+    get channel() {
+        return this._channel;
+    }
+
     get peer() {
         return this._peer;
     }

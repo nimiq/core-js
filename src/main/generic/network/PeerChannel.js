@@ -2,6 +2,7 @@ class PeerChannel extends Observable {
     constructor(connection) {
         super();
         this._conn = connection;
+        this._conn.on('message', msg => this._onMessage(msg));
 
         // Forward specified events on the connection to listeners of this Observable.
         this.bubble(this._conn, 'close', 'error');

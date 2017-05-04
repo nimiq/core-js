@@ -37,16 +37,18 @@ class ConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.on('inv',        msg => this._onInv(msg));
-        peer.on('getdata',    msg => this._onGetData(msg));
-        peer.on('notfound',   msg => this._onNotFound(msg));
-        peer.on('block',      msg => this._onBlock(msg));
-        peer.on('tx',         msg => this._onTx(msg));
-        peer.on('getblocks',  msg => this._onGetBlocks(msg));
-        peer.on('mempool',    msg => this._onMempool(msg));
+        peer.channel.on('inv',        msg => this._onInv(msg));
+        peer.channel.on('getdata',    msg => this._onGetData(msg));
+        peer.channel.on('notfound',   msg => this._onNotFound(msg));
+        peer.channel.on('block',      msg => this._onBlock(msg));
+        peer.channel.on('tx',         msg => this._onTx(msg));
+        peer.channel.on('getblocks',  msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool',    msg => this._onMempool(msg));
 
         // Start syncing our blockchain with the peer.
-        this._syncBlockchain();
+        // _syncBlockchain() might immediately emit events, so yield control flow
+        // first to give listeners the chance to register first.
+        setTimeout(this._syncBlockchain.bind(this), 0);
     }
 
     /* Public API */
@@ -213,7 +215,7 @@ class ConsensusAgent extends Observable {
 
     async _onBlock(msg) {
         const hash = await msg.block.hash();
-        console.log('[BLOCK] Received block ' + hash.toBase64(), msg.block);
+        console.log('[BLOCK] Received block ' + hash.toBase64());
 
         // Check if we have requested this block.
         if (!this._inFlightRequests.getRequestId(hash)) {

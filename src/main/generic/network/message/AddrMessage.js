@@ -13,7 +13,7 @@ class AddrMessage extends Message {
         for (let i = 0; i < count; ++i) {
             addresses.push(NetAddress.unserialize(buf));
         }
-		return new AddrMessage(count, addresses);
+		return new AddrMessage(addresses);
 	}
 
     serialize(buf) {

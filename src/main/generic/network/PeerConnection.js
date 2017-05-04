@@ -10,25 +10,32 @@ class PeerConnection extends Observable {
         this._bytesSent = 0;
 
         if (this._channel.on) {
-            this._channel.on('message', msg => this._onMessage(msg));
+            this._channel.on('message', msg => this._onMessage(msg.data || msg));
             this._channel.on('close', () => this.fire('close', this));
             this._channel.on('error', e => this.fire('error', e, this));
         } else {
-            this._channel.onmessage = msg => this._onMessage(msg);
+            this._channel.onmessage = msg => this._onMessage(msg.data || msg);
             this._channel.onclose = () => this.fire('close', this);
             this._channel.onerror = e => this.fire('error', e, this);
         }
     }
 
     _onMessage(msg) {
-        this._bytesReceived += msg.length;
-        this.fire('message', msg, this);
+        if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
+            this._bytesReceived += msg.byteLength || msg.length;
+            this.fire('message', msg, this);
+        } else {
+            // Browser only
+            const reader = new FileReader();
+            reader.onloadend = () => this._onMessage(new Uint8Array(reader.result));
+            reader.readAsArrayBuffer(msg);
+        }
     }
 
     send(msg) {
         try {
             this._channel.send(msg);
-            this._bytesSent += msg.length;
+            this._bytesSent += msg.byteLength || msg.length;
         } catch (e) {
             console.error('Failed to send data over ' + this, msg, this);
         }

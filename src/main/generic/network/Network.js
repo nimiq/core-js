@@ -14,10 +14,16 @@ class Network extends Observable {
     }
 
     async _init() {
+        this._enabled = false;
+
         this._peerCount = 0;
         this._agents = {};
-        this._activeAddresses = {}
 
+        // All addresses we are currently connected to including our own address.
+        this._activeAddresses = {}
+        this._activeAddresses[NetworkUtils.myNetAddress()] = true;
+
+        // All peer addresses we know.
         this._addresses = new PeerAddresses();
 
         this._wsConnector = new WebSocketConnector();
@@ -32,18 +38,23 @@ class Network extends Observable {
     }
 
     connect() {
+        this._enabled = true;
+
         // Start connecting to peers.
         this._checkPeerCount();
     }
 
     disconnect() {
-        for (let conn in this._agents) {
-            conn.close('manual network disconnect');
+        this._enabled = false;
+
+        // Close all active connections.
+        for (let key in this._agents) {
+            this._agents[key].channel.close('manual network disconnect');
         }
     }
 
     _checkPeerCount() {
-        if (this._peerCount < Network.PEER_COUNT_DESIRED) {
+        if (this._enabled && this._peerCount < Network.PEER_COUNT_DESIRED) {
             // Pick a random peer address that we are not connected to yet.
             let candidates = this._addresses.findByServices(Services.myServiceMask());
             candidates = candidates.filter(addr => !this._activeAddresses[addr]);
@@ -131,7 +142,7 @@ class Network extends Observable {
             // Let listeners know that the peers changed.
             this.fire('peers-changed');
 
-            console.log('[PEER-LEFT] ' + peer, peer);
+            console.log('[PEER-LEFT] ' + peer);
         }
 
         this._checkPeerCount();
@@ -151,7 +162,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        console.log('[PEER-JOINED] ' + peer, peer);
+        console.log('[PEER-JOINED] ' + peer);
     }
 
     // A peer has sent us new addresses.
@@ -178,6 +189,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ': ' + BufferUtils.toAscii(msg.payload));
         }
     }
 

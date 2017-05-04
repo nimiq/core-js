@@ -15,7 +15,7 @@ class NetAddress {
         const port = buf.readUint16();
         const signalId = buf.readUint64();
         const distance = buf.readUint8();
-        return new NetAddress(services, timestamp, ipAddress, port, signalId);
+        return new NetAddress(services, timestamp, host, port, signalId, distance);
     }
 
     serialize(buf) {
