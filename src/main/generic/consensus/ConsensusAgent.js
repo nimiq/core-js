@@ -45,6 +45,9 @@ class ConsensusAgent extends Observable {
         peer.channel.on('getblocks',  msg => this._onGetBlocks(msg));
         peer.channel.on('mempool',    msg => this._onMempool(msg));
 
+        // Clean up when the peer disconnects.
+        peer.channel.on('close',      () => this._onClose());
+
         // Start syncing our blockchain with the peer.
         // _syncBlockchain() might immediately emit events, so yield control flow
         // first to give listeners the chance to register first.
@@ -405,6 +408,11 @@ class ConsensusAgent extends Observable {
         for (let tx of transactions) {
             this._peer.channel.tx(tx);
         }
+    }
+
+    _onClose() {
+        // Clear all timers and intervals when the peer disconnects.
+        this._timers.clearAll();
     }
 }
 Class.register(ConsensusAgent);

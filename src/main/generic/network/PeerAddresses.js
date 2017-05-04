@@ -1,4 +1,4 @@
-class PeerAddresses {
+class PeerAddresses extends Observable {
     static get MAX_AGE() {
         return 1000 * 60 * 60 * 3; // 3 hours
     }
@@ -14,6 +14,7 @@ class PeerAddresses {
     }
 
     constructor() {
+        super();
         this._store = {};
         this.push(null, PeerAddresses.SEED_PEERS);
         this.push(null, NetworkUtils.myNetAddress());
@@ -21,6 +22,7 @@ class PeerAddresses {
 
     push(channel, arg) {
         const netAddresses = arg.length ? arg : [arg];
+        const newAddresses = [];
 
         for (let addr of netAddresses) {
             // Ignore addresses that are too old.
@@ -28,6 +30,8 @@ class PeerAddresses {
                 console.log('Ignoring address ' + addr + ' - too old', addr);
                 continue;
             }
+
+            const knownAddr = this._store[addr];
 
             // Increment distance values for signaling addresses.
             // XXX use a more robust condition here.
@@ -42,16 +46,26 @@ class PeerAddresses {
 
                 // Ignore address if we already know a better route to this address.
                 // TODO save anyways to have a backup route?
-                const knownAddr = this._store[addr];
                 if (knownAddr && knownAddr.distance < addr.distance) {
                     console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
                     continue;
                 }
             }
 
+            // Check if we already know this address with a more recent timestamp.
+            if (knownAddr && knownAddr.timestamp > addr.timestamp) {
+                console.log('Ignoring addr ' + addr + ' - older than existing one');
+                continue;
+            }
+
             // Store the address.
             this._store[addr] = new PeerAddress(addr, channel);
-            //console.log('Adding new peer address: ' + this._store[addr]);
+            newAddresses.push(addr);
+        }
+
+        // Tell listeners when we learn new addresses.
+        if (newAddresses.length) {
+            this.fire('addresses-added', newAddresses, this);
         }
     }
 

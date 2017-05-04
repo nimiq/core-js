@@ -30,6 +30,9 @@ class NetworkAgent extends Observable {
         // The peer object we create after the handshake completes.
         this._peer = null;
 
+        // All addresses that we think the remote peer knows.
+        this._knownAddresses = {};
+
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
 
@@ -48,12 +51,16 @@ class NetworkAgent extends Observable {
         this._handshake();
     }
 
-    _onClose() {
-        // Clear connectivity check interval when peer disconnects.
-        this._timers.clearInterval('connectivity');
 
-        // Tell listeners that the peer has disconnected.
-        this.fire('close', this._peer, this._channel, this);
+    /* Public API */
+
+    relayAddresses(addresses) {
+        // Only relay addresses that the peer doesn't know yet.
+        // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
+        const unknownAddresses = addresses.filter(addr => !this._knownAddresses[addr]);
+        if (unknownAddresses.length) {
+            this._channel.addr(unknownAddresses);
+        }
     }
 
 
@@ -129,6 +136,9 @@ class NetworkAgent extends Observable {
         );
         this.fire('handshake', this._peer, this);
 
+        // Remember that the peer has sent us this address.
+        this._knownAddresses[this._version.netAddress] = true;
+
         // Store/Update the peer's netAddress.
         this._addresses.push(this._channel, this._version.netAddress);
 
@@ -146,7 +156,6 @@ class NetworkAgent extends Observable {
     /* Addresses */
 
     _requestAddresses() {
-
         // Request addresses from peer.
         this._channel.getaddr(Services.myServiceMask());
 
@@ -162,10 +171,15 @@ class NetworkAgent extends Observable {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) return;
 
-        console.log('[ADDR] ' + msg.addresses.length + ' addresses ');
+        console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
 
         // Clear the getaddr timeout.
         this._timers.clearTimeout('getaddr');
+
+        // Remember that the peer has sent us these addresses.
+        for (let addr of msg.addresses) {
+            this._knownAddresses[addr] = true;
+        }
 
         // Put the new addresses in the address pool.
         await this._addresses.push(this._channel, msg.addresses);
@@ -182,6 +196,8 @@ class NetworkAgent extends Observable {
 
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.findByServices(msg.serviceMask);
+
+        // TODO we could exclude the knowAddresses from the response.
 
         // Send the addresses back to the peer.
         this._channel.addr(addresses);
@@ -216,6 +232,14 @@ class NetworkAgent extends Observable {
 
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout('ping_' + msg.nonce);
+    }
+
+    _onClose() {
+        // Clear all timers and intervals when the peer disconnects.
+        this._timers.clearAll();
+
+        // Tell listeners that the peer has disconnected.
+        this.fire('close', this._peer, this._channel, this);
     }
 
     _canAcceptMessage(msg) {

@@ -33,5 +33,14 @@ class Timers {
         clearInterval(this._intervals[key]);
         this._intervals[key] = setInterval(fn, intervalTime);
     }
+
+    clearAll() {
+        for (var key in this._timeouts) {
+            this.clearTimeout(key);
+        }
+        for (var key in this._intervals) {
+            this.clearInterval(key);
+        }
+    }
 }
 Class.register(Timers);

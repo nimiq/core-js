@@ -14,7 +14,7 @@ class Network extends Observable {
     }
 
     async _init() {
-        this._enabled = false;
+        this._autoConnect = false;
 
         this._peerCount = 0;
         this._agents = {};
@@ -25,6 +25,13 @@ class Network extends Observable {
 
         // All peer addresses we know.
         this._addresses = new PeerAddresses();
+
+        // Relay new addresses to peers.
+        this._addresses.on('addresses-added', addresses => {
+            for (let key in this._agents) {
+                this._agents[key].relayAddresses(addresses);
+            }
+        });
 
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -38,14 +45,14 @@ class Network extends Observable {
     }
 
     connect() {
-        this._enabled = true;
+        this._autoConnect = true;
 
         // Start connecting to peers.
         this._checkPeerCount();
     }
 
     disconnect() {
-        this._enabled = false;
+        this._autoConnect = false;
 
         // Close all active connections.
         for (let key in this._agents) {
@@ -55,7 +62,7 @@ class Network extends Observable {
 
     // XXX For testing
     disconnectWS() {
-        this._enabled = false;
+        this._autoConnect = false;
 
         // Close all websocket connections.
         for (let key in this._agents) {
@@ -67,7 +74,7 @@ class Network extends Observable {
     }
 
     _checkPeerCount() {
-        if (this._enabled && this._peerCount < Network.PEER_COUNT_DESIRED) {
+        if (this._autoConnect && this._peerCount < Network.PEER_COUNT_DESIRED) {
             // Pick a random peer address that we are not connected to yet.
             let candidates = this._addresses.findByServices(Services.myServiceMask());
             candidates = candidates.filter(addr => !this._activeAddresses[addr]);
@@ -139,7 +146,7 @@ class Network extends Observable {
         // Remove all peer addresses that were reachable via this channel.
         this._addresses.deleteBySignalChannel(channel);
 
-        // Remove connection & agent.
+        // Remove agent.
         delete this._agents[channel.connection];
 
         if (peer) {
@@ -166,11 +173,11 @@ class Network extends Observable {
         // Store the net address of the peer to prevent duplicate connections.
         this._activeAddresses[peer.netAddress] = true;
 
-        // Let listeners know about this peer.
-        this.fire('peer-joined', peer);
-
         // Increment the peerCount.
         this._peerCount++;
+
+        // Let listeners know about this peer.
+        this.fire('peer-joined', peer);
 
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
