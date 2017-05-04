@@ -11,7 +11,7 @@ const port = parseInt(argv.port);
 const miner = argv.miner;
 const passive = argv.passive;
 
-console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ', miner=' + miner + ', passive=' + passive + ')');
+console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ', miner=' + !!miner + ', passive=' + !!passive + ')');
 
 NetworkUtils.configureNetAddress(host, port);
 Core.get().then( $ => {
