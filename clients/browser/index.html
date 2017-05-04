@@ -419,6 +419,7 @@
 
 		Core.get().then( $ => {
 			window.$ = $;
+			$.network.connect();
 			const ui = new MinerUI($);
 		});
 	</script>
