@@ -403,9 +403,9 @@ class ConsensusAgent extends Observable {
             startIndex = 0;
         }
 
-        // Collect up to XXX 128 (was 500) inventory vectors for the blocks starting right
+        // Collect up to 500 inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + 128);
+        const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
         const vectors = [];
         for (let i = startIndex + 1; i <= stopIndex; ++i) {
             vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
