@@ -128,9 +128,6 @@ describe('Transaction', () => {
             const test4 = new Transaction(senderPubKey, recipientAddr, value, -20,nonce);
         }).toThrow('Malformed fee');
         expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, value, 0,nonce);
-        }).toThrow('Malformed fee');
-        expect( () => {
             const test5 = new Transaction(senderPubKey, recipientAddr, value, new Uint8Array(20),nonce);
         }).toThrow('Malformed fee');
         expect( () => {
