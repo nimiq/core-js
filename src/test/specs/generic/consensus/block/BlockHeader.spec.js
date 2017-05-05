@@ -128,7 +128,7 @@ describe('BlockHeader', () => {
 
     it('can falsify an invalid proof-of-work', (done) => {
         const blockHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
-        blockHeader.verify()
+        blockHeader.verifyProofOfWork()
             .then( (isValid) => {
                 expect(isValid).toBe(false);
                 done();

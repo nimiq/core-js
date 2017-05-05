@@ -1,4 +1,4 @@
-describe('Buffer', () => {
+describe('SerialBuffer', () => {
 
 	it('can writeUint8 and readUint8',() => {
 
@@ -167,19 +167,19 @@ describe('Buffer', () => {
 		const length2 = string2.length;
 
 		const buffer = new SerialBuffer(length1 + 1 + length2 + 2);
-		buffer.writeFixedString(string1, length1 + 1);
-		buffer.writeFixedString(string2, length2 + 2);
+		buffer.writeFixLengthString(string1, length1 + 1);
+		buffer.writeFixLengthString(string2, length2 + 2);
 
-		const testString1 = buffer.readFixedString(length1 + 1);
+		const testString1 = buffer.readFixLengthString(length1 + 1);
 		expect(testString1.length).toBe(length1);
 		expect(testString1).toBe(string1);
 
-		const testString2 = buffer.readFixedString(length2 + 2);
+		const testString2 = buffer.readFixLengthString(length2 + 2);
 		expect(testString2.length).toBe(length2);
 		expect(testString2).toBe(string2);
 
 		expect( () => {
-			buffer.writeFixedString(string1, length1 - 2);
-        }).toThrow('Malformed length');
+			buffer.writeFixLengthString(string1, length1 - 2);
+        }).toThrow('Malformed value/length');
 	});
 });

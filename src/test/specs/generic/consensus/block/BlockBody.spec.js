@@ -1,11 +1,10 @@
 describe('BlockBody', () => {
-    const rawTransaction = new RawTransaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0);
     const signature = new Signature(Dummy.signature1);
 
-    const transaction1 = new Transaction(rawTransaction,signature);
-    const transaction2 = new Transaction(rawTransaction,signature);
-    const transaction3 = new Transaction(rawTransaction,signature);
-    const transaction4 = new Transaction(rawTransaction,signature);
+    const transaction1 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0,signature);
+    const transaction2 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0,signature);
+    const transaction3 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0,signature);
+    const transaction4 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888,42,0,signature);
 
     const minerAddress = new Address(Dummy.address1);
 

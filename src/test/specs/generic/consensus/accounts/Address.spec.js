@@ -5,15 +5,15 @@ describe('Address', () => {
         expect(address.serializedSize).toEqual(20);
         expect(() => {
             const sign = new Address(new ArrayBuffer(16));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const sign = new Address('test');
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const sign = new Address(new ArrayBuffer(33));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
     });
 
     it('is serializable and unserializable', () => {

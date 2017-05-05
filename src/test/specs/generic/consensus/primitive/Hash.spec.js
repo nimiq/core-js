@@ -5,15 +5,15 @@ describe('Hash', () => {
         expect(hash.serializedSize).toEqual(32);
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(16)); 
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => { 
             const sign = new Hash('test'); 
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => { 
             const sign = new Hash(new ArrayBuffer(33)); 
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
     });
 
     it('is serializable and unserializable', () => {

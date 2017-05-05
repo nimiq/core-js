@@ -7,19 +7,19 @@ describe('PublicKey', () => {
         expect(pubKey1.serializedSize).toEqual(65);
         expect(() => {
             const pubKey = new PublicKey(new ArrayBuffer(16));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const pubKey = new PublicKey(new ArrayBuffer(20));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const pubKey = new PublicKey(new ArrayBuffer(66));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const pubKey = new PublicKey(new ArrayBuffer(64));
-        }).toThrow('Invalid argument');
+        }).toThrow('Primitive: Invalid length');
     });
     
     it('is serializable and unserializable', () => {
