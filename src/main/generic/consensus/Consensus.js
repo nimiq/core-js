@@ -72,8 +72,8 @@ class Consensus extends Observable {
             console.log('Synced with all connected peers (' + Object.keys(this._agents).length + '), consensus established.');
             console.log('Blockchain: height=' + this._blockchain.height + ', totalWork=' + this._blockchain.totalWork + ', headHash=' + this._blockchain.headHash.toBase64());
 
-            this._established = true;
             this._syncing = false;
+            this._established = true;
             this.fire('established');
 
             return;
@@ -82,6 +82,11 @@ class Consensus extends Observable {
         console.log('Syncing blockchain with peer ' + bestAgent.peer);
 
         this._syncing = true;
+
+        // If we expect this sync to change our blockchain height, tell listeners about it.
+        if (bestHeight > this._blockchain.height) {
+            this.fire('syncing', bestHeight);
+        }
 
         bestAgent.on('sync', () => this._onPeerSynced());
         bestAgent.on('close', () => {
