@@ -19,6 +19,11 @@ class WebRtcConnector extends Observable {
         if (!Services.isWebRtc(peerAddress.services)) throw 'Malformed peerAddress';
         const signalId = peerAddress.signalId;
 
+        if (this._connectors[signalId]) {
+            console.warn('WebRtc: Already connecting/connected to ' + signalId);
+            return;
+        }
+
         const connector = new OutgoingPeerConnector(this._config, peerAddress.signalChannel, signalId);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors[signalId] = connector;
@@ -77,10 +82,10 @@ class WebRtcConnector extends Observable {
         else if (this._connectors[msg.senderId]) {
             this._connectors[msg.senderId].onSignal(payload);
         }
-        
+
         // Invalid signal.
         else {
-            console.warn('Discarding invalid signal received from ' + msg.sender + ' via ' + channel, msg, channel);
+            console.warn('WebRtc: Discarding invalid signal received from ' + msg.senderId + ' via ' + channel + ': ' + BufferUtils.toAscii(msg.payload));
         }
     }
 

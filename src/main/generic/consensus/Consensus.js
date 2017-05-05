@@ -1,6 +1,6 @@
 class Consensus extends Observable {
     static get SYNC_THROTTLE() {
-        return 2000; // ms
+        return 1000; // ms
     }
 
     constructor(blockchain, mempool, network) {
