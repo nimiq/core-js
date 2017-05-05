@@ -10,7 +10,7 @@
 <body>
 	<header>
 		<span class="name"><span class="icon-nimiq"></span>nimiq</span>
-		<span class="subtitle">Blockchain Cockpit &mdash; Beta</span>
+		<span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
 	</header>
 
 	<!--beginjs-->
@@ -201,11 +201,11 @@
 				<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
 			</div>
 			<div class="info-block">
-				<strong>Bytes received</strong>
+				<strong>Received</strong>
 				<span id="netBytesReceived"></span>
 			</div>
 			<div class="info-block">
-				<strong>Bytes sent</strong>
+				<strong>Sent</strong>
 				<span id="netBytesSent"></span>
 			</div>
 		</div>
@@ -395,9 +395,19 @@
 				this._netPeerCount.innerText = $.network.peerCount;
 				this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
 				this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
-				this._netBytesReceived.innerText = $.network.bytesReceived;
-				this._netBytesSent.innerText = $.network.bytesSent;
+				this._netBytesReceived.innerText = this._humanBytes($.network.bytesReceived);
+				this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
 			}
+
+			_humanBytes(bytes) {
+			    var i = 0;
+			    var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+				while (bytes > 1024) {
+					bytes /= 1024;
+					i++;
+				}
+			    return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
+			};
 
 			_minerChanged() {
 				this._mnrWorking.innerText = $.miner.working;

@@ -17,7 +17,9 @@ class PeerAddresses extends Observable {
 
     static get SEED_PEERS() {
         return [
-            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0)
+            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0),
+            new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq1.styp-rekowsky.de", 8080, 0, 0),
+            new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq2.styp-rekowsky.de", 8080, 0, 0)
         ];
     }
 
