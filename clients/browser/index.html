@@ -346,7 +346,7 @@
 				return false;
 			}
 
-			_headChanged(head) {
+			async _headChanged(head) {
 				this._bcTotalWork.innerText = $.blockchain.totalWork;
 				this._bcHeight.innerText = $.blockchain.height;
 				this._bcAccountsHash.innerText = $.blockchain.accountsHash.toBase64();
@@ -360,9 +360,20 @@
 
 				const el = document.createElement('div');
 				const date = new Date(head.timestamp * 1000);
-				el.innerHTML =`<b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
-					+ `prev=<hash>${head.prevHash.toBase64()}</hash>, difficulty=${head.difficulty}, `
-					+ `nonce=${head.nonce}, transactionCount=${head.transactionCount}`;
+				let html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+					+ `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
+
+				for (let tx of head.transactions) {
+					const senderAddr = await tx.senderAddr();
+					const value = (tx.value / 1e4).toFixed(4);
+					const fee = (tx.fee / 1e4).toFixed(4);
+					html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
+				}
+				el.innerHTML = html;
+
+				if (this._blockHistory.childNodes.length > 24) {
+					this._blockHistory.removeChild(this._blockHistory.firstChild);
+				}
 				this._blockHistory.appendChild(el);
 			}
 
@@ -400,21 +411,23 @@
 				this._wltNonce.innerText = balance.nonce;
 			}
 
-			_mempoolChanged() {
+			async _mempoolChanged() {
 				// XXX inefficient
-				$.mempool.getTransactions().then( txs => {
-					this._mplTransactionCount.innerText = txs.length;
+				const txs = await $.mempool.getTransactions();
+				this._mplTransactionCount.innerText = txs.length;
 
-					while (this._mplTransactions.firstChild) {
-						this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-					}
+				while (this._mplTransactions.firstChild) {
+					this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+				}
 
-					for (let tx of txs) {
-						const el = document.createElement('div');
-						el.innerText = tx.toString();
-						this._mplTransactions.appendChild(el);
-					}
-				});
+				for (let tx of txs) {
+					const el = document.createElement('div');
+					const senderAddr = await tx.senderAddr();
+					const value = (tx.value / 1e4).toFixed(4);
+					const fee = (tx.fee / 1e4).toFixed(4);
+					el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+					this._mplTransactions.appendChild(el);
+				}
 			}
 		}
 

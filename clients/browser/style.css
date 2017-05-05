@@ -148,3 +148,7 @@ hash {
     display: flex;
     flex-direction: column-reverse;
 }
+
+#blockHistory > div {
+    margin: 5px 0;
+}
