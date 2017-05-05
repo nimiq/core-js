@@ -1,80 +1,35 @@
-// TODO: Make use of "storage-persistence" api (mandatory for private key storage)
-// TODO V2: Make use of "IDBTransactions" api for serial reads/writes
-class TypedDB {
-
-    static get db() {
-        if (TypedDB._db) return Promise.resolve(TypedDB._db);
-
-        const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB;
-        const IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.OIDBTransaction || window.msIDBTransaction;
-        const dbVersion = 1;
-        const request = indexedDB.open('lovicash', dbVersion);
-
-        return new Promise((resolve,error) => {
-            request.onsuccess = event => {
-                TypedDB._db = request.result;
-                resolve(request.result);
-            };
-
-            request.onupgradeneeded = event => {
-                const db = event.target.result;
-                db.createObjectStore('accounts');
-                db.createObjectStore('blocks');
-                db.createObjectStore('certificate');
-                db.createObjectStore('wallet');
-            };
-        });
-    }
-
+class TypedDB extends BaseTypedDB {
     constructor(tableName, type) {
-        this._tableName = tableName;
-        this._type = type;
+        super(tableName, type);
+        this._cache = {};
     }
 
-    _get(key) {
-        return TypedDB.db.then( db => new Promise( (resolve,error) => {
-            const getTx = db.transaction([this._tableName])
-                .objectStore(this._tableName)
-                .get(key);
-            getTx.onsuccess = event => resolve(event.target.result);
-            getTx.onerror = error;
-        }));
-    }
-
-    _put(key, value) {
-        return TypedDB.db.then( db => new Promise( (resolve,error) => {
-            const putTx = db.transaction([this._tableName], 'readwrite')
-                .objectStore(this._tableName)
-                .put(value, key);
-            putTx.onsuccess = event => resolve(event.target.result);
-            putTx.onerror = error;
-        }));
-    }
-
-    getObject(key) {
-        return this._get(key)
-            .then( value => this._type && this._type.cast && !(value instanceof this._type) ? this._type.cast(value) : value);
+    async getObject(key) {
+        if (this._cache[key] === undefined) {
+            this._cache[key] = await super.getObject(key);
+        }
+        return this._cache[key];
     }
 
     putObject(key, value) {
-        return this._put(key, value);
+        this._cache[key] = value;
+        return super.putObject(key, value);
     }
 
-    getString(key) {
-        return this._get(key);
+    async getString(key) {
+        if (this._cache[key] === undefined) {
+            this._cache[key] = await super.getString(key);
+        }
+        return this._cache[key];
     }
 
     putString(key, value) {
-        return this._put(key, value);
+        this._cache[key] = value;
+        return super.putString(key, value);
     }
 
     delete(key) {
-        return TypedDB.db.then(db => new Promise((resolve,error) => {
-            const deleteTx = db.transaction([this._tableName], 'readwrite')
-                .objectStore(this._tableName)
-                .delete(key);
-            deleteTx.onsuccess = event => resolve(event.target.result);
-            deleteTx.onerror = error;
-        }));
+        delete this._cache[key];
+        return super.delete(key);
     }
 }
