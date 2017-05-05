@@ -14,6 +14,11 @@ class ConsensusAgent extends Observable {
         return 5000; // ms
     }
 
+    // Maximum number of blockchain sync retries before closing the connectino.
+    static get MAX_SYNC_ATTEMPTS() {
+        return 3;
+    }
+
     constructor(blockchain, mempool, peer) {
         super();
         this._blockchain = blockchain;
@@ -28,6 +33,9 @@ class ConsensusAgent extends Observable {
 
         // The height of our blockchain when we last attempted to sync the chain.
         this._lastChainHeight = 0;
+
+        // The number of failed blockchain sync attempts.
+        this._failedSyncs = 0;
 
         // Invectory of all objects that we think the remote peer knows.
         this._knownObjects = {};
@@ -90,9 +98,14 @@ class ConsensusAgent extends Observable {
             console.log('Blockchain busy, waiting ...');
         }
         // If we already requested blocks from the peer but it didn't give us any
-        // good ones, drop the peer.
+        // good ones, retry or drop the peer.
         else if (this._lastChainHeight == this._blockchain.height) {
-            this._peer.channel.close('blockchain sync failed');
+            this._failedSyncs++;
+            if (this._failedSyncs < ConsensusAgent.MAX_SYNC_ATTEMPTS) {
+                this._requestBlocks();
+            } else {
+                this._peer.channel.close('blockchain sync failed');
+            }
         }
         // If the peer has a longer chain than us, request blocks from it.
         else if (this._blockchain.height < this._peer.startHeight) {
