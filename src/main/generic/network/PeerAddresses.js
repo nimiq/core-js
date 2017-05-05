@@ -1,10 +1,18 @@
 class PeerAddresses extends Observable {
-    static get MAX_AGE() {
+    static get MAX_AGE_WEBSOCKET() {
         return 1000 * 60 * 60 * 3; // 3 hours
     }
 
+    static get MAX_AGE_WEBRTC() {
+        return 1000 * 60 * 10; // 10 minutes
+    }
+
     static get MAX_DISTANCE() {
-        return 4;
+        return 3;
+    }
+
+    static get CLEANUP_INTERVAL() {
+        return 1000 * 60 * 3; // 3 minutes
     }
 
     static get SEED_PEERS() {
@@ -18,6 +26,9 @@ class PeerAddresses extends Observable {
         this._store = {};
         this.push(null, PeerAddresses.SEED_PEERS);
         this.push(null, NetworkUtils.myNetAddress());
+
+        // Setup cleanup interval.
+        setInterval(() => this._cleanup(), PeerAddresses.CLEANUP_INTERVAL);
     }
 
     push(channel, arg) {
@@ -26,7 +37,7 @@ class PeerAddresses extends Observable {
 
         for (let addr of netAddresses) {
             // Ignore addresses that are too old.
-            if (Date.now() - addr.timestamp > PeerAddresses.MAX_AGE) {
+            if (this._exceedsAge(addr)) {
                 console.log('Ignoring address ' + addr + ' - too old', addr);
                 continue;
             }
@@ -63,7 +74,7 @@ class PeerAddresses extends Observable {
             newAddresses.push(addr);
         }
 
-        // Tell listeners when we learn new addresses.
+        // Tell listeners that we learned new addresses.
         if (newAddresses.length) {
             this.fire('addresses-added', newAddresses, this);
         }
@@ -109,10 +120,22 @@ class PeerAddresses extends Observable {
         }
     }
 
-    cleanup() {
+    _cleanup() {
         // Delete all peer addresses that are older than MAX_AGE.
         // Special case: don't delete addresses without timestamps (timestamp == 0)
+        for (let key in this._store) {
+            const addr = this._store[key];
+            if (addr.timestamp > 0 && this._exceedsAge(addr)) {
+                console.log('Deleting old peer address ' + addr);
+                delete this._store[key];
+            }
+        }
+    }
 
+    _exceedsAge(addr) {
+        const age = Date.now() - addr.timestamp;
+        return (Services.isWebRtc(addr.services) && age > PeerAddresses.MAX_AGE_WEBRTC)
+            || (Services.isWebSocket(addr.services) && age > PeerAddresses.MAX_AGE_WEBSOCKET);
     }
 }
 Class.register(PeerAddresses);

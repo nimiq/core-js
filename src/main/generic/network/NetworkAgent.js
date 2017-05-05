@@ -15,6 +15,10 @@ class NetworkAgent extends Observable {
         return 60000; // ms
     }
 
+    static get ANNOUNCE_ADDR_INTERVAL() {
+        return 1000 * 60 * 3; // 3 minutes
+    }
+
     constructor(blockchain, addresses, channel) {
         super();
         this._blockchain = blockchain;
@@ -147,6 +151,11 @@ class NetworkAgent extends Observable {
         this._timers.setInterval('connectivity',
             () => this._checkConnectivity(),
             NetworkAgent.CONNECTIVITY_INTERVAL);
+
+        // Regularly announce our address.
+        this._timers.setInterval('announce-addr',
+            () => this._channel.addr([NetworkUtils.myNetAddress()]),
+            NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Request new network addresses from the peer.
         this._requestAddresses();
