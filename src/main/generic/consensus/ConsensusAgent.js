@@ -262,7 +262,7 @@ class ConsensusAgent extends Observable {
 
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        //console.log('[TX] Received transaction ' + hash.toBase64());
+        console.log('[TX] Received transaction ' + hash.toBase64());
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);

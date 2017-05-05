@@ -306,7 +306,7 @@
 
 				const recipientAddr = elRecipientAddr.value;
 				let value = parseFloat(elValue.value);
-				let fee = parseInt(elFee.value);
+				let fee = parseFloat(elFee.value);
 
 				if (!recipientAddr) {
 					elRecipientAddr.className = 'error';
