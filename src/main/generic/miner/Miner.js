@@ -60,7 +60,7 @@ class Miner extends Observable {
 		// Construct next block.
 		const nextBlock = await this._getNextBlock();
 
-		console.log('Miner starting work on prevHash=' + nextBlock.prevHash.toBase64() + ', accountsHash=' + nextBlock.accountsHash.toBase64() + ', difficulty=' + nextBlock.difficulty + ', hashrate=' + this._hashrate + ' H/s');
+		console.log('Miner starting work on prevHash=' + nextBlock.prevHash.toBase64() + ', accountsHash=' + nextBlock.accountsHash.toBase64() + ', difficulty=' + nextBlock.difficulty + ', transactionCount=' + nextBlock.transactionCount + ', hashrate=' + this._hashrate + ' H/s');
 
 		// Start hashing.
 		this._worker = setTimeout( () => this._tryNonces(nextBlock), 0);
@@ -84,7 +84,7 @@ class Miner extends Observable {
 
 			if (isPoW) {
 				const hash = await block.hash();
-				console.log('MINED BLOCK!!! nonce=' + block.nonce + ', difficulty=' + block.difficulty + ', hash=' + hash.toBase64() + ', hashrate=' + this._hashrate + ' H/s');
+				console.log('MINED BLOCK!!! nonce=' + block.nonce + ', difficulty=' + block.difficulty + ', hash=' + hash.toBase64() + ', transactionCount=' + block.transactionCount + ', hashrate=' + this._hashrate + ' H/s');
 
 				// Tell listeners that we've mined a block.
 				this.fire('block-mined', block, this);
