@@ -20,7 +20,10 @@ class ConsensusAgent extends Observable {
         this._mempool = mempool;
         this._peer = peer;
 
-        // Flag indicating that we have sync'd our blockchain with the peer's.
+        // Flag indicating that we are currently syncing our blockchain with the peer's.
+        this._syncing = false;
+
+        // Flag indicating that have synced our blockchain with the peer's.
         this._synced = false;
 
         // The height of our blockchain when we last attempted to sync the chain.
@@ -31,10 +34,10 @@ class ConsensusAgent extends Observable {
 
         // InvVectors we want to request via getdata are collected here and
         // periodically requested.
-        this._objectsToRequest = [];
+        this._objectsToRequest = new IndexedArray([], true);
 
-        // Helper object to keep track of in-flight getdata requests.
-        this._inFlightRequests = new InFlightRequests();
+        // Objects that are currently being requested from the peer.
+        this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
@@ -50,6 +53,11 @@ class ConsensusAgent extends Observable {
 
         // Clean up when the peer disconnects.
         peer.channel.on('close',      () => this._onClose());
+
+        // Wait for the blockchain to processes queued blocks before requesting more.
+        this._blockchain.on('ready', () => {
+            if (this._syncing) this.syncBlockchain();
+        });
     }
 
     /* Public API */
@@ -75,27 +83,37 @@ class ConsensusAgent extends Observable {
     }
 
     syncBlockchain() {
-        if (this._lastChainHeight == this._blockchain.height) {
-            // We already requested blocks from the peer but it didn't give us any good ones.
-            // Abort sync and drop peer.
+        this._syncing = true;
+
+        // If the blockchain is still busy processing blocks, wait for it to catch up.
+        if (this._blockchain.busy) {
+            console.log('Blockchain busy, waiting ...');
+        }
+        // If we already requested blocks from the peer but it didn't give us any
+        // good ones, drop the peer.
+        else if (this._lastChainHeight == this._blockchain.height) {
             this._peer.channel.close('blockchain sync failed');
-        } else if (this._blockchain.height < this._peer.startHeight) {
-            // If the peer has a longer chain than us, request blocks from it.
+        }
+        // If the peer has a longer chain than us, request blocks from it.
+        else if (this._blockchain.height < this._peer.startHeight) {
             this._lastChainHeight = this._blockchain.height;
             this._requestBlocks();
-        } else if (this._blockchain.height > this._peer.startHeight) {
-            // The peer has a shorter chain than us.
-            // TODO what do we do here?
+        }
+        // The peer has a shorter chain than us.
+        // TODO what do we do here?
+        else if (this._blockchain.height > this._peer.startHeight) {
             console.log('Peer ' + this._peer + ' has a shorter chain (' + this._peer.startHeight + ') than us');
 
             // XXX assume consensus state?
+            this._syncing = false;
             this._synced = true;
             this.fire('sync');
-        } else {
-            // We have the same chain height as the peer.
-            // TODO Do we need to check that we have the same head???
-
+        }
+        // We have the same chain height as the peer.
+        // TODO Do we need to check that we have the same head???
+        else {
             // Consensus established.
+            this._syncing = false;
             this._synced = true;
             this.fire('sync');
         }
@@ -164,7 +182,9 @@ class ConsensusAgent extends Observable {
 
         if (unknownObjects.length) {
             // Store unknown vectors in objectsToRequest array.
-            Array.prototype.push.apply(this._objectsToRequest, unknownObjects);
+            for (let obj of unknownObjects) {
+                this._objectsToRequest.push(obj);
+            }
 
             // Clear the request throttle timeout.
             this._timers.clearTimeout('inv');
@@ -181,38 +201,40 @@ class ConsensusAgent extends Observable {
     }
 
     async _requestData() {
+        // Only one request at a time.
+        if (this._objectsInFlight) return;
+
+        // Don't do anything if there are no objects queued to request.
+        if (this._objectsToRequest.isEmpty()) return;
+
+        // Mark the requested objects as in-flight.
+        this._objectsInFlight = this._objectsToRequest;
+
         // Request all queued objects from the peer.
         // TODO depending in the REQUEST_THRESHOLD, we might need to split up
         // the getdata request into multiple ones.
-        this._peer.channel.getdata(this._objectsToRequest);
-
-        // Keep track of this request.
-        const requestId = this._inFlightRequests.push(this._objectsToRequest);
+        this._peer.channel.getdata(this._objectsToRequest.array);
 
         // Reset the queue.
-        this._objectsToRequest = [];
+        this._objectsToRequest = new IndexedArray([], true);
 
         // Set timer to detect end of request / missing objects
-        this._timers.setTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getdata', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
-    _noMoreData(requestId) {
-        // Check if there are objects missing for this request.
-        const objects = this._inFlightRequests.getObjects(requestId);
-        const missingObjects = Object.keys(objects).length;
-        if (missingObjects) {
-            console.warn(missingObjects + ' missing objects for request ' + requestId, objects);
-            // TODO what to do here?
-        }
-
+    _noMoreData() {
         // Cancel the request timeout timer.
-        this._timers.clearTimeout('getdata_' + requestId);
+        this._timers.clearTimeout('getdata');
 
-        // Delete the request.
-        this._inFlightRequests.deleteRequest(requestId);
+        // Reset objects in flight.
+        this._objectsInFlight = null;
 
-        // If we haven't fully sync'ed the blockchain yet, keep on syncing.
-        if (!this._synced) {
+        // If there are more objects to request, request them.
+        if (!this._objectsToRequest.isEmpty()) {
+            this._requestData();
+        }
+        // Otherwise, request more blocks if we are still syncing the blockchain.
+        else if (this._syncing) {
             this.syncBlockchain();
         }
     }
@@ -222,18 +244,20 @@ class ConsensusAgent extends Observable {
         //console.log('[BLOCK] Received block ' + hash.toBase64());
 
         // Check if we have requested this block.
-        if (!this._inFlightRequests.getRequestId(hash)) {
+        const vector = new InvVector(InvVector.Type.BLOCK, hash);
+        if (this._objectsInFlight.indexOf(vector) < 0) {
             console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer + ', discarding');
             return;
         }
 
-        // Put block into blockchain
-        const accepted = await this._blockchain.pushBlock(msg.block);
+        // Mark object as received.
+        this._onObjectReceived(vector);
+
+        // Put block into blockchain.
+        this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
         // TODO what to do if the peer keeps sending invalid blocks?
-
-        this._onObjectReceived(hash);
     }
 
     async _onTx(msg) {
@@ -241,59 +265,49 @@ class ConsensusAgent extends Observable {
         //console.log('[TX] Received transaction ' + hash.toBase64());
 
         // Check if we have requested this transaction.
-        if (!this._inFlightRequests.getRequestId(hash)) {
+        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+        if (this._objectsInFlight.indexOf(vector) < 0) {
             console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer + ', discarding');
             return;
         }
 
+        // Mark object as received.
+        this._onObjectReceived(vector);
+
         // Put transaction into mempool.
-        const accepted = await this._mempool.pushTransaction(msg.transaction);
+        this._mempool.pushTransaction(msg.transaction);
 
         // TODO send reject message if we don't like the transaction
         // TODO what to do if the peer keeps sending invalid transactions?
-
-        this._onObjectReceived(hash);
     }
 
     _onNotFound(msg) {
         console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects', msg.vectors);
 
         // Remove unknown objects from in-flight list.
-        for (let obj of msg.vectors) {
-            const requestId = this._inFlightRequests.getRequestId(obj.hash);
-            if (!requestId) {
-                console.warn('Unsolicited notfound vector ' + obj + ' from peer ' + this._peer, obj);
+        for (let vector of msg.vectors) {
+            if (this._objectsInFlight.indexOf(vector) < 0) {
+                console.warn('Unsolicited notfound vector ' + vector + ' from peer ' + this._peer, vector);
                 continue;
             }
 
             console.log('Peer ' + this._peer + ' did not find ' + obj, obj);
 
-            this._onObjectReceived(obj.hash);
+            this._onObjectReceived(vector);
         }
     }
 
-    _onObjectReceived(hash) {
-        // Mark the getdata request for this object as complete.
-        const requestId = this._inFlightRequests.getRequestId(hash);
-        if (!requestId) {
-            console.warn('Could not find requestId for ' + hash);
-            return;
-        }
-        this._inFlightRequests.deleteObject(hash);
+    _onObjectReceived(vector) {
+        if (!this._objectsInFlight) return;
 
-        // Check if we have received all objects for this request.
-        const objects = this._inFlightRequests.getObjects(requestId);
-        if (!objects) {
-            console.warn('Could not find objects for requestId ' + requestId);
-            return;
-        }
-        const moreObjects = Object.keys(objects).length > 0;
+        // Remove the vector from the objectsInFlight.
+        this._objectsInFlight.delete(vector);
 
         // Reset the request timeout if we expect more objects to come.
-        if (moreObjects) {
-            this._timers.resetTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
+        if (!this._objectsInFlight.isEmpty()) {
+            this._timers.resetTimeout('getdata', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
         } else {
-            this._noMoreData(requestId);
+            this._noMoreData();
         }
     }
 
@@ -389,9 +403,9 @@ class ConsensusAgent extends Observable {
             startIndex = 0;
         }
 
-        // Collect up to 500 inventory vectors for the blocks starting right
+        // Collect up to XXX 128 (was 500) inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
+        const stopIndex = Math.min(mainPath.length - 1, startIndex + 128);
         const vectors = [];
         for (let i = startIndex + 1; i <= stopIndex; ++i) {
             vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
@@ -427,45 +441,3 @@ class ConsensusAgent extends Observable {
     }
 }
 Class.register(ConsensusAgent);
-
-class InFlightRequests {
-    constructor() {
-        this._index = {};
-        this._array = [];
-        this._requestId = 1;
-    }
-
-    push(objects) {
-        this._array[this._requestId] = {};
-        for (let obj of objects) {
-            this._index[obj.hash] = this._requestId;
-            this._array[this._requestId][obj.hash] = obj;
-        }
-        return this._requestId++;
-    }
-
-    getObjects(requestId) {
-        return this._array[requestId];
-    }
-
-    getRequestId(hash) {
-        return this._index[hash];
-    }
-
-    deleteObject(hash) {
-        const requestId = this._index[hash];
-        if (!requestId) return;
-        delete this._array[requestId][hash];
-        delete this._index[hash];
-    }
-
-    deleteRequest(requestId) {
-        const objects = this._array[requestId];
-        if (!objects) return;
-        for (let hash in objects) {
-            delete this._index[hash];
-        }
-        delete this._array[requestId];
-    }
-}
-Class.register(InFlightRequests);

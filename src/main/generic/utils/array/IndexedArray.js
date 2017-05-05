@@ -1,8 +1,9 @@
 class IndexedArray {
-    constructor(array) {
+    constructor(array, ignoreDuplicates) {
         this._array = array || new Array();
-        this._index = {};
+        this._ignoreDuplicates = ignoreDuplicates;
 
+        this._index = {};
         this._buildIndex();
 
         return new Proxy(this._array, this);
@@ -33,7 +34,11 @@ class IndexedArray {
     // TODO index access set, e.g. arr[5] = 42
 
     push(value) {
-        if (this._index[value] !== undefined) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+        if (this._index[value] !== undefined) {
+            if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+            return;
+        }
+
         const length = this._array.push(value);
         this._index[value] = length - 1;
         return length;
@@ -65,6 +70,10 @@ class IndexedArray {
 
     get length() {
         return this._array.length;
+    }
+
+    get array() {
+        return this._array;
     }
 }
 Class.register(IndexedArray);

@@ -33,10 +33,6 @@ class Block {
 			+ this._body.serializedSize;
 	}
 
-	async verify() {
-		// TODO
-	}
-
 	get header() {
 		return this._header;
 	}

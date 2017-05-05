@@ -50,12 +50,12 @@ class VolatileBlockchainStore {
         delete this._store[key];
     }
 
-    setMainChain(chain) {
-        this._mainChain = chain;
-    }
-
     getMainChain() {
         return this._mainChain;
+    }
+
+    setMainChain(chain) {
+        this._mainChain = chain;
     }
 }
 Class.register(BlockchainStore);

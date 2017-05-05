@@ -19,7 +19,11 @@ class Blockchain extends Observable {
         this._mainPath = null;
         this._headHash = null;
 
+        // Blocks arriving fast over the network will create a backlog of blocks
+        // in the synchronizer queue. Tell listeners when the blockchain is
+        // ready to accept blocks again.
         this._synchronizer = new Synchronizer();
+        this._synchronizer.on('work-end', () => this.fire('ready', this));
 
         return this._init();
     }
@@ -344,6 +348,10 @@ class Blockchain extends Observable {
 
     get path() {
         return this._mainPath;
+    }
+
+    get busy() {
+        return this._synchronizer.working;
     }
 }
 Class.register(Blockchain);
