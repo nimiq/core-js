@@ -73,6 +73,7 @@ class Consensus extends Observable {
             console.log('Blockchain: height=' + this._blockchain.height + ', totalWork=' + this._blockchain.totalWork + ', headHash=' + this._blockchain.headHash.toBase64());
 
             this._established = true;
+            this._syncing = false;
             this.fire('established');
 
             return;

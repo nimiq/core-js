@@ -92,7 +92,7 @@ class Network extends Observable {
     }
 
     _connect(peerAddress) {
-        console.log('Connecting to ' + peerAddress + ' ...');
+        console.log('Connecting to ' + peerAddress + ' (via ' + peerAddress.signalChannel + ')...');
 
         if (Services.isWebSocket(peerAddress.services)) {
             this._activeAddresses[peerAddress] = true;
@@ -199,6 +199,11 @@ class Network extends Observable {
     /* Signaling */
 
     _onSignal(channel, msg) {
+        if (msg.senderId === NetworkUtils.mySignalId()) {
+            console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
+            return;
+        }
+
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === NetworkUtils.mySignalId()) {
             this._rtcConnector.onSignal(channel, msg);
@@ -214,7 +219,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId);
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + NetworkUtils.mySignalId() + '): ' + BufferUtils.toAscii(msg.payload));
         }
     }
 

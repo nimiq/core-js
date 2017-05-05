@@ -1,7 +1,10 @@
 // TODO: Make use of "storage-persistence" api (mandatory for private key storage)
 // TODO V2: Make use of "IDBTransactions" api for serial reads/writes
 class TypedDB {
+
     static get db() {
+        if (TypedDB._db) return Promise.resolve(TypedDB._db);
+
         const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB;
         const IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.OIDBTransaction || window.msIDBTransaction;
         const dbVersion = 1;
@@ -9,6 +12,7 @@ class TypedDB {
 
         return new Promise((resolve,error) => {
             request.onsuccess = event => {
+                TypedDB._db = request.result;
                 resolve(request.result);
             };
 
