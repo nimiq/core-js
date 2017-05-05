@@ -11,23 +11,21 @@ var jasmine = new require('gulp-jasmine-livereload-task');
 gulp.task('default', function() {
     gulp.run(jasmine({
         files: [
-            'src/main/generic/utils/indexed-db/indexed-db.js',
-            'src/main/generic/utils/indexed-db/*.js',
-        	'src/main/generic/utils/**/*.js',
-        	'src/main/generic/consensus/primitive/Primitive.js',
-        	'src/main/generic/consensus/primitive/*.js',
-            'src/main/generic/consensus/account/*.js',
-            'src/main/generic/consensus/block/BlockBody.js',
-            'src/main/generic/consensus/block/BlockHeader.js',
-            'src/main/generic/consensus/block/*.js',
-            'src/main/generic/network/message/Message.js',
-            'src/main/generic/network/message/*Message.js',
-            'src/main/generic/network/message/*.js',
-            'src/main/generic/network/**/*.js',
-            'src/main/generic/*/**/*.js',
-        	'src/main/generic/*.js',
-            'src/test/specs/**/Dummy.spec.js',
-        	'src/test/specs/**/*.spec.js'
+        './src/main/platform/browser/Class.js',
+        './src/main/generic/utils/Observable.js',
+        './src/main/platform/browser/**/*.js',
+        './src/main/generic/utils/**/*.js',
+        './src/main/generic/consensus/primitive/Primitive.js', 
+        './src/main/generic/consensus/primitive/**/*.js', 
+        './src/main/generic/consensus/block/BlockHeader.js', 
+        './src/main/generic/consensus/block/BlockBody.js', 
+        './src/main/generic/network/struct/*.js', 
+        './src/main/generic/network/message/Message.js', 
+        './src/main/generic/network/message/*Message.js', 
+        './src/main/generic/consensus/account/Address.js', 
+        './src/main/generic/**/*.js',
+        'src/test/specs/**/Dummy.spec.js',
+        'src/test/specs/**/*.spec.js'
         ]
     }));
 });

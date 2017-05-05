@@ -10,9 +10,8 @@ Dummy.block1 = (() => {
     	const value = 1;
     	const fee = 1;
     	const nonce = 1;
-    	const rawTx = new RawTransaction(senderPubKey,recipientAddr,value,fee,nonce);
     	const sign = new Signature(Dummy['signature'+index]);
-        return new Transaction(rawTx,sign);
+        return new Transaction(senderPubKey,recipientAddr,value,fee,nonce,sign);
     }
 
     const transactions = [1,2,3].map(dummyTransaction);
