@@ -8,7 +8,7 @@ class WebSocketConnector extends Observable {
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
     	ws.onopen = () => {
-            const conn = new PeerConnection(ws, peerAddress.host, peerAddress.port);
+            const conn = new PeerConnection(ws, PeerConnection.Protocol.WEBSOCKET, peerAddress.host, peerAddress.port);
             this.fire('connection', conn);
         };
         ws.onerror = e => this.fire('error', peerAddress, e);

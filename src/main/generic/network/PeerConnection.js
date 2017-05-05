@@ -1,8 +1,9 @@
 class PeerConnection extends Observable {
-    constructor(nativeChannel, host, port) {
+    constructor(nativeChannel, protocol, host, port) {
         super();
         this._channel = nativeChannel;
 
+        this._protocol = protocol;
         this._host = host;
         this._port = port;
 
@@ -21,11 +22,13 @@ class PeerConnection extends Observable {
     }
 
     _onMessage(msg) {
+        // XXX Cleanup!
         if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
             this._bytesReceived += msg.byteLength || msg.length;
             this.fire('message', msg, this);
         } else {
             // Browser only
+            // TODO FileReader is slow and this is ugly anyways. Improve!
             const reader = new FileReader();
             reader.onloadend = () => this._onMessage(new Uint8Array(reader.result));
             reader.readAsArrayBuffer(msg);
@@ -53,7 +56,11 @@ class PeerConnection extends Observable {
     }
 
     toString() {
-        return "PeerConnection{host=" + this._host + ", port=" + this._port + "}";
+        return 'PeerConnection{protocol=' + this._protocol + ', host=' + this._host + ', port=' + this._port + '}';
+    }
+
+    get protocol() {
+        return this._protocol;
     }
 
     get host() {
@@ -72,4 +79,7 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 }
+PeerConnection.Protocol = {};
+PeerConnection.Protocol.WEBSOCKET = 'websocket';
+PeerConnection.Protocol.WEBRTC = 'webrtc';
 Class.register(PeerConnection);

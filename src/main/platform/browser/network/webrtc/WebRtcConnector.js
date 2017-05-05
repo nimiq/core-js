@@ -152,9 +152,9 @@ class PeerConnector extends Observable {
     	const channel = event.channel || event.target;
         // TODO extract ip & port from session description
         // XXX Use "peerId" as host in the meantime.
-        const host = this._getPeerId();
+        const host = this._remoteId;
         const port = 420;
-        const conn = new PeerConnection(channel, host, port);
+        const conn = new PeerConnection(channel, PeerConnection.Protocol.WEBRTC, host, port);
     	this.fire('connection', conn);
 	}
 

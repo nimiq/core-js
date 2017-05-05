@@ -198,7 +198,7 @@
 
 			<div class="info-block">
 				<strong>Peers</strong>
-				<span id="netPeerCount"></span>
+				<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
 			</div>
 			<div class="info-block">
 				<strong>Bytes received</strong>
@@ -256,10 +256,12 @@
 
 				// Network
 				this._netPeerCount = document.querySelector('#netPeerCount');
+				this._netPeerCountWs = document.querySelector('#netPeerCountWs');
+				this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
 				this._netBytesReceived = document.querySelector('#netBytesReceived');
 				this._netBytesSent = document.querySelector('#netBytesSent');
 
-				setInterval(() => this._networkChanged(), 2500);
+				setInterval( () => this._networkChanged(), 2500);
 
 				// Wallet
 				this._wltAddress = document.querySelector('#wltAddress');
@@ -391,6 +393,10 @@
 
 			_networkChanged() {
 				this._netPeerCount.innerText = $.network.peerCount;
+				this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
+				this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
+				this._netBytesReceived.innerText = $.network.bytesReceived;
+				this._netBytesSent.innerText = $.network.bytesSent;
 			}
 
 			_minerChanged() {

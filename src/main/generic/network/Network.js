@@ -61,7 +61,7 @@ class Network extends Observable {
     }
 
     // XXX For testing
-    disconnectWS() {
+    disconnectWebSocket() {
         this._autoConnect = false;
 
         // Close all websocket connections.
@@ -225,6 +225,25 @@ class Network extends Observable {
 
     get peerCount() {
         return this._peerCount;
+    }
+
+    // XXX debug info
+    get peerCountWebSocket() {
+        return Object.keys(this._agents).reduce( (n, key) =>
+            n + (this._agents[key].channel.connection.protocol === PeerConnection.Protocol.WEBSOCKET), 0);
+    }
+    get peerCountWebRtc() {
+        return Object.keys(this._agents).reduce( (n, key) =>
+            n + (this._agents[key].channel.connection.protocol === PeerConnection.Protocol.WEBRTC), 0);
+    }
+
+    // XXX debug info
+    get bytesReceived() {
+        return Object.keys(this._agents).reduce( (n, key) => n + this._agents[key].channel.connection.bytesReceived, 0);
+    }
+
+    get bytesSent() {
+        return Object.keys(this._agents).reduce( (n, key) => n + this._agents[key].channel.connection.bytesSent, 0);
     }
 }
 Class.register(Network);

@@ -33,7 +33,7 @@ class WebSocketConnector extends Observable {
     }
 
     _onConnection(ws) {
-        const conn = new PeerConnection(ws, ws._socket.remoteAddress, ws._socket.remotePort);
+        const conn = new PeerConnection(ws, PeerConnection.Protocol.WEBSOCKET, ws._socket.remoteAddress, ws._socket.remotePort);
         this.fire('connection', conn);
     }
 }
