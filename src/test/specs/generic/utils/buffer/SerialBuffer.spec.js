@@ -182,4 +182,16 @@ describe('SerialBuffer', () => {
 			buffer.writeFixLengthString(string1, length1 - 2);
         }).toThrow('Malformed value/length');
 	});
+
+	it('throws an error on invalid writes/reads',() => {
+		const value1 = Number.MAX_SAFE_INTEGER + 1;
+
+		const buffer = new SerialBuffer(8);
+		buffer.writeUint64(value1);
+
+		buffer.readUint64();
+		expect( () => {
+			buffer.readUint64()
+		}).toThrow();
+	});
 });
