@@ -27,42 +27,21 @@ describe('GetDataMessage', () => {
 
 
     it('is serializable and unserializable', () => {
-        const msg1 = new GetDataMessage(count,vectors);
+        const msg1 = new GetDataMessage(vectors);
         const msg2 = GetDataMessage.unserialize(msg1.serialize());
 
-        expect(msg2.count).toEqual(count);
+        expect(msg2.vectors.length).toEqual(count);
         expect(msg2.vectors[0].equals(vector1)).toBe(true);
         expect(msg2.vectors[1].equals(vector2)).toBe(true);
         expect(msg2.vectors[2].equals(vector3)).toBe(true);
     });
-
-    it('must have a well defined count (4 bytes)', () => {
-        expect( () => {
-            const test1 = new GetDataMessage(undefined,vectors)
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test2 = new GetDataMessage(null,vectors)
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test3 = new GetDataMessage(false,vectors)
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test4 = new GetDataMessage(true,vectors)
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test5 = new GetDataMessage(-1,vectors)
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test6 = new GetDataMessage(Number.MAX_SAFE_INTEGER,vectors)
-        }).toThrow('Malformed vectors');
-    });  
 	
     it('must have well defined vectors', () => {
         expect( () => {
-            const test1 = new GetDataMessage(count,undefined)
+            const test1 = new GetDataMessage(undefined)
         }).toThrow('Malformed vectors');
         expect( () => {
-            const test1 = new GetDataMessage(count,[undefined])
+            const test1 = new GetDataMessage([undefined])
         }).toThrow('Malformed vectors');
     }); 
 
