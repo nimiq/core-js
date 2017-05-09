@@ -17,5 +17,3 @@ script: karma start --single-run
 notifications:
   slack:
     secure: dobfBi9oIS4gRFQtfh9m/u3KIR5mDL6rRApKZwL5A77ZHT8qvoZofXacMOkyZUwmtgUQnnkg5hA72iC+ZYyBMjFEjlUlO7Dr3QhWs+Ex/Vy4k/Whk2ep4bBEfhZMv1xBOXjPRKi/NE/bMVdjG3gqs+qNPnc1rfucTMtGTXWJaHVmuFRTGKJXZm/MTDSJAJOpdF6oVJ10DwdkdwZMtuWnpvd2lPvRdk0lyn4TiEyaiAweqwEhqvvXp4LbAl2zfXAhcLQMH8DQzqmTDzdFfAVitARGxvG332RM8C+TEZJjiOkka3Fub2u0ogNHNkxy+9O2ywK+y+yLOj2KEF1tx+prgQQm8FbfJzFQ+KQBt5c1dl2Lf+6OTfwB+LKOm1r2DrAIpJj5i+KHBEvamvTLpdDNGRWt7Or27Kx+jAPUMtmdhSxpnDkGZtNhqinG6oMIKXKjU720QyV775gI+4q5vidBaAH2UU8SxLMJyOj46iel4/nH0g2LbAuoliAW3t0fZHjAwhITEWZDWc6fw0NB2BznXJz8j8IAiPACxbmw2guuZLkF15IpBEn4H04TiXLtRCteVlJ0hVzPjqproWpCj7FDOd2+YlZRh/1L0rB68TJeVa1xp4W5nYM7hTjeYijIAqQQfZAz3GdAOr/FhlVLJDLJsbdtvBmEVPd+dVLZi4eJH4Y=
-    on_success: change # default: always
-    on_failure: always # default: always
