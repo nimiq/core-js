@@ -1,4 +1,4 @@
-# Nimiq Blockchain
+# Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core)
 
 ## Getting started 
 
