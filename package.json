@@ -15,7 +15,12 @@
     "gulp-concat": "^2.6.1",
     "gulp-jasmine-livereload-task": "^0.11.0",
     "gulp-watch": "^4.3.11",
-    "jasmine2-custom-message": "^0.8.2"
+    "jasmine2-custom-message": "^0.8.2",
+    "jasmine-core": "*",
+    "karma": "*",
+    "karma-cli": "*",
+    "karma-jasmine": "*",
+    "karma-chrome-launcher": "*"
   },
   "author": "",
   "license": "ISC",
