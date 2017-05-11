@@ -1,6 +1,19 @@
 
 describe('Accounts', () => {
 
+    it('cannot commit a wrong block', (done) => {
+        const block = Dummy.block1;
+        Accounts.createVolatile().then(
+            account => {
+                const accountsHash1 = account.hash;
+                expect( () => {
+                    account.commitBlock(block);
+                }).toThrow('AccountHash mismatch');
+                done();
+            }
+        );
+    });
+
     it('can apply and revert a block', (done) => {
         expect(true).toBe(false,'because we need to hardcode valid blocks into the specs to test this');
         done();

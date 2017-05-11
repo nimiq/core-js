@@ -179,8 +179,12 @@ describe('Transaction', () => {
     })
 
     it('can verify a valid signature', (done) => {
-        expect(true).toBe(false,'because we need to hardcode a signed signature into the specs');
-        done();
+        const tx1 = Transaction.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.validTransaction)));
+        tx1.verifySignature()
+            .then( isValid => {
+                expect(isValid).toBe(true); 
+                done(); 
+            })
     });
 
 });

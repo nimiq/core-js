@@ -17,6 +17,9 @@ Dummy.signature1 = 'yn57dWMc9EQVuvuzmoi+36ftTKXLBvpPkLkSUvi33gtUbq6iY5LtiaQzr5Z9
 Dummy.signature2 = '00v2Siqx3zh1bcoofmw4LVzYFuDKpcmStEl8zZeBpYZ6chVU0eeuP+i+/CuNIRhomW5HRybcPvhTUqhxFpl/sw==';
 Dummy.signature3 = 'mU04AuXE5QcLPPvQbtdWzjHeB6oNVjxdfPRXfPWmJx/YgBAIFfogOT7wasBiOIx8n/YKMoK0VWLVarl2KLiKvQ==';
 
+// Transaction {_recipientAddr: Dummy.address1, _value: 9007199254740991, _fee: 1, _nonce: 4}
+Dummy.validTransaction = 'BLmr/q3KWDCFnlPlG8FPz7E/u6OUp2LBN0IEvA7K+qdlum+s3c0nAhtEIjaqEGebUPK9Y8aa/ZYJkOYlgKuFju+R6SQPQVIjmC7cNFUyYwcQ6Up/UkM/////////AAAAAQAAAAQA5U5046ZaZPCB4gdQf/r2t64as/4MLMpTJBW6iFNosbSOyXi+o4EvGy51C/BkhTEz+1QkB6w8xK88jA+YSSXW';
+
 if( typeof global !== 'undefined' ){
 	global.Dummy = Dummy;
 }

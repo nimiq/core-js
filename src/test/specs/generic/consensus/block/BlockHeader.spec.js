@@ -17,7 +17,7 @@ describe('BlockHeader', () => {
            ---------------------------- 
            116 bytes
         */
-    	const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
+    	const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty,timestamp,nonce);
         
     	const serialized = blockHeader1.serialize();
         
@@ -116,7 +116,7 @@ describe('BlockHeader', () => {
     });
 
     it('is serializable and unserializable', () => {
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,timestamp,nonce);
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty,timestamp,nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
 
         expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);

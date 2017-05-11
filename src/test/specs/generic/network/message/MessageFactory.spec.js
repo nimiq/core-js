@@ -6,7 +6,7 @@ describe('MessageFactory',()=>{
 		expect( () => {
 			MessageFactory.parse(maliciousMsg);
         }).toThrow('Invalid message type: '+maliciousType);
-		expect(true).toBe(false);
+		// expect(true).toBe(false);
 	});
 
 });
