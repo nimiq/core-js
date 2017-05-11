@@ -27,7 +27,7 @@ class Core {
         this.wallet = await Wallet.getPersistent();
 
         // Miner
-        this.miner = new Miner(this.wallet.address, this.blockchain, this.mempool);
+        this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);
 
         Object.freeze(this);
         return this;

@@ -1,5 +1,4 @@
 class Block {
-
 	constructor(header, body) {
 		if (!(header instanceof BlockHeader)) throw 'Malformed header';
 		if (!(body instanceof BlockBody)) throw 'Malformed body';

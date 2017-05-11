@@ -58,7 +58,7 @@ class AccountsTree extends Observable {
         if (commonPrefix.length !== node.prefix.length) {
             // Cut the common prefix off the existing node.
             await this._store.delete(node);
-            node.prefix = node.prefix.slice(i);
+            node.prefix = node.prefix.slice(commonPrefix.length);
             const nodeKey = await this._store.put(node);
 
             // Insert the new account node.

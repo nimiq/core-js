@@ -1,5 +1,4 @@
 class BlockHeader {
-
     constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
@@ -57,21 +56,21 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
-    verifyProofOfWork() {
-        // Verify that trailingZeros(hash) == difficulty
-        return this.hash().then( hash => {
-            const zeroBytes = Math.floor(this.difficulty / 8);
-            for (let i = 0; i < zeroBytes; i++) {
-                if (hash[i] !== 0) return false;
-            }
-            const zeroBits = this.difficulty % 8;
-            if (zeroBits && hash[zeroBytes] > Math.pow(2, 8 - zeroBits)) return false;
-            return true;
-        });
+    // Verify that leadingZeros(hash) == difficulty
+    async verifyProofOfWork(buf) {
+        const hash = await this.hash(buf);
+
+        const zeroBytes = Math.floor(this.difficulty / 8);
+        for (let i = 0; i < zeroBytes; i++) {
+            if (hash[i] !== 0) return false;
+        }
+        const zeroBits = this.difficulty % 8;
+        if (zeroBits && hash[zeroBytes] > Math.pow(2, 8 - zeroBits)) return false;
+        return true;
     }
 
-    async hash() {
-        this._hash = this._hash || await Crypto.sha256(this.serialize());
+    async hash(buf) {
+        this._hash = this._hash || await Crypto.sha256(this.serialize(buf));
         return this._hash;
     }
 
@@ -83,6 +82,17 @@ class BlockHeader {
             && this._difficulty === o.difficulty
             && this._timestamp === o.timestamp
             && this._nonce === o.nonce;
+    }
+
+    toString() {
+        return `BlockHeader{`
+            + `prevHash=${this._prevHash}, `
+            + `bodyHash=${this._bodyHash}, `
+            + `accountsHash=${this._accountsHash}, `
+            + `difficulty=${this._difficulty}, `
+            + `timestamp=${this._timestamp}, `
+            + `nonce=${this._nonce}`
+            + `}`;
     }
 
     get prevHash() {

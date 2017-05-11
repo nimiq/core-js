@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8"/>
-	<title>Nimiq Blockchain Cockpit &ndash; Beta</title>
+	<title>Nimiq Blockchain Cockpit &ndash; Alpha</title>
 
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
@@ -17,13 +17,13 @@
 	<script src="../../src/main/platform/browser/Class.js"></script>
 	<script src="../../src/main/platform/browser/database/BaseTypedDB.js"></script>
 	<script src="../../src/main/platform/browser/database/TypedDB.js"></script>
-	<script src="../../src/main/platform/browser/database/storage-persistence.js"></script>
 	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
 	<script src="../../src/main/generic/utils/array/IndexedArray.js"></script>
 	<script src="../../src/main/generic/utils/array/ArrayUtils.js"></script>
 	<script src="../../src/main/generic/utils/buffer/SerialBuffer.js"></script>
 	<script src="../../src/main/generic/utils/buffer/BufferUtils.js"></script>
-	<script src="../../src/main/platform/browser/crypto/Crypto.js"></script>
+	<script src="../../src/main/platform/browser/crypto/CryptoLib.js"></script>
+	<script src="../../src/main/generic/utils/crypto/Crypto.js"></script>
 	<script src="../../src/main/generic/utils/number/NumberUtils.js"></script>
 	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
 	<script src="../../src/main/generic/utils/platform/PlatformUtils.js"></script>
@@ -51,6 +51,7 @@
 	<script src="../../src/main/generic/consensus/mempool/Mempool.js"></script>
 	<script src="../../src/main/generic/consensus/ConsensusAgent.js"></script>
 	<script src="../../src/main/generic/consensus/Consensus.js"></script>
+	<script src="../../src/main/generic/consensus/Policy.js"></script>
 	<script src="../../src/main/generic/network/message/Message.js"></script>
 	<script src="../../src/main/generic/network/message/AddrMessage.js"></script>
 	<script src="../../src/main/generic/network/message/BlockMessage.js"></script>
@@ -80,7 +81,6 @@
 	<script src="../../src/main/generic/network/NetworkAgent.js"></script>
 	<script src="../../src/main/generic/network/Network.js"></script>
 	<script src="../../src/main/generic/miner/Miner.js"></script>
-	<script src="../../src/main/generic/miner/Policy.js"></script>
 	<script src="../../src/main/platform/browser/wallet/WalletStore.js"></script>
 	<script src="../../src/main/generic/wallet/Wallet.js"></script>
 	<script src="../../src/main/generic/Core.js"></script>

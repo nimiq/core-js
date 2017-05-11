@@ -1,7 +1,8 @@
 class GetBlocksMessage extends Message {
     constructor(hashes, hashStop) {
         super(Message.Type.GETBLOCKS);
-        if (!NumberUtils.isUint16(hashes.length)) throw 'Malformed hashes';
+        if (!hashes || !NumberUtils.isUint16(hashes.length)
+            || hashes.some( it => !(it instanceof Hash))) throw 'Malformed hashes';
         this._hashes = hashes;
         this._hashStop = hashStop;
     }

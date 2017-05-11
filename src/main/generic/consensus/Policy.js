@@ -1,5 +1,3 @@
-// TODO: Implement Block Size Limit
-// TODO V2: Implement total coins limit
 class Policy {
 	static get BLOCK_TIME() {
 		return 10; /* in seconds */

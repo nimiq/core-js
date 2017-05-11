@@ -10,7 +10,7 @@ class SerialBuffer extends Uint8Array {
         return this._readPos;
     }
     set readPos(value) {
-        if (value < 0 || value >= this.byteLength) throw 'Invalid readPos ' + value;
+        if (value < 0 || value > this.byteLength) throw 'Invalid readPos ' + value;
         this._readPos = value;
     }
 
@@ -18,7 +18,7 @@ class SerialBuffer extends Uint8Array {
         return this._writePos;
     }
     set writePos(value) {
-        if (value < 0 || value >= this.byteLength) throw 'Invalid writePos ' + value;
+        if (value < 0 || value > this.byteLength) throw 'Invalid writePos ' + value;
         this._writePos = value;
     }
 
