@@ -68,6 +68,11 @@ class IndexedArray {
         return Object.keys(this._index).length == 0;
     }
 
+    slice(start, end) {
+        const arr = this._array.slice(start, end);
+        return new IndexedArray(arr, this._ignoreDuplicates);
+    }
+
     get length() {
         return this._array.length;
     }

@@ -423,7 +423,7 @@
 
 			_balanceChanged(balance) {
 				if (!balance) balance = Balance.INITIAL;
-				this._wltBalance.innerText = (balance.value / 1e4).toFixed(4);
+				this._wltBalance.innerText = Policy.satoshisToCoins(balance.value).toFixed(4);
 				this._wltNonce.innerText = balance.nonce;
 			}
 

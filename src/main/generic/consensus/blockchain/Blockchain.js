@@ -57,7 +57,10 @@ class Blockchain extends Observable {
         return this;
     }
 
-    async _fetchPath(block, maxBlocks = 10000) {
+    // Retrieves up to maxBlocks predecessors of the given block.
+    // Returns an array of max (maxBlocks + 1) block hashes with the given hash
+    // as the last element.
+    async _fetchPath(block, maxBlocks = 1000000) {
         let hash = await block.hash();
         const path = [hash];
 
@@ -76,7 +79,7 @@ class Blockchain extends Observable {
             // Advance to the predecessor block.
             hash = block.prevHash;
             block = prevChain.head;
-        } while (--maxBlocks && !Block.GENESIS.HASH.equals(hash));
+        } while (--maxBlocks > 0 && !Block.GENESIS.HASH.equals(hash));
 
         return new IndexedArray(path);
     }
@@ -305,13 +308,23 @@ class Blockchain extends Observable {
 
         // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
         if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS == 0) {
+            // If the given chain is the main chain, get the last DIFFICULTY_ADJUSTMENT_BLOCKS
+            // blocks via this._mainChain, otherwise fetch the path.
+            let startHash;
+            if (chain === this._mainChain) {
+                const startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS, 0);
+                startHash = this._mainPath[startHeight];
+            } else {
+                const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1);
+                startHash = path[0];
+            }
+
             // Compute the actual time it took to mine the last DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-            const startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1, 0);
-            const startChain = await this._store.get(this._mainPath[startHeight].toBase64());
+            const startChain = await this._store.get(startHash.toBase64());
             const actualTime = chain.head.timestamp - startChain.head.timestamp;
 
             // Compute the next difficulty.
-            const expectedTime = (chain.height - startHeight) * Policy.BLOCK_TIME;
+            const expectedTime = Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME;
             let nextDifficulty = chain.head.difficulty;
             if (expectedTime < actualTime) {
                 nextDifficulty--;

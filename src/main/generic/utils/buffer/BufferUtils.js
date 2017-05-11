@@ -34,6 +34,10 @@ class BufferUtils {
     return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
   }
 
+  static toHex(buffer) {
+    return Array.prototype.map.call(buffer, x => ('0' + x.toString(16)).slice(-1)).join('');
+  }
+
   static concatTypedArrays(a, b) {
     const c = new (a.constructor)(a.length + b.length);
     c.set(a, 0);
