@@ -136,6 +136,11 @@ describe('BlockHeader', () => {
     });
 
     it('can verify a valid proof-of-work', () => {
-         expect(true).toBe(false,'because we need to hardcode a valid blockHeader into the specs')
+        const blockHeader = BlockHeader.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.header2)));
+        blockHeader.verifyProofOfWork()
+            .then( (isValid) => {
+                expect(isValid).toBe(true);
+                done();
+            })
     });
 });

@@ -32,3 +32,5 @@ Dummy.block1 = (() => {
 
     return new Block(header,body);
 })();
+
+Dummy.header2 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCSHKYzC8x+6cxgeoqnm7xDc4h7ZXpi9rJxOFQTqFvSG5EfqcM8IhyvbSvrTQysB2WOsfRZfa1dc1y70dJj0RZqQAAAAAT/wAAAAAAAAQAAAAAAAAAA=';
