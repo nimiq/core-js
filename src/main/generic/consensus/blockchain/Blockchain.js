@@ -336,7 +336,9 @@ class Blockchain extends Observable {
             let nextTarget = currentTarget * adjustment;
 
             // Make sure the target is below or equal the maximum allowed target (difficulty 1).
+            // Also enforce a minimum target of 1.
             nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+            nextTarget = Math.max(nextTarget, 1);
 
             return BlockUtils.targetToCompact(nextTarget);
         }

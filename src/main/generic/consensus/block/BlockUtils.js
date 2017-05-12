@@ -21,13 +21,12 @@ class BlockUtils {
         let size = base16.length / 2;
         let compact = size << 24;
 
-        // The following three bytes are the first three digits of the above
-        // representation. If less than three digits are present, then one or
+        // The following three bytes are the first three bytes of the above
+        // representation. If less than three bytes are present, then one or
         // more of the last bytes of the compact representation will be zero.
-        for (let i = 0; i < 3; ++i) {
-            if (i < size) {
-                compact |= parseInt(base16.substr(i * 2, 2), 16) << ((2 - i) * 8);
-            }
+        const numBytes = Math.min(size, 3);
+        for (let i = 0; i < numBytes; ++i) {
+            compact |= parseInt(base16.substr(i * 2, 2), 16) << ((2 - i) * 8);
         }
 
         return compact;
@@ -51,6 +50,14 @@ class BlockUtils {
 
     static isProofOfWork(hash, target) {
         return parseInt(hash.toHex(), 16) <= target;
+    }
+
+    static isValidCompact(compact) {
+        return BlockUtils.isValidTarget(BlockUtils.compactToTarget(compact));
+    }
+
+    static isValidTarget(target) {
+        return target >= 1 && target <= Policy.BLOCK_TARGET_MAX;
     }
 }
 Class.register(BlockUtils);

@@ -3,7 +3,7 @@ class BlockHeader {
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
-        if (!NumberUtils.isUint32(nBits)) throw 'Malformed nBits';
+        if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
         if (!NumberUtils.isUint64(timestamp)) throw 'Malformed timestamp';
         if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
 
