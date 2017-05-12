@@ -52,6 +52,14 @@ class Block {
 		return this._header.accountsHash;
 	}
 
+	get nBits() {
+		return this._header.nBits;
+	}
+
+	get target() {
+		return this._header.target;
+	}
+
 	get difficulty() {
 		return this._header.difficulty;
 	}
@@ -83,7 +91,13 @@ class Block {
 
 /* Genesis Block */
 Block.GENESIS = new Block(
-	new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='), 10, 0, 0),
+	new BlockHeader(
+		new Hash(),
+		new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='),
+		new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),
+		BlockUtils.difficultyToCompact(1),
+		0,
+		0),
 	new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
 );
 // Store hash for synchronous access
