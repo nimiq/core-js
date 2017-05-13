@@ -2,7 +2,7 @@ describe('BlockHeader', () => {
 	const prevHash = new Hash(Dummy.hash1);
 	const bodyHash = new Hash(Dummy.hash2);
 	const accountsHash = new Hash(Dummy.hash3);
-	const difficulty = 1;
+	const difficulty = BlockUtils.difficultyToCompact(1);
 	const timestamp = 1;
 	const nonce = 1;
 
@@ -90,7 +90,7 @@ describe('BlockHeader', () => {
 
     it('must have a well defined nonce (8 bytes)', () => {
         const nonce1 = NumberUtils.UINT64_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce1);
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash, difficulty, timestamp, nonce1);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const nonce2 = blockHeader2.nonce;
 
@@ -99,7 +99,7 @@ describe('BlockHeader', () => {
 
     it('must have a well defined difficulty (4 bytes)', () => {
         const difficulty1 = NumberUtils.UINT32_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty1, timestamp, nonce);
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,BlockUtils.difficultyToCompact(difficulty1), timestamp, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const difficulty2 = blockHeader2.difficulty;
 
@@ -122,7 +122,7 @@ describe('BlockHeader', () => {
         expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);
         expect(blockHeader2.bodyHash.equals(bodyHash)).toBe(true);
         expect(blockHeader2.accountsHash.equals(accountsHash)).toBe(true);
-        expect(blockHeader2.difficulty).toBe(difficulty);
+        expect(blockHeader2.difficulty).toBe(BlockUtils.compactToDifficulty(difficulty));
         expect(blockHeader2.timestamp).toBe(timestamp);
     }); 
 

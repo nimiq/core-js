@@ -23,7 +23,7 @@ Dummy.block1 = (() => {
     const prevHash = new Hash(Dummy.hash1);
     const bodyHash = new Hash(Dummy.hash2);
     const accountsHash = new Hash(Dummy.hash3);
-    const difficulty = 1;
+    const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
     const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
@@ -33,7 +33,30 @@ Dummy.block1 = (() => {
     return new Block(header,body);
 })();
 
-Dummy.header2 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCSHKYzC8x+6cxgeoqnm7xDc4h7ZXpi9rJxOFQTqFvSG5EfqcM8IhyvbSvrTQysB2WOsfRZfa1dc1y70dJj0RZqQAAAAAT/wAAAAAAAAQAAAAAAAAAA=';
+/*
+generator for header2
+async function _mine(header, buffer) {
+    // Reset the write position of the buffer before re-using it.
+    buffer.writePos = 0;
+
+    // Compute hash and check if it meets the proof of work condition.
+    const isPoW = await header.verifyProofOfWork(buffer);
+
+    // Check if we have found a block.
+    if (isPoW) {
+        // Tell listeners that we've mined a block.
+        return header;
+    } else {
+        // Increment nonce.
+        header.nonce++;
+        return await _mine(header, buffer);
+    }
+}
+const buffer = Dummy.header1.serialize();
+_mine(Dummy.header1, buffer).then(validHeader=>console.log(BufferUtils.toBase64(validHeader.serialize())));
+*/
+
+Dummy.header2 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCSHKYzC8x+6cxgeoqnm7xDc4h7ZXpi9rJxOFQTqFvSG5EfqcM8IhyvbSvrTQysB2WOsfRZfa1dc1y70dJj0RZqQHwD//z/wAAAAAAAAQPfkEAAAAAA=';
 Dummy.accountsHash = '1bX0xXTjWUUV/Ax1CNWaRq0/pO94FCF1bUwnG+VT88Q=';
 Dummy.accountsBlock = (() => {
 
@@ -56,7 +79,7 @@ Dummy.accountsBlock = (() => {
     const prevHash = new Hash(Dummy.hash1);
     const bodyHash = new Hash(Dummy.hash2);
     const accountsHash = new Hash(Dummy.accountsHash);
-    const difficulty = 1;
+    const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
     const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);

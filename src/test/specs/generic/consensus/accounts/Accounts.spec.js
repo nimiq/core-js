@@ -25,8 +25,8 @@ describe('Accounts', () => {
                 await account._updateBalance(addr, 10, (a, b) => a + b);
             }
             const accountsHash1 = account.hash;
-            account.commitBlock(Dummy.accountsBlock);
-            account.revertBlock(Dummy.accountsBlock);
+            await account.commitBlock(Dummy.accountsBlock);
+            await account.revertBlock(Dummy.accountsBlock);
             const accountsHash2 = account.hash;
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
             done();

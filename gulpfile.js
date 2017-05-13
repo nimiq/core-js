@@ -17,6 +17,8 @@ gulp.task('default', function() {
         './src/main/generic/utils/**/*.js',
         './src/main/generic/consensus/primitive/Primitive.js', 
         './src/main/generic/consensus/primitive/**/*.js', 
+        './src/main/generic/consensus/Policy.js', 
+        './src/main/generic/consensus/block/BlockUtils.js', 
         './src/main/generic/consensus/block/BlockHeader.js', 
         './src/main/generic/consensus/block/BlockBody.js', 
         './src/main/generic/network/struct/*.js', 
