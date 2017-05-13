@@ -202,8 +202,8 @@ class Blockchain extends Observable {
 
     async _isValidExtension(chain, block) {
         // Check that the difficulty matches.
-        const nextDifficulty = await this.getNextDifficulty(chain);
-        if (nextDifficulty !== block.difficulty) {
+        const nextCompactTarget = await this.getNextCompactTarget(chain);
+        if (nextCompactTarget !== block.nBits) {
             console.warn('Blockchain rejecting block - difficulty mismatch');
             return false;
         }
@@ -303,7 +303,7 @@ class Blockchain extends Observable {
         return chain ? chain.head : null;
     }
 
-    async getNextDifficulty(chain) {
+    async getNextCompactTarget(chain) {
         chain = chain || this._mainChain;
 
         // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
@@ -323,20 +323,29 @@ class Blockchain extends Observable {
             const startChain = await this._store.get(startHash.toBase64());
             const actualTime = chain.head.timestamp - startChain.head.timestamp;
 
-            // Compute the next difficulty.
+            // Compute the target adjustment factor.
             const expectedTime = Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME;
-            let nextDifficulty = chain.head.difficulty;
-            if (expectedTime < actualTime) {
-                nextDifficulty--;
-            } else if (expectedTime > actualTime) {
-                nextDifficulty++;
-            }
-            return Math.max(nextDifficulty, Policy.DIFFICULTY_MIN);
+            let adjustment = actualTime / expectedTime;
+
+            // Clamp the adjustment factor to [0.25, 4].
+            adjustment = Math.max(adjustment, 0.25);
+            adjustment = Math.min(adjustment, 4);
+
+            // Compute the next target.
+            const currentTarget = chain.head.target;
+            let nextTarget = currentTarget * adjustment;
+
+            // Make sure the target is below or equal the maximum allowed target (difficulty 1).
+            // Also enforce a minimum target of 1.
+            nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+            nextTarget = Math.max(nextTarget, 1);
+
+            return BlockUtils.targetToCompact(nextTarget);
         }
 
         // If the difficulty is not adjusted at this height, the next difficulty
         // is the current difficulty.
-        return chain.head.difficulty;
+        return chain.head.nBits;
     }
 
     get head() {

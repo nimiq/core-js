@@ -109,9 +109,9 @@ class Miner extends Observable {
 		const accountsHash = this._blockchain.accountsHash;
 		const bodyHash = await body.hash();
 		const timestamp = this._getNextTimestamp();
-		const difficulty = await this._blockchain.getNextDifficulty();
+		const nBits = await this._blockchain.getNextCompactTarget();
 		const nonce = Math.round(Math.random() * 100000);
-		return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+		return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce);
 	}
 
 	async _getNextBody() {

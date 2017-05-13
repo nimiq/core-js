@@ -1,16 +1,16 @@
 class BlockHeader {
-    constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
+    constructor(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce) {
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
-        if (!NumberUtils.isUint32(difficulty)) throw 'Malformed difficulty';
+        if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
         if (!NumberUtils.isUint64(timestamp)) throw 'Malformed timestamp';
         if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
 
         this._prevHash = prevHash;
         this._bodyHash = bodyHash;
         this._accountsHash = accountsHash;
-        this._difficulty = difficulty;
+        this._nBits = nBits;
         this._timestamp = timestamp;
         this._nonce = nonce;
     }
@@ -30,10 +30,10 @@ class BlockHeader {
         var prevHash = Hash.unserialize(buf);
         var bodyHash = Hash.unserialize(buf);
         var accountsHash = Hash.unserialize(buf);
-        var difficulty = buf.readUint32();
+        var nBits = buf.readUint32();
         var timestamp = buf.readUint64();
         var nonce = buf.readUint64();
-        return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+        return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce);
     }
 
     serialize(buf) {
@@ -41,7 +41,7 @@ class BlockHeader {
         this._prevHash.serialize(buf);
         this._bodyHash.serialize(buf);
         this._accountsHash.serialize(buf);
-        buf.writeUint32(this._difficulty);
+        buf.writeUint32(this._nBits);
         buf.writeUint64(this._timestamp);
         buf.writeUint64(this._nonce);
         return buf;
@@ -51,22 +51,14 @@ class BlockHeader {
         return this._prevHash.serializedSize
             + this._bodyHash.serializedSize
             + this._accountsHash.serializedSize
-            + /*difficulty*/ 4
+            + /*nBits*/ 4
             + /*timestamp*/ 8
             + /*nonce*/ 8;
     }
 
-    // Verify that leadingZeros(hash) == difficulty
     async verifyProofOfWork(buf) {
         const hash = await this.hash(buf);
-
-        const zeroBytes = Math.floor(this.difficulty / 8);
-        for (let i = 0; i < zeroBytes; i++) {
-            if (hash[i] !== 0) return false;
-        }
-        const zeroBits = this.difficulty % 8;
-        if (zeroBits && hash[zeroBytes] > Math.pow(2, 8 - zeroBits)) return false;
-        return true;
+        return BlockUtils.isProofOfWork(hash, this.target);
     }
 
     async hash(buf) {
@@ -79,7 +71,7 @@ class BlockHeader {
             && this._prevHash.equals(o.prevHash)
             && this._bodyHash.equals(o.bodyHash)
             && this._accountsHash.equals(o.accountsHash)
-            && this._difficulty === o.difficulty
+            && this._nBits === o.nBits
             && this._timestamp === o.timestamp
             && this._nonce === o.nonce;
     }
@@ -89,7 +81,7 @@ class BlockHeader {
             + `prevHash=${this._prevHash}, `
             + `bodyHash=${this._bodyHash}, `
             + `accountsHash=${this._accountsHash}, `
-            + `difficulty=${this._difficulty}, `
+            + `nBits=${this._nBits.toString(16)}, `
             + `timestamp=${this._timestamp}, `
             + `nonce=${this._nonce}`
             + `}`;
@@ -107,8 +99,16 @@ class BlockHeader {
         return this._accountsHash;
     }
 
+    get nBits() {
+        return this._nBits;
+    }
+
+    get target() {
+        return BlockUtils.compactToTarget(this._nBits);
+    }
+
     get difficulty() {
-        return this._difficulty;
+        return BlockUtils.compactToDifficulty(this._nBits);
     }
 
     get timestamp() {
@@ -125,14 +125,5 @@ class BlockHeader {
         this._nonce = n;
         this._hash = null;
     }
-
-    log(desc) {
-        super.log(desc, `BlockHeader
-            prev: ${Buffer.toBase64(this._prevHash)}
-            tx-root: ${Buffer.toBase64(this._bodyHash)}
-            state-root: ${Buffer.toBase64(this._accountsHash)}
-            difficulty: ${this._difficulty}, timestamp: ${this._timestamp}, nonce: ${this._nonce}`);
-    }
-
 }
 Class.register(BlockHeader);
