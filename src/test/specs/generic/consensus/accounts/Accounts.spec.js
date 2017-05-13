@@ -15,33 +15,38 @@ describe('Accounts', () => {
     });
 
     it('can apply and revert a block', (done) => {
-        expect(true).toBe(false,'because we need to hardcode valid blocks into the specs to test this');
-        done();
-
-        const block = new Block();
-
-        const accountsHash1 = Accounts.hash();
-        Accounts.applyBlock(block);
-        Accounts.revertBlock(block);
-        const accountsHash2 = Accounts.hash();
-
-        expect(accountsHash1.equals(accountsHash2)).toEqual(true);
+        // prepare everything and serialize accountstree
+        async function test() {
+            account = await Accounts.createVolatile();
+            for (var i = 3; i > 0; i--) {
+                let senderPubKey = new PublicKey(Dummy['publicKey'+i]);
+                let recipientAddr = new Address(Dummy['address'+i]);
+                addr = await senderPubKey.toAddress();
+                await account._updateBalance(addr, 10, (a, b) => a + b);
+            }
+            const accountsHash1 = account.hash;
+            account.commitBlock(Dummy.accountsBlock);
+            account.revertBlock(Dummy.accountsBlock);
+            const accountsHash2 = account.hash;
+            expect(accountsHash1.equals(accountsHash2)).toEqual(true);
+            done();
+        }
+        test();
     });
 
     it('put and get an account', (done) => {
-        expect(true).toBe(false,'because we need to hardcode valid blocks into the specs to test this');
-        done();
         const balance = 42;
         const nonce = 192049;
         const accountState1 = new Balance(balance, nonce);
         const accountAddress = new Address(Dummy.address2);
 
         async function test() {
-            const account = await Accounts.getBalance(accountAddress);
-            expect(accountState1.nonce).tobe(accountState2.nonce);
+            account = await Accounts.createVolatile();
+            await account._tree.put(accountAddress, accountState1);
+            const accountState2 = await account.getBalance(accountAddress);
+            expect(accountState1.nonce).toBe(accountState2.nonce);
             done();
         }
-
-        //test();
+        test();
     });
 });

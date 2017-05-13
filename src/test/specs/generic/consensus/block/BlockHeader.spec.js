@@ -135,7 +135,7 @@ describe('BlockHeader', () => {
             })
     });
 
-    it('can verify a valid proof-of-work', () => {
+    it('can verify a valid proof-of-work', (done) => {
         const blockHeader = BlockHeader.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.header2)));
         blockHeader.verifyProofOfWork()
             .then( (isValid) => {
