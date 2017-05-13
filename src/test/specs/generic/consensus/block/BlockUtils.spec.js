@@ -1,10 +1,5 @@
 describe('BlockUtils', () => {
     it('can convert to and from difficulty', ()=>{
-        // let difficulty = 0;
-        // let difficultyR = BlockUtils.compactToDifficulty(BlockUtils.difficultyToCompact(difficulty));
-
-        // expect(difficultyR).toBe(difficulty);
-
         let difficulty = 1;
         let difficultyR = BlockUtils.compactToDifficulty(BlockUtils.difficultyToCompact(difficulty));
         
@@ -21,6 +16,11 @@ describe('BlockUtils', () => {
         expect(difficultyR).toBe(difficulty);
 
         difficulty = NumberUtils.UINT64_MAX;
+        difficultyR = BlockUtils.compactToDifficulty(BlockUtils.difficultyToCompact(difficulty));
+        
+        expect(difficultyR).toBe(difficulty);
+
+        difficulty = Policy.BLOCK_TARGET_MAX;
         difficultyR = BlockUtils.compactToDifficulty(BlockUtils.difficultyToCompact(difficulty));
         
         expect(difficultyR).toBe(difficulty);
@@ -51,6 +51,11 @@ describe('BlockUtils', () => {
         target = BlockUtils.difficultyToTarget(difficulty);
         
         expect(BlockUtils.isValidTarget(target)).toBe(true);
+
+        difficulty = Policy.BLOCK_TARGET_MAX;
+        target = BlockUtils.difficultyToTarget(difficulty);
+        
+        expect(BlockUtils.isValidTarget(target)).toBe(true);
     });
 
     it('computes valid compacts', ()=>{
@@ -75,6 +80,11 @@ describe('BlockUtils', () => {
         expect(BlockUtils.isValidCompact(target)).toBe(true);
 
         difficulty = NumberUtils.UINT64_MAX;
+        target = BlockUtils.difficultyToCompact(difficulty);
+        
+        expect(BlockUtils.isValidCompact(target)).toBe(true);
+
+        difficulty = Policy.BLOCK_TARGET_MAX;
         target = BlockUtils.difficultyToCompact(difficulty);
         
         expect(BlockUtils.isValidCompact(target)).toBe(true);
