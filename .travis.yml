@@ -19,6 +19,7 @@ before_install:
 - if [ "$TO_TEST" = "browser" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
 - if [ "$TO_TEST" = "browser" ]; then export DISPLAY=:99.0; fi
 - if [ "$TO_TEST" = "browser" ]; then sh -e /etc/init.d/xvfb start; fi
+- if [ "$TO_TEST" = "node" ]; then npm install -g jasmine; fi
 - if [ "$TO_TEST" = "node" ]; then npm --prefix src/main/platform/nodejs install src/main/platform/nodejs; fi
 script:
 - if [ "$TO_TEST" = "browser" ]; then karma start --single-run; fi
