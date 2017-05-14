@@ -1,3 +1,5 @@
+language: node_js
+
 sudo: required
 dist: trusty
 addons:
@@ -6,14 +8,22 @@ addons:
     - google-chrome
     packages:
     - google-chrome-stable
-language: node_js
+
+env:
+- TO_TEST=browser
+- TO_TEST=node
+
 node_js:
 - node
 before_install:
-- export CHROME_BIN=/usr/bin/google-chrome
-- export DISPLAY=:99.0
-- sh -e /etc/init.d/xvfb start
-script: karma start --single-run
+- if [ "$TO_TEST" = "browser" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
+- if [ "$TO_TEST" = "browser" ]; then export DISPLAY=:99.0; fi
+- if [ "$TO_TEST" = "browser" ]; then sh -e /etc/init.d/xvfb start; fi
+- if [ "$TO_TEST" = "node" ]; then npm --prefix src/main/platform/nodejs install src/main/platform/nodejs; fi
+script:
+- if [ "$TO_TEST" = "browser" ]; then karma start --single-run; fi
+- if [ "$TO_TEST" = "node" ]; then jasmine; fi
+
 notifications:
   slack:
     secure: dobfBi9oIS4gRFQtfh9m/u3KIR5mDL6rRApKZwL5A77ZHT8qvoZofXacMOkyZUwmtgUQnnkg5hA72iC+ZYyBMjFEjlUlO7Dr3QhWs+Ex/Vy4k/Whk2ep4bBEfhZMv1xBOXjPRKi/NE/bMVdjG3gqs+qNPnc1rfucTMtGTXWJaHVmuFRTGKJXZm/MTDSJAJOpdF6oVJ10DwdkdwZMtuWnpvd2lPvRdk0lyn4TiEyaiAweqwEhqvvXp4LbAl2zfXAhcLQMH8DQzqmTDzdFfAVitARGxvG332RM8C+TEZJjiOkka3Fub2u0ogNHNkxy+9O2ywK+y+yLOj2KEF1tx+prgQQm8FbfJzFQ+KQBt5c1dl2Lf+6OTfwB+LKOm1r2DrAIpJj5i+KHBEvamvTLpdDNGRWt7Or27Kx+jAPUMtmdhSxpnDkGZtNhqinG6oMIKXKjU720QyV775gI+4q5vidBaAH2UU8SxLMJyOj46iel4/nH0g2LbAuoliAW3t0fZHjAwhITEWZDWc6fw0NB2BznXJz8j8IAiPACxbmw2guuZLkF15IpBEn4H04TiXLtRCteVlJ0hVzPjqproWpCj7FDOd2+YlZRh/1L0rB68TJeVa1xp4W5nYM7hTjeYijIAqQQfZAz3GdAOr/FhlVLJDLJsbdtvBmEVPd+dVLZi4eJH4Y=
