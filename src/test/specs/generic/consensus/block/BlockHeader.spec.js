@@ -102,7 +102,7 @@ describe('BlockHeader', () => {
         const compact1 = BlockUtils.difficultyToCompact(difficulty1);
         const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,compact1, timestamp, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-        const compact2 = blockHeader2._nBits;
+        const compact2 = blockHeader2.nBits;
 
         expect(compact2).toBe(compact1);
     });  
