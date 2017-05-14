@@ -99,11 +99,12 @@ describe('BlockHeader', () => {
 
     it('must have a well defined difficulty (4 bytes)', () => {
         const difficulty1 = NumberUtils.UINT32_MAX;
-        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,BlockUtils.difficultyToCompact(difficulty1), timestamp, nonce);
+        const compact1 = BlockUtils.difficultyToCompact(difficulty1);
+        const blockHeader1 = new BlockHeader(prevHash,bodyHash,accountsHash,compact1, timestamp, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
-        const difficulty2 = blockHeader2.difficulty;
+        const compact2 = blockHeader2._nBits;
 
-        expect(difficulty2).toBe(difficulty1);
+        expect(compact2).toBe(compact1);
     });  
 
      it('must have a well defined timestamp (8 bytes)', () => {
