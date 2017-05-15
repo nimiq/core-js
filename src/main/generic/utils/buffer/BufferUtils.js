@@ -1,14 +1,4 @@
 class BufferUtils {
-    static toUnicode(buffer, encoding = 'utf-8') {
-        const decoder = new TextDecoder(encoding);
-        return decoder.decode(buffer);
-    }
-
-    static fromUnicode(string, encoding = 'utf-8') {
-        const encoder = new TextEncoder(encoding);
-        return encoder.encode(string);
-    }
-
     static toAscii(buffer) {
         return String.fromCharCode.apply(null, new Uint8Array(buffer));
     }
