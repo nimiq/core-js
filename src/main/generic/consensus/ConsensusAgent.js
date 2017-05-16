@@ -14,9 +14,12 @@ class ConsensusAgent extends Observable {
         return 5000; // ms
     }
 
-    // Maximum number of blockchain sync retries before closing the connectino.
+    // Maximum number of blockchain sync retries before closing the connection.
+    // XXX If the peer is on a long fork, it will count as a failed sync attempt
+    // if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
+    // blocks.
     static get MAX_SYNC_ATTEMPTS() {
-        return 3;
+        return 5;
     }
 
     constructor(blockchain, mempool, peer) {

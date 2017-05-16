@@ -47,7 +47,8 @@ class Blockchain extends Observable {
 
         // Automatically commit the chain head if the accountsHash matches.
         // Needed to bootstrap the empty accounts tree.
-        if (this.accountsHash.equals(this.head.accountsHash)) {
+        const accountsHash = await this.accountsHash();
+        if (accountsHash.equals(this.head.accountsHash)) {
             await this._accounts.commitBlock(this._mainChain.head);
         } else {
             // Assume that the accounts tree is in the correct state.
@@ -221,11 +222,12 @@ class Blockchain extends Observable {
     async _extend(newChain) {
         // Validate that the block matches the current account state.
         // XXX This is also enforced by Accounts.commitBlock()
-        if (!this.accountsHash.equals(newChain.head.accountsHash)) {
+        const accountsHash = await this.accountsHash();
+        if (!accountsHash.equals(newChain.head.accountsHash)) {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
             console.log('Blockchain rejecting block, AccountsHash mismatch: current='
-                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64());
+                + accountsHash + ', block=' + newChain.head.accountsHash);
             return;
         }
 
@@ -246,7 +248,8 @@ class Blockchain extends Observable {
 
         // XXX Sanity check: Assert that the accountsHash now matches the
         // accountsHash of the current head.
-        if (!this._accounts.hash.equals(this.head.accountsHash)) {
+        const accountsHash = await this._accounts.hash();
+        if (!accountsHash.equals(this.head.accountsHash)) {
             throw 'Failed to revert main chain - inconsistent state';
         }
 
@@ -364,16 +367,16 @@ class Blockchain extends Observable {
         return this._headHash;
     }
 
-    get accountsHash() {
-        return this._accounts.hash;
-    }
-
     get path() {
         return this._mainPath;
     }
 
     get busy() {
         return this._synchronizer.working;
+    }
+
+    accountsHash() {
+        return this._accounts.hash();
     }
 }
 Class.register(Blockchain);

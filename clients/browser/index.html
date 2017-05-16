@@ -352,11 +352,11 @@
 			async _headChanged(head) {
 				this._bcTotalWork.innerText = $.blockchain.totalWork;
 				this._bcHeight.innerText = $.blockchain.height;
-				this._bcAccountsHash.innerText = $.blockchain.accountsHash.toBase64();
+				this._bcAccountsHash.innerText = await $.blockchain.accountsHash();
 
-				this._hdHash.innerText = $.blockchain.headHash.toBase64();
-				this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
-				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
+				this._hdHash.innerText = $.blockchain.headHash;
+				this._hdPrevHash.innerText = $.blockchain.head.prevHash;
+				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
 				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
 				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
 				this._hdNonce.innerText = $.blockchain.head.nonce;

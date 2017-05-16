@@ -20,54 +20,62 @@ class Accounts extends Observable {
         this.bubble(this._tree, '*');
     }
 
-    commitBlock(block) {
-        if (!block.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
-        return this._execute(block, (a, b) => a + b);
+    async commitBlock(block) {
+        const hash = await this.hash();
+        if (!block.accountsHash.equals(hash)) throw 'AccountHash mismatch';
+
+        // TODO we should validate if the block is going to be applied correctly.
+
+        const treeTx = await this._tree.transaction();
+        await this._execute(treeTx, block, (a, b) => a + b);
+        return await treeTx.commit();
     }
 
-    revertBlock(block) {
-        return this._execute(block, (a, b) => a - b);
+    async revertBlock(block) {
+        const treeTx = await this._tree.transaction();
+        await this._execute(treeTx, block, (a, b) => a - b);
+        return await treeTx.commit();
     }
 
     getBalance(address) {
         return this._tree.get(address);
     }
 
-    async _execute(block, operator) {
-        await this._executeTransactions(block.body, operator);
-        await this._rewardMiner(block.body, operator);
+    async _execute(treeTx, block, operator) {
+        await this._executeTransactions(treeTx, block.body, operator);
+        await this._rewardMiner(treeTx, block.body, operator);
     }
 
-    async _rewardMiner(body, op) {
+    async _rewardMiner(treeTx, body, op) {
           // Sum up transaction fees.
         const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
-        await this._updateBalance(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+        await this._updateBalance(treeTx, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
-    async _executeTransactions(body, op) {
+    async _executeTransactions(treeTx, body, op) {
         for (let tx of body.transactions) {
-            await this._executeTransaction(tx, op);
+            await this._executeTransaction(treeTx, tx, op);
         }
     }
 
-    async _executeTransaction(tx, op) {
-        await this._updateSender(tx, op);
-        await this._updateRecipient(tx, op);
+    async _executeTransaction(treeTx, tx, op) {
+        await this._updateSender(treeTx, tx, op);
+        await this._updateRecipient(treeTx, tx, op);
     }
 
-    async _updateSender(tx, op) {
+    async _updateSender(treeTx, tx, op) {
         const addr = await tx.senderAddr();
-        await this._updateBalance(addr, -tx.value - tx.fee, op);
+        await this._updateBalance(treeTx, addr, -tx.value - tx.fee, op);
     }
 
-    async _updateRecipient(tx, op) {
-        await this._updateBalance(tx.recipientAddr, tx.value, op);
+    async _updateRecipient(treeTx, tx, op) {
+        await this._updateBalance(treeTx, tx.recipientAddr, tx.value, op);
     }
 
-    async _updateBalance(address, value, operator) {
+    async _updateBalance(treeTx, address, value, operator) {
         // XXX If we don't find a balance, we assume the account is empty for now.
         // TODO retrieve the account balance by asking the network.
-        let balance = await this.getBalance(address);
+        let balance = await treeTx.get(address);
         if (!balance) {
             balance = new Balance();
         }
@@ -79,11 +87,11 @@ class Accounts extends Observable {
         if (newNonce < 0) throw 'Nonce Error!';
 
         const newBalance = new Balance(newValue, newNonce);
-        await this._tree.put(address, newBalance);
+        await treeTx.put(address, newBalance);
     }
 
-    get hash() {
-        return this._tree.root;
+    hash() {
+        return this._tree.root();
     }
 }
 Class.register(Accounts);

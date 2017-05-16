@@ -69,12 +69,19 @@ class BaseTypedDB {
     }
 
     delete(key) {
-        return BaseTypedDB.db.then(db => new Promise((resolve,error) => {
+        return BaseTypedDB.db.then(db => new Promise( (resolve,error) => {
             const deleteTx = db.transaction([this._tableName], 'readwrite')
                 .objectStore(this._tableName)
                 .delete(key);
             deleteTx.onsuccess = event => resolve(event.target.result);
             deleteTx.onerror = error;
         }));
+    }
+
+    nativeTransaction() {
+        return BaseTypedDB.db.then( db => db
+            .transaction([this._tableName], 'readwrite')
+            .objectStore(this._tableName)
+        );
     }
 }
