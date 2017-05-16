@@ -32,7 +32,7 @@ if( typeof global !== 'undefined' ){
 ## sha256 hash
 
 Crypto
-	.sha256(BufferUtils.fromUnicode('hello'))
+	.sha256(BufferUtils.fromAscii('hello'))
     .then(BufferUtils.toBase64)
     .then(copy)
 
@@ -41,7 +41,7 @@ Crypto
 ## Address
 
 Crypto
-	.sha256(BufferUtils.fromUnicode('should be the public key'))
+	.sha256(BufferUtils.fromAscii('should be the public key'))
     .then(hash => hash.slice(0,20))
     .then(BufferUtils.toBase64)
     .then(copy)

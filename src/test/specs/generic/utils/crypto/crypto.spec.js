@@ -12,7 +12,7 @@ describe('Crypto', () => {
 
     it('can sign and verify data', (done) => {
     	// http://www.ietf.org/rfc/rfc6090.txt
-		const dataToSign = BufferUtils.fromUnicode('test data to sign');
+		const dataToSign = BufferUtils.fromAscii('test data to sign');
 		Crypto.generateKeys()
 		    .then(keys => Crypto.exportPublic(keys.publicKey)
 		    	.then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
@@ -24,8 +24,8 @@ describe('Crypto', () => {
     }); 
 
 	it('can detect wrong signatures', (done) => {
-		const dataToSign = BufferUtils.fromUnicode('test data to sign');
-		const wrongData = BufferUtils.fromUnicode('wrong test data to sign');
+		const dataToSign = BufferUtils.fromAscii('test data to sign');
+		const wrongData = BufferUtils.fromAscii('wrong test data to sign');
 		Crypto.generateKeys()
 		    .then(keys => Crypto.exportPublic(keys.publicKey)
 		    	.then(publicKey => Crypto.sign(keys.privateKey,dataToSign)
@@ -37,7 +37,7 @@ describe('Crypto', () => {
     });     
 
     it('can hash data with sha256', (done) => {
-		const dataToHash = BufferUtils.fromUnicode('hello');
+		const dataToHash = BufferUtils.fromAscii('hello');
 		const expectedHash = Dummy.hash1;
 		Crypto.sha256(dataToHash).then( hash => {
 			expect( BufferUtils.toBase64(hash) ).toBe(expectedHash);
