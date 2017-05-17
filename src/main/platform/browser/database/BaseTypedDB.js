@@ -1,7 +1,4 @@
-// TODO: Make use of "storage-persistence" api (mandatory for private key storage)
-// TODO V2: Make use of "IDBTransactions" api for serial reads/writes
 class BaseTypedDB {
-
     static get db() {
         if (BaseTypedDB._db) return Promise.resolve(BaseTypedDB._db);
 
@@ -69,7 +66,7 @@ class BaseTypedDB {
     }
 
     delete(key) {
-        return BaseTypedDB.db.then(db => new Promise( (resolve,error) => {
+        return BaseTypedDB.db.then(db => new Promise( (resolve, error) => {
             const deleteTx = db.transaction([this._tableName], 'readwrite')
                 .objectStore(this._tableName)
                 .delete(key);
@@ -79,9 +76,25 @@ class BaseTypedDB {
     }
 
     nativeTransaction() {
-        return BaseTypedDB.db.then( db => db
-            .transaction([this._tableName], 'readwrite')
-            .objectStore(this._tableName)
-        );
+        return BaseTypedDB.db.then( db => new NativeDBTransaction(db, this._tableName));
+    }
+}
+
+class NativeDBTransaction extends Observable {
+    constructor(db, tableName) {
+        super();
+        this._tx = db.transaction([tableName], 'readwrite');
+        this._store = this._tx.objectStore(tableName);
+
+        this._tx.oncomplete = () => this.fire('complete');
+        this._tx.onerror = e => this.fire('error', e);
+    }
+
+    put(key, value) {
+        return this._store.put(key, value);
+    }
+
+    delete(key) {
+        return this._store.delete(key);
     }
 }

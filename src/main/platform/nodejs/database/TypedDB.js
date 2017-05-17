@@ -47,5 +47,14 @@ class TypedDB {
             this._db.del(key, err => resolve());
         });
     }
+
+    transaction() {
+
+    }
 }
 Class.register(TypedDB);
+
+class NativeDBTransaction {
+
+}
+Class.register(TypedDBTransaction);
