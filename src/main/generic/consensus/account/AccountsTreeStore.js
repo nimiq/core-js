@@ -60,11 +60,11 @@ class VolatileAccountsTreeStore {
         delete this._store[key];
     }
 
-    /*
     transaction() {
-        return this;
+        const tx = this;
+        tx.commit = () => true;
+        return tx;
     }
-    */
 
     getRootKey() {
         return this._rootKey;

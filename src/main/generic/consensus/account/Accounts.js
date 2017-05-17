@@ -22,7 +22,7 @@ class Accounts extends Observable {
 
     async commitBlock(block) {
         const hash = await this.hash();
-        if (!block.accountsHash.equals(hash)) throw 'AccountHash mismatch';
+        if (!block.accountsHash.equals(hash)) throw 'AccountsHash mismatch';
 
         // TODO we should validate if the block is going to be applied correctly.
 
