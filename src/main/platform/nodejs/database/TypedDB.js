@@ -48,13 +48,45 @@ class TypedDB {
         });
     }
 
-    transaction() {
+    nativeTransaction() {
+        return Promise.resolve(new NativeDBTransaction(this._db));
+    }
 
+    transaction() {
+        return new TypedDBTransaction(this);
     }
 }
 Class.register(TypedDB);
 
-class NativeDBTransaction {
+class NativeDBTransaction extends Observable {
+    constructor(db) {
+        super();
+        this._batch = db.batch();
+    }
+
+    putObject(key, value) {
+        if (!value.serialize) throw 'NodeJS TypedDB required objects with .serialize()';
+        const buf = value.serialize();
+        this._batch.put(key, buf, {valueEncoding: 'binary'});
+    }
+
+    putString(key, value) {
+        this._batch.put(key, value, {valueEncoding: 'ascii'});
+    }
+
+    delete(key) {
+        this._batch.del(key);
+    }
+
+    commit() {
+        this._batch.write( err => {
+            if (err) {
+                this.fire('error', err);
+            } else {
+                this.fire('complete');
+            }
+        });
+    }
 
 }
-Class.register(TypedDBTransaction);
+Class.register(NativeDBTransaction);

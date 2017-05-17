@@ -90,11 +90,19 @@ class NativeDBTransaction extends Observable {
         this._tx.onerror = e => this.fire('error', e);
     }
 
-    put(key, value) {
-        return this._store.put(key, value);
+    putObject(key, value) {
+        this._store.put(value, key);
+    }
+
+    putString(key, value) {
+        this._store.put(value, key);
     }
 
     delete(key) {
-        return this._store.delete(key);
+        this._store.delete(key);
+    }
+
+    commit() {
+        // no-op on IndexedDB
     }
 }
