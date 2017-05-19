@@ -106,7 +106,7 @@ class Miner extends Observable {
 
 	async _getNextHeader(body) {
 		const prevHash = await this._blockchain.headHash;
-		const accountsHash = this._blockchain.accountsHash;
+		const accountsHash = await this._blockchain.accountsHash();
 		const bodyHash = await body.hash();
 		const timestamp = this._getNextTimestamp();
 		const nBits = await this._blockchain.getNextCompactTarget();

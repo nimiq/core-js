@@ -24,26 +24,24 @@ class ObjectDB extends TypedDB {
         return key;
     }
 
-    /*
     async transaction() {
         const tx = await super.transaction();
-        return {
-            get: function(key) {
-                return tx.get(key);
-            },
+        const that = this;
 
-            put: async function(obj) {
-                const key = await this.key(obj);
-                await tx.put(key, obj);
-                return key;
-            },
+        tx.get = key => tx.getObject(key);
+        tx.put = async function(obj) {
+            const key = await that.key(obj);
+            await tx.putObject(key, obj);
+            return key;
+        };
+        const superDelete = tx.delete.bind(tx);
+        tx.delete = async function(obj) {
+            const key = await that.key(obj);
+            await superDelete(key);
+            return key;
+        };
 
-            putRaw: async function(key, obj) {
-                await this.put(key, obj);
-                return key;
-            }
-        }
+        return tx;
     }
-    */
 }
 Class.register(ObjectDB);

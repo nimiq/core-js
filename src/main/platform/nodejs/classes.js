@@ -4,6 +4,11 @@ global.Class = {
 	}
 }
 
+require("../../generic/utils/Observable.js");
+require("../../generic/utils/Services.js");
+require("../../generic/utils/Synchronizer.js");
+require("../../generic/utils/Timers.js");
+require("../../generic/utils/database/TypedDBTransaction.js");
 require("./database/TypedDB.js");
 require("../../generic/utils/database/ObjectDB.js");
 require("../../generic/utils/array/IndexedArray.js");
@@ -16,10 +21,6 @@ require("../../generic/utils/number/NumberUtils.js");
 require("../../generic/utils/object/ObjectUtils.js");
 require("../../generic/utils/platform/PlatformUtils.js");
 require("../../generic/utils/string/StringUtils.js");
-require("../../generic/utils/Observable.js");
-require("../../generic/utils/Services.js");
-require("../../generic/utils/Synchronizer.js");
-require("../../generic/utils/Timers.js");
 require("../../generic/consensus/Policy.js");
 require("../../generic/consensus/primitive/Primitive.js");
 require("../../generic/consensus/primitive/Hash.js");

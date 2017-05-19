@@ -15,6 +15,11 @@
 
 	<!--beginjs-->
 	<script src="../../src/main/platform/browser/Class.js"></script>
+	<script src="../../src/main/generic/utils/Observable.js"></script>
+	<script src="../../src/main/generic/utils/Services.js"></script>
+	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
+	<script src="../../src/main/generic/utils/Timers.js"></script>
+	<script src="../../src/main/generic/utils/database/TypedDBTransaction.js"></script>
 	<script src="../../src/main/platform/browser/database/BaseTypedDB.js"></script>
 	<script src="../../src/main/platform/browser/database/TypedDB.js"></script>
 	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
@@ -28,10 +33,6 @@
 	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
 	<script src="../../src/main/generic/utils/platform/PlatformUtils.js"></script>
 	<script src="../../src/main/generic/utils/string/StringUtils.js"></script>
-	<script src="../../src/main/generic/utils/Observable.js"></script>
-	<script src="../../src/main/generic/utils/Services.js"></script>
-	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
-	<script src="../../src/main/generic/utils/Timers.js"></script>
 	<script src="../../src/main/generic/consensus/Policy.js"></script>
 	<script src="../../src/main/generic/consensus/primitive/Primitive.js"></script>
 	<script src="../../src/main/generic/consensus/primitive/Hash.js"></script>
@@ -352,11 +353,11 @@
 			async _headChanged(head) {
 				this._bcTotalWork.innerText = $.blockchain.totalWork;
 				this._bcHeight.innerText = $.blockchain.height;
-				this._bcAccountsHash.innerText = $.blockchain.accountsHash.toBase64();
+				this._bcAccountsHash.innerText = await $.blockchain.accountsHash();
 
-				this._hdHash.innerText = $.blockchain.headHash.toBase64();
-				this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
-				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
+				this._hdHash.innerText = $.blockchain.headHash;
+				this._hdPrevHash.innerText = $.blockchain.head.prevHash;
+				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
 				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
 				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
 				this._hdNonce.innerText = $.blockchain.head.nonce;

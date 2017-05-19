@@ -51,6 +51,7 @@ class PeerConnection extends Observable {
 
     equals(o) {
         return o instanceof PeerConnection
+            && this.protocol === o.protocol
             && this.host === o.host
             && this.port === o.port;
     }

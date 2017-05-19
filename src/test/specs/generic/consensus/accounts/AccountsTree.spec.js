@@ -9,7 +9,8 @@ describe('AccountsTree', () => {
             const tree = await AccountsTree.createVolatile();
             await tree.put(address, balance1);
 
-            expect(tree.root.byteLength).toEqual(32);
+            const root = await tree.root();
+            expect(root.byteLength).toEqual(32);
             done();
         }
 
@@ -86,15 +87,15 @@ describe('AccountsTree', () => {
             const tree = await AccountsTree.createVolatile();
 
             await tree.put(address, balance1);
-            const state1 = tree.root.toBase64();
+            const state1 = await tree.root();
 
             await tree.put(address, balance2);
-            const state2 = tree.root.toBase64();
-            expect(state2).not.toBe(state1);
+            const state2 = await tree.root();
+            expect(state2.toBase64()).not.toBe(state1.toBase64());
 
             await tree.put(address, balance1);
-            const state3 = tree.root.toBase64();
-            expect(state3).toBe(state1);
+            const state3 = await tree.root();
+            expect(state3.toBase64()).toBe(state1.toBase64());
 
             done();
         }
@@ -125,7 +126,7 @@ describe('AccountsTree', () => {
             await tree.put(address1, balance1);
             await tree.put(address2, balance1);
             await tree.put(address3, balance1);
-            const state1 = tree.root.toBase64();
+            const state1 = await tree.root();
 
 
             // "reset"
@@ -136,7 +137,7 @@ describe('AccountsTree', () => {
             await tree.put(address1, balance1);
             await tree.put(address3, balance1);
             await tree.put(address2, balance1);
-            const state2 = tree.root.toBase64();
+            const state2 = await tree.root();
 
 
             // "reset"
@@ -147,7 +148,7 @@ describe('AccountsTree', () => {
             await tree.put(address2, balance1);
             await tree.put(address1, balance1);
             await tree.put(address3, balance1);
-            const state3 = tree.root.toBase64();
+            const state3 = await tree.root();
 
 
             // "reset"
@@ -158,11 +159,11 @@ describe('AccountsTree', () => {
             await tree.put(address2, balance1);
             await tree.put(address3, balance1);
             await tree.put(address1, balance1);
-            const state4 = tree.root.toBase64();
+            const state4 = await tree.root();
 
-            expect(state2).toBe(state1);
-            expect(state3).toBe(state1);
-            expect(state4).toBe(state1);
+            expect(state2.toBase64()).toBe(state1.toBase64());
+            expect(state3.toBase64()).toBe(state1.toBase64());
+            expect(state4.toBase64()).toBe(state1.toBase64());
 
             done();
         }
@@ -234,13 +235,13 @@ describe('AccountsTree', () => {
 
 
             await tree.put(address1,balance1);
-            const root1 = tree.root.toBase64();
+            const root1 = await tree.root();
 
             await tree.put(address2,balance2);
             await tree.put(address2,new Balance(0,0));
 
-            const root2 = tree.root.toBase64();
-            expect(root2).toEqual(root1);
+            const root2 = await tree.root();
+            expect(root2.toBase64()).toEqual(root1.toBase64());
 
             done();
         }

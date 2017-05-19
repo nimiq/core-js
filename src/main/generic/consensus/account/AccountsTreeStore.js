@@ -8,6 +8,7 @@ class AccountsTreeStore {
         //return new PersistentAccountsTreeStore();
     }
 }
+Class.register(AccountsTreeStore);
 
 class PersistentAccountsTreeStore extends ObjectDB {
     constructor() {
@@ -22,18 +23,16 @@ class PersistentAccountsTreeStore extends ObjectDB {
         return await super.putString('root', rootKey);
     }
 
-    /*
-    transaction() {
-        const tx = super.transaction();
-        tx.getRootKey = async function(rootKey) {
-            tx.get('root');
+    async transaction() {
+        const tx = await super.transaction();
+        tx.getRootKey = function(rootKey) {
+            return tx.getString('root');
         }
-        tx.setRootKey = async function(rootKey) {
-            tx.putRaw('root', rootKey);
+        tx.setRootKey = function(rootKey) {
+            return tx.putString('root', rootKey);
         }
         return tx;
     }
-    */
 }
 
 class VolatileAccountsTreeStore {
@@ -61,11 +60,11 @@ class VolatileAccountsTreeStore {
         delete this._store[key];
     }
 
-    /*
     transaction() {
-        return this;
+        const tx = this;
+        tx.commit = () => true;
+        return tx;
     }
-    */
 
     getRootKey() {
         return this._rootKey;
@@ -75,4 +74,3 @@ class VolatileAccountsTreeStore {
         this._rootKey = rootKey;
     }
 }
-Class.register(AccountsTreeStore);
