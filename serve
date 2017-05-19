@@ -1,2 +1,0 @@
-cd src
-python ../servers/simple-https-server/simple-https-server.py

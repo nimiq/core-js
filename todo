@@ -1,5 +1,0 @@
-printf "\n** lovicash project management suite ** \n\n* Version 1 *\n"
-grep -nr --include "*.js" "// TODO:.*$" | sed "s/\/\/ TODO://g" | sed "s|.*/||g"
-# printf "\n* Version 2 *\n"
-# grep -nr --include "*.js" "// TODO V2:" | sed "s/\/\/ TODO V2://g"
-printf "\n"
