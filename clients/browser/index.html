@@ -332,9 +332,8 @@
 				}
 
 				$.accounts.getBalance($.wallet.address).then( balance => {
-					// XXX Coin to cent conversion
-					value = Math.round(value * 1e4);
-					fee = Math.round(fee * 1e4);
+					value = Policy.coinsToSatoshis(value);
+					fee = Policy.coinsToSatoshis(fee);
 
 					if (balance.value < value + fee) {
 						elValue.className = 'error';
@@ -369,8 +368,8 @@
 
 				for (let tx of head.transactions) {
 					const senderAddr = await tx.senderAddr();
-					const value = (tx.value / 1e4).toFixed(4);
-					const fee = (tx.fee / 1e4).toFixed(4);
+					const value = Policy.satoshisToCoins(tx.value).toFixed(4);
+					const fee = Policy.satoshisToCoins(tx.fee).toFixed(4);
 					html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
 				}
 				el.innerHTML = html;
@@ -441,8 +440,8 @@
 				for (let tx of txs) {
 					const el = document.createElement('div');
 					const senderAddr = await tx.senderAddr();
-					const value = (tx.value / 1e4).toFixed(4);
-					const fee = (tx.fee / 1e4).toFixed(4);
+					const value = Policy.satoshisToCoins(tx.value).toFixed(4);
+					const fee = Policy.satoshisToCoins(tx.fee).toFixed(4);
 					el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
 					this._mplTransactions.appendChild(el);
 				}
