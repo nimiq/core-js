@@ -23,6 +23,9 @@ npm install
 ### Build
 `gulp build` concatenates all sources into `/nimiq.js`
 
+### Run Browser client
+Open `clients/browser/index.html` in your browser
+
 ### Run NodeJS client
 ```
 cd clients/nodejs/
