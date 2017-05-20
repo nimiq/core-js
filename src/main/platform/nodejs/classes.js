@@ -71,4 +71,5 @@ require("../../generic/network/Network.js");
 require("../../generic/miner/Miner.js");
 require("./wallet/WalletStore.js");
 require("../../generic/wallet/Wallet.js");
+require("./utils/WindowDetector.js");
 require("../../generic/Core.js");
