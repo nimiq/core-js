@@ -9,4 +9,13 @@ class WebRtcConfig {
             certificates : [certificate]
         };
     }
+
+    static async mySignalId() {
+        const config = await WebRtcConfig.get();
+        const conn = new RTCPeerConnection(config);
+        conn.createDataChannel('pseudo');
+        return conn.createOffer().then(desc => {
+            return WebRtcUtils.sdpToSignalId(desc.sdp);
+        });
+    }
 }

@@ -17,9 +17,9 @@ class PeerAddresses extends Observable {
 
     static get SEED_PEERS() {
         return [
-            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0),
-            new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq1.styp-rekowsky.de", 8080, 0, 0),
-            new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq2.styp-rekowsky.de", 8080, 0, 0)
+            new WssPeerAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080),
+            new WssPeerAddress(Services.WEBSOCKET, Date.now(), "nimiq1.styp-rekowsky.de", 8080),
+            new WssPeerAddress(Services.WEBSOCKET, Date.now(), "nimiq2.styp-rekowsky.de", 8080)
         ];
     }
 
@@ -27,7 +27,7 @@ class PeerAddresses extends Observable {
         super();
         this._store = {};
         this.push(null, PeerAddresses.SEED_PEERS);
-        this.push(null, NetworkUtils.myNetAddress());
+        this.push(null, NetworkConfig.myPeerAddress());
 
         // Setup cleanup interval.
         setInterval(() => this._cleanup(), PeerAddresses.CLEANUP_INTERVAL);

@@ -6,16 +6,17 @@ const fs = require('fs');
 class WebSocketConnector extends Observable {
     constructor() {
         super();
-        const port = NetworkUtils.myNetAddress().port;
-
+        const port = NetworkConfig.myPeerAddress().port;
+        const sslConfig = NetworkConfig.getSSLConfig();
+        
         const options = {
-          key: fs.readFileSync(NetworkUtils.getSSLConfig().key),
-          cert: fs.readFileSync(NetworkUtils.getSSLConfig().cert)
+            key: fs.readFileSync(sslConfig.key),
+            cert: fs.readFileSync(sslConfig.cert)
         };
 
         const httpsServer = https.createServer(options, (req, res) => {
-          res.writeHead(200);
-          res.end('Nimiq NodeJS Client\n');
+            res.writeHead(200);
+            res.end('Nimiq NodeJS Client\n');
         }).listen(port);
 
         this._wss = new WebSocket.Server({server: httpsServer});

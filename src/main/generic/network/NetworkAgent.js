@@ -72,7 +72,7 @@ class NetworkAgent extends Observable {
 
     async _handshake() {
         // Kick off the handshake by telling the peer our version, network address & blockchain height.
-        this._channel.version(NetworkUtils.myNetAddress(), this._blockchain.height);
+        this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height);
 
         // Drop the peer if it doesn't acknowledge our version message.
         this._timers.setTimeout('verack', () => this._channel.close('verack timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
@@ -154,7 +154,7 @@ class NetworkAgent extends Observable {
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([NetworkUtils.myNetAddress()]),
+            () => this._channel.addr([NetworkConfig.myPeerAddress()]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Request new network addresses from the peer.

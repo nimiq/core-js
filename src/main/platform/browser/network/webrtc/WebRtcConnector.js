@@ -1,6 +1,6 @@
 class WebRtcConnector extends Observable {
     static get CONNECT_TIMEOUT() {
-        return 20000; // ms
+        return 10000; // ms
     }
 
     constructor() {
@@ -12,6 +12,11 @@ class WebRtcConnector extends Observable {
         this._connectors = {};
         this._config = await WebRtcConfig.get();
         this._timers = new Timers();
+
+        // Configure our peer address.
+        const signalId = await this._config.mySignalId();
+        NetworkConfig.configurePeerAddress(signalId);
+
         return this;
     }
 
@@ -130,7 +135,7 @@ class PeerConnector extends Observable {
 
     _signal(signal) {
         this._signalChannel.signal(
-            NetworkUtils.mySignalId(),
+            NetworkConfig.mySignalId(),
             this._remoteId,
             BufferUtils.fromAscii(JSON.stringify(signal))
         );

@@ -2,7 +2,7 @@ class AddrMessage extends Message {
     constructor(addresses) {
         super(Message.Type.ADDR);
         if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.some( it => !(it instanceof NetAddress))) throw 'Malformed addresses';
+            || addresses.some( it => !(it instanceof PeerAddress))) throw 'Malformed addresses';
         this._addresses = addresses;
     }
 
@@ -11,7 +11,7 @@ class AddrMessage extends Message {
         const count = buf.readUint16();
         const addresses = [];
         for (let i = 0; i < count; ++i) {
-            addresses.push(NetAddress.unserialize(buf));
+            addresses.push(PeerAddress.unserialize(buf));
         }
 		return new AddrMessage(addresses);
 	}

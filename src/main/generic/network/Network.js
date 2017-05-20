@@ -21,7 +21,7 @@ class Network extends Observable {
 
         // All addresses we are currently connected to including our own address.
         this._activeAddresses = {}
-        this._activeAddresses[NetworkUtils.myNetAddress()] = true;
+        this._activeAddresses[NetworkConfig.myPeerAddress()] = true;
 
         // All peer addresses we know.
         this._addresses = new PeerAddresses();
@@ -199,13 +199,13 @@ class Network extends Observable {
     /* Signaling */
 
     _onSignal(channel, msg) {
-        if (msg.senderId === NetworkUtils.mySignalId()) {
+        if (msg.senderId === NetworkConfig.mySignalId()) {
             console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
             return;
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
-        if (msg.recipientId === NetworkUtils.mySignalId()) {
+        if (msg.recipientId === NetworkConfig.mySignalId()) {
             this._rtcConnector.onSignal(channel, msg);
         }
         // Otherwise, try to forward the signal to the intented recipient.
@@ -219,7 +219,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + NetworkUtils.mySignalId() + '): ' + BufferUtils.toAscii(msg.payload));
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + NetworkConfig.mySignalId() + '): ' + BufferUtils.toAscii(msg.payload));
         }
     }
 
