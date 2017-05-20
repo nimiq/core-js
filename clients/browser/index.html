@@ -85,146 +85,157 @@
 	<script src="../../src/main/generic/miner/Miner.js"></script>
 	<script src="../../src/main/platform/browser/wallet/WalletStore.js"></script>
 	<script src="../../src/main/generic/wallet/Wallet.js"></script>
+	<script src="../../src/main/platform/browser/utils/WindowDetector.js"></script>
 	<script src="../../src/main/generic/Core.js"></script>
 	<!--endjs-->
 
-	<div class="left">
-		<div class="info">
-			<div class="info-title">Wallet</div>
-
-			<div class="info-block">
-				<strong>Address</strong>
-				<span id="wltAddress"></span>
-			</div>
-			<div class="info-block">
-				<strong>Balance</strong>
-				<span id="wltBalance"></span>
-			</div>
-			<div class="info-block">
-				<strong>Nonce</strong>
-				<span id="wltNonce"></span>
+	<div id="content">
+		<div id="overlay">
+			<div class="message">
+				Nimiq Blockchain Cockpit is already running in another browser window or tab.
+				<br><br>
+				<small>Please use only one window/tab at a time.</small>
 			</div>
 		</div>
 
-		<div class="info">
-			<div class="info-title">Transaction</div>
-			<form>
-				<div class="input-group">
-					<label for="recipientAddr">Recipient</label>
-					<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+		<div class="left">
+			<div class="info">
+				<div class="info-title">Wallet</div>
+
+				<div class="info-block">
+					<strong>Address</strong>
+					<span id="wltAddress"></span>
 				</div>
-				<div class="input-group">
-					<label for="value">Value</label>
-					<input id="txValue" name="value" type="number">
+				<div class="info-block">
+					<strong>Balance</strong>
+					<span id="wltBalance"></span>
 				</div>
-				<div class="input-group">
-					<label for="fee">Fee</label>
-					<input id="txFee" name="fee" type="number">
+				<div class="info-block">
+					<strong>Nonce</strong>
+					<span id="wltNonce"></span>
 				</div>
-				<div class="input-group">
-					<button type="button" id="txSubmitBtn">Send</button>
+			</div>
+
+			<div class="info">
+				<div class="info-title">Transaction</div>
+				<form>
+					<div class="input-group">
+						<label for="recipientAddr">Recipient</label>
+						<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+					</div>
+					<div class="input-group">
+						<label for="value">Value</label>
+						<input id="txValue" name="value" type="number">
+					</div>
+					<div class="input-group">
+						<label for="fee">Fee</label>
+						<input id="txFee" name="fee" type="number">
+					</div>
+					<div class="input-group">
+						<button type="button" id="txSubmitBtn">Send</button>
+					</div>
+				</form>
+			</div>
+
+			<div class="info">
+				<div class="info-title">Miner</div>
+
+				<div class="info-block">
+					<strong>Working</strong>
+					<span id="mnrWorking"></span>
 				</div>
-			</form>
+				<div class="info-block">
+					<strong>Hashrate</strong>
+					<span id="mnrHashrate"></span> H/s
+				</div>
+				<div class="info-block">
+					<strong>Last block mined at</strong>
+					<span id="mnrLastBlockTs"></span>
+				</div>
+				<div class="info-block">
+					<button id="mnrStartBtn">Start Mining</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="right">
+			<div class="info">
+				<div class="info-title">Blockchain</div>
+
+				<div class="info-block">
+					<strong>Total work</strong>
+					<span id="bcTotalWork"></span>
+				</div>
+				<div class="info-block">
+					<strong>Height</strong>
+					<span id="bcHeight"></span>
+				</div>
+				<div class="info-block">
+					<strong>Accounts Hash</strong>
+					<hash id="bcAccountsHash"></hash>
+				</div>
+			</div>
+
+			<div class="info">
+				<div class="info-title">Head Block</div>
+
+				<div class="info-block">
+					<strong>Hash</strong>
+					<hash id="hdHash"></hash>
+				</div>
+				<div class="info-block">
+					<strong>Prev Hash</strong>
+					<hash id="hdPrevHash"></hash>
+				</div>
+				<div class="info-block">
+					<strong>Accounts Hash</strong>
+					<hash id="hdAccountsHash"></hash>
+				</div>
+				<div class="info-block">
+					<strong>Difficulty</strong>
+					<span id="hdDifficulty"></span>
+				</div>
+				<div class="info-block">
+					<strong>Timestamp</strong>
+					<span id="hdTimestamp"></span>
+				</div>
+				<div class="info-block">
+					<strong>Nonce</strong>
+					<span id="hdNonce"></span>
+				</div>
+			</div>
+
+			<div class="info">
+				<div class="info-title">Network</div>
+
+				<div class="info-block">
+					<strong>Peers</strong>
+					<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
+				</div>
+				<div class="info-block">
+					<strong>Received</strong>
+					<span id="netBytesReceived"></span>
+				</div>
+				<div class="info-block">
+					<strong>Sent</strong>
+					<span id="netBytesSent"></span>
+				</div>
+			</div>
+		</div>
+
+		<div class="info" style="clear: left;">
+			<div class="info-title">Mempool</div>
+			<div class="info-block">
+				<strong>Transaction Count</strong>
+				<span id="mplTransactionCount"></span>
+			</div>
+			<div class="info-block" id="mplTransactions"></div>
 		</div>
 
 		<div class="info">
-			<div class="info-title">Miner</div>
-
-			<div class="info-block">
-				<strong>Working</strong>
-				<span id="mnrWorking"></span>
-			</div>
-			<div class="info-block">
-				<strong>Hashrate</strong>
-				<span id="mnrHashrate"></span> H/s
-			</div>
-			<div class="info-block">
-				<strong>Last block mined at</strong>
-				<span id="mnrLastBlockTs"></span>
-			</div>
-			<div class="info-block">
-				<button id="mnrStartBtn">Start Mining</button>
-			</div>
+			<div class="info-title">Block History</div>
+			<div class="info-block" id="blockHistory"></div>
 		</div>
-	</div>
-
-	<div class="right">
-		<div class="info">
-			<div class="info-title">Blockchain</div>
-
-			<div class="info-block">
-				<strong>Total work</strong>
-				<span id="bcTotalWork"></span>
-			</div>
-			<div class="info-block">
-				<strong>Height</strong>
-				<span id="bcHeight"></span>
-			</div>
-			<div class="info-block">
-				<strong>Accounts Hash</strong>
-				<hash id="bcAccountsHash"></hash>
-			</div>
-		</div>
-
-		<div class="info">
-			<div class="info-title">Head Block</div>
-
-			<div class="info-block">
-				<strong>Hash</strong>
-				<hash id="hdHash"></hash>
-			</div>
-			<div class="info-block">
-				<strong>Prev Hash</strong>
-				<hash id="hdPrevHash"></hash>
-			</div>
-			<div class="info-block">
-				<strong>Accounts Hash</strong>
-				<hash id="hdAccountsHash"></hash>
-			</div>
-			<div class="info-block">
-				<strong>Difficulty</strong>
-				<span id="hdDifficulty"></span>
-			</div>
-			<div class="info-block">
-				<strong>Timestamp</strong>
-				<span id="hdTimestamp"></span>
-			</div>
-			<div class="info-block">
-				<strong>Nonce</strong>
-				<span id="hdNonce"></span>
-			</div>
-		</div>
-
-		<div class="info">
-			<div class="info-title">Network</div>
-
-			<div class="info-block">
-				<strong>Peers</strong>
-				<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
-			</div>
-			<div class="info-block">
-				<strong>Received</strong>
-				<span id="netBytesReceived"></span>
-			</div>
-			<div class="info-block">
-				<strong>Sent</strong>
-				<span id="netBytesSent"></span>
-			</div>
-		</div>
-	</div>
-
-	<div class="info" style="clear: left;">
-		<div class="info-title">Mempool</div>
-		<div class="info-block">
-			<strong>Transaction Count</strong>
-			<span id="mplTransactionCount"></span>
-		</div>
-		<div class="info-block" id="mplTransactions"></div>
-	</div>
-
-	<div class="info">
-		<div class="info-title">Block History</div>
-		<div class="info-block" id="blockHistory"></div>
 	</div>
 
 	<script type="text/javascript">
@@ -448,11 +459,18 @@
 			}
 		}
 
-		Core.get().then( $ => {
+		const overlay = document.querySelector('#overlay');
+
+		Core.init( $ => {
 			window.$ = $;
 			$.network.connect();
+
+			overlay.style.display = 'none';
 			const ui = new MinerUI($);
+		}, () => {
+			overlay.style.display = 'block';
 		});
+
 	</script>
 </body>
 </html>

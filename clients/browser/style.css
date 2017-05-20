@@ -152,3 +152,25 @@ hash {
 #blockHistory > div {
     margin: 5px 0;
 }
+
+#content {
+    position: relative;
+}
+
+#overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    background: rgba(239, 239, 239, 0.95);
+}
+
+#overlay .message {
+    font-size: 18pt;
+    text-align: center;
+    margin-top: 15%;
+    padding: 15px;
+}
