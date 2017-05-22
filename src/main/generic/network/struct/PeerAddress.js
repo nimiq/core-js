@@ -33,10 +33,7 @@ class PeerAddress {
     equals(o) {
         return o instanceof PeerAddress
             && this._protocol === o.protocol;
-            // XXX Should we compare services? A peer advertising his own address
-            // with different services would be considered two different addresses then.
-            // Not comparing services is consistent with toString().
-            // && this._services === o.services;
+            /* services is ignored */
             /* timestamp is ignored */
     }
 
@@ -61,6 +58,8 @@ Class.register(PeerAddress);
 class WssPeerAddress extends PeerAddress {
     constructor(services, timestamp, host, port) {
         super(PeerAddress.Protocol.WSS, services, timestamp);
+        if (!Services.isWebSocket(services)) throw 'Malformed services';
+
         this._host = host;
         this._port = port;
     }
@@ -99,6 +98,10 @@ class WssPeerAddress extends PeerAddress {
             && this._port === o.port;
     }
 
+    hashCode() {
+        return this.toString();
+    }
+
     toString() {
         return `wss://${this._host}:${this._port}`;
     }
@@ -116,6 +119,8 @@ Class.register(WssPeerAddress);
 class RtcPeerAddress extends PeerAddress {
     constructor(services, timestamp, signalId, distance) {
         super(PeerAddress.Protocol.RTC, services, timestamp);
+        if (!Services.isWebRtc(services)) throw 'Malformed services';
+
         this._signalId = signalId;
         this._distance = distance;
     }
@@ -150,6 +155,10 @@ class RtcPeerAddress extends PeerAddress {
         return super.equals(o)
             && o instanceof RtcPeerAddress
             && this._signalId === o.signalId;
+    }
+
+    hashCode() {
+        return this.toString();
     }
 
     toString() {

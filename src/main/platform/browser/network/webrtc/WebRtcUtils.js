@@ -5,4 +5,8 @@ class WebRtcUtils {
 			.replace(/:/g, '')                           // replace colons
 			.slice(1, 32);                               // truncate hash to 16 bytes
 	}
+
+    static iceCandidateToIpAddress(candidate) {
+        
+    }
 }
