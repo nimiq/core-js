@@ -1,11 +1,10 @@
 class PeerConnection extends Observable {
-    constructor(nativeChannel, protocol, host, port) {
+    constructor(nativeChannel, peerAddress, netAddress) {
         super();
         this._channel = nativeChannel;
 
-        this._protocol = protocol;
-        this._host = host;
-        this._port = port;
+        this._peerAddress = peerAddress;
+        this._netAddress = netAddress;
 
         this._bytesReceived = 0;
         this._bytesSent = 0;
@@ -51,25 +50,20 @@ class PeerConnection extends Observable {
 
     equals(o) {
         return o instanceof PeerConnection
-            && this.protocol === o.protocol
-            && this.host === o.host
-            && this.port === o.port;
+            && this.peerAddress.equals(o.peerAddress)
+            && this.netAddress.equals(o.netAddress)
     }
 
     toString() {
-        return 'PeerConnection{protocol=' + this._protocol + ', host=' + this._host + ', port=' + this._port + '}';
+        return `PeerConnection{peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
     }
 
-    get protocol() {
-        return this._protocol;
+    get peerAddress() {
+        return this._peerAddress;
     }
 
-    get host() {
-        return this._host;
-    }
-
-    get port() {
-        return this._port;
+    get netAddress() {
+        return this._netAddress;
     }
 
     get bytesReceived() {
@@ -80,7 +74,4 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 }
-PeerConnection.Protocol = {};
-PeerConnection.Protocol.WEBSOCKET = 'websocket';
-PeerConnection.Protocol.WEBRTC = 'webrtc';
 Class.register(PeerConnection);

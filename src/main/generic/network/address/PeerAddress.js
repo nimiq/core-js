@@ -123,6 +123,8 @@ class RtcPeerAddress extends PeerAddress {
 
         this._signalId = signalId;
         this._distance = distance;
+
+        this._signalChannel = null;
     }
 
     static unserialize(buf) {
@@ -176,6 +178,15 @@ class RtcPeerAddress extends PeerAddress {
     // Changed when passed on to other peers.
     set distance(value) {
         this._distance = value;
+    }
+
+    get signalChannel() {
+        return this._signalChannel;
+    }
+
+    // Set to the receiving channel when received from other peers.
+    set signalChannel(value) {
+        this._signalChannel = value;
     }
 }
 Class.register(RtcPeerAddress);

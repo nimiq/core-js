@@ -8,7 +8,7 @@ class WebSocketConnector extends Observable {
         super();
         const port = NetworkConfig.myPeerAddress().port;
         const sslConfig = NetworkConfig.getSSLConfig();
-        
+
         const options = {
             key: fs.readFileSync(sslConfig.key),
             cert: fs.readFileSync(sslConfig.cert)
@@ -29,12 +29,13 @@ class WebSocketConnector extends Observable {
         if (!Services.isWebSocket(peerAddress.services)) throw 'Malformed peerAddress';
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
-    	ws.onopen = () => this._onConnection(ws);
+    	ws.onopen = () => this._onConnection(ws, peerAddress);
         ws.onerror = e => this.fire('error', peerAddress, e);
     }
 
-    _onConnection(ws) {
-        const conn = new PeerConnection(ws, PeerConnection.Protocol.WEBSOCKET, ws._socket.remoteAddress, ws._socket.remotePort);
+    _onConnection(ws, peerAddress) {
+        const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress, ws._socket.remotePort);
+        const conn = new PeerConnection(ws, peerAddress, netAddress);
         this.fire('connection', conn);
     }
 }

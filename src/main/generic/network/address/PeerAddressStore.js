@@ -141,16 +141,3 @@ class PeerAddresses extends Observable {
     }
 }
 Class.register(PeerAddresses);
-
-class PeerAddress extends NetAddress {
-    constructor(netAddress, signalChannel) {
-        super(netAddress.services, netAddress.timestamp, netAddress.host,
-            netAddress.port, netAddress.signalId, netAddress.distance);
-        this._signalChannel = signalChannel;
-    }
-
-    get signalChannel() {
-        return this._signalChannel;
-    }
-}
-Class.register(PeerAddress);
