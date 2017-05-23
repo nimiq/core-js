@@ -74,7 +74,7 @@ class Mempool extends Observable {
 
     async _verifyTransactionBalance(transaction, quiet) {
         // Verify balance and nonce:
-        // - sender account balance must be greater or equal the transaction value.
+        // - sender account balance must be greater or equal the transaction value + fee.
         // - sender account nonce must match the transaction nonce.
         const senderAddr = await transaction.senderAddr();
         const senderBalance = await this._accounts.getBalance(senderAddr);
@@ -83,7 +83,7 @@ class Mempool extends Observable {
             return;
         }
 
-        if (senderBalance.value < transaction.value) {
+        if (senderBalance.value < (transaction.value + transaction.fee)) {
             if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
             return false;
         }
