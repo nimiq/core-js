@@ -4,8 +4,9 @@ class ObjectDB extends TypedDB {
     }
 
     async key(obj) {
-        if (!obj.hash) throw 'ObjectDB requires objects with a .hash() method';
-        return BufferUtils.toBase64(await obj.hash());
+        if (obj.hash) return BufferUtils.toBase64(await obj.hash());
+        if (obj.hashCode) return obj.hashCode();
+        throw 'ObjectDB requires objects with a .hash() or .hashCode() method';
     }
 
     async get(key) {

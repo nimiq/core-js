@@ -19,6 +19,7 @@ class BaseTypedDB {
                 db.createObjectStore('blocks');
                 db.createObjectStore('certificate');
                 db.createObjectStore('wallet');
+                db.createObjectStore('peers');
             };
         });
     }

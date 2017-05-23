@@ -127,9 +127,9 @@ class PeerConnector extends Observable {
             // Validate that the signalId given in the session description matches
             // the advertised signalId.
             const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
-            if (signalId !== this._remoteId) {
+            if (signalId !== this._peerAddress.signalId) {
                 // TODO what to do here?
-                console.error('Invalid remote description received: expected signalId ' + this._remoteId + ', got ' + signalId);
+                console.error('Invalid remote description received: expected signalId ' + this._peerAddress.signalId + ', got ' + signalId);
                 return;
             }
 
@@ -167,25 +167,16 @@ class PeerConnector extends Observable {
 
 	_onP2PChannel(event) {
     	const channel = event.channel || event.target;
-        const conn = new PeerConnection(channel, PeerConnection.Protocol.WEBRTC, host, port);
+
+        // FIXME it is not robust to assume that the last iceCandidate seen is
+        // actually the address that we connected to.
+        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
+        const conn = new PeerConnection(channel, this._peerAddress, netAddress);
     	this.fire('connection', conn);
 	}
 
 	_errorLog(error) {
     	console.error(error);
-	}
-
-    // deprecated
-	_getPeerId() {
-		const desc = this._rtcConnection.remoteDescription;
-		return PeerConnector.sdpToPeerId(desc.sdp);
-	}
-    // deprecated
-	static sdpToPeerId(sdp) {
-		return sdp
-			.match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
-			.replace(/:/g, '') 							// replace colons
-			.slice(1, 32); 								// truncate hash to 16 bytes
 	}
 }
 

@@ -20,14 +20,18 @@ class Network extends Observable {
         this._agents = {};
 
         // All addresses we are currently connected to including our own address.
-        this._activeAddresses = {}
+        this._activeAddresses = {};
         this._activeAddresses[NetworkConfig.myPeerAddress()] = true;
 
         // All peer addresses we know.
         this._addresses = new PeerAddresses();
 
         // Relay new addresses to peers.
+        // FIXME relay addresses only to a few peers
         this._addresses.on('addresses-added', addresses => {
+            // XXX FIXME address flooding
+            // TODO never relay seed addresses
+            // TODO don't relay if handshake hasn't finished yet.
             for (let key in this._agents) {
                 this._agents[key].relayAddresses(addresses);
             }

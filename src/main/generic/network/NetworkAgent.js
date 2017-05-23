@@ -180,6 +180,8 @@ class NetworkAgent extends Observable {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) return;
 
+        // TODO reject messages that contain more than 1000 addresses (bitcoin), drop peer
+        
         console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
 
         // Clear the getaddr timeout.
@@ -207,6 +209,7 @@ class NetworkAgent extends Observable {
         const addresses = this._addresses.findByServices(msg.serviceMask);
 
         // TODO we could exclude the knowAddresses from the response.
+        // TODO never return seed addresses.
 
         // Send the addresses back to the peer.
         this._channel.addr(addresses);
