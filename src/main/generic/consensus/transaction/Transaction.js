@@ -5,7 +5,7 @@ class Transaction {
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
-        if (!NumberUtils.isUint32(fee)) throw 'Malformed fee';
+        if (!NumberUtils.isUint64(fee)) throw 'Malformed fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw 'Malformed signature';
@@ -34,7 +34,7 @@ class Transaction {
         const senderPubKey = PublicKey.unserialize(buf);
         const recipientAddr = Address.unserialize(buf);
         const value = buf.readUint64();
-        const fee = buf.readUint32();
+        const fee = buf.readUint64();
         const nonce = buf.readUint32();
         const signature = Signature.unserialize(buf);
         return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
@@ -57,7 +57,7 @@ class Transaction {
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
-        buf.writeUint32(this._fee);
+        buf.writeUint64(this._fee);
         buf.writeUint32(this._nonce);
         return buf;
     }
@@ -66,7 +66,7 @@ class Transaction {
         return this._senderPubKey.serializedSize
             + this._recipientAddr.serializedSize
             + /*value*/ 8
-            + /*fee*/ 4
+            + /*fee*/ 8
             + /*nonce*/ 4;
     }
 
