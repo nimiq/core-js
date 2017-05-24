@@ -1,5 +1,4 @@
 class Blockchain extends Observable {
-
     static async getPersistent(accounts) {
         const store = BlockchainStore.getPersistent();
         return await new Blockchain(store, accounts);
@@ -8,6 +7,10 @@ class Blockchain extends Observable {
     static async createVolatile(accounts) {
         const store = BlockchainStore.createVolatile();
         return await new Blockchain(store, accounts);
+    }
+
+    static get BLOCK_TIMESTAMP_DRIFT_MAX() {
+        return 1000 * 60 * 15; // 15 minutes
     }
 
     constructor(store, accounts) {
@@ -43,6 +46,7 @@ class Blockchain extends Observable {
         this._headHash = await this._mainChain.hash();
 
         // Fetch the path along the main chain.
+        // XXX optimize this!
         this._mainPath = await this._fetchPath(this.head);
 
         // Automatically commit the chain head if the accountsHash matches.
@@ -195,6 +199,13 @@ class Blockchain extends Observable {
                 return false;
             }
             pubKeys[tx.publicKey] = true;
+        }
+
+        // Verify that the block's timestamp is not too far in the future.
+        // TODO Use network-adjusted time (see https://en.bitcoin.it/wiki/Block_timestamp).
+        if (block.header.timestamp > Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) {
+            console.warn('Blockchain rejected block - timestamp too far in the future');
+            return false;
         }
 
         // Everything checks out.
