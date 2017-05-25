@@ -31,7 +31,7 @@ class Primitive extends Uint8Array {
     toString() {
         return this.toBase64();
     }
-    
+
     toBase64() {
         return BufferUtils.toBase64(this);
     }
