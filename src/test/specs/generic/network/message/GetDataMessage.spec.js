@@ -38,10 +38,10 @@ describe('GetDataMessage', () => {
 	
     it('must have well defined vectors', () => {
         expect( () => {
-            const test1 = new GetDataMessage(undefined)
+            const test1 = new GetDataMessage(undefined);
         }).toThrow('Malformed vectors');
         expect( () => {
-            const test1 = new GetDataMessage([undefined])
+            const test1 = new GetDataMessage([undefined]);
         }).toThrow('Malformed vectors');
     }); 
 

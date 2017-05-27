@@ -23,16 +23,16 @@ class AccountsTree extends Observable {
         if (!rootKey) {
             rootKey = await this._store.put(new AccountsTreeNode());
             await this._store.setRootKey(rootKey);
-        };
+        }
         return this;
     }
 
     put(address, balance, transaction) {
-        return new Promise( (resolve, error) => {
-            this._synchronizer.push( _ => {
+        return new Promise((resolve, error) => {
+            this._synchronizer.push(_ => {
                 return this._put(address, balance, transaction);
             }, resolve, error);
-        })
+        });
     }
 
     async _put(address, balance, transaction) {
@@ -140,6 +140,7 @@ class AccountsTree extends Observable {
             // The node has no children left, continue pruning.
             prefix = node.prefix;
         }
+        return undefined;
     }
 
     async _updateKeys(transaction, prefix, nodeKey, rootPath) {
@@ -188,8 +189,8 @@ class AccountsTree extends Observable {
         // Descend into the matching child node if one exists.
         const childKey = node.getChild(address);
         if (childKey) {
-          const childNode = await transaction.get(childKey);
-          return await this._retrieve(transaction, childNode, address);
+            const childNode = await transaction.get(childKey);
+            return await this._retrieve(transaction, childNode, address);
         }
 
         // No matching child exists, the requested address is not part of this node.
@@ -200,15 +201,15 @@ class AccountsTree extends Observable {
         const tx = await this._store.transaction();
         const that = this;
         return {
-            get: function(address) {
+            get: function (address) {
                 return that.get(address, tx);
             },
 
-            put: function(address, balance) {
+            put: function (address, balance) {
                 return that.put(address, balance, tx);
             },
 
-            commit: function() {
+            commit: function () {
                 return tx.commit();
             }
         };
@@ -283,7 +284,7 @@ class AccountsTreeNode {
             this.balance.serialize(buf);
         } else if (this.children) {
             // branch node
-            const childCount = this.children.reduce( (count, val) => count + !!val, 0);
+            const childCount = this.children.reduce((count, val) => count + !!val, 0);
             buf.writeUint8(childCount);
             for (let i = 0; i < this.children.length; ++i) {
                 if (this.children[i]) {
@@ -303,7 +304,7 @@ class AccountsTreeNode {
             + (!this.balance ? /*childCount*/ 1 : 0)
             // The children array contains undefined values for non existant children.
             // Only count existing ones.
-            + (this.children ? this.children.reduce( (count, val) => count + !!val, 0)
+            + (this.children ? this.children.reduce((count, val) => count + !!val, 0)
                 * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
     }
 
@@ -321,7 +322,7 @@ class AccountsTreeNode {
     }
 
     hasChildren() {
-        return this.children && this.children.some( child => !!child);
+        return this.children && this.children.some(child => !!child);
     }
 
     hash() {

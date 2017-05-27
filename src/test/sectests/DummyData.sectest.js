@@ -18,37 +18,32 @@ Dummy.signature2 = '00v2Siqx3zh1bcoofmw4LVzYFuDKpcmStEl8zZeBpYZ6chVU0eeuP+i+/CuN
 Dummy.signature3 = 'mU04AuXE5QcLPPvQbtdWzjHeB6oNVjxdfPRXfPWmJx/YgBAIFfogOT7wasBiOIx8n/YKMoK0VWLVarl2KLiKvQ==';
 
 
-
- /* 
-
-# Dummy Generators 
-
-## sha256 hash
-
-Crypto
-	.sha256(BufferUtils.fromAscii('hello'))
-    .then(BufferUtils.toBase64)
-    .then(copy)
-
-
-
-## Address
-
-Crypto
-	.sha256(BufferUtils.fromAscii('should be the public key'))
-    .then(hash => hash.slice(0,20))
-    .then(BufferUtils.toBase64)
-    .then(copy)
-
-
-
-## publicKey
-
-Crypto
-	.generateKeys()
-	.then(keys => Crypto.exportPublic(keys.publicKey))
-	.then(BufferUtils.toBase64)
-	.then(copy)
-
-
-  */
+// # Dummy Generators 
+//
+// ## sha256 hash
+//
+// Crypto
+// 	.sha256(BufferUtils.fromAscii('hello'))
+//     .then(BufferUtils.toBase64)
+//     .then(copy)
+//
+//
+//
+// ## Address
+//
+// Crypto
+// 	.sha256(BufferUtils.fromAscii('should be the public key'))
+//     .then(hash => hash.slice(0,20))
+//     .then(BufferUtils.toBase64)
+//     .then(copy)
+//
+//
+//
+// ## publicKey
+//
+// Crypto
+// 	.generateKeys()
+// 	.then(keys => Crypto.exportPublic(keys.publicKey))
+// 	.then(BufferUtils.toBase64)
+// 	.then(copy)
+//

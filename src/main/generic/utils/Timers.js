@@ -35,10 +35,10 @@ class Timers {
     }
 
     clearAll() {
-        for (var key in this._timeouts) {
+        for (const key in this._timeouts) {
             this.clearTimeout(key);
         }
-        for (var key in this._intervals) {
+        for (const key in this._intervals) {
             this.clearInterval(key);
         }
     }

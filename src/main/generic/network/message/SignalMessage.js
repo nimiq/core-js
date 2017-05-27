@@ -9,14 +9,14 @@ class SignalMessage extends Message {
         this._payload = payload;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
+    static unserialize(buf) {
+        Message.unserialize(buf);
         const senderId = buf.readUint64();
         const recipientId = buf.readUint64();
         const length = buf.readUint16();
         const payload = buf.read(length);
-		return new SignalMessage(senderId, recipientId, payload);
-	}
+        return new SignalMessage(senderId, recipientId, payload);
+    }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);

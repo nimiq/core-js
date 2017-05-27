@@ -12,33 +12,33 @@ class RejectMessage extends Message {
         this._extraData = extraData;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
-		const messageType = buf.readVarLengthString();
+    static unserialize(buf) {
+        Message.unserialize(buf);
+        const messageType = buf.readVarLengthString();
         const code = buf.readUint8();
         const reason = buf.readVarLengthString();
         // TODO extraData
-		return new BlockMessage(block);
-	}
+        return new BlockMessage(block);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
         buf.writeVarLengthString(this._messageType);
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
         // TODO extraData
-		return buf;
-	}
+        return buf;
+    }
 
-	get serializedSize() {
-		return super.serializedSize
+    get serializedSize() {
+        return super.serializedSize
             + /*messageType VarLengthString extra byte*/ 1
-			+ this._messageType.length
+            + this._messageType.length
             + /*code*/ 1
             + /*reason VarLengthString extra byte*/ 1
-			+ this._reason.length;
-	}
+            + this._reason.length;
+    }
 
     get messageType() {
         return this._messageType;

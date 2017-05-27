@@ -34,9 +34,9 @@ class InvVector {
     }
 
     toString() {
-        return "InvVector{type=" + this._type + ", hash=" + this.hash + "}";
+        return 'InvVector{type=' + this._type + ', hash=' + this.hash + '}';
     }
-    
+
     get serializedSize() {
         return /*invType*/ 4
             + this._hash.serializedSize;
@@ -54,5 +54,5 @@ InvVector.Type = {
     ERROR: 0,
     TRANSACTION: 1,
     BLOCK: 2
-}
+};
 Class.register(InvVector);

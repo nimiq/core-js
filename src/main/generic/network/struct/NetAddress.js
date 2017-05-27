@@ -49,7 +49,7 @@ class NetAddress {
 
     toString() {
         return "NetAddress{services=" + this._services + ", host=" + this._host
-            + ", port=" + this._port + ", signalId=" + this._signalId + "}"
+            + ", port=" + this._port + ", signalId=" + this._signalId + "}";
     }
 
     get services() {
