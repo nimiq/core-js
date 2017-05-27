@@ -16,7 +16,7 @@ class HashMap {
         this._map[this._fnHash(key)] = value;
     }
 
-    remove(key) {
+    delete(key) {
         delete this._map[this._fnHash(key)];
     }
 

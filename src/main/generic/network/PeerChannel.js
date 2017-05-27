@@ -5,7 +5,7 @@ class PeerChannel extends Observable {
         this._conn.on('message', msg => this._onMessage(msg));
 
         // Forward specified events on the connection to listeners of this Observable.
-        this.bubble(this._conn, 'close', 'error');
+        this.bubble(this._conn, 'close', 'error', 'ban');
     }
 
     _onMessage(rawMsg) {
@@ -37,6 +37,10 @@ class PeerChannel extends Observable {
 
     close(reason) {
         this._conn.close(reason);
+    }
+
+    ban(reason) {
+        this._conn.ban(reason);
     }
 
     version(netAddress, startHeight) {
@@ -102,6 +106,10 @@ class PeerChannel extends Observable {
     equals(o) {
         return o instanceof PeerChannel
             && this._conn.equals(o.connection);
+    }
+
+    hashCode() {
+        return this.toString();
     }
 
     toString() {

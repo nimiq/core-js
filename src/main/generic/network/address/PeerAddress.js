@@ -4,7 +4,7 @@ class PeerAddress {
         this._services = services;
         this._timestamp = timestamp;
     }
-
+    
     static unserialize(buf) {
         const protocol = buf.readUint8();
         switch (protocol) {
@@ -12,7 +12,7 @@ class PeerAddress {
                 return WssPeerAddress.unserialize(buf);
 
             case PeerAddress.Protocol.RTC:
-                return RtcPeerAddress.unserialze(buf);
+                return RtcPeerAddress.unserialize(buf);
 
             default:
                 throw 'Malformed PeerAddress protocol ' + protocol;
@@ -49,6 +49,9 @@ class PeerAddress {
         return this._timestamp;
     }
 
+    set timestamp(value) {
+        this._timestamp = value;
+    }
 }
 PeerAddress.Protocol = {};
 PeerAddress.Protocol.WSS = 1;

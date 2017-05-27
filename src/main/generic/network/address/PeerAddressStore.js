@@ -13,11 +13,11 @@ class PersistentPeerAddressStore extends ObjectDB {
     constructor() {
         super('peers', PeerAddress);
     }
-
 }
 Class.register(PersistentPeerAddressStore);
 
-class VolatilePeerAddressStore extends PeerAddressStore {
-
+class VolatilePeerAddressStore {
+    constructor() {
+    }
 }
 Class.register(VolatilePeerAddressStore);

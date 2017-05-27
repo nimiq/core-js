@@ -12,7 +12,11 @@ class HashSet {
         this._map[this._fnHash(value)] = value;
     }
 
-    remove(value) {
+    get(value) {
+        return this._map[this._fnHash(value)];
+    }
+
+    delete(value) {
         delete this._map[this._fnHash(value)];
     }
 

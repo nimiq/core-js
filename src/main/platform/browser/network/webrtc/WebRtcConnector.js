@@ -21,7 +21,7 @@ class WebRtcConnector extends Observable {
     }
 
     connect(peerAddress) {
-        if (!(peerAddress instanceof RtcPeerAddress)) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== PeerAddress.Protocol.RTC) throw 'Malformed peerAddress';
         if (!peerAddress.signalChannel) throw 'peerAddress.signalChannel not set';
 
         const signalId = peerAddress.signalId;

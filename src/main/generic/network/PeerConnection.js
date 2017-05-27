@@ -48,10 +48,20 @@ class PeerConnection extends Observable {
         this._channel.close();
     }
 
+    ban(reason) {
+        console.warn(`Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
+        this._channel.close();
+        this.fire('ban', reason, this);
+    }
+
     equals(o) {
         return o instanceof PeerConnection
             && this.peerAddress.equals(o.peerAddress)
-            && this.netAddress.equals(o.netAddress)
+            && this.netAddress.equals(o.netAddress);
+    }
+
+    hashCode() {
+        return this.toString();
     }
 
     toString() {

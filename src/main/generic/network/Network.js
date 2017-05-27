@@ -17,25 +17,16 @@ class Network extends Observable {
         this._autoConnect = false;
 
         this._peerCount = 0;
-        this._agents = {};
+        this._agents = new HashMap();
 
         // All addresses we are currently connected to including our own address.
         this._activeAddresses = {};
-        this._activeAddresses[NetworkConfig.myPeerAddress()] = true;
 
         // All peer addresses we know.
         this._addresses = new PeerAddresses();
 
         // Relay new addresses to peers.
-        // FIXME relay addresses only to a few peers
-        this._addresses.on('addresses-added', addresses => {
-            // XXX FIXME address flooding
-            // TODO never relay seed addresses
-            // TODO don't relay if handshake hasn't finished yet.
-            for (let key in this._agents) {
-                this._agents[key].relayAddresses(addresses);
-            }
-        });
+        this._addresses.on('added', addresses => this._relayAddresses(addresses));
 
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -59,7 +50,7 @@ class Network extends Observable {
         this._autoConnect = false;
 
         // Close all active connections.
-        for (let key in this._agents) {
+        for (let agent of this._agents) {
             this._agents[key].channel.close('manual network disconnect');
         }
     }
@@ -75,6 +66,10 @@ class Network extends Observable {
                 agent.channel.close('manual websocket disconnect');
             }
         }
+    }
+
+    _relayAddresses(addresses) {
+
     }
 
     _checkPeerCount() {
@@ -95,17 +90,26 @@ class Network extends Observable {
         }
     }
 
-    _connect(peerAddress) {
-        console.log('Connecting to ' + peerAddress + ' (via ' + peerAddress.signalChannel + ')...');
+    _pickAddress() {
 
-        if (Services.isWebSocket(peerAddress.services)) {
+    }
+
+    _connect(peerAddress) {
+        console.log('Connecting to ' + peerAddress + ' (via ' + peerAddress.signalChannel + ') ...');
+
+        switch (peerAddress.protocol) {
+        case PeerAddress.Protocol.WSS:
             this._activeAddresses[peerAddress] = true;
             this._wsConnector.connect(peerAddress);
-        } else if (Services.isWebRtc(peerAddress.services)) {
+            break;
+
+        case PeerAddress.Protocol.RTC:
             this._activeAddresses[peerAddress] = true;
             this._rtcConnector.connect(peerAddress);
-        } else {
-            console.error('Cannot connect to ' + peerAddress + ' - neither WS nor RTC supported');
+            break;
+
+        default:
+            console.error('Cannot connect to ' + peerAddress + ' - unsupported protocol');
             _onError(peerAddress);
         }
     }
@@ -127,6 +131,7 @@ class Network extends Observable {
 
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
+        channel.on('ban', reason => this._onBan(channel, reason));
 
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
         agent.on('handshake', peer => this._onHandshake(peer));
@@ -138,12 +143,12 @@ class Network extends Observable {
     }
 
     // Connection to this peer address failed.
-    _onError(peerAddr) {
-        console.warn('Connection to ' + peerAddr + ' failed');
+    _onError(peerAddress) {
+        console.warn('Connection to ' + peerAddress + ' failed');
 
         // Remove peer address from addresses.
-        this._addresses.delete(peerAddr);
-        delete this._activeAddresses[peerAddr];
+        this._addresses.delete(peerAddress);
+        delete this._activeAddresses[peerAddress ];
 
         this._checkPeerCount();
     }
@@ -177,6 +182,11 @@ class Network extends Observable {
         this._checkPeerCount();
     }
 
+    // This peer channel was banned.
+    _onBan(channel, reason) {
+        this._addresses.ban(channel.peerAddress);
+    }
+
     // Handshake with this peer was successful.
     _onHandshake(peer) {
         // Store the net address of the peer to prevent duplicate connections.
@@ -203,6 +213,7 @@ class Network extends Observable {
     /* Signaling */
 
     _onSignal(channel, msg) {
+        // XXX Discard signals from myself.
         if (msg.senderId === NetworkConfig.mySignalId()) {
             console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
             return;
@@ -212,12 +223,13 @@ class Network extends Observable {
         if (msg.recipientId === NetworkConfig.mySignalId()) {
             this._rtcConnector.onSignal(channel, msg);
         }
+
         // Otherwise, try to forward the signal to the intented recipient.
         else {
             const peerAddress = this._addresses.findBySignalId(msg.recipientId);
             if (!peerAddress) {
                 // TODO send reject/unreachable message/signal if we cannot forward the signal
-                console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found', msg);
+                console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found');
                 return;
             }
 

@@ -1,24 +1,4 @@
 class NetworkAgent extends Observable {
-    static get HANDSHAKE_TIMEOUT() {
-        return 10000; // ms
-    }
-
-    static get PING_TIMEOUT() {
-        return 10000; // ms
-    }
-
-    static get GETADDR_TIMEOUT() {
-        return 5000; // ms
-    }
-
-    static get CONNECTIVITY_INTERVAL() {
-        return 60000; // ms
-    }
-
-    static get ANNOUNCE_ADDR_INTERVAL() {
-        return 1000 * 60 * 3; // 3 minutes
-    }
-
     constructor(blockchain, addresses, channel) {
         super();
         this._blockchain = blockchain;
@@ -34,8 +14,8 @@ class NetworkAgent extends Observable {
         // The peer object we create after the handshake completes.
         this._peer = null;
 
-        // All addresses that we think the remote peer knows.
-        this._knownAddresses = {};
+        // All peerAddresses that we think the remote peer knows.
+        this._knownAddresses = new HashSet();
 
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
@@ -55,13 +35,15 @@ class NetworkAgent extends Observable {
         this._handshake();
     }
 
-
-    /* Public API */
-
     relayAddresses(addresses) {
+        // Don't relay if the handshake hasn't finished yet.
+        if (!this._connected) {
+            return;
+        }
+
         // Only relay addresses that the peer doesn't know yet.
         // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
-        const unknownAddresses = addresses.filter(addr => !this._knownAddresses[addr]);
+        const unknownAddresses = addresses.filter(addr => !this._knownAddresses.contains(addr));
         if (unknownAddresses.length) {
             this._channel.addr(unknownAddresses);
         }
@@ -83,7 +65,9 @@ class NetworkAgent extends Observable {
 
     async _onVersion(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[VERSION] startHeight=' + msg.startHeight);
 
@@ -95,13 +79,6 @@ class NetworkAgent extends Observable {
         }
 
         // TODO actually check version, services and stuff.
-
-        // Distance to self must always be zero.
-        if (msg.netAddress.distance !== 0) {
-            console.warn('Invalid version message from ' + this._channel + ' - distance != 0');
-            this._channel.close('invalid version');
-            return;
-        }
 
         // Clear the version timeout.
         this._timers.clearTimeout('version');
@@ -115,7 +92,9 @@ class NetworkAgent extends Observable {
 
     _onVerAck(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[VERACK]');
 
@@ -135,15 +114,14 @@ class NetworkAgent extends Observable {
         this._peer = new Peer(
             this._channel,
             this._version.version,
-            this._version.netAddress,
             this._version.startHeight
         );
         this.fire('handshake', this._peer, this);
 
         // Remember that the peer has sent us this address.
-        this._knownAddresses[this._version.netAddress] = true;
+        this._knownAddresses.add(this._version.peerAddress);
 
-        // Store/Update the peer's netAddress.
+        // Store/update the peerAddress.
         this._addresses.push(this._channel, this._version.netAddress);
 
         // Setup regular connectivity check.
@@ -178,10 +156,17 @@ class NetworkAgent extends Observable {
 
     async _onAddr(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
-        // TODO reject messages that contain more than 1000 addresses (bitcoin), drop peer
-        
+        // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
+        if (msg.addresses.length > 1000) {
+            console.warn('Rejecting ADDR message - too many addresses');
+            this._channel.ban('ADDR message too large');
+            return;
+        }
+
         console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
 
         // Clear the getaddr timeout.
@@ -189,11 +174,11 @@ class NetworkAgent extends Observable {
 
         // Remember that the peer has sent us these addresses.
         for (let addr of msg.addresses) {
-            this._knownAddresses[addr] = true;
+            this._knownAddresses.add(addr);
         }
 
         // Put the new addresses in the address pool.
-        await this._addresses.push(this._channel, msg.addresses);
+        await this._addresses.add(this._channel, msg.addresses);
 
         // Tell listeners that we have received new addresses.
         this.fire('addr', msg.addresses, this);
@@ -201,7 +186,9 @@ class NetworkAgent extends Observable {
 
     _onGetAddr(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[GETADDR] serviceMask=' + msg.serviceMask);
 
@@ -231,7 +218,9 @@ class NetworkAgent extends Observable {
 
     _onPing(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[PING] nonce=' + msg.nonce);
 
@@ -277,4 +266,9 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
+NetworkAgent.HANDSHAKE_TIMEOUT = 10000; // ms
+NetworkAgent.PING_TIMEOUT = 10000; // ms
+NetworkAgent.GETADDR_TIMEOUT = 5000; // ms
+NetworkAgent.CONNECTIVITY_INTERVAL = 60000; // ms
+NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 3; // 3 minutes
 Class.register(NetworkAgent);
