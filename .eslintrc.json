@@ -33,6 +33,17 @@
             "error",
             "always"
         ],
+        "require-jsdoc": [
+            "warn",
+            {
+                "require": {
+                    "FunctionDeclaration": true,
+                    "MethodDefinition": true,
+                    "ClassDeclaration": true,
+                    "ArrowFunctionExpression": false
+                }
+            }
+        ],
         "consistent-return": "error",
         "prefer-const": "warn",
         "prefer-template": "warn",

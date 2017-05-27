@@ -22,10 +22,11 @@ before_install:
 - if [ "$TO_TEST" = "browser" ]; then sh -e /etc/init.d/xvfb start; fi
 - if [ "$TO_TEST" = "node" ]; then npm install -g jasmine; fi
 - if [ "$TO_TEST" = "node" ]; then npm --prefix src/main/platform/nodejs install src/main/platform/nodejs; fi
+- if [ "$TO_TEST" = "lint" ]; then npm install -g eslint; fi
 script:
 - if [ "$TO_TEST" = "browser" ]; then karma start --single-run; fi
 - if [ "$TO_TEST" = "node" ]; then jasmine; fi
-- if [ "$TO_TEST" = "lint" ]; then node_modules/.bin/gulp; fi
+- if [ "$TO_TEST" = "lint" ]; then eslint src *.js; fi
 
 notifications:
   slack:
