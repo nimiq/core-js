@@ -54,16 +54,16 @@ class ConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv',        msg => this._onInv(msg));
-        peer.channel.on('getdata',    msg => this._onGetData(msg));
-        peer.channel.on('notfound',   msg => this._onNotFound(msg));
-        peer.channel.on('block',      msg => this._onBlock(msg));
-        peer.channel.on('tx',         msg => this._onTx(msg));
-        peer.channel.on('getblocks',  msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool',    msg => this._onMempool(msg));
+        peer.channel.on('inv', msg => this._onInv(msg));
+        peer.channel.on('getdata', msg => this._onGetData(msg));
+        peer.channel.on('notfound', msg => this._onNotFound(msg));
+        peer.channel.on('block', msg => this._onBlock(msg));
+        peer.channel.on('tx', msg => this._onTx(msg));
+        peer.channel.on('getblocks', msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool', msg => this._onMempool(msg));
 
         // Clean up when the peer disconnects.
-        peer.channel.on('close',      () => this._onClose());
+        peer.channel.on('close', () => this._onClose());
 
         // Wait for the blockchain to processes queued blocks before requesting more.
         this._blockchain.on('ready', () => {
@@ -165,25 +165,25 @@ class ConsensusAgent extends Observable {
 
         // Check which of the advertised objects we know
         // Request unknown objects, ignore known ones.
-        const unknownObjects = []
+        const unknownObjects = [];
         for (let vector of msg.vectors) {
             switch (vector.type) {
-                case InvVector.Type.BLOCK:
+                case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
                     //console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (!block) {
                         unknownObjects.push(vector);
                     }
                     break;
-
-                case InvVector.Type.TRANSACTION:
+                }
+                case InvVector.Type.TRANSACTION: {
                     const tx = await this._mempool.getTransaction(vector.hash);
                     //console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (!tx) {
                         unknownObjects.push(vector);
                     }
                     break;
-
+                }
                 default:
                     throw 'Invalid inventory type: ' + vector.type;
             }
@@ -337,7 +337,7 @@ class ConsensusAgent extends Observable {
         const unknownObjects = [];
         for (let vector of msg.vectors) {
             switch (vector.type) {
-                case InvVector.Type.BLOCK:
+                case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
                     console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (block) {
@@ -348,8 +348,8 @@ class ConsensusAgent extends Observable {
                         unknownObjects.push(vector);
                     }
                     break;
-
-                case InvVector.Type.TRANSACTION:
+                }
+                case InvVector.Type.TRANSACTION: {
                     const tx = await this._mempool.getTransaction(vector.hash);
                     console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (tx) {
@@ -360,7 +360,7 @@ class ConsensusAgent extends Observable {
                         unknownObjects.push(vector);
                     }
                     break;
-
+                }
                 default:
                     throw 'Invalid inventory type: ' + vector.type;
             }
@@ -413,8 +413,9 @@ class ConsensusAgent extends Observable {
             // XXX Assert that the full path back to genesis is available in
             // blockchain.path. When the chain grows very long, it makes no
             // sense to keep the full path in memory.
-            if (this._blockchain.path.length !== this._blockchain.height)
+            if (this._blockchain.path.length !== this._blockchain.height) {
                 throw 'Blockchain.path.length != Blockchain.height';
+            }
 
             startIndex = 0;
         }

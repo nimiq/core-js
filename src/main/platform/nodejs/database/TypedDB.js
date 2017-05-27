@@ -10,9 +10,12 @@ class TypedDB {
     }
 
     getObject(key) {
-        return new Promise( (resolve, error) => {
+        return new Promise((resolve, error) => {
             this._db.get(key, {valueEncoding: 'binary'}, (err, value) => {
-                if (err) return resolve(undefined);
+                if (err) {
+                    resolve(undefined);
+                    return;
+                }
                 const buf = new SerialBuffer(value);
                 resolve(this._type.unserialize(buf));
             });
@@ -20,7 +23,7 @@ class TypedDB {
     }
 
     putObject(key, value) {
-        return new Promise( (resolve, error) => {
+        return new Promise((resolve, error) => {
             if (!value.serialize) throw 'NodeJS TypedDB required objects with .serialize()';
             const buf = value.serialize();
             this._db.put(key, buf, {valueEncoding: 'binary'}, err => err ? error(err) : resolve());
@@ -28,22 +31,25 @@ class TypedDB {
     }
 
     putString(key, value) {
-        return new Promise( (resolve, error) => {
+        return new Promise((resolve, error) => {
             this._db.put(key, value, {valueEncoding: 'ascii'}, err => err ? error(err) : resolve());
         });
     }
 
     getString(key) {
-        return new Promise( (resolve, error) => {
+        return new Promise((resolve, error) => {
             this._db.get(key, {valueEncoding: 'ascii'}, (err, value) => {
-                if (err) return resolve(undefined);
+                if (err) {
+                    resolve(undefined);
+                    return;
+                }
                 resolve(value);
             });
         });
     }
 
     delete(key) {
-        return new Promise( (resolve, error) => {
+        return new Promise((resolve, error) => {
             this._db.del(key, err => resolve());
         });
     }
@@ -79,7 +85,7 @@ class NativeDBTransaction extends Observable {
     }
 
     commit() {
-        this._batch.write( err => {
+        this._batch.write(err => {
             if (err) {
                 this.fire('error', err);
             } else {

@@ -24,7 +24,7 @@ class NetworkUtils {
         return {
             key : NetworkUtils._myKey,
             cert: NetworkUtils._myCert
-        }
+        };
     }
 }
 Class.register(NetworkUtils);

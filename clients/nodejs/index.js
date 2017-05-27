@@ -21,7 +21,7 @@ console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ',
 NetworkUtils.configureNetAddress(host, port);
 NetworkUtils.configureSSL(key, cert);
 
-Core.init( $ => {
+Core.init($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
     if (!passive) $.network.connect();

@@ -106,27 +106,27 @@ class WebRtcConnector extends Observable {
 }
 
 class PeerConnector extends Observable {
-	constructor(config, signalChannel, remoteId) {
-		super();
+    constructor(config, signalChannel, remoteId) {
+        super();
         this._signalChannel = signalChannel;
         this._remoteId = remoteId;
 
-		this._rtcConnection = new RTCPeerConnection(config);
-	    this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
-	}
+        this._rtcConnection = new RTCPeerConnection(config);
+        this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
+    }
 
-	onSignal(signal) {
-	    if (signal.sdp) {
-	        this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal), e => {
-	            if (signal.type == 'offer') {
-	                this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
-				}
-	        });
-	    } else if (signal.candidate) {
-			this._rtcConnection.addIceCandidate(new RTCIceCandidate(signal))
-				.catch( e => e );
-	    }
-	}
+    onSignal(signal) {
+        if (signal.sdp) {
+            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal), e => {
+                if (signal.type == 'offer') {
+                    this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
+                }
+            });
+        } else if (signal.candidate) {
+            this._rtcConnection.addIceCandidate(new RTCIceCandidate(signal))
+                .catch(e => e);
+        }
+    }
 
     _signal(signal) {
         this._signalChannel.signal(
@@ -136,63 +136,64 @@ class PeerConnector extends Observable {
         );
     }
 
-	_onIceCandidate(event) {
-    	if (event.candidate != null) {
-        	this._signal(event.candidate);
-    	}
-	}
+    _onIceCandidate(event) {
+        if (event.candidate != null) {
+            this._signal(event.candidate);
+        }
+    }
 
-	_onDescription(description) {
-    	this._rtcConnection.setLocalDescription(description, () => {
-        	this._signal(description);
-    	}, this._errorLog);
-	}
+    _onDescription(description) {
+        this._rtcConnection.setLocalDescription(description, () => {
+            this._signal(description);
+        }, this._errorLog);
+    }
 
-	_onP2PChannel(event) {
-    	const channel = event.channel || event.target;
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
         // TODO extract ip & port from session description
         // XXX Use "peerId" as host in the meantime.
         const host = this._remoteId;
         const port = 420;
         const conn = new PeerConnection(channel, PeerConnection.Protocol.WEBRTC, host, port);
-    	this.fire('connection', conn);
-	}
+        this.fire('connection', conn);
+    }
 
-	_errorLog(error) {
-    	console.error(error);
-	}
+    _errorLog(error) {
+        console.error(error);
+    }
 
     // deprecated
-	_getPeerId() {
-		const desc = this._rtcConnection.remoteDescription;
-		return PeerConnector.sdpToPeerId(desc.sdp);
-	}
+    _getPeerId() {
+        const desc = this._rtcConnection.remoteDescription;
+        return PeerConnector.sdpToPeerId(desc.sdp);
+    }
+
     // deprecated
-	static sdpToPeerId(sdp) {
-		return sdp
-			.match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
-			.replace(/:/g, '') 							// replace colons
-			.slice(1, 32); 								// truncate hash to 16 bytes
-	}
+    static sdpToPeerId(sdp) {
+        return sdp
+            .match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
+            .replace(/:/g, '') 							// replace colons
+            .slice(1, 32); 								// truncate hash to 16 bytes
+    }
 }
 
 class OutgoingPeerConnector extends PeerConnector {
-	constructor(config, signalChannel, remoteId) {
-		super(config, signalChannel, remoteId);
+    constructor(config, signalChannel, remoteId) {
+        super(config, signalChannel, remoteId);
 
         // Create offer.
-    	const channel = this._rtcConnection.createDataChannel('data-channel');
-    	channel.binaryType = 'arraybuffer';
+        const channel = this._rtcConnection.createDataChannel('data-channel');
+        channel.binaryType = 'arraybuffer';
         channel.onopen = e => this._onP2PChannel(e);
         this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
-	}
+    }
 
 }
 
 class IncomingPeerConnector extends PeerConnector {
-	constructor(config, signalChannel, remoteId, offer) {
-		super(config, signalChannel, remoteId);
+    constructor(config, signalChannel, remoteId, offer) {
+        super(config, signalChannel, remoteId);
         this._rtcConnection.ondatachannel = e => this._onP2PChannel(e);
-		this.onSignal(offer);
-	}
+        this.onSignal(offer);
+    }
 }

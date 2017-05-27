@@ -1,38 +1,38 @@
 class Hash extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 32;
-	}
+    static get SERIALIZED_SIZE() {
+        return 32;
+    }
 
-	constructor(arg) {
-		super(arg, Hash.SERIALIZED_SIZE);
-	}
+    constructor(arg) {
+        super(arg, Hash.SERIALIZED_SIZE);
+    }
 
-	static unserialize(buf) {
-		return new Hash(buf.read(Hash.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new Hash(buf.read(Hash.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
     get serializedSize() {
         return Hash.SERIALIZED_SIZE;
     }
 
-	equals(o) {
-		return o instanceof Hash
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof Hash
+            && super.equals(o);
+    }
 
-	static fromBase64(base64) {
-		return new Hash(BufferUtils.fromBase64(base64));
-	}
+    static fromBase64(base64) {
+        return new Hash(BufferUtils.fromBase64(base64));
+    }
 
-	static isHash(o) {
-		return o instanceof Hash;
-	}
+    static isHash(o) {
+        return o instanceof Hash;
+    }
 }
 Class.register(Hash);

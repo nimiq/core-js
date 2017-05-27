@@ -1,6 +1,6 @@
 // Print stack traces to the console.
-Error.prototype.toString = function() {
-	return this.stack;
+Error.prototype.toString = function () {
+    return this.stack;
 };
 
 global.atob = require('atob');

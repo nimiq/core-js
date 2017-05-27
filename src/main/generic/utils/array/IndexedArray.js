@@ -29,6 +29,8 @@ class IndexedArray {
         if (this[key] && key[0] !== '_') {
             return this[key].bind ? this[key].bind(this) : this[key];
         }
+
+        return undefined;
     }
 
     // TODO index access set, e.g. arr[5] = 42
@@ -36,7 +38,7 @@ class IndexedArray {
     push(value) {
         if (this._index[value] !== undefined) {
             if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
-            return;
+            return this._index[value];
         }
 
         const length = this._array.push(value);

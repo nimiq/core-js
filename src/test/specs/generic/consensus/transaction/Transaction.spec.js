@@ -6,20 +6,18 @@ describe('Transaction', () => {
     const nonce = 1;
     const signature = new Signature(Dummy.signature1);
 
-     it('is 169 bytes long', ()=>{
+    it('is 169 bytes long', () => {
 
-        /*
-            65 bytes senderPubKey
-            20 bytes recipientAddress
-             8 bytes value
-             8 bytes fee
-             4 bytes nonce
-            64 bytes signature
-           ----------------------------
-           165 bytes
-        */
+        //  65 bytes senderPubKey
+        //  20 bytes recipientAddress
+        //   8 bytes value
+        //   8 bytes fee
+        //   4 bytes nonce
+        //  64 bytes signature
+        // ----------------------------
+        // 165 bytes
 
-        const transaction1 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce,signature);
+        const transaction1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
         const serialized = transaction1.serialize();
         expect(serialized.byteLength).toBe(169);
     });
@@ -28,137 +26,137 @@ describe('Transaction', () => {
         // expect( () => {
         //     const test1 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, undefined);
         // }).toThrow('Malformed signature');
-        expect( () => {
-            const test2 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, null);
+        expect(() => {
+            const test2 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, null);
         }).toThrow('Malformed signature');
-        expect( () => {
-            const test3 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, true);
+        expect(() => {
+            const test3 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, true);
         }).toThrow('Malformed signature');
-        expect( () => {
-            const test4 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, -20);
+        expect(() => {
+            const test4 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, -20);
         }).toThrow('Malformed signature');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, new Uint8Array(64));
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, new Uint8Array(64));
         }).toThrow('Malformed signature');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce, new ArrayBuffer(64));
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, new ArrayBuffer(64));
         }).toThrow('Malformed signature');
     });
 
     it('must have a well defined senderPubKey (65 bytes)', () => {
-        expect( () => {
-            const test1 = new Transaction(undefined,recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test1 = new Transaction(undefined, recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test2 = new Transaction(null,recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test2 = new Transaction(null, recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test3 = new Transaction(true,recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test3 = new Transaction(true, recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test4 = new Transaction(new Address(),recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test4 = new Transaction(new Address(), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test5 = new Transaction(new Signature(),recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(new Signature(), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test5 = new Transaction(new Uint8Array(65),recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(new Uint8Array(65), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
-        expect( () => {
-            const test5 = new Transaction(new ArrayBuffer(65),recipientAddr,value,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(new ArrayBuffer(65), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
     });
 
     it('must have a well defined recipientAddr (20 bytes)', () => {
-        expect( () => {
-            const test1 = new Transaction(senderPubKey, undefined,value,fee,nonce,signature);
+        expect(() => {
+            const test1 = new Transaction(senderPubKey, undefined, value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
-        expect( () => {
-            const test2 = new Transaction(senderPubKey, null,value,fee,nonce,signature);
+        expect(() => {
+            const test2 = new Transaction(senderPubKey, null, value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
-        expect( () => {
-            const test3 = new Transaction(senderPubKey, true,value,fee,nonce,signature);
+        expect(() => {
+            const test3 = new Transaction(senderPubKey, true, value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
-        expect( () => {
-            const test4 = new Transaction(senderPubKey, new PublicKey(),value,fee,nonce,signature);
+        expect(() => {
+            const test4 = new Transaction(senderPubKey, new PublicKey(), value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, new Signature(),value,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, new Signature(), value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, new Uint8Array(20),value,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, new Uint8Array(20), value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
     });
 
     it('must have a well defined value (8 bytes)', () => {
-        expect( () => {
-            const test1 = new Transaction(senderPubKey, recipientAddr, undefined,fee,nonce,signature);
+        expect(() => {
+            const test1 = new Transaction(senderPubKey, recipientAddr, undefined, fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test2 = new Transaction(senderPubKey, recipientAddr, null,fee,nonce,signature);
+        expect(() => {
+            const test2 = new Transaction(senderPubKey, recipientAddr, null, fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test3 = new Transaction(senderPubKey, recipientAddr, true,fee,nonce,signature);
+        expect(() => {
+            const test3 = new Transaction(senderPubKey, recipientAddr, true, fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test4 = new Transaction(senderPubKey, recipientAddr, -20,fee,nonce,signature);
+        expect(() => {
+            const test4 = new Transaction(senderPubKey, recipientAddr, -20, fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, 0,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, 0, fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, new Uint8Array(20),fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, new Uint8Array(20), fee, nonce, signature);
         }).toThrow('Malformed value');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, Number.MAX_SAFE_INTEGER+1,fee,nonce,signature);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, Number.MAX_SAFE_INTEGER + 1, fee, nonce, signature);
         }).toThrow('Malformed value');
     });
 
     it('must have a well defined fee (8 bytes)', () => {
-        expect( () => {
-            const test1 = new Transaction(senderPubKey, recipientAddr, value, undefined,nonce);
+        expect(() => {
+            const test1 = new Transaction(senderPubKey, recipientAddr, value, undefined, nonce);
         }).toThrow('Malformed fee');
-        expect( () => {
-            const test2 = new Transaction(senderPubKey, recipientAddr, value, null,nonce);
+        expect(() => {
+            const test2 = new Transaction(senderPubKey, recipientAddr, value, null, nonce);
         }).toThrow('Malformed fee');
-        expect( () => {
-            const test3 = new Transaction(senderPubKey, recipientAddr, value, true,nonce);
+        expect(() => {
+            const test3 = new Transaction(senderPubKey, recipientAddr, value, true, nonce);
         }).toThrow('Malformed fee');
-        expect( () => {
-            const test4 = new Transaction(senderPubKey, recipientAddr, value, -20,nonce);
+        expect(() => {
+            const test4 = new Transaction(senderPubKey, recipientAddr, value, -20, nonce);
         }).toThrow('Malformed fee');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, value, new Uint8Array(20),nonce);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, value, new Uint8Array(20), nonce);
         }).toThrow('Malformed fee');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, value, Number.MAX_SAFE_INTEGER+1,nonce);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, value, Number.MAX_SAFE_INTEGER + 1, nonce);
         }).toThrow('Malformed fee');
     });
 
     it('must have a well defined nonce (4 bytes)', () => {
-        expect( () => {
+        expect(() => {
             const test1 = new Transaction(senderPubKey, recipientAddr, value, fee, undefined);
         }).toThrow('Malformed nonce');
-        expect( () => {
+        expect(() => {
             const test2 = new Transaction(senderPubKey, recipientAddr, value, fee, null);
         }).toThrow('Malformed nonce');
-        expect( () => {
+        expect(() => {
             const test3 = new Transaction(senderPubKey, recipientAddr, value, fee, true);
         }).toThrow('Malformed nonce');
-        expect( () => {
+        expect(() => {
             const test4 = new Transaction(senderPubKey, recipientAddr, value, fee, -20);
         }).toThrow('Malformed nonce');
-        expect( () => {
+        expect(() => {
             const test5 = new Transaction(senderPubKey, recipientAddr, value, fee, new Uint8Array(20));
         }).toThrow('Malformed nonce');
-        expect( () => {
-            const test5 = new Transaction(senderPubKey, recipientAddr, value, fee, Number.MAX_SAFE_INTEGER-1);
+        expect(() => {
+            const test5 = new Transaction(senderPubKey, recipientAddr, value, fee, Number.MAX_SAFE_INTEGER - 1);
         }).toThrow('Malformed nonce');
 
     });
 
     it('is serializable and unserializable', () => {
-        const tx1 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce,signature);
+        const tx1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
         const tx2 = Transaction.unserialize(tx1.serialize());
 
         expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
@@ -170,21 +168,21 @@ describe('Transaction', () => {
     });
 
     it('can falsify an invalid signature', (done) => {
-        const tx1 = new Transaction(senderPubKey,recipientAddr,value,fee,nonce,signature);
+        const tx1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
         tx1.verifySignature()
-            .then( isValid => {
+            .then(isValid => {
                 expect(isValid).toBe(false);
                 done();
-            })
-    })
+            });
+    });
 
     it('can verify a valid signature', (done) => {
         const tx1 = Transaction.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.validTransaction)));
         tx1.verifySignature()
-            .then( isValid => {
+            .then(isValid => {
                 expect(isValid).toBe(true);
                 done();
-            })
+            });
     });
 
 });

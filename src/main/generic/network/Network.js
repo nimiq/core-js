@@ -20,7 +20,7 @@ class Network extends Observable {
         this._agents = {};
 
         // All addresses we are currently connected to including our own address.
-        this._activeAddresses = {}
+        this._activeAddresses = {};
         this._activeAddresses[NetworkUtils.myNetAddress()] = true;
 
         // All peer addresses we know.

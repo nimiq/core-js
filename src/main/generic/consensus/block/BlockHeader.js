@@ -24,7 +24,7 @@ class BlockHeader {
         // XXX clear out cached hash
         o._hash = undefined;
         return o;
-	}
+    }
 
     static unserialize(buf) {
         var prevHash = Hash.unserialize(buf);
