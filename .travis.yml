@@ -12,6 +12,7 @@ addons:
 env:
 - TO_TEST=browser
 - TO_TEST=node
+- TO_TEST=lint
 
 node_js:
 - node
@@ -24,6 +25,7 @@ before_install:
 script:
 - if [ "$TO_TEST" = "browser" ]; then karma start --single-run; fi
 - if [ "$TO_TEST" = "node" ]; then jasmine; fi
+- if [ "$TO_TEST" = "lint" ]; then node_modules/.bin/gulp; fi
 
 notifications:
   slack:
