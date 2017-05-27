@@ -192,13 +192,13 @@ class Blockchain extends Observable {
         }
 
         // XXX Check that there is only one transaction per sender per block.
-        const pubKeys = {};
+        const senderPubKeys = {};
         for (let tx of block.body.transactions) {
-            if (pubKeys[tx.publicKey]) {
+            if (senderPubKeys[tx.senderPubKey]) {
                 console.warn('Blockchain rejected block - more than one transaction per sender');
                 return false;
             }
-            pubKeys[tx.publicKey] = true;
+            senderPubKeys[tx.senderPubKey] = true;
         }
 
         // Verify that the block's timestamp is not too far in the future.
