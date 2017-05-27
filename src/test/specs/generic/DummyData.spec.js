@@ -20,41 +20,36 @@ Dummy.signature3 = 'mU04AuXE5QcLPPvQbtdWzjHeB6oNVjxdfPRXfPWmJx/YgBAIFfogOT7wasBi
 // Transaction {_recipientAddr: Dummy.address1, _value: 9007199254740991, _fee: 1, _nonce: 4}
 Dummy.validTransaction = 'BHRjt7rp/Rt0BfsHyEDpJcCdpLS9811yp76Yy1An/NJ0voiRWw2sOtLZvxSoflYm7sVL963psAntQ3bmxOKH/UiR6SQPQVIjmC7cNFUyYwcQ6Up/UkM/////////P/AAAAAAAAAAAAAEpKNUjs8tXJjrrcRcAzDH4HUMpN8gSIiZT32G+iJZPejR5hWu24Z9NX73DzssJCsyTIM6iIG/z9UGQL3ucF7eKg==';
 
-if (typeof global !== 'undefined' ) {
-	global.Dummy = Dummy;
+if (typeof global !== 'undefined') {
+    global.Dummy = Dummy;
 }
 
 
-/*
-
-# Dummy Generators
-
-## sha256 hash
-
-Crypto
-	.sha256(BufferUtils.fromAscii('hello'))
-    .then(BufferUtils.toBase64)
-    .then(copy)
-
-
-
-## Address
-
-Crypto
-	.sha256(BufferUtils.fromAscii('should be the public key'))
-    .then(hash => hash.slice(0,20))
-    .then(BufferUtils.toBase64)
-    .then(copy)
-
-
-
-## publicKey
-
-Crypto
-	.generateKeys()
-	.then(keys => Crypto.exportPublic(keys.publicKey))
-	.then(BufferUtils.toBase64)
-	.then(copy)
-
-
-  */
+// # Dummy Generators
+//
+// ## sha256 hash
+//
+// Crypto
+// 	.sha256(BufferUtils.fromAscii('hello'))
+//     .then(BufferUtils.toBase64)
+//     .then(copy)
+//
+//
+//
+// ## Address
+//
+// Crypto
+// 	.sha256(BufferUtils.fromAscii('should be the public key'))
+//     .then(hash => hash.slice(0,20))
+//     .then(BufferUtils.toBase64)
+//     .then(copy)
+//
+//
+//
+// ## publicKey
+//
+// Crypto
+// 	.generateKeys()
+// 	.then(keys => Crypto.exportPublic(keys.publicKey))
+// 	.then(BufferUtils.toBase64)
+// 	.then(copy)

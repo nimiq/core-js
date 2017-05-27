@@ -2,19 +2,19 @@ class AddrMessage extends Message {
     constructor(addresses) {
         super(Message.Type.ADDR);
         if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.some( it => !(it instanceof PeerAddress))) throw 'Malformed addresses';
+            || addresses.some(it => !(it instanceof PeerAddress))) throw 'Malformed addresses';
         this._addresses = addresses;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
+    static unserialize(buf) {
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const addresses = [];
         for (let i = 0; i < count; ++i) {
             addresses.push(PeerAddress.unserialize(buf));
         }
-		return new AddrMessage(addresses);
-	}
+        return new AddrMessage(addresses);
+    }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);

@@ -17,7 +17,7 @@ npm install
 ```
 
 ### Run Testsuite
-- `gulp` runs the testsuite in your browser
+- `gulp test` runs the testsuite in your browser
 - `jasmine` runs the testsuite in NodeJs
 
 ### Build

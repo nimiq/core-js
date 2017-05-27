@@ -10,41 +10,76 @@
     ],
     "requireOperatorBeforeLineBreak": true,
     "requireCamelCaseOrUpperCaseIdentifiers": {
-        "allowedPrefixes": ["opt_"],
-        "allExcept": ["var_args"]
+        "allowedPrefixes": [
+            "opt_"
+        ],
+        "allExcept": [
+            "var_args"
+        ]
     },
     "maximumLineLength": {
-      "value": 80,
-      "allExcept": ["comments", "regex"]
+        "value": 120,
+        "allExcept": [
+            "comments",
+            "regex"
+        ]
     },
-    "validateIndentation": 2,
+    "validateIndentation": 4,
     "validateQuoteMarks": "'",
-
     "disallowMultipleLineStrings": true,
     "disallowMixedSpacesAndTabs": true,
     "disallowTrailingWhitespace": true,
     "disallowSpaceAfterPrefixUnaryOperators": true,
     "disallowMultipleVarDecl": true,
-    "disallowKeywordsOnNewLine": ["else"],
-
+    "disallowKeywordsOnNewLine": [
+        "else"
+    ],
     "requireSpaceAfterKeywords": [
-      "if",
-      "else",
-      "for",
-      "while",
-      "do",
-      "switch",
-      "return",
-      "try",
-      "catch"
+        "if",
+        "else",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "return",
+        "try",
+        "catch"
     ],
     "requireSpaceBeforeBinaryOperators": [
-        "=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=",
-        "&=", "|=", "^=", "+=",
-
-        "+", "-", "*", "/", "%", "<<", ">>", ">>>", "&",
-        "|", "^", "&&", "||", "===", "==", ">=",
-        "<=", "<", ">", "!=", "!=="
+        "=",
+        "+=",
+        "-=",
+        "*=",
+        "/=",
+        "%=",
+        "<<=",
+        ">>=",
+        ">>>=",
+        "&=",
+        "|=",
+        "^=",
+        "+=",
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "<<",
+        ">>",
+        ">>>",
+        "&",
+        "|",
+        "^",
+        "&&",
+        "||",
+        "===",
+        "==",
+        ">=",
+        "<=",
+        "<",
+        ">",
+        "!=",
+        "!=="
     ],
     "requireSpaceAfterBinaryOperators": true,
     "requireSpacesInConditionalExpression": true,
@@ -60,10 +95,11 @@
     "disallowSpacesInsideObjectBrackets": "all",
     "disallowSpacesInsideArrayBrackets": "all",
     "disallowSpacesInsideParentheses": true,
-
     "disallowMultipleLineBreaks": true,
     "disallowNewlineBeforeBlockStatements": true,
-    "disallowKeywords": ["with"],
+    "disallowKeywords": [
+        "with"
+    ],
     "disallowSpacesInFunctionExpression": {
         "beforeOpeningRoundBrace": true
     },
@@ -78,7 +114,6 @@
     "requireSemicolons": true,
     "validateParameterSeparator": ", ",
     "requireSpaceBetweenArguments": true,
-
     "jsDoc": {
         "checkAnnotations": "closurecompiler",
         "checkParamNames": true,

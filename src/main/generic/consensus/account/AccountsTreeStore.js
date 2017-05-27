@@ -27,10 +27,10 @@ class PersistentAccountsTreeStore extends ObjectDB {
         const tx = await super.transaction();
         tx.getRootKey = function(rootKey) {
             return tx.getString('root');
-        }
+        };
         tx.setRootKey = function(rootKey) {
             return tx.putString('root', rootKey);
-        }
+        };
         return tx;
     }
 }

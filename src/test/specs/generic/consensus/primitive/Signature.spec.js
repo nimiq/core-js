@@ -31,10 +31,10 @@ describe('Signature', () => {
 
 
     it('is serializable and unserializable', () => {
-    	const signature1 = new Signature(Dummy.signature1);
-    	const signature2 = Signature.unserialize(signature1.serialize());
+        const signature1 = new Signature(Dummy.signature1);
+        const signature2 = Signature.unserialize(signature1.serialize());
 
         expect(signature2.toBase64()).toEqual(Dummy.signature1);
-		expect(signature2.toBase64()).toEqual(Dummy.signature1);
+        expect(signature2.toBase64()).toEqual(Dummy.signature1);
     });
 });

@@ -30,22 +30,22 @@ describe('Message', () => {
 
     it('must have a well defined type (12 bytes)', () => {
         expect( () => {
-            const test1 = new Message(undefined)
+            const test1 = new Message(undefined);
         }).toThrow('Malformed type');
         expect( () => {
-            const test2 = new Message(null)
+            const test2 = new Message(null);
         }).toThrow('Malformed type');
         expect( () => {
-            const test3 = new Message(false)
+            const test3 = new Message(false);
         }).toThrow('Malformed type');
         expect( () => {
-            const test4 = new Message(true)
+            const test4 = new Message(true);
         }).toThrow('Malformed type');
         expect( () => {
-            const test5 = new Message('')
+            const test5 = new Message('');
         }).toThrow('Malformed type');
         expect( () => {
-            const test7 = new Message('aaaaaaaaaaaaa')
+            const test7 = new Message('aaaaaaaaaaaaa');
         }).toThrow('Malformed type');
     });
 

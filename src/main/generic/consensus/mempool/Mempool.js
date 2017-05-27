@@ -20,7 +20,7 @@ class Mempool extends Observable {
         const hash = await transaction.hash();
         if (this._transactions[hash]) {
             console.log('Mempool ignoring known transaction ' + hash.toBase64());
-            return;
+            return false;
         }
 
         // Fully verify the transaction against the current accounts state.
@@ -80,7 +80,7 @@ class Mempool extends Observable {
         const senderBalance = await this._accounts.getBalance(senderAddr);
         if (!senderBalance) {
             if (!quiet) console.warn('Mempool rejected transaction - sender account unknown');
-            return;
+            return false;
         }
 
         if (senderBalance.value < (transaction.value + transaction.fee)) {

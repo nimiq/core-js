@@ -1,17 +1,17 @@
 describe('InvVector', () => {
-	const type = 42;
-	const hash = new Hash(Dummy.hash1);
+    const type = 42;
+    const hash = new Hash(Dummy.hash1);
 
     it('is 36 bytes long', () => {
 
         /*
-             4 bytes type
-            32 bytes invHash
-           ----------------------------
-            36 bytes
-        */
+         4 bytes type
+         32 bytes invHash
+         ----------------------------
+         36 bytes
+         */
 
-        const vec1 = new InvVector(type,hash);
+        const vec1 = new InvVector(type, hash);
         const serialized = vec1.serialize();
         expect(serialized.byteLength).toBe(36);
         expect(vec1.serializedSize).toBe(36);

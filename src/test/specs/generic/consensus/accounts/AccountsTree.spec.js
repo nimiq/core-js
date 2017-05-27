@@ -5,7 +5,7 @@ describe('AccountsTree', () => {
         const balance2 = new Balance(8000000, 8);
         const address = new Address(Dummy.address1);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
             await tree.put(address, balance1);
 
@@ -23,7 +23,7 @@ describe('AccountsTree', () => {
         const balance1 = new Balance(value, nonce);
         const address = new Address(Dummy.address1);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
             await tree.put(address, balance1);
 
@@ -37,7 +37,7 @@ describe('AccountsTree', () => {
         test();
     });
 
-     it('can put and get multiple Balances', (done) => {
+    it('can put and get multiple Balances', (done) => {
         const value1 = 8;
         const nonce1 = 8;
         const balance1 = new Balance(value1, nonce1);
@@ -53,7 +53,7 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
 
             await tree.put(address1, balance1);
@@ -83,7 +83,7 @@ describe('AccountsTree', () => {
         const balance2 = new Balance(8000000, 8);
         const address = new Address(Dummy.address1);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
 
             await tree.put(address, balance1);
@@ -119,7 +119,7 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
 
             // order1
@@ -188,14 +188,14 @@ describe('AccountsTree', () => {
         const balance3 = new Balance(value3, nonce3);
         const address3 = new Address(Dummy.address3);
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
 
             await Promise.all([
-                    tree.put(address1, balance1),
-                    tree.put(address2, balance2),
-                    tree.put(address3, balance3)
-                ]);
+                tree.put(address1, balance1),
+                tree.put(address2, balance2),
+                tree.put(address3, balance3)
+            ]);
 
             const balanceTest1 = await tree.get(address1);
             expect(balanceTest1.value).toEqual(value1);
@@ -217,10 +217,10 @@ describe('AccountsTree', () => {
         test();
     });
 
-    it('represents the inital balance of an account implicitly',(done) => {
+    it('represents the inital balance of an account implicitly', (done) => {
         // Balance { value:0, nonce:0 } may not be stored explicitly
 
-        async function test(){
+        async function test() {
             const tree = await AccountsTree.createVolatile();
 
             const value1 = 8;
@@ -234,11 +234,11 @@ describe('AccountsTree', () => {
             const address2 = new Address(Dummy.address2);
 
 
-            await tree.put(address1,balance1);
+            await tree.put(address1, balance1);
             const root1 = await tree.root();
 
-            await tree.put(address2,balance2);
-            await tree.put(address2,new Balance(0,0));
+            await tree.put(address2, balance2);
+            await tree.put(address2, new Balance(0, 0));
 
             const root2 = await tree.root();
             expect(root2.toBase64()).toEqual(root1.toBase64());
@@ -247,6 +247,6 @@ describe('AccountsTree', () => {
         }
 
         test();
-    })
+    });
 
 });

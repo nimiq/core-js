@@ -1,8 +1,8 @@
 class Message {
-	constructor(type) {
+    constructor(type) {
         if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
         this._type = type;
-	}
+    }
 
     static peekType(buf) {
         // Store current read position.
@@ -26,9 +26,9 @@ class Message {
         const type = buf.readFixLengthString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
-		// TODO validate checksum
+        // TODO validate checksum
 
-		return new Message(type);
+        return new Message(type);
     }
 
     serialize(buf) {
@@ -47,48 +47,48 @@ class Message {
             + /*checksum*/ 4;
     }
 
-	get magic() {
+    get magic() {
         return this._magic;
-	}
+    }
 
-	get type() {
+    get type() {
         return this._type;
-	}
+    }
 
-	get length() {
+    get length() {
         return this._length;
-	}
+    }
 
-	get checksum() {
+    get checksum() {
         return this._checksum;
-	}
+    }
 }
 Message.MAGIC = 0x42042042;
 Message.Type = {
     VERSION: 'version',
-	VERACK: 'verack',
-	INV: 'inv',
-	GETDATA: 'getdata',
-	NOTFOUND: 'notfound',
-	GETBLOCKS: 'getblocks',
-	GETHEADERS: 'getheaders',
-	TX: 'tx',
-	BLOCK: 'block',
-	HEADERS: 'headers',
-	MEMPOOL: 'mempool',
-	REJECT: 'reject',
+    VERACK: 'verack',
+    INV: 'inv',
+    GETDATA: 'getdata',
+    NOTFOUND: 'notfound',
+    GETBLOCKS: 'getblocks',
+    GETHEADERS: 'getheaders',
+    TX: 'tx',
+    BLOCK: 'block',
+    HEADERS: 'headers',
+    MEMPOOL: 'mempool',
+    REJECT: 'reject',
 
-	ADDR: 'addr',
-	GETADDR: 'getaddr',
-	PING: 'ping',
-	PONG: 'pong',
+    ADDR: 'addr',
+    GETADDR: 'getaddr',
+    PING: 'ping',
+    PONG: 'pong',
 
-	SIGNAL: 'signal',
+    SIGNAL: 'signal',
 
-	SENDHEADERS: 'sendheaders',
+    SENDHEADERS: 'sendheaders',
 
     // Nimiq
     GETBALANCES: 'getbalances',
     BALANCES: 'balances'
-}
+};
 Class.register(Message);

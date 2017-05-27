@@ -27,7 +27,7 @@ class Crypto {
     }
 
     static importPrivate(privateKey) {
-        return Crypto.lib.importKey('pkcs8', privateKey);
+        return Crypto.lib.importKey('pkcs8', privateKey, Crypto.settings.keys, true, ['sign']);
     }
 
     static exportPublic(publicKey, format ='raw') {

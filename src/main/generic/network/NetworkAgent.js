@@ -229,7 +229,7 @@ class NetworkAgent extends Observable {
     }
 
     _onPong(msg) {
-        console.log('[PONG] nonce=' + msg.nonce)
+        console.log('[PONG] nonce=' + msg.nonce);
 
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout('ping_' + msg.nonce);

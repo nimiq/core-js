@@ -7,7 +7,7 @@ class WebSocketConnector extends Observable {
         if (peerAddress.protocol !== PeerAddress.Protocol.WSS) throw 'Malformed peerAddress';
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
-    	ws.onopen = () => {
+        ws.onopen = () => {
             const netAddress = NetAddress.fromHostname(peerAddress.host, peerAddress.port);
             const conn = new PeerConnection(ws, peerAddress, netAddress);
             this.fire('connection', conn);

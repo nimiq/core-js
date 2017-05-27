@@ -2,7 +2,6 @@ const WebSocket = require('ws');
 const https = require('https');
 const fs = require('fs');
 
-
 class WebSocketConnector extends Observable {
     constructor() {
         super();
@@ -29,7 +28,7 @@ class WebSocketConnector extends Observable {
         if (peerAddress.protocol !== PeerAddress.Protocol.WSS) throw 'Malformed peerAddress';
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
-    	ws.onopen = () => this._onConnection(ws, peerAddress);
+        ws.onopen = () => this._onConnection(ws, peerAddress);
         ws.onerror = e => this.fire('error', peerAddress, e);
     }
 
