@@ -170,27 +170,6 @@ class Blockchain extends Observable {
             return false;
         }
 
-        // Check that header bodyHash matches the actual bodyHash.
-        const bodyHash = await block.body.hash();
-        if (!block.header.bodyHash.equals(bodyHash)) {
-            console.warn('Blockchain rejecting block - body hash mismatch');
-            return false;
-        }
-
-        // Check that the headerHash matches the difficulty.
-        if (!await block.header.verifyProofOfWork()) {
-            console.warn('Blockchain rejected block - PoW verification failed');
-            return false;
-        }
-
-        // Check that all transaction signatures are valid.
-        for (let tx of block.body.transactions) {
-            if (!await tx.verifySignature()) {
-                console.warn('Blockchain rejected block - invalid transaction signature');
-                return false;
-            }
-        }
-
         // XXX Check that there is only one transaction per sender per block.
         const senderPubKeys = {};
         for (let tx of block.body.transactions) {
@@ -206,6 +185,27 @@ class Blockchain extends Observable {
         if (block.header.timestamp > Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) {
             console.warn('Blockchain rejected block - timestamp too far in the future');
             return false;
+        }
+
+        // Check that the headerHash matches the difficulty.
+        if (!await block.header.verifyProofOfWork()) {
+            console.warn('Blockchain rejected block - PoW verification failed');
+            return false;
+        }
+
+        // Check that header bodyHash matches the actual bodyHash.
+        const bodyHash = await block.body.hash();
+        if (!block.header.bodyHash.equals(bodyHash)) {
+            console.warn('Blockchain rejecting block - body hash mismatch');
+            return false;
+        }
+
+        // Check that all transaction signatures are valid.
+        for (let tx of block.body.transactions) {
+            if (!await tx.verifySignature()) {
+                console.warn('Blockchain rejected block - invalid transaction signature');
+                return false;
+            }
         }
 
         // Everything checks out.
