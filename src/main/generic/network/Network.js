@@ -90,27 +90,23 @@ class Network extends Observable {
         }
     }
 
-    _pickAddress() {
-
-    }
-
     _connect(peerAddress) {
         console.log('Connecting to ' + peerAddress + ' (via ' + peerAddress.signalChannel + ') ...');
 
         switch (peerAddress.protocol) {
-        case PeerAddress.Protocol.WSS:
-            this._activeAddresses[peerAddress] = true;
-            this._wsConnector.connect(peerAddress);
-            break;
+            case PeerAddress.Protocol.WSS:
+                this._activeAddresses[peerAddress] = true;
+                this._wsConnector.connect(peerAddress);
+                break;
 
-        case PeerAddress.Protocol.RTC:
-            this._activeAddresses[peerAddress] = true;
-            this._rtcConnector.connect(peerAddress);
-            break;
+            case PeerAddress.Protocol.RTC:
+                this._activeAddresses[peerAddress] = true;
+                this._rtcConnector.connect(peerAddress);
+                break;
 
-        default:
-            console.error('Cannot connect to ' + peerAddress + ' - unsupported protocol');
-            _onError(peerAddress);
+            default:
+                console.error('Cannot connect to ' + peerAddress + ' - unsupported protocol');
+                _onError(peerAddress);
         }
     }
 

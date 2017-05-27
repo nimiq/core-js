@@ -23,7 +23,7 @@ class NetworkConfig {
         return {
             key : NetworkConfig._myKey,
             cert: NetworkConfig._myCert
-        }
+        };
     }
 }
 Class.register(NetworkConfig);

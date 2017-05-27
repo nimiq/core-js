@@ -170,7 +170,7 @@ class PeerAddresses extends Observable {
         for (let addr of this._store.values()) {
             if (addr.timestamp > 0 && this._exceedsAge(addr)) {
                 console.log('Deleting old peer address ' + addr);
-                this._store.delete(addr)
+                this._store.delete(addr);
             }
         }
 

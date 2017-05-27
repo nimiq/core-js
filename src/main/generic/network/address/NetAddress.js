@@ -29,8 +29,8 @@ class NetAddress {
 
     equals(o) {
         return o instanceof NetAddress
-            && this._host = o.host
-            && this._port = o.port;
+            && this._host == o.host
+            && this._port == o.port;
     }
 
     hashCode() {

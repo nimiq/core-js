@@ -54,7 +54,7 @@ InvVector.Type = {
     ERROR: 0,
     TRANSACTION: 1,
     BLOCK: 2
-}
+};
 Class.register(InvVector);
 
 class BaseInventoryMessage extends Message {
