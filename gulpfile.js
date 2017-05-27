@@ -96,7 +96,7 @@ gulp.task('jscs', function () {
 
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
-    return gulp.src(['./src/main/**/*.js', './src/test/**/*.js'])
+    return gulp.src(['./src/main/**/*.js', './src/test/**/*.js', '!./src/**/node_modules/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failAfterError());
