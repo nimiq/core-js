@@ -15,8 +15,7 @@ module.exports = function (config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'dist/babel-runtime.js',
-            'dist/nimiq.js',
+            'dist/web.js',
             'src/test/specs/**/Dummy.spec.js',
             'src/test/specs/**/*.spec.js'
         ],
