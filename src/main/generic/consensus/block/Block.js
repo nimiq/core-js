@@ -92,7 +92,7 @@ class Block {
 /* Genesis Block */
 Block.GENESIS = new Block(
     new BlockHeader(
-        new Hash(),
+        new Hash(null),
         new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='),
         new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),
         BlockUtils.difficultyToCompact(1),
