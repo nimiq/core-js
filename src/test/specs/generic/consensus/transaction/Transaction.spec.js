@@ -54,10 +54,10 @@ describe('Transaction', () => {
             const test3 = new Transaction(true, recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
         expect(() => {
-            const test4 = new Transaction(new Address(), recipientAddr, value, fee, nonce, signature);
+            const test4 = new Transaction(new Address(null), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
         expect(() => {
-            const test5 = new Transaction(new Signature(), recipientAddr, value, fee, nonce, signature);
+            const test5 = new Transaction(new Signature(null), recipientAddr, value, fee, nonce, signature);
         }).toThrow('Malformed senderPubKey');
         expect(() => {
             const test5 = new Transaction(new Uint8Array(65), recipientAddr, value, fee, nonce, signature);
@@ -78,10 +78,10 @@ describe('Transaction', () => {
             const test3 = new Transaction(senderPubKey, true, value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
         expect(() => {
-            const test4 = new Transaction(senderPubKey, new PublicKey(), value, fee, nonce, signature);
+            const test4 = new Transaction(senderPubKey, new PublicKey(null), value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
         expect(() => {
-            const test5 = new Transaction(senderPubKey, new Signature(), value, fee, nonce, signature);
+            const test5 = new Transaction(senderPubKey, new Signature(null), value, fee, nonce, signature);
         }).toThrow('Malformed recipientAddr');
         expect(() => {
             const test5 = new Transaction(senderPubKey, new Uint8Array(20), value, fee, nonce, signature);
