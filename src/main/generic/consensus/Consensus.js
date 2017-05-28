@@ -21,7 +21,7 @@ class Consensus extends Observable {
             // Don't announce head changes if we are not synced yet.
             if (!this._established) return;
 
-            for (let peerId in this._agents) {
+            for (const peerId in this._agents) {
                 this._agents[peerId].relayBlock(head);
             }
         });
@@ -31,7 +31,7 @@ class Consensus extends Observable {
             // Don't relay transactions if we are not synced yet.
             if (!this._established) return;
 
-            for (let peerId in this._agents) {
+            for (const peerId in this._agents) {
                 this._agents[peerId].relayTransaction(tx);
             }
         });
@@ -59,7 +59,7 @@ class Consensus extends Observable {
         // Find the peer with the highest chain that isn't sync'd yet.
         let bestHeight = -1;
         let bestAgent = null;
-        for (let key in this._agents) {
+        for (const key in this._agents) {
             const agent = this._agents[key];
             if (!agent.synced && agent.peer.startHeight >= bestHeight) {
                 bestHeight = agent.peer.startHeight;
@@ -69,8 +69,8 @@ class Consensus extends Observable {
 
         if (!bestAgent) {
             // We are synced with all connected peers.
-            console.log('Synced with all connected peers (' + Object.keys(this._agents).length + '), consensus established.');
-            console.log('Blockchain: height=' + this._blockchain.height + ', totalWork=' + this._blockchain.totalWork + ', headHash=' + this._blockchain.headHash.toBase64());
+            console.log(`Synced with all connected peers (${Object.keys(this._agents).length}), consensus established.`);
+            console.log(`Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash.toBase64()}`);
 
             this._syncing = false;
             this._established = true;
@@ -79,7 +79,7 @@ class Consensus extends Observable {
             return;
         }
 
-        console.log('Syncing blockchain with peer ' + bestAgent.peer);
+        console.log(`Syncing blockchain with peer ${bestAgent.peer}`);
 
         this._syncing = true;
 

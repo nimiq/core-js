@@ -55,7 +55,7 @@ class Miner extends Observable {
         const block = await this._getNextBlock();
         const buffer = block.header.serialize();
 
-        console.log('Miner starting work on ' + block.header + ', transactionCount=' + block.transactionCount + ', hashrate=' + this._hashrate + ' H/s');
+        console.log(`Miner starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
         // Start hashing.
         this._mine(block, buffer);

@@ -8,12 +8,12 @@ class Wallet {
             keys = await Crypto.generateKeys();
             await db.put('keys', keys);
         }
-        return await new Wallet(keys, accounts, mempool);
+        return new Wallet(keys, accounts, mempool);
     }
 
     static async createVolatile(accounts, mempool) {
         const keys = await Crypto.generateKeys();
-        return await new Wallet(keys, accounts, mempool);
+        return new Wallet(keys, accounts, mempool);
     }
 
     constructor(keys, accounts, mempool) {
@@ -42,7 +42,7 @@ class Wallet {
         return this._signTransaction(transaction);
     }
 
-    async _signTransaction(transaction) {
+    _signTransaction(transaction) {
         return Crypto.sign(this._keys.privateKey, transaction.serializeContent())
             .then(signature => {
                 transaction.signature = signature;
@@ -64,7 +64,7 @@ class Wallet {
         return this._publicKey;
     }
 
-    async getBalance(accounts) {
+    getBalance() {
         return this._accounts.getBalance(this.address);
     }
 }
