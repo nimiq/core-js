@@ -4,7 +4,7 @@ class NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        return new WssNetAddress(
+        return new WssPeerAddress(
             Services.myServices(), Date.now(),
             NetworkConfig._myHost, NetworkConfig._myPort);
     }
