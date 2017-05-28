@@ -259,7 +259,7 @@ class Network extends Observable {
 
         // XXX Discard signals from myself.
         if (msg.senderId === mySignalId) {
-            console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
+            console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel + ' (myId: ' + mySignalId + ')');
             return;
         }
 
@@ -279,7 +279,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + mySignalId + '): ' + BufferUtils.toAscii(msg.payload));
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel + ')');
         }
     }
 
