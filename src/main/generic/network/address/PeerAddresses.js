@@ -357,7 +357,8 @@ class PeerAddresses extends Observable {
     // Delete all RTC-only peer addresses that are signalable over the given channel.
     _deleteBySignalChannel(channel) {
         // XXX inefficient linear scan
-        for (let addr of this._store.values()) {
+        for (let peerAddressState of this._store.values()) {
+            const addr = peerAddressState.peerAddress;
             if (addr.protocol === Protocol.RTC && channel.equals(addr.signalChannel)) {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);

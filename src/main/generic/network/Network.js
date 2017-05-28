@@ -299,11 +299,13 @@ class Network extends Observable {
     }
 
     get bytesReceived() {
-        return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
+        // FIXME return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
+        return 0;
     }
 
     get bytesSent() {
-        return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
+        // FIXME return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
+        return 0;
     }
 }
 Network.PEER_COUNT_DESIRED = 12;

@@ -109,7 +109,7 @@ class WebRtcConnector extends Observable {
         delete this._connectors[signalId];
     }
 }
-WebRtcConnector.CONNECT_TIMEOUT = 10000; // ms
+WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 
 class PeerConnector extends Observable {
     constructor(config, signalChannel, signalId) {
@@ -188,11 +188,10 @@ class OutboundPeerConnector extends PeerConnector {
 
         // FIXME it is not robust to assume that the last iceCandidate seen is
         // actually the address that we connected to.
-        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
+        const netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
         const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
         this.fire('connection', conn);
     }
-
 }
 
 class InboundPeerConnector extends PeerConnector {
@@ -207,7 +206,7 @@ class InboundPeerConnector extends PeerConnector {
 
         // FIXME it is not robust to assume that the last iceCandidate seen is
         // actually the address that we connected to.
-        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
+        const netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
         const conn = new PeerConnection(channel, Protocol.RTC, netAddress, /*peerAddress*/ null);
         this.fire('connection', conn);
     }
