@@ -177,11 +177,11 @@ class NetworkAgent extends Observable {
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.findByServices(msg.serviceMask);
 
-        // TODO we could exclude the knowAddresses from the response.
-        // TODO never return seed addresses.
+        // Exclude known addresses from the response.
+        const unknownAddresses = addresses.filter(addr => !this._knownAddresses.contains(addr));
 
         // Send the addresses back to the peer.
-        this._channel.addr(addresses);
+        this._channel.addr(unknownAddresses);
     }
 
 

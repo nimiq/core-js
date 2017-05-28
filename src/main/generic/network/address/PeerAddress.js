@@ -123,11 +123,16 @@ class RtcPeerAddress extends PeerAddress {
     constructor(services, timestamp, signalId, distance) {
         super(PeerAddress.Protocol.RTC, services, timestamp);
         if (!Services.isWebRtc(services)) throw 'Malformed services';
+        if (!RtcPeerAddress.isSignalId(signalId)) throw 'Malformed signalId';
 
         this._signalId = signalId;
         this._distance = distance;
 
         this._signalChannel = null;
+    }
+
+    static isSignalId(arg) {
+        return /[a-z0-9]{32}/i.test(arg);
     }
 
     static unserialize(buf) {
