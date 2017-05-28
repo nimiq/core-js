@@ -301,5 +301,5 @@ class Network extends Observable {
     }
 }
 Network.PEER_COUNT_DESIRED = 12;
-Network.PEER_COUNT_RELAY = 3;
+Network.PEER_COUNT_RELAY = 6;
 Class.register(Network);

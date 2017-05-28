@@ -110,12 +110,23 @@ class PeerAddresses extends Observable {
         return this._signalIds.get(signalId);
     }
 
+    // TODO improve this by returning the best addresses first.
     findByServices(serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
         const addresses = [];
-        for (let addr of this._store.values()) {
-            if ((addr.services & serviceMask) !== 0) {
-                addresses.push(addr);
+        for (let peerAddressState of this._store.values()) {
+            if (peerAddressState.state === PeerAddressState.BANNED
+                    || peerAddressState.state === PeerAddressState.FAILED) {
+                continue;
+            }
+
+            const address = peerAddressState.peerAddress;
+            if (address.timestamp !== 0 && (address.services & serviceMask) !== 0) {
+                addresses.push(address);
+
+                if (addresses.length >= maxAddresses) {
+                    break;
+                }
             }
         }
         return addresses;
