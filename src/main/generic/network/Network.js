@@ -254,14 +254,17 @@ class Network extends Observable {
     /* Signaling */
 
     _onSignal(channel, msg) {
+        // Can be null for non-rtc nodes.
+        const mySignalId = NetworkConfig.myPeerAddress().signalId;
+
         // XXX Discard signals from myself.
-        if (msg.senderId === NetworkConfig.myPeerAddress().signalId) {
+        if (msg.senderId === mySignalId) {
             console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
             return;
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
-        if (msg.recipientId === NetworkConfig.myPeerAddress().signalId) {
+        if (msg.recipientId === mySignalId) {
             this._rtcConnector.onSignal(channel, msg);
         }
 
@@ -276,7 +279,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + NetworkConfig.mySignalId() + '): ' + BufferUtils.toAscii(msg.payload));
+            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + mySignalId + '): ' + BufferUtils.toAscii(msg.payload));
         }
     }
 
