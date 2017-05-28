@@ -49,7 +49,9 @@ class PeerAddresses extends Observable {
 
         // Return the candidate with the highest score.
         const scores = candidates.keys().sort((a, b) => b - a);
-        return candidates.get(scores[0]).peerAddress;
+        const winner = candidates.get(scores[0]);
+        console.log(`Picked peerAddress ${winner} with score ${scores[0]}`);
+        return winner.peerAddress;
     }
 
     _scoreAddress(peerAddressState) {
@@ -224,7 +226,7 @@ class PeerAddresses extends Observable {
 
         peerAddressState.state = PeerAddressState.CONNECTED;
         peerAddressState.lastConnected = Date.now();
-        peerAddressState.failedAttempts = 0;
+        //peerAddressState.failedAttempts = 0;
 
         switch (peerAddress.protocol) {
             case PeerAddress.Protocol.WSS:
@@ -275,7 +277,6 @@ class PeerAddresses extends Observable {
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
-
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
 
@@ -364,10 +365,16 @@ class PeerAddresses extends Observable {
                     break;
 
                 case PeerAddressState.BANNED:
-                    // Unban peers whose bans have expired.
                     if (peerAddressState.bannedUntil <= now) {
-                        peerAddressState.state = PeerAddressState.NEW;
-                        peerAddressState.bannedUntil = -1;
+                        if (addr.timestamp === 0) {
+                            // Restore banned seed addresses to the NEW state.
+                            peerAddressState.state = PeerAddressState.NEW;
+                            peerAddressState.failedAttempts = 0;
+                            peerAddressState.bannedUntil = -1;
+                        } else {
+                            // Delete expires bans.
+                            this._store.delete(addr);
+                        }
                     }
                     break;
 
@@ -434,7 +441,9 @@ class PeerAddressState {
     }
 
     toString() {
-        return `PeerAddressState{peerAddress=${this._peerAddress}, state=${this.state}}`;
+        return `PeerAddressState{peerAddress=${this._peerAddress}, state=${this.state}, `
+            + `lastConnected=${this.lastConnected}, failedAttempts=${this.failedAttempts}, `
+            + `bannedUntil=${this.bannedUntil}}`;
     }
 }
 PeerAddressState.NEW = 1;

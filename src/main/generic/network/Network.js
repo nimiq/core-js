@@ -3,6 +3,14 @@ class Network extends Observable {
         return PlatformUtils.isBrowser() ? 15 : 50000;
     }
 
+    static get PEER_COUNT_PER_IP_WS_MAX() {
+        return PlatformUtils.isBrowser() ? 2 : 15;
+    }
+
+    static get PEER_COUNT_PER_IP_RTC_MAX() {
+        return 3;
+    }
+
     constructor(blockchain) {
         super();
         this._blockchain = blockchain;
@@ -14,7 +22,7 @@ class Network extends Observable {
 
         this._peerCount = 0;
         this._agents = new HashMap();
-        this._netAddresses = new HashSet(netAddress => netAddress.host);
+        this._netAddresses = new HashMap(netAddress => netAddress.host);
 
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -136,11 +144,16 @@ class Network extends Observable {
             this._addresses.connected(conn.peerAddress);
         }
 
-        // Allow only one connection per IP address.
-        if (this._netAddresses.contains(conn.netAddress)) {
-            conn.close('duplicate connection (netAddress)');
+        // Track & limit concurrent connections to the same IP address.
+        const maxConnections = !conn.peerAddress || conn.peerAddress.protocol === PeerAddress.Protocol.WSS ?
+            Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
+        let numConnections = this._netAddresses.get(conn.netAddress) || 0;
+        numConnections++;
+        if (numConnections > maxConnections) {
+            conn.close(`connection limit per ip (${maxConnections}) reached`).
             return;
         }
+        this._netAddresses.put(conn.netAddress, numConnections);
 
         console.log('Connection established: ' + conn);
 
@@ -158,8 +171,6 @@ class Network extends Observable {
         } else {
             this._agents.put(conn.netAddress, agent);
         }
-
-        this._netAddresses.add(conn.netAddress);
     }
 
     // Connection to this peer address failed.
@@ -173,12 +184,17 @@ class Network extends Observable {
 
     // This peer channel was closed.
     _onClose(peer, channel) {
-        this._addresses.disconnected(channel.peerAddress);
-
-        // Remove agent & ip address.
-        this._agents.delete(channel.peerAddress);
+        // Delete agent.
+        if (channel.peerAddress) {
+            this._addresses.disconnected(channel.peerAddress);
+            this._agents.delete(channel.peerAddress);
+        }
         this._agents.delete(channel.netAddress);
-        this._netAddresses.delete(channel.netAddress);
+
+        // Decrement connection count per IP.
+        let numConnections = this._netAddresses.get(channel.netAddress) || 1;
+        numConnections = Math.max(numConnections--, 0);
+        this._netAddresses.put(channel.netAddress, numConnections);
 
         // This is true if the handshake with the peer completed.
         if (peer) {
@@ -192,6 +208,14 @@ class Network extends Observable {
             this.fire('peers-changed');
 
             console.log('[PEER-LEFT] ' + peer);
+        } else {
+            // The connection was closed before the handshake completed.
+            // Treat this as failed connection attempt.
+            // TODO incoming WS connections.
+            console.log(`Connection to ${channel} closed pre-handshake`);
+            if (channel.peerAddress) {
+                this._addresses.unreachable(channel.peerAddress);
+            }
         }
 
         this._checkPeerCount();
