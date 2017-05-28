@@ -1,6 +1,6 @@
 class Primitive extends Uint8Array {
     constructor(arg, length) {
-        if (!arg) {
+        if (arg === null) {
             super(length);
         } else if (typeof arg === 'string') {
             const buffer = BufferUtils.fromBase64(arg);
@@ -13,7 +13,7 @@ class Primitive extends Uint8Array {
             Primitive._enforceLength(arg, length);
             super(arg.buffer, arg.byteOffset, arg.byteLength);
         } else {
-            throw 'Primitive: Invalid argument ' + arg;
+            throw `Primitive: Invalid argument ${arg}`;
         }
     }
 
@@ -31,7 +31,7 @@ class Primitive extends Uint8Array {
     toString() {
         return this.toBase64();
     }
-    
+
     toBase64() {
         return BufferUtils.toBase64(this);
     }

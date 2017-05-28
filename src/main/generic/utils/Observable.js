@@ -13,7 +13,7 @@ class Observable {
     }
 
     fire() {
-        if (!arguments.length) throw 'Obserable.fire() needs type argument';
+        if (!arguments.length) throw 'Observable.fire() needs type argument';
 
         // Notify listeners for this event type.
         const type = arguments[0];
@@ -33,7 +33,7 @@ class Observable {
     }
 
     bubble() {
-        if (arguments.length < 2) throw 'Obserable.bubble() needs observable and at least 1 type argument';
+        if (arguments.length < 2) throw 'Observable.bubble() needs observable and at least 1 type argument';
 
         const observable = arguments[0];
         const types = Array.prototype.slice.call(arguments, 1);

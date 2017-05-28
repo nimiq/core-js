@@ -17,11 +17,11 @@ describe('Miner', () => {
     //         const currPrevHash = await currHeader.hash();
     //         const nextBody = nextBlock.body;
     //         const isPOW = await nextHeader.verify();
-    
-    //         expect(nextHeader.difficulty).toBe(difficulty-1);    
-    //         expect(nextHeader.prevHash.equals(currPrevHash)).toBe(true);    
-    //         expect(nextHeader.accountsHash.equals(currAccountsHash)).toBe(true);    
-    //         expect(nextBody.minerAddr.equals(minerAddress)).toBe(true);    
+
+    //         expect(nextHeader.difficulty).toBe(difficulty-1);
+    //         expect(nextHeader.prevHash.equals(currPrevHash)).toBe(true);
+    //         expect(nextHeader.accountsHash.equals(currAccountsHash)).toBe(true);
+    //         expect(nextBody.minerAddr.equals(minerAddress)).toBe(true);
     //         expect(isPOW).toBe(true);
 
     //         done();
