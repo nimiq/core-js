@@ -1,7 +1,47 @@
+'use strict';
+
+var _freeze = require('babel-runtime/core-js/object/freeze');
+
+var _freeze2 = _interopRequireDefault(_freeze);
+
+var _isInteger = require('babel-runtime/core-js/number/is-integer');
+
+var _isInteger2 = _interopRequireDefault(_isInteger);
+
+var _keys = require('babel-runtime/core-js/object/keys');
+
+var _keys2 = _interopRequireDefault(_keys);
+
+var _stringify = require('babel-runtime/core-js/json/stringify');
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+var _maxSafeInteger = require('babel-runtime/core-js/number/max-safe-integer');
+
+var _maxSafeInteger2 = _interopRequireDefault(_maxSafeInteger);
+
+var _regenerator = require('babel-runtime/regenerator');
+
+var _regenerator2 = _interopRequireDefault(_regenerator);
+
+var _asyncToGenerator2 = require('babel-runtime/helpers/asyncToGenerator');
+
+var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
+
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
+var _getIterator2 = require('babel-runtime/core-js/get-iterator');
+
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 class Class {
-	static register() {
-		// Required for our custom NodeJS isomorphism
-	}
+    static register() {
+        // Required for our custom NodeJS isomorphism
+    }
 }
 
 class Observable {
@@ -25,15 +65,57 @@ class Observable {
         const type = arguments[0];
         if (this._listeners[type]) {
             const args = Array.prototype.slice.call(arguments, 1);
-            for (let listener of this._listeners[type]) {
-                listener.apply(null, args);
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = (0, _getIterator3.default)(this._listeners[type]), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    let listener = _step.value;
+
+                    listener.apply(null, args);
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
             }
         }
 
         // Notify wildcard listeners. Pass event type as first argument
         if (this._listeners[Observable.WILDCARD]) {
-            for (let listener of this._listeners[Observable.WILDCARD]) {
-                listener.apply(null, arguments);
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = (0, _getIterator3.default)(this._listeners[Observable.WILDCARD]), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    let listener = _step2.value;
+
+                    listener.apply(null, arguments);
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
             }
         }
     }
@@ -43,95 +125,80 @@ class Observable {
 
         const observable = arguments[0];
         const types = Array.prototype.slice.call(arguments, 1);
-        for (let type of types) {
-            let callback;
-            if (type == Observable.WILDCARD) {
-                callback = function() {
-                    this.fire.apply(this, arguments);
-                };
-            } else {
-                callback = function() {
-                    this.fire.apply(this, [type, ...arguments]);
-                };
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+            for (var _iterator3 = (0, _getIterator3.default)(types), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                let type = _step3.value;
+
+                let callback;
+                if (type == Observable.WILDCARD) {
+                    callback = function callback() {
+                        this.fire.apply(this, arguments);
+                    };
+                } else {
+                    callback = function callback() {
+                        this.fire.apply(this, [type, ...arguments]);
+                    };
+                }
+                observable.on(type, callback.bind(this));
             }
-            observable.on(type, callback.bind(this));
+        } catch (err) {
+            _didIteratorError3 = true;
+            _iteratorError3 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                    _iterator3.return();
+                }
+            } finally {
+                if (_didIteratorError3) {
+                    throw _iteratorError3;
+                }
+            }
         }
     }
 }
 Class.register(Observable);
 
-class Crypto {
-  static get lib() { return window.crypto.subtle; }
-
-  static get settings() {
-    const hashAlgo = {name: 'SHA-256'};
-    const signAlgo = 'ECDSA';
-    const curve = 'P-256';    // can be 'P-256', 'P-384', or 'P-521'
-    return {
-        hashAlgo: hashAlgo,
-        curve: curve,
-        keys: {name: signAlgo, namedCurve: curve},
-        sign: {name: signAlgo, hash: hashAlgo}
-      };
-  }
-
-  static sha256(buffer) {
-    return Crypto.lib.digest(Crypto.settings.hashAlgo, buffer)
-      .then(hash => new Hash(hash));
-  }
-
-  static generateKeys() {
-    return Crypto.lib.generateKey(Crypto.settings.keys, true, ['sign', 'verify']);
-  }
-
-  static exportPrivate(privateKey) {
-    return Crypto.lib.exportKey('pkcs8', privateKey);
-  }
-
-  static importPrivate(privateKey) {
-    return Crypto.lib.importKey('pkcs8', privateKey);
-  }
-
-  static exportPublic(publicKey, format ='raw') {
-    return Crypto.lib.exportKey(format, publicKey)
-      .then(key => new PublicKey(key));
-  }
-
-  static exportAddress(publicKey) {
-    return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
-  }
-
-  static importPublic(publicKey, format = 'raw') {
-    return Crypto.lib.importKey(format, publicKey, Crypto.settings.keys, true, ['verify']);
-  }
-
-  static publicToAddress(publicKey) {
-    return Crypto.sha256(publicKey).then(hash => hash.subarray(0, 20))
-      .then(address => new Address(address));
-  }
-
-  static sign(privateKey, data) {
-    return Crypto.lib.sign(Crypto.settings.sign, privateKey, data)
-      .then(sign => new Signature(sign));
-  }
-
-  static verify(publicKey, signature, data) {
-    return Crypto.importPublic(publicKey)
-        .then(key => Crypto.lib.verify(Crypto.settings.sign, key, signature, data));
-  }
+class CryptoLib {
+    static get instance() {
+        return typeof window !== 'undefined' ? window.crypto.subtle : self.crypto.subtle;
+    }
 }
-Class.register(Crypto);
-// TODO: Make use of "storage-persistence" api (mandatory for private key storage)
-// TODO V2: Make use of "IDBTransactions" api for serial reads/writes
-class TypedDB {
+
+class NetworkUtils {
+    static mySignalId() {
+        if (!NetworkUtils._mySignalId) {
+            NetworkUtils._mySignalId = Math.round(Math.random() * NumberUtils.UINT64_MAX) + 1;
+        }
+        return NetworkUtils._mySignalId;
+    }
+
+    static myNetAddress() {
+        return new NetAddress(Services.myServices(), Date.now(),
+        /*host*/"", /*port*/0, NetworkUtils.mySignalId(), /*distance*/0);
+    }
+
+    static configureNetAddress() {
+        // Ignored on browser platform.
+    }
+}
+
+class BaseTypedDB {
     static get db() {
+        if (BaseTypedDB._db) return _promise2.default.resolve(BaseTypedDB._db);
+
         const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB;
         const IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.OIDBTransaction || window.msIDBTransaction;
         const dbVersion = 1;
         const request = indexedDB.open('lovicash', dbVersion);
 
-        return new Promise((resolve,error) => {
+        return new _promise2.default((resolve, error) => {
             request.onsuccess = event => {
+                BaseTypedDB._db = request.result;
                 resolve(request.result);
             };
 
@@ -151,28 +218,23 @@ class TypedDB {
     }
 
     _get(key) {
-        return TypedDB.db.then( db => new Promise( (resolve,error) => {
-            const getTx = db.transaction([this._tableName])
-                .objectStore(this._tableName)
-                .get(key);
+        return BaseTypedDB.db.then(db => new _promise2.default((resolve, error) => {
+            const getTx = db.transaction([this._tableName]).objectStore(this._tableName).get(key);
             getTx.onsuccess = event => resolve(event.target.result);
             getTx.onerror = error;
         }));
     }
 
     _put(key, value) {
-        return TypedDB.db.then( db => new Promise( (resolve,error) => {
-            const putTx = db.transaction([this._tableName], 'readwrite')
-                .objectStore(this._tableName)
-                .put(value, key);
+        return BaseTypedDB.db.then(db => new _promise2.default((resolve, error) => {
+            const putTx = db.transaction([this._tableName], 'readwrite').objectStore(this._tableName).put(value, key);
             putTx.onsuccess = event => resolve(event.target.result);
             putTx.onerror = error;
         }));
     }
 
     getObject(key) {
-        return this._get(key)
-            .then( value => this._type && this._type.cast && !(value instanceof this._type) ? this._type.cast(value) : value);
+        return this._get(key).then(value => this._type && this._type.cast && !(value instanceof this._type) ? this._type.cast(value) : value);
     }
 
     putObject(key, value) {
@@ -188,54 +250,264 @@ class TypedDB {
     }
 
     delete(key) {
-        return TypedDB.db.then(db => new Promise((resolve,error) => {
-            const deleteTx = db.transaction([this._tableName], 'readwrite')
-                .objectStore(this._tableName)
-                .delete(key);
+        return BaseTypedDB.db.then(db => new _promise2.default((resolve, error) => {
+            const deleteTx = db.transaction([this._tableName], 'readwrite').objectStore(this._tableName).delete(key);
             deleteTx.onsuccess = event => resolve(event.target.result);
             deleteTx.onerror = error;
         }));
     }
+
+    nativeTransaction() {
+        return BaseTypedDB.db.then(db => new NativeDBTransaction(db, this._tableName));
+    }
 }
 
-navigator.storage.persisted().then(persistent=> {
-  if (persistent)
-    console.log('Storage will not be cleared except by explicit user action');
-  else
-    console.log('Storage may be cleared by the UA under storage pressure.');
-});
+class NativeDBTransaction extends Observable {
+    constructor(db, tableName) {
+        super();
+        this._tx = db.transaction([tableName], 'readwrite');
+        this._store = this._tx.objectStore(tableName);
 
+        this._tx.oncomplete = () => this.fire('complete');
+        this._tx.onerror = e => this.fire('error', e);
+    }
+
+    putObject(key, value) {
+        this._store.put(value, key);
+    }
+
+    putString(key, value) {
+        this._store.put(value, key);
+    }
+
+    delete(key) {
+        this._store.delete(key);
+    }
+
+    commit() {
+        // no-op on IndexedDB
+    }
+}
+
+class TypedDB extends BaseTypedDB {
+    constructor(tableName, type) {
+        super(tableName, type);
+        this._cache = {};
+    }
+
+    getObject(key) {
+        var _this = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee() {
+            return _regenerator2.default.wrap(function _callee$(_context) {
+                while (1) switch (_context.prev = _context.next) {
+                    case 0:
+                        if (!(_this._cache[key] === undefined)) {
+                            _context.next = 4;
+                            break;
+                        }
+
+                        _context.next = 3;
+                        return BaseTypedDB.prototype.getObject.call(_this, key);
+
+                    case 3:
+                        _this._cache[key] = _context.sent;
+
+                    case 4:
+                        return _context.abrupt('return', _this._cache[key]);
+
+                    case 5:
+                    case 'end':
+                        return _context.stop();
+                }
+            }, _callee, _this);
+        }))();
+    }
+
+    putObject(key, value) {
+        this._cache[key] = value;
+        return super.putObject(key, value);
+    }
+
+    getString(key) {
+        var _this2 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee2() {
+            return _regenerator2.default.wrap(function _callee2$(_context2) {
+                while (1) switch (_context2.prev = _context2.next) {
+                    case 0:
+                        if (!(_this2._cache[key] === undefined)) {
+                            _context2.next = 4;
+                            break;
+                        }
+
+                        _context2.next = 3;
+                        return BaseTypedDB.prototype.getString.call(_this2, key);
+
+                    case 3:
+                        _this2._cache[key] = _context2.sent;
+
+                    case 4:
+                        return _context2.abrupt('return', _this2._cache[key]);
+
+                    case 5:
+                    case 'end':
+                        return _context2.stop();
+                }
+            }, _callee2, _this2);
+        }))();
+    }
+
+    putString(key, value) {
+        this._cache[key] = value;
+        return super.putString(key, value);
+    }
+
+    delete(key) {
+        delete this._cache[key];
+        return super.delete(key);
+    }
+
+    updateCache(values) {
+        for (let key in values) {
+            this._cache[key] = values[key];
+        }
+    }
+
+    flushCache(keys) {
+        if (!keys) {
+            this._cache = {};
+        } else {
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
+
+            try {
+                for (var _iterator4 = (0, _getIterator3.default)(keys), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    let key = _step4.value;
+
+                    delete this._cache[key];
+                }
+            } catch (err) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
+                    }
+                } finally {
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+        }
+    }
+
+    transaction() {
+        return new TypedDBTransaction(this);
+    }
+}
+
+class WindowDetector {
+    static get KEY_PING() {
+        return 'WindowDetector.PING';
+    }
+
+    static get KEY_PONG() {
+        return 'WindowDetector.PONG';
+    }
+
+    static get KEY_BYE() {
+        return 'WindowDetector.BYE';
+    }
+
+    // Singleton
+    static get() {
+        if (!WindowDetector._instance) {
+            WindowDetector._instance = new WindowDetector();
+        }
+        return WindowDetector._instance;
+    }
+
+    constructor() {
+        window.addEventListener('storage', e => {
+            if (e.key === WindowDetector.KEY_PING) {
+                this._pong(e.newValue);
+            }
+        });
+        window.addEventListener('unload', e => {
+            this._bye();
+        });
+    }
+
+    isSingleWindow() {
+        return new _promise2.default((resolve, reject) => {
+            const nonce = Math.round(Math.random() * _maxSafeInteger2.default);
+            const timeout = setTimeout(() => {
+                window.removeEventListener('storage', listener);
+                resolve(true);
+            }, 100);
+
+            const listener = e => {
+                if (e.key === WindowDetector.KEY_PONG && e.newValue == nonce) {
+                    clearTimeout(timeout);
+
+                    window.removeEventListener('storage', listener);
+                    resolve(false);
+                }
+            };
+            window.addEventListener('storage', listener);
+
+            this._ping(nonce);
+        });
+    }
+
+    waitForSingleWindow(fnReady, fnWait) {
+        this.isSingleWindow().then(singleWindow => {
+            if (singleWindow) {
+                fnReady();
+            } else {
+                if (fnWait) fnWait();
+
+                const listener = e => {
+                    if (e.key === WindowDetector.KEY_BYE) {
+                        window.removeEventListener('storage', listener);
+                        // Don't pass fnWait, we only want it to be called once.
+                        this.waitForSingleWindow(fnReady, /*fnWait*/undefined);
+                    }
+                };
+                window.addEventListener('storage', listener);
+            }
+        });
+    }
+
+    _ping(nonce) {
+        localStorage.setItem(WindowDetector.KEY_PING, nonce);
+    }
+
+    _pong(nonce) {
+        localStorage.setItem(WindowDetector.KEY_PONG, nonce);
+    }
+
+    _bye() {
+        localStorage.setItem(WindowDetector.KEY_BYE, Date.now());
+    }
+}
+WindowDetector._instance = null;
 
 class WalletStore extends TypedDB {
-	constructor(){
-		super('wallet');
-	}
-
-	get(key) {
-		return super.getObject(key);
-	}
-
-	put(key, value) {
-		return super.putObject(key, value);
-	}
-}
-
-class NetworkUtils {
-    static mySignalId() {
-        if (!NetworkUtils._mySignalId) {
-            NetworkUtils._mySignalId = Math.round(Math.random() * NumberUtils.UINT64_MAX) + 1;
-        }
-        return NetworkUtils._mySignalId;
+    constructor() {
+        super('wallet');
     }
 
-    static myNetAddress() {
-        return new NetAddress(Services.myServices(), Date.now(),
-            /*host*/ "", /*port*/ 0,
-            NetworkUtils.mySignalId(), /*distance*/ 0);
+    get(key) {
+        return super.getObject(key);
     }
 
-    static configureNetAddress() {
-        // Ignored on browser platform.
+    put(key, value) {
+        return super.putObject(key, value);
     }
 }
 
@@ -248,8 +520,8 @@ class WebSocketConnector extends Observable {
         if (!Services.isWebSocket(peerAddress.services)) throw 'Malformed peerAddress';
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
-    	ws.onopen = () => {
-            const conn = new PeerConnection(ws, peerAddress.host, peerAddress.port);
+        ws.onopen = () => {
+            const conn = new PeerConnection(ws, PeerConnection.Protocol.WEBSOCKET, peerAddress.host, peerAddress.port);
             this.fire('connection', conn);
         };
         ws.onerror = e => this.fire('error', peerAddress, e);
@@ -260,33 +532,47 @@ class WebSocketConnector extends Observable {
 // TODO V2: should cache the certificate in it's scope
 window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 class WebRtcCertificate {
-	static get() {
-		// TODO the certificate is going to expire eventually. Automatically renew it.
-		const db = new TypedDB('certificate');
-		return db.getObject('certKey').then( value => {
-			if (value) return value;
-			return RTCPeerConnection.generateCertificate({
-		  			name: 'ECDSA',
-			    	namedCurve: 'P-256'
-				})
-				.then(cert => {
-					db.putObject('certKey', cert);
-					return cert;
-				});
-			});
-	}
+    static get() {
+        // TODO the certificate is going to expire eventually. Automatically renew it.
+        const db = new TypedDB('certificate');
+        return db.getObject('certKey').then(value => {
+            if (value) return value;
+            return RTCPeerConnection.generateCertificate({
+                name: 'ECDSA',
+                namedCurve: 'P-256'
+            }).then(cert => {
+                db.putObject('certKey', cert);
+                return cert;
+            });
+        });
+    }
 }
 
 class WebRtcConfig {
-    static async get() {
-        const certificate = await WebRtcCertificate.get();
-        return {
-            iceServers: [
-                { urls: 'stun:stun.services.mozilla.com' },
-                { urls: 'stun:stun.l.google.com:19302' }
-            ],
-            certificates : [certificate]
-        };
+    static get() {
+        var _this3 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee3() {
+            var certificate;
+            return _regenerator2.default.wrap(function _callee3$(_context3) {
+                while (1) switch (_context3.prev = _context3.next) {
+                    case 0:
+                        _context3.next = 2;
+                        return WebRtcCertificate.get();
+
+                    case 2:
+                        certificate = _context3.sent;
+                        return _context3.abrupt('return', {
+                            iceServers: [{ urls: 'stun:stun.services.mozilla.com' }, { urls: 'stun:stun.l.google.com:19302' }],
+                            certificates: [certificate]
+                        });
+
+                    case 4:
+                    case 'end':
+                        return _context3.stop();
+                }
+            }, _callee3, _this3);
+        }))();
     }
 }
 
@@ -300,16 +586,39 @@ class WebRtcConnector extends Observable {
         return this._init();
     }
 
-    async _init() {
-        this._connectors = {};
-        this._config = await WebRtcConfig.get();
-        this._timers = new Timers();
-        return this;
+    _init() {
+        var _this4 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee4() {
+            return _regenerator2.default.wrap(function _callee4$(_context4) {
+                while (1) switch (_context4.prev = _context4.next) {
+                    case 0:
+                        _this4._connectors = {};
+                        _context4.next = 3;
+                        return WebRtcConfig.get();
+
+                    case 3:
+                        _this4._config = _context4.sent;
+
+                        _this4._timers = new Timers();
+                        return _context4.abrupt('return', _this4);
+
+                    case 6:
+                    case 'end':
+                        return _context4.stop();
+                }
+            }, _callee4, _this4);
+        }))();
     }
 
     connect(peerAddress) {
         if (!Services.isWebRtc(peerAddress.services)) throw 'Malformed peerAddress';
         const signalId = peerAddress.signalId;
+
+        if (this._connectors[signalId]) {
+            console.warn('WebRtc: Already connecting/connected to ' + signalId);
+            return;
+        }
 
         const connector = new OutgoingPeerConnector(this._config, peerAddress.signalChannel, signalId);
         connector.on('connection', conn => this._onConnection(conn, signalId));
@@ -367,13 +676,13 @@ class WebRtcConnector extends Observable {
         // If we are already establishing a connection with the sender of this
         // signal, forward it to the corresponding connector.
         else if (this._connectors[msg.senderId]) {
-            this._connectors[msg.senderId].onSignal(payload);
-        }
-        
-        // Invalid signal.
-        else {
-            console.warn('Discarding invalid signal received from ' + msg.sender + ' via ' + channel, msg, channel);
-        }
+                this._connectors[msg.senderId].onSignal(payload);
+            }
+
+            // Invalid signal.
+            else {
+                    console.warn('WebRtc: Discarding invalid signal received from ' + msg.senderId + ' via ' + channel + ': ' + BufferUtils.toAscii(msg.payload));
+                }
     }
 
     _onConnection(conn, signalId) {
@@ -393,95 +702,90 @@ class WebRtcConnector extends Observable {
 }
 
 class PeerConnector extends Observable {
-	constructor(config, signalChannel, remoteId) {
-		super();
+    constructor(config, signalChannel, remoteId) {
+        super();
         this._signalChannel = signalChannel;
         this._remoteId = remoteId;
 
-		this._rtcConnection = new RTCPeerConnection(config);
-	    this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
-	}
-
-	onSignal(signal) {
-	    if (signal.sdp) {
-	        this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal), e => {
-	            if (signal.type == 'offer') {
-	                this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
-				}
-	        });
-	    } else if (signal.candidate) {
-			this._rtcConnection.addIceCandidate(new RTCIceCandidate(signal))
-				.catch( e => e );
-	    }
-	}
-
-    _signal(signal) {
-        this._signalChannel.signal(
-            NetworkUtils.mySignalId(),
-            this._remoteId,
-            BufferUtils.fromAscii(JSON.stringify(signal))
-        );
+        this._rtcConnection = new RTCPeerConnection(config);
+        this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
     }
 
-	_onIceCandidate(event) {
-    	if (event.candidate != null) {
-        	this._signal(event.candidate);
-    	}
-	}
+    onSignal(signal) {
+        if (signal.sdp) {
+            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal)).then(() => {
+                if (signal.type == 'offer') {
+                    this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
+                }
+            });
+        } else if (signal.candidate) {
+            this._rtcConnection.addIceCandidate(new RTCIceCandidate(signal)).catch(e => e);
+        }
+    }
 
-	_onDescription(description) {
-    	this._rtcConnection.setLocalDescription(description, () => {
-        	this._signal(description);
-    	}, this._errorLog);
-	}
+    _signal(signal) {
+        this._signalChannel.signal(NetworkUtils.mySignalId(), this._remoteId, BufferUtils.fromAscii((0, _stringify2.default)(signal)));
+    }
 
-	_onP2PChannel(event) {
-    	const channel = event.channel || event.target;
+    _onIceCandidate(event) {
+        if (event.candidate != null) {
+            this._signal(event.candidate);
+        }
+    }
+
+    _onDescription(description) {
+        this._rtcConnection.setLocalDescription(description, () => {
+            this._signal(description);
+        }, this._errorLog);
+    }
+
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
         // TODO extract ip & port from session description
         // XXX Use "peerId" as host in the meantime.
-        const host = this._getPeerId();
+        const host = this._remoteId;
         const port = 420;
-        const conn = new PeerConnection(channel, host, port);
-    	this.fire('connection', conn);
-	}
+        const conn = new PeerConnection(channel, PeerConnection.Protocol.WEBRTC, host, port);
+        this.fire('connection', conn);
+    }
 
-	_errorLog(error) {
-    	console.error(error);
-	}
+    _errorLog(error) {
+        console.error(error);
+    }
 
     // deprecated
-	_getPeerId() {
-		const desc = this._rtcConnection.remoteDescription;
-		return PeerConnector.sdpToPeerId(desc.sdp);
-	}
+    _getPeerId() {
+        const desc = this._rtcConnection.remoteDescription;
+        return PeerConnector.sdpToPeerId(desc.sdp);
+    }
+
     // deprecated
-	static sdpToPeerId(sdp) {
-		return sdp
-			.match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
-			.replace(/:/g, '') 							// replace colons
-			.slice(1, 32); 								// truncate hash to 16 bytes
-	}
+    static sdpToPeerId(sdp) {
+        return sdp.match('fingerprint:sha-256(.*)\r\n')[1] // parse fingerprint
+        .replace(/:/g, '') // replace colons
+        .slice(1, 32); // truncate hash to 16 bytes
+    }
 }
 
 class OutgoingPeerConnector extends PeerConnector {
-	constructor(config, signalChannel, remoteId) {
-		super(config, signalChannel, remoteId);
+    constructor(config, signalChannel, remoteId) {
+        super(config, signalChannel, remoteId);
 
         // Create offer.
-    	const channel = this._rtcConnection.createDataChannel('data-channel');
-    	channel.binaryType = 'arraybuffer';
+        const channel = this._rtcConnection.createDataChannel('data-channel');
+        channel.binaryType = 'arraybuffer';
         channel.onopen = e => this._onP2PChannel(e);
         this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
-	}
+    }
 
 }
 
 class IncomingPeerConnector extends PeerConnector {
-	constructor(config, signalChannel, remoteId, offer) {
-		super(config, signalChannel, remoteId);
+    constructor(config, signalChannel, remoteId, offer) {
+        super(config, signalChannel, remoteId);
         this._rtcConnection.ondatachannel = e => this._onP2PChannel(e);
-		this.onSignal(offer);
-	}
+        this.onSignal(offer);
+    }
 }
 
 class Services {
@@ -515,34 +819,78 @@ Services.WEBSOCKET = 1;
 Services.WEBRTC = 2;
 Class.register(Services);
 
-class Synchronizer {
+class Synchronizer extends Observable {
     constructor() {
+        super();
         this._queue = [];
         this._working = false;
     }
 
     push(fn, resolve, error) {
-        this._queue.push({fn: fn, resolve: resolve, error: error});
+        this._queue.push({ fn: fn, resolve: resolve, error: error });
         if (!this._working) {
             this._doWork();
         }
     }
 
-    async _doWork() {
-        this._working = true;
-        while (this._queue.length) {
-            const job = this._queue.shift();
-            try {
-                const result = await job.fn();
-                job.resolve(result);
-            } catch (e) {
-                if (job.error) job.error(e);
-            }
-        }
-        this._working = false;
+    _doWork() {
+        var _this5 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee5() {
+            var job, result;
+            return _regenerator2.default.wrap(function _callee5$(_context5) {
+                while (1) switch (_context5.prev = _context5.next) {
+                    case 0:
+                        _this5._working = true;
+                        _this5.fire('work-start', _this5);
+
+                    case 2:
+                        if (!_this5._queue.length) {
+                            _context5.next = 16;
+                            break;
+                        }
+
+                        job = _this5._queue.shift();
+                        _context5.prev = 4;
+                        _context5.next = 7;
+                        return job.fn();
+
+                    case 7:
+                        result = _context5.sent;
+
+                        job.resolve(result);
+                        _context5.next = 14;
+                        break;
+
+                    case 11:
+                        _context5.prev = 11;
+                        _context5.t0 = _context5['catch'](4);
+
+                        if (job.error) job.error(_context5.t0);
+
+                    case 14:
+                        _context5.next = 2;
+                        break;
+
+                    case 16:
+
+                        _this5._working = false;
+                        _this5.fire('work-end', _this5);
+
+                    case 18:
+                    case 'end':
+                        return _context5.stop();
+                }
+            }, _callee5, _this5, [[4, 11]]);
+        }))();
+    }
+
+    get working() {
+        return this._working;
     }
 }
 Class.register(Synchronizer);
+
 class Timers {
     constructor() {
         this._timeouts = {};
@@ -580,10 +928,10 @@ class Timers {
     }
 
     clearAll() {
-        for (var key in this._timeouts) {
+        for (const key in this._timeouts) {
             this.clearTimeout(key);
         }
-        for (var key in this._intervals) {
+        for (const key in this._intervals) {
             this.clearInterval(key);
         }
     }
@@ -594,14 +942,38 @@ class ArrayUtils {
     static randomElement(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     }
+
+    static subarray(uintarr, begin, end) {
+        function clamp(v, min, max) {
+            return v < min ? min : v > max ? max : v;
+        }
+
+        if (begin === undefined) {
+            begin = 0;
+        }
+        if (end === undefined) {
+            end = uintarr.byteLength;
+        }
+
+        begin = clamp(begin, 0, uintarr.byteLength);
+        end = clamp(end, 0, uintarr.byteLength);
+
+        let len = end - begin;
+        if (len < 0) {
+            len = 0;
+        }
+
+        return new Uint8Array(uintarr.buffer, uintarr.byteOffset + begin, len);
+    }
 }
 Class.register(ArrayUtils);
 
 class IndexedArray {
-    constructor(array) {
+    constructor(array, ignoreDuplicates) {
         this._array = array || new Array();
-        this._index = {};
+        this._ignoreDuplicates = ignoreDuplicates;
 
+        this._index = {};
         this._buildIndex();
 
         return new Proxy(this._array, this);
@@ -627,12 +999,18 @@ class IndexedArray {
         if (this[key] && key[0] !== '_') {
             return this[key].bind ? this[key].bind(this) : this[key];
         }
+
+        return undefined;
     }
 
     // TODO index access set, e.g. arr[5] = 42
 
     push(value) {
-        if (this._index[value] !== undefined) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+        if (this._index[value] !== undefined) {
+            if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+            return this._index[value];
+        }
+
         const length = this._array.push(value);
         this._index[value] = length - 1;
         return length;
@@ -659,188 +1037,76 @@ class IndexedArray {
     }
 
     isEmpty() {
-        return Object.keys(this._index).length == 0;
+        return (0, _keys2.default)(this._index).length == 0;
+    }
+
+    slice(start, end) {
+        const arr = this._array.slice(start, end);
+        return new IndexedArray(arr, this._ignoreDuplicates);
     }
 
     get length() {
         return this._array.length;
     }
+
+    get array() {
+        return this._array;
+    }
 }
 Class.register(IndexedArray);
 
-// // TODO V2: Implement checksum for addresses
-// class Crypto {
-//   static get lib() { return window.crypto.subtle; }
-
-//   static get settings() {
-//     const hashAlgo = {name: 'SHA-256'};
-//     const signAlgo = 'ECDSA';
-//     const curve = 'P-256';    // can be 'P-256', 'P-384', or 'P-521'
-//     return {
-//         hashAlgo: hashAlgo,
-//         curve: curve,
-//         keys: {name: signAlgo, namedCurve: curve},
-//         sign: {name: signAlgo, hash: hashAlgo}
-//       };
-//   }
-
-//   static sha256(buffer) {
-//     return Crypto.lib.digest(Crypto.settings.hashAlgo, buffer)
-//       .then(hash => new Hash(hash));
-//   }
-
-//   static generateKeys() {
-//     return Crypto.lib.generateKey(Crypto.settings.keys, true, ['sign', 'verify']);
-//   }
-
-//   static exportPrivate(privateKey) {
-//     return Crypto.lib.exportKey('pkcs8', privateKey);
-//   }
-
-//   static importPrivate(privateKey) {
-//     return Crypto.lib.importKey('pkcs8', privateKey);
-//   }
-
-//   static exportPublic(publicKey, format ='raw') {
-//     return Crypto.lib.exportKey(format, publicKey)
-//       .then(key => new PublicKey(key));
-//   }
-
-//   static exportAddress(publicKey) {
-//     return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
-//   }
-
-//   static importPublic(publicKey, format = 'raw') {
-//     return Crypto.lib.importKey(format, publicKey, Crypto.settings.keys, true, ['verify']);
-//   }
-
-//   static publicToAddress(publicKey) {
-//     return Crypto.sha256(publicKey).then(hash => hash.subarray(0, 20))
-//       .then(address => new Address(address));
-//   }
-
-//   static sign(privateKey, data) {
-//     return Crypto.lib.sign(Crypto.settings.sign, privateKey, data)
-//       .then(sign => new Signature(sign));
-//   }
-
-//   static verify(publicKey, signature, data) {
-//     return Crypto.importPublic(publicKey)
-//         .then(key => Crypto.lib.verify(Crypto.settings.sign, key, signature, data));
-//   }
-// }
-// Class.register(Crypto);
-class ObjectDB extends TypedDB {
-    constructor(tableName, type) {
-        super(tableName, type);
-    }
-
-    async key(obj) {
-        if (!obj.hash) throw 'ObjectDB requires objects with a .hash() method';
-        return BufferUtils.toBase64(await obj.hash());
-    }
-
-    async get(key) {
-        return await super.getObject(key);
-    }
-
-    async put(obj) {
-        const key = await this.key(obj);
-        await super.putObject(key, obj);
-        return key;
-    }
-
-    async delete(obj) {
-        const key = await this.key(obj);
-        await super.delete(key);
-        return key;
-    }
-
-    /*
-    async transaction() {
-        const tx = await super.transaction();
-        return {
-            get: function(key) {
-                return tx.get(key);
-            },
-
-            put: async function(obj) {
-                const key = await this.key(obj);
-                await tx.put(key, obj);
-                return key;
-            },
-
-            putRaw: async function(key, obj) {
-                await this.put(key, obj);
-                return key;
-            }
-        }
-    }
-    */
-}
-Class.register(ObjectDB);
-
 class BufferUtils {
-
-  static toUnicode(buffer, encoding = 'utf-8') {
-    const decoder = new TextDecoder(encoding);
-    return decoder.decode(buffer);
-  }
-
-  static fromUnicode(string, encoding = 'utf-8') {
-    const encoder = new TextEncoder(encoding);
-    return encoder.encode(string);
-  }
-
-  static toAscii(buffer) {
-      return String.fromCharCode.apply(null, new Uint8Array(buffer));
-  }
-
-  static fromAscii(string) {
-      var buf = new Uint8Array(string.length);
-      for (let i = 0; i < string.length; ++i) {
-          buf[i] = string.charCodeAt(i);
-      }
-      return buf;
-  }
-
-  static toBase64(buffer) {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
-  }
-
-  static fromBase64(base64) {
-    return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-  }
-
-  static toBase64Clean(buffer) {
-    return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
-  }
-
-  static concatTypedArrays(a, b) {
-    const c = new (a.constructor)(a.length + b.length);
-    c.set(a, 0);
-    c.set(b, a.length);
-    return c;
-  }
-
-  static concat(a, b)  {
-    return BufferUtils.concatTypedArrays(
-        new Uint8Array(a.buffer || a),
-        new Uint8Array(b.buffer || b)
-    );
-  }
-
-  static equals(a, b) {
-    if (a.length !== b.length) return false;
-    const viewA = new Uint8Array(a);
-    const viewB = new Uint8Array(b);
-    for (let i = 0; i < a.length; i++) {
-      if (viewA[i] !== viewB[i]) return false;
+    static toAscii(buffer) {
+        return String.fromCharCode.apply(null, new Uint8Array(buffer));
     }
-    return true;
-  }
+
+    static fromAscii(string) {
+        var buf = new Uint8Array(string.length);
+        for (let i = 0; i < string.length; ++i) {
+            buf[i] = string.charCodeAt(i);
+        }
+        return buf;
+    }
+
+    static toBase64(buffer) {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    }
+
+    static fromBase64(base64) {
+        return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    }
+
+    static toBase64Clean(buffer) {
+        return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+    }
+
+    static toHex(buffer) {
+        return Array.prototype.map.call(buffer, x => ('00' + x.toString(16)).slice(-2)).join('');
+    }
+
+    static concatTypedArrays(a, b) {
+        const c = new a.constructor(a.length + b.length);
+        c.set(a, 0);
+        c.set(b, a.length);
+        return c;
+    }
+
+    static concat(a, b) {
+        return BufferUtils.concatTypedArrays(new Uint8Array(a.buffer || a), new Uint8Array(b.buffer || b));
+    }
+
+    static equals(a, b) {
+        if (a.length !== b.length) return false;
+        const viewA = new Uint8Array(a);
+        const viewB = new Uint8Array(b);
+        for (let i = 0; i < a.length; i++) {
+            if (viewA[i] !== viewB[i]) return false;
+        }
+        return true;
+    }
 }
 Class.register(BufferUtils);
+
 class SerialBuffer extends Uint8Array {
     constructor(arg) {
         super(arg);
@@ -849,11 +1115,15 @@ class SerialBuffer extends Uint8Array {
         this._writePos = 0;
     }
 
+    subarray(start, end) {
+        return ArrayUtils.subarray(this, start, end);
+    }
+
     get readPos() {
         return this._readPos;
     }
     set readPos(value) {
-        if (value < 0 || value >= this.byteLength) throw 'Invalid readPos ' + value;
+        if (value < 0 || value > this.byteLength) throw 'Invalid readPos ' + value;
         this._readPos = value;
     }
 
@@ -861,7 +1131,7 @@ class SerialBuffer extends Uint8Array {
         return this._writePos;
     }
     set writePos(value) {
-        if (value < 0 || value >= this.byteLength) throw 'Invalid writePos ' + value;
+        if (value < 0 || value > this.byteLength) throw 'Invalid writePos ' + value;
         this._writePos = value;
     }
 
@@ -941,34 +1211,422 @@ class SerialBuffer extends Uint8Array {
     }
 }
 Class.register(SerialBuffer);
+
+class Crypto {
+    static get lib() {
+        return CryptoLib.instance;
+    }
+
+    static get settings() {
+        const hashAlgo = { name: 'SHA-256' };
+        const signAlgo = 'ECDSA';
+        const curve = 'P-256'; // can be 'P-256', 'P-384', or 'P-521'
+        return {
+            hashAlgo: hashAlgo,
+            curve: curve,
+            keys: { name: signAlgo, namedCurve: curve },
+            sign: { name: signAlgo, hash: hashAlgo }
+        };
+    }
+
+    static sha256(buffer) {
+        return Crypto.lib.digest(Crypto.settings.hashAlgo, buffer).then(hash => new Hash(hash));
+    }
+
+    static generateKeys() {
+        return Crypto.lib.generateKey(Crypto.settings.keys, true, ['sign', 'verify']);
+    }
+
+    static exportPrivate(privateKey) {
+        return Crypto.lib.exportKey('pkcs8', privateKey);
+    }
+
+    static importPrivate(privateKey) {
+        return Crypto.lib.importKey('pkcs8', privateKey, Crypto.settings.keys, true, ['sign']);
+    }
+
+    static exportPublic(publicKey) {
+        let format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'raw';
+
+        return Crypto.lib.exportKey(format, publicKey).then(key => new PublicKey(key));
+    }
+
+    static exportAddress(publicKey) {
+        return Crypto.exportPublic(publicKey).then(Crypto.publicToAddress);
+    }
+
+    static importPublic(publicKey) {
+        let format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'raw';
+
+        return Crypto.lib.importKey(format, publicKey, Crypto.settings.keys, true, ['verify']);
+    }
+
+    static publicToAddress(publicKey) {
+        return Crypto.sha256(publicKey).then(hash => hash.subarray(0, 20)).then(address => new Address(address));
+    }
+
+    static sign(privateKey, data) {
+        return Crypto.lib.sign(Crypto.settings.sign, privateKey, data).then(sign => new Signature(sign));
+    }
+
+    static verify(publicKey, signature, data) {
+        return Crypto.importPublic(publicKey).then(key => Crypto.lib.verify(Crypto.settings.sign, key, signature, data));
+    }
+}
+Class.register(Crypto);
+
+class ObjectDB extends TypedDB {
+    constructor(tableName, type) {
+        super(tableName, type);
+    }
+
+    key(obj) {
+        var _this6 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee6() {
+            return _regenerator2.default.wrap(function _callee6$(_context6) {
+                while (1) switch (_context6.prev = _context6.next) {
+                    case 0:
+                        if (obj.hash) {
+                            _context6.next = 2;
+                            break;
+                        }
+
+                        throw 'ObjectDB requires objects with a .hash() method';
+
+                    case 2:
+                        _context6.t0 = BufferUtils;
+                        _context6.next = 5;
+                        return obj.hash();
+
+                    case 5:
+                        _context6.t1 = _context6.sent;
+                        return _context6.abrupt('return', _context6.t0.toBase64.call(_context6.t0, _context6.t1));
+
+                    case 7:
+                    case 'end':
+                        return _context6.stop();
+                }
+            }, _callee6, _this6);
+        }))();
+    }
+
+    get(key) {
+        var _this7 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee7() {
+            return _regenerator2.default.wrap(function _callee7$(_context7) {
+                while (1) switch (_context7.prev = _context7.next) {
+                    case 0:
+                        _context7.next = 2;
+                        return TypedDB.prototype.getObject.call(_this7, key);
+
+                    case 2:
+                        return _context7.abrupt('return', _context7.sent);
+
+                    case 3:
+                    case 'end':
+                        return _context7.stop();
+                }
+            }, _callee7, _this7);
+        }))();
+    }
+
+    put(obj) {
+        var _this8 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee8() {
+            var key;
+            return _regenerator2.default.wrap(function _callee8$(_context8) {
+                while (1) switch (_context8.prev = _context8.next) {
+                    case 0:
+                        _context8.next = 2;
+                        return _this8.key(obj);
+
+                    case 2:
+                        key = _context8.sent;
+                        _context8.next = 5;
+                        return TypedDB.prototype.putObject.call(_this8, key, obj);
+
+                    case 5:
+                        return _context8.abrupt('return', key);
+
+                    case 6:
+                    case 'end':
+                        return _context8.stop();
+                }
+            }, _callee8, _this8);
+        }))();
+    }
+
+    delete(obj) {
+        var _this9 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee9() {
+            var key;
+            return _regenerator2.default.wrap(function _callee9$(_context9) {
+                while (1) switch (_context9.prev = _context9.next) {
+                    case 0:
+                        _context9.next = 2;
+                        return _this9.key(obj);
+
+                    case 2:
+                        key = _context9.sent;
+                        _context9.next = 5;
+                        return TypedDB.prototype.delete.call(_this9, key);
+
+                    case 5:
+                        return _context9.abrupt('return', key);
+
+                    case 6:
+                    case 'end':
+                        return _context9.stop();
+                }
+            }, _callee9, _this9);
+        }))();
+    }
+
+    transaction() {
+        var _this10 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee12() {
+            var tx, that, _ref, superDelete, _ref2;
+
+            return _regenerator2.default.wrap(function _callee12$(_context12) {
+                while (1) switch (_context12.prev = _context12.next) {
+                    case 0:
+                        _context12.next = 2;
+                        return TypedDB.prototype.transaction.call(_this10);
+
+                    case 2:
+                        tx = _context12.sent;
+                        that = _this10;
+
+
+                        tx.get = function (key) {
+                            return tx.getObject(key);
+                        };
+                        tx.put = (() => {
+                            _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee10(obj) {
+                                var key;
+                                return _regenerator2.default.wrap(function _callee10$(_context10) {
+                                    while (1) switch (_context10.prev = _context10.next) {
+                                        case 0:
+                                            _context10.next = 2;
+                                            return that.key(obj);
+
+                                        case 2:
+                                            key = _context10.sent;
+                                            _context10.next = 5;
+                                            return tx.putObject(key, obj);
+
+                                        case 5:
+                                            return _context10.abrupt('return', key);
+
+                                        case 6:
+                                        case 'end':
+                                            return _context10.stop();
+                                    }
+                                }, _callee10, this);
+                            }));
+                            return function (_x3) {
+                                return _ref.apply(this, arguments);
+                            };
+                        })();
+                        superDelete = tx.delete.bind(tx);
+
+                        tx.delete = (() => {
+                            _ref2 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee11(obj) {
+                                var key;
+                                return _regenerator2.default.wrap(function _callee11$(_context11) {
+                                    while (1) switch (_context11.prev = _context11.next) {
+                                        case 0:
+                                            _context11.next = 2;
+                                            return that.key(obj);
+
+                                        case 2:
+                                            key = _context11.sent;
+                                            _context11.next = 5;
+                                            return superDelete(key);
+
+                                        case 5:
+                                            return _context11.abrupt('return', key);
+
+                                        case 6:
+                                        case 'end':
+                                            return _context11.stop();
+                                    }
+                                }, _callee11, this);
+                            }));
+                            return function (_x4) {
+                                return _ref2.apply(this, arguments);
+                            };
+                        })();
+
+                        return _context12.abrupt('return', tx);
+
+                    case 9:
+                    case 'end':
+                        return _context12.stop();
+                }
+            }, _callee12, _this10);
+        }))();
+    }
+}
+Class.register(ObjectDB);
+
+class TypedDBTransaction {
+    constructor(db) {
+        this._db = db;
+        this._objects = {};
+        this._strings = {};
+        this._deletions = {};
+    }
+
+    commit() {
+        return this._db.nativeTransaction().then(tx => new _promise2.default((resolve, reject) => {
+            tx.on('complete', () => {
+                if (this._db.updateCache && this._db.flushCache) {
+                    this._db.updateCache(this._objects);
+                    this._db.updateCache(this._strings);
+                    this._db.flushCache((0, _keys2.default)(this._deletions));
+                }
+
+                resolve(true);
+            });
+            tx.on('error', e => reject(e));
+
+            for (let key in this._objects) {
+                tx.putObject(key, this._objects[key]);
+            }
+            for (let key in this._strings) {
+                tx.putString(key, this._strings[key]);
+            }
+            for (let key in this._deletions) {
+                tx.delete(key);
+            }
+
+            tx.commit();
+        }));
+    }
+
+    getObject(key) {
+        var _this11 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee13() {
+            return _regenerator2.default.wrap(function _callee13$(_context13) {
+                while (1) switch (_context13.prev = _context13.next) {
+                    case 0:
+                        if (!_this11._deletions[key]) {
+                            _context13.next = 2;
+                            break;
+                        }
+
+                        return _context13.abrupt('return', undefined);
+
+                    case 2:
+                        if (!(_this11._objects[key] !== undefined)) {
+                            _context13.next = 4;
+                            break;
+                        }
+
+                        return _context13.abrupt('return', _this11._objects[key]);
+
+                    case 4:
+                        _context13.next = 6;
+                        return _this11._db.getObject(key);
+
+                    case 6:
+                        return _context13.abrupt('return', _context13.sent);
+
+                    case 7:
+                    case 'end':
+                        return _context13.stop();
+                }
+            }, _callee13, _this11);
+        }))();
+    }
+
+    putObject(key, value) {
+        this._objects[key] = value;
+        delete this._deletions[key];
+    }
+
+    getString(key) {
+        var _this12 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee14() {
+            return _regenerator2.default.wrap(function _callee14$(_context14) {
+                while (1) switch (_context14.prev = _context14.next) {
+                    case 0:
+                        if (!_this12._deletions[key]) {
+                            _context14.next = 2;
+                            break;
+                        }
+
+                        return _context14.abrupt('return', undefined);
+
+                    case 2:
+                        if (!(_this12._strings[key] !== undefined)) {
+                            _context14.next = 4;
+                            break;
+                        }
+
+                        return _context14.abrupt('return', _this12._strings[key]);
+
+                    case 4:
+                        _context14.next = 6;
+                        return _this12._db.getString(key);
+
+                    case 6:
+                        return _context14.abrupt('return', _context14.sent);
+
+                    case 7:
+                    case 'end':
+                        return _context14.stop();
+                }
+            }, _callee14, _this12);
+        }))();
+    }
+
+    putString(key, value) {
+        this._strings[key] = value;
+        delete this._deletions[key];
+    }
+
+    delete(key) {
+        this._deletions[key] = true;
+        delete this._objects[key];
+        delete this._strings[key];
+    }
+}
+Class.register(TypedDBTransaction);
+
 class NumberUtils {
     static isUint8(val) {
-        return Number.isInteger(val)
-            && val >= 0 && val <= NumberUtils.UINT8_MAX;
+        return (0, _isInteger2.default)(val) && val >= 0 && val <= NumberUtils.UINT8_MAX;
     }
 
     static isUint16(val) {
-        return Number.isInteger(val)
-            && val >= 0 && val <= NumberUtils.UINT16_MAX;
+        return (0, _isInteger2.default)(val) && val >= 0 && val <= NumberUtils.UINT16_MAX;
     }
 
     static isUint32(val) {
-        return Number.isInteger(val)
-            && val >= 0 && val <= NumberUtils.UINT32_MAX;
+        return (0, _isInteger2.default)(val) && val >= 0 && val <= NumberUtils.UINT32_MAX;
     }
 
     static isUint64(val) {
-        return Number.isInteger(val)
-            && val >= 0 && val <= NumberUtils.UINT64_MAX;
+        return (0, _isInteger2.default)(val) && val >= 0 && val <= NumberUtils.UINT64_MAX;
     }
 }
 
 NumberUtils.UINT8_MAX = 255;
 NumberUtils.UINT16_MAX = 65535;
 NumberUtils.UINT32_MAX = 4294967295;
-NumberUtils.UINT64_MAX = Number.MAX_SAFE_INTEGER;
-Object.freeze(NumberUtils);
+NumberUtils.UINT64_MAX = _maxSafeInteger2.default;
+(0, _freeze2.default)(NumberUtils);
 Class.register(NumberUtils);
+
 class ObjectUtils {
     static cast(o, clazz) {
         if (!o) return o;
@@ -977,6 +1635,7 @@ class ObjectUtils {
     }
 }
 Class.register(ObjectUtils);
+
 class PlatformUtils {
     static isBrowser() {
         return typeof window !== "undefined";
@@ -986,10 +1645,12 @@ Class.register(PlatformUtils);
 
 class StringUtils {
     static isMultibyte(str) {
-        return /[\uD800-\uDFFF]/.test(str);
+        return (/[\uD800-\uDFFF]/.test(str)
+        );
     }
 }
 Class.register(StringUtils);
+
 class Primitive extends Uint8Array {
     constructor(arg, length) {
         if (!arg) {
@@ -1016,14 +1677,17 @@ class Primitive extends Uint8Array {
     }
 
     equals(o) {
-        return o instanceof Primitive
-            && BufferUtils.equals(this, o);
+        return o instanceof Primitive && BufferUtils.equals(this, o);
+    }
+
+    subarray(begin, end) {
+        return ArrayUtils.subarray(this, begin, end);
     }
 
     toString() {
         return this.toBase64();
     }
-    
+
     toBase64() {
         return BufferUtils.toBase64(this);
     }
@@ -1036,154 +1700,150 @@ Class.register(Primitive);
 
 class Hash extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 32;
-	}
+    static get SERIALIZED_SIZE() {
+        return 32;
+    }
 
-	constructor(arg) {
-		super(arg, Hash.SERIALIZED_SIZE);
-	}
+    constructor(arg) {
+        super(arg, Hash.SERIALIZED_SIZE);
+    }
 
-	static unserialize(buf) {
-		return new Hash(buf.read(Hash.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new Hash(buf.read(Hash.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
     get serializedSize() {
         return Hash.SERIALIZED_SIZE;
     }
 
-	equals(o) {
-		return o instanceof Hash
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof Hash && super.equals(o);
+    }
 
-	static fromBase64(base64) {
-		return new Hash(BufferUtils.fromBase64(base64));
-	}
+    static fromBase64(base64) {
+        return new Hash(BufferUtils.fromBase64(base64));
+    }
 
-	static isHash(o) {
-		return o instanceof Hash;
-	}
+    static isHash(o) {
+        return o instanceof Hash;
+    }
 }
 Class.register(Hash);
 
 class PrivateKey extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 64;
-	}
+    static get SERIALIZED_SIZE() {
+        return 64;
+    }
 
-	constructor(arg) {
-		super(arg, PrivateKey.SERIALIZED_SIZE);
-	}
+    constructor(arg) {
+        super(arg, PrivateKey.SERIALIZED_SIZE);
+    }
 
-	static unserialize(buf) {
-		return new PublicKey(buf.read(PrivateKey.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new PublicKey(buf.read(PrivateKey.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
-	get serializedSize() {
-		return PrivateKey.SERIALIZED_SIZE;
-	}
+    get serializedSize() {
+        return PrivateKey.SERIALIZED_SIZE;
+    }
 
-	equals(o) {
-		return o instanceof PrivateKey
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof PrivateKey && super.equals(o);
+    }
 }
 
 Class.register(PrivateKey);
 
 class PublicKey extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 65;
-	}
+    static get SERIALIZED_SIZE() {
+        return 65;
+    }
 
-	constructor(arg) {
-		super(arg, PublicKey.SERIALIZED_SIZE);
-	}
+    constructor(arg) {
+        super(arg, PublicKey.SERIALIZED_SIZE);
+    }
 
-	static unserialize(buf) {
-		return new PublicKey(buf.read(PublicKey.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new PublicKey(buf.read(PublicKey.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
-	get serializedSize() {
-		return PublicKey.SERIALIZED_SIZE;
-	}
+    get serializedSize() {
+        return PublicKey.SERIALIZED_SIZE;
+    }
 
-	equals(o) {
-		return o instanceof PublicKey
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof PublicKey && super.equals(o);
+    }
 
-	toAddress() {
-		return Crypto.publicToAddress(this);
-	}
+    toAddress() {
+        return Crypto.publicToAddress(this);
+    }
 }
 Class.register(PublicKey);
 
 class Signature extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 64;
-	}
+    static get SERIALIZED_SIZE() {
+        return 64;
+    }
 
-	constructor(arg) {
+    constructor(arg) {
         super(arg, Signature.SERIALIZED_SIZE);
-	}
+    }
 
-	static unserialize(buf) {
-		return new Signature(buf.read(Signature.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new Signature(buf.read(Signature.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
     get serializedSize() {
         return Signature.SERIALIZED_SIZE;
     }
 
-	equals(o) {
-		return o instanceof Signature
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof Signature && super.equals(o);
+    }
 }
 Class.register(Signature);
-class BlockHeader {
 
-    constructor(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce) {
+class BlockHeader {
+    constructor(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce) {
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
-        if (!NumberUtils.isUint32(difficulty)) throw 'Malformed difficulty';
+        if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
         if (!NumberUtils.isUint64(timestamp)) throw 'Malformed timestamp';
         if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
 
         this._prevHash = prevHash;
         this._bodyHash = bodyHash;
         this._accountsHash = accountsHash;
-        this._difficulty = difficulty;
+        this._nBits = nBits;
         this._timestamp = timestamp;
         this._nonce = nonce;
     }
@@ -1197,16 +1857,16 @@ class BlockHeader {
         // XXX clear out cached hash
         o._hash = undefined;
         return o;
-	}
+    }
 
     static unserialize(buf) {
         var prevHash = Hash.unserialize(buf);
         var bodyHash = Hash.unserialize(buf);
         var accountsHash = Hash.unserialize(buf);
-        var difficulty = buf.readUint32();
+        var nBits = buf.readUint32();
         var timestamp = buf.readUint64();
         var nonce = buf.readUint64();
-        return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+        return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce);
     }
 
     serialize(buf) {
@@ -1214,47 +1874,77 @@ class BlockHeader {
         this._prevHash.serialize(buf);
         this._bodyHash.serialize(buf);
         this._accountsHash.serialize(buf);
-        buf.writeUint32(this._difficulty);
+        buf.writeUint32(this._nBits);
         buf.writeUint64(this._timestamp);
         buf.writeUint64(this._nonce);
         return buf;
     }
 
     get serializedSize() {
-        return this._prevHash.serializedSize
-            + this._bodyHash.serializedSize
-            + this._accountsHash.serializedSize
-            + /*difficulty*/ 4
-            + /*timestamp*/ 8
-            + /*nonce*/ 8;
+        return this._prevHash.serializedSize + this._bodyHash.serializedSize + this._accountsHash.serializedSize + /*nBits*/4 + /*timestamp*/8 + /*nonce*/8;
     }
 
-    verifyProofOfWork() {
-        // Verify that trailingZeros(hash) == difficulty
-        return this.hash().then( hash => {
-            const zeroBytes = Math.floor(this.difficulty / 8);
-            for (let i = 0; i < zeroBytes; i++) {
-                if (hash[i] !== 0) return false;
-            }
-            const zeroBits = this.difficulty % 8;
-            if (zeroBits && hash[zeroBytes] > Math.pow(2, 8 - zeroBits)) return false;
-            return true;
-        });
+    verifyProofOfWork(buf) {
+        var _this13 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee15() {
+            var hash;
+            return _regenerator2.default.wrap(function _callee15$(_context15) {
+                while (1) switch (_context15.prev = _context15.next) {
+                    case 0:
+                        _context15.next = 2;
+                        return _this13.hash(buf);
+
+                    case 2:
+                        hash = _context15.sent;
+                        return _context15.abrupt('return', BlockUtils.isProofOfWork(hash, _this13.target));
+
+                    case 4:
+                    case 'end':
+                        return _context15.stop();
+                }
+            }, _callee15, _this13);
+        }))();
     }
 
-    async hash() {
-        this._hash = this._hash || await Crypto.sha256(this.serialize());
-        return this._hash;
+    hash(buf) {
+        var _this14 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee16() {
+            return _regenerator2.default.wrap(function _callee16$(_context16) {
+                while (1) switch (_context16.prev = _context16.next) {
+                    case 0:
+                        _context16.t0 = _this14._hash;
+
+                        if (_context16.t0) {
+                            _context16.next = 5;
+                            break;
+                        }
+
+                        _context16.next = 4;
+                        return Crypto.sha256(_this14.serialize(buf));
+
+                    case 4:
+                        _context16.t0 = _context16.sent;
+
+                    case 5:
+                        _this14._hash = _context16.t0;
+                        return _context16.abrupt('return', _this14._hash);
+
+                    case 7:
+                    case 'end':
+                        return _context16.stop();
+                }
+            }, _callee16, _this14);
+        }))();
     }
 
     equals(o) {
-        return o instanceof BlockHeader
-            && this._prevHash.equals(o.prevHash)
-            && this._bodyHash.equals(o.bodyHash)
-            && this._accountsHash.equals(o.accountsHash)
-            && this._difficulty === o.difficulty
-            && this._timestamp === o.timestamp
-            && this._nonce === o.nonce;
+        return o instanceof BlockHeader && this._prevHash.equals(o.prevHash) && this._bodyHash.equals(o.bodyHash) && this._accountsHash.equals(o.accountsHash) && this._nBits === o.nBits && this._timestamp === o.timestamp && this._nonce === o.nonce;
+    }
+
+    toString() {
+        return `BlockHeader{` + `prevHash=${this._prevHash}, ` + `bodyHash=${this._bodyHash}, ` + `accountsHash=${this._accountsHash}, ` + `nBits=${this._nBits.toString(16)}, ` + `timestamp=${this._timestamp}, ` + `nonce=${this._nonce}` + `}`;
     }
 
     get prevHash() {
@@ -1269,8 +1959,16 @@ class BlockHeader {
         return this._accountsHash;
     }
 
+    get nBits() {
+        return this._nBits;
+    }
+
+    get target() {
+        return BlockUtils.compactToTarget(this._nBits);
+    }
+
     get difficulty() {
-        return this._difficulty;
+        return BlockUtils.compactToDifficulty(this._nBits);
     }
 
     get timestamp() {
@@ -1287,115 +1985,245 @@ class BlockHeader {
         this._nonce = n;
         this._hash = null;
     }
-
-    log(desc) {
-        super.log(desc, `BlockHeader
-            prev: ${Buffer.toBase64(this._prevHash)}
-            tx-root: ${Buffer.toBase64(this._bodyHash)}
-            state-root: ${Buffer.toBase64(this._accountsHash)}
-            difficulty: ${this._difficulty}, timestamp: ${this._timestamp}, nonce: ${this._nonce}`);
-    }
-
 }
 Class.register(BlockHeader);
+
 class BlockBody {
 
-	constructor(minerAddr, transactions) {
-		if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
-		if (!transactions || transactions.some( it => !(it instanceof Transaction))) throw 'Malformed transactions';
-		this._minerAddr = minerAddr;
-		this._transactions = transactions;
-	}
-
-	static cast(o) {
-		if (!o) return o;
-		ObjectUtils.cast(o, BlockBody);
-		o._minerAddr = new Address(o._minerAddr);
-		o._transactions.forEach( tx => Transaction.cast(tx));
-		return o;
-	}
-
-	static unserialize(buf) {
-		const minerAddr = Address.unserialize(buf);
-		const numTransactions = buf.readUint16();
-		const transactions = new Array(numTransactions);
-		for (let i = 0; i < numTransactions; i++) {
-			transactions[i] = Transaction.unserialize(buf);
-		}
-		return new BlockBody(minerAddr, transactions);
-	}
-
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		this._minerAddr.serialize(buf);
-		buf.writeUint16(this._transactions.length);
-		for (let tx of this._transactions) {
-			tx.serialize(buf);
-		}
-		return buf;
-	}
-
-	get serializedSize() {
-		let size = this._minerAddr.serializedSize
-			+ /*transactionsLength*/ 2;
-		for (let tx of this._transactions) {
-			size += tx.serializedSize;
-		}
-		return size;
-	}
-
-	hash() {
-		return BlockBody._computeRoot([this._minerAddr, ...this._transactions]);
-	}
-
-	static _computeRoot(values) {
-		// values may contain:
-		// - transactions (Transaction)
-		// - miner address (Uint8Array)
-		const len = values.length;
-		if (len == 1) {
-			const value = values[0];
-			return value.hash ? /*transaction*/ value.hash() : /*miner address*/ Crypto.sha256(value);
-		}
-
-		const mid = Math.round(len / 2);
-		const left = values.slice(0, mid);
-		const right = values.slice(mid);
-		return Promise.all([
-					BlockBody._computeRoot(left),
-					BlockBody._computeRoot(right)
-				])
-			.then( hashes => Crypto.sha256(BufferUtils.concat(hashes[0], hashes[1])));
-	}
-
-	equals(o) {
-		return o instanceof BlockBody
-			&& this._minerAddr.equals(o.minerAddr)
-			&& this._transactions.every( (tx, i) => tx.equals(o.transactions[i]) );
+    constructor(minerAddr, transactions) {
+        if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
+        if (!transactions || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
+        this._minerAddr = minerAddr;
+        this._transactions = transactions;
     }
 
-	get minerAddr() {
-		return this._minerAddr;
-	}
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, BlockBody);
+        o._minerAddr = new Address(o._minerAddr);
+        o._transactions.forEach(tx => Transaction.cast(tx));
+        return o;
+    }
 
-	get transactions() {
-		return this._transactions;
-	}
+    static unserialize(buf) {
+        const minerAddr = Address.unserialize(buf);
+        const numTransactions = buf.readUint16();
+        const transactions = new Array(numTransactions);
+        for (let i = 0; i < numTransactions; i++) {
+            transactions[i] = Transaction.unserialize(buf);
+        }
+        return new BlockBody(minerAddr, transactions);
+    }
 
-	get transactionCount() {
-		return this._transactions.length;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        this._minerAddr.serialize(buf);
+        buf.writeUint16(this._transactions.length);
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
+
+        try {
+            for (var _iterator5 = (0, _getIterator3.default)(this._transactions), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                let tx = _step5.value;
+
+                tx.serialize(buf);
+            }
+        } catch (err) {
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                    _iterator5.return();
+                }
+            } finally {
+                if (_didIteratorError5) {
+                    throw _iteratorError5;
+                }
+            }
+        }
+
+        return buf;
+    }
+
+    get serializedSize() {
+        let size = this._minerAddr.serializedSize + /*transactionsLength*/2;
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
+
+        try {
+            for (var _iterator6 = (0, _getIterator3.default)(this._transactions), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                let tx = _step6.value;
+
+                size += tx.serializedSize;
+            }
+        } catch (err) {
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                    _iterator6.return();
+                }
+            } finally {
+                if (_didIteratorError6) {
+                    throw _iteratorError6;
+                }
+            }
+        }
+
+        return size;
+    }
+
+    hash() {
+        return BlockBody._computeRoot([this._minerAddr, ...this._transactions]);
+    }
+
+    static _computeRoot(values) {
+        // values may contain:
+        // - transactions (Transaction)
+        // - miner address (Uint8Array)
+        const len = values.length;
+        if (len == 1) {
+            const value = values[0];
+            return value.hash ? /*transaction*/value.hash() : /*miner address*/Crypto.sha256(value);
+        }
+
+        const mid = Math.round(len / 2);
+        const left = values.slice(0, mid);
+        const right = values.slice(mid);
+        return _promise2.default.all([BlockBody._computeRoot(left), BlockBody._computeRoot(right)]).then(hashes => Crypto.sha256(BufferUtils.concat(hashes[0], hashes[1])));
+    }
+
+    equals(o) {
+        return o instanceof BlockBody && this._minerAddr.equals(o.minerAddr) && this._transactions.every((tx, i) => tx.equals(o.transactions[i]));
+    }
+
+    get minerAddr() {
+        return this._minerAddr;
+    }
+
+    get transactions() {
+        return this._transactions;
+    }
+
+    get transactionCount() {
+        return this._transactions.length;
+    }
 }
 Class.register(BlockBody);
-class InvVector {
-    static async fromBlock(block) {
-        const hash = await block.hash();
-        return new InvVector(InvVector.Type.BLOCK, hash);
+
+class BlockUtils {
+    static compactToTarget(compact) {
+        return (compact & 0xffffff) * Math.pow(2, 8 * ((compact >> 24) - 3));
     }
 
-    static async fromTransaction(tx) {
-        const hash = await tx.hash();
-        return new InvVector(InvVector.Type.TRANSACTION, hash);
+    static targetToCompact(target) {
+        // Convert the target into base 16 with zero-padding.
+        let base16 = target.toString(16);
+        if (base16.length % 2 != 0) {
+            base16 = "0" + base16;
+        }
+
+        // If the first (most significant) byte is greater than 127 (0x7f),
+        // prepend a zero byte.
+        if (parseInt(base16.substr(0, 2), 16) > 0x7f) {
+            base16 = "00" + base16;
+        }
+
+        // The first byte of the 'compact' format is the number of bytes,
+        // including the prepended zero if it's present.
+        let size = base16.length / 2;
+        let compact = size << 24;
+
+        // The following three bytes are the first three bytes of the above
+        // representation. If less than three bytes are present, then one or
+        // more of the last bytes of the compact representation will be zero.
+        const numBytes = Math.min(size, 3);
+        for (let i = 0; i < numBytes; ++i) {
+            compact |= parseInt(base16.substr(i * 2, 2), 16) << (2 - i) * 8;
+        }
+
+        return compact;
+    }
+
+    static compactToDifficulty(compact) {
+        return Policy.BLOCK_TARGET_MAX / BlockUtils.compactToTarget(compact);
+    }
+
+    static difficultyToCompact(difficulty) {
+        return BlockUtils.targetToCompact(Policy.BLOCK_TARGET_MAX / difficulty);
+    }
+
+    static difficultyToTarget(difficulty) {
+        return Policy.BLOCK_TARGET_MAX / difficulty;
+    }
+
+    static targetToDifficulty(target) {
+        return Policy.BLOCK_TARGET_MAX / target;
+    }
+
+    static isProofOfWork(hash, target) {
+        return parseInt(hash.toHex(), 16) <= target;
+    }
+
+    static isValidCompact(compact) {
+        return BlockUtils.isValidTarget(BlockUtils.compactToTarget(compact));
+    }
+
+    static isValidTarget(target) {
+        return target >= 1 && target <= Policy.BLOCK_TARGET_MAX;
+    }
+}
+Class.register(BlockUtils);
+
+class InvVector {
+    static fromBlock(block) {
+        var _this15 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee17() {
+            var hash;
+            return _regenerator2.default.wrap(function _callee17$(_context17) {
+                while (1) switch (_context17.prev = _context17.next) {
+                    case 0:
+                        _context17.next = 2;
+                        return block.hash();
+
+                    case 2:
+                        hash = _context17.sent;
+                        return _context17.abrupt('return', new InvVector(InvVector.Type.BLOCK, hash));
+
+                    case 4:
+                    case 'end':
+                        return _context17.stop();
+                }
+            }, _callee17, _this15);
+        }))();
+    }
+
+    static fromTransaction(tx) {
+        var _this16 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee18() {
+            var hash;
+            return _regenerator2.default.wrap(function _callee18$(_context18) {
+                while (1) switch (_context18.prev = _context18.next) {
+                    case 0:
+                        _context18.next = 2;
+                        return tx.hash();
+
+                    case 2:
+                        hash = _context18.sent;
+                        return _context18.abrupt('return', new InvVector(InvVector.Type.TRANSACTION, hash));
+
+                    case 4:
+                    case 'end':
+                        return _context18.stop();
+                }
+            }, _callee18, _this16);
+        }))();
     }
 
     constructor(type, hash) {
@@ -1417,18 +2245,16 @@ class InvVector {
     }
 
     equals(o) {
-        return o instanceof InvVector
-            && this._type == o.type
-            && this._hash.equals(o.hash);
+        return o instanceof InvVector && this._type == o.type && this._hash.equals(o.hash);
     }
 
     toString() {
-        return "InvVector{type=" + this._type + ", hash=" + this.hash + "}";
+        return 'InvVector{type=' + this._type + ', hash=' + this.hash + '}';
     }
-    
+
     get serializedSize() {
-        return /*invType*/ 4
-            + this._hash.serializedSize;
+        return (/*invType*/4 + this._hash.serializedSize
+        );
     }
 
     get type() {
@@ -1443,8 +2269,9 @@ InvVector.Type = {
     ERROR: 0,
     TRANSACTION: 1,
     BLOCK: 2
-}
+};
 Class.register(InvVector);
+
 class NetAddress {
     constructor(services, timestamp, host, port, signalId, distance) {
         this._services = services;
@@ -1477,26 +2304,16 @@ class NetAddress {
     }
 
     get serializedSize() {
-        return /*services*/ 4
-            + /*timestamp*/ 8
-            + /*extra byte VarLengthString host*/ 1
-            + this._host.length
-            + /*port*/ 2
-            + /*signalId*/ 8
-            + /*distance*/ 1;
+        return (/*services*/4 + /*timestamp*/8 + /*extra byte VarLengthString host*/1 + this._host.length + /*port*/2 + /*signalId*/8 + /*distance*/1
+        );
     }
 
     equals(o) {
-        return o instanceof NetAddress
-            && this._services === o.services
-            && this._host === o.host
-            && this._port === o.port
-            && this._signalId === o.signalId;
+        return o instanceof NetAddress && this._services === o.services && this._host === o.host && this._port === o.port && this._signalId === o.signalId;
     }
 
     toString() {
-        return "NetAddress{services=" + this._services + ", host=" + this._host
-            + ", port=" + this._port + ", signalId=" + this._signalId + "}"
+        return "NetAddress{services=" + this._services + ", host=" + this._host + ", port=" + this._port + ", signalId=" + this._signalId + "}";
     }
 
     get services() {
@@ -1531,10 +2348,10 @@ class NetAddress {
 Class.register(NetAddress);
 
 class Message {
-	constructor(type) {
+    constructor(type) {
         if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
         this._type = type;
-	}
+    }
 
     static peekType(buf) {
         // Store current read position.
@@ -1558,9 +2375,9 @@ class Message {
         const type = buf.readFixLengthString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
-		// TODO validate checksum
+        // TODO validate checksum
 
-		return new Message(type);
+        return new Message(type);
     }
 
     serialize(buf) {
@@ -1573,92 +2390,132 @@ class Message {
     }
 
     get serializedSize() {
-        return /*magic*/ 4
-            + /*type*/ 12
-            + /*length*/ 4
-            + /*checksum*/ 4;
+        return (/*magic*/4 + /*type*/12 + /*length*/4 + /*checksum*/4
+        );
     }
 
-	get magic() {
+    get magic() {
         return this._magic;
-	}
+    }
 
-	get type() {
+    get type() {
         return this._type;
-	}
+    }
 
-	get length() {
+    get length() {
         return this._length;
-	}
+    }
 
-	get checksum() {
+    get checksum() {
         return this._checksum;
-	}
+    }
 }
 Message.MAGIC = 0x42042042;
 Message.Type = {
     VERSION: 'version',
-	VERACK: 'verack',
-	INV: 'inv',
-	GETDATA: 'getdata',
-	NOTFOUND: 'notfound',
-	GETBLOCKS: 'getblocks',
-	GETHEADERS: 'getheaders',
-	TX: 'tx',
-	BLOCK: 'block',
-	HEADERS: 'headers',
-	MEMPOOL: 'mempool',
-	REJECT: 'reject',
+    VERACK: 'verack',
+    INV: 'inv',
+    GETDATA: 'getdata',
+    NOTFOUND: 'notfound',
+    GETBLOCKS: 'getblocks',
+    GETHEADERS: 'getheaders',
+    TX: 'tx',
+    BLOCK: 'block',
+    HEADERS: 'headers',
+    MEMPOOL: 'mempool',
+    REJECT: 'reject',
 
-	ADDR: 'addr',
-	GETADDR: 'getaddr',
-	PING: 'ping',
-	PONG: 'pong',
+    ADDR: 'addr',
+    GETADDR: 'getaddr',
+    PING: 'ping',
+    PONG: 'pong',
 
-	SIGNAL: 'signal',
+    SIGNAL: 'signal',
 
-	SENDHEADERS: 'sendheaders',
+    SENDHEADERS: 'sendheaders',
 
     // Nimiq
     GETBALANCES: 'getbalances',
     BALANCES: 'balances'
-}
+};
 Class.register(Message);
 
 class AddrMessage extends Message {
     constructor(addresses) {
         super(Message.Type.ADDR);
-        if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.some( it => !(it instanceof NetAddress))) throw 'Malformed addresses';
+        if (!addresses || !NumberUtils.isUint16(addresses.length) || addresses.some(it => !(it instanceof NetAddress))) throw 'Malformed addresses';
         this._addresses = addresses;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
+    static unserialize(buf) {
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const addresses = [];
         for (let i = 0; i < count; ++i) {
             addresses.push(NetAddress.unserialize(buf));
         }
-		return new AddrMessage(addresses);
-	}
+        return new AddrMessage(addresses);
+    }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         buf.writeUint16(this._addresses.length);
-        for (let addr of this._addresses) {
-            addr.serialize(buf);
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
+        var _iteratorError7 = undefined;
+
+        try {
+            for (var _iterator7 = (0, _getIterator3.default)(this._addresses), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                let addr = _step7.value;
+
+                addr.serialize(buf);
+            }
+        } catch (err) {
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                    _iterator7.return();
+                }
+            } finally {
+                if (_didIteratorError7) {
+                    throw _iteratorError7;
+                }
+            }
         }
+
         return buf;
     }
 
     get serializedSize() {
-        let size = super.serializedSize
-            + /*count*/ 2;
-        for (let addr of this._addresses) {
-            size += addr.serializedSize;
+        let size = super.serializedSize + /*count*/2;
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
+
+        try {
+            for (var _iterator8 = (0, _getIterator3.default)(this._addresses), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                let addr = _step8.value;
+
+                size += addr.serializedSize;
+            }
+        } catch (err) {
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                    _iterator8.return();
+                }
+            } finally {
+                if (_didIteratorError8) {
+                    throw _iteratorError8;
+                }
+            }
         }
+
         return size;
     }
 
@@ -1675,29 +2532,29 @@ class BlockMessage extends Message {
         this._block = block;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
-		const block = Block.unserialize(buf);
-		return new BlockMessage(block);
-	}
+    static unserialize(buf) {
+        Message.unserialize(buf);
+        const block = Block.unserialize(buf);
+        return new BlockMessage(block);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
-		this._block.serialize(buf);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
+        this._block.serialize(buf);
+        return buf;
+    }
 
-	get serializedSize() {
-		return super.serializedSize
-			+ this._block.serializedSize;
-	}
+    get serializedSize() {
+        return super.serializedSize + this._block.serializedSize;
+    }
 
     get block() {
         return this._block;
     }
 }
 Class.register(BlockMessage);
+
 class GetAddrMessage extends Message {
     constructor(serviceMask) {
         super(Message.Type.GETADDR);
@@ -1719,8 +2576,7 @@ class GetAddrMessage extends Message {
     }
 
     get serializedSize() {
-        return super.serializedSize
-            + /*serviceMask*/ 4;
+        return super.serializedSize + /*serviceMask*/4;
     }
 
     get serviceMask() {
@@ -1732,42 +2588,84 @@ Class.register(GetAddrMessage);
 class GetBlocksMessage extends Message {
     constructor(hashes, hashStop) {
         super(Message.Type.GETBLOCKS);
-        if (!NumberUtils.isUint16(hashes.length)) throw 'Malformed hashes';
+        if (!hashes || !NumberUtils.isUint16(hashes.length) || hashes.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
         this._hashes = hashes;
         this._hashStop = hashStop;
     }
 
     static unserialize(buf) {
-		Message.unserialize(buf);
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const hashes = [];
         for (let i = 0; i < count; i++) {
             hashes.push(Hash.unserialize(buf));
         }
         const hashStop = Hash.unserialize(buf);
-		return new GetBlocksMessage(hashes, hashStop);
-	}
+        return new GetBlocksMessage(hashes, hashStop);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
         buf.writeUint16(this._hashes.length);
-        for (let hash of this._hashes) {
-            hash.serialize(buf);
-        }
-        this._hashStop.serialize(buf);
-		return buf;
-	}
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
 
-	get serializedSize() {
-		let size = super.serializedSize
-			+ /*count*/ 2
-            + this._hashStop.serializedSize;
-        for (let hash of this._hashes) {
-            size += hash.serializedSize;
+        try {
+            for (var _iterator9 = (0, _getIterator3.default)(this._hashes), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                let hash = _step9.value;
+
+                hash.serialize(buf);
+            }
+        } catch (err) {
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
+                }
+            } finally {
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
+                }
+            }
         }
+
+        this._hashStop.serialize(buf);
+        return buf;
+    }
+
+    get serializedSize() {
+        let size = super.serializedSize + /*count*/2 + this._hashStop.serializedSize;
+        var _iteratorNormalCompletion10 = true;
+        var _didIteratorError10 = false;
+        var _iteratorError10 = undefined;
+
+        try {
+            for (var _iterator10 = (0, _getIterator3.default)(this._hashes), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                let hash = _step10.value;
+
+                size += hash.serializedSize;
+            }
+        } catch (err) {
+            _didIteratorError10 = true;
+            _iteratorError10 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                    _iterator10.return();
+                }
+            } finally {
+                if (_didIteratorError10) {
+                    throw _iteratorError10;
+                }
+            }
+        }
+
         return size;
-	}
+    }
 
     get hashes() {
         return this._hashes;
@@ -1782,27 +2680,69 @@ Class.register(GetBlocksMessage);
 class BaseInventoryMessage extends Message {
     constructor(type, vectors) {
         super(type);
-        if (!vectors || !NumberUtils.isUint16(vectors.length)
-			|| vectors.some( it => !(it instanceof InvVector))) throw 'Malformed vectors';
+        if (!vectors || !NumberUtils.isUint16(vectors.length) || vectors.some(it => !(it instanceof InvVector))) throw 'Malformed vectors';
         this._vectors = vectors;
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
+        super.serialize(buf);
         buf.writeUint16(this._vectors.length);
-        for (let vector of this._vectors) {
-            vector.serialize(buf);
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
+
+        try {
+            for (var _iterator11 = (0, _getIterator3.default)(this._vectors), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                let vector = _step11.value;
+
+                vector.serialize(buf);
+            }
+        } catch (err) {
+            _didIteratorError11 = true;
+            _iteratorError11 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                    _iterator11.return();
+                }
+            } finally {
+                if (_didIteratorError11) {
+                    throw _iteratorError11;
+                }
+            }
         }
+
         return buf;
     }
 
     get serializedSize() {
-        let size = super.serializedSize
-            + /*count*/ 2;
-        for (let vector of this._vectors) {
-            size += vector.serializedSize;
+        let size = super.serializedSize + /*count*/2;
+        var _iteratorNormalCompletion12 = true;
+        var _didIteratorError12 = false;
+        var _iteratorError12 = undefined;
+
+        try {
+            for (var _iterator12 = (0, _getIterator3.default)(this._vectors), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                let vector = _step12.value;
+
+                size += vector.serializedSize;
+            }
+        } catch (err) {
+            _didIteratorError12 = true;
+            _iteratorError12 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                    _iterator12.return();
+                }
+            } finally {
+                if (_didIteratorError12) {
+                    throw _iteratorError12;
+                }
+            }
         }
+
         return size;
     }
 
@@ -1818,7 +2758,7 @@ class InvMessage extends BaseInventoryMessage {
     }
 
     static unserialize(buf) {
-		Message.unserialize(buf);
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
@@ -1835,7 +2775,7 @@ class GetDataMessage extends BaseInventoryMessage {
     }
 
     static unserialize(buf) {
-		Message.unserialize(buf);
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
@@ -1853,7 +2793,7 @@ class NotFoundMessage extends BaseInventoryMessage {
     }
 
     static unserialize(buf) {
-		Message.unserialize(buf);
+        Message.unserialize(buf);
         const count = buf.readUint16();
         const vectors = [];
         for (let i = 0; i < count; ++i) {
@@ -1875,6 +2815,7 @@ class MempoolMessage extends Message {
     }
 }
 Class.register(MempoolMessage);
+
 class PingMessage extends Message {
     constructor(nonce) {
         super(Message.Type.PING);
@@ -1895,8 +2836,7 @@ class PingMessage extends Message {
     }
 
     get serializedSize() {
-        return super.serializedSize
-            + /*nonce*/ 4;
+        return super.serializedSize + /*nonce*/4;
     }
 
     get nonce() {
@@ -1925,8 +2865,7 @@ class PongMessage extends Message {
     }
 
     get serializedSize() {
-        return super.serializedSize
-            + /*nonce*/ 4;
+        return super.serializedSize + /*nonce*/4;
     }
 
     get nonce() {
@@ -1949,33 +2888,28 @@ class RejectMessage extends Message {
         this._extraData = extraData;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
-		const messageType = buf.readVarLengthString();
+    static unserialize(buf) {
+        Message.unserialize(buf);
+        const messageType = buf.readVarLengthString();
         const code = buf.readUint8();
         const reason = buf.readVarLengthString();
         // TODO extraData
-		return new BlockMessage(block);
-	}
+        return new BlockMessage(block);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
         buf.writeVarLengthString(this._messageType);
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
         // TODO extraData
-		return buf;
-	}
+        return buf;
+    }
 
-	get serializedSize() {
-		return super.serializedSize
-            + /*messageType VarLengthString extra byte*/ 1
-			+ this._messageType.length
-            + /*code*/ 1
-            + /*reason VarLengthString extra byte*/ 1
-			+ this._reason.length;
-	}
+    get serializedSize() {
+        return super.serializedSize + /*messageType VarLengthString extra byte*/1 + this._messageType.length + /*code*/1 + /*reason VarLengthString extra byte*/1 + this._reason.length;
+    }
 
     get messageType() {
         return this._messageType;
@@ -1996,6 +2930,7 @@ class RejectMessage extends Message {
 RejectMessage.Code = {};
 RejectMessage.Code.DUPLICATE = 0x12;
 Class.register(RejectMessage);
+
 class SignalMessage extends Message {
     constructor(senderId, recipientId, payload) {
         super(Message.Type.SIGNAL);
@@ -2007,14 +2942,14 @@ class SignalMessage extends Message {
         this._payload = payload;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
+    static unserialize(buf) {
+        Message.unserialize(buf);
         const senderId = buf.readUint64();
         const recipientId = buf.readUint64();
         const length = buf.readUint16();
         const payload = buf.read(length);
-		return new SignalMessage(senderId, recipientId, payload);
-	}
+        return new SignalMessage(senderId, recipientId, payload);
+    }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -2027,11 +2962,7 @@ class SignalMessage extends Message {
     }
 
     get serializedSize() {
-        return super.serializedSize
-            + /*senderId*/ 8
-            + /*recipientId*/ 8
-            + /*payloadLength*/ 2
-            + this._payload.byteLength;
+        return super.serializedSize + /*senderId*/8 + /*recipientId*/8 + /*payloadLength*/2 + this._payload.byteLength;
     }
 
     get senderId() {
@@ -2054,29 +2985,29 @@ class TxMessage extends Message {
         this._transaction = transaction;
     }
 
-	static unserialize(buf) {
-		Message.unserialize(buf);
-		const transaction = Transaction.unserialize(buf);
-		return new TxMessage(transaction);
-	}
+    static unserialize(buf) {
+        Message.unserialize(buf);
+        const transaction = Transaction.unserialize(buf);
+        return new TxMessage(transaction);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
-		this._transaction.serialize(buf);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
+        this._transaction.serialize(buf);
+        return buf;
+    }
 
-	get serializedSize() {
-		return super.serializedSize
-			+ this._transaction.serializedSize;
-	}
+    get serializedSize() {
+        return super.serializedSize + this._transaction.serializedSize;
+    }
 
     get transaction() {
         return this._transaction;
     }
 }
 Class.register(TxMessage);
+
 class VerAckMessage extends Message {
     constructor() {
         super(Message.Type.VERACK);
@@ -2088,6 +3019,7 @@ class VerAckMessage extends Message {
     }
 }
 Class.register(VerAckMessage);
+
 class VersionMessage extends Message {
     constructor(version, netAddress, startHeight) {
         super(Message.Type.VERSION);
@@ -2097,28 +3029,25 @@ class VersionMessage extends Message {
     }
 
     static unserialize(buf) {
-		Message.unserialize(buf);
+        Message.unserialize(buf);
         const version = buf.readUint32();
         const netAddress = NetAddress.unserialize(buf);
         const startHeight = buf.readUint32();
-		return new VersionMessage(version, netAddress, startHeight);
-	}
+        return new VersionMessage(version, netAddress, startHeight);
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		super.serialize(buf);
-		buf.writeUint32(this._version);
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        super.serialize(buf);
+        buf.writeUint32(this._version);
         this._netAddress.serialize(buf);
         buf.writeUint32(this._startHeight);
-		return buf;
-	}
+        return buf;
+    }
 
-	get serializedSize() {
-		return super.serializedSize
-			+ /*version*/ 4
-            + this._netAddress.serializedSize
-            + /*startHeight*/ 4;
-	}
+    get serializedSize() {
+        return super.serializedSize + /*version*/4 + this._netAddress.serializedSize + /*startHeight*/4;
+    }
 
     get version() {
         return this._version;
@@ -2127,7 +3056,7 @@ class VersionMessage extends Message {
     get netAddress() {
         return this._netAddress;
     }
-    
+
     get startHeight() {
         return this._startHeight;
     }
@@ -2136,92 +3065,154 @@ Class.register(VersionMessage);
 
 class Address extends Primitive {
 
-	static get SERIALIZED_SIZE() {
-		return 20;
-	}
+    static get SERIALIZED_SIZE() {
+        return 20;
+    }
 
-	constructor(arg) {
-		super(arg, Address.SERIALIZED_SIZE);
-	}
+    constructor(arg) {
+        super(arg, Address.SERIALIZED_SIZE);
+    }
 
-	static unserialize(buf) {
-		return new Address(buf.read(Address.SERIALIZED_SIZE));
-	}
+    static unserialize(buf) {
+        return new Address(buf.read(Address.SERIALIZED_SIZE));
+    }
 
-	serialize(buf) {
-		buf = buf || new SerialBuffer(this.serializedSize);
-		buf.write(this);
-		return buf;
-	}
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.write(this);
+        return buf;
+    }
 
-	get serializedSize() {
-		return Address.SERIALIZED_SIZE;
-	}
+    get serializedSize() {
+        return Address.SERIALIZED_SIZE;
+    }
 
-	equals(o) {
-		return o instanceof Address
-			&& super.equals(o);
-	}
+    equals(o) {
+        return o instanceof Address && super.equals(o);
+    }
 }
 Class.register(Address);
 
 class Core {
     // Singleton
-    static async get() {
-        if (!Core.INSTANCE) {
-            Core.INSTANCE = await new Core();
+    static get() {
+        if (!Core._instance) throw 'Core.get() failed - not initialized yet. Call Core.init() first.';
+        return Core._instance;
+    }
+
+    static init(fnSuccess, fnError) {
+        // Don't initialize core twice.
+        if (Core._instance) {
+            console.warn('Core.init() called more than once.');
+
+            fnSuccess(Core._instance);
+            return;
         }
-        return Core.INSTANCE;
+
+        // Wait until there is only a single browser window open for this origin.
+        WindowDetector.get().waitForSingleWindow((0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee19() {
+            return _regenerator2.default.wrap(function _callee19$(_context19) {
+                while (1) switch (_context19.prev = _context19.next) {
+                    case 0:
+                        _context19.next = 2;
+                        return new Core();
+
+                    case 2:
+                        Core._instance = _context19.sent;
+
+                        fnSuccess(Core._instance);
+
+                    case 4:
+                    case 'end':
+                        return _context19.stop();
+                }
+            }, _callee19, this);
+        })), fnError);
     }
 
     constructor() {
         return this._init();
     }
 
-    async _init() {
-        // Model
-        this.accounts = await Accounts.getPersistent();
-        this.blockchain = await Blockchain.getPersistent(this.accounts);
-        this.mempool = new Mempool(this.blockchain, this.accounts);
+    _init() {
+        var _this17 = this;
 
-        // Network
-        this.network = await new Network(this.blockchain);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee20() {
+            return _regenerator2.default.wrap(function _callee20$(_context20) {
+                while (1) switch (_context20.prev = _context20.next) {
+                    case 0:
+                        _context20.next = 2;
+                        return Accounts.getPersistent();
 
-        // Consensus
-        this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
+                    case 2:
+                        _this17.accounts = _context20.sent;
+                        _context20.next = 5;
+                        return Blockchain.getPersistent(_this17.accounts);
 
-        // Wallet
-        this.wallet = await Wallet.getPersistent();
+                    case 5:
+                        _this17.blockchain = _context20.sent;
 
-        // Miner
-        this.miner = new Miner(this.wallet.address, this.blockchain, this.mempool);
+                        _this17.mempool = new Mempool(_this17.blockchain, _this17.accounts);
 
-        Object.freeze(this);
-        return this;
+                        // Network
+                        _context20.next = 9;
+                        return new Network(_this17.blockchain);
+
+                    case 9:
+                        _this17.network = _context20.sent;
+
+
+                        // Consensus
+                        _this17.consensus = new Consensus(_this17.blockchain, _this17.mempool, _this17.network);
+
+                        // Wallet
+                        _context20.next = 13;
+                        return Wallet.getPersistent();
+
+                    case 13:
+                        _this17.wallet = _context20.sent;
+
+
+                        // Miner
+                        _this17.miner = new Miner(_this17.blockchain, _this17.mempool, _this17.wallet.address);
+
+                        (0, _freeze2.default)(_this17);
+                        return _context20.abrupt('return', _this17);
+
+                    case 17:
+                    case 'end':
+                        return _context20.stop();
+                }
+            }, _callee20, _this17);
+        }))();
     }
 }
-Core.INSTANCE = null;
+Core._instance = null;
 Class.register(Core);
 
 class Consensus extends Observable {
+    static get SYNC_THROTTLE() {
+        return 1000; // ms
+    }
 
     constructor(blockchain, mempool, network) {
         super();
-        this._agents = {};
-        this._state = Consensus.State.UNKNOWN;
+        this._blockchain = blockchain;
+        this._mempool = mempool;
 
-        // Create a P2PAgent for each peer that connects.
-        network.on('peer-joined', peer => {
-            const agent = new ConsensusAgent(peer, blockchain, mempool);
-            this._agents[peer.netAddress] = agent;
-            agent.on('consensus', () => this._onPeerConsensus(agent));
-        });
-        network.on('peer-left', peer => {
-            delete this._agents[peer.netAddress];
-        });
+        this._agents = {};
+        this._timers = new Timers();
+        this._syncing = false;
+        this._established = false;
+
+        network.on('peer-joined', peer => this._onPeerJoined(peer));
+        network.on('peer-left', peer => this._onPeerLeft(peer));
 
         // Notify peers when our blockchain head changes.
         blockchain.on('head-changed', head => {
+            // Don't announce head changes if we are not synced yet.
+            if (!this._established) return;
+
             for (let peerId in this._agents) {
                 this._agents[peerId].relayBlock(head);
             }
@@ -2229,33 +3220,85 @@ class Consensus extends Observable {
 
         // Relay new (verified) transactions to peers.
         mempool.on('transaction-added', tx => {
+            // Don't relay transactions if we are not synced yet.
+            if (!this._established) return;
+
             for (let peerId in this._agents) {
                 this._agents[peerId].relayTransaction(tx);
             }
         });
     }
 
-    _onPeerConsensus(agent) {
-        // TODO Derive consensus state from several peers.
-        this._state = Consensus.State.ESTABLISHED;
-        this.fire('established');
+    _onPeerJoined(peer) {
+        // Create a ConsensusAgent for each peer that connects.
+        const agent = new ConsensusAgent(this._blockchain, this._mempool, peer);
+        this._agents[peer.netAddress] = agent;
 
-        console.log('Consensus established');
+        // If no more peers connect within the specified timeout, start syncing.
+        this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), Consensus.SYNC_THROTTLE);
     }
 
-    get state() {
-        return this._state;
+    _onPeerLeft(peer) {
+        delete this._agents[peer.netAddress];
+    }
+
+    _syncBlockchain() {
+        // Wait for ongoing sync to finish.
+        if (this._syncing) {
+            return;
+        }
+
+        // Find the peer with the highest chain that isn't sync'd yet.
+        let bestHeight = -1;
+        let bestAgent = null;
+        for (let key in this._agents) {
+            const agent = this._agents[key];
+            if (!agent.synced && agent.peer.startHeight >= bestHeight) {
+                bestHeight = agent.peer.startHeight;
+                bestAgent = agent;
+            }
+        }
+
+        if (!bestAgent) {
+            // We are synced with all connected peers.
+            console.log('Synced with all connected peers (' + (0, _keys2.default)(this._agents).length + '), consensus established.');
+            console.log('Blockchain: height=' + this._blockchain.height + ', totalWork=' + this._blockchain.totalWork + ', headHash=' + this._blockchain.headHash.toBase64());
+
+            this._syncing = false;
+            this._established = true;
+            this.fire('established');
+
+            return;
+        }
+
+        console.log('Syncing blockchain with peer ' + bestAgent.peer);
+
+        this._syncing = true;
+
+        // If we expect this sync to change our blockchain height, tell listeners about it.
+        if (bestHeight > this._blockchain.height) {
+            this.fire('syncing', bestHeight);
+        }
+
+        bestAgent.on('sync', () => this._onPeerSynced());
+        bestAgent.on('close', () => {
+            this._onPeerLeft(bestAgent.peer);
+            this._onPeerSynced();
+        });
+        bestAgent.syncBlockchain();
+    }
+
+    _onPeerSynced() {
+        this._syncing = false;
+        this._syncBlockchain();
     }
 
     get established() {
-        return this._state === Consensus.State.ESTABLISHED;
+        return this._established;
     }
 
     // TODO confidence level?
 }
-Consensus.State = {};
-Consensus.State.UNKNOWN = 'unknown';
-Consensus.State.ESTABLISHED = 'established';
 Class.register(Consensus);
 
 class ConsensusAgent extends Observable {
@@ -2274,92 +3317,177 @@ class ConsensusAgent extends Observable {
         return 5000; // ms
     }
 
-    constructor(peer, blockchain, mempool) {
+    // Maximum number of blockchain sync retries before closing the connection.
+    // XXX If the peer is on a long fork, it will count as a failed sync attempt
+    // if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
+    // blocks.
+    static get MAX_SYNC_ATTEMPTS() {
+        return 5;
+    }
+
+    constructor(blockchain, mempool, peer) {
         super();
-        this._peer = peer;
         this._blockchain = blockchain;
         this._mempool = mempool;
+        this._peer = peer;
 
-        // Flag indicating that we have sync'd our blockchain with the peer's.
+        // Flag indicating that we are currently syncing our blockchain with the peer's.
+        this._syncing = false;
+
+        // Flag indicating that have synced our blockchain with the peer's.
         this._synced = false;
+
+        // The height of our blockchain when we last attempted to sync the chain.
+        this._lastChainHeight = 0;
+
+        // The number of failed blockchain sync attempts.
+        this._failedSyncs = 0;
 
         // Invectory of all objects that we think the remote peer knows.
         this._knownObjects = {};
 
         // InvVectors we want to request via getdata are collected here and
         // periodically requested.
-        this._objectsToRequest = [];
+        this._objectsToRequest = new IndexedArray([], true);
 
-        // Helper object to keep track of in-flight getdata requests.
-        this._inFlightRequests = new InFlightRequests();
+        // Objects that are currently being requested from the peer.
+        this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv',        msg => this._onInv(msg));
-        peer.channel.on('getdata',    msg => this._onGetData(msg));
-        peer.channel.on('notfound',   msg => this._onNotFound(msg));
-        peer.channel.on('block',      msg => this._onBlock(msg));
-        peer.channel.on('tx',         msg => this._onTx(msg));
-        peer.channel.on('getblocks',  msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool',    msg => this._onMempool(msg));
+        peer.channel.on('inv', msg => this._onInv(msg));
+        peer.channel.on('getdata', msg => this._onGetData(msg));
+        peer.channel.on('notfound', msg => this._onNotFound(msg));
+        peer.channel.on('block', msg => this._onBlock(msg));
+        peer.channel.on('tx', msg => this._onTx(msg));
+        peer.channel.on('getblocks', msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool', msg => this._onMempool(msg));
 
         // Clean up when the peer disconnects.
-        peer.channel.on('close',      () => this._onClose());
+        peer.channel.on('close', () => this._onClose());
 
-        // Start syncing our blockchain with the peer.
-        // _syncBlockchain() might immediately emit events, so yield control flow
-        // first to give listeners the chance to register first.
-        setTimeout(this._syncBlockchain.bind(this), 0);
+        // Wait for the blockchain to processes queued blocks before requesting more.
+        this._blockchain.on('ready', () => {
+            if (this._syncing) this.syncBlockchain();
+        });
     }
 
     /* Public API */
 
-    async relayBlock(block) {
-        // Don't relay block to this peer if it already knows it.
-        const hash = await block.hash();
-        if (this._knownObjects[hash]) return;
+    relayBlock(block) {
+        var _this18 = this;
 
-        // Relay block to peer.
-        const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        this._peer.channel.inv([vector]);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee21() {
+            var hash, vector;
+            return _regenerator2.default.wrap(function _callee21$(_context21) {
+                while (1) switch (_context21.prev = _context21.next) {
+                    case 0:
+                        _context21.next = 2;
+                        return block.hash();
+
+                    case 2:
+                        hash = _context21.sent;
+
+                        if (!_this18._knownObjects[hash]) {
+                            _context21.next = 5;
+                            break;
+                        }
+
+                        return _context21.abrupt('return');
+
+                    case 5:
+
+                        // Relay block to peer.
+                        vector = new InvVector(InvVector.Type.BLOCK, hash);
+
+                        _this18._peer.channel.inv([vector]);
+
+                    case 7:
+                    case 'end':
+                        return _context21.stop();
+                }
+            }, _callee21, _this18);
+        }))();
     }
 
-    async relayTransaction(transaction) {
-        // Don't relay transaction to this peer if it already knows it.
-        const hash = await transaction.hash();
-        if (this._knownObjects[hash]) return;
+    relayTransaction(transaction) {
+        var _this19 = this;
 
-        // Relay transaction to peer.
-        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        this._peer.channel.inv([vector]);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee22() {
+            var hash, vector;
+            return _regenerator2.default.wrap(function _callee22$(_context22) {
+                while (1) switch (_context22.prev = _context22.next) {
+                    case 0:
+                        _context22.next = 2;
+                        return transaction.hash();
+
+                    case 2:
+                        hash = _context22.sent;
+
+                        if (!_this19._knownObjects[hash]) {
+                            _context22.next = 5;
+                            break;
+                        }
+
+                        return _context22.abrupt('return');
+
+                    case 5:
+
+                        // Relay transaction to peer.
+                        vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+
+                        _this19._peer.channel.inv([vector]);
+
+                    case 7:
+                    case 'end':
+                        return _context22.stop();
+                }
+            }, _callee22, _this19);
+        }))();
     }
 
-    _syncBlockchain() {
-        // TODO Don't loop forver here!!
-        // Save the last blockchain height when we issuing getblocks and when we get here again, see if it changed.
-        // If it didn't the peer didn't give us any valid blocks. Try again or drop him!
+    syncBlockchain() {
+        this._syncing = true;
 
-        if (this._blockchain.height < this._peer.startHeight) {
-            // If the peer has a longer chain than us, request blocks from it.
-            this._requestBlocks();
-        } else if (this._blockchain.height > this._peer.startHeight) {
-            // The peer has a shorter chain than us.
-            // TODO what do we do here?
-            console.log('Peer ' + this._peer + ' has a shorter chain (' + this._peer.startHeight + ') than us');
-
-            // XXX assume consensus state?
-            this._synced = true;
-            this.fire('consensus');
-        } else {
-            // We have the same chain height as the peer.
-            // TODO Do we need to check that we have the same head???
-
-            // Consensus established.
-            this._synced = true;
-            this.fire('consensus');
+        // If the blockchain is still busy processing blocks, wait for it to catch up.
+        if (this._blockchain.busy) {
+            console.log('Blockchain busy, waiting ...');
         }
+        // If we already requested blocks from the peer but it didn't give us any
+        // good ones, retry or drop the peer.
+        else if (this._lastChainHeight == this._blockchain.height) {
+                this._failedSyncs++;
+                if (this._failedSyncs < ConsensusAgent.MAX_SYNC_ATTEMPTS) {
+                    this._requestBlocks();
+                } else {
+                    this._peer.channel.close('blockchain sync failed');
+                }
+            }
+            // If the peer has a longer chain than us, request blocks from it.
+            else if (this._blockchain.height < this._peer.startHeight) {
+                    this._lastChainHeight = this._blockchain.height;
+                    this._requestBlocks();
+                }
+                // The peer has a shorter chain than us.
+                // TODO what do we do here?
+                else if (this._blockchain.height > this._peer.startHeight) {
+                        console.log('Peer ' + this._peer + ' has a shorter chain (' + this._peer.startHeight + ') than us');
+
+                        // XXX assume consensus state?
+                        this._syncing = false;
+                        this._synced = true;
+                        this.fire('sync');
+                    }
+                    // We have the same chain height as the peer.
+                    // TODO Do we need to check that we have the same head???
+                    else {
+                            // Consensus established.
+                            this._syncing = false;
+                            this._synced = true;
+                            this.fire('sync');
+                        }
     }
 
     _requestBlocks() {
@@ -2386,549 +3514,1108 @@ class ConsensusAgent extends Observable {
         this._timers.setTimeout('getblocks', () => this._peer.channel.close('getblocks timeout'), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
-    async _onInv(msg) {
-        // Clear the getblocks timeout.
-        this._timers.clearTimeout('getblocks');
+    _onInv(msg) {
+        var _this20 = this;
 
-        // Check which of the advertised objects we know
-        // Request unknown objects, ignore known ones.
-        const unknownObjects = []
-        for (let vector of msg.vectors) {
-            switch (vector.type) {
-                case InvVector.Type.BLOCK:
-                    const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
-                    if (!block) {
-                        unknownObjects.push(vector);
-                    }
-                    break;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee23() {
+            var unknownObjects, _iteratorNormalCompletion13, _didIteratorError13, _iteratorError13, _iterator13, _step13, vector, block, tx, _iteratorNormalCompletion14, _didIteratorError14, _iteratorError14, _iterator14, _step14, obj, _iteratorNormalCompletion15, _didIteratorError15, _iteratorError15, _iterator15, _step15;
 
-                case InvVector.Type.TRANSACTION:
-                    const tx = await this._mempool.getTransaction(vector.hash);
-                    console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
-                    if (!tx) {
-                        unknownObjects.push(vector);
-                    }
-                    break;
+            return _regenerator2.default.wrap(function _callee23$(_context23) {
+                while (1) switch (_context23.prev = _context23.next) {
+                    case 0:
+                        // Clear the getblocks timeout.
+                        _this20._timers.clearTimeout('getblocks');
 
-                default:
-                    throw 'Invalid inventory type: ' + vector.type;
-            }
-        }
+                        // Check which of the advertised objects we know
+                        // Request unknown objects, ignore known ones.
+                        unknownObjects = [];
+                        _iteratorNormalCompletion13 = true;
+                        _didIteratorError13 = false;
+                        _iteratorError13 = undefined;
+                        _context23.prev = 5;
+                        _iterator13 = (0, _getIterator3.default)(msg.vectors);
 
-        // Keep track of the objects the peer knows.
-        for (let obj of unknownObjects) {
-            this._knownObjects[obj.hash] = obj;
-        }
+                    case 7:
+                        if (_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done) {
+                            _context23.next = 26;
+                            break;
+                        }
 
-        if (unknownObjects.length) {
-            // Store unknown vectors in objectsToRequest array.
-            Array.prototype.push.apply(this._objectsToRequest, unknownObjects);
+                        vector = _step13.value;
+                        _context23.t0 = vector.type;
+                        _context23.next = _context23.t0 === InvVector.Type.BLOCK ? 12 : _context23.t0 === InvVector.Type.TRANSACTION ? 17 : 22;
+                        break;
 
-            // Clear the request throttle timeout.
-            this._timers.clearTimeout('inv');
+                    case 12:
+                        _context23.next = 14;
+                        return _this20._blockchain.getBlock(vector.hash);
 
-            // If there are enough objects queued up, send out a getdata request.
-            if (this._objectsToRequest.length >= ConsensusAgent.REQUEST_THRESHOLD) {
-                this._requestData();
-            }
-            // Otherwise, wait a short time for more inv messages to arrive, then request.
-            else {
-                this._timers.setTimeout('inv', () => this._requestData(), ConsensusAgent.REQUEST_THROTTLE);
-            }
-        }
+                    case 14:
+                        block = _context23.sent;
+
+                        //console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
+                        if (!block) {
+                            unknownObjects.push(vector);
+                        }
+                        return _context23.abrupt('break', 23);
+
+                    case 17:
+                        _context23.next = 19;
+                        return _this20._mempool.getTransaction(vector.hash);
+
+                    case 19:
+                        tx = _context23.sent;
+
+                        //console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
+                        if (!tx) {
+                            unknownObjects.push(vector);
+                        }
+                        return _context23.abrupt('break', 23);
+
+                    case 22:
+                        throw 'Invalid inventory type: ' + vector.type;
+
+                    case 23:
+                        _iteratorNormalCompletion13 = true;
+                        _context23.next = 7;
+                        break;
+
+                    case 26:
+                        _context23.next = 32;
+                        break;
+
+                    case 28:
+                        _context23.prev = 28;
+                        _context23.t1 = _context23['catch'](5);
+                        _didIteratorError13 = true;
+                        _iteratorError13 = _context23.t1;
+
+                    case 32:
+                        _context23.prev = 32;
+                        _context23.prev = 33;
+
+                        if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                            _iterator13.return();
+                        }
+
+                    case 35:
+                        _context23.prev = 35;
+
+                        if (!_didIteratorError13) {
+                            _context23.next = 38;
+                            break;
+                        }
+
+                        throw _iteratorError13;
+
+                    case 38:
+                        return _context23.finish(35);
+
+                    case 39:
+                        return _context23.finish(32);
+
+                    case 40:
+
+                        console.log('[INV] ' + msg.vectors.length + ' vectors, ' + unknownObjects.length + ' previously unknown');
+
+                        // Keep track of the objects the peer knows.
+                        _iteratorNormalCompletion14 = true;
+                        _didIteratorError14 = false;
+                        _iteratorError14 = undefined;
+                        _context23.prev = 44;
+                        for (_iterator14 = (0, _getIterator3.default)(unknownObjects); !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                            obj = _step14.value;
+
+                            _this20._knownObjects[obj.hash] = obj;
+                        }
+
+                        _context23.next = 52;
+                        break;
+
+                    case 48:
+                        _context23.prev = 48;
+                        _context23.t2 = _context23['catch'](44);
+                        _didIteratorError14 = true;
+                        _iteratorError14 = _context23.t2;
+
+                    case 52:
+                        _context23.prev = 52;
+                        _context23.prev = 53;
+
+                        if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                            _iterator14.return();
+                        }
+
+                    case 55:
+                        _context23.prev = 55;
+
+                        if (!_didIteratorError14) {
+                            _context23.next = 58;
+                            break;
+                        }
+
+                        throw _iteratorError14;
+
+                    case 58:
+                        return _context23.finish(55);
+
+                    case 59:
+                        return _context23.finish(52);
+
+                    case 60:
+                        if (!unknownObjects.length) {
+                            _context23.next = 82;
+                            break;
+                        }
+
+                        // Store unknown vectors in objectsToRequest array.
+                        _iteratorNormalCompletion15 = true;
+                        _didIteratorError15 = false;
+                        _iteratorError15 = undefined;
+                        _context23.prev = 64;
+                        for (_iterator15 = (0, _getIterator3.default)(unknownObjects); !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                            obj = _step15.value;
+
+                            _this20._objectsToRequest.push(obj);
+                        }
+
+                        // Clear the request throttle timeout.
+                        _context23.next = 72;
+                        break;
+
+                    case 68:
+                        _context23.prev = 68;
+                        _context23.t3 = _context23['catch'](64);
+                        _didIteratorError15 = true;
+                        _iteratorError15 = _context23.t3;
+
+                    case 72:
+                        _context23.prev = 72;
+                        _context23.prev = 73;
+
+                        if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                            _iterator15.return();
+                        }
+
+                    case 75:
+                        _context23.prev = 75;
+
+                        if (!_didIteratorError15) {
+                            _context23.next = 78;
+                            break;
+                        }
+
+                        throw _iteratorError15;
+
+                    case 78:
+                        return _context23.finish(75);
+
+                    case 79:
+                        return _context23.finish(72);
+
+                    case 80:
+                        _this20._timers.clearTimeout('inv');
+
+                        // If there are enough objects queued up, send out a getdata request.
+                        if (_this20._objectsToRequest.length >= ConsensusAgent.REQUEST_THRESHOLD) {
+                            _this20._requestData();
+                        }
+                        // Otherwise, wait a short time for more inv messages to arrive, then request.
+                        else {
+                                _this20._timers.setTimeout('inv', function () {
+                                    return _this20._requestData();
+                                }, ConsensusAgent.REQUEST_THROTTLE);
+                            }
+
+                    case 82:
+                    case 'end':
+                        return _context23.stop();
+                }
+            }, _callee23, _this20, [[5, 28, 32, 40], [33,, 35, 39], [44, 48, 52, 60], [53,, 55, 59], [64, 68, 72, 80], [73,, 75, 79]]);
+        }))();
     }
 
-    async _requestData() {
-        // Request all queued objects from the peer.
-        // TODO depending in the REQUEST_THRESHOLD, we might need to split up
-        // the getdata request into multiple ones.
-        this._peer.channel.getdata(this._objectsToRequest);
+    _requestData() {
+        var _this21 = this;
 
-        // Keep track of this request.
-        const requestId = this._inFlightRequests.push(this._objectsToRequest);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee24() {
+            return _regenerator2.default.wrap(function _callee24$(_context24) {
+                while (1) switch (_context24.prev = _context24.next) {
+                    case 0:
+                        if (!_this21._objectsInFlight) {
+                            _context24.next = 2;
+                            break;
+                        }
 
-        // Reset the queue.
-        this._objectsToRequest = [];
+                        return _context24.abrupt('return');
 
-        // Set timer to detect end of request / missing objects
-        this._timers.setTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
+                    case 2:
+                        if (!_this21._objectsToRequest.isEmpty()) {
+                            _context24.next = 4;
+                            break;
+                        }
+
+                        return _context24.abrupt('return');
+
+                    case 4:
+
+                        // Mark the requested objects as in-flight.
+                        _this21._objectsInFlight = _this21._objectsToRequest;
+
+                        // Request all queued objects from the peer.
+                        // TODO depending in the REQUEST_THRESHOLD, we might need to split up
+                        // the getdata request into multiple ones.
+                        _this21._peer.channel.getdata(_this21._objectsToRequest.array);
+
+                        // Reset the queue.
+                        _this21._objectsToRequest = new IndexedArray([], true);
+
+                        // Set timer to detect end of request / missing objects
+                        _this21._timers.setTimeout('getdata', function () {
+                            return _this21._noMoreData();
+                        }, ConsensusAgent.REQUEST_TIMEOUT);
+
+                    case 8:
+                    case 'end':
+                        return _context24.stop();
+                }
+            }, _callee24, _this21);
+        }))();
     }
 
-    _noMoreData(requestId) {
-        // Check if there are objects missing for this request.
-        const objects = this._inFlightRequests.getObjects(requestId);
-        const missingObjects = Object.keys(objects).length;
-        if (missingObjects) {
-            console.warn(missingObjects + ' missing objects for request ' + requestId, objects);
-            // TODO what to do here?
-        }
-
+    _noMoreData() {
         // Cancel the request timeout timer.
-        this._timers.clearTimeout('getdata_' + requestId);
+        this._timers.clearTimeout('getdata');
 
-        // Delete the request.
-        this._inFlightRequests.deleteRequest(requestId);
+        // Reset objects in flight.
+        this._objectsInFlight = null;
 
-        // If we haven't fully sync'ed the blockchain yet, keep on syncing.
-        if (!this._synced) {
-            this._syncBlockchain();
+        // If there are more objects to request, request them.
+        if (!this._objectsToRequest.isEmpty()) {
+            this._requestData();
         }
+        // Otherwise, request more blocks if we are still syncing the blockchain.
+        else if (this._syncing) {
+                this.syncBlockchain();
+            }
     }
 
-    async _onBlock(msg) {
-        const hash = await msg.block.hash();
-        console.log('[BLOCK] Received block ' + hash.toBase64());
+    _onBlock(msg) {
+        var _this22 = this;
 
-        // Check if we have requested this block.
-        if (!this._inFlightRequests.getRequestId(hash)) {
-            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer + ', discarding');
-            return;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee25() {
+            var hash, vector;
+            return _regenerator2.default.wrap(function _callee25$(_context25) {
+                while (1) switch (_context25.prev = _context25.next) {
+                    case 0:
+                        _context25.next = 2;
+                        return msg.block.hash();
 
-        // Put block into blockchain
-        const accepted = await this._blockchain.pushBlock(msg.block);
+                    case 2:
+                        hash = _context25.sent;
 
-        // TODO send reject message if we don't like the block
-        // TODO what to do if the peer keeps sending invalid blocks?
+                        //console.log('[BLOCK] Received block ' + hash.toBase64());
 
-        this._onObjectReceived(hash);
+                        // Check if we have requested this block.
+                        vector = new InvVector(InvVector.Type.BLOCK, hash);
+
+                        if (!(_this22._objectsInFlight.indexOf(vector) < 0)) {
+                            _context25.next = 7;
+                            break;
+                        }
+
+                        console.warn('Unsolicited block ' + hash + ' received from peer ' + _this22._peer + ', discarding');
+                        return _context25.abrupt('return');
+
+                    case 7:
+
+                        // Mark object as received.
+                        _this22._onObjectReceived(vector);
+
+                        // Put block into blockchain.
+                        _this22._blockchain.pushBlock(msg.block);
+
+                        // TODO send reject message if we don't like the block
+                        // TODO what to do if the peer keeps sending invalid blocks?
+
+                    case 9:
+                    case 'end':
+                        return _context25.stop();
+                }
+            }, _callee25, _this22);
+        }))();
     }
 
-    async _onTx(msg) {
-        const hash = await msg.transaction.hash();
-        console.log('[TX] Received transaction ' + hash.toBase64());
+    _onTx(msg) {
+        var _this23 = this;
 
-        // Check if we have requested this transaction.
-        if (!this._inFlightRequests.getRequestId(hash)) {
-            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer + ', discarding');
-            return;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee26() {
+            var hash, vector;
+            return _regenerator2.default.wrap(function _callee26$(_context26) {
+                while (1) switch (_context26.prev = _context26.next) {
+                    case 0:
+                        _context26.next = 2;
+                        return msg.transaction.hash();
 
-        // Put transaction into mempool.
-        const accepted = await this._mempool.pushTransaction(msg.transaction);
+                    case 2:
+                        hash = _context26.sent;
 
-        // TODO send reject message if we don't like the transaction
-        // TODO what to do if the peer keeps sending invalid transactions?
+                        console.log('[TX] Received transaction ' + hash.toBase64());
 
-        this._onObjectReceived(hash);
+                        // Check if we have requested this transaction.
+                        vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+
+                        if (!(_this23._objectsInFlight.indexOf(vector) < 0)) {
+                            _context26.next = 8;
+                            break;
+                        }
+
+                        console.warn('Unsolicited transaction ' + hash + ' received from peer ' + _this23._peer + ', discarding');
+                        return _context26.abrupt('return');
+
+                    case 8:
+
+                        // Mark object as received.
+                        _this23._onObjectReceived(vector);
+
+                        // Put transaction into mempool.
+                        _this23._mempool.pushTransaction(msg.transaction);
+
+                        // TODO send reject message if we don't like the transaction
+                        // TODO what to do if the peer keeps sending invalid transactions?
+
+                    case 10:
+                    case 'end':
+                        return _context26.stop();
+                }
+            }, _callee26, _this23);
+        }))();
     }
 
     _onNotFound(msg) {
         console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects', msg.vectors);
 
         // Remove unknown objects from in-flight list.
-        for (let obj of msg.vectors) {
-            const requestId = this._inFlightRequests.getRequestId(obj.hash);
-            if (!requestId) {
-                console.warn('Unsolicited notfound vector ' + obj + ' from peer ' + this._peer, obj);
-                continue;
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
+
+        try {
+            for (var _iterator16 = (0, _getIterator3.default)(msg.vectors), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+                let vector = _step16.value;
+
+                if (this._objectsInFlight.indexOf(vector) < 0) {
+                    console.warn('Unsolicited notfound vector ' + vector + ' from peer ' + this._peer, vector);
+                    continue;
+                }
+
+                console.log('Peer ' + this._peer + ' did not find ' + obj, obj);
+
+                this._onObjectReceived(vector);
             }
-
-            console.log('Peer ' + this._peer + ' did not find ' + obj, obj);
-
-            this._onObjectReceived(obj.hash);
+        } catch (err) {
+            _didIteratorError16 = true;
+            _iteratorError16 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                    _iterator16.return();
+                }
+            } finally {
+                if (_didIteratorError16) {
+                    throw _iteratorError16;
+                }
+            }
         }
     }
 
-    _onObjectReceived(hash) {
-        // Mark the getdata request for this object as complete.
-        const requestId = this._inFlightRequests.getRequestId(hash);
-        if (!requestId) {
-            console.warn('Could not find requestId for ' + hash);
-            return;
-        }
-        this._inFlightRequests.deleteObject(hash);
+    _onObjectReceived(vector) {
+        if (!this._objectsInFlight) return;
 
-        // Check if we have received all objects for this request.
-        const objects = this._inFlightRequests.getObjects(requestId);
-        if (!objects) {
-            console.warn('Could not find objects for requestId ' + requestId);
-            return;
-        }
-        const moreObjects = Object.keys(objects).length > 0;
+        // Remove the vector from the objectsInFlight.
+        this._objectsInFlight.delete(vector);
 
         // Reset the request timeout if we expect more objects to come.
-        if (moreObjects) {
-            this._timers.resetTimeout('getdata_' + requestId, () => this._noMoreData(requestId), ConsensusAgent.REQUEST_TIMEOUT);
+        if (!this._objectsInFlight.isEmpty()) {
+            this._timers.resetTimeout('getdata', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
         } else {
-            this._noMoreData(requestId);
+            this._noMoreData();
         }
     }
-
 
     /* Request endpoints */
 
-    async _onGetData(msg) {
-        // check which of the requested objects we know
-        // send back all known objects
-        // send notfound for unknown objects
-        const unknownObjects = [];
-        for (let vector of msg.vectors) {
-            switch (vector.type) {
-                case InvVector.Type.BLOCK:
-                    const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
-                    if (block) {
-                        // We have found a requested block, send it back to the sender.
-                        this._peer.channel.block(block);
-                    } else {
-                        // Requested block is unknown.
-                        unknownObjects.push(vector);
-                    }
-                    break;
+    _onGetData(msg) {
+        var _this24 = this;
 
-                case InvVector.Type.TRANSACTION:
-                    const tx = await this._mempool.getTransaction(vector.hash);
-                    console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
-                    if (tx) {
-                        // We have found a requested transaction, send it back to the sender.
-                        this._peer.channel.tx(tx);
-                    } else {
-                        // Requested transaction is unknown.
-                        unknownObjects.push(vector);
-                    }
-                    break;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee27() {
+            var unknownObjects, _iteratorNormalCompletion17, _didIteratorError17, _iteratorError17, _iterator17, _step17, vector, block, tx;
 
-                default:
-                    throw 'Invalid inventory type: ' + vector.type;
-            }
-        }
+            return _regenerator2.default.wrap(function _callee27$(_context27) {
+                while (1) switch (_context27.prev = _context27.next) {
+                    case 0:
+                        // check which of the requested objects we know
+                        // send back all known objects
+                        // send notfound for unknown objects
+                        unknownObjects = [];
+                        _iteratorNormalCompletion17 = true;
+                        _didIteratorError17 = false;
+                        _iteratorError17 = undefined;
+                        _context27.prev = 4;
+                        _iterator17 = (0, _getIterator3.default)(msg.vectors);
 
-        // Report any unknown objects back to the sender.
-        if (unknownObjects.length) {
-            this._peer.channel.notfound(unknownObjects);
-        }
+                    case 6:
+                        if (_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done) {
+                            _context27.next = 27;
+                            break;
+                        }
+
+                        vector = _step17.value;
+                        _context27.t0 = vector.type;
+                        _context27.next = _context27.t0 === InvVector.Type.BLOCK ? 11 : _context27.t0 === InvVector.Type.TRANSACTION ? 17 : 23;
+                        break;
+
+                    case 11:
+                        _context27.next = 13;
+                        return _this24._blockchain.getBlock(vector.hash);
+
+                    case 13:
+                        block = _context27.sent;
+
+                        console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
+                        if (block) {
+                            // We have found a requested block, send it back to the sender.
+                            _this24._peer.channel.block(block);
+                        } else {
+                            // Requested block is unknown.
+                            unknownObjects.push(vector);
+                        }
+                        return _context27.abrupt('break', 24);
+
+                    case 17:
+                        _context27.next = 19;
+                        return _this24._mempool.getTransaction(vector.hash);
+
+                    case 19:
+                        tx = _context27.sent;
+
+                        console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
+                        if (tx) {
+                            // We have found a requested transaction, send it back to the sender.
+                            _this24._peer.channel.tx(tx);
+                        } else {
+                            // Requested transaction is unknown.
+                            unknownObjects.push(vector);
+                        }
+                        return _context27.abrupt('break', 24);
+
+                    case 23:
+                        throw 'Invalid inventory type: ' + vector.type;
+
+                    case 24:
+                        _iteratorNormalCompletion17 = true;
+                        _context27.next = 6;
+                        break;
+
+                    case 27:
+                        _context27.next = 33;
+                        break;
+
+                    case 29:
+                        _context27.prev = 29;
+                        _context27.t1 = _context27['catch'](4);
+                        _didIteratorError17 = true;
+                        _iteratorError17 = _context27.t1;
+
+                    case 33:
+                        _context27.prev = 33;
+                        _context27.prev = 34;
+
+                        if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                            _iterator17.return();
+                        }
+
+                    case 36:
+                        _context27.prev = 36;
+
+                        if (!_didIteratorError17) {
+                            _context27.next = 39;
+                            break;
+                        }
+
+                        throw _iteratorError17;
+
+                    case 39:
+                        return _context27.finish(36);
+
+                    case 40:
+                        return _context27.finish(33);
+
+                    case 41:
+
+                        // Report any unknown objects back to the sender.
+                        if (unknownObjects.length) {
+                            _this24._peer.channel.notfound(unknownObjects);
+                        }
+
+                    case 42:
+                    case 'end':
+                        return _context27.stop();
+                }
+            }, _callee27, _this24, [[4, 29, 33, 41], [34,, 36, 40]]);
+        }))();
     }
 
-    async _onGetBlocks(msg) {
-        console.log('[GETBLOCKS] Request for blocks, ' + msg.hashes.length + ' block locators');
+    _onGetBlocks(msg) {
+        var _this25 = this;
 
-        // A peer has requested blocks. Check all requested block locator hashes
-        // in the given order and pick the first hash that is found on our main
-        // chain, ignore the rest. If none of the requested hashes is found,
-        // pick the genesis block hash. Send the main chain starting from the
-        // picked hash back to the peer.
-        // TODO honor hashStop argument
-        const mainPath = this._blockchain.path;
-        let startIndex = -1;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee28() {
+            var mainPath, startIndex, _iteratorNormalCompletion18, _didIteratorError18, _iteratorError18, _iterator18, _step18, hash, block, stopIndex, vectors, i;
 
-        for (let hash of msg.hashes) {
-            // Shortcut for genesis block which will be the only block sent by
-            // fresh peers.
-            if (Block.GENESIS.HASH.equals(hash)) {
-                startIndex = 0;
-                break;
-            }
+            return _regenerator2.default.wrap(function _callee28$(_context28) {
+                while (1) switch (_context28.prev = _context28.next) {
+                    case 0:
+                        console.log('[GETBLOCKS] Request for blocks, ' + msg.hashes.length + ' block locators');
 
-            // Check if we know the requested block.
-            const block = await this._blockchain.getBlock(hash);
+                        // A peer has requested blocks. Check all requested block locator hashes
+                        // in the given order and pick the first hash that is found on our main
+                        // chain, ignore the rest. If none of the requested hashes is found,
+                        // pick the genesis block hash. Send the main chain starting from the
+                        // picked hash back to the peer.
+                        // TODO honor hashStop argument
+                        mainPath = _this25._blockchain.path;
+                        startIndex = -1;
+                        _iteratorNormalCompletion18 = true;
+                        _didIteratorError18 = false;
+                        _iteratorError18 = undefined;
+                        _context28.prev = 6;
+                        _iterator18 = (0, _getIterator3.default)(msg.hashes);
 
-            // If we don't know the block, try the next one.
-            if (!block) continue;
+                    case 8:
+                        if (_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done) {
+                            _context28.next = 25;
+                            break;
+                        }
 
-            // If the block is not on our main chain, try the next one.
-            // mainPath is an IndexedArray with constant-time .indexOf()
-            startIndex = mainPath.indexOf(hash);
-            if (startIndex < 0) continue;
+                        hash = _step18.value;
 
-            // We found a block, ignore remaining block locator hashes.
-            break;
-        }
+                        if (!Block.GENESIS.HASH.equals(hash)) {
+                            _context28.next = 13;
+                            break;
+                        }
 
-        // If we found none of the requested blocks on our main chain,
-        // start with the genesis block.
-        if (startIndex < 0) {
-            // XXX Assert that the full path back to genesis is available in
-            // blockchain.path. When the chain grows very long, it makes no
-            // sense to keep the full path in memory.
-            if (this._blockchain.path.length !== this._blockchain.height)
-                throw 'Blockchain.path.length != Blockchain.height';
+                        startIndex = 0;
+                        return _context28.abrupt('break', 25);
 
-            startIndex = 0;
-        }
+                    case 13:
+                        _context28.next = 15;
+                        return _this25._blockchain.getBlock(hash);
 
-        // Collect up to 500 inventory vectors for the blocks starting right
-        // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
-        const vectors = [];
-        for (let i = startIndex + 1; i <= stopIndex; ++i) {
-            vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
-        }
+                    case 15:
+                        block = _context28.sent;
 
-        // Send the vectors back to the requesting peer.
-        this._peer.channel.inv(vectors);
+                        if (block) {
+                            _context28.next = 18;
+                            break;
+                        }
+
+                        return _context28.abrupt('continue', 22);
+
+                    case 18:
+
+                        // If the block is not on our main chain, try the next one.
+                        // mainPath is an IndexedArray with constant-time .indexOf()
+                        startIndex = mainPath.indexOf(hash);
+
+                        if (!(startIndex < 0)) {
+                            _context28.next = 21;
+                            break;
+                        }
+
+                        return _context28.abrupt('continue', 22);
+
+                    case 21:
+                        return _context28.abrupt('break', 25);
+
+                    case 22:
+                        _iteratorNormalCompletion18 = true;
+                        _context28.next = 8;
+                        break;
+
+                    case 25:
+                        _context28.next = 31;
+                        break;
+
+                    case 27:
+                        _context28.prev = 27;
+                        _context28.t0 = _context28['catch'](6);
+                        _didIteratorError18 = true;
+                        _iteratorError18 = _context28.t0;
+
+                    case 31:
+                        _context28.prev = 31;
+                        _context28.prev = 32;
+
+                        if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                            _iterator18.return();
+                        }
+
+                    case 34:
+                        _context28.prev = 34;
+
+                        if (!_didIteratorError18) {
+                            _context28.next = 37;
+                            break;
+                        }
+
+                        throw _iteratorError18;
+
+                    case 37:
+                        return _context28.finish(34);
+
+                    case 38:
+                        return _context28.finish(31);
+
+                    case 39:
+                        if (!(startIndex < 0)) {
+                            _context28.next = 43;
+                            break;
+                        }
+
+                        if (!(_this25._blockchain.path.length !== _this25._blockchain.height)) {
+                            _context28.next = 42;
+                            break;
+                        }
+
+                        throw 'Blockchain.path.length != Blockchain.height';
+
+                    case 42:
+
+                        startIndex = 0;
+
+                    case 43:
+
+                        // Collect up to 500 inventory vectors for the blocks starting right
+                        // after the identified block on the main chain.
+                        stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
+                        vectors = [];
+
+                        for (i = startIndex + 1; i <= stopIndex; ++i) {
+                            vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
+                        }
+
+                        // Send the vectors back to the requesting peer.
+                        _this25._peer.channel.inv(vectors);
+
+                    case 47:
+                    case 'end':
+                        return _context28.stop();
+                }
+            }, _callee28, _this25, [[6, 27, 31, 39], [32,, 34, 38]]);
+        }))();
     }
 
-    async _onMempool(msg) {
-        // Query mempool for transactions
-        const transactions = await this._mempool.getTransactions();
+    _onMempool(msg) {
+        var _this26 = this;
 
-        // Send transactions back to sender.
-        for (let tx of transactions) {
-            this._peer.channel.tx(tx);
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee29() {
+            var transactions, _iteratorNormalCompletion19, _didIteratorError19, _iteratorError19, _iterator19, _step19, tx;
+
+            return _regenerator2.default.wrap(function _callee29$(_context29) {
+                while (1) switch (_context29.prev = _context29.next) {
+                    case 0:
+                        _context29.next = 2;
+                        return _this26._mempool.getTransactions();
+
+                    case 2:
+                        transactions = _context29.sent;
+
+
+                        // Send transactions back to sender.
+                        _iteratorNormalCompletion19 = true;
+                        _didIteratorError19 = false;
+                        _iteratorError19 = undefined;
+                        _context29.prev = 6;
+                        for (_iterator19 = (0, _getIterator3.default)(transactions); !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                            tx = _step19.value;
+
+                            _this26._peer.channel.tx(tx);
+                        }
+                        _context29.next = 14;
+                        break;
+
+                    case 10:
+                        _context29.prev = 10;
+                        _context29.t0 = _context29['catch'](6);
+                        _didIteratorError19 = true;
+                        _iteratorError19 = _context29.t0;
+
+                    case 14:
+                        _context29.prev = 14;
+                        _context29.prev = 15;
+
+                        if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                            _iterator19.return();
+                        }
+
+                    case 17:
+                        _context29.prev = 17;
+
+                        if (!_didIteratorError19) {
+                            _context29.next = 20;
+                            break;
+                        }
+
+                        throw _iteratorError19;
+
+                    case 20:
+                        return _context29.finish(17);
+
+                    case 21:
+                        return _context29.finish(14);
+
+                    case 22:
+                    case 'end':
+                        return _context29.stop();
+                }
+            }, _callee29, _this26, [[6, 10, 14, 22], [15,, 17, 21]]);
+        }))();
     }
 
     _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
+
+        this.fire('close', this);
+    }
+
+    get peer() {
+        return this._peer;
+    }
+
+    get synced() {
+        return this._synced;
     }
 }
 Class.register(ConsensusAgent);
 
-class InFlightRequests {
-    constructor() {
-        this._index = {};
-        this._array = [];
-        this._requestId = 1;
-    }
-
-    push(objects) {
-        this._array[this._requestId] = {};
-        for (let obj of objects) {
-            this._index[obj.hash] = this._requestId;
-            this._array[this._requestId][obj.hash] = obj;
-        }
-        return this._requestId++;
-    }
-
-    getObjects(requestId) {
-        return this._array[requestId];
-    }
-
-    getRequestId(hash) {
-        return this._index[hash];
-    }
-
-    deleteObject(hash) {
-        const requestId = this._index[hash];
-        if (!requestId) return;
-        delete this._array[requestId][hash];
-        delete this._index[hash];
-    }
-
-    deleteRequest(requestId) {
-        const objects = this._array[requestId];
-        if (!objects) return;
-        for (let hash in objects) {
-            delete this._index[hash];
-        }
-        delete this._array[requestId];
-    }
-}
-Class.register(InFlightRequests);
-
-class Miner extends Observable {
-	constructor(minerAddress, blockchain, mempool) {
-		super();
-		this._blockchain = blockchain;
-		this._mempool = mempool;
-
-		// XXX Cleanup
-		this._address = minerAddress || new Address();
-		if (!minerAddress || !(minerAddress instanceof Address)) {
-			console.warn('No miner address set');
-		}
-
-		this._worker = null;
-		this._hashCount = 0;
-		this._hashrate = 0;
-		this._hashrateWorker = null;
-	}
-
-	// XXX Cleanup
-	static configureSpeed(iterations) {
-		Miner._iterations = iterations || 75;
-	}
-
-	startWork() {
-		if (this.working) {
-			console.warn('Miner already working');
-			return;
-		}
-
-		// Listen to changes in the mempool which evicts invalid transactions
-		// after every blockchain head change and then fires 'transactions-ready'
-		// when the eviction process finishes. Restart work on the next block
-		// with fresh transactions when this fires.
-		this._mempool.on('transactions-ready', () => this._startWork());
-
-		// Immediately start processing transactions when they come in.
-		this._mempool.on('transaction-added', () => this._startWork());
-
-		// Initialize hashrate computation.
-		this._hashCount = 0;
-		this._hashrateWorker = setInterval( () => this._updateHashrate(), 5000);
-
-		// Tell listeners that we've started working.
-		this.fire('start', this);
-
-		// Kick off the mining process.
-		this._startWork();
-	}
-
-	async _startWork() {
-		// XXX Needed as long as we cannot unregister from transactions-ready events.
-		if (!this.working) {
-			return;
-		}
-
-		if (this._worker) {
-			clearTimeout(this._worker);
-		}
-
-		// Construct next block.
-		const nextBlock = await this._getNextBlock();
-
-		console.log('Miner starting work on prevHash=' + nextBlock.prevHash.toBase64() + ', accountsHash=' + nextBlock.accountsHash.toBase64() + ', difficulty=' + nextBlock.difficulty + ', hashrate=' + this._hashrate + ' H/s');
-
-		// Start hashing.
-		this._worker = setTimeout( () => this._tryNonces(nextBlock), 0);
-	}
-
-	async _tryNonces(block) {
-		// If the blockchain head has changed in the meantime, abort.
-		if (!this._blockchain.headHash.equals(block.prevHash)) {
-			return;
-		}
-
-		// If we are supposed to stop working, abort.
-		if (!this.working) {
-			return;
-		}
-
-		// Play with the number of iterations to adjust hashrate vs. responsiveness.
-		for (let i = 0; i < Miner._iterations; ++i) {
-			let isPoW = await block.header.verifyProofOfWork();
-			this._hashCount++;
-
-			if (isPoW) {
-				const hash = await block.hash();
-				console.log('MINED BLOCK!!! nonce=' + block.nonce + ', difficulty=' + block.difficulty + ', hash=' + hash.toBase64() + ', hashrate=' + this._hashrate + ' H/s');
-
-				// Tell listeners that we've mined a block.
-				this.fire('block-mined', block, this);
-
-				// Reset worker state.
-				clearTimeout(this._worker);
-				this._worker = null;
-
-				// Push block into blockchain.
-				await this._blockchain.pushBlock(block);
-
-				// We will resume work when the blockchain updates.
-				return;
-			}
-
-			block.header.nonce += 1;
-		}
-
-		this._worker = setTimeout( () => this._tryNonces(block), 0);
-	}
-
-	async _getNextBlock() {
-		const body = await this._getNextBody();
-		const header = await this._getNextHeader(body);
-		return new Block(header, body);
-	}
-
-	async _getNextHeader(body) {
-		const prevHash = await this._blockchain.headHash;
-		const accountsHash = this._blockchain.accountsHash;
-		const bodyHash = await body.hash();
-		const timestamp = this._getNextTimestamp();
-		const difficulty = await this._blockchain.getNextDifficulty();
-		const nonce = Math.round(Math.random() * 100000);
-		return new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
-	}
-
-	async _getNextBody() {
-		// Get transactions from mempool (default is maxCount=5000).
-		// TODO Completely fill up the block with transactions until the size limit is reached.
-		const transactions = await this._mempool.getTransactions();
-		return new BlockBody(this._address, transactions);
-	}
-
-	_getNextTimestamp() {
-		return Math.floor(Date.now() / 1000);
-	}
-
-	stopWork() {
-		// TODO unregister from head-changed events
-		this._stopWork();
-
-		console.log('Miner stopped work');
-
-		// Tell listeners that we've stopped working.
-		this.fire('stop', this);
-	}
-
-	_stopWork() {
-		// TODO unregister from blockchain head-changed events.
-
-		if (this._worker) {
-			clearTimeout(this._worker);
-			this._worker = null;
-		}
-		if (this._hashrateWorker) {
-			clearInterval(this._hashrateWorker);
-			this._hashrateWorker = null;
-		}
-
-		this._hashCount = 0;
-		this._hashrate = 0;
-	}
-
-	_updateHashrate() {
-		// Called in 5 second intervals
-		this._hashrate = Math.round(this._hashCount / 5);
-		this._hashCount = 0;
-
-		// Tell listeners about our new hashrate.
-		this.fire('hashrate-changed', this._hashrate, this);
-	}
-
-	get address() {
-		return this._address;
-	}
-
-	get working() {
-		return !!this._hashrateWorker;
-	}
-
-	get hashrate() {
-		return this._hashrate;
-	}
-}
-// XXX Move to configuration
-Miner._iterations = 75;
-Class.register(Miner);
-
-// TODO: Implement Block Size Limit
-// TODO V2: Implement total coins limit
 class Policy {
-	static get BLOCK_TIME() {
-		return 10; /* in seconds */
-	}
+    static get SATOSHIS_PER_COIN() {
+        return 1e8;
+    }
 
-	static get BLOCK_REWARD() {
-		return 50 * 1e4; // XXX Testing
-	}
+    static get BLOCK_TIME() {
+        return 30;
+        /* in seconds */
+    }
 
-	static get BLOCK_SIZE_MAX() {
-		return 1e6; // 1 MB
-	}
+    static get BLOCK_REWARD() {
+        return Policy.coinsToSatoshis(50);
+    }
 
-	static get DIFFICULTY_MIN() {
-		return 10;
-	}
+    static get BLOCK_SIZE_MAX() {
+        return 1e6; // 1 MB
+    }
 
-	static get DIFFICULTY_ADJUSTMENT_BLOCKS() {
-		return 5; // Blocks
-	}
+    static get BLOCK_TARGET_MAX() {
+        return BlockUtils.compactToTarget(0x1f00ffff); // 16 zero bits, bitcoin uses 32 (0x1d00ffff)
+    }
+
+    static get DIFFICULTY_ADJUSTMENT_BLOCKS() {
+        return 5; // Blocks
+    }
+
+    static coinsToSatoshis(coins) {
+        return coins * Policy.SATOSHIS_PER_COIN;
+    }
+
+    static satoshisToCoins(satoshis) {
+        return satoshis / Policy.SATOSHIS_PER_COIN;
+    }
 }
 Class.register(Policy);
+
+class Miner extends Observable {
+    constructor(blockchain, mempool, minerAddress) {
+        super();
+        this._blockchain = blockchain;
+        this._mempool = mempool;
+        this._address = minerAddress;
+
+        // Number of hashes computed since the last hashrate update.
+        this._hashCount = 0;
+
+        // Timestamp of the last hashrate update.
+        this._lastHashrate = 0;
+
+        // Hashrate computation interval handle.
+        this._hashrateWorker = null;
+
+        // The current hashrate of this miner.
+        this._hashrate = 0;
+
+        // Listen to changes in the mempool which evicts invalid transactions
+        // after every blockchain head change and then fires 'transactions-ready'
+        // when the eviction process finishes. Restart work on the next block
+        // with fresh transactions when this fires.
+        this._mempool.on('transactions-ready', () => this._startWork());
+
+        // Immediately start processing transactions when they come in.
+        this._mempool.on('transaction-added', () => this._startWork());
+    }
+
+    startWork() {
+        if (this.working) {
+            console.warn('Miner already working');
+            return;
+        }
+
+        // Initialize hashrate computation.
+        this._hashCount = 0;
+        this._lastHashrate = Date.now();
+        this._hashrateWorker = setInterval(() => this._updateHashrate(), 5000);
+
+        // Tell listeners that we've started working.
+        this.fire('start', this);
+
+        // Kick off the mining process.
+        this._startWork();
+    }
+
+    _startWork() {
+        var _this27 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee30() {
+            var block, buffer;
+            return _regenerator2.default.wrap(function _callee30$(_context30) {
+                while (1) switch (_context30.prev = _context30.next) {
+                    case 0:
+                        if (_this27.working) {
+                            _context30.next = 2;
+                            break;
+                        }
+
+                        return _context30.abrupt('return');
+
+                    case 2:
+                        _context30.next = 4;
+                        return _this27._getNextBlock();
+
+                    case 4:
+                        block = _context30.sent;
+                        buffer = block.header.serialize();
+
+
+                        console.log('Miner starting work on ' + block.header + ', transactionCount=' + block.transactionCount + ', hashrate=' + _this27._hashrate + ' H/s');
+
+                        // Start hashing.
+                        _this27._mine(block, buffer);
+
+                    case 8:
+                    case 'end':
+                        return _context30.stop();
+                }
+            }, _callee30, _this27);
+        }))();
+    }
+
+    _mine(block, buffer) {
+        var _this28 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee31() {
+            var isPoW;
+            return _regenerator2.default.wrap(function _callee31$(_context31) {
+                while (1) switch (_context31.prev = _context31.next) {
+                    case 0:
+                        if (_this28._blockchain.headHash.equals(block.prevHash)) {
+                            _context31.next = 2;
+                            break;
+                        }
+
+                        return _context31.abrupt('return');
+
+                    case 2:
+                        if (_this28.working) {
+                            _context31.next = 4;
+                            break;
+                        }
+
+                        return _context31.abrupt('return');
+
+                    case 4:
+
+                        // Reset the write position of the buffer before re-using it.
+                        buffer.writePos = 0;
+
+                        // Compute hash and check if it meets the proof of work condition.
+                        _context31.next = 7;
+                        return block.header.verifyProofOfWork(buffer);
+
+                    case 7:
+                        isPoW = _context31.sent;
+
+
+                        // Keep track of how many hashes we have computed.
+                        _this28._hashCount++;
+
+                        // Check if we have found a block.
+                        if (isPoW) {
+                            // Tell listeners that we've mined a block.
+                            _this28.fire('block-mined', block, _this28);
+
+                            // Push block into blockchain.
+                            _this28._blockchain.pushBlock(block);
+                        } else {
+                            // Increment nonce.
+                            block.header.nonce++;
+
+                            // Continue mining.
+                            _this28._mine(block, buffer);
+                        }
+
+                    case 10:
+                    case 'end':
+                        return _context31.stop();
+                }
+            }, _callee31, _this28);
+        }))();
+    }
+
+    _getNextBlock() {
+        var _this29 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee32() {
+            var body, header;
+            return _regenerator2.default.wrap(function _callee32$(_context32) {
+                while (1) switch (_context32.prev = _context32.next) {
+                    case 0:
+                        _context32.next = 2;
+                        return _this29._getNextBody();
+
+                    case 2:
+                        body = _context32.sent;
+                        _context32.next = 5;
+                        return _this29._getNextHeader(body);
+
+                    case 5:
+                        header = _context32.sent;
+                        return _context32.abrupt('return', new Block(header, body));
+
+                    case 7:
+                    case 'end':
+                        return _context32.stop();
+                }
+            }, _callee32, _this29);
+        }))();
+    }
+
+    _getNextHeader(body) {
+        var _this30 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee33() {
+            var prevHash, accountsHash, bodyHash, timestamp, nBits, nonce;
+            return _regenerator2.default.wrap(function _callee33$(_context33) {
+                while (1) switch (_context33.prev = _context33.next) {
+                    case 0:
+                        _context33.next = 2;
+                        return _this30._blockchain.headHash;
+
+                    case 2:
+                        prevHash = _context33.sent;
+                        _context33.next = 5;
+                        return _this30._blockchain.accountsHash();
+
+                    case 5:
+                        accountsHash = _context33.sent;
+                        _context33.next = 8;
+                        return body.hash();
+
+                    case 8:
+                        bodyHash = _context33.sent;
+                        timestamp = _this30._getNextTimestamp();
+                        _context33.next = 12;
+                        return _this30._blockchain.getNextCompactTarget();
+
+                    case 12:
+                        nBits = _context33.sent;
+                        nonce = Math.round(Math.random() * 100000);
+                        return _context33.abrupt('return', new BlockHeader(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce));
+
+                    case 15:
+                    case 'end':
+                        return _context33.stop();
+                }
+            }, _callee33, _this30);
+        }))();
+    }
+
+    _getNextBody() {
+        var _this31 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee34() {
+            var transactions;
+            return _regenerator2.default.wrap(function _callee34$(_context34) {
+                while (1) switch (_context34.prev = _context34.next) {
+                    case 0:
+                        _context34.next = 2;
+                        return _this31._mempool.getTransactions();
+
+                    case 2:
+                        transactions = _context34.sent;
+                        return _context34.abrupt('return', new BlockBody(_this31._address, transactions));
+
+                    case 4:
+                    case 'end':
+                        return _context34.stop();
+                }
+            }, _callee34, _this31);
+        }))();
+    }
+
+    _getNextTimestamp() {
+        return Math.floor(Date.now() / 1000);
+    }
+
+    stopWork() {
+        // TODO unregister from blockchain head-changed events.
+
+        if (this._hashrateWorker) {
+            clearInterval(this._hashrateWorker);
+            this._hashrateWorker = null;
+        }
+
+        this._hashrate = 0;
+
+        // Tell listeners that we've stopped working.
+        this.fire('stop', this);
+
+        console.log('Miner stopped work');
+    }
+
+    _updateHashrate() {
+        const elapsed = (Date.now() - this._lastHashrate) / 1000;
+        this._hashrate = Math.round(this._hashCount / elapsed);
+
+        this._hashCount = 0;
+        this._lastHashrate = Date.now();
+
+        // Tell listeners about our new hashrate.
+        this.fire('hashrate-changed', this._hashrate, this);
+    }
+
+    get address() {
+        return this._address;
+    }
+
+    get working() {
+        return !!this._hashrateWorker;
+    }
+
+    get hashrate() {
+        return this._hashrate;
+    }
+}
+Class.register(Miner);
 
 class Network extends Observable {
     static get PEER_COUNT_DESIRED() {
@@ -2945,35 +4632,61 @@ class Network extends Observable {
         return this._init();
     }
 
-    async _init() {
-        this._autoConnect = false;
+    _init() {
+        var _this32 = this;
 
-        this._peerCount = 0;
-        this._agents = {};
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee35() {
+            return _regenerator2.default.wrap(function _callee35$(_context35) {
+                while (1) switch (_context35.prev = _context35.next) {
+                    case 0:
+                        _this32._autoConnect = false;
 
-        // All addresses we are currently connected to including our own address.
-        this._activeAddresses = {}
-        this._activeAddresses[NetworkUtils.myNetAddress()] = true;
+                        _this32._peerCount = 0;
+                        _this32._agents = {};
 
-        // All peer addresses we know.
-        this._addresses = new PeerAddresses();
+                        // All addresses we are currently connected to including our own address.
+                        _this32._activeAddresses = {};
+                        _this32._activeAddresses[NetworkUtils.myNetAddress()] = true;
 
-        // Relay new addresses to peers.
-        this._addresses.on('addresses-added', addresses => {
-            for (let key in this._agents) {
-                this._agents[key].relayAddresses(addresses);
-            }
-        });
+                        // All peer addresses we know.
+                        _this32._addresses = new PeerAddresses();
 
-        this._wsConnector = new WebSocketConnector();
-        this._wsConnector.on('connection', conn => this._onConnection(conn));
-        this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
+                        // Relay new addresses to peers.
+                        _this32._addresses.on('addresses-added', function (addresses) {
+                            for (let key in _this32._agents) {
+                                _this32._agents[key].relayAddresses(addresses);
+                            }
+                        });
 
-        this._rtcConnector = await new WebRtcConnector();
-        this._rtcConnector.on('connection', conn => this._onConnection(conn));
-        this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
+                        _this32._wsConnector = new WebSocketConnector();
+                        _this32._wsConnector.on('connection', function (conn) {
+                            return _this32._onConnection(conn);
+                        });
+                        _this32._wsConnector.on('error', function (peerAddr) {
+                            return _this32._onError(peerAddr);
+                        });
 
-        return this;
+                        _context35.next = 12;
+                        return new WebRtcConnector();
+
+                    case 12:
+                        _this32._rtcConnector = _context35.sent;
+
+                        _this32._rtcConnector.on('connection', function (conn) {
+                            return _this32._onConnection(conn);
+                        });
+                        _this32._rtcConnector.on('error', function (peerAddr) {
+                            return _this32._onError(peerAddr);
+                        });
+
+                        return _context35.abrupt('return', _this32);
+
+                    case 16:
+                    case 'end':
+                        return _context35.stop();
+                }
+            }, _callee35, _this32);
+        }))();
     }
 
     connect() {
@@ -2993,7 +4706,7 @@ class Network extends Observable {
     }
 
     // XXX For testing
-    disconnectWS() {
+    disconnectWebSocket() {
         this._autoConnect = false;
 
         // Close all websocket connections.
@@ -3024,7 +4737,7 @@ class Network extends Observable {
     }
 
     _connect(peerAddress) {
-        console.log('Connecting to ' + peerAddress + ' ...');
+        console.log('Connecting to ' + peerAddress + ' (via ' + peerAddress.signalChannel + ')...');
 
         if (Services.isWebSocket(peerAddress.services)) {
             this._activeAddresses[peerAddress] = true;
@@ -3127,31 +4840,52 @@ class Network extends Observable {
         this._checkPeerCount();
     }
 
-
     /* Signaling */
 
     _onSignal(channel, msg) {
+        if (msg.senderId === NetworkUtils.mySignalId()) {
+            console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
+            return;
+        }
+
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === NetworkUtils.mySignalId()) {
             this._rtcConnector.onSignal(channel, msg);
         }
         // Otherwise, try to forward the signal to the intented recipient.
         else {
-            const peerAddress = this._addresses.findBySignalId(msg.recipientId);
-            if (!peerAddress) {
-                // TODO send reject/unreachable message/signal if we cannot forward the signal
-                console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found', msg);
-                return;
-            }
+                const peerAddress = this._addresses.findBySignalId(msg.recipientId);
+                if (!peerAddress) {
+                    // TODO send reject/unreachable message/signal if we cannot forward the signal
+                    console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found', msg);
+                    return;
+                }
 
-            // XXX PeerChannel API doesn't fit here, no need to re-create the message.
-            peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId);
-        }
+                // XXX PeerChannel API doesn't fit here, no need to re-create the message.
+                peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
+                console.log('Forwarding signal from ' + msg.senderId + ' to ' + msg.recipientId + ' (received on: ' + channel.connection + ', myId: ' + NetworkUtils.mySignalId() + '): ' + BufferUtils.toAscii(msg.payload));
+            }
     }
 
     get peerCount() {
         return this._peerCount;
+    }
+
+    // XXX debug info
+    get peerCountWebSocket() {
+        return (0, _keys2.default)(this._agents).reduce((n, key) => n + (this._agents[key].channel.connection.protocol === PeerConnection.Protocol.WEBSOCKET), 0);
+    }
+    get peerCountWebRtc() {
+        return (0, _keys2.default)(this._agents).reduce((n, key) => n + (this._agents[key].channel.connection.protocol === PeerConnection.Protocol.WEBRTC), 0);
+    }
+
+    // XXX debug info
+    get bytesReceived() {
+        return (0, _keys2.default)(this._agents).reduce((n, key) => n + this._agents[key].channel.connection.bytesReceived, 0);
+    }
+
+    get bytesSent() {
+        return (0, _keys2.default)(this._agents).reduce((n, key) => n + this._agents[key].channel.connection.bytesSent, 0);
     }
 }
 Class.register(Network);
@@ -3171,6 +4905,10 @@ class NetworkAgent extends Observable {
 
     static get CONNECTIVITY_INTERVAL() {
         return 60000; // ms
+    }
+
+    static get ANNOUNCE_ADDR_INTERVAL() {
+        return 1000 * 60 * 3; // 3 minutes
     }
 
     constructor(blockchain, addresses, channel) {
@@ -3195,20 +4933,19 @@ class NetworkAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to network/control messages from the peer.
-        channel.on('version',    msg => this._onVersion(msg));
-        channel.on('verack',     msg => this._onVerAck(msg));
-        channel.on('addr',       msg => this._onAddr(msg));
-        channel.on('getaddr',    msg => this._onGetAddr(msg));
-        channel.on('ping',       msg => this._onPing(msg));
-        channel.on('pong',       msg => this._onPong(msg));
+        channel.on('version', msg => this._onVersion(msg));
+        channel.on('verack', msg => this._onVerAck(msg));
+        channel.on('addr', msg => this._onAddr(msg));
+        channel.on('getaddr', msg => this._onGetAddr(msg));
+        channel.on('ping', msg => this._onPing(msg));
+        channel.on('pong', msg => this._onPong(msg));
 
         // Clean up when the peer disconnects.
-        channel.on('close',      () => this._onClose());
+        channel.on('close', () => this._onClose());
 
         // Initiate the protocol with the new peer.
         this._handshake();
     }
-
 
     /* Public API */
 
@@ -3221,50 +4958,92 @@ class NetworkAgent extends Observable {
         }
     }
 
-
     /* Handshake */
 
-    async _handshake() {
-        // Kick off the handshake by telling the peer our version, network address & blockchain height.
-        this._channel.version(NetworkUtils.myNetAddress(), this._blockchain.height);
+    _handshake() {
+        var _this33 = this;
 
-        // Drop the peer if it doesn't acknowledge our version message.
-        this._timers.setTimeout('verack', () => this._channel.close('verack timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee36() {
+            return _regenerator2.default.wrap(function _callee36$(_context36) {
+                while (1) switch (_context36.prev = _context36.next) {
+                    case 0:
+                        // Kick off the handshake by telling the peer our version, network address & blockchain height.
+                        _this33._channel.version(NetworkUtils.myNetAddress(), _this33._blockchain.height);
 
-        // Drop the peer if it doesn't send us a version message.
-        this._timers.setTimeout('version', () => this._channel.close('version timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
+                        // Drop the peer if it doesn't acknowledge our version message.
+                        _this33._timers.setTimeout('verack', function () {
+                            return _this33._channel.close('verack timeout');
+                        }, NetworkAgent.HANDSHAKE_TIMEOUT);
+
+                        // Drop the peer if it doesn't send us a version message.
+                        _this33._timers.setTimeout('version', function () {
+                            return _this33._channel.close('version timeout');
+                        }, NetworkAgent.HANDSHAKE_TIMEOUT);
+
+                    case 3:
+                    case 'end':
+                        return _context36.stop();
+                }
+            }, _callee36, _this33);
+        }))();
     }
 
-    async _onVersion(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+    _onVersion(msg) {
+        var _this34 = this;
 
-        console.log('[VERSION] startHeight=' + msg.startHeight);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee37() {
+            return _regenerator2.default.wrap(function _callee37$(_context37) {
+                while (1) switch (_context37.prev = _context37.next) {
+                    case 0:
+                        if (_this34._canAcceptMessage(msg)) {
+                            _context37.next = 2;
+                            break;
+                        }
 
-        // Reject duplicate version messages.
-        if (this._version) {
-            console.warn('Rejecting duplicate version message from ' + this._channel);
-            this._channel.reject('version', RejectMessage.Code.DUPLICATE);
-            return;
-        }
+                        return _context37.abrupt('return');
 
-        // TODO actually check version, services and stuff.
+                    case 2:
 
-        // Distance to self must always be zero.
-        if (msg.netAddress.distance !== 0) {
-            console.warn('Invalid version message from ' + this._channel + ' - distance != 0');
-            this._channel.close('invalid version');
-            return;
-        }
+                        console.log('[VERSION] startHeight=' + msg.startHeight);
 
-        // Clear the version timeout.
-        this._timers.clearTimeout('version');
+                        // Reject duplicate version messages.
 
-        // Acknowledge the receipt of the version message.
-        this._channel.verack();
+                        if (!_this34._version) {
+                            _context37.next = 7;
+                            break;
+                        }
 
-        // Store the version message.
-        this._version = msg;
+                        console.warn('Rejecting duplicate version message from ' + _this34._channel);
+                        _this34._channel.reject('version', RejectMessage.Code.DUPLICATE);
+                        return _context37.abrupt('return');
+
+                    case 7:
+                        if (!(msg.netAddress.distance !== 0)) {
+                            _context37.next = 11;
+                            break;
+                        }
+
+                        console.warn('Invalid version message from ' + _this34._channel + ' - distance != 0');
+                        _this34._channel.close('invalid version');
+                        return _context37.abrupt('return');
+
+                    case 11:
+
+                        // Clear the version timeout.
+                        _this34._timers.clearTimeout('version');
+
+                        // Acknowledge the receipt of the version message.
+                        _this34._channel.verack();
+
+                        // Store the version message.
+                        _this34._version = msg;
+
+                    case 14:
+                    case 'end':
+                        return _context37.stop();
+                }
+            }, _callee37, _this34);
+        }))();
     }
 
     _onVerAck(msg) {
@@ -3286,12 +5065,7 @@ class NetworkAgent extends Observable {
         this._connected = true;
 
         // Tell listeners about the new peer that connected.
-        this._peer = new Peer(
-            this._channel,
-            this._version.version,
-            this._version.netAddress,
-            this._version.startHeight
-        );
+        this._peer = new Peer(this._channel, this._version.version, this._version.netAddress, this._version.startHeight);
         this.fire('handshake', this._peer, this);
 
         // Remember that the peer has sent us this address.
@@ -3302,14 +5076,14 @@ class NetworkAgent extends Observable {
 
         // Setup regular connectivity check.
         // TODO randomize interval?
-        this._timers.setInterval('connectivity',
-            () => this._checkConnectivity(),
-            NetworkAgent.CONNECTIVITY_INTERVAL);
+        this._timers.setInterval('connectivity', () => this._checkConnectivity(), NetworkAgent.CONNECTIVITY_INTERVAL);
+
+        // Regularly announce our address.
+        this._timers.setInterval('announce-addr', () => this._channel.addr([NetworkUtils.myNetAddress()]), NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Request new network addresses from the peer.
         this._requestAddresses();
     }
-
 
     /* Addresses */
 
@@ -3325,25 +5099,89 @@ class NetworkAgent extends Observable {
         }, NetworkAgent.GETADDR_TIMEOUT);
     }
 
-    async _onAddr(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+    _onAddr(msg) {
+        var _this35 = this;
 
-        console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee38() {
+            var _iteratorNormalCompletion20, _didIteratorError20, _iteratorError20, _iterator20, _step20, addr;
 
-        // Clear the getaddr timeout.
-        this._timers.clearTimeout('getaddr');
+            return _regenerator2.default.wrap(function _callee38$(_context38) {
+                while (1) switch (_context38.prev = _context38.next) {
+                    case 0:
+                        if (_this35._canAcceptMessage(msg)) {
+                            _context38.next = 2;
+                            break;
+                        }
 
-        // Remember that the peer has sent us these addresses.
-        for (let addr of msg.addresses) {
-            this._knownAddresses[addr] = true;
-        }
+                        return _context38.abrupt('return');
 
-        // Put the new addresses in the address pool.
-        await this._addresses.push(this._channel, msg.addresses);
+                    case 2:
 
-        // Tell listeners that we have received new addresses.
-        this.fire('addr', msg.addresses, this);
+                        console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
+
+                        // Clear the getaddr timeout.
+                        _this35._timers.clearTimeout('getaddr');
+
+                        // Remember that the peer has sent us these addresses.
+                        _iteratorNormalCompletion20 = true;
+                        _didIteratorError20 = false;
+                        _iteratorError20 = undefined;
+                        _context38.prev = 7;
+                        for (_iterator20 = (0, _getIterator3.default)(msg.addresses); !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                            addr = _step20.value;
+
+                            _this35._knownAddresses[addr] = true;
+                        }
+
+                        // Put the new addresses in the address pool.
+                        _context38.next = 15;
+                        break;
+
+                    case 11:
+                        _context38.prev = 11;
+                        _context38.t0 = _context38['catch'](7);
+                        _didIteratorError20 = true;
+                        _iteratorError20 = _context38.t0;
+
+                    case 15:
+                        _context38.prev = 15;
+                        _context38.prev = 16;
+
+                        if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                            _iterator20.return();
+                        }
+
+                    case 18:
+                        _context38.prev = 18;
+
+                        if (!_didIteratorError20) {
+                            _context38.next = 21;
+                            break;
+                        }
+
+                        throw _iteratorError20;
+
+                    case 21:
+                        return _context38.finish(18);
+
+                    case 22:
+                        return _context38.finish(15);
+
+                    case 23:
+                        _context38.next = 25;
+                        return _this35._addresses.push(_this35._channel, msg.addresses);
+
+                    case 25:
+
+                        // Tell listeners that we have received new addresses.
+                        _this35.fire('addr', msg.addresses, _this35);
+
+                    case 26:
+                    case 'end':
+                        return _context38.stop();
+                }
+            }, _callee38, _this35, [[7, 11, 15, 23], [16,, 18, 22]]);
+        }))();
     }
 
     _onGetAddr(msg) {
@@ -3360,7 +5198,6 @@ class NetworkAgent extends Observable {
         // Send the addresses back to the peer.
         this._channel.addr(addresses);
     }
-
 
     /* Connectivity Check */
 
@@ -3386,7 +5223,7 @@ class NetworkAgent extends Observable {
     }
 
     _onPong(msg) {
-        console.log('[PONG] nonce=' + msg.nonce)
+        console.log('[PONG] nonce=' + msg.nonce);
 
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout('ping_' + msg.nonce);
@@ -3401,16 +5238,13 @@ class NetworkAgent extends Observable {
     }
 
     _canAcceptMessage(msg) {
-        const isHandshakeMsg =
-            msg.type == Message.Type.VERSION
-            || msg.type == Message.Type.VERACK;
+        const isHandshakeMsg = msg.type == Message.Type.VERSION || msg.type == Message.Type.VERACK;
 
         // We accept handshake messages only if we are not connected, all other
         // messages otherwise.
         const accept = isHandshakeMsg != this._connected;
         if (!accept) {
-            console.warn('Discarding message from ' + this._channel
-                + ' - not acceptable in state connected=' + this._connected, msg);
+            console.warn('Discarding message from ' + this._channel + ' - not acceptable in state connected=' + this._connected, msg);
         }
         return accept;
     }
@@ -3450,32 +5284,34 @@ class Peer {
     }
 
     equals(o) {
-        return o instanceof Peer
-            && this._channel.equals(o.channel)
-            && this._version === o.version
-            && this._netAddress.equals(o.netAddress);
+        return o instanceof Peer && this._channel.equals(o.channel) && this._version === o.version && this._netAddress.equals(o.netAddress);
     }
 
     toString() {
-        return "Peer{channel=" + this._channel + ", version=" + this._version
-            + ", netAddress=" + this._netAddress + "}";
+        return "Peer{channel=" + this._channel + ", version=" + this._version + ", netAddress=" + this._netAddress + "}";
     }
 }
 Class.register(Peer);
 
 class PeerAddresses extends Observable {
-    static get MAX_AGE() {
+    static get MAX_AGE_WEBSOCKET() {
         return 1000 * 60 * 60 * 3; // 3 hours
     }
 
+    static get MAX_AGE_WEBRTC() {
+        return 1000 * 60 * 10; // 10 minutes
+    }
+
     static get MAX_DISTANCE() {
-        return 4;
+        return 3;
+    }
+
+    static get CLEANUP_INTERVAL() {
+        return 1000 * 60 * 3; // 3 minutes
     }
 
     static get SEED_PEERS() {
-        return [
-            new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0)
-        ];
+        return [new NetAddress(Services.WEBSOCKET, Date.now(), "alpacash.com", 8080, 0, 0), new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq1.styp-rekowsky.de", 8080, 0, 0), new NetAddress(Services.WEBSOCKET, Date.now(), "nimiq2.styp-rekowsky.de", 8080, 0, 0)];
     }
 
     constructor() {
@@ -3483,52 +5319,77 @@ class PeerAddresses extends Observable {
         this._store = {};
         this.push(null, PeerAddresses.SEED_PEERS);
         this.push(null, NetworkUtils.myNetAddress());
+
+        // Setup cleanup interval.
+        setInterval(() => this._cleanup(), PeerAddresses.CLEANUP_INTERVAL);
     }
 
     push(channel, arg) {
         const netAddresses = arg.length ? arg : [arg];
         const newAddresses = [];
 
-        for (let addr of netAddresses) {
-            // Ignore addresses that are too old.
-            if (Date.now() - addr.timestamp > PeerAddresses.MAX_AGE) {
-                console.log('Ignoring address ' + addr + ' - too old', addr);
-                continue;
-            }
+        var _iteratorNormalCompletion21 = true;
+        var _didIteratorError21 = false;
+        var _iteratorError21 = undefined;
 
-            const knownAddr = this._store[addr];
+        try {
+            for (var _iterator21 = (0, _getIterator3.default)(netAddresses), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+                let addr = _step21.value;
 
-            // Increment distance values for signaling addresses.
-            // XXX use a more robust condition here.
-            if (channel && addr.signalId) {
-                addr.distance++;
-
-                // Ignore addresses that exceed max distance.
-                if (addr.distance > PeerAddresses.MAX_DISTANCE) {
-                    console.log('Ignoring address ' + addr + ' - max distance exceeded', addr);
+                // Ignore addresses that are too old.
+                if (this._exceedsAge(addr)) {
+                    console.log('Ignoring address ' + addr + ' - too old', addr);
                     continue;
                 }
 
-                // Ignore address if we already know a better route to this address.
-                // TODO save anyways to have a backup route?
-                if (knownAddr && knownAddr.distance < addr.distance) {
-                    //console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
+                const knownAddr = this._store[addr];
+
+                // Increment distance values for signaling addresses.
+                // XXX use a more robust condition here.
+                if (channel && addr.signalId) {
+                    addr.distance++;
+
+                    // Ignore addresses that exceed max distance.
+                    if (addr.distance > PeerAddresses.MAX_DISTANCE) {
+                        console.log('Ignoring address ' + addr + ' - max distance exceeded', addr);
+                        continue;
+                    }
+
+                    // Ignore address if we already know a better route to this address.
+                    // TODO save anyways to have a backup route?
+                    if (knownAddr && knownAddr.distance < addr.distance) {
+                        //console.log('Ignoring address ' + addr + ' - better route exists', addr, knownAddr);
+                        continue;
+                    }
+                }
+
+                // Check if we already know this address with a more recent timestamp.
+                if (knownAddr && knownAddr.timestamp > addr.timestamp) {
+                    //console.log('Ignoring addr ' + addr + ' - older than existing one');
                     continue;
                 }
+
+                // Store the address.
+                this._store[addr] = new PeerAddress(addr, channel);
+                newAddresses.push(addr);
             }
 
-            // Check if we already know this address with a more recent timestamp.
-            if (knownAddr && knownAddr.timestamp > addr.timestamp) {
-                //console.log('Ignoring addr ' + addr + ' - older than existing one');
-                continue;
+            // Tell listeners that we learned new addresses.
+        } catch (err) {
+            _didIteratorError21 = true;
+            _iteratorError21 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                    _iterator21.return();
+                }
+            } finally {
+                if (_didIteratorError21) {
+                    throw _iteratorError21;
+                }
             }
-
-            // Store the address.
-            this._store[addr] = new PeerAddress(addr, channel);
-            newAddresses.push(addr);
         }
 
-        // Tell listeners when we learn new addresses.
         if (newAddresses.length) {
             this.fire('addresses-added', newAddresses, this);
         }
@@ -3566,26 +5427,35 @@ class PeerAddresses extends Observable {
         // XXX inefficient linear scan
         for (let key in this._store) {
             const addr = this._store[key];
-            if (addr.signalChannel && addr.signalChannel.equals(channel)
-                    && Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
+            if (addr.signalChannel && addr.signalChannel.equals(channel) && Services.isWebRtc(addr.services) && !Services.isWebSocket(addr.services)) {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 delete this._store[key];
             }
         }
     }
 
-    cleanup() {
+    _cleanup() {
         // Delete all peer addresses that are older than MAX_AGE.
         // Special case: don't delete addresses without timestamps (timestamp == 0)
+        for (let key in this._store) {
+            const addr = this._store[key];
+            if (addr.timestamp > 0 && this._exceedsAge(addr)) {
+                console.log('Deleting old peer address ' + addr);
+                delete this._store[key];
+            }
+        }
+    }
 
+    _exceedsAge(addr) {
+        const age = Date.now() - addr.timestamp;
+        return Services.isWebRtc(addr.services) && age > PeerAddresses.MAX_AGE_WEBRTC || Services.isWebSocket(addr.services) && age > PeerAddresses.MAX_AGE_WEBSOCKET;
     }
 }
 Class.register(PeerAddresses);
 
 class PeerAddress extends NetAddress {
     constructor(netAddress, signalChannel) {
-        super(netAddress.services, netAddress.timestamp, netAddress.host,
-            netAddress.port, netAddress.signalId, netAddress.distance);
+        super(netAddress.services, netAddress.timestamp, netAddress.host, netAddress.port, netAddress.signalId, netAddress.distance);
         this._signalChannel = signalChannel;
     }
 
@@ -3609,7 +5479,7 @@ class PeerChannel extends Observable {
         let msg;
         try {
             msg = MessageFactory.parse(rawMsg);
-        } catch(e) {
+        } catch (e) {
             // TODO Drop client if it keeps sending junk.
             // TODO Bitcoin sends a reject message if the message can't be decoded.
             // From the Bitcoin Reference:
@@ -3664,7 +5534,9 @@ class PeerChannel extends Observable {
         this._send(new TxMessage(transaction));
     }
 
-    getblocks(hashes, hashStop = new Hash()) {
+    getblocks(hashes) {
+        let hashStop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Hash();
+
         this._send(new GetBlocksMessage(hashes, hashStop));
     }
 
@@ -3697,8 +5569,7 @@ class PeerChannel extends Observable {
     }
 
     equals(o) {
-        return o instanceof PeerChannel
-            && this._conn.equals(o.connection);
+        return o instanceof PeerChannel && this._conn.equals(o.connection);
     }
 
     toString() {
@@ -3713,10 +5584,11 @@ class PeerChannel extends Observable {
 Class.register(PeerChannel);
 
 class PeerConnection extends Observable {
-    constructor(nativeChannel, host, port) {
+    constructor(nativeChannel, protocol, host, port) {
         super();
         this._channel = nativeChannel;
 
+        this._protocol = protocol;
         this._host = host;
         this._port = port;
 
@@ -3735,11 +5607,13 @@ class PeerConnection extends Observable {
     }
 
     _onMessage(msg) {
+        // XXX Cleanup!
         if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
             this._bytesReceived += msg.byteLength || msg.length;
             this.fire('message', msg, this);
         } else {
             // Browser only
+            // TODO FileReader is slow and this is ugly anyways. Improve!
             const reader = new FileReader();
             reader.onloadend = () => this._onMessage(new Uint8Array(reader.result));
             reader.readAsArrayBuffer(msg);
@@ -3761,13 +5635,15 @@ class PeerConnection extends Observable {
     }
 
     equals(o) {
-        return o instanceof PeerConnection
-            && this.host === o.host
-            && this.port === o.port;
+        return o instanceof PeerConnection && this.protocol === o.protocol && this.host === o.host && this.port === o.port;
     }
 
     toString() {
-        return "PeerConnection{host=" + this._host + ", port=" + this._port + "}";
+        return 'PeerConnection{protocol=' + this._protocol + ', host=' + this._host + ', port=' + this._port + '}';
+    }
+
+    get protocol() {
+        return this._protocol;
     }
 
     get host() {
@@ -3786,79 +5662,347 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 }
+PeerConnection.Protocol = {};
+PeerConnection.Protocol.WEBSOCKET = 'websocket';
+PeerConnection.Protocol.WEBRTC = 'webrtc';
 Class.register(PeerConnection);
 
 // TODO V2: Store private key encrypted
 class Wallet {
 
-	static async getPersistent() {
-		const db = new WalletStore();
-		let keys = await db.get('keys');
-		if (!keys) {
-			keys = await Crypto.generateKeys();
-			await db.put('keys', keys);
-		}
-		return await new Wallet(keys);
-	}
+    static getPersistent(accounts, mempool) {
+        var _this36 = this;
 
-	static async createVolatile() {
-		const keys = await Crypto.generateKeys();
-		return await new Wallet(keys);
-	}
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee39() {
+            var db, keys;
+            return _regenerator2.default.wrap(function _callee39$(_context39) {
+                while (1) switch (_context39.prev = _context39.next) {
+                    case 0:
+                        db = new WalletStore();
+                        _context39.next = 3;
+                        return db.get('keys');
 
-	constructor(keys) {
-		this._keys = keys;
-		return this._init();
-	}
+                    case 3:
+                        keys = _context39.sent;
 
-	async _init() {
-		this._publicKey = await Crypto.exportPublic(this._keys.publicKey);
-		this._address = await Crypto.exportAddress(this._keys.publicKey);
-		return this;
-	}
+                        if (keys) {
+                            _context39.next = 10;
+                            break;
+                        }
 
-	importPrivate(privateKey) {
-		return Crypto.importPrivate(privateKey)
-	}
+                        _context39.next = 7;
+                        return Crypto.generateKeys();
 
-	exportPrivate() {
-		return Crypto.exportPrivate(this._keys.privateKey);
-	}
+                    case 7:
+                        keys = _context39.sent;
+                        _context39.next = 10;
+                        return db.put('keys', keys);
 
-	createTransaction(recipientAddr, value, fee, nonce) {
-		const transaction = new Transaction(this._publicKey, recipientAddr, value, fee, nonce);
-		return this._signTransaction(transaction);
-	}
+                    case 10:
+                        _context39.next = 12;
+                        return new Wallet(keys, accounts, mempool);
 
-	async _signTransaction(transaction) {
-		return Crypto.sign(this._keys.privateKey, transaction.serializeContent())
-			.then(signature => {
-				transaction.signature = signature;
-				return transaction;
-			});
-	}
+                    case 12:
+                        return _context39.abrupt('return', _context39.sent);
 
-	get address() {
-		return this._address;
-	}
+                    case 13:
+                    case 'end':
+                        return _context39.stop();
+                }
+            }, _callee39, _this36);
+        }))();
+    }
 
-	get publicKey() {
-		return this._publicKey;
-	}
+    static createVolatile(accounts, mempool) {
+        var _this37 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee40() {
+            var keys;
+            return _regenerator2.default.wrap(function _callee40$(_context40) {
+                while (1) switch (_context40.prev = _context40.next) {
+                    case 0:
+                        _context40.next = 2;
+                        return Crypto.generateKeys();
+
+                    case 2:
+                        keys = _context40.sent;
+                        _context40.next = 5;
+                        return new Wallet(keys, accounts, mempool);
+
+                    case 5:
+                        return _context40.abrupt('return', _context40.sent);
+
+                    case 6:
+                    case 'end':
+                        return _context40.stop();
+                }
+            }, _callee40, _this37);
+        }))();
+    }
+
+    constructor(keys, accounts, mempool) {
+        this._keys = keys;
+        this._accounts = accounts;
+        this._mempool = mempool;
+        return this._init();
+    }
+
+    _init() {
+        var _this38 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee41() {
+            return _regenerator2.default.wrap(function _callee41$(_context41) {
+                while (1) switch (_context41.prev = _context41.next) {
+                    case 0:
+                        _context41.next = 2;
+                        return Crypto.exportPublic(_this38._keys.publicKey);
+
+                    case 2:
+                        _this38._publicKey = _context41.sent;
+                        _context41.next = 5;
+                        return Crypto.exportAddress(_this38._keys.publicKey);
+
+                    case 5:
+                        _this38._address = _context41.sent;
+                        return _context41.abrupt('return', _this38);
+
+                    case 7:
+                    case 'end':
+                        return _context41.stop();
+                }
+            }, _callee41, _this38);
+        }))();
+    }
+
+    importPrivate(privateKey) {
+        return Crypto.importPrivate(privateKey);
+    }
+
+    exportPrivate() {
+        return Crypto.exportPrivate(this._keys.privateKey);
+    }
+
+    createTransaction(recipientAddr, value, fee, nonce) {
+        const transaction = new Transaction(this._publicKey, recipientAddr, value, fee, nonce);
+        return this._signTransaction(transaction);
+    }
+
+    _signTransaction(transaction) {
+        var _this39 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee42() {
+            return _regenerator2.default.wrap(function _callee42$(_context42) {
+                while (1) switch (_context42.prev = _context42.next) {
+                    case 0:
+                        return _context42.abrupt('return', Crypto.sign(_this39._keys.privateKey, transaction.serializeContent()).then(function (signature) {
+                            transaction.signature = signature;
+                            return transaction;
+                        }));
+
+                    case 1:
+                    case 'end':
+                        return _context42.stop();
+                }
+            }, _callee42, _this39);
+        }))();
+    }
+
+    transferFunds(recipientAddr, value, fee) {
+        var _this40 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee43() {
+            return _regenerator2.default.wrap(function _callee43$(_context43) {
+                while (1) switch (_context43.prev = _context43.next) {
+                    case 0:
+                        _context43.next = 2;
+                        return _this40.getBalance().then(function (balance) {
+                            return _this40.createTransaction(recipientAddr, value, fee, balance.nonce).then(function (transaction) {
+                                return _this40._mempool.pushTransaction(transaction);
+                            });
+                        });
+
+                    case 2:
+                    case 'end':
+                        return _context43.stop();
+                }
+            }, _callee43, _this40);
+        }))();
+    }
+
+    get address() {
+        return this._address;
+    }
+
+    get publicKey() {
+        return this._publicKey;
+    }
+
+    getBalance(accounts) {
+        var _this41 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee44() {
+            return _regenerator2.default.wrap(function _callee44$(_context44) {
+                while (1) switch (_context44.prev = _context44.next) {
+                    case 0:
+                        return _context44.abrupt('return', _this41._accounts.getBalance(_this41.address));
+
+                    case 1:
+                    case 'end':
+                        return _context44.stop();
+                }
+            }, _callee44, _this41);
+        }))();
+    }
 }
 Class.register(Wallet);
+
+class Block {
+    constructor(header, body) {
+        if (!(header instanceof BlockHeader)) throw 'Malformed header';
+        if (!(body instanceof BlockBody)) throw 'Malformed body';
+        this._header = header;
+        this._body = body;
+    }
+
+    static cast(o) {
+        if (!o) return o;
+        ObjectUtils.cast(o, Block);
+        BlockHeader.cast(o._header);
+        BlockBody.cast(o._body);
+        return o;
+    }
+
+    static unserialize(buf) {
+        var header = BlockHeader.unserialize(buf);
+        var body = BlockBody.unserialize(buf);
+        return new Block(header, body);
+    }
+
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        this._header.serialize(buf);
+        this._body.serialize(buf);
+        return buf;
+    }
+
+    get serializedSize() {
+        return this._header.serializedSize + this._body.serializedSize;
+    }
+
+    get header() {
+        return this._header;
+    }
+
+    get body() {
+        return this._body;
+    }
+
+    get prevHash() {
+        return this._header.prevHash;
+    }
+
+    get bodyHash() {
+        return this._header.bodyHash;
+    }
+
+    get accountsHash() {
+        return this._header.accountsHash;
+    }
+
+    get nBits() {
+        return this._header.nBits;
+    }
+
+    get target() {
+        return this._header.target;
+    }
+
+    get difficulty() {
+        return this._header.difficulty;
+    }
+
+    get timestamp() {
+        return this._header.timestamp;
+    }
+
+    get nonce() {
+        return this._header.nonce;
+    }
+
+    get minerAddr() {
+        return this._body.minerAddr;
+    }
+
+    get transactions() {
+        return this._body.transactions;
+    }
+
+    get transactionCount() {
+        return this._body.transactionCount;
+    }
+
+    hash() {
+        return this._header.hash();
+    }
+}
+
+/* Genesis Block */
+Block.GENESIS = new Block(new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='), BlockUtils.difficultyToCompact(1), 0, 0), new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), []));
+// Store hash for synchronous access
+Block.GENESIS.hash().then(hash => {
+    Block.GENESIS.HASH = hash;
+    (0, _freeze2.default)(Block.GENESIS);
+});
+Class.register(Block);
+
 // TODO: verify values and nonces of senders
 // TODO: check state-root after revert
 // TODO V2: hide all private functions in constructor scope
 class Accounts extends Observable {
-    static async getPersistent() {
-        const tree = await AccountsTree.getPersistent();
-        return new Accounts(tree);
+    static getPersistent() {
+        var _this42 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee45() {
+            var tree;
+            return _regenerator2.default.wrap(function _callee45$(_context45) {
+                while (1) switch (_context45.prev = _context45.next) {
+                    case 0:
+                        _context45.next = 2;
+                        return AccountsTree.getPersistent();
+
+                    case 2:
+                        tree = _context45.sent;
+                        return _context45.abrupt('return', new Accounts(tree));
+
+                    case 4:
+                    case 'end':
+                        return _context45.stop();
+                }
+            }, _callee45, _this42);
+        }))();
     }
 
-    static async createVolatile() {
-        const tree = await AccountsTree.createVolatile();
-        return new Accounts(tree);
+    static createVolatile() {
+        var _this43 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee46() {
+            var tree;
+            return _regenerator2.default.wrap(function _callee46$(_context46) {
+                while (1) switch (_context46.prev = _context46.next) {
+                    case 0:
+                        _context46.next = 2;
+                        return AccountsTree.createVolatile();
+
+                    case 2:
+                        tree = _context46.sent;
+                        return _context46.abrupt('return', new Accounts(tree));
+
+                    case 4:
+                    case 'end':
+                        return _context46.stop();
+                }
+            }, _callee46, _this43);
+        }))();
     }
 
     constructor(accountsTree) {
@@ -3870,263 +6014,884 @@ class Accounts extends Observable {
     }
 
     commitBlock(block) {
-        if (!block.accountsHash.equals(this.hash)) throw 'AccountHash mismatch';
-        return this._execute(block, (a, b) => a + b);
+        var _this44 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee47() {
+            var hash, treeTx;
+            return _regenerator2.default.wrap(function _callee47$(_context47) {
+                while (1) switch (_context47.prev = _context47.next) {
+                    case 0:
+                        _context47.next = 2;
+                        return _this44.hash();
+
+                    case 2:
+                        hash = _context47.sent;
+
+                        if (block.accountsHash.equals(hash)) {
+                            _context47.next = 5;
+                            break;
+                        }
+
+                        throw 'AccountsHash mismatch';
+
+                    case 5:
+                        _context47.next = 7;
+                        return _this44._tree.transaction();
+
+                    case 7:
+                        treeTx = _context47.sent;
+                        _context47.next = 10;
+                        return _this44._execute(treeTx, block, function (a, b) {
+                            return a + b;
+                        });
+
+                    case 10:
+                        _context47.next = 12;
+                        return treeTx.commit();
+
+                    case 12:
+                        return _context47.abrupt('return', _context47.sent);
+
+                    case 13:
+                    case 'end':
+                        return _context47.stop();
+                }
+            }, _callee47, _this44);
+        }))();
     }
 
     revertBlock(block) {
-        return this._execute(block, (a, b) => a - b);
+        var _this45 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee48() {
+            var treeTx;
+            return _regenerator2.default.wrap(function _callee48$(_context48) {
+                while (1) switch (_context48.prev = _context48.next) {
+                    case 0:
+                        _context48.next = 2;
+                        return _this45._tree.transaction();
+
+                    case 2:
+                        treeTx = _context48.sent;
+                        _context48.next = 5;
+                        return _this45._execute(treeTx, block, function (a, b) {
+                            return a - b;
+                        });
+
+                    case 5:
+                        _context48.next = 7;
+                        return treeTx.commit();
+
+                    case 7:
+                        return _context48.abrupt('return', _context48.sent);
+
+                    case 8:
+                    case 'end':
+                        return _context48.stop();
+                }
+            }, _callee48, _this45);
+        }))();
     }
 
     getBalance(address) {
         return this._tree.get(address);
     }
 
-    async _execute(block, operator) {
-        await this._executeTransactions(block.body, operator);
-        await this._rewardMiner(block.body, operator);
+    _execute(treeTx, block, operator) {
+        var _this46 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee49() {
+            return _regenerator2.default.wrap(function _callee49$(_context49) {
+                while (1) switch (_context49.prev = _context49.next) {
+                    case 0:
+                        _context49.next = 2;
+                        return _this46._executeTransactions(treeTx, block.body, operator);
+
+                    case 2:
+                        _context49.next = 4;
+                        return _this46._rewardMiner(treeTx, block.body, operator);
+
+                    case 4:
+                    case 'end':
+                        return _context49.stop();
+                }
+            }, _callee49, _this46);
+        }))();
     }
 
-    async _rewardMiner(body, op) {
-          // Sum up transaction fees.
-        const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
-        await this._updateBalance(body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+    _rewardMiner(treeTx, body, op) {
+        var _this47 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee50() {
+            var txFees;
+            return _regenerator2.default.wrap(function _callee50$(_context50) {
+                while (1) switch (_context50.prev = _context50.next) {
+                    case 0:
+                        // Sum up transaction fees.
+                        txFees = body.transactions.reduce(function (sum, tx) {
+                            return sum + tx.fee;
+                        }, 0);
+                        _context50.next = 3;
+                        return _this47._updateBalance(treeTx, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+
+                    case 3:
+                    case 'end':
+                        return _context50.stop();
+                }
+            }, _callee50, _this47);
+        }))();
     }
 
-    async _executeTransactions(body, op) {
-        for (let tx of body.transactions) {
-            await this._executeTransaction(tx, op);
-        }
+    _executeTransactions(treeTx, body, op) {
+        var _this48 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee51() {
+            var _iteratorNormalCompletion22, _didIteratorError22, _iteratorError22, _iterator22, _step22, tx;
+
+            return _regenerator2.default.wrap(function _callee51$(_context51) {
+                while (1) switch (_context51.prev = _context51.next) {
+                    case 0:
+                        _iteratorNormalCompletion22 = true;
+                        _didIteratorError22 = false;
+                        _iteratorError22 = undefined;
+                        _context51.prev = 3;
+                        _iterator22 = (0, _getIterator3.default)(body.transactions);
+
+                    case 5:
+                        if (_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done) {
+                            _context51.next = 12;
+                            break;
+                        }
+
+                        tx = _step22.value;
+                        _context51.next = 9;
+                        return _this48._executeTransaction(treeTx, tx, op);
+
+                    case 9:
+                        _iteratorNormalCompletion22 = true;
+                        _context51.next = 5;
+                        break;
+
+                    case 12:
+                        _context51.next = 18;
+                        break;
+
+                    case 14:
+                        _context51.prev = 14;
+                        _context51.t0 = _context51['catch'](3);
+                        _didIteratorError22 = true;
+                        _iteratorError22 = _context51.t0;
+
+                    case 18:
+                        _context51.prev = 18;
+                        _context51.prev = 19;
+
+                        if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                            _iterator22.return();
+                        }
+
+                    case 21:
+                        _context51.prev = 21;
+
+                        if (!_didIteratorError22) {
+                            _context51.next = 24;
+                            break;
+                        }
+
+                        throw _iteratorError22;
+
+                    case 24:
+                        return _context51.finish(21);
+
+                    case 25:
+                        return _context51.finish(18);
+
+                    case 26:
+                    case 'end':
+                        return _context51.stop();
+                }
+            }, _callee51, _this48, [[3, 14, 18, 26], [19,, 21, 25]]);
+        }))();
     }
 
-    async _executeTransaction(tx, op) {
-        await this._updateSender(tx, op);
-        await this._updateRecipient(tx, op);
+    _executeTransaction(treeTx, tx, op) {
+        var _this49 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee52() {
+            return _regenerator2.default.wrap(function _callee52$(_context52) {
+                while (1) switch (_context52.prev = _context52.next) {
+                    case 0:
+                        _context52.next = 2;
+                        return _this49._updateSender(treeTx, tx, op);
+
+                    case 2:
+                        _context52.next = 4;
+                        return _this49._updateRecipient(treeTx, tx, op);
+
+                    case 4:
+                    case 'end':
+                        return _context52.stop();
+                }
+            }, _callee52, _this49);
+        }))();
     }
 
-    async _updateSender(tx, op) {
-        const addr = await tx.senderAddr();
-        await this._updateBalance(addr, -tx.value - tx.fee, op);
+    _updateSender(treeTx, tx, op) {
+        var _this50 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee53() {
+            var addr;
+            return _regenerator2.default.wrap(function _callee53$(_context53) {
+                while (1) switch (_context53.prev = _context53.next) {
+                    case 0:
+                        _context53.next = 2;
+                        return tx.senderAddr();
+
+                    case 2:
+                        addr = _context53.sent;
+                        _context53.next = 5;
+                        return _this50._updateBalance(treeTx, addr, -tx.value - tx.fee, op);
+
+                    case 5:
+                    case 'end':
+                        return _context53.stop();
+                }
+            }, _callee53, _this50);
+        }))();
     }
 
-    async _updateRecipient(tx, op) {
-        await this._updateBalance(tx.recipientAddr, tx.value, op);
+    _updateRecipient(treeTx, tx, op) {
+        var _this51 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee54() {
+            return _regenerator2.default.wrap(function _callee54$(_context54) {
+                while (1) switch (_context54.prev = _context54.next) {
+                    case 0:
+                        _context54.next = 2;
+                        return _this51._updateBalance(treeTx, tx.recipientAddr, tx.value, op);
+
+                    case 2:
+                    case 'end':
+                        return _context54.stop();
+                }
+            }, _callee54, _this51);
+        }))();
     }
 
-    async _updateBalance(address, value, operator) {
-        // XXX If we don't find a balance, we assume the account is empty for now.
-        // TODO retrieve the account balance by asking the network.
-        let balance = await this.getBalance(address);
-        if (!balance) {
-            balance = new Balance();
-        }
+    _updateBalance(treeTx, address, value, operator) {
+        var _this52 = this;
 
-        const newValue = operator(balance.value, value);
-        if (newValue < 0) throw 'Balance Error!';
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee55() {
+            var balance, newValue, newNonce, newBalance;
+            return _regenerator2.default.wrap(function _callee55$(_context55) {
+                while (1) switch (_context55.prev = _context55.next) {
+                    case 0:
+                        _context55.next = 2;
+                        return treeTx.get(address);
 
-        const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
-        if (newNonce < 0) throw 'Nonce Error!';
+                    case 2:
+                        balance = _context55.sent;
 
-        const newBalance = new Balance(newValue, newNonce);
-        await this._tree.put(address, newBalance);
+                        if (!balance) {
+                            balance = new Balance();
+                        }
+
+                        newValue = operator(balance.value, value);
+
+                        if (!(newValue < 0)) {
+                            _context55.next = 7;
+                            break;
+                        }
+
+                        throw 'Balance Error!';
+
+                    case 7:
+                        newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
+
+                        if (!(newNonce < 0)) {
+                            _context55.next = 10;
+                            break;
+                        }
+
+                        throw 'Nonce Error!';
+
+                    case 10:
+                        newBalance = new Balance(newValue, newNonce);
+                        _context55.next = 13;
+                        return treeTx.put(address, newBalance);
+
+                    case 13:
+                    case 'end':
+                        return _context55.stop();
+                }
+            }, _callee55, _this52);
+        }))();
     }
 
-    get hash() {
-        return this._tree.root;
+    hash() {
+        return this._tree.root();
     }
 }
 Class.register(Accounts);
 
 class AccountsTree extends Observable {
-    static async getPersistent() {
-        const store = AccountsTreeStore.getPersistent();
-        return await new AccountsTree(store);
+    static getPersistent() {
+        var _this53 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee56() {
+            var store;
+            return _regenerator2.default.wrap(function _callee56$(_context56) {
+                while (1) switch (_context56.prev = _context56.next) {
+                    case 0:
+                        store = AccountsTreeStore.getPersistent();
+                        _context56.next = 3;
+                        return new AccountsTree(store);
+
+                    case 3:
+                        return _context56.abrupt('return', _context56.sent);
+
+                    case 4:
+                    case 'end':
+                        return _context56.stop();
+                }
+            }, _callee56, _this53);
+        }))();
     }
 
-    static async createVolatile() {
-        const store = AccountsTreeStore.createVolatile();
-        return await new AccountsTree(store);
+    static createVolatile() {
+        var _this54 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee57() {
+            var store;
+            return _regenerator2.default.wrap(function _callee57$(_context57) {
+                while (1) switch (_context57.prev = _context57.next) {
+                    case 0:
+                        store = AccountsTreeStore.createVolatile();
+                        _context57.next = 3;
+                        return new AccountsTree(store);
+
+                    case 3:
+                        return _context57.abrupt('return', _context57.sent);
+
+                    case 4:
+                    case 'end':
+                        return _context57.stop();
+                }
+            }, _callee57, _this54);
+        }))();
     }
 
     constructor(treeStore) {
         super();
         this._store = treeStore;
-        this._rootKey = undefined;
         this._synchronizer = new Synchronizer();
 
         // Initialize root node.
         return this._initRoot();
     }
 
-    async _initRoot() {
-        this._rootKey = await this._store.getRootKey();
-        if (!this._rootKey) {
-            this._rootKey = await this._store.put(new AccountsTreeNode());
-            await this._store.setRootKey(this._rootKey);
-        };
-        return this;
+    _initRoot() {
+        var _this55 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee58() {
+            var rootKey;
+            return _regenerator2.default.wrap(function _callee58$(_context58) {
+                while (1) switch (_context58.prev = _context58.next) {
+                    case 0:
+                        _context58.next = 2;
+                        return _this55._store.getRootKey();
+
+                    case 2:
+                        rootKey = _context58.sent;
+
+                        if (rootKey) {
+                            _context58.next = 9;
+                            break;
+                        }
+
+                        _context58.next = 6;
+                        return _this55._store.put(new AccountsTreeNode());
+
+                    case 6:
+                        rootKey = _context58.sent;
+                        _context58.next = 9;
+                        return _this55._store.setRootKey(rootKey);
+
+                    case 9:
+                        return _context58.abrupt('return', _this55);
+
+                    case 10:
+                    case 'end':
+                        return _context58.stop();
+                }
+            }, _callee58, _this55);
+        }))();
     }
 
-    put(address, balance) {
-        return new Promise( (resolve, error) => {
-            this._synchronizer.push( _ => {
-                return this._put(address, balance);
+    put(address, balance, transaction) {
+        return new _promise2.default((resolve, error) => {
+            this._synchronizer.push(_ => {
+                return this._put(address, balance, transaction);
             }, resolve, error);
-        })
+        });
     }
 
-    async _put(address, balance) {
-        // Fetch the root node. This should never fail.
-        const rootNode = await this._store.get(this._rootKey);
+    _put(address, balance, transaction) {
+        var _this56 = this;
 
-        // Insert balance into the tree at address.
-        await this._insert(rootNode, address, balance, []);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee59() {
+            var rootKey, rootNode;
+            return _regenerator2.default.wrap(function _callee59$(_context59) {
+                while (1) switch (_context59.prev = _context59.next) {
+                    case 0:
+                        transaction = transaction || _this56._store;
 
-        // Tell listeners that the balance of address has changed.
-        this.fire(address, balance, address);
+                        // Fetch the root node. This should never fail.
+                        _context59.next = 3;
+                        return transaction.getRootKey();
+
+                    case 3:
+                        rootKey = _context59.sent;
+                        _context59.next = 6;
+                        return transaction.get(rootKey);
+
+                    case 6:
+                        rootNode = _context59.sent;
+                        _context59.next = 9;
+                        return _this56._insert(transaction, rootNode, address, balance, []);
+
+                    case 9:
+
+                        // Tell listeners that the balance of address has changed.
+                        _this56.fire(address, balance, address);
+
+                    case 10:
+                    case 'end':
+                        return _context59.stop();
+                }
+            }, _callee59, _this56);
+        }))();
     }
 
-    async _insert(node, address, balance, rootPath) {
-        // Find common prefix between node and new address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
+    _insert(transaction, node, address, balance, rootPath) {
+        var _this57 = this;
 
-        // Cut common prefix off the new address.
-        address = address.subarray(commonPrefix.length);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee60() {
+            var commonPrefix, nodeKey, newChild, newChildKey, newParent, newParentKey, childKey, childNode;
+            return _regenerator2.default.wrap(function _callee60$(_context60) {
+                while (1) switch (_context60.prev = _context60.next) {
+                    case 0:
+                        // Find common prefix between node and new address.
+                        commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
 
-        // If the node prefix does not fully match the new address, split the node.
-        if (commonPrefix.length !== node.prefix.length) {
-            // Cut the common prefix off the existing node.
-            await this._store.delete(node);
-            node.prefix = node.prefix.slice(i);
-            const nodeKey = await this._store.put(node);
+                        // Cut common prefix off the new address.
 
-            // Insert the new account node.
-            const newChild = new AccountsTreeNode(address, balance);
-            const newChildKey = await this._store.put(newChild);
+                        address = address.subarray(commonPrefix.length);
 
-            // Insert the new parent node.
-            const newParent = new AccountsTreeNode(commonPrefix);
-            newParent.putChild(node.prefix, nodeKey);
-            newParent.putChild(newChild.prefix, newChildKey);
-            const newParentKey = await this._store.put(newParent);
+                        // If the node prefix does not fully match the new address, split the node.
 
-            return await this._updateKeys(newParent.prefix, newParentKey, rootPath);
-        }
+                        if (!(commonPrefix.length !== node.prefix.length)) {
+                            _context60.next = 22;
+                            break;
+                        }
 
-        // If the remaining address is empty, we have found an (existing) node
-        // with the given address. Update the balance.
-        if (!address.length) {
-            // Delete the existing node.
-            await this._store.delete(node);
+                        _context60.next = 5;
+                        return transaction.delete(node);
 
-            // Special case: If the new balance is the initial balance
-            // (i.e. balance=0, nonce=0), it is like the account never existed
-            // in the first place. Delete the node in this case.
-            if (Balance.INITIAL.equals(balance)) {
-                // We have already deleted the node, remove the subtree it was on.
-                return await this._prune(node.prefix, rootPath);
-            }
+                    case 5:
+                        node.prefix = node.prefix.slice(commonPrefix.length);
+                        _context60.next = 8;
+                        return transaction.put(node);
 
-            // Update the balance.
-            node.balance = balance;
-            const nodeKey = await this._store.put(node);
+                    case 8:
+                        nodeKey = _context60.sent;
 
-            return await this._updateKeys(node.prefix, nodeKey, rootPath);
-        }
 
-        // If the node prefix matches and there are address bytes left, descend into
-        // the matching child node if one exists.
-        const childKey = node.getChild(address);
-        if (childKey) {
-            const childNode = await this._store.get(childKey);
-            rootPath.push(node);
-            return await this._insert(childNode, address, balance, rootPath);
-        }
+                        // Insert the new account node.
+                        newChild = new AccountsTreeNode(address, balance);
+                        _context60.next = 12;
+                        return transaction.put(newChild);
 
-        // If no matching child exists, add a new child account node to the current node.
-        const newChild = new AccountsTreeNode(address, balance);
-        const newChildKey = await this._store.put(newChild);
+                    case 12:
+                        newChildKey = _context60.sent;
 
-        await this._store.delete(node);
-        node.putChild(newChild.prefix, newChildKey);
-        const nodeKey = await this._store.put(node);
 
-        return await this._updateKeys(node.prefix, nodeKey, rootPath);
+                        // Insert the new parent node.
+                        newParent = new AccountsTreeNode(commonPrefix);
+
+                        newParent.putChild(node.prefix, nodeKey);
+                        newParent.putChild(newChild.prefix, newChildKey);
+                        _context60.next = 18;
+                        return transaction.put(newParent);
+
+                    case 18:
+                        newParentKey = _context60.sent;
+                        _context60.next = 21;
+                        return _this57._updateKeys(transaction, newParent.prefix, newParentKey, rootPath);
+
+                    case 21:
+                        return _context60.abrupt('return', _context60.sent);
+
+                    case 22:
+                        if (address.length) {
+                            _context60.next = 36;
+                            break;
+                        }
+
+                        _context60.next = 25;
+                        return transaction.delete(node);
+
+                    case 25:
+                        if (!Balance.INITIAL.equals(balance)) {
+                            _context60.next = 29;
+                            break;
+                        }
+
+                        _context60.next = 28;
+                        return _this57._prune(transaction, node.prefix, rootPath);
+
+                    case 28:
+                        return _context60.abrupt('return', _context60.sent);
+
+                    case 29:
+
+                        // Update the balance.
+                        node.balance = balance;
+                        _context60.next = 32;
+                        return transaction.put(node);
+
+                    case 32:
+                        nodeKey = _context60.sent;
+                        _context60.next = 35;
+                        return _this57._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+
+                    case 35:
+                        return _context60.abrupt('return', _context60.sent);
+
+                    case 36:
+
+                        // If the node prefix matches and there are address bytes left, descend into
+                        // the matching child node if one exists.
+                        childKey = node.getChild(address);
+
+                        if (!childKey) {
+                            _context60.next = 45;
+                            break;
+                        }
+
+                        _context60.next = 40;
+                        return transaction.get(childKey);
+
+                    case 40:
+                        childNode = _context60.sent;
+
+                        rootPath.push(node);
+                        _context60.next = 44;
+                        return _this57._insert(transaction, childNode, address, balance, rootPath);
+
+                    case 44:
+                        return _context60.abrupt('return', _context60.sent);
+
+                    case 45:
+
+                        // If no matching child exists, add a new child account node to the current node.
+                        newChild = new AccountsTreeNode(address, balance);
+                        _context60.next = 48;
+                        return transaction.put(newChild);
+
+                    case 48:
+                        newChildKey = _context60.sent;
+                        _context60.next = 51;
+                        return transaction.delete(node);
+
+                    case 51:
+                        node.putChild(newChild.prefix, newChildKey);
+                        _context60.next = 54;
+                        return transaction.put(node);
+
+                    case 54:
+                        nodeKey = _context60.sent;
+                        _context60.next = 57;
+                        return _this57._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+
+                    case 57:
+                        return _context60.abrupt('return', _context60.sent);
+
+                    case 58:
+                    case 'end':
+                        return _context60.stop();
+                }
+            }, _callee60, _this57);
+        }))();
     }
 
-    async _prune(prefix, rootPath) {
-        // Walk along the rootPath towards the root node starting with the
-        // immediate predecessor of the node specified by 'prefix'.
-        let i = rootPath.length - 1;
-        for (; i >= 0; --i) {
-            const node = rootPath[i];
-            let nodeKey = await this._store.delete(node);
+    _prune(transaction, prefix, rootPath) {
+        var _this58 = this;
 
-            node.removeChild(prefix);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee61() {
+            var rootKey, i, node, nodeKey;
+            return _regenerator2.default.wrap(function _callee61$(_context61) {
+                while (1) switch (_context61.prev = _context61.next) {
+                    case 0:
+                        _context61.next = 2;
+                        return transaction.getRootKey();
 
-            // If the node has children left, update it and all keys on the
-            // remaining root path. Pruning finished.
-            // XXX Special case: We start with an empty root node. Don't delete it.
-            if (node.hasChildren() || nodeKey === this._rootKey) {
-                nodeKey = await this._store.put(node);
-                return await this._updateKeys(node.prefix, nodeKey, rootPath.slice(0, i));
-            }
+                    case 2:
+                        rootKey = _context61.sent;
 
-            // The node has no children left, continue pruning.
-            prefix = node.prefix;
-        }
+
+                        // Walk along the rootPath towards the root node starting with the
+                        // immediate predecessor of the node specified by 'prefix'.
+                        i = rootPath.length - 1;
+
+                    case 4:
+                        if (!(i >= 0)) {
+                            _context61.next = 21;
+                            break;
+                        }
+
+                        node = rootPath[i];
+                        _context61.next = 8;
+                        return transaction.delete(node);
+
+                    case 8:
+                        nodeKey = _context61.sent;
+
+
+                        node.removeChild(prefix);
+
+                        // If the node has children left, update it and all keys on the
+                        // remaining root path. Pruning finished.
+                        // XXX Special case: We start with an empty root node. Don't delete it.
+
+                        if (!(node.hasChildren() || nodeKey === rootKey)) {
+                            _context61.next = 17;
+                            break;
+                        }
+
+                        _context61.next = 13;
+                        return transaction.put(node);
+
+                    case 13:
+                        nodeKey = _context61.sent;
+                        _context61.next = 16;
+                        return _this58._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
+
+                    case 16:
+                        return _context61.abrupt('return', _context61.sent);
+
+                    case 17:
+
+                        // The node has no children left, continue pruning.
+                        prefix = node.prefix;
+
+                    case 18:
+                        --i;
+                        _context61.next = 4;
+                        break;
+
+                    case 21:
+                        return _context61.abrupt('return', undefined);
+
+                    case 22:
+                    case 'end':
+                        return _context61.stop();
+                }
+            }, _callee61, _this58);
+        }))();
     }
 
-    async _updateKeys(prefix, nodeKey, rootPath) {
-        // Walk along the rootPath towards the root node starting with the
-        // immediate predecessor of the node specified by 'prefix'.
-        let i = rootPath.length - 1;
-        for (; i >= 0; --i) {
-            const node = rootPath[i];
-            await this._store.delete(node);
+    _updateKeys(transaction, prefix, nodeKey, rootPath) {
+        var _this59 = this;
 
-            node.putChild(prefix, nodeKey);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee62() {
+            var i, node;
+            return _regenerator2.default.wrap(function _callee62$(_context62) {
+                while (1) switch (_context62.prev = _context62.next) {
+                    case 0:
+                        // Walk along the rootPath towards the root node starting with the
+                        // immediate predecessor of the node specified by 'prefix'.
+                        i = rootPath.length - 1;
 
-            nodeKey = await this._store.put(node);
-            prefix = node.prefix;
-        }
+                    case 1:
+                        if (!(i >= 0)) {
+                            _context62.next = 13;
+                            break;
+                        }
 
-        this._rootKey = nodeKey;
-        await this._store.setRootKey(this._rootKey);
+                        node = rootPath[i];
+                        _context62.next = 5;
+                        return transaction.delete(node);
 
-        return this._rootKey;
+                    case 5:
+
+                        node.putChild(prefix, nodeKey);
+
+                        _context62.next = 8;
+                        return transaction.put(node);
+
+                    case 8:
+                        nodeKey = _context62.sent;
+
+                        prefix = node.prefix;
+
+                    case 10:
+                        --i;
+                        _context62.next = 1;
+                        break;
+
+                    case 13:
+                        _context62.next = 15;
+                        return transaction.setRootKey(nodeKey);
+
+                    case 15:
+                        return _context62.abrupt('return', nodeKey);
+
+                    case 16:
+                    case 'end':
+                        return _context62.stop();
+                }
+            }, _callee62, _this59);
+        }))();
     }
 
-    async get(address) {
-        if (!this._rootKey) return;
-        const rootNode = await this._store.get(this._rootKey);
-        return await this._retrieve(rootNode, address);
+    get(address, transaction) {
+        var _this60 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee63() {
+            var rootKey, rootNode;
+            return _regenerator2.default.wrap(function _callee63$(_context63) {
+                while (1) switch (_context63.prev = _context63.next) {
+                    case 0:
+                        transaction = transaction || _this60._store;
+
+                        // Fetch the root node. This should never fail.
+                        _context63.next = 3;
+                        return transaction.getRootKey();
+
+                    case 3:
+                        rootKey = _context63.sent;
+                        _context63.next = 6;
+                        return transaction.get(rootKey);
+
+                    case 6:
+                        rootNode = _context63.sent;
+                        _context63.next = 9;
+                        return _this60._retrieve(transaction, rootNode, address);
+
+                    case 9:
+                        return _context63.abrupt('return', _context63.sent);
+
+                    case 10:
+                    case 'end':
+                        return _context63.stop();
+                }
+            }, _callee63, _this60);
+        }))();
     }
 
-    async _retrieve(node, address) {
-        // Find common prefix between node and requested address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
+    _retrieve(transaction, node, address) {
+        var _this61 = this;
 
-        // If the prefix does not fully match, the requested address is not part
-        // of this node.
-        if (commonPrefix.length !== node.prefix.length) return false;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee64() {
+            var commonPrefix, childKey, childNode;
+            return _regenerator2.default.wrap(function _callee64$(_context64) {
+                while (1) switch (_context64.prev = _context64.next) {
+                    case 0:
+                        // Find common prefix between node and requested address.
+                        commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
 
-        // Cut common prefix off the new address.
-        address = address.subarray(commonPrefix.length);
+                        // If the prefix does not fully match, the requested address is not part
+                        // of this node.
 
-        // If the address remaining address is empty, we have found the requested
-        // node.
-        if (!address.length) return node.balance;
+                        if (!(commonPrefix.length !== node.prefix.length)) {
+                            _context64.next = 3;
+                            break;
+                        }
 
-        // Descend into the matching child node if one exists.
-        const childKey = node.getChild(address);
-        if (childKey) {
-          const childNode = await this._store.get(childKey);
-          return await this._retrieve(childNode, address);
-        }
+                        return _context64.abrupt('return', false);
 
-        // No matching child exists, the requested address is not part of this node.
-        return false;
+                    case 3:
+
+                        // Cut common prefix off the new address.
+                        address = address.subarray(commonPrefix.length);
+
+                        // If the address remaining address is empty, we have found the requested
+                        // node.
+
+                        if (address.length) {
+                            _context64.next = 6;
+                            break;
+                        }
+
+                        return _context64.abrupt('return', node.balance);
+
+                    case 6:
+
+                        // Descend into the matching child node if one exists.
+                        childKey = node.getChild(address);
+
+                        if (!childKey) {
+                            _context64.next = 14;
+                            break;
+                        }
+
+                        _context64.next = 10;
+                        return transaction.get(childKey);
+
+                    case 10:
+                        childNode = _context64.sent;
+                        _context64.next = 13;
+                        return _this61._retrieve(transaction, childNode, address);
+
+                    case 13:
+                        return _context64.abrupt('return', _context64.sent);
+
+                    case 14:
+                        return _context64.abrupt('return', false);
+
+                    case 15:
+                    case 'end':
+                        return _context64.stop();
+                }
+            }, _callee64, _this61);
+        }))();
+    }
+
+    transaction() {
+        var _this62 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee65() {
+            var tx, that;
+            return _regenerator2.default.wrap(function _callee65$(_context65) {
+                while (1) switch (_context65.prev = _context65.next) {
+                    case 0:
+                        _context65.next = 2;
+                        return _this62._store.transaction();
+
+                    case 2:
+                        tx = _context65.sent;
+                        that = _this62;
+                        return _context65.abrupt('return', {
+                            get: function get(address) {
+                                return that.get(address, tx);
+                            },
+
+                            put: function put(address, balance) {
+                                return that.put(address, balance, tx);
+                            },
+
+                            commit: function commit() {
+                                return tx.commit();
+                            }
+                        });
+
+                    case 5:
+                    case 'end':
+                        return _context65.stop();
+                }
+            }, _callee65, _this62);
+        }))();
     }
 
     static _commonPrefix(arr1, arr2) {
@@ -4139,15 +6904,37 @@ class AccountsTree extends Observable {
         return commonPrefix.slice(0, i);
     }
 
-    get root() {
-        if (!this._rootKey) return new Hash();
-        return Hash.fromBase64(this._rootKey);
+    root() {
+        var _this63 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee66() {
+            var rootKey;
+            return _regenerator2.default.wrap(function _callee66$(_context66) {
+                while (1) switch (_context66.prev = _context66.next) {
+                    case 0:
+                        _context66.next = 2;
+                        return _this63._store.getRootKey();
+
+                    case 2:
+                        rootKey = _context66.sent;
+                        return _context66.abrupt('return', Hash.fromBase64(rootKey));
+
+                    case 4:
+                    case 'end':
+                        return _context66.stop();
+                }
+            }, _callee66, _this63);
+        }))();
     }
 }
 Class.register(AccountsTree);
 
 class AccountsTreeNode {
-    constructor(prefix = new Uint8Array(), balance, children) {
+    constructor() {
+        let prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Uint8Array();
+        let balance = arguments[1];
+        let children = arguments[2];
+
         this.prefix = prefix;
         this.balance = balance;
         this.children = children;
@@ -4198,7 +6985,7 @@ class AccountsTreeNode {
             this.balance.serialize(buf);
         } else if (this.children) {
             // branch node
-            const childCount = this.children.reduce( (count, val) => count + !!val, 0);
+            const childCount = this.children.reduce((count, val) => count + !!val, 0);
             buf.writeUint8(childCount);
             for (let i = 0; i < this.children.length; ++i) {
                 if (this.children[i]) {
@@ -4211,15 +6998,11 @@ class AccountsTreeNode {
     }
 
     get serializedSize() {
-        return /*type*/ 1
-            + /*prefixLength*/ 1
-            + this.prefix.byteLength
-            + (this.balance ? this.balance.serializedSize : 0)
-            + (!this.balance ? /*childCount*/ 1 : 0)
+        return (/*type*/1 + /*prefixLength*/1 + this.prefix.byteLength + (this.balance ? this.balance.serializedSize : 0) + (!this.balance ? /*childCount*/1 : 0)
             // The children array contains undefined values for non existant children.
             // Only count existing ones.
-            + (this.children ? this.children.reduce( (count, val) => count + !!val, 0)
-                * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
+            + (this.children ? this.children.reduce((count, val) => count + !!val, 0) * ( /*keySize*/32 + /*childIndex*/1) : 0)
+        );
     }
 
     getChild(prefix) {
@@ -4236,7 +7019,7 @@ class AccountsTreeNode {
     }
 
     hasChildren() {
-        return this.children && this.children.some( child => !!child);
+        return this.children && this.children.some(child => !!child);
     }
 
     hash() {
@@ -4255,32 +7038,84 @@ class AccountsTreeStore {
         //return new PersistentAccountsTreeStore();
     }
 }
+Class.register(AccountsTreeStore);
 
 class PersistentAccountsTreeStore extends ObjectDB {
     constructor() {
         super('accounts', AccountsTreeNode);
     }
 
-    async getRootKey() {
-        return await super.getString('root');
+    getRootKey() {
+        var _this64 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee67() {
+            return _regenerator2.default.wrap(function _callee67$(_context67) {
+                while (1) switch (_context67.prev = _context67.next) {
+                    case 0:
+                        _context67.next = 2;
+                        return ObjectDB.prototype.getString.call(_this64, 'root');
+
+                    case 2:
+                        return _context67.abrupt('return', _context67.sent);
+
+                    case 3:
+                    case 'end':
+                        return _context67.stop();
+                }
+            }, _callee67, _this64);
+        }))();
     }
 
-    async setRootKey(rootKey) {
-        return await super.putString('root', rootKey);
+    setRootKey(rootKey) {
+        var _this65 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee68() {
+            return _regenerator2.default.wrap(function _callee68$(_context68) {
+                while (1) switch (_context68.prev = _context68.next) {
+                    case 0:
+                        _context68.next = 2;
+                        return ObjectDB.prototype.putString.call(_this65, 'root', rootKey);
+
+                    case 2:
+                        return _context68.abrupt('return', _context68.sent);
+
+                    case 3:
+                    case 'end':
+                        return _context68.stop();
+                }
+            }, _callee68, _this65);
+        }))();
     }
 
-    /*
     transaction() {
-        const tx = super.transaction();
-        tx.getRootKey = async function(rootKey) {
-            tx.get('root');
-        }
-        tx.setRootKey = async function(rootKey) {
-            tx.putRaw('root', rootKey);
-        }
-        return tx;
+        var _this66 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee69() {
+            var tx;
+            return _regenerator2.default.wrap(function _callee69$(_context69) {
+                while (1) switch (_context69.prev = _context69.next) {
+                    case 0:
+                        _context69.next = 2;
+                        return ObjectDB.prototype.transaction.call(_this66);
+
+                    case 2:
+                        tx = _context69.sent;
+
+                        tx.getRootKey = function (rootKey) {
+                            return tx.getString('root');
+                        };
+                        tx.setRootKey = function (rootKey) {
+                            return tx.putString('root', rootKey);
+                        };
+                        return _context69.abrupt('return', tx);
+
+                    case 6:
+                    case 'end':
+                        return _context69.stop();
+                }
+            }, _callee69, _this66);
+        }))();
     }
-    */
 }
 
 class VolatileAccountsTreeStore {
@@ -4289,30 +7124,87 @@ class VolatileAccountsTreeStore {
         this._rootKey = undefined;
     }
 
-    async key(node) {
-        return BufferUtils.toBase64(await node.hash());
+    key(node) {
+        var _this67 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee70() {
+            return _regenerator2.default.wrap(function _callee70$(_context70) {
+                while (1) switch (_context70.prev = _context70.next) {
+                    case 0:
+                        _context70.t0 = BufferUtils;
+                        _context70.next = 3;
+                        return node.hash();
+
+                    case 3:
+                        _context70.t1 = _context70.sent;
+                        return _context70.abrupt('return', _context70.t0.toBase64.call(_context70.t0, _context70.t1));
+
+                    case 5:
+                    case 'end':
+                        return _context70.stop();
+                }
+            }, _callee70, _this67);
+        }))();
     }
 
     get(key) {
         return this._store[key];
     }
 
-    async put(node) {
-        const key = await this.key(node);
-        this._store[key] = node;
-        return key;
+    put(node) {
+        var _this68 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee71() {
+            var key;
+            return _regenerator2.default.wrap(function _callee71$(_context71) {
+                while (1) switch (_context71.prev = _context71.next) {
+                    case 0:
+                        _context71.next = 2;
+                        return _this68.key(node);
+
+                    case 2:
+                        key = _context71.sent;
+
+                        _this68._store[key] = node;
+                        return _context71.abrupt('return', key);
+
+                    case 5:
+                    case 'end':
+                        return _context71.stop();
+                }
+            }, _callee71, _this68);
+        }))();
     }
 
-    async delete(node) {
-        const key = await this.key(node);
-        delete this._store[key];
+    delete(node) {
+        var _this69 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee72() {
+            var key;
+            return _regenerator2.default.wrap(function _callee72$(_context72) {
+                while (1) switch (_context72.prev = _context72.next) {
+                    case 0:
+                        _context72.next = 2;
+                        return _this69.key(node);
+
+                    case 2:
+                        key = _context72.sent;
+
+                        delete _this69._store[key];
+
+                    case 4:
+                    case 'end':
+                        return _context72.stop();
+                }
+            }, _callee72, _this69);
+        }))();
     }
 
-    /*
     transaction() {
-        return this;
+        const tx = this;
+        tx.commit = () => true;
+        return tx;
     }
-    */
 
     getRootKey() {
         return this._rootKey;
@@ -4322,10 +7214,12 @@ class VolatileAccountsTreeStore {
         this._rootKey = rootKey;
     }
 }
-Class.register(AccountsTreeStore);
 
 class Balance {
-    constructor(value = 0, nonce = 0) {
+    constructor() {
+        let value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+        let nonce = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
         if (!NumberUtils.isUint64(value)) throw 'Malformed value';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
 
@@ -4351,8 +7245,8 @@ class Balance {
     }
 
     get serializedSize() {
-        return /*value*/ 8
-            + /*nonce*/ 4;
+        return (/*value*/8 + /*nonce*/4
+        );
     }
 
     get value() {
@@ -4364,124 +7258,61 @@ class Balance {
     }
 
     equals(o) {
-        return o instanceof Balance
-            && this._value === o.value
-            && this._nonce === o.nonce;
+        return o instanceof Balance && this._value === o.value && this._nonce === o.nonce;
     }
 }
 Balance.INITIAL = new Balance();
 Class.register(Balance);
 
-class Block {
-
-	constructor(header, body) {
-		if (!(header instanceof BlockHeader)) throw 'Malformed header';
-		if (!(body instanceof BlockBody)) throw 'Malformed body';
-		this._header = header;
-		this._body = body;
-	}
-
-	static cast(o) {
-		if (!o) return o;
-		ObjectUtils.cast(o, Block);
-		BlockHeader.cast(o._header);
-		BlockBody.cast(o._body);
-		return o;
-	}
-
-    static unserialize(buf) {
-        var header = BlockHeader.unserialize(buf);
-        var body = BlockBody.unserialize(buf);
-        return new Block(header, body);
-    }
-
-    serialize(buf) {
-        buf = buf || new SerialBuffer(this.serializedSize);
-        this._header.serialize(buf);
-        this._body.serialize(buf);
-        return buf;
-    }
-
-	get serializedSize() {
-		return this._header.serializedSize
-			+ this._body.serializedSize;
-	}
-
-	async verify() {
-		// TODO
-	}
-
-	get header() {
-		return this._header;
-	}
-
-	get body() {
-		return this._body;
-	}
-
-	get prevHash() {
-		return this._header.prevHash;
-	}
-
-	get bodyHash() {
-		return this._header.bodyHash;
-	}
-
-	get accountsHash() {
-		return this._header.accountsHash;
-	}
-
-	get difficulty() {
-		return this._header.difficulty;
-	}
-
-	get timestamp() {
-		return this._header.timestamp;
-	}
-
-	get nonce() {
-		return this._header.nonce;
-	}
-
-	get minerAddr() {
-		return this._body.minerAddr;
-	}
-
-	get transactions() {
-		return this._body.transactions;
-	}
-
-	get transactionCount() {
-		return this._body.transactionCount;
-	}
-
-	hash() {
-		return this._header.hash();
-	}
-}
-
-/* Genesis Block */
-Block.GENESIS = new Block(
-	new BlockHeader(new Hash(), new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='), new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='), 10, 0, 0),
-	new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
-);
-// Store hash for synchronous access
-Block.GENESIS.hash().then( hash => {
-	Block.GENESIS.HASH = hash;
-	Object.freeze(Block.GENESIS);
-});
-Class.register(Block);
-
 class Blockchain extends Observable {
+    static getPersistent(accounts) {
+        var _this70 = this;
 
-    static async getPersistent(accounts) {
-        const store = BlockchainStore.getPersistent();
-        return await new Blockchain(store, accounts);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee73() {
+            var store;
+            return _regenerator2.default.wrap(function _callee73$(_context73) {
+                while (1) switch (_context73.prev = _context73.next) {
+                    case 0:
+                        store = BlockchainStore.getPersistent();
+                        _context73.next = 3;
+                        return new Blockchain(store, accounts);
+
+                    case 3:
+                        return _context73.abrupt('return', _context73.sent);
+
+                    case 4:
+                    case 'end':
+                        return _context73.stop();
+                }
+            }, _callee73, _this70);
+        }))();
     }
 
-    static async createVolatile(accounts) {
-        const store = BlockchainStore.createVolatile();
-        return await new Blockchain(store, accounts);
+    static createVolatile(accounts) {
+        var _this71 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee74() {
+            var store;
+            return _regenerator2.default.wrap(function _callee74$(_context74) {
+                while (1) switch (_context74.prev = _context74.next) {
+                    case 0:
+                        store = BlockchainStore.createVolatile();
+                        _context74.next = 3;
+                        return new Blockchain(store, accounts);
+
+                    case 3:
+                        return _context74.abrupt('return', _context74.sent);
+
+                    case 4:
+                    case 'end':
+                        return _context74.stop();
+                }
+            }, _callee74, _this71);
+        }))();
+    }
+
+    static get BLOCK_TIMESTAMP_DRIFT_MAX() {
+        return 1000 * 60 * 15; // 15 minutes
     }
 
     constructor(store, accounts) {
@@ -4493,307 +7324,873 @@ class Blockchain extends Observable {
         this._mainPath = null;
         this._headHash = null;
 
+        // Blocks arriving fast over the network will create a backlog of blocks
+        // in the synchronizer queue. Tell listeners when the blockchain is
+        // ready to accept blocks again.
         this._synchronizer = new Synchronizer();
+        this._synchronizer.on('work-end', () => this.fire('ready', this));
 
         return this._init();
     }
 
-    async _init() {
-        // Load the main chain from storage.
-        this._mainChain = await this._store.getMainChain();
+    _init() {
+        var _this72 = this;
 
-        // If we don't know any chains, start with the genesis chain.
-        if (!this._mainChain) {
-            this._mainChain = new Chain(Block.GENESIS);
-            await this._store.put(this._mainChain);
-            await this._store.setMainChain(this._mainChain);
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee75() {
+            var accountsHash;
+            return _regenerator2.default.wrap(function _callee75$(_context75) {
+                while (1) switch (_context75.prev = _context75.next) {
+                    case 0:
+                        _context75.next = 2;
+                        return _this72._store.getMainChain();
 
-        // Cache the hash of the head of the current main chain.
-        this._headHash = await this._mainChain.hash();
+                    case 2:
+                        _this72._mainChain = _context75.sent;
 
-        // Fetch the path along the main chain.
-        this._mainPath = await this._fetchPath(this.head);
+                        if (_this72._mainChain) {
+                            _context75.next = 9;
+                            break;
+                        }
 
-        // Automatically commit the chain head if the accountsHash matches.
-        // Needed to bootstrap the empty accounts tree.
-        if (this.accountsHash.equals(this.head.accountsHash)) {
-            await this._accounts.commitBlock(this._mainChain.head);
-        } else {
-            // Assume that the accounts tree is in the correct state.
-            // TODO validate this?
-        }
+                        _this72._mainChain = new Chain(Block.GENESIS);
+                        _context75.next = 7;
+                        return _this72._store.put(_this72._mainChain);
 
-        return this;
+                    case 7:
+                        _context75.next = 9;
+                        return _this72._store.setMainChain(_this72._mainChain);
+
+                    case 9:
+                        _context75.next = 11;
+                        return _this72._mainChain.hash();
+
+                    case 11:
+                        _this72._headHash = _context75.sent;
+                        _context75.next = 14;
+                        return _this72._fetchPath(_this72.head);
+
+                    case 14:
+                        _this72._mainPath = _context75.sent;
+                        _context75.next = 17;
+                        return _this72.accountsHash();
+
+                    case 17:
+                        accountsHash = _context75.sent;
+
+                        if (!accountsHash.equals(_this72.head.accountsHash)) {
+                            _context75.next = 23;
+                            break;
+                        }
+
+                        _context75.next = 21;
+                        return _this72._accounts.commitBlock(_this72._mainChain.head);
+
+                    case 21:
+                        _context75.next = 23;
+                        break;
+
+                    case 23:
+                        return _context75.abrupt('return', _this72);
+
+                    case 24:
+                    case 'end':
+                        return _context75.stop();
+                }
+            }, _callee75, _this72);
+        }))();
     }
 
-    async _fetchPath(block, maxBlocks = 10000) {
-        let hash = await block.hash();
-        const path = [hash];
+    // Retrieves up to maxBlocks predecessors of the given block.
+    // Returns an array of max (maxBlocks + 1) block hashes with the given hash
+    // as the last element.
+    _fetchPath(block) {
+        var _arguments = arguments,
+            _this73 = this;
 
-        if (Block.GENESIS.HASH.equals(hash)) {
-            return new IndexedArray(path);
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee76() {
+            let maxBlocks = _arguments.length > 1 && _arguments[1] !== undefined ? _arguments[1] : 1000000;
+            var hash, path, prevChain;
+            return _regenerator2.default.wrap(function _callee76$(_context76) {
+                while (1) switch (_context76.prev = _context76.next) {
+                    case 0:
+                        _context76.next = 2;
+                        return block.hash();
 
-        do {
-            const prevChain = await this._store.get(block.prevHash.toBase64());
-            if (!prevChain) throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
+                    case 2:
+                        hash = _context76.sent;
+                        path = [hash];
 
-            // TODO unshift() is inefficient. We should build the array with push()
-            // instead and iterate over it in reverse order.
-            path.unshift(block.prevHash);
+                        if (!Block.GENESIS.HASH.equals(hash)) {
+                            _context76.next = 6;
+                            break;
+                        }
 
-            // Advance to the predecessor block.
-            hash = block.prevHash;
-            block = prevChain.head;
-        } while (--maxBlocks && !Block.GENESIS.HASH.equals(hash));
+                        return _context76.abrupt('return', new IndexedArray(path));
 
-        return new IndexedArray(path);
+                    case 6:
+                        _context76.next = 8;
+                        return _this73._store.get(block.prevHash.toBase64());
+
+                    case 8:
+                        prevChain = _context76.sent;
+
+                        if (prevChain) {
+                            _context76.next = 11;
+                            break;
+                        }
+
+                        throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
+
+                    case 11:
+
+                        // TODO unshift() is inefficient. We should build the array with push()
+                        // instead and iterate over it in reverse order.
+                        path.unshift(block.prevHash);
+
+                        // Advance to the predecessor block.
+                        hash = block.prevHash;
+                        block = prevChain.head;
+
+                    case 14:
+                        if (--maxBlocks > 0 && !Block.GENESIS.HASH.equals(hash)) {
+                            _context76.next = 6;
+                            break;
+                        }
+
+                    case 15:
+                        return _context76.abrupt('return', new IndexedArray(path));
+
+                    case 16:
+                    case 'end':
+                        return _context76.stop();
+                }
+            }, _callee76, _this73);
+        }))();
     }
 
     pushBlock(block) {
-        return new Promise( (resolve, error) => {
-            this._synchronizer.push( () => {
+        return new _promise2.default((resolve, error) => {
+            this._synchronizer.push(() => {
                 return this._pushBlock(block);
             }, resolve, error);
         });
     }
 
-    async _pushBlock(block) {
-        // Check if we already know this block. If so, ignore it.
-        const hash = await block.hash();
-        const knownChain = await this._store.get(hash.toBase64());
-        if (knownChain) {
-            console.log('Blockchain ignoring known block ' + hash.toBase64());
-            return true;
-        }
+    _pushBlock(block) {
+        var _this74 = this;
 
-        // Retrieve the previous block. Fail if we don't know it.
-        const prevChain = await this._store.get(block.prevHash.toBase64());
-        if (!prevChain) {
-            console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown');
-            return false;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee77() {
+            var hash, knownChain, prevChain, totalWork, height, newChain;
+            return _regenerator2.default.wrap(function _callee77$(_context77) {
+                while (1) switch (_context77.prev = _context77.next) {
+                    case 0:
+                        _context77.next = 2;
+                        return block.hash();
 
-        // Check all intrinsic block invariants.
-        if (!await this._verifyBlock(block)) {
-            return false;
-        }
+                    case 2:
+                        hash = _context77.sent;
+                        _context77.next = 5;
+                        return _this74._store.get(hash.toBase64());
 
-        // Check that the block is a valid extension of its previous block.
-        if (!await this._isValidExtension(prevChain, block)) {
-            return false;
-        }
+                    case 5:
+                        knownChain = _context77.sent;
 
-        // Block looks good, compute the new total work & height.
-        const totalWork = prevChain.totalWork + block.difficulty;
-        const height = prevChain.height + 1;
+                        if (!knownChain) {
+                            _context77.next = 9;
+                            break;
+                        }
 
-        // Store the new block.
-        const newChain = new Chain(block, totalWork, height);
-        await this._store.put(newChain);
+                        console.log('Blockchain ignoring known block ' + hash.toBase64());
+                        return _context77.abrupt('return', true);
 
-        // Check if the new block extends our current main chain.
-        if (block.prevHash.equals(this._headHash)) {
-            // Append new block to the main chain.
-            await this._extend(newChain);
+                    case 9:
+                        _context77.next = 11;
+                        return _this74._store.get(block.prevHash.toBase64());
 
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
+                    case 11:
+                        prevChain = _context77.sent;
 
-            return true;
-        }
+                        if (prevChain) {
+                            _context77.next = 15;
+                            break;
+                        }
 
-        // Otherwise, check if the new chain is harder than our current main chain.
-        // TODO Compare timestamp if totalWork is equal.
-        if (newChain.totalWork > this.totalWork) {
-            // A fork has become the hardest chain, rebranch to it.
-            await this._rebranch(newChain);
+                        console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown');
+                        return _context77.abrupt('return', false);
 
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
+                    case 15:
+                        _context77.next = 17;
+                        return _this74._verifyBlock(block);
 
-            return true;
-        }
+                    case 17:
+                        if (_context77.sent) {
+                            _context77.next = 19;
+                            break;
+                        }
 
-        // Otherwise, we are creating/extending a fork. We have stored the block,
-        // the head didn't change, nothing else to do.
-        console.log('Creating/extending fork with block ' + hash.toBase64()
-            + ', height=' + newChain.height + ', totalWork='
-            + newChain.totalWork);
+                        return _context77.abrupt('return', false);
 
-        return true;
+                    case 19:
+                        _context77.next = 21;
+                        return _this74._isValidExtension(prevChain, block);
+
+                    case 21:
+                        if (_context77.sent) {
+                            _context77.next = 23;
+                            break;
+                        }
+
+                        return _context77.abrupt('return', false);
+
+                    case 23:
+
+                        // Block looks good, compute the new total work & height.
+                        totalWork = prevChain.totalWork + block.difficulty;
+                        height = prevChain.height + 1;
+
+                        // Store the new block.
+
+                        newChain = new Chain(block, totalWork, height);
+                        _context77.next = 28;
+                        return _this74._store.put(newChain);
+
+                    case 28:
+                        if (!block.prevHash.equals(_this74._headHash)) {
+                            _context77.next = 33;
+                            break;
+                        }
+
+                        _context77.next = 31;
+                        return _this74._extend(newChain);
+
+                    case 31:
+
+                        // Tell listeners that the head of the chain has changed.
+                        _this74.fire('head-changed', _this74.head);
+
+                        return _context77.abrupt('return', true);
+
+                    case 33:
+                        if (!(newChain.totalWork > _this74.totalWork)) {
+                            _context77.next = 38;
+                            break;
+                        }
+
+                        _context77.next = 36;
+                        return _this74._rebranch(newChain);
+
+                    case 36:
+
+                        // Tell listeners that the head of the chain has changed.
+                        _this74.fire('head-changed', _this74.head);
+
+                        return _context77.abrupt('return', true);
+
+                    case 38:
+
+                        // Otherwise, we are creating/extending a fork. We have stored the block,
+                        // the head didn't change, nothing else to do.
+                        console.log('Creating/extending fork with block ' + hash.toBase64() + ', height=' + newChain.height + ', totalWork=' + newChain.totalWork);
+
+                        return _context77.abrupt('return', true);
+
+                    case 40:
+                    case 'end':
+                        return _context77.stop();
+                }
+            }, _callee77, _this74);
+        }))();
     }
 
-    async _verifyBlock(block) {
-        // Check that the maximum block size is not exceeded.
-        if (block.serializedSize > Policy.BLOCK_SIZE_MAX) {
-            console.warn('Blockchain rejected block - max block size exceeded');
-            return false;
-        }
+    _verifyBlock(block) {
+        var _this75 = this;
 
-        // Check that header bodyHash matches the actual bodyHash.
-        const bodyHash = await block.body.hash();
-        if (!block.header.bodyHash.equals(bodyHash)) {
-            console.warn('Blockchain rejecting block - body hash mismatch');
-            return false;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee78() {
+            var senderPubKeys, _iteratorNormalCompletion23, _didIteratorError23, _iteratorError23, _iterator23, _step23, tx, bodyHash, _iteratorNormalCompletion24, _didIteratorError24, _iteratorError24, _iterator24, _step24;
 
-        // Check that the headerHash matches the difficulty.
-        if (!await block.header.verifyProofOfWork()) {
-            console.warn('Blockchain rejected block - PoW verification failed');
-            return false;
-        }
+            return _regenerator2.default.wrap(function _callee78$(_context78) {
+                while (1) switch (_context78.prev = _context78.next) {
+                    case 0:
+                        if (!(block.serializedSize > Policy.BLOCK_SIZE_MAX)) {
+                            _context78.next = 3;
+                            break;
+                        }
 
-        // Check that all transaction signatures are valid.
-        for (let tx of block.body.transactions) {
-            if (!await tx.verifySignature()) {
-                console.warn('Blockchain rejected block - invalid transaction signature');
-                return false;
-            }
-        }
+                        console.warn('Blockchain rejected block - max block size exceeded');
+                        return _context78.abrupt('return', false);
 
-        // XXX Check that there is only one transaction per sender per block.
-        const pubKeys = {};
-        for (let tx of block.body.transactions) {
-            if (pubKeys[tx.publicKey]) {
-                console.warn('Blockchain rejected block - more than one transaction per sender');
-                return false;
-            }
-            pubKeys[tx.publicKey] = true;
-        }
+                    case 3:
 
-        // Everything checks out.
-        return true;
+                        // XXX Check that there is only one transaction per sender per block.
+                        senderPubKeys = {};
+                        _iteratorNormalCompletion23 = true;
+                        _didIteratorError23 = false;
+                        _iteratorError23 = undefined;
+                        _context78.prev = 7;
+                        _iterator23 = (0, _getIterator3.default)(block.body.transactions);
+
+                    case 9:
+                        if (_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done) {
+                            _context78.next = 18;
+                            break;
+                        }
+
+                        tx = _step23.value;
+
+                        if (!senderPubKeys[tx.senderPubKey]) {
+                            _context78.next = 14;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejected block - more than one transaction per sender');
+                        return _context78.abrupt('return', false);
+
+                    case 14:
+                        senderPubKeys[tx.senderPubKey] = true;
+
+                    case 15:
+                        _iteratorNormalCompletion23 = true;
+                        _context78.next = 9;
+                        break;
+
+                    case 18:
+                        _context78.next = 24;
+                        break;
+
+                    case 20:
+                        _context78.prev = 20;
+                        _context78.t0 = _context78['catch'](7);
+                        _didIteratorError23 = true;
+                        _iteratorError23 = _context78.t0;
+
+                    case 24:
+                        _context78.prev = 24;
+                        _context78.prev = 25;
+
+                        if (!_iteratorNormalCompletion23 && _iterator23.return) {
+                            _iterator23.return();
+                        }
+
+                    case 27:
+                        _context78.prev = 27;
+
+                        if (!_didIteratorError23) {
+                            _context78.next = 30;
+                            break;
+                        }
+
+                        throw _iteratorError23;
+
+                    case 30:
+                        return _context78.finish(27);
+
+                    case 31:
+                        return _context78.finish(24);
+
+                    case 32:
+                        if (!(block.header.timestamp > Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX)) {
+                            _context78.next = 35;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejected block - timestamp too far in the future');
+                        return _context78.abrupt('return', false);
+
+                    case 35:
+                        _context78.next = 37;
+                        return block.header.verifyProofOfWork();
+
+                    case 37:
+                        if (_context78.sent) {
+                            _context78.next = 40;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejected block - PoW verification failed');
+                        return _context78.abrupt('return', false);
+
+                    case 40:
+                        _context78.next = 42;
+                        return block.body.hash();
+
+                    case 42:
+                        bodyHash = _context78.sent;
+
+                        if (block.header.bodyHash.equals(bodyHash)) {
+                            _context78.next = 46;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejecting block - body hash mismatch');
+                        return _context78.abrupt('return', false);
+
+                    case 46:
+
+                        // Check that all transaction signatures are valid.
+                        _iteratorNormalCompletion24 = true;
+                        _didIteratorError24 = false;
+                        _iteratorError24 = undefined;
+                        _context78.prev = 49;
+                        _iterator24 = (0, _getIterator3.default)(block.body.transactions);
+
+                    case 51:
+                        if (_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done) {
+                            _context78.next = 61;
+                            break;
+                        }
+
+                        tx = _step24.value;
+                        _context78.next = 55;
+                        return tx.verifySignature();
+
+                    case 55:
+                        if (_context78.sent) {
+                            _context78.next = 58;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejected block - invalid transaction signature');
+                        return _context78.abrupt('return', false);
+
+                    case 58:
+                        _iteratorNormalCompletion24 = true;
+                        _context78.next = 51;
+                        break;
+
+                    case 61:
+                        _context78.next = 67;
+                        break;
+
+                    case 63:
+                        _context78.prev = 63;
+                        _context78.t1 = _context78['catch'](49);
+                        _didIteratorError24 = true;
+                        _iteratorError24 = _context78.t1;
+
+                    case 67:
+                        _context78.prev = 67;
+                        _context78.prev = 68;
+
+                        if (!_iteratorNormalCompletion24 && _iterator24.return) {
+                            _iterator24.return();
+                        }
+
+                    case 70:
+                        _context78.prev = 70;
+
+                        if (!_didIteratorError24) {
+                            _context78.next = 73;
+                            break;
+                        }
+
+                        throw _iteratorError24;
+
+                    case 73:
+                        return _context78.finish(70);
+
+                    case 74:
+                        return _context78.finish(67);
+
+                    case 75:
+                        return _context78.abrupt('return', true);
+
+                    case 76:
+                    case 'end':
+                        return _context78.stop();
+                }
+            }, _callee78, _this75, [[7, 20, 24, 32], [25,, 27, 31], [49, 63, 67, 75], [68,, 70, 74]]);
+        }))();
     }
 
-    async _isValidExtension(chain, block) {
-        // Check that the difficulty matches.
-        const nextDifficulty = await this.getNextDifficulty(chain);
-        if (nextDifficulty !== block.difficulty) {
-            console.warn('Blockchain rejecting block - difficulty mismatch');
-            return false;
-        }
+    _isValidExtension(chain, block) {
+        var _this76 = this;
 
-        // Check that the timestamp is after (or equal) the previous block's timestamp.
-        if (chain.head.timestamp > block.timestamp) {
-            console.warn('Blockchain rejecting block - timestamp mismatch');
-            return false;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee79() {
+            var nextCompactTarget;
+            return _regenerator2.default.wrap(function _callee79$(_context79) {
+                while (1) switch (_context79.prev = _context79.next) {
+                    case 0:
+                        _context79.next = 2;
+                        return _this76.getNextCompactTarget(chain);
 
-        // Everything checks out.
-        return true;
+                    case 2:
+                        nextCompactTarget = _context79.sent;
+
+                        if (!(nextCompactTarget !== block.nBits)) {
+                            _context79.next = 6;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejecting block - difficulty mismatch');
+                        return _context79.abrupt('return', false);
+
+                    case 6:
+                        if (!(chain.head.timestamp > block.timestamp)) {
+                            _context79.next = 9;
+                            break;
+                        }
+
+                        console.warn('Blockchain rejecting block - timestamp mismatch');
+                        return _context79.abrupt('return', false);
+
+                    case 9:
+                        return _context79.abrupt('return', true);
+
+                    case 10:
+                    case 'end':
+                        return _context79.stop();
+                }
+            }, _callee79, _this76);
+        }))();
     }
 
-    async _extend(newChain) {
-        // Validate that the block matches the current account state.
-        // XXX This is also enforced by Accounts.commitBlock()
-        if (!this.accountsHash.equals(newChain.head.accountsHash)) {
-            // AccountsHash mismatch. This can happen if someone gives us an
-            // invalid block. TODO error handling
-            console.log('Blockchain rejecting block, AccountsHash mismatch: current='
-                + this.accountsHash.toBase64() + ', block=' + newChain.head.accountsHash.toBase64());
-            return;
-        }
+    _extend(newChain) {
+        var _this77 = this;
 
-        // AccountsHash matches, commit the block.
-        await this._accounts.commitBlock(newChain.head);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee80() {
+            var accountsHash, hash;
+            return _regenerator2.default.wrap(function _callee80$(_context80) {
+                while (1) switch (_context80.prev = _context80.next) {
+                    case 0:
+                        _context80.next = 2;
+                        return _this77.accountsHash();
 
-        // Update main chain.
-        const hash = await newChain.hash();
-        this._mainChain = newChain;
-        this._mainPath.push(hash);
-        this._headHash = hash;
-        await this._store.setMainChain(this._mainChain);
+                    case 2:
+                        accountsHash = _context80.sent;
+
+                        if (accountsHash.equals(newChain.head.accountsHash)) {
+                            _context80.next = 6;
+                            break;
+                        }
+
+                        // AccountsHash mismatch. This can happen if someone gives us an
+                        // invalid block. TODO error handling
+                        console.log('Blockchain rejecting block, AccountsHash mismatch: current=' + accountsHash + ', block=' + newChain.head.accountsHash);
+                        return _context80.abrupt('return');
+
+                    case 6:
+                        _context80.next = 8;
+                        return _this77._accounts.commitBlock(newChain.head);
+
+                    case 8:
+                        _context80.next = 10;
+                        return newChain.hash();
+
+                    case 10:
+                        hash = _context80.sent;
+
+                        _this77._mainChain = newChain;
+                        _this77._mainPath.push(hash);
+                        _this77._headHash = hash;
+                        _context80.next = 16;
+                        return _this77._store.setMainChain(_this77._mainChain);
+
+                    case 16:
+                    case 'end':
+                        return _context80.stop();
+                }
+            }, _callee80, _this77);
+        }))();
     }
 
-    async _revert() {
-        // Revert the head block of the main chain.
-        await this._accounts.revertBlock(this.head);
+    _revert() {
+        var _this78 = this;
 
-        // XXX Sanity check: Assert that the accountsHash now matches the
-        // accountsHash of the current head.
-        if (!this._accounts.hash.equals(this.head.accountsHash)) {
-            throw 'Failed to revert main chain - inconsistent state';
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee81() {
+            var accountsHash, prevHash, prevChain;
+            return _regenerator2.default.wrap(function _callee81$(_context81) {
+                while (1) switch (_context81.prev = _context81.next) {
+                    case 0:
+                        _context81.next = 2;
+                        return _this78._accounts.revertBlock(_this78.head);
 
-        // Load the predecessor chain.
-        const prevHash = this.head.prevHash;
-        const prevChain = await this._store.get(prevHash.toBase64());
-        if (!prevChain) throw 'Failed to find predecessor block ' + prevHash.toBase64() + ' while reverting';
+                    case 2:
+                        _context81.next = 4;
+                        return _this78._accounts.hash();
 
-        // Update main chain.
-        this._mainChain = prevChain;
-        this._mainPath.pop();
-        this._headHash = prevHash;
-        await this._store.setMainChain(this._mainChain);
+                    case 4:
+                        accountsHash = _context81.sent;
+
+                        if (accountsHash.equals(_this78.head.accountsHash)) {
+                            _context81.next = 7;
+                            break;
+                        }
+
+                        throw 'Failed to revert main chain - inconsistent state';
+
+                    case 7:
+
+                        // Load the predecessor chain.
+                        prevHash = _this78.head.prevHash;
+                        _context81.next = 10;
+                        return _this78._store.get(prevHash.toBase64());
+
+                    case 10:
+                        prevChain = _context81.sent;
+
+                        if (prevChain) {
+                            _context81.next = 13;
+                            break;
+                        }
+
+                        throw 'Failed to find predecessor block ' + prevHash.toBase64() + ' while reverting';
+
+                    case 13:
+
+                        // Update main chain.
+                        _this78._mainChain = prevChain;
+                        _this78._mainPath.pop();
+                        _this78._headHash = prevHash;
+                        _context81.next = 18;
+                        return _this78._store.setMainChain(_this78._mainChain);
+
+                    case 18:
+                    case 'end':
+                        return _context81.stop();
+                }
+            }, _callee81, _this78);
+        }))();
     }
 
-    async _rebranch(newChain) {
-        const hash = await newChain.hash();
-        console.log('Rebranching to fork ' + hash.toBase64() + ', height='
-            + newChain.height + ', totalWork=' + newChain.totalWork, newChain);
+    _rebranch(newChain) {
+        var _this79 = this;
 
-        // Find the common ancestor between our current main chain and the fork chain.
-        // Walk up the fork chain until we find a block that is part of the main chain.
-        // Store the chain along the way. In the worst case, this walks all the way
-        // up to the genesis block.
-        let forkHead = newChain.head;
-        const forkChain = [newChain];
-        while (this._mainPath.indexOf(forkHead.prevHash) < 0) {
-            const prevChain = await this._store.get(forkHead.prevHash.toBase64());
-            if (!prevChain) throw 'Failed to find predecessor block ' + forkHead.prevHash.toBase64() + ' while rebranching';
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee82() {
+            var hash, forkHead, forkChain, prevChain, commonAncestor, _iteratorNormalCompletion25, _didIteratorError25, _iteratorError25, _iterator25, _step25, block;
 
-            forkHead = prevChain.head;
-            forkChain.unshift(prevChain);
-        }
+            return _regenerator2.default.wrap(function _callee82$(_context82) {
+                while (1) switch (_context82.prev = _context82.next) {
+                    case 0:
+                        _context82.next = 2;
+                        return newChain.hash();
 
-        // The predecessor of forkHead is the desired common ancestor.
-        const commonAncestor = forkHead.prevHash;
+                    case 2:
+                        hash = _context82.sent;
 
-        console.log('Found common ancestor ' + commonAncestor.toBase64() + ' ' + forkChain.length + ' blocks up');
+                        console.log('Rebranching to fork ' + hash.toBase64() + ', height=' + newChain.height + ', totalWork=' + newChain.totalWork, newChain);
 
-        // Revert all blocks on the current main chain until the common ancestor.
-        while (!this.headHash.equals(commonAncestor)) {
-            await this._revert();
-        }
+                        // Find the common ancestor between our current main chain and the fork chain.
+                        // Walk up the fork chain until we find a block that is part of the main chain.
+                        // Store the chain along the way. In the worst case, this walks all the way
+                        // up to the genesis block.
+                        forkHead = newChain.head;
+                        forkChain = [newChain];
 
-        // We have reverted to the common ancestor state. Apply all blocks on
-        // the fork chain until we reach the new head.
-        for (let block of forkChain) {
-            await this._extend(block);
-        }
+                    case 6:
+                        if (!(_this79._mainPath.indexOf(forkHead.prevHash) < 0)) {
+                            _context82.next = 16;
+                            break;
+                        }
+
+                        _context82.next = 9;
+                        return _this79._store.get(forkHead.prevHash.toBase64());
+
+                    case 9:
+                        prevChain = _context82.sent;
+
+                        if (prevChain) {
+                            _context82.next = 12;
+                            break;
+                        }
+
+                        throw 'Failed to find predecessor block ' + forkHead.prevHash.toBase64() + ' while rebranching';
+
+                    case 12:
+
+                        forkHead = prevChain.head;
+                        forkChain.unshift(prevChain);
+                        _context82.next = 6;
+                        break;
+
+                    case 16:
+
+                        // The predecessor of forkHead is the desired common ancestor.
+                        commonAncestor = forkHead.prevHash;
+
+
+                        console.log('Found common ancestor ' + commonAncestor.toBase64() + ' ' + forkChain.length + ' blocks up');
+
+                        // Revert all blocks on the current main chain until the common ancestor.
+
+                    case 18:
+                        if (_this79.headHash.equals(commonAncestor)) {
+                            _context82.next = 23;
+                            break;
+                        }
+
+                        _context82.next = 21;
+                        return _this79._revert();
+
+                    case 21:
+                        _context82.next = 18;
+                        break;
+
+                    case 23:
+
+                        // We have reverted to the common ancestor state. Apply all blocks on
+                        // the fork chain until we reach the new head.
+                        _iteratorNormalCompletion25 = true;
+                        _didIteratorError25 = false;
+                        _iteratorError25 = undefined;
+                        _context82.prev = 26;
+                        _iterator25 = (0, _getIterator3.default)(forkChain);
+
+                    case 28:
+                        if (_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done) {
+                            _context82.next = 35;
+                            break;
+                        }
+
+                        block = _step25.value;
+                        _context82.next = 32;
+                        return _this79._extend(block);
+
+                    case 32:
+                        _iteratorNormalCompletion25 = true;
+                        _context82.next = 28;
+                        break;
+
+                    case 35:
+                        _context82.next = 41;
+                        break;
+
+                    case 37:
+                        _context82.prev = 37;
+                        _context82.t0 = _context82['catch'](26);
+                        _didIteratorError25 = true;
+                        _iteratorError25 = _context82.t0;
+
+                    case 41:
+                        _context82.prev = 41;
+                        _context82.prev = 42;
+
+                        if (!_iteratorNormalCompletion25 && _iterator25.return) {
+                            _iterator25.return();
+                        }
+
+                    case 44:
+                        _context82.prev = 44;
+
+                        if (!_didIteratorError25) {
+                            _context82.next = 47;
+                            break;
+                        }
+
+                        throw _iteratorError25;
+
+                    case 47:
+                        return _context82.finish(44);
+
+                    case 48:
+                        return _context82.finish(41);
+
+                    case 49:
+                    case 'end':
+                        return _context82.stop();
+                }
+            }, _callee82, _this79, [[26, 37, 41, 49], [42,, 44, 48]]);
+        }))();
     }
 
-    async getBlock(hash) {
-        const chain = await this._store.get(hash.toBase64());
-        return chain ? chain.head : null;
+    getBlock(hash) {
+        var _this80 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee83() {
+            var chain;
+            return _regenerator2.default.wrap(function _callee83$(_context83) {
+                while (1) switch (_context83.prev = _context83.next) {
+                    case 0:
+                        _context83.next = 2;
+                        return _this80._store.get(hash.toBase64());
+
+                    case 2:
+                        chain = _context83.sent;
+                        return _context83.abrupt('return', chain ? chain.head : null);
+
+                    case 4:
+                    case 'end':
+                        return _context83.stop();
+                }
+            }, _callee83, _this80);
+        }))();
     }
 
-    async getNextDifficulty(chain) {
-        chain = chain || this._mainChain;
+    getNextCompactTarget(chain) {
+        var _this81 = this;
 
-        // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-        if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS == 0) {
-            // Compute the actual time it took to mine the last DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-            const startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1, 0);
-            const startChain = await this._store.get(this._mainPath[startHeight].toBase64());
-            const actualTime = chain.head.timestamp - startChain.head.timestamp;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee84() {
+            var startHash, startHeight, path, startChain, actualTime, expectedTime, adjustment, currentTarget, nextTarget;
+            return _regenerator2.default.wrap(function _callee84$(_context84) {
+                while (1) switch (_context84.prev = _context84.next) {
+                    case 0:
+                        chain = chain || _this81._mainChain;
 
-            // Compute the next difficulty.
-            const expectedTime = (chain.height - startHeight) * Policy.BLOCK_TIME;
-            let nextDifficulty = chain.head.difficulty;
-            if (expectedTime < actualTime) {
-                nextDifficulty--;
-            } else if (expectedTime > actualTime) {
-                nextDifficulty++;
-            }
-            return Math.max(nextDifficulty, Policy.DIFFICULTY_MIN);
-        }
+                        // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
 
-        // If the difficulty is not adjusted at this height, the next difficulty
-        // is the current difficulty.
-        return chain.head.difficulty;
+                        if (!(chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS == 0)) {
+                            _context84.next = 24;
+                            break;
+                        }
+
+                        if (!(chain === _this81._mainChain)) {
+                            _context84.next = 7;
+                            break;
+                        }
+
+                        startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS, 0);
+
+                        startHash = _this81._mainPath[startHeight];
+                        _context84.next = 11;
+                        break;
+
+                    case 7:
+                        _context84.next = 9;
+                        return _this81._fetchPath(chain.head, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1);
+
+                    case 9:
+                        path = _context84.sent;
+
+                        startHash = path[0];
+
+                    case 11:
+                        _context84.next = 13;
+                        return _this81._store.get(startHash.toBase64());
+
+                    case 13:
+                        startChain = _context84.sent;
+                        actualTime = chain.head.timestamp - startChain.head.timestamp;
+
+                        // Compute the target adjustment factor.
+
+                        expectedTime = Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME;
+                        adjustment = actualTime / expectedTime;
+
+                        // Clamp the adjustment factor to [0.25, 4].
+
+                        adjustment = Math.max(adjustment, 0.25);
+                        adjustment = Math.min(adjustment, 4);
+
+                        // Compute the next target.
+                        currentTarget = chain.head.target;
+                        nextTarget = currentTarget * adjustment;
+
+                        // Make sure the target is below or equal the maximum allowed target (difficulty 1).
+                        // Also enforce a minimum target of 1.
+
+                        nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+                        nextTarget = Math.max(nextTarget, 1);
+
+                        return _context84.abrupt('return', BlockUtils.targetToCompact(nextTarget));
+
+                    case 24:
+                        return _context84.abrupt('return', chain.head.nBits);
+
+                    case 25:
+                    case 'end':
+                        return _context84.stop();
+                }
+            }, _callee84, _this81);
+        }))();
     }
 
     get head() {
@@ -4812,18 +8209,24 @@ class Blockchain extends Observable {
         return this._headHash;
     }
 
-    get accountsHash() {
-        return this._accounts.hash;
-    }
-
     get path() {
         return this._mainPath;
+    }
+
+    get busy() {
+        return this._synchronizer.working;
+    }
+
+    accountsHash() {
+        return this._accounts.hash();
     }
 }
 Class.register(Blockchain);
 
 class Chain {
-    constructor(head, totalWork, height = 1) {
+    constructor(head, totalWork) {
+        let height = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+
         this._head = head;
         this._totalWork = totalWork ? totalWork : head.difficulty;
         this._height = height;
@@ -4852,9 +8255,7 @@ class Chain {
     }
 
     get serializedSize() {
-        return this._head.serializedSize
-            + /*totalWork*/ 8
-            + /*height*/ 4;
+        return this._head.serializedSize + /*totalWork*/8 + /*height*/4;
     }
 
     get head() {
@@ -4890,15 +8291,63 @@ class PersistentBlockchainStore extends ObjectDB {
         super('blocks', Chain);
     }
 
-    async getMainChain() {
-        const key = await super.getString('main');
-        if (!key) return undefined;
-        return super.getObject(key);
+    getMainChain() {
+        var _this82 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee85() {
+            var key;
+            return _regenerator2.default.wrap(function _callee85$(_context85) {
+                while (1) switch (_context85.prev = _context85.next) {
+                    case 0:
+                        _context85.next = 2;
+                        return ObjectDB.prototype.getString.call(_this82, 'main');
+
+                    case 2:
+                        key = _context85.sent;
+
+                        if (key) {
+                            _context85.next = 5;
+                            break;
+                        }
+
+                        return _context85.abrupt('return', undefined);
+
+                    case 5:
+                        return _context85.abrupt('return', ObjectDB.prototype.getObject.call(_this82, key));
+
+                    case 6:
+                    case 'end':
+                        return _context85.stop();
+                }
+            }, _callee85, _this82);
+        }))();
     }
 
-    async setMainChain(mainChain) {
-        const key = await this.key(mainChain);
-        return await super.putString('main', key);
+    setMainChain(mainChain) {
+        var _this83 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee86() {
+            var key;
+            return _regenerator2.default.wrap(function _callee86$(_context86) {
+                while (1) switch (_context86.prev = _context86.next) {
+                    case 0:
+                        _context86.next = 2;
+                        return _this83.key(mainChain);
+
+                    case 2:
+                        key = _context86.sent;
+                        _context86.next = 5;
+                        return ObjectDB.prototype.putString.call(_this83, 'main', key);
+
+                    case 5:
+                        return _context86.abrupt('return', _context86.sent);
+
+                    case 6:
+                    case 'end':
+                        return _context86.stop();
+                }
+            }, _callee86, _this83);
+        }))();
     }
 }
 
@@ -4908,31 +8357,88 @@ class VolatileBlockchainStore {
         this._mainChain = null;
     }
 
-    async key(value) {
-        return BufferUtils.toBase64(await value.hash());
+    key(value) {
+        var _this84 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee87() {
+            return _regenerator2.default.wrap(function _callee87$(_context87) {
+                while (1) switch (_context87.prev = _context87.next) {
+                    case 0:
+                        _context87.t0 = BufferUtils;
+                        _context87.next = 3;
+                        return value.hash();
+
+                    case 3:
+                        _context87.t1 = _context87.sent;
+                        return _context87.abrupt('return', _context87.t0.toBase64.call(_context87.t0, _context87.t1));
+
+                    case 5:
+                    case 'end':
+                        return _context87.stop();
+                }
+            }, _callee87, _this84);
+        }))();
     }
 
     get(key) {
         return this._store[key];
     }
 
-    async put(value) {
-        const key = await this.key(value);
-        this._store[key] = value;
-        return key;
+    put(value) {
+        var _this85 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee88() {
+            var key;
+            return _regenerator2.default.wrap(function _callee88$(_context88) {
+                while (1) switch (_context88.prev = _context88.next) {
+                    case 0:
+                        _context88.next = 2;
+                        return _this85.key(value);
+
+                    case 2:
+                        key = _context88.sent;
+
+                        _this85._store[key] = value;
+                        return _context88.abrupt('return', key);
+
+                    case 5:
+                    case 'end':
+                        return _context88.stop();
+                }
+            }, _callee88, _this85);
+        }))();
     }
 
-    async delete(value) {
-        const key = await this.key(value);
-        delete this._store[key];
-    }
+    delete(value) {
+        var _this86 = this;
 
-    setMainChain(chain) {
-        this._mainChain = chain;
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee89() {
+            var key;
+            return _regenerator2.default.wrap(function _callee89$(_context89) {
+                while (1) switch (_context89.prev = _context89.next) {
+                    case 0:
+                        _context89.next = 2;
+                        return _this86.key(value);
+
+                    case 2:
+                        key = _context89.sent;
+
+                        delete _this86._store[key];
+
+                    case 4:
+                    case 'end':
+                        return _context89.stop();
+                }
+            }, _callee89, _this86);
+        }))();
     }
 
     getMainChain() {
         return this._mainChain;
+    }
+
+    setMainChain(chain) {
+        this._mainChain = chain;
     }
 }
 Class.register(BlockchainStore);
@@ -4947,109 +8453,274 @@ class Mempool extends Observable {
         this._transactions = {};
 
         // All public keys of transaction senders currently in the pool.
-        this._publicKeys = {};
+        this._senderPubKeys = {};
 
         // Listen for changes in the blockchain head to evict transactions that
         // have become invalid.
         blockchain.on('head-changed', () => this._evictTransactions());
     }
 
-    async pushTransaction(transaction) {
-        // Check if we already know this transaction.
-        const hash = await transaction.hash();
-        if (this._transactions[hash]) {
-            console.log('Mempool ignoring known transaction ' + hash.toBase64());
-            return;
-        }
+    pushTransaction(transaction) {
+        var _this87 = this;
 
-        // Fully verify the transaction against the current accounts state.
-        if (!await this._verifyTransaction(transaction)) {
-            return false;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee90() {
+            var hash;
+            return _regenerator2.default.wrap(function _callee90$(_context90) {
+                while (1) switch (_context90.prev = _context90.next) {
+                    case 0:
+                        _context90.next = 2;
+                        return transaction.hash();
 
-        // Only allow one transaction per publicKey at a time.
-        // TODO This is a major limitation!
-        if (this._publicKeys[transaction.publicKey]) {
-            console.warn('Mempool rejecting transaction - duplicate public key');
-            return false;
-        }
-        this._publicKeys[transaction.publicKey] = true;
+                    case 2:
+                        hash = _context90.sent;
 
-        // Transaction is valid, add it to the mempool.
-        this._transactions[hash] = transaction;
+                        if (!_this87._transactions[hash]) {
+                            _context90.next = 6;
+                            break;
+                        }
 
-        // Tell listeners about the new valid transaction we received.
-        this.fire('transaction-added', transaction);
+                        console.log('Mempool ignoring known transaction ' + hash.toBase64());
+                        return _context90.abrupt('return', false);
 
-        return true;
+                    case 6:
+                        _context90.next = 8;
+                        return _this87._verifyTransaction(transaction);
+
+                    case 8:
+                        if (_context90.sent) {
+                            _context90.next = 10;
+                            break;
+                        }
+
+                        return _context90.abrupt('return', false);
+
+                    case 10:
+                        if (!_this87._senderPubKeys[transaction.senderPubKey]) {
+                            _context90.next = 13;
+                            break;
+                        }
+
+                        console.warn('Mempool rejecting transaction - duplicate sender public key');
+                        return _context90.abrupt('return', false);
+
+                    case 13:
+                        _this87._senderPubKeys[transaction.senderPubKey] = true;
+
+                        // Transaction is valid, add it to the mempool.
+                        _this87._transactions[hash] = transaction;
+
+                        // Tell listeners about the new valid transaction we received.
+                        _this87.fire('transaction-added', transaction);
+
+                        return _context90.abrupt('return', true);
+
+                    case 17:
+                    case 'end':
+                        return _context90.stop();
+                }
+            }, _callee90, _this87);
+        }))();
     }
 
     // Currently not asynchronous, but might be in the future.
-    async getTransaction(hash) {
-        return this._transactions[hash];
+    getTransaction(hash) {
+        var _this88 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee91() {
+            return _regenerator2.default.wrap(function _callee91$(_context91) {
+                while (1) switch (_context91.prev = _context91.next) {
+                    case 0:
+                        return _context91.abrupt('return', _this88._transactions[hash]);
+
+                    case 1:
+                    case 'end':
+                        return _context91.stop();
+                }
+            }, _callee91, _this88);
+        }))();
     }
 
     // Currently not asynchronous, but might be in the future.
-    async getTransactions(maxCount = 5000) {
-        // TODO Add logic here to pick the "best" transactions.
-        const transactions = [];
-        for (let hash in this._transactions) {
-            if (transactions.length >= maxCount) break;
-            transactions.push(this._transactions[hash]);
-        }
-        return transactions;
+    getTransactions() {
+        var _arguments2 = arguments,
+            _this89 = this;
+
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee92() {
+            let maxCount = _arguments2.length > 0 && _arguments2[0] !== undefined ? _arguments2[0] : 5000;
+            var transactions, hash;
+            return _regenerator2.default.wrap(function _callee92$(_context92) {
+                while (1) switch (_context92.prev = _context92.next) {
+                    case 0:
+                        // TODO Add logic here to pick the "best" transactions.
+                        transactions = [];
+                        _context92.t0 = _regenerator2.default.keys(_this89._transactions);
+
+                    case 2:
+                        if ((_context92.t1 = _context92.t0()).done) {
+                            _context92.next = 9;
+                            break;
+                        }
+
+                        hash = _context92.t1.value;
+
+                        if (!(transactions.length >= maxCount)) {
+                            _context92.next = 6;
+                            break;
+                        }
+
+                        return _context92.abrupt('break', 9);
+
+                    case 6:
+                        transactions.push(_this89._transactions[hash]);
+                        _context92.next = 2;
+                        break;
+
+                    case 9:
+                        return _context92.abrupt('return', transactions);
+
+                    case 10:
+                    case 'end':
+                        return _context92.stop();
+                }
+            }, _callee92, _this89);
+        }))();
     }
 
-    async _verifyTransaction(transaction) {
-        // Verify transaction signature.
-        if (!await transaction.verifySignature()) {
-            console.warn('Mempool rejected transaction - invalid signature', transaction);
-            return false;
-        }
+    _verifyTransaction(transaction) {
+        var _this90 = this;
 
-        // Verify transaction balance.
-        return await this._verifyTransactionBalance(transaction);
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee93() {
+            return _regenerator2.default.wrap(function _callee93$(_context93) {
+                while (1) switch (_context93.prev = _context93.next) {
+                    case 0:
+                        _context93.next = 2;
+                        return transaction.verifySignature();
+
+                    case 2:
+                        if (_context93.sent) {
+                            _context93.next = 5;
+                            break;
+                        }
+
+                        console.warn('Mempool rejected transaction - invalid signature', transaction);
+                        return _context93.abrupt('return', false);
+
+                    case 5:
+                        _context93.next = 7;
+                        return _this90._verifyTransactionBalance(transaction);
+
+                    case 7:
+                        return _context93.abrupt('return', _context93.sent);
+
+                    case 8:
+                    case 'end':
+                        return _context93.stop();
+                }
+            }, _callee93, _this90);
+        }))();
     }
 
-    async _verifyTransactionBalance(transaction, quiet) {
-        // Verify balance and nonce:
-        // - sender account balance must be greater or equal the transaction value.
-        // - sender account nonce must match the transaction nonce.
-        const senderAddr = await transaction.senderAddr();
-        const senderBalance = await this._accounts.getBalance(senderAddr);
-        if (!senderBalance) {
-            if (!quiet) console.warn('Mempool rejected transaction - sender account unknown');
-            return;
-        }
+    _verifyTransactionBalance(transaction, quiet) {
+        var _this91 = this;
 
-        if (senderBalance.value < transaction.value) {
-            if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
-            return false;
-        }
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee94() {
+            var senderAddr, senderBalance;
+            return _regenerator2.default.wrap(function _callee94$(_context94) {
+                while (1) switch (_context94.prev = _context94.next) {
+                    case 0:
+                        _context94.next = 2;
+                        return transaction.senderAddr();
 
-        if (senderBalance.nonce !== transaction.nonce) {
-            if (!quiet) console.warn('Mempool rejected transaction - invalid nonce', transaction);
-            return false;
-        }
+                    case 2:
+                        senderAddr = _context94.sent;
+                        _context94.next = 5;
+                        return _this91._accounts.getBalance(senderAddr);
 
-        // Everything checks out.
-        return true;
+                    case 5:
+                        senderBalance = _context94.sent;
+
+                        if (senderBalance) {
+                            _context94.next = 9;
+                            break;
+                        }
+
+                        if (!quiet) console.warn('Mempool rejected transaction - sender account unknown');
+                        return _context94.abrupt('return', false);
+
+                    case 9:
+                        if (!(senderBalance.value < transaction.value + transaction.fee)) {
+                            _context94.next = 12;
+                            break;
+                        }
+
+                        if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
+                        return _context94.abrupt('return', false);
+
+                    case 12:
+                        if (!(senderBalance.nonce !== transaction.nonce)) {
+                            _context94.next = 15;
+                            break;
+                        }
+
+                        if (!quiet) console.warn('Mempool rejected transaction - invalid nonce', transaction);
+                        return _context94.abrupt('return', false);
+
+                    case 15:
+                        return _context94.abrupt('return', true);
+
+                    case 16:
+                    case 'end':
+                        return _context94.stop();
+                }
+            }, _callee94, _this91);
+        }))();
     }
 
-    async _evictTransactions() {
-        // Evict all transactions from the pool that have become invalid due
-        // to changes in the account state (i.e. typically because the were included
-        // in a newly mined block). No need to re-check signatures.
-        for (let hash in this._transactions) {
-            const transaction = this._transactions[hash];
-            if (!await this._verifyTransactionBalance(transaction, true)) {
-                delete this._transactions[hash];
-                delete this._publicKeys[transaction.publicKey];
-            }
-        }
+    _evictTransactions() {
+        var _this92 = this;
 
-        // Tell listeners that the pool has updated after a blockchain head change.
-        this.fire('transactions-ready');
+        return (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee95() {
+            var hash, transaction;
+            return _regenerator2.default.wrap(function _callee95$(_context95) {
+                while (1) switch (_context95.prev = _context95.next) {
+                    case 0:
+                        _context95.t0 = _regenerator2.default.keys(_this92._transactions);
+
+                    case 1:
+                        if ((_context95.t1 = _context95.t0()).done) {
+                            _context95.next = 11;
+                            break;
+                        }
+
+                        hash = _context95.t1.value;
+                        transaction = _this92._transactions[hash];
+                        _context95.next = 6;
+                        return _this92._verifyTransactionBalance(transaction, true);
+
+                    case 6:
+                        if (_context95.sent) {
+                            _context95.next = 9;
+                            break;
+                        }
+
+                        delete _this92._transactions[hash];
+                        delete _this92._senderPubKeys[transaction.senderPubKey];
+
+                    case 9:
+                        _context95.next = 1;
+                        break;
+
+                    case 11:
+
+                        // Tell listeners that the pool has updated after a blockchain head change.
+                        _this92.fire('transactions-ready');
+
+                    case 12:
+                    case 'end':
+                        return _context95.stop();
+                }
+            }, _callee95, _this92);
+        }))();
     }
 }
 Class.register(Mempool);
@@ -5061,7 +8732,7 @@ class Transaction {
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
-        if (!NumberUtils.isUint32(fee)) throw 'Malformed fee';
+        if (!NumberUtils.isUint64(fee)) throw 'Malformed fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw 'Malformed signature';
@@ -5090,7 +8761,7 @@ class Transaction {
         const senderPubKey = PublicKey.unserialize(buf);
         const recipientAddr = Address.unserialize(buf);
         const value = buf.readUint64();
-        const fee = buf.readUint32();
+        const fee = buf.readUint64();
         const nonce = buf.readUint32();
         const signature = Signature.unserialize(buf);
         return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
@@ -5104,8 +8775,7 @@ class Transaction {
     }
 
     get serializedSize() {
-        return this.serializedContentSize
-            + this._signature.serializedSize;
+        return this.serializedContentSize + this._signature.serializedSize;
     }
 
     serializeContent(buf) {
@@ -5113,17 +8783,13 @@ class Transaction {
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
-        buf.writeUint32(this._fee);
+        buf.writeUint64(this._fee);
         buf.writeUint32(this._nonce);
         return buf;
     }
 
     get serializedContentSize() {
-        return this._senderPubKey.serializedSize
-            + this._recipientAddr.serializedSize
-            + /*value*/ 8
-            + /*fee*/ 4
-            + /*nonce*/ 4;
+        return this._senderPubKey.serializedSize + this._recipientAddr.serializedSize + /*value*/8 + /*fee*/8 + /*nonce*/4;
     }
 
     verifySignature() {
@@ -5138,24 +8804,11 @@ class Transaction {
     }
 
     equals(o) {
-        return o instanceof Transaction
-            && this._senderPubKey.equals(o.senderPubKey)
-            && this._recipientAddr.equals(o.recipientAddr)
-            && this._value === o.value
-            && this._fee === o.fee
-            && this._nonce === o.nonce
-            && this._signature.equals(o.signature);
+        return o instanceof Transaction && this._senderPubKey.equals(o.senderPubKey) && this._recipientAddr.equals(o.recipientAddr) && this._value === o.value && this._fee === o.fee && this._nonce === o.nonce && this._signature.equals(o.signature);
     }
 
     toString() {
-        return `Transaction{`
-            + `senderPubKey=${this._senderPubKey.toBase64()}, `
-            + `recipientAddr=${this._recipientAddr.toBase64()}, `
-            + `value=${this._value}, `
-            + `fee=${this._fee}, `
-            + `nonce=${this._nonce}, `
-            + `signature=${this._signature.toBase64()}`
-            + `}`;
+        return `Transaction{` + `senderPubKey=${this._senderPubKey.toBase64()}, ` + `recipientAddr=${this._recipientAddr.toBase64()}, ` + `value=${this._value}, ` + `fee=${this._fee}, ` + `nonce=${this._nonce}, ` + `signature=${this._signature.toBase64()}` + `}`;
     }
 
     get senderPubKey() {
@@ -5220,3 +8873,4 @@ MessageFactory.CLASSES[Message.Type.PING] = PingMessage;
 MessageFactory.CLASSES[Message.Type.PONG] = PongMessage;
 MessageFactory.CLASSES[Message.Type.SIGNAL] = SignalMessage;
 Class.register(MessageFactory);
+//# sourceMappingURL=nimiq.js.map

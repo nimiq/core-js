@@ -3,28 +3,30 @@ language: node_js
 sudo: required
 dist: trusty
 addons:
-  apt:
-    sources:
-    - google-chrome
-    packages:
-    - google-chrome-stable
+  chrome: stable
+  firefox: latest
 
 env:
-- TO_TEST=browser
+- TO_TEST=chrome
+- TO_TEST=firefox
 - TO_TEST=node
 - TO_TEST=lint
 
 node_js:
 - node
 before_install:
-- if [ "$TO_TEST" = "browser" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
-- if [ "$TO_TEST" = "browser" ]; then export DISPLAY=:99.0; fi
-- if [ "$TO_TEST" = "browser" ]; then sh -e /etc/init.d/xvfb start; fi
+- if [ "$TO_TEST" = "chrome" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
+- if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then export DISPLAY=:99.0; fi
+- if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then sh -e /etc/init.d/xvfb start; fi
 - if [ "$TO_TEST" = "node" ]; then npm install -g jasmine; fi
 - if [ "$TO_TEST" = "node" ]; then npm --prefix src/main/platform/nodejs install src/main/platform/nodejs; fi
 - if [ "$TO_TEST" = "lint" ]; then npm install -g eslint; fi
+- npm install -g gulp
+before_script:
+- gulp build
 script:
-- if [ "$TO_TEST" = "browser" ]; then karma start --single-run; fi
+- if [ "$TO_TEST" = "chrome" ]; then karma start --single-run --browsers Chrome_travis_ci; fi
+- if [ "$TO_TEST" = "firefox" ]; then karma start --single-run --browsers Firefox; fi
 - if [ "$TO_TEST" = "node" ]; then jasmine; fi
 - if [ "$TO_TEST" = "lint" ]; then eslint src *.js; fi
 

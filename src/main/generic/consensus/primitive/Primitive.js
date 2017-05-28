@@ -28,6 +28,10 @@ class Primitive extends Uint8Array {
             && BufferUtils.equals(this, o);
     }
 
+    subarray(begin, end) {
+        return ArrayUtils.subarray(this, begin, end);
+    }
+
     toString() {
         return this.toBase64();
     }

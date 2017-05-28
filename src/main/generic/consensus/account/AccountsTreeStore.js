@@ -16,15 +16,15 @@ class PersistentAccountsTreeStore extends ObjectDB {
     }
 
     async getRootKey() {
-        return await super.getString('root');
+        return await ObjectDB.prototype.getString.call(this, 'root');
     }
 
     async setRootKey(rootKey) {
-        return await super.putString('root', rootKey);
+        return await ObjectDB.prototype.putString.call(this, 'root', rootKey);
     }
 
     async transaction() {
-        const tx = await super.transaction();
+        const tx = await ObjectDB.prototype.transaction.call(this);
         tx.getRootKey = function(rootKey) {
             return tx.getString('root');
         };
