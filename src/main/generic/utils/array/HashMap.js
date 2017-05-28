@@ -41,3 +41,4 @@ class HashMap {
         return Object.keys(this._map).length;
     }
 }
+Class.register(HashMap);
