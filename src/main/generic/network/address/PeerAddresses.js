@@ -244,12 +244,6 @@ class PeerAddresses extends Observable {
             this._deleteBySignalChannel(peerAddressState.peerAddress.signalChannel);
         }
 
-        if (peerAddressState.state === PeerAddressState.BANNED) {
-            return;
-        }
-
-        peerAddressState.state = PeerAddressState.TRIED;
-
         switch (peerAddress.protocol) {
             case PeerAddress.Protocol.WSS:
                 this._peerCountWs--;
@@ -259,6 +253,10 @@ class PeerAddresses extends Observable {
                 break;
             default:
                 console.warn('Unknown protocol ' + peerAddress.protocol);
+        }
+
+        if (peerAddressState.state !== PeerAddressState.BANNED) {
+            peerAddressState.state = PeerAddressState.TRIED;
         }
     }
 
