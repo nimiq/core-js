@@ -200,7 +200,7 @@ class PeerAddresses extends Observable {
             // TODO save anyways to have a backup route?
             if (peerAddress.protocol === Protocol.RTC
                     && peerAddressState.peerAddress.distance < peerAddress.distance) {
-                console.log('Ignoring address ' + peerAddress + ' - better route ' + knownAddress + ' exists');
+                console.log('Ignoring address ' + peerAddress + ' - better route ' + peerAddressState.peerAddress + ' exists');
                 return false;
             }
         }
