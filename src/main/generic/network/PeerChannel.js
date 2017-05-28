@@ -13,13 +13,15 @@ class PeerChannel extends Observable {
         try {
             msg = MessageFactory.parse(rawMsg);
         } catch(e) {
-            // TODO Drop client if it keeps sending junk.
-            // TODO Bitcoin sends a reject message if the message can't be decoded.
+            console.warn(`Failed to parse message from ${this.peerAddress}: ${e}`);
+
+            // Ban client if it sends junk.
+            // TODO We should probably be more lenient here. Bitcoin sends a
+            // reject message if the message can't be decoded.
             // From the Bitcoin Reference:
             //  "Be careful of reject message feedback loops where two peers
             //   each don’t understand each other’s reject messages and so keep
             //   sending them back and forth forever."
-            console.log('Failed to parse message: ' + rawMsg, e);
             this.ban('junk received');
         }
 
