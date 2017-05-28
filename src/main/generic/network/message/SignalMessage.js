@@ -30,8 +30,8 @@ class SignalMessage extends Message {
 
     get serializedSize() {
         return super.serializedSize
-            + /*senderId*/ 8
-            + /*recipientId*/ 8
+            + /*senderId*/ 32
+            + /*recipientId*/ 32
             + /*payloadLength*/ 2
             + this._payload.byteLength;
     }
