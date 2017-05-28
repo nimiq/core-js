@@ -21,14 +21,14 @@ describe('PublicKey', () => {
             const pubKey = new PublicKey(new ArrayBuffer(64));
         }).toThrow('Primitive: Invalid length');
     });
-    
+
     it('is serializable and unserializable', () => {
-        const pubKey1 = new PublicKey();
+        const pubKey1 = new PublicKey(null);
         const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
 
         expect(pubKey1.equals(pubKey2)).toEqual(true);
     });
-    
+
     it('has an equals method', () => {
         const pubKey1 = new PublicKey(Dummy.publicKey1);
         const pubKey2 = new PublicKey(Dummy.publicKey2);

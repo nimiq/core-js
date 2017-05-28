@@ -118,7 +118,7 @@ describe('Mempool', () => {
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const transaction = await wallets[i].createTransaction(new Address(Dummy.address), 234, 1, 42);
+                const transaction = await wallets[i].createTransaction(new Address(Dummy.address1), 234, 1, 42);
                 const result = await mempool.pushTransaction(transaction);
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);
