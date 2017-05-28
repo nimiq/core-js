@@ -32,6 +32,7 @@ class WebRtcConnector extends Observable {
 
         this._timers.setTimeout('connect_' + signalId, () => {
             delete this._connectors[signalId];
+            this._timers.clearTimeout('connect_' + signalId);
             this.fire('error', peerAddress);
         }, WebRtcConnector.CONNECT_TIMEOUT);
     }
@@ -144,7 +145,7 @@ class PeerConnector extends Observable {
 
     _signal(signal) {
         this._peerAddress.signalChannel.signal(
-            NetworkConfig.mySignalId(),
+            NetworkConfig.myPeerAddress().signalId,
             this._peerAddress.signalId,
             BufferUtils.fromAscii(JSON.stringify(signal))
         );

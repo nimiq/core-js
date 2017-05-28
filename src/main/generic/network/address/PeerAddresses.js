@@ -62,7 +62,7 @@ class PeerAddresses extends Observable {
             return -1;
         }
 
-        const score = this._scoreProtocol(peerAddress) * peerAddress.timestamp;
+        const score = this._scoreProtocol(peerAddress) * (peerAddress.timestamp + 1);
         switch (peerAddressState.state) {
             case PeerAddressState.CONNECTING:
             case PeerAddressState.CONNECTED:

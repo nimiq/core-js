@@ -150,7 +150,7 @@ class Network extends Observable {
         let numConnections = this._netAddresses.get(conn.netAddress) || 0;
         numConnections++;
         if (numConnections > maxConnections) {
-            conn.close(`connection limit per ip (${maxConnections}) reached`).
+            conn.close(`connection limit per ip (${maxConnections}) reached`);
             return;
         }
         this._netAddresses.put(conn.netAddress, numConnections);
