@@ -104,7 +104,7 @@ class NetworkAgent extends Observable {
         this._knownAddresses.add(msg.peerAddress);
 
         // Store/update the peerAddress.
-        this._addresses.push(this._channel, msg.peerAddress);
+        this._addresses.add(this._channel, msg.peerAddress);
 
         // Setup regular connectivity check.
         // TODO randomize interval?
