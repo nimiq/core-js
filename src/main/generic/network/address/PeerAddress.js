@@ -138,7 +138,7 @@ class RtcPeerAddress extends PeerAddress {
     static unserialize(buf) {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
-        const signalId = buf.readFixLengthString(32);
+        const signalId = buf.readString(32);
         const distance = buf.readUint8();
         return new RtcPeerAddress(services, timestamp, signalId, distance);
     }
@@ -148,7 +148,7 @@ class RtcPeerAddress extends PeerAddress {
         super.serialize(buf);
         buf.writeUint32(this._services);
         buf.writeUint64(this._timestamp);
-        buf.writeFixLengthString(this._signalId, 32);
+        buf.writeString(this._signalId, 32);
         buf.writeUint8(this._distance);
         return buf;
     }

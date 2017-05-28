@@ -11,8 +11,8 @@ class SignalMessage extends Message {
 
     static unserialize(buf) {
         Message.unserialize(buf);
-        const senderId = buf.readUint64();
-        const recipientId = buf.readUint64();
+        const senderId = buf.readString(32);
+        const recipientId = buf.readString(32);
         const length = buf.readUint16();
         const payload = buf.read(length);
         return new SignalMessage(senderId, recipientId, payload);
@@ -21,8 +21,8 @@ class SignalMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint64(this._senderId);
-        buf.writeUint64(this._recipientId);
+        buf.writeString(this._senderId, 32);
+        buf.writeString(this._recipientId, 32);
         buf.writeUint16(this._payload.byteLength);
         buf.write(this._payload);
         return buf;

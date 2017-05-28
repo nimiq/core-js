@@ -12,7 +12,7 @@ class Message {
         buf.readPos = 4;
 
         // Read the type string.
-        const type = buf.readFixLengthString(12);
+        const type = buf.readPaddedString(12);
 
         // Reset the read position to original.
         buf.readPos = pos;
@@ -23,7 +23,7 @@ class Message {
     static unserialize(buf) {
         const magic = buf.readUint32();
         if (magic !== Message.MAGIC) throw 'Malformed magic';
-        const type = buf.readFixLengthString(12);
+        const type = buf.readPaddedString(12);
         const length = buf.readUint32();
         const checksum = buf.readUint32();
         // TODO validate checksum
@@ -34,7 +34,7 @@ class Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint32(Message.MAGIC);
-        buf.writeFixLengthString(this._type, 12);
+        buf.writePaddedString(this._type, 12);
         buf.writeUint32(this._length);
         buf.writeUint32(this._checksum);
         return buf;

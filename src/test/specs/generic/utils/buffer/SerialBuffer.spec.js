@@ -167,19 +167,19 @@ describe('SerialBuffer', () => {
         const length2 = string2.length;
 
         const buffer = new SerialBuffer(length1 + 1 + length2 + 2);
-        buffer.writeFixLengthString(string1, length1 + 1);
-        buffer.writeFixLengthString(string2, length2 + 2);
+        buffer.writePaddedString(string1, length1 + 1);
+        buffer.writePaddedString(string2, length2 + 2);
 
-        const testString1 = buffer.readFixLengthString(length1 + 1);
+        const testString1 = buffer.readPaddedString(length1 + 1);
         expect(testString1.length).toBe(length1);
         expect(testString1).toBe(string1);
 
-        const testString2 = buffer.readFixLengthString(length2 + 2);
+        const testString2 = buffer.readPaddedString(length2 + 2);
         expect(testString2.length).toBe(length2);
         expect(testString2).toBe(string2);
 
         expect(() => {
-            buffer.writeFixLengthString(string1, length1 - 2);
+            buffer.writePaddedString(string1, length1 - 2);
         }).toThrow('Malformed value/length');
     });
 
