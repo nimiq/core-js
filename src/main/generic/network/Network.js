@@ -63,7 +63,7 @@ class Network extends Observable {
 
         // Close all websocket connections.
         for (let agent of this._agents.values()) {
-            if (agent.peer.peerAddress.protocol === PeerAddress.Protocol.WSS) {
+            if (agent.peer.peerAddress.protocol === Protocol.WS) {
                 agent.channel.close('manual websocket disconnect');
             }
         }
@@ -108,13 +108,13 @@ class Network extends Observable {
 
     _connect(peerAddress) {
         switch (peerAddress.protocol) {
-            case PeerAddress.Protocol.WSS:
+            case Protocol.WS:
                 console.log(`Connecting to ${peerAddress} ...`);
                 this._addresses.connecting(peerAddress);
                 this._wsConnector.connect(peerAddress);
                 break;
 
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 console.log(`Connecting to ${peerAddress} via ${peerAddress.signalChannel}...`);
                 this._addresses.connecting(peerAddress);
                 this._rtcConnector.connect(peerAddress);
@@ -134,7 +134,7 @@ class Network extends Observable {
         }
 
         // Check if we already have a connection to the same peerAddress.
-        // The peerAddress is null for incoming WebSocket connections (NodeJS only).
+        // The peerAddress is null for incoming connections.
         if (conn.peerAddress) {
             if (this._addresses.isConnected(conn.peerAddress)) {
                 conn.close('duplicate connection (peerAddress)');
@@ -145,7 +145,7 @@ class Network extends Observable {
         }
 
         // Track & limit concurrent connections to the same IP address.
-        const maxConnections = !conn.peerAddress || conn.peerAddress.protocol === PeerAddress.Protocol.WSS ?
+        const maxConnections = conn.protocol === Protocol.WS ?
             Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
         let numConnections = this._netAddresses.get(conn.netAddress) || 0;
         numConnections++;
@@ -231,6 +231,9 @@ class Network extends Observable {
         if (!this._agents.contains(peer.peerAddress)) {
             this._agents.delete(peer.netAddress);
             this._agents.put(peer.peerAddress, agent);
+        } else if (this._agents.contains(peer.netAddress)) {
+            agent.channel.close('duplicate connection (incoming, after handshake)');
+            return;
         }
 
         // Increment the peerCount.

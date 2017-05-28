@@ -8,10 +8,10 @@ class PeerAddress {
     static unserialize(buf) {
         const protocol = buf.readUint8();
         switch (protocol) {
-            case PeerAddress.Protocol.WSS:
-                return WssPeerAddress.unserialize(buf);
+            case Protocol.WS:
+                return WsPeerAddress.unserialize(buf);
 
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 return RtcPeerAddress.unserialize(buf);
 
             default:
@@ -53,14 +53,11 @@ class PeerAddress {
         this._timestamp = value;
     }
 }
-PeerAddress.Protocol = {};
-PeerAddress.Protocol.WSS = 1;
-PeerAddress.Protocol.RTC = 2;
 Class.register(PeerAddress);
 
-class WssPeerAddress extends PeerAddress {
+class WsPeerAddress extends PeerAddress {
     constructor(services, timestamp, host, port) {
-        super(PeerAddress.Protocol.WSS, services, timestamp);
+        super(Protocol.WS, services, timestamp);
         if (!Services.isWebSocket(services)) throw 'Malformed services';
 
         this._host = host;
@@ -72,7 +69,7 @@ class WssPeerAddress extends PeerAddress {
         const timestamp = buf.readUint64();
         const host = buf.readVarLengthString();
         const port = buf.readUint16();
-        return new WssPeerAddress(services, timestamp, host, port);
+        return new WsPeerAddress(services, timestamp, host, port);
     }
 
     serialize(buf) {
@@ -96,7 +93,7 @@ class WssPeerAddress extends PeerAddress {
 
     equals(o) {
         return super.equals(o)
-            && o instanceof WssPeerAddress
+            && o instanceof WsPeerAddress
             && this._host === o.host
             && this._port === o.port;
     }
@@ -117,11 +114,11 @@ class WssPeerAddress extends PeerAddress {
         return this._port;
     }
 }
-Class.register(WssPeerAddress);
+Class.register(WsPeerAddress);
 
 class RtcPeerAddress extends PeerAddress {
     constructor(services, timestamp, signalId, distance) {
-        super(PeerAddress.Protocol.RTC, services, timestamp);
+        super(Protocol.RTC, services, timestamp);
         if (!Services.isWebRtc(services)) throw 'Malformed services';
         if (!RtcPeerAddress.isSignalId(signalId)) throw 'Malformed signalId';
 

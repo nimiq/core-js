@@ -1,10 +1,11 @@
 class PeerConnection extends Observable {
-    constructor(nativeChannel, peerAddress, netAddress) {
+    constructor(nativeChannel, protocol, netAddress, peerAddress) {
         super();
         this._channel = nativeChannel;
 
-        this._peerAddress = peerAddress;
+        this._protocol = protocol;
         this._netAddress = netAddress;
+        this._peerAddress = peerAddress;
 
         this._bytesReceived = 0;
         this._bytesSent = 0;

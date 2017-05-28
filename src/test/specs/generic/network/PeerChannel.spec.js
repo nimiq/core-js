@@ -4,7 +4,7 @@ describe('PeerChannel', () => {
     const vec1 = new InvVector(type, hash);
     const count = 1;
     const message = new InvMessage([vec1]);
-    const addr = new WssPeerAddress(Services.WEBSOCKET, Date.now(), 'node1.nimiq.com', 8443);
+    const addr = new WsPeerAddress(Services.WEBSOCKET, Date.now(), 'node1.nimiq.com', 8443);
 
     it('can send a VersionMessage', (done) => {
         const spy = new SpyConnection(msg => {

@@ -85,9 +85,9 @@ class PeerAddresses extends Observable {
 
     _scoreProtocol(peerAddress) {
         if (this._peerCountWs < 3) {
-            return peerAddress.protocol === PeerAddress.Protocol.WSS ? 2 : 1;
+            return peerAddress.protocol === Protocol.WS ? 2 : 1;
         } else {
-            return peerAddress.protocol === PeerAddress.Protocol.RTC ? 2 : 1;
+            return peerAddress.protocol === Protocol.RTC ? 2 : 1;
         }
     }
 
@@ -97,9 +97,9 @@ class PeerAddresses extends Observable {
 
     _canConnect(peerAddress) {
         switch (peerAddress.protocol) {
-            case PeerAddress.Protocol.WSS:
+            case Protocol.WS:
                 return true;
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 return PlatformUtils.isBrowser();
             default:
                 return false;
@@ -168,7 +168,7 @@ class PeerAddresses extends Observable {
         }
 
         // Increment distance values of RTC addresses.
-        if (peerAddress.protocol === PeerAddress.Protocol.RTC) {
+        if (peerAddress.protocol === Protocol.RTC) {
             peerAddress.distance++;
 
             // Ignore address if it exceeds max distance.
@@ -191,14 +191,14 @@ class PeerAddresses extends Observable {
 
             // Ignore address if we already know a better route to this address.
             // TODO save anyways to have a backup route?
-            if (peerAddress.protocol === PeerAddress.Protocol.RTC
+            if (peerAddress.protocol === Protocol.RTC
                     && peerAddressState.peerAddress.distance < peerAddress.distance) {
                 console.log('Ignoring address ' + peerAddress + ' - better route ' + knownAddress + ' exists');
                 return false;
             }
         }
 
-        if (peerAddress.protocol === PeerAddress.Protocol.RTC) {
+        if (peerAddress.protocol === Protocol.RTC) {
             peerAddress.signalChannel = channel;
 
             // Index by signalId.
@@ -240,10 +240,10 @@ class PeerAddresses extends Observable {
         //peerAddressState.failedAttempts = 0;
 
         switch (peerAddress.protocol) {
-            case PeerAddress.Protocol.WSS:
+            case Protocol.WS:
                 this._peerCountWs++;
                 break;
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 this._peerCountRtc++;
                 break;
             default:
@@ -258,15 +258,15 @@ class PeerAddresses extends Observable {
             throw 'Unknown peerAddress';
         }
 
-        if (peerAddress.protocol === PeerAddress.Protocol.RTC) {
+        if (peerAddress.protocol === Protocol.RTC) {
             this._deleteBySignalChannel(peerAddressState.peerAddress.signalChannel);
         }
 
         switch (peerAddress.protocol) {
-            case PeerAddress.Protocol.WSS:
+            case Protocol.WS:
                 this._peerCountWs--;
                 break;
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 this._peerCountRtc--;
                 break;
             default:
@@ -334,7 +334,7 @@ class PeerAddresses extends Observable {
         }
 
         // Delete from signalId index.
-        if (peerAddress.protocol === PeerAddress.Protocol.RTC) {
+        if (peerAddress.protocol === Protocol.RTC) {
             this._signalIds.delete(peerAddress.signalId);
         }
 
@@ -351,7 +351,7 @@ class PeerAddresses extends Observable {
     _deleteBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (let addr of this._store.values()) {
-            if (addr.protocol === PeerAddress.Protocol.RTC && channel.equals(addr.signalChannel)) {
+            if (addr.protocol === Protocol.RTC && channel.equals(addr.signalChannel)) {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);
             }
@@ -398,10 +398,10 @@ class PeerAddresses extends Observable {
     _exceedsAge(peerAddress) {
         const age = Date.now() - peerAddress.timestamp;
         switch (peerAddress.protocol) {
-            case PeerAddress.Protocol.WSS:
+            case Protocol.WS:
                 return age > PeerAddresses.MAX_AGE_WEBSOCKET;
 
-            case PeerAddress.Protocol.RTC:
+            case Protocol.RTC:
                 return age > PeerAddresses.MAX_AGE_WEBRTC;
         }
         return false;
@@ -422,9 +422,9 @@ PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    new WssPeerAddress(Services.WEBSOCKET, 0, "alpacash.com", 8080),
-    new WssPeerAddress(Services.WEBSOCKET, 0, "nimiq1.styp-rekowsky.de", 8080),
-    new WssPeerAddress(Services.WEBSOCKET, 0, "nimiq2.styp-rekowsky.de", 8080)
+    //new WsPeerAddress(Services.WEBSOCKET, 0, "alpacash.com", 8080),
+    new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq1.styp-rekowsky.de", 8080),
+    //new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq2.styp-rekowsky.de", 8080)
 ];
 Class.register(PeerAddresses);
 

@@ -17,7 +17,7 @@ class WebRtcConnector extends Observable {
     }
 
     connect(peerAddress) {
-        if (peerAddress.protocol !== PeerAddress.Protocol.RTC) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
         if (!peerAddress.signalChannel) throw 'peerAddress.signalChannel not set';
 
         const signalId = peerAddress.signalId;
@@ -45,6 +45,8 @@ class WebRtcConnector extends Observable {
             console.error('Failed to parse signal payload from ' + msg.senderId);
             return;
         }
+
+        console.log('Received signal from ' + msg.senderId, payload);
 
         if (!payload) {
             console.warn('Discarding signal from ' + msg.senderId + ' - empty payload');
@@ -110,9 +112,10 @@ class WebRtcConnector extends Observable {
 WebRtcConnector.CONNECT_TIMEOUT = 10000; // ms
 
 class PeerConnector extends Observable {
-    constructor(config, peerAddress) {
+    constructor(config, signalChannel, signalId) {
         super();
-        this._peerAddress = peerAddress;
+        this._signalChannel = signalChannel;
+        this._signalId = signalId;
 
         this._rtcConnection = new RTCPeerConnection(config);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
@@ -125,9 +128,9 @@ class PeerConnector extends Observable {
             // Validate that the signalId given in the session description matches
             // the advertised signalId.
             const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
-            if (signalId !== this._peerAddress.signalId) {
+            if (signalId !== this._signalId) {
                 // TODO what to do here?
-                console.error('Invalid remote description received: expected signalId ' + this._peerAddress.signalId + ', got ' + signalId);
+                console.error('Invalid remote description received: expected signalId ' + this._signalId + ', got ' + signalId);
                 return;
             }
 
@@ -144,9 +147,9 @@ class PeerConnector extends Observable {
     }
 
     _signal(signal) {
-        this._peerAddress.signalChannel.signal(
+        this._signalChannel.signal(
             NetworkConfig.myPeerAddress().signalId,
-            this._peerAddress.signalId,
+            this._signalId,
             BufferUtils.fromAscii(JSON.stringify(signal))
         );
     }
@@ -163,16 +166,6 @@ class PeerConnector extends Observable {
         }, this._errorLog);
     }
 
-    _onP2PChannel(event) {
-        const channel = event.channel || event.target;
-
-        // FIXME it is not robust to assume that the last iceCandidate seen is
-        // actually the address that we connected to.
-        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
-        const conn = new PeerConnection(channel, this._peerAddress, netAddress);
-        this.fire('connection', conn);
-    }
-
     _errorLog(error) {
         console.error(error);
     }
@@ -180,7 +173,8 @@ class PeerConnector extends Observable {
 
 class OutboundPeerConnector extends PeerConnector {
     constructor(config, peerAddress) {
-        super(config, peerAddress);
+        super(config, peerAddress.signalChannel, peerAddress.signalId);
+        this._peerAddress = peerAddress;
 
         // Create offer.
         const channel = this._rtcConnection.createDataChannel('data-channel');
@@ -188,12 +182,33 @@ class OutboundPeerConnector extends PeerConnector {
         channel.onopen = e => this._onP2PChannel(e);
         this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
     }
+
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
+
+        // FIXME it is not robust to assume that the last iceCandidate seen is
+        // actually the address that we connected to.
+        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
+        this.fire('connection', conn);
+    }
+
 }
 
 class InboundPeerConnector extends PeerConnector {
-    constructor(config, peerAddress, offer) {
-        super(config, peerAddress);
+    constructor(config, signalChannel, signalId, offer) {
+        super(config, signalChannel, signalId);
         this._rtcConnection.ondatachannel = e => this._onP2PChannel(e);
         this.onSignal(offer);
+    }
+
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
+
+        // FIXME it is not robust to assume that the last iceCandidate seen is
+        // actually the address that we connected to.
+        const netAddress = NetAddress.fromIpAddress(this._lastIceCandidate.ip, this._lastIceCandidate.port);
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, /*peerAddress*/ null);
+        this.fire('connection', conn);
     }
 }

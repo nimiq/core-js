@@ -44,6 +44,7 @@ require('../../generic/consensus/transaction/Transaction.js');
 require('../../generic/consensus/mempool/Mempool.js');
 require('../../generic/consensus/ConsensusAgent.js');
 require('../../generic/consensus/Consensus.js');
+require('../../generic/network/Protocol.js');
 require('../../generic/network/address/NetAddress.js');
 require('../../generic/network/address/PeerAddress.js');
 require('../../generic/network/address/PeerAddresses.js');
