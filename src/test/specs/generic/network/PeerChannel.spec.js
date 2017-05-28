@@ -4,13 +4,13 @@ describe('PeerChannel', () => {
     const vec1 = new InvVector(type, hash);
     const count = 1;
     const message = new InvMessage([vec1]);
-    const addr = new NetAddress(0, 0, '', 0, 0, 0);
+    const addr = new WssPeerAddress(Services.WEBSOCKET, Date.now(), 'node1.nimiq.com', 8443);
 
     it('can send a VersionMessage', (done) => {
         const spy = new SpyConnection(msg => {
             const vMsg = VersionMessage.unserialize(msg);
             expect(vMsg.version).toBe(1);
-            expect(vMsg.netAddress.equals(addr)).toBe(true);
+            expect(vMsg.peerAddress.equals(addr)).toBe(true);
             expect(vMsg.startHeight).toBe(42);
             done();
         });

@@ -20,6 +20,7 @@ class PeerChannel extends Observable {
             //   each don’t understand each other’s reject messages and so keep
             //   sending them back and forth forever."
             console.log('Failed to parse message: ' + rawMsg, e);
+            this.ban('junk received');
         }
 
         if (!msg) return;
@@ -43,8 +44,8 @@ class PeerChannel extends Observable {
         this._conn.ban(reason);
     }
 
-    version(netAddress, startHeight) {
-        this._send(new VersionMessage(1, netAddress, startHeight));
+    version(peerAddress, startHeight) {
+        this._send(new VersionMessage(1, peerAddress, startHeight));
     }
 
     verack() {
@@ -120,5 +121,12 @@ class PeerChannel extends Observable {
         return this._conn;
     }
 
+    get peerAddress() {
+        return this._conn.peerAddress;
+    }
+
+    get netAddress() {
+        return this._conn.netAddress;
+    }
 }
 Class.register(PeerChannel);

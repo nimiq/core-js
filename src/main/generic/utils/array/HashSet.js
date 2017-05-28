@@ -31,4 +31,9 @@ class HashSet {
     values() {
         return Object.values(this._map);
     }
+
+    get length() {
+        // XXX inefficient
+        return Object.keys(this._map).length;
+    }
 }

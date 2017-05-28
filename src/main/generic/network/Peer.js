@@ -18,11 +18,11 @@ class Peer {
     }
 
     get peerAddress() {
-        return this._channel.connection.peerAddress;
+        return this._channel.peerAddress;
     }
 
     get netAddress() {
-        return this._channel.connection.netAddress;
+        return this._channel.netAddress;
     }
 
     equals(o) {

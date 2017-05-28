@@ -4,7 +4,7 @@ class PeerAddress {
         this._services = services;
         this._timestamp = timestamp;
     }
-    
+
     static unserialize(buf) {
         const protocol = buf.readUint8();
         switch (protocol) {
@@ -21,7 +21,7 @@ class PeerAddress {
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint32(this._protocol);
+        buf.writeUint8(this._protocol);
         // services, timestamp written by subclasses
         return buf;
     }

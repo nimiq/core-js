@@ -46,6 +46,11 @@ class NetworkAgent extends Observable {
         const unknownAddresses = addresses.filter(addr => !this._knownAddresses.contains(addr));
         if (unknownAddresses.length) {
             this._channel.addr(unknownAddresses);
+
+            // We assume that the peer knows these addresses now.
+            for (let address of unknownAddresses) {
+                this._knownAddresses.add(address);
+            }
         }
     }
 

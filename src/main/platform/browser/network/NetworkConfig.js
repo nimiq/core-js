@@ -4,7 +4,7 @@ class NetworkConfig {
             throw 'PeerAddress is not configured';
         }
 
-        return new RtcNetAddress(
+        return new RtcPeerAddress(
             Services.myServices(), Date.now(),
             NetworkConfig._mySignalId, /*distance*/ 0);
     }
