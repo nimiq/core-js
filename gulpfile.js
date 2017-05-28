@@ -13,6 +13,8 @@ const sources = {
     browser: [
         './src/main/platform/browser/Class.js',
         './src/main/generic/utils/Observable.js',
+        './src/main/platform/browser/database/BaseTypedDB.js',
+        './src/main/platform/browser/database/TypedDB.js',
         './src/main/platform/browser/**/*.js',
         './src/main/generic/utils/**/*.js',
         './src/main/generic/consensus/primitive/Primitive.js',

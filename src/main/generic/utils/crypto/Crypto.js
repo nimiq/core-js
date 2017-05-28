@@ -22,15 +22,32 @@ class Crypto {
         return Crypto.lib.generateKey(Crypto.settings.keys, true, ['sign', 'verify']);
     }
 
+    static async exportPair(pair) {
+        if (!pair) return pair;
+        return {
+            publicKey: await Crypto.exportPublic(pair.publicKey),
+            privateKey: await Crypto.exportPrivate(pair.privateKey)
+        };
+    }
+
+    static async importPair(pair) {
+        if (!pair) return pair;
+        if (!(pair.privateKey instanceof Object)) return pair; // It's already imported
+        return {
+            publicKey: await Crypto.importPublic(pair.publicKey),
+            privateKey: await Crypto.importPrivate(pair.privateKey)
+        };
+    }
+
     static exportPrivate(privateKey) {
-        return Crypto.lib.exportKey('pkcs8', privateKey);
+        return Crypto.lib.exportKey('jwk', privateKey);
     }
 
     static importPrivate(privateKey) {
-        return Crypto.lib.importKey('pkcs8', privateKey, Crypto.settings.keys, true, ['sign']);
+        return Crypto.lib.importKey('jwk', privateKey, Crypto.settings.keys, true, ['sign']);
     }
 
-    static exportPublic(publicKey, format ='raw') {
+    static exportPublic(publicKey, format = 'raw') {
         return Crypto.lib.exportKey(format, publicKey)
             .then(key => new PublicKey(key));
     }
