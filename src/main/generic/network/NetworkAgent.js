@@ -101,10 +101,10 @@ class NetworkAgent extends Observable {
         this.fire('handshake', this._peer, this);
 
         // Remember that the peer has sent us this address.
-        this._knownAddresses.add(this._version.peerAddress);
+        this._knownAddresses.add(msg.peerAddress);
 
         // Store/update the peerAddress.
-        this._addresses.push(this._channel, this._version.netAddress);
+        this._addresses.push(this._channel, msg.peerAddress);
 
         // Setup regular connectivity check.
         // TODO randomize interval?
