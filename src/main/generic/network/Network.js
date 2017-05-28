@@ -255,7 +255,7 @@ class Network extends Observable {
 
     _onSignal(channel, msg) {
         // XXX Discard signals from myself.
-        if (msg.senderId === NetworkConfig.mySignalId()) {
+        if (msg.senderId === NetworkConfig.myPeerAddress().signalId) {
             console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel.connection + ' (myId: ' + msg.senderId + '): ' + BufferUtils.toAscii(msg.payload));
             return;
         }
