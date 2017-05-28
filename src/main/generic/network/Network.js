@@ -261,7 +261,7 @@ class Network extends Observable {
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
-        if (msg.recipientId === NetworkConfig.mySignalId()) {
+        if (msg.recipientId === NetworkConfig.myPeerAddress().signalId) {
             this._rtcConnector.onSignal(channel, msg);
         }
 
