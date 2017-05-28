@@ -153,7 +153,12 @@ class Network extends Observable {
         agent.on('close', (peer, channel) => this._onClose(peer, channel));
         agent.on('addr', () => this._onAddr());
 
-        this._agents.put(conn.peerAddress, agent);
+        if (conn.peerAddress) {
+            this._agents.put(conn.peerAddress, agent);
+        } else {
+            this._agents.put(conn.netAddress, agent);
+        }
+
         this._netAddresses.add(conn.netAddress);
     }
 
@@ -172,6 +177,7 @@ class Network extends Observable {
 
         // Remove agent & ip address.
         this._agents.delete(channel.peerAddress);
+        this._agents.delete(channel.netAddress);
         this._netAddresses.delete(channel.netAddress);
 
         // This is true if the handshake with the peer completed.
@@ -197,7 +203,12 @@ class Network extends Observable {
     }
 
     // Handshake with this peer was successful.
-    _onHandshake(peer) {
+    _onHandshake(peer, agent) {
+        if (!this._agents.contains(peer.peerAddress)) {
+            this._agents.delete(peer.netAddress);
+            this._agents.put(peer.peerAddress, agent);
+        }
+
         // Increment the peerCount.
         this._peerCount++;
 
