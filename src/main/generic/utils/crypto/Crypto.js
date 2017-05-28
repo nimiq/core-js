@@ -32,7 +32,7 @@ class Crypto {
 
     static async importPair(pair) {
         if (!pair) return pair;
-        if (!(pair.privateKey instanceof Object)) return pair; // It's already imported
+        if (pair.publicKey.extractable) return pair; // It's already imported
         return {
             publicKey: await Crypto.importPublic(pair.publicKey),
             privateKey: await Crypto.importPrivate(pair.privateKey)
