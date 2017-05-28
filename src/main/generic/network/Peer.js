@@ -35,7 +35,7 @@ class Peer {
     }
 
     toString() {
-        return `Peer{version=${this._version}, startHeight=${this._startHeight}`
+        return `Peer{version=${this._version}, startHeight=${this._startHeight}, `
             + `peerAddress=${this.peerAddress}, netAddress=${this.netAddress}}`;
     }
 }

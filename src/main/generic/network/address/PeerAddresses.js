@@ -120,7 +120,7 @@ class PeerAddresses extends Observable {
     }
 
     add(channel, arg) {
-        const peerAddresses = arg.length ? arg : [arg];
+        const peerAddresses = arg.length !== undefined ? arg : [arg];
         const newAddresses = [];
 
         for (let addr of peerAddresses) {
