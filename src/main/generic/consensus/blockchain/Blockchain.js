@@ -1,12 +1,12 @@
 class Blockchain extends Observable {
-    static async getPersistent(accounts) {
+    static getPersistent(accounts) {
         const store = BlockchainStore.getPersistent();
-        return await new Blockchain(store, accounts);
+        return new Blockchain(store, accounts);
     }
 
-    static async createVolatile(accounts) {
+    static createVolatile(accounts) {
         const store = BlockchainStore.createVolatile();
-        return await new Blockchain(store, accounts);
+        return new Blockchain(store, accounts);
     }
 
     static get BLOCK_TIMESTAMP_DRIFT_MAX() {
@@ -74,8 +74,8 @@ class Blockchain extends Observable {
         }
 
         do {
-            const prevChain = await this._store.get(block.prevHash.toBase64());
-            if (!prevChain) throw 'Failed to find predecessor block ' + block.prevHash.toBase64();
+            const prevChain = await this._store.get(block.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
+            if (!prevChain) throw `Failed to find predecessor block ${block.prevHash.toBase64()}`;
 
             // TODO unshift() is inefficient. We should build the array with push()
             // instead and iterate over it in reverse order.
@@ -102,14 +102,14 @@ class Blockchain extends Observable {
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
-            console.log('Blockchain ignoring known block ' + hash.toBase64());
+            console.log(`Blockchain ignoring known block ${hash.toBase64()}`);
             return true;
         }
 
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
-            console.log('Blockchain discarding block ' + hash.toBase64() + ' - previous block ' + block.prevHash.toBase64() + ' unknown');
+            console.log(`Blockchain discarding block ${hash.toBase64()} - previous block ${block.prevHash.toBase64()} unknown`);
             return false;
         }
 
@@ -134,7 +134,9 @@ class Blockchain extends Observable {
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
             // Append new block to the main chain.
-            await this._extend(newChain);
+            if (!await this._extend(newChain)) {
+                return false;
+            }
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -156,9 +158,7 @@ class Blockchain extends Observable {
 
         // Otherwise, we are creating/extending a fork. We have stored the block,
         // the head didn't change, nothing else to do.
-        console.log('Creating/extending fork with block ' + hash.toBase64()
-            + ', height=' + newChain.height + ', totalWork='
-            + newChain.totalWork);
+        console.log(`Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
         return true;
     }
@@ -172,7 +172,7 @@ class Blockchain extends Observable {
 
         // XXX Check that there is only one transaction per sender per block.
         const senderPubKeys = {};
-        for (let tx of block.body.transactions) {
+        for (const tx of block.body.transactions) {
             if (senderPubKeys[tx.senderPubKey]) {
                 console.warn('Blockchain rejected block - more than one transaction per sender');
                 return false;
@@ -199,10 +199,9 @@ class Blockchain extends Observable {
             console.warn('Blockchain rejecting block - body hash mismatch');
             return false;
         }
-
         // Check that all transaction signatures are valid.
-        for (let tx of block.body.transactions) {
-            if (!await tx.verifySignature()) {
+        for (const tx of block.body.transactions) {
+            if (!await tx.verifySignature()) { // eslint-disable-line no-await-in-loop
                 console.warn('Blockchain rejected block - invalid transaction signature');
                 return false;
             }
@@ -237,9 +236,9 @@ class Blockchain extends Observable {
         if (!accountsHash.equals(newChain.head.accountsHash)) {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
-            console.log('Blockchain rejecting block, AccountsHash mismatch: current='
-                + accountsHash + ', block=' + newChain.head.accountsHash);
-            return;
+            console.log(`Blockchain rejecting block, AccountsHash mismatch: current=${accountsHash}, block=${newChain.head.accountsHash}`);
+
+            return false;
         }
 
         // AccountsHash matches, commit the block.
@@ -251,6 +250,8 @@ class Blockchain extends Observable {
         this._mainPath.push(hash);
         this._headHash = hash;
         await this._store.setMainChain(this._mainChain);
+
+        return true;
     }
 
     async _revert() {
@@ -267,7 +268,7 @@ class Blockchain extends Observable {
         // Load the predecessor chain.
         const prevHash = this.head.prevHash;
         const prevChain = await this._store.get(prevHash.toBase64());
-        if (!prevChain) throw 'Failed to find predecessor block ' + prevHash.toBase64() + ' while reverting';
+        if (!prevChain) throw `Failed to find predecessor block ${prevHash.toBase64()} while reverting`;
 
         // Update main chain.
         this._mainChain = prevChain;
@@ -278,8 +279,7 @@ class Blockchain extends Observable {
 
     async _rebranch(newChain) {
         const hash = await newChain.hash();
-        console.log('Rebranching to fork ' + hash.toBase64() + ', height='
-            + newChain.height + ', totalWork=' + newChain.totalWork, newChain);
+        console.log(`Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}, newChain`);
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
@@ -288,8 +288,8 @@ class Blockchain extends Observable {
         let forkHead = newChain.head;
         const forkChain = [newChain];
         while (this._mainPath.indexOf(forkHead.prevHash) < 0) {
-            const prevChain = await this._store.get(forkHead.prevHash.toBase64());
-            if (!prevChain) throw 'Failed to find predecessor block ' + forkHead.prevHash.toBase64() + ' while rebranching';
+            const prevChain = await this._store.get(forkHead.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
+            if (!prevChain) throw `Failed to find predecessor block ${forkHead.prevHash.toBase64()} while rebranching`;
 
             forkHead = prevChain.head;
             forkChain.unshift(prevChain);
@@ -298,17 +298,17 @@ class Blockchain extends Observable {
         // The predecessor of forkHead is the desired common ancestor.
         const commonAncestor = forkHead.prevHash;
 
-        console.log('Found common ancestor ' + commonAncestor.toBase64() + ' ' + forkChain.length + ' blocks up');
+        console.log(`Found common ancestor ${commonAncestor.toBase64()} ${forkChain.length} blocks up`);
 
         // Revert all blocks on the current main chain until the common ancestor.
         while (!this.headHash.equals(commonAncestor)) {
-            await this._revert();
+            await this._revert(); // eslint-disable-line no-await-in-loop
         }
 
         // We have reverted to the common ancestor state. Apply all blocks on
         // the fork chain until we reach the new head.
-        for (let block of forkChain) {
-            await this._extend(block);
+        for (const block of forkChain) {
+            await this._extend(block); // eslint-disable-line no-await-in-loop
         }
     }
 

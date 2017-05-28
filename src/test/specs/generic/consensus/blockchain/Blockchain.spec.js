@@ -94,7 +94,7 @@ describe('Blockchain', () => {
             // Finally, try to push a block that has an invalid AccountsHash
             block = await Dummy.block10_2;
             status = await blockchain.pushBlock(block);
-            expect(status).toBe(true);
+            expect(status).toBe(false);
             expect(console.log).toHaveBeenCalledWith('Blockchain rejecting block, AccountsHash mismatch: current=ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=, block=R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA=');
 
         })().then(done, done.fail);
