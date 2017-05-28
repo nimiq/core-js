@@ -193,7 +193,7 @@ class Network extends Observable {
 
         // Decrement connection count per IP.
         let numConnections = this._netAddresses.get(channel.netAddress) || 1;
-        numConnections = Math.max(numConnections--, 0);
+        numConnections = Math.max(numConnections - 1, 0);
         this._netAddresses.put(channel.netAddress, numConnections);
 
         // This is true if the handshake with the peer completed.

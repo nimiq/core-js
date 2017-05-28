@@ -178,14 +178,21 @@ class PeerAddresses extends Observable {
             }
         }
 
+        // Check if we already know this address.
         const peerAddressState = this._store.get(peerAddress);
         if (peerAddressState) {
-            if (peerAddressState.peerAddress.timestamp >= peerAddress.timestamp) {
+            // Ignore address if it is banned.
+            if (peerAddressState.state === PeerAddressState.BANNED) {
                 return false;
             }
 
-            if (peerAddressState.state !== PeerAddressState.NEW) {
-                peerAddressState.peerAddress.timestamp = peerAddress.timestamp;
+            // Don't allow address updates if we are currenly connected to this address.
+            if (peerAddressState.state === PeerAddressState.CONNECTED) {
+                return false;
+            }
+
+            // Ignore address if we already know this address with a more recent timestamp.
+            if (peerAddressState.peerAddress.timestamp >= peerAddress.timestamp) {
                 return false;
             }
 
@@ -205,7 +212,7 @@ class PeerAddresses extends Observable {
             this._signalIds.put(peerAddress.signalId, peerAddress);
         }
 
-        // Store the new address.
+        // Store the new/updated address.
         this._store.add(new PeerAddressState(peerAddress));
         return true;
     }
