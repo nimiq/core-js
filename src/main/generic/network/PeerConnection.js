@@ -72,6 +72,11 @@ class PeerConnection extends Observable {
         return this._peerAddress;
     }
 
+    // Set when the VERSION message is received on an incoming WebSocket connection.
+    set peerAddress(value) {
+        this._peerAddress = value;
+    }
+
     get netAddress() {
         return this._netAddress;
     }

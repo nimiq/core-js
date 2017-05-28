@@ -1,8 +1,4 @@
 class WebRtcConnector extends Observable {
-    static get CONNECT_TIMEOUT() {
-        return 10000; // ms
-    }
-
     constructor() {
         super();
         return this._init();
@@ -45,12 +41,12 @@ class WebRtcConnector extends Observable {
         try {
             payload = JSON.parse(BufferUtils.toAscii(msg.payload));
         } catch (e) {
-            console.error('Failed to parse signal payload from ' + msg.senderId, msg);
+            console.error('Failed to parse signal payload from ' + msg.senderId);
             return;
         }
 
         if (!payload) {
-            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload', msg);
+            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload');
             return;
         }
 
@@ -110,6 +106,7 @@ class WebRtcConnector extends Observable {
         delete this._connectors[signalId];
     }
 }
+WebRtcConnector.CONNECT_TIMEOUT = 10000; // ms
 
 class PeerConnector extends Observable {
     constructor(config, peerAddress) {

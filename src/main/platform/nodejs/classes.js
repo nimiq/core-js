@@ -59,7 +59,6 @@ require('../../generic/network/message/PongMessage.js');
 require('../../generic/network/message/RejectMessage.js');
 require('../../generic/network/message/SignalMessage.js');
 require('../../generic/network/message/TxMessage.js');
-require('../../generic/network/message/VerAckMessage.js');
 require('../../generic/network/message/VersionMessage.js');
 require('../../generic/network/message/MessageFactory.js');
 require('./network/webrtc/WebRtcConnector.js');

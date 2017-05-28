@@ -19,7 +19,7 @@ class WebSocketConnector extends Observable {
         }).listen(port);
 
         this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', ws => this._onConnection(ws));
+        this._wss.on('connection', ws => this._onConnection(ws, null));
 
         console.log('WebSocketConnector listening on port ' + port);
     }

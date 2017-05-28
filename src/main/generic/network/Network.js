@@ -14,11 +14,7 @@ class Network extends Observable {
 
         this._peerCount = 0;
         this._agents = new HashMap();
-
-        this._addresses = new PeerAddresses();
-
-        // Relay new addresses to peers.
-        this._addresses.on('added', addresses => this._relayAddresses(addresses));
+        this._netAddresses = new HashSet(netAddress => netAddress.host);
 
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -27,6 +23,12 @@ class Network extends Observable {
         this._rtcConnector = await new WebRtcConnector();
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
+
+        // XXX Do this after the WebRtcConnector initialization.
+        this._addresses = new PeerAddresses();
+
+        // Relay new addresses to peers.
+        this._addresses.on('added', addresses => this._relayAddresses(addresses));
 
         return this;
     }
@@ -124,15 +126,23 @@ class Network extends Observable {
         }
 
         // Check if we already have a connection to the same peerAddress.
-        // TODO Check netAddress to limit the number of connections to the same ip.
-        if (this._addresses.isConnected(conn.peerAddress)) {
-            conn.close('duplicate connection');
+        // The peerAddress is null for incoming WebSocket connections (NodeJS only).
+        if (conn.peerAddress) {
+            if (this._addresses.isConnected(conn.peerAddress)) {
+                conn.close('duplicate connection (peerAddress)');
+                return;
+            }
+
+            this._addresses.connected(conn.peerAddress);
+        }
+
+        // Allow only one connection per IP address.
+        if (this._netAddresses.contains(conn.netAddress)) {
+            conn.close('duplicate connection (netAddress)');
             return;
         }
 
         console.log('Connection established: ' + conn);
-
-        this._addresses.connected(conn.peerAddress);
 
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
@@ -143,8 +153,8 @@ class Network extends Observable {
         agent.on('close', (peer, channel) => this._onClose(peer, channel));
         agent.on('addr', () => this._onAddr());
 
-        // Store the agent for this connection.
         this._agents.put(conn.peerAddress, agent);
+        this._netAddresses.add(conn.netAddress);
     }
 
     // Connection to this peer address failed.
@@ -160,8 +170,9 @@ class Network extends Observable {
     _onClose(peer, channel) {
         this._addresses.disconnected(channel.peerAddress);
 
-        // Remove agent.
+        // Remove agent & ip address.
         this._agents.delete(channel.peerAddress);
+        this._netAddresses.delete(channel.netAddress);
 
         // This is true if the handshake with the peer completed.
         if (peer) {

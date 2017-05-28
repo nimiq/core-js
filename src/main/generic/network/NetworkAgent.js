@@ -8,9 +8,6 @@ class NetworkAgent extends Observable {
         // Flag indicating that we have completed handshake with the peer.
         this._connected = false;
 
-        // The version message announced by the peer.
-        this._version = null;
-
         // The peer object we create after the handshake completes.
         this._peer = null;
 
@@ -61,9 +58,6 @@ class NetworkAgent extends Observable {
         // Kick off the handshake by telling the peer our version, network address & blockchain height.
         this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height);
 
-        // Drop the peer if it doesn't acknowledge our version message.
-        this._timers.setTimeout('verack', () => this._channel.close('verack timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
-
         // Drop the peer if it doesn't send us a version message.
         this._timers.setTimeout('version', () => this._channel.close('version timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
     }
@@ -76,40 +70,23 @@ class NetworkAgent extends Observable {
 
         console.log('[VERSION] startHeight=' + msg.startHeight);
 
-        // Reject duplicate version messages.
-        if (this._version) {
-            console.warn('Rejecting duplicate version message from ' + this._channel);
-            this._channel.reject('version', RejectMessage.Code.DUPLICATE);
-            return;
-        }
-
         // TODO actually check version, services and stuff.
 
         // Clear the version timeout.
         this._timers.clearTimeout('version');
 
-        // Acknowledge the receipt of the version message.
-        this._channel.verack();
-
-        // Store the version message.
-        this._version = msg;
-    }
-
-    _onVerAck(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) {
-            return;
-        }
-
-        console.log('[VERACK]');
-
-        // Clear the version message timeout.
-        this._timers.clearTimeout('verack');
-
-        // Fail if the peer didn't send a version message first.
-        if (!this._version) {
-            this._channel.close('verack before version');
-            return;
+        // Check that the given peerAddress matches the one we expect.
+        // In case of incoming WebSocket connections, this is the first time we
+        // see the remote peer's peerAddress. Set it in this case.
+        // TODO We should validate that the given peerAddress actually resolves
+        // to the peer's netAddress!!
+        if (this._channel.peerAddress) {
+            if (!this._channel.peerAddress.equals(msg.peerAddress)) {
+                this._channel.close('unexpected peerAddress in version message');
+                return;
+            }
+        } else {
+            this._channel.peerAddress = msg.peerAddress;
         }
 
         // Handshake completed, connection established.
@@ -118,8 +95,8 @@ class NetworkAgent extends Observable {
         // Tell listeners about the new peer that connected.
         this._peer = new Peer(
             this._channel,
-            this._version.version,
-            this._version.startHeight
+            msg.version,
+            msg.startHeight
         );
         this.fire('handshake', this._peer, this);
 
@@ -249,9 +226,7 @@ class NetworkAgent extends Observable {
     }
 
     _canAcceptMessage(msg) {
-        const isHandshakeMsg =
-            msg.type == Message.Type.VERSION
-            || msg.type == Message.Type.VERACK;
+        const isHandshakeMsg = msg.type == Message.Type.VERSION;
 
         // We accept handshake messages only if we are not connected, all other
         // messages otherwise.
@@ -271,9 +246,9 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
-NetworkAgent.HANDSHAKE_TIMEOUT = 10000; // ms
+NetworkAgent.HANDSHAKE_TIMEOUT = 3000; // ms
 NetworkAgent.PING_TIMEOUT = 10000; // ms
 NetworkAgent.GETADDR_TIMEOUT = 5000; // ms
 NetworkAgent.CONNECTIVITY_INTERVAL = 60000; // ms
-NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 3; // 3 minutes
+NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
 Class.register(NetworkAgent);

@@ -66,7 +66,6 @@ class Message {
 Message.MAGIC = 0x42042042;
 Message.Type = {
     VERSION: 'version',
-    VERACK: 'verack',
     INV: 'inv',
     GETDATA: 'getdata',
     NOTFOUND: 'notfound',

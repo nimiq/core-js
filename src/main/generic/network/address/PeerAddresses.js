@@ -136,6 +136,11 @@ class PeerAddresses extends Observable {
     }
 
     _add(channel, peerAddress) {
+        // Ignore our own address.
+        if (NetworkConfig.myPeerAddress().equals(peerAddress)) {
+            return false;
+        }
+
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
         if (channel && this._exceedsAge(peerAddress)) {
