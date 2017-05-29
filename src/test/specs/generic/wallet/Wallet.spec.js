@@ -6,7 +6,7 @@ describe('Wallet', () => {
 
     it('can create a signed transaction', (done) => {
         const test = async () => {
-            const wallet = await Wallet.getPersistent();
+            const wallet = await Wallet.createVolatile();
             const transaction = await wallet.createTransaction(recipient, value, fee, nonce);
             const isValid = await transaction.verifySignature();
             expect(isValid).toBe(true);

@@ -17,19 +17,15 @@ describe('Mempool', () => {
             // Create a transaction
             const transaction = await wallet.createTransaction(new Address(Dummy.address1), 543,42,23);
 
-            // Mock this method, as it proved too difficult to get it to return "good"
-            // values using the real thing AND it's not part of the class we're testing
-            spyOn(accounts, 'getBalance').and.returnValue({value:745, nonce: 23});
+            // Make sure we have some good values in our account
+            await accounts._tree.put(wallet.address, new Balance(745, 23));
 
             // Push the transaction for the first time
-            await mempool.pushTransaction(transaction);
+            let result = await mempool.pushTransaction(transaction);
+            expect(result).toBe(true);
 
-            // Make sure that getBalance was indeed called with the correct address
-            expect(accounts.getBalance).toHaveBeenCalledWith(wallet.address);
-
-            // Push the transaction for a second time, and expect the result to be undefined
-            // as the method should return just after the sanity check on the code
-            const result = await mempool.pushTransaction(transaction);
+            // Push the transaction for a second time, and expect the result to be false
+            result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
 
         })().then(done, done.fail);
@@ -65,7 +61,7 @@ describe('Mempool', () => {
             expect(console.warn).toHaveBeenCalledWith('Mempool rejected transaction - sender account unknown');
 
             // Set the balance to a lower number than the transaction amount
-            const getBalanceSpy = spyOn(accounts, 'getBalance').and.returnValue({value:745, nonce: 42});
+            await accounts._tree.put(wallet.address, new Balance(745, 42));
 
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
@@ -74,7 +70,7 @@ describe('Mempool', () => {
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
-            getBalanceSpy.and.returnValue({value:7745, nonce: 24});
+            await accounts._tree.put(wallet.address, new Balance(7745, 23));
 
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
@@ -89,8 +85,8 @@ describe('Mempool', () => {
             // Create a transaction
             const referenceTransaction = await wallet.createTransaction(new Address(Dummy.address1), 523,23,42);
 
-            // Mock this method to have the correct values we need
-            spyOn(accounts, 'getBalance').and.returnValue({value:745, nonce: 42});
+            // Add the correct values we need to our wallet's balance
+            await accounts._tree.put(wallet.address, new Balance(745, 42));
 
             // The transaction should be successfully pushed
             const result = await mempool.pushTransaction(referenceTransaction);
@@ -115,11 +111,9 @@ describe('Mempool', () => {
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
                 const wallet = await Wallet.createVolatile(accounts, mempool);
+                await accounts._tree.put(wallet.address, new Balance(23478, 42));
                 wallets.push(wallet);
             }
-
-            // Mock this method to have the correct values we need
-            const getBalanceSpy = spyOn(accounts, 'getBalance').and.returnValue({value:23478, nonce: 42});
 
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
@@ -134,18 +128,19 @@ describe('Mempool', () => {
             let transactions = await mempool.getTransactions();
             expect(transactions).toEqual(referenceTransactions);
 
-            // Change the balance so that pending transactions will get evicted
-            getBalanceSpy.and.returnValue({value:2, nonce: 24});
+            // Change the balances so that pending transactions will get evicted
+            for (let i = 0; i < numberOfTransactions; i++) {
+                await accounts._tree.put(wallets[i].address, new Balance(2, 24));
+            }
 
-            // Evict all transactions
-            await mempool._evictTransactions();
-            // FIXME: We should be using blockchain.fire() to test eviction, but there are some
-            // async issues in play which prevent us from doing that right now
-            //blockchain.fire('head-changed');
+            // Fire a 'head-change' event to evict all transactions
+            blockchain.fire('head-changed');
 
             // Check that all the transactions were evicted
-            transactions = await mempool.getTransactions();
-            expect(transactions.length).toEqual(0);
+            mempool.on('transactions-ready', async function() {
+                transactions = await mempool.getTransactions();
+                expect(transactions.length).toEqual(0);
+            });
 
         })().then(done, done.fail);
     });

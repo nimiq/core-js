@@ -6,5 +6,7 @@ src/main/platform/nodejs/database/keys
 clients/nodejs/node_modules
 clients/nodejs/database
 clients/nodejs/localhost.*
+dist/web*
+dist/node*
 .idea
 *.iml

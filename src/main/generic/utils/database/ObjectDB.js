@@ -10,23 +10,23 @@ class ObjectDB extends TypedDB {
     }
 
     async get(key) {
-        return await super.getObject(key);
+        return await TypedDB.prototype.getObject.call(this, key);
     }
 
     async put(obj) {
         const key = await this.key(obj);
-        await super.putObject(key, obj);
+        await TypedDB.prototype.putObject.call(this, key, obj);
         return key;
     }
 
     async delete(obj) {
         const key = await this.key(obj);
-        await super.delete(key);
+        await TypedDB.prototype.delete.call(this, key);
         return key;
     }
 
     async transaction() {
-        const tx = await super.transaction();
+        const tx = await TypedDB.prototype.transaction.call(this);
         const that = this;
 
         tx.get = key => tx.getObject(key);

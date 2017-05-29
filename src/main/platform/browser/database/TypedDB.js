@@ -6,7 +6,7 @@ class TypedDB extends BaseTypedDB {
 
     async getObject(key) {
         if (this._cache[key] === undefined) {
-            this._cache[key] = await super.getObject(key);
+            this._cache[key] = await BaseTypedDB.prototype.getObject.call(this, key);
         }
         return this._cache[key];
     }
@@ -18,7 +18,7 @@ class TypedDB extends BaseTypedDB {
 
     async getString(key) {
         if (this._cache[key] === undefined) {
-            this._cache[key] = await super.getString(key);
+            this._cache[key] = await BaseTypedDB.prototype.getString.call(this, key);
         }
         return this._cache[key];
     }

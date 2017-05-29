@@ -134,7 +134,7 @@ class PeerConnector extends Observable {
                 return;
             }
 
-            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal), e => {
+            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal)).then(() => {
                 if (signal.type == 'offer') {
                     this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
                 }

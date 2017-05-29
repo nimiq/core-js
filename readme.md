@@ -21,7 +21,7 @@ npm install
 - `jasmine` runs the testsuite in NodeJs
 
 ### Build
-`gulp build` concatenates all sources into `/nimiq.js`
+`gulp build` concatenates all sources into `/nimiq-{web,node}.js`
 
 ### Run Browser client
 Open `clients/browser/index.html` in your browser

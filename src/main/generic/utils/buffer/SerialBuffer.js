@@ -6,6 +6,10 @@ class SerialBuffer extends Uint8Array {
         this._writePos = 0;
     }
 
+    subarray(start, end) {
+        return ArrayUtils.subarray(this, start, end);
+    }
+
     get readPos() {
         return this._readPos;
     }

@@ -11,20 +11,34 @@
     "url": "git+https://github.com/styppo/novicash.git"
   },
   "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.5.1",
+    "browserify": "^14.4.0",
     "eslint": "^3.19.0",
     "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
     "gulp-concat": "^2.6.1",
+    "gulp-connect": "^5.0.0",
     "gulp-eslint": "^3.0.1",
     "gulp-jasmine-livereload-task": "^0.11.0",
     "gulp-jscs": "^4.0.0",
+    "gulp-merge": "^0.1.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^2.6.0",
+    "gulp-streamify": "^1.0.2",
+    "gulp-util": "^3.0.8",
     "gulp-watch": "^4.3.11",
-    "jasmine2-custom-message": "^0.8.2",
     "jasmine-core": "*",
+    "jasmine2-custom-message": "^0.8.2",
     "jscs": "^3.0.7",
     "karma": "*",
+    "karma-chrome-launcher": "*",
     "karma-cli": "*",
+    "karma-firefox-launcher": "^1.0.1",
     "karma-jasmine": "*",
-    "karma-chrome-launcher": "*"
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
   },
   "author": "",
   "license": "ISC",
@@ -32,5 +46,7 @@
     "url": "https://github.com/styppo/novicash/issues"
   },
   "homepage": "https://github.com/styppo/novicash#readme",
-  "dependencies": {}
+  "dependencies": {
+    "babel-runtime": "^6.23.0"
+  }
 }
