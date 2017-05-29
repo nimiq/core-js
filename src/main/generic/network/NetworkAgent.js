@@ -38,9 +38,14 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        // Only relay addresses that the peer doesn't know yet.
+        // Only relay addresses that the peer doesn't know yet. If the address
+        // the peer knows is older than RELAY_THROTTLE, relay the address again.
         // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
-        const unknownAddresses = addresses.filter(addr => !this._knownAddresses.contains(addr));
+        const unknownAddresses = addresses.filter(addr => {
+            const knownAddress = this._knownAddresses.get(addr);
+            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
+        });
+
         if (unknownAddresses.length) {
             this._channel.addr(unknownAddresses);
 
@@ -109,7 +114,7 @@ class NetworkAgent extends Observable {
         // TODO randomize interval?
         this._timers.setInterval('connectivity',
             () => this._checkConnectivity(),
-            NetworkAgent.CONNECTIVITY_INTERVAL);
+            NetworkAgent.CONNECTIVITY_CHECK_INTERVAL);
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
@@ -248,6 +253,7 @@ class NetworkAgent extends Observable {
 NetworkAgent.HANDSHAKE_TIMEOUT = 3000; // ms
 NetworkAgent.PING_TIMEOUT = 10000; // ms
 NetworkAgent.GETADDR_TIMEOUT = 5000; // ms
-NetworkAgent.CONNECTIVITY_INTERVAL = 60000; // ms
+NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 60000; // ms
 NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
+NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
 Class.register(NetworkAgent);
