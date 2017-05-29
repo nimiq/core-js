@@ -236,7 +236,14 @@ class Network extends Observable {
 
     // This peer channel was banned.
     _onBan(channel, reason) {
-        this._addresses.ban(channel.peerAddress);
+        // TODO If this is an incoming connection, the peerAddres might not be set yet.
+        // Ban the netAddress in this case.
+        // XXX Should we always ban the netAddress as well?
+        if (channel.peerAddress) {
+            this._addresses.ban(channel.peerAddress);
+        } else {
+            // TODO ban netAddress
+        }
     }
 
     // Handshake with this peer was successful.
