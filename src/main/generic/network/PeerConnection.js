@@ -1,11 +1,11 @@
 class PeerConnection extends Observable {
-    constructor(nativeChannel, protocol, host, port) {
+    constructor(nativeChannel, protocol, netAddress, peerAddress) {
         super();
         this._channel = nativeChannel;
 
         this._protocol = protocol;
-        this._host = host;
-        this._port = port;
+        this._netAddress = netAddress;
+        this._peerAddress = peerAddress;
 
         this._bytesReceived = 0;
         this._bytesSent = 0;
@@ -39,8 +39,10 @@ class PeerConnection extends Observable {
         try {
             this._channel.send(msg);
             this._bytesSent += msg.byteLength || msg.length;
+            return true;
         } catch (e) {
-            console.error('Failed to send data over ' + this, msg, this);
+            console.error(`Failed to send data over ${this}: ${e}`);
+            return false;
         }
     }
 
@@ -49,27 +51,41 @@ class PeerConnection extends Observable {
         this._channel.close();
     }
 
+    ban(reason) {
+        console.warn(`Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
+        this._channel.close();
+        this.fire('ban', reason, this);
+    }
+
     equals(o) {
         return o instanceof PeerConnection
-            && this.protocol === o.protocol
-            && this.host === o.host
-            && this.port === o.port;
+            && this.peerAddress.equals(o.peerAddress)
+            && this.netAddress.equals(o.netAddress);
+    }
+
+    hashCode() {
+        return this._protocol + '|' + this._peerAddress.hashCode() + '|' + this._netAddress.hashCode();
     }
 
     toString() {
-        return 'PeerConnection{protocol=' + this._protocol + ', host=' + this._host + ', port=' + this._port + '}';
+        return `PeerConnection{protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
     }
 
     get protocol() {
         return this._protocol;
     }
 
-    get host() {
-        return this._host;
+    get peerAddress() {
+        return this._peerAddress;
     }
 
-    get port() {
-        return this._port;
+    // Set when the VERSION message is received on an incoming connection.
+    set peerAddress(value) {
+        this._peerAddress = value;
+    }
+
+    get netAddress() {
+        return this._netAddress;
     }
 
     get bytesReceived() {
@@ -80,7 +96,4 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 }
-PeerConnection.Protocol = {};
-PeerConnection.Protocol.WEBSOCKET = 'websocket';
-PeerConnection.Protocol.WEBRTC = 'webrtc';
 Class.register(PeerConnection);

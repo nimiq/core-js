@@ -73,14 +73,24 @@ class SerialBuffer extends Uint8Array {
         this._writePos += 8;
     }
 
-    readFixLengthString(length) {
+    readString(length) {
+        const bytes = this.read(length);
+        return BufferUtils.toAscii(bytes);
+    }
+    writeString(value, length) {
+        if (StringUtils.isMultibyte(value) || value.length !== length) throw 'Malformed value/length';
+        const bytes = BufferUtils.fromAscii(value);
+        this.write(bytes);
+    }
+
+    readPaddedString(length) {
         const bytes = this.read(length);
         let i = 0;
         while (i < length && bytes[i] != 0x0) i++;
         const view = new Uint8Array(bytes.buffer, bytes.byteOffset, i);
         return BufferUtils.toAscii(view);
     }
-    writeFixLengthString(value, length) {
+    writePaddedString(value, length) {
         if (StringUtils.isMultibyte(value) || value.length > length) throw 'Malformed value/length';
         const bytes = BufferUtils.fromAscii(value);
         this.write(bytes);

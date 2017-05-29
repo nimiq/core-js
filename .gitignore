@@ -1,3 +1,4 @@
+.DS_Store
 node_modules
 SpecRunner.html
 servers/peer-portal-node/node_modules
@@ -8,4 +9,5 @@ clients/nodejs/database
 clients/nodejs/localhost.*
 dist/web*
 dist/node*
-
+.idea
+*.iml

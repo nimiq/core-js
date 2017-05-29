@@ -1,8 +1,8 @@
 class SignalMessage extends Message {
     constructor(senderId, recipientId, payload) {
         super(Message.Type.SIGNAL);
-        if (!senderId || !NumberUtils.isUint64(senderId)) throw 'Malformed senderId';
-        if (!recipientId || !NumberUtils.isUint64(recipientId)) throw 'Malformed recipientId';
+        if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId ' + senderId;
+        if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId ' + recipientId;
         if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         this._senderId = senderId;
         this._recipientId = recipientId;
@@ -11,8 +11,8 @@ class SignalMessage extends Message {
 
     static unserialize(buf) {
         Message.unserialize(buf);
-        const senderId = buf.readUint64();
-        const recipientId = buf.readUint64();
+        const senderId = buf.readString(32);
+        const recipientId = buf.readString(32);
         const length = buf.readUint16();
         const payload = buf.read(length);
         return new SignalMessage(senderId, recipientId, payload);
@@ -21,8 +21,8 @@ class SignalMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint64(this._senderId);
-        buf.writeUint64(this._recipientId);
+        buf.writeString(this._senderId, 32);
+        buf.writeString(this._recipientId, 32);
         buf.writeUint16(this._payload.byteLength);
         buf.write(this._payload);
         return buf;
@@ -30,8 +30,8 @@ class SignalMessage extends Message {
 
     get serializedSize() {
         return super.serializedSize
-            + /*senderId*/ 8
-            + /*recipientId*/ 8
+            + /*senderId*/ 32
+            + /*recipientId*/ 32
             + /*payloadLength*/ 2
             + this._payload.byteLength;
     }

@@ -1,8 +1,4 @@
 class WebRtcConnector extends Observable {
-    static get CONNECT_TIMEOUT() {
-        return 20000; // ms
-    }
-
     constructor() {
         super();
         return this._init();
@@ -12,26 +8,35 @@ class WebRtcConnector extends Observable {
         this._connectors = {};
         this._config = await WebRtcConfig.get();
         this._timers = new Timers();
+
+        // Configure our peer address.
+        const signalId = await WebRtcConfig.mySignalId();
+        NetworkConfig.configurePeerAddress(signalId);
+
         return this;
     }
 
     connect(peerAddress) {
-        if (!Services.isWebRtc(peerAddress.services)) throw 'Malformed peerAddress';
-        const signalId = peerAddress.signalId;
+        if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
+        if (!peerAddress.signalChannel) throw 'peerAddress.signalChannel not set';
 
+        const signalId = peerAddress.signalId;
         if (this._connectors[signalId]) {
             console.warn('WebRtc: Already connecting/connected to ' + signalId);
-            return;
+            return false;
         }
 
-        const connector = new OutgoingPeerConnector(this._config, peerAddress.signalChannel, signalId);
+        const connector = new OutboundPeerConnector(this._config, peerAddress);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors[signalId] = connector;
 
         this._timers.setTimeout('connect_' + signalId, () => {
             delete this._connectors[signalId];
+            this._timers.clearTimeout('connect_' + signalId);
             this.fire('error', peerAddress);
         }, WebRtcConnector.CONNECT_TIMEOUT);
+
+        return true;
     }
 
     onSignal(channel, msg) {
@@ -39,12 +44,12 @@ class WebRtcConnector extends Observable {
         try {
             payload = JSON.parse(BufferUtils.toAscii(msg.payload));
         } catch (e) {
-            console.error('Failed to parse signal payload from ' + msg.senderId, msg);
+            console.error('Failed to parse signal payload from ' + msg.senderId);
             return;
         }
 
         if (!payload) {
-            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload', msg);
+            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload');
             return;
         }
 
@@ -61,19 +66,20 @@ class WebRtcConnector extends Observable {
                     return;
                 } else {
                     // We are going to accept the offer. Clear the connect timeout
-                    // from our previous outgoing connection attempt to this peer.
+                    // from our previous Outbound connection attempt to this peer.
                     console.log('Simultaneous connection, accepting offer from ' + msg.senderId + ' (>' + msg.recipientId + ')');
                     this._timers.clearTimeout('connect_' + msg.senderId);
                 }
             }
 
             // Accept the offer.
-            const connector = new IncomingPeerConnector(this._config, channel, msg.senderId, payload);
+            const connector = new InboundPeerConnector(this._config, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors[msg.senderId] = connector;
 
             this._timers.setTimeout('connect_' + msg.senderId, () => {
                 delete this._connectors[msg.senderId];
+                this._timers.clearTimeout('connect_' + msg.senderId);
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
 
@@ -102,36 +108,50 @@ class WebRtcConnector extends Observable {
 
     _onClose(signalId) {
         delete this._connectors[signalId];
+        this._timers.clearTimeout('connect_' + signalId);
     }
 }
+WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 
 class PeerConnector extends Observable {
-    constructor(config, signalChannel, remoteId) {
+    constructor(config, signalChannel, signalId) {
         super();
         this._signalChannel = signalChannel;
-        this._remoteId = remoteId;
+        this._signalId = signalId;
 
         this._rtcConnection = new RTCPeerConnection(config);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
+
+        this._lastIceCandidate = null;
     }
 
     onSignal(signal) {
         if (signal.sdp) {
+            // Validate that the signalId given in the session description matches
+            // the advertised signalId.
+            const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
+            if (signalId !== this._signalId) {
+                // TODO what to do here?
+                console.error('Invalid remote description received: expected signalId ' + this._signalId + ', got ' + signalId);
+                return;
+            }
+
             this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal)).then(() => {
                 if (signal.type == 'offer') {
                     this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
                 }
             });
         } else if (signal.candidate) {
-            this._rtcConnection.addIceCandidate(new RTCIceCandidate(signal))
-                .catch(e => e);
+            this._lastIceCandidate = new RTCIceCandidate(signal);
+            this._rtcConnection.addIceCandidate(this._lastIceCandidate)
+                .catch( e => e );
         }
     }
 
     _signal(signal) {
         this._signalChannel.signal(
-            NetworkUtils.mySignalId(),
-            this._remoteId,
+            NetworkConfig.myPeerAddress().signalId,
+            this._signalId,
             BufferUtils.fromAscii(JSON.stringify(signal))
         );
     }
@@ -148,38 +168,15 @@ class PeerConnector extends Observable {
         }, this._errorLog);
     }
 
-    _onP2PChannel(event) {
-        const channel = event.channel || event.target;
-        // TODO extract ip & port from session description
-        // XXX Use "peerId" as host in the meantime.
-        const host = this._remoteId;
-        const port = 420;
-        const conn = new PeerConnection(channel, PeerConnection.Protocol.WEBRTC, host, port);
-        this.fire('connection', conn);
-    }
-
     _errorLog(error) {
         console.error(error);
     }
-
-    // deprecated
-    _getPeerId() {
-        const desc = this._rtcConnection.remoteDescription;
-        return PeerConnector.sdpToPeerId(desc.sdp);
-    }
-
-    // deprecated
-    static sdpToPeerId(sdp) {
-        return sdp
-            .match('fingerprint:sha-256(.*)\r\n')[1]	// parse fingerprint
-            .replace(/:/g, '') 							// replace colons
-            .slice(1, 32); 								// truncate hash to 16 bytes
-    }
 }
 
-class OutgoingPeerConnector extends PeerConnector {
-    constructor(config, signalChannel, remoteId) {
-        super(config, signalChannel, remoteId);
+class OutboundPeerConnector extends PeerConnector {
+    constructor(config, peerAddress) {
+        super(config, peerAddress.signalChannel, peerAddress.signalId);
+        this._peerAddress = peerAddress;
 
         // Create offer.
         const channel = this._rtcConnection.createDataChannel('data-channel');
@@ -188,12 +185,52 @@ class OutgoingPeerConnector extends PeerConnector {
         this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
     }
 
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
+
+        // FIXME it is not really robust to assume that the last iceCandidate seen is
+        // actually the address that we connected to.
+        let netAddress;
+        if (this._lastIceCandidate) {
+            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+        } else {
+            // XXX Can/Why does this happen?
+            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            netAddress = new NetAddress(this._signalId, 1);
+        }
+
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
+        this.fire('connection', conn);
+    }
 }
 
-class IncomingPeerConnector extends PeerConnector {
-    constructor(config, signalChannel, remoteId, offer) {
-        super(config, signalChannel, remoteId);
+class InboundPeerConnector extends PeerConnector {
+    constructor(config, signalChannel, signalId, offer) {
+        super(config, signalChannel, signalId);
         this._rtcConnection.ondatachannel = e => this._onP2PChannel(e);
         this.onSignal(offer);
+    }
+
+    _onP2PChannel(event) {
+        const channel = event.channel || event.target;
+
+        // Speculatively generate a peerAddress for incoming peers to prevent
+        // duplicate connections. It will be updated once the peer sends its
+        // version message.
+        const peerAddress = new RtcPeerAddress(Services.WEBRTC, Date.now(), this._signalId, 0);
+
+        // FIXME it is not really robust to assume that the last iceCandidate seen is
+        // actually the address that we connected to.
+        let netAddress;
+        if (this._lastIceCandidate) {
+            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+        } else {
+            // XXX Can/Why does this happen?
+            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            netAddress = new NetAddress(this._signalId, 1);
+        }
+
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, peerAddress);
+        this.fire('connection', conn);
     }
 }
