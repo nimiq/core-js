@@ -15,21 +15,7 @@ module.exports = function (config) {
 
         // list of files / patterns to load in the browser
         files: [
-            './src/main/platform/browser/Class.js',
-            './src/main/generic/utils/Observable.js',
-            './src/main/platform/browser/**/*.js',
-            './src/main/generic/utils/**/*.js',
-            './src/main/generic/consensus/primitive/Primitive.js',
-            './src/main/generic/consensus/primitive/**/*.js',
-            './src/main/generic/consensus/Policy.js',
-            './src/main/generic/consensus/block/BlockUtils.js',
-            './src/main/generic/consensus/block/BlockHeader.js',
-            './src/main/generic/consensus/block/BlockBody.js',
-            './src/main/generic/network/struct/*.js',
-            './src/main/generic/network/message/Message.js',
-            './src/main/generic/network/message/*Message.js',
-            './src/main/generic/consensus/account/Address.js',
-            './src/main/generic/**/*.js',
+            'dist/web.js',
             'src/test/specs/**/Dummy.spec.js',
             'src/test/specs/**/*.spec.js'
         ],
