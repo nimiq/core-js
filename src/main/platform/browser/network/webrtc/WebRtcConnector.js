@@ -79,7 +79,7 @@ class WebRtcConnector extends Observable {
 
             this._timers.setTimeout('connect_' + msg.senderId, () => {
                 delete this._connectors[msg.senderId];
-                this._timers.clearTimeout('connect_' + signalId);
+                this._timers.clearTimeout('connect_' + msg.senderId);
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
 

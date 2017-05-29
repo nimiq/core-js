@@ -41,16 +41,16 @@ class NetworkAgent extends Observable {
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
-        const unknownAddresses = addresses.filter(addr => {
+        const filteredAddresses = addresses.filter(addr => {
             const knownAddress = this._knownAddresses.get(addr);
             return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
         });
 
-        if (unknownAddresses.length) {
-            this._channel.addr(unknownAddresses);
+        if (filteredAddresses.length) {
+            this._channel.addr(filteredAddresses);
 
             // We assume that the peer knows these addresses now.
-            for (let address of unknownAddresses) {
+            for (let address of filteredAddresses) {
                 this._knownAddresses.add(address);
             }
         }
@@ -181,11 +181,19 @@ class NetworkAgent extends Observable {
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.findByServices(msg.serviceMask);
 
-        // Exclude known addresses from the response.
-        const unknownAddresses = addresses.filter(addr => !this._knownAddresses.contains(addr));
+        const filteredAddresses = addresses.filter(addr => {
+            // Exclude RTC addresses that are already at MAX_DISTANCE.
+            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+                return false;
+            }
+
+            // Exclude known addresses from the response unless they are older than RELAY_THROTTLE.
+            const knownAddress = this._knownAddresses.get(addr);
+            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
+        });
 
         // Send the addresses back to the peer.
-        this._channel.addr(unknownAddresses);
+        this._channel.addr(filteredAddresses);
     }
 
 

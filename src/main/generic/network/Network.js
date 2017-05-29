@@ -311,7 +311,7 @@ class Network extends Observable {
 
             // XXX PeerChannel API doesn't fit here, no need to re-create the message.
             peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log(`Forwarding signal from ${msg.senderId} to ${msg.recipientId} (received from ${channel.peerAddress})`);
+            console.log(`Forwarding signal from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);
         }
     }
 
