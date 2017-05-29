@@ -149,6 +149,7 @@ gulp.task('build-web', function () {
     return gulp.src(sources.platform.browser.concat(sources.generic))
         .pipe(sourcemaps.init())
         .pipe(concat('web.js'))
+        .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
 });
