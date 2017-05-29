@@ -453,9 +453,9 @@ PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    //new WsPeerAddress(Services.WEBSOCKET, 0, "alpacash.com", 8080),
+    new WsPeerAddress(Services.WEBSOCKET, 0, "alpacash.com", 8080),
     new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq1.styp-rekowsky.de", 8080),
-    //new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq2.styp-rekowsky.de", 8080)
+    new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq2.styp-rekowsky.de", 8080)
 ];
 Class.register(PeerAddresses);
 
