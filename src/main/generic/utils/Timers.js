@@ -19,6 +19,10 @@ class Timers {
         this._timeouts[key] = setTimeout(fn, waitTime);
     }
 
+    timeoutExists(key) {
+        return this._timeouts[key] !== undefined;
+    }
+
     setInterval(key, fn, intervalTime) {
         if (this._intervals[key]) throw 'Duplicate interval for key ' + key;
         this._intervals[key] = setInterval(fn, intervalTime);
@@ -32,6 +36,10 @@ class Timers {
     resetInterval(key, fn, intervalTime) {
         clearInterval(this._intervals[key]);
         this._intervals[key] = setInterval(fn, intervalTime);
+    }
+
+    intervalExists(key) {
+        return this._intervals[key] !== undefined;
     }
 
     clearAll() {
