@@ -5,9 +5,6 @@ class NetworkAgent extends Observable {
         this._addresses = addresses;
         this._channel = channel;
 
-        // Flag indicating that we have completed handshake with the peer.
-        this._connected = false;
-
         // The peer object we create after the handshake completes.
         this._peer = null;
 
@@ -16,6 +13,15 @@ class NetworkAgent extends Observable {
 
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
+
+        // True if we have received the peer's version message.
+        this._versionReceived = false;
+
+        // True if we have successfully sent our version message.
+        this._versionSent = false;
+
+        // Number of times we have tried to send out the version message.
+        this._versionAttempts = 0;
 
         // Listen to network/control messages from the peer.
         channel.on('version',    msg => this._onVersion(msg));
@@ -34,7 +40,7 @@ class NetworkAgent extends Observable {
 
     relayAddresses(addresses) {
         // Don't relay if the handshake hasn't finished yet.
-        if (!this._connected) {
+        if (!this._versionReceived || !this._versionSent) {
             return;
         }
 
@@ -50,7 +56,7 @@ class NetworkAgent extends Observable {
             this._channel.addr(filteredAddresses);
 
             // We assume that the peer knows these addresses now.
-            for (let address of filteredAddresses) {
+            for (const address of filteredAddresses) {
                 this._knownAddresses.add(address);
             }
         }
@@ -61,10 +67,33 @@ class NetworkAgent extends Observable {
 
     async _handshake() {
         // Kick off the handshake by telling the peer our version, network address & blockchain height.
-        this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height);
+        // Firefox sends the data-channel-open event too early, so sending the version message might fail.
+        // Try again in this case.
+        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height)) {
+            this._versionAttempts++;
+            if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
+                this._channel.close('sending of version message failed');
+                return;
+            }
+
+            setTimeout(this._handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
+            return;
+        }
+
+        this._versionSent = true;
 
         // Drop the peer if it doesn't send us a version message.
-        this._timers.setTimeout('version', () => this._channel.close('version timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
+        // Only do this if we haven't received the peer's version message already.
+        if (!this._versionReceived) {
+            // TODO Should we ban instead?
+            this._timers.setTimeout('version', () => {
+                this._channel.close('version timeout');
+                this._timers.clearTimeout('version');
+            }, NetworkAgent.HANDSHAKE_TIMEOUT);
+        } else {
+            // The peer has sent us his version message already.
+            this._finishHandshake();
+        }
     }
 
     async _onVersion(msg) {
@@ -93,16 +122,12 @@ class NetworkAgent extends Observable {
         }
         this._channel.peerAddress = msg.peerAddress;
 
-        // Handshake completed, connection established.
-        this._connected = true;
-
-        // Tell listeners about the new peer that connected.
+        // Create peer object.
         this._peer = new Peer(
             this._channel,
             msg.version,
             msg.startHeight
         );
-        this.fire('handshake', this._peer, this);
 
         // Remember that the peer has sent us this address.
         this._knownAddresses.add(msg.peerAddress);
@@ -110,6 +135,14 @@ class NetworkAgent extends Observable {
         // Store/update the peerAddress.
         this._addresses.add(this._channel, msg.peerAddress);
 
+        this._versionReceived = true;
+
+        if (this._versionSent) {
+            this._finishHandshake();
+        }
+    }
+
+    _finishHandshake() {
         // Setup regular connectivity check.
         // TODO randomize interval?
         this._timers.setInterval('connectivity',
@@ -120,6 +153,9 @@ class NetworkAgent extends Observable {
         this._timers.setInterval('announce-addr',
             () => this._channel.addr([NetworkConfig.myPeerAddress()]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
+
+        // Tell listeners about the new peer that connected.
+        this.fire('handshake', this._peer, this);
 
         // Request new network addresses from the peer.
         this._requestAddresses();
@@ -136,6 +172,7 @@ class NetworkAgent extends Observable {
         // fire the address event with empty addresses.
         this._timers.setTimeout('getaddr', () => {
             console.warn('Peer ' + this._channel + ' did not send addresses when asked for');
+            this._timers.clearTimeout('getaddr');
             this.fire('addresses', [], this);
         }, NetworkAgent.GETADDR_TIMEOUT);
     }
@@ -148,8 +185,8 @@ class NetworkAgent extends Observable {
 
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > 1000) {
-            console.warn('Rejecting ADDR message - too many addresses');
-            this._channel.ban('ADDR message too large');
+            console.warn('Rejecting addr message - too many addresses');
+            this._channel.ban('addr message too large');
             return;
         }
 
@@ -238,16 +275,13 @@ class NetworkAgent extends Observable {
     }
 
     _canAcceptMessage(msg) {
-        const isHandshakeMsg = msg.type == Message.Type.VERSION;
-
-        // We accept handshake messages only if we are not connected, all other
-        // messages otherwise.
-        const accept = isHandshakeMsg != this._connected;
-        if (!accept) {
-            console.warn('Discarding message from ' + this._channel
-                + ' - not acceptable in state connected=' + this._connected, msg);
+        // The first message must be the version message.
+        if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
+            console.warn(`Discarding ${msg.type} message from ${this._channel}`
+                + ' - no version message received previously');
+            return false;
         }
-        return accept;
+        return true;
     }
 
     get channel() {
@@ -258,10 +292,12 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
-NetworkAgent.HANDSHAKE_TIMEOUT = 3000; // ms
-NetworkAgent.PING_TIMEOUT = 10000; // ms
-NetworkAgent.GETADDR_TIMEOUT = 5000; // ms
-NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 60000; // ms
+NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
+NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
+NetworkAgent.GETADDR_TIMEOUT = 1000 * 5; // 5 seconds
+NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
 NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
-NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
+NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 5; // 5 minutes
+NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
+NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
 Class.register(NetworkAgent);

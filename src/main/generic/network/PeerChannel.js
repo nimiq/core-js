@@ -35,7 +35,7 @@ class PeerChannel extends Observable {
     }
 
     _send(msg) {
-        this._conn.send(msg.serialize());
+        return this._conn.send(msg.serialize());
     }
 
     close(reason) {
@@ -47,63 +47,63 @@ class PeerChannel extends Observable {
     }
 
     version(peerAddress, startHeight) {
-        this._send(new VersionMessage(1, peerAddress, startHeight));
+        return this._send(new VersionMessage(1, peerAddress, startHeight));
     }
 
     verack() {
-        this._send(new VerAckMessage());
+        return this._send(new VerAckMessage());
     }
 
     inv(vectors) {
-        this._send(new InvMessage(vectors));
+        return this._send(new InvMessage(vectors));
     }
 
     notfound(vectors) {
-        this._send(new NotFoundMessage(vectors));
+        return this._send(new NotFoundMessage(vectors));
     }
 
     getdata(vectors) {
-        this._send(new GetDataMessage(vectors));
+        return this._send(new GetDataMessage(vectors));
     }
 
     block(block) {
-        this._send(new BlockMessage(block));
+        return this._send(new BlockMessage(block));
     }
 
     tx(transaction) {
-        this._send(new TxMessage(transaction));
+        return this._send(new TxMessage(transaction));
     }
 
     getblocks(hashes, hashStop = new Hash()) {
-        this._send(new GetBlocksMessage(hashes, hashStop));
+        return this._send(new GetBlocksMessage(hashes, hashStop));
     }
 
     mempool() {
-        this._send(new MempoolMessage());
+        return this._send(new MempoolMessage());
     }
 
     reject(messageType, code, reason, extraData) {
-        this._send(new RejectMessage(messageType, code, reason, extraData));
+        return this._send(new RejectMessage(messageType, code, reason, extraData));
     }
 
     addr(addresses) {
-        this._send(new AddrMessage(addresses));
+        return this._send(new AddrMessage(addresses));
     }
 
     getaddr(serviceMask) {
-        this._send(new GetAddrMessage(serviceMask));
+        return this._send(new GetAddrMessage(serviceMask));
     }
 
     ping(nonce) {
-        this._send(new PingMessage(nonce));
+        return this._send(new PingMessage(nonce));
     }
 
     pong(nonce) {
-        this._send(new PongMessage(nonce));
+        return this._send(new PongMessage(nonce));
     }
 
     signal(senderId, recipientId, payload) {
-        this._send(new SignalMessage(senderId, recipientId, payload));
+        return this._send(new SignalMessage(senderId, recipientId, payload));
     }
 
     equals(o) {

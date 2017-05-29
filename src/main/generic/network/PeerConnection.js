@@ -39,8 +39,10 @@ class PeerConnection extends Observable {
         try {
             this._channel.send(msg);
             this._bytesSent += msg.byteLength || msg.length;
+            return true;
         } catch (e) {
             console.error(`Failed to send data over ${this}: ${e}`);
+            return false;
         }
     }
 
