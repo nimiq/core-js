@@ -255,6 +255,9 @@ class Network extends Observable {
             return;
         }
 
+        // Tell others about the address that we just connected to.
+        this._relayAddresses([peer.peerAddress]);
+
         // Increment the peerCount.
         this._peerCount++;
 
