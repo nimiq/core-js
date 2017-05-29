@@ -55,11 +55,6 @@ describe('Mempool', () => {
             // Set the valid transaction signature to test different scenarios
             transaction.signature = validSignature;
 
-            // Make sure the transaction fails due to an invalid sender balance
-            result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
-            expect(console.warn).toHaveBeenCalledWith('Mempool rejected transaction - sender account unknown');
-
             // Set the balance to a lower number than the transaction amount
             await accounts._tree.put(wallet.address, new Balance(745, 42));
 
@@ -118,8 +113,8 @@ describe('Mempool', () => {
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const transaction = await wallets[i].createTransaction(new Address(Dummy.address1), 234, 1, 42);
-                const result = await mempool.pushTransaction(transaction);
+                const transaction = await wallets[i].createTransaction(new Address(Dummy.address1), 234, 1, 42); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);
             }

@@ -36,8 +36,8 @@ class Accounts extends Observable {
         //return treeTx.commit();
     }
 
-    getBalance(address) {
-        return this._tree.get(address);
+    async getBalance(address) {
+        return await this._tree.get(address) || Balance.INITIAL;
     }
 
     async _execute(treeTx, block, operator) {
@@ -52,8 +52,8 @@ class Accounts extends Observable {
     }
 
     async _executeTransactions(treeTx, body, op) {
-        for (let tx of body.transactions) {
-            await this._executeTransaction(treeTx, tx, op);
+        for (const tx of body.transactions) {
+            await this._executeTransaction(treeTx, tx, op); // eslint-disable-line no-await-in-loop
         }
     }
 
