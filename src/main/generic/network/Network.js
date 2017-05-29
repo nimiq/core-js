@@ -161,7 +161,7 @@ class Network extends Observable {
         }
         this._connectionCounts.put(conn.netAddress, numConnections);
 
-        console.log(`Connection established (${Protocol.name(conn.protocol)}) ${conn.peerAddress} ${conn.netAddress} (${numConnections})`);
+        console.log(`Connection established ${conn.peerAddress} ${conn.netAddress} (${numConnections})`);
 
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));

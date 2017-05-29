@@ -66,7 +66,7 @@ class PeerConnection extends Observable {
     }
 
     toString() {
-        return `PeerConnection{protocol=${Protocol.name(this._protocol)}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+        return `PeerConnection{protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
     }
 
     get protocol() {
