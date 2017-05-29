@@ -30,6 +30,7 @@ class WebSocketConnector extends Observable {
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
         ws.onopen = () => this._onConnection(ws, peerAddress);
         ws.onerror = e => this.fire('error', peerAddress, e);
+        return true;
     }
 
     _onConnection(ws, peerAddress) {

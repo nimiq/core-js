@@ -77,17 +77,16 @@ class NetworkAgent extends Observable {
 
         // Check that the given peerAddress matches the one we expect.
         // In case of incoming WebSocket connections, this is the first time we
-        // see the remote peer's peerAddress. Set it in this case.
+        // see the remote peer's peerAddress.
         // TODO We should validate that the given peerAddress actually resolves
-        // to the peer's netAddress!!
+        // to the peer's netAddress!
         if (this._channel.peerAddress) {
             if (!this._channel.peerAddress.equals(msg.peerAddress)) {
                 this._channel.close('unexpected peerAddress in version message');
                 return;
             }
-        } else {
-            this._channel.peerAddress = msg.peerAddress;
         }
+        this._channel.peerAddress = msg.peerAddress;
 
         // Handshake completed, connection established.
         this._connected = true;

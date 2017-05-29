@@ -23,7 +23,7 @@ class WebRtcConnector extends Observable {
         const signalId = peerAddress.signalId;
         if (this._connectors[signalId]) {
             console.warn('WebRtc: Already connecting/connected to ' + signalId);
-            return;
+            return false;
         }
 
         const connector = new OutboundPeerConnector(this._config, peerAddress);
@@ -35,6 +35,8 @@ class WebRtcConnector extends Observable {
             this._timers.clearTimeout('connect_' + signalId);
             this.fire('error', peerAddress);
         }, WebRtcConnector.CONNECT_TIMEOUT);
+
+        return true;
     }
 
     onSignal(channel, msg) {
@@ -45,8 +47,6 @@ class WebRtcConnector extends Observable {
             console.error('Failed to parse signal payload from ' + msg.senderId);
             return;
         }
-
-        console.log('Received signal from ' + msg.senderId, payload);
 
         if (!payload) {
             console.warn('Discarding signal from ' + msg.senderId + ' - empty payload');
@@ -186,9 +186,17 @@ class OutboundPeerConnector extends PeerConnector {
     _onP2PChannel(event) {
         const channel = event.channel || event.target;
 
-        // FIXME it is not robust to assume that the last iceCandidate seen is
+        // FIXME it is not really robust to assume that the last iceCandidate seen is
         // actually the address that we connected to.
-        const netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+        let netAddress;
+        if (this._lastIceCandidate) {
+            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+        } else {
+            // XXX Can/Why does this happen?
+            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            netAddress = new NetAddress(this._signalId, 1);
+        }
+
         const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
         this.fire('connection', conn);
     }
@@ -204,10 +212,23 @@ class InboundPeerConnector extends PeerConnector {
     _onP2PChannel(event) {
         const channel = event.channel || event.target;
 
-        // FIXME it is not robust to assume that the last iceCandidate seen is
+        // Speculatively generate a peerAddress for incoming peers to prevent
+        // duplicate connections. It will be updated once the peer sends its
+        // version message.
+        const peerAddress = new RtcPeerAddress(Services.WEBRTC, Date.now(), this._signalId, 0);
+
+        // FIXME it is not really robust to assume that the last iceCandidate seen is
         // actually the address that we connected to.
-        const netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
-        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, /*peerAddress*/ null);
+        let netAddress;
+        if (this._lastIceCandidate) {
+            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+        } else {
+            // XXX Can/Why does this happen?
+            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            netAddress = new NetAddress(this._signalId, 1);
+        }
+
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, peerAddress);
         this.fire('connection', conn);
     }
 }

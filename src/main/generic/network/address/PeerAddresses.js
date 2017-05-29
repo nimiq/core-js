@@ -50,7 +50,6 @@ class PeerAddresses extends Observable {
         // Return the candidate with the highest score.
         const scores = candidates.keys().sort((a, b) => b - a);
         const winner = candidates.get(scores[0]);
-        console.log(`Picked peerAddress ${winner} with score ${scores[0]}`);
         return winner.peerAddress;
     }
 
@@ -181,6 +180,8 @@ class PeerAddresses extends Observable {
         // Check if we already know this address.
         const peerAddressState = this._store.get(peerAddress);
         if (peerAddressState) {
+            const knownAddress = peerAddressState.peerAddress;
+
             // Ignore address if it is banned.
             if (peerAddressState.state === PeerAddressState.BANNED) {
                 return false;
@@ -192,15 +193,16 @@ class PeerAddresses extends Observable {
             }
 
             // Ignore address if we already know this address with a more recent timestamp.
-            if (peerAddressState.peerAddress.timestamp >= peerAddress.timestamp) {
+            if (knownAddress.timestamp >= peerAddress.timestamp) {
                 return false;
             }
 
             // Ignore address if we already know a better route to this address.
             // TODO save anyways to have a backup route?
-            if (peerAddress.protocol === Protocol.RTC
-                    && peerAddressState.peerAddress.distance < peerAddress.distance) {
-                console.log('Ignoring address ' + peerAddress + ' - better route ' + peerAddressState.peerAddress + ' exists');
+            if (peerAddress.protocol === Protocol.RTC && knownAddress.distance < peerAddress.distance) {
+                console.log(`Ignoring address ${peerAddress} (distance ${peerAddress.distance} `
+                    + `via ${channel.peerAddress}) - better route with distance ${knownAddress.distance} `
+                    + `via ${knownAddress.signalChannel.peerAddress} exists`);
                 return false;
             }
         }
@@ -213,7 +215,12 @@ class PeerAddresses extends Observable {
         }
 
         // Store the new/updated address.
-        this._store.add(new PeerAddressState(peerAddress));
+        if (peerAddressState) {
+            peerAddressState.peerAddress = peerAddress;
+        } else {
+            this._store.add(new PeerAddressState(peerAddress));
+        }
+
         return true;
     }
 
@@ -221,10 +228,13 @@ class PeerAddresses extends Observable {
     connecting(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
-            throw 'Unknown peerAddress';
+            return;
         }
         if (peerAddressState.state === PeerAddressState.BANNED) {
             throw 'Connecting to banned address';
+        }
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            throw 'Duplicate connection to ' + peerAddress;
         }
 
         peerAddressState.state = PeerAddressState.CONNECTING;
@@ -237,6 +247,7 @@ class PeerAddresses extends Observable {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
+            this._store.add(peerAddressState);
         }
         if (peerAddressState.state === PeerAddressState.BANNED) {
             throw 'Connected to banned address';
@@ -262,11 +273,12 @@ class PeerAddresses extends Observable {
     disconnected(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
-            throw 'Unknown peerAddress';
+            return;
         }
 
-        if (peerAddress.protocol === Protocol.RTC) {
-            this._deleteBySignalChannel(peerAddressState.peerAddress.signalChannel);
+        const channel = peerAddressState.peerAddress.signalChannel;
+        if (peerAddress.protocol === Protocol.RTC && channel) {
+            this._deleteBySignalChannel(channel);
         }
 
         switch (peerAddress.protocol) {
@@ -281,7 +293,12 @@ class PeerAddresses extends Observable {
         }
 
         if (peerAddressState.state !== PeerAddressState.BANNED) {
-            peerAddressState.state = PeerAddressState.TRIED;
+            // XXX Immediately delete WebRTC addresses when they disconnect.
+            if (peerAddress.protocol === Protocol.RTC) {
+                this._delete(peerAddress);
+            } else {
+                peerAddressState.state = PeerAddressState.TRIED;
+            }
         }
     }
 
@@ -289,7 +306,7 @@ class PeerAddresses extends Observable {
     unreachable(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
-            throw 'Unknown peerAddress';
+            return;
         }
 
         if (peerAddressState.state === PeerAddressState.BANNED) {
@@ -438,7 +455,7 @@ Class.register(PeerAddresses);
 
 class PeerAddressState {
     constructor(peerAddress) {
-        this._peerAddress = peerAddress;
+        this.peerAddress = peerAddress;
 
         this.state = PeerAddressState.NEW;
         this.lastConnected = -1;
@@ -446,21 +463,17 @@ class PeerAddressState {
         this.bannedUntil = -1;
     }
 
-    get peerAddress() {
-        return this._peerAddress;
-    }
-
     equals(o) {
         return o instanceof PeerAddressState
-            && this._peerAddress.equals(o.peerAddress);
+            && this.peerAddress.equals(o.peerAddress);
     }
 
     hashCode() {
-        return this._peerAddress.hashCode();
+        return this.peerAddress.hashCode();
     }
 
     toString() {
-        return `PeerAddressState{peerAddress=${this._peerAddress}, state=${this.state}, `
+        return `PeerAddressState{peerAddress=${this.peerAddress}, state=${this.state}, `
             + `lastConnected=${this.lastConnected}, failedAttempts=${this.failedAttempts}, `
             + `bannedUntil=${this.bannedUntil}}`;
     }

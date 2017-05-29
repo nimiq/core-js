@@ -13,5 +13,6 @@ class WebSocketConnector extends Observable {
             this.fire('connection', conn);
         };
         ws.onerror = e => this.fire('error', peerAddress, e);
+        return true;
     }
 }

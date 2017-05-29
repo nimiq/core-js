@@ -123,6 +123,10 @@ class PeerChannel extends Observable {
         return this._conn;
     }
 
+    get protocol() {
+        return this._conn.protocol;
+    }
+
     get peerAddress() {
         return this._conn.peerAddress;
     }

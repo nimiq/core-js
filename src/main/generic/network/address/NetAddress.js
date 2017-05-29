@@ -39,7 +39,15 @@ class NetAddress {
     }
 
     toString() {
-        return `NetAddress{host=${this._host}, port=${this._port}}`;
+        return `${this._host}:${this._port}`;
+    }
+
+    get host() {
+        return this._host;
+    }
+
+    get port() {
+        return this._port;
     }
 }
 Class.register(NetAddress);

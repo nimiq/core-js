@@ -62,18 +62,22 @@ class PeerConnection extends Observable {
     }
 
     hashCode() {
-        return this.toString();
+        return this._protocol + '|' + this._peerAddress.hashCode() + '|' + this._netAddress.hashCode();
     }
 
     toString() {
-        return `PeerConnection{peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+        return `PeerConnection{protocol=${Protocol.name(this._protocol)}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+    }
+
+    get protocol() {
+        return this._protocol;
     }
 
     get peerAddress() {
         return this._peerAddress;
     }
 
-    // Set when the VERSION message is received on an incoming WebSocket connection.
+    // Set when the VERSION message is received on an incoming connection.
     set peerAddress(value) {
         this._peerAddress = value;
     }
