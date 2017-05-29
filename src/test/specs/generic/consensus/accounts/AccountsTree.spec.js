@@ -261,7 +261,7 @@ describe('AccountsTree', () => {
         test();
     });
 
-    it('represents the inital balance of an account implicitly', (done) => {
+    it('represents the initial balance of an account implicitly', (done) => {
         // Balance { value:0, nonce:0 } may not be stored explicitly
 
         async function test() {
@@ -320,4 +320,29 @@ describe('AccountsTree', () => {
         test();
     });
 
+    it('can handle an account balance decreasing to zero', done => {
+        async function test() {
+            const tree = await AccountsTree.createVolatile();
+
+            const value1 = 1234;
+            const nonce1 = 0;
+            const balance1 = new Balance(value1, nonce1);
+            const address = new Address(BufferUtils.fromBase64(Dummy.address1));
+
+            await tree.put(address, balance1);
+
+            const value2 = 0;
+            const nonce2 = 1;
+            const balance2 = new Balance(value2, nonce2);
+
+            await tree.put(address, balance2);
+
+            const balance3 = await tree.get(address);
+
+            const value3 = balance3.value;
+            expect(value3).toBe(value2);
+            done();
+        }
+        test();
+    });
 });
