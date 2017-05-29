@@ -18,8 +18,8 @@ console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ',
 
 // XXX Configure Core.
 // TODO Create config/options object and pass to Core.get()/init().
-NetworkUtils.configureNetAddress(host, port);
-NetworkUtils.configureSSL(key, cert);
+NetworkConfig.configurePeerAddress(host, port);
+NetworkConfig.configureSSL(key, cert);
 
 Core.init($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());

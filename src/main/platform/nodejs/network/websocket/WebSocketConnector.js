@@ -2,15 +2,15 @@ const WebSocket = require('ws');
 const https = require('https');
 const fs = require('fs');
 
-
 class WebSocketConnector extends Observable {
     constructor() {
         super();
-        const port = NetworkUtils.myNetAddress().port;
+        const port = NetworkConfig.myPeerAddress().port;
+        const sslConfig = NetworkConfig.getSSLConfig();
 
         const options = {
-            key: fs.readFileSync(NetworkUtils.getSSLConfig().key),
-            cert: fs.readFileSync(NetworkUtils.getSSLConfig().cert)
+            key: fs.readFileSync(sslConfig.key),
+            cert: fs.readFileSync(sslConfig.cert)
         };
 
         const httpsServer = https.createServer(options, (req, res) => {
@@ -19,21 +19,23 @@ class WebSocketConnector extends Observable {
         }).listen(port);
 
         this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', ws => this._onConnection(ws));
+        this._wss.on('connection', ws => this._onConnection(ws, null));
 
         console.log('WebSocketConnector listening on port ' + port);
     }
 
     connect(peerAddress) {
-        if (!Services.isWebSocket(peerAddress.services)) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== Protocol.WS) throw 'Malformed peerAddress';
 
         const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
-        ws.onopen = () => this._onConnection(ws);
+        ws.onopen = () => this._onConnection(ws, peerAddress);
         ws.onerror = e => this.fire('error', peerAddress, e);
+        return true;
     }
 
-    _onConnection(ws) {
-        const conn = new PeerConnection(ws, PeerConnection.Protocol.WEBSOCKET, ws._socket.remoteAddress, ws._socket.remotePort);
+    _onConnection(ws, peerAddress) {
+        const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress, ws._socket.remotePort);
+        const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
         this.fire('connection', conn);
     }
 }

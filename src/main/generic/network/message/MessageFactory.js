@@ -9,7 +9,6 @@ class MessageFactory {
 }
 MessageFactory.CLASSES = {};
 MessageFactory.CLASSES[Message.Type.VERSION] = VersionMessage;
-MessageFactory.CLASSES[Message.Type.VERACK] = VerAckMessage;
 MessageFactory.CLASSES[Message.Type.INV] = InvMessage;
 MessageFactory.CLASSES[Message.Type.GETDATA] = GetDataMessage;
 MessageFactory.CLASSES[Message.Type.NOTFOUND] = NotFoundMessage;

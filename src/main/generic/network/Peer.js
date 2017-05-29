@@ -1,8 +1,7 @@
 class Peer {
-    constructor(channel, version, netAddress, startHeight) {
+    constructor(channel, version, startHeight) {
         this._channel = channel;
         this._version = version;
-        this._netAddress = netAddress;
         this._startHeight = startHeight;
     }
 
@@ -14,24 +13,30 @@ class Peer {
         return this._version;
     }
 
-    get netAddress() {
-        return this._netAddress;
-    }
-
     get startHeight() {
         return this._startHeight;
     }
 
+    get peerAddress() {
+        return this._channel.peerAddress;
+    }
+
+    get netAddress() {
+        return this._channel.netAddress;
+    }
+
     equals(o) {
         return o instanceof Peer
-            && this._channel.equals(o.channel)
-            && this._version === o.version
-            && this._netAddress.equals(o.netAddress);
+            && this._channel.equals(o.channel);
+    }
+
+    hashCode() {
+        return this._channel.hashCode();
     }
 
     toString() {
-        return "Peer{channel=" + this._channel + ", version=" + this._version
-            + ", netAddress=" + this._netAddress + "}";
+        return `Peer{version=${this._version}, startHeight=${this._startHeight}, `
+            + `peerAddress=${this.peerAddress}, netAddress=${this.netAddress}}`;
     }
 }
 Class.register(Peer);

@@ -1,6 +1,3 @@
-// TODO: verify values and nonces of senders
-// TODO: check state-root after revert
-// TODO V2: hide all private functions in constructor scope
 class Accounts extends Observable {
     static async getPersistent() {
         const tree = await AccountsTree.getPersistent();
@@ -26,15 +23,17 @@ class Accounts extends Observable {
 
         // TODO we should validate if the block is going to be applied correctly.
 
-        const treeTx = await this._tree.transaction();
+        // FIXME Firefox apparently has problems with transactions!
+        const treeTx = this._tree; //await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a + b);
-        return await treeTx.commit();
+        //return treeTx.commit();
     }
 
     async revertBlock(block) {
-        const treeTx = await this._tree.transaction();
+        // FIXME Firefox apparently has problems with transactions!
+        const treeTx = this._tree; //await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a - b);
-        return await treeTx.commit();
+        //return treeTx.commit();
     }
 
     getBalance(address) {

@@ -1,44 +1,27 @@
 class NetworkAgent extends Observable {
-    static get HANDSHAKE_TIMEOUT() {
-        return 10000; // ms
-    }
-
-    static get PING_TIMEOUT() {
-        return 10000; // ms
-    }
-
-    static get GETADDR_TIMEOUT() {
-        return 5000; // ms
-    }
-
-    static get CONNECTIVITY_INTERVAL() {
-        return 60000; // ms
-    }
-
-    static get ANNOUNCE_ADDR_INTERVAL() {
-        return 1000 * 60 * 3; // 3 minutes
-    }
-
     constructor(blockchain, addresses, channel) {
         super();
         this._blockchain = blockchain;
         this._addresses = addresses;
         this._channel = channel;
 
-        // Flag indicating that we have completed handshake with the peer.
-        this._connected = false;
-
-        // The version message announced by the peer.
-        this._version = null;
-
         // The peer object we create after the handshake completes.
         this._peer = null;
 
-        // All addresses that we think the remote peer knows.
-        this._knownAddresses = {};
+        // All peerAddresses that we think the remote peer knows.
+        this._knownAddresses = new HashSet();
 
         // Helper object to keep track of timeouts & intervals.
         this._timers = new Timers();
+
+        // True if we have received the peer's version message.
+        this._versionReceived = false;
+
+        // True if we have successfully sent our version message.
+        this._versionSent = false;
+
+        // Number of times we have tried to send out the version message.
+        this._versionAttempts = 0;
 
         // Listen to network/control messages from the peer.
         channel.on('version',    msg => this._onVersion(msg));
@@ -55,15 +38,27 @@ class NetworkAgent extends Observable {
         this._handshake();
     }
 
-
-    /* Public API */
-
     relayAddresses(addresses) {
-        // Only relay addresses that the peer doesn't know yet.
+        // Don't relay if the handshake hasn't finished yet.
+        if (!this._versionReceived || !this._versionSent) {
+            return;
+        }
+
+        // Only relay addresses that the peer doesn't know yet. If the address
+        // the peer knows is older than RELAY_THROTTLE, relay the address again.
         // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
-        const unknownAddresses = addresses.filter(addr => !this._knownAddresses[addr]);
-        if (unknownAddresses.length) {
-            this._channel.addr(unknownAddresses);
+        const filteredAddresses = addresses.filter(addr => {
+            const knownAddress = this._knownAddresses.get(addr);
+            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
+        });
+
+        if (filteredAddresses.length) {
+            this._channel.addr(filteredAddresses);
+
+            // We assume that the peer knows these addresses now.
+            for (const address of filteredAddresses) {
+                this._knownAddresses.add(address);
+            }
         }
     }
 
@@ -72,90 +67,95 @@ class NetworkAgent extends Observable {
 
     async _handshake() {
         // Kick off the handshake by telling the peer our version, network address & blockchain height.
-        this._channel.version(NetworkUtils.myNetAddress(), this._blockchain.height);
+        // Firefox sends the data-channel-open event too early, so sending the version message might fail.
+        // Try again in this case.
+        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height)) {
+            this._versionAttempts++;
+            if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
+                this._channel.close('sending of version message failed');
+                return;
+            }
 
-        // Drop the peer if it doesn't acknowledge our version message.
-        this._timers.setTimeout('verack', () => this._channel.close('verack timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
+            setTimeout(this._handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
+            return;
+        }
+
+        this._versionSent = true;
 
         // Drop the peer if it doesn't send us a version message.
-        this._timers.setTimeout('version', () => this._channel.close('version timeout'), NetworkAgent.HANDSHAKE_TIMEOUT);
+        // Only do this if we haven't received the peer's version message already.
+        if (!this._versionReceived) {
+            // TODO Should we ban instead?
+            this._timers.setTimeout('version', () => {
+                this._channel.close('version timeout');
+                this._timers.clearTimeout('version');
+            }, NetworkAgent.HANDSHAKE_TIMEOUT);
+        } else {
+            // The peer has sent us his version message already.
+            this._finishHandshake();
+        }
     }
 
     async _onVersion(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[VERSION] startHeight=' + msg.startHeight);
 
-        // Reject duplicate version messages.
-        if (this._version) {
-            console.warn('Rejecting duplicate version message from ' + this._channel);
-            this._channel.reject('version', RejectMessage.Code.DUPLICATE);
-            return;
-        }
-
         // TODO actually check version, services and stuff.
-
-        // Distance to self must always be zero.
-        if (msg.netAddress.distance !== 0) {
-            console.warn('Invalid version message from ' + this._channel + ' - distance != 0');
-            this._channel.close('invalid version');
-            return;
-        }
 
         // Clear the version timeout.
         this._timers.clearTimeout('version');
 
-        // Acknowledge the receipt of the version message.
-        this._channel.verack();
-
-        // Store the version message.
-        this._version = msg;
-    }
-
-    _onVerAck(msg) {
-        // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
-
-        console.log('[VERACK]');
-
-        // Clear the version message timeout.
-        this._timers.clearTimeout('verack');
-
-        // Fail if the peer didn't send a version message first.
-        if (!this._version) {
-            this._channel.close('verack before version');
-            return;
+        // Check that the given peerAddress matches the one we expect.
+        // In case of incoming WebSocket connections, this is the first time we
+        // see the remote peer's peerAddress.
+        // TODO We should validate that the given peerAddress actually resolves
+        // to the peer's netAddress!
+        if (this._channel.peerAddress) {
+            if (!this._channel.peerAddress.equals(msg.peerAddress)) {
+                this._channel.close('unexpected peerAddress in version message');
+                return;
+            }
         }
+        this._channel.peerAddress = msg.peerAddress;
 
-        // Handshake completed, connection established.
-        this._connected = true;
-
-        // Tell listeners about the new peer that connected.
+        // Create peer object.
         this._peer = new Peer(
             this._channel,
-            this._version.version,
-            this._version.netAddress,
-            this._version.startHeight
+            msg.version,
+            msg.startHeight
         );
-        this.fire('handshake', this._peer, this);
 
         // Remember that the peer has sent us this address.
-        this._knownAddresses[this._version.netAddress] = true;
+        this._knownAddresses.add(msg.peerAddress);
 
-        // Store/Update the peer's netAddress.
-        this._addresses.push(this._channel, this._version.netAddress);
+        // Store/update the peerAddress.
+        this._addresses.add(this._channel, msg.peerAddress);
 
+        this._versionReceived = true;
+
+        if (this._versionSent) {
+            this._finishHandshake();
+        }
+    }
+
+    _finishHandshake() {
         // Setup regular connectivity check.
         // TODO randomize interval?
         this._timers.setInterval('connectivity',
             () => this._checkConnectivity(),
-            NetworkAgent.CONNECTIVITY_INTERVAL);
+            NetworkAgent.CONNECTIVITY_CHECK_INTERVAL);
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([NetworkUtils.myNetAddress()]),
+            () => this._channel.addr([NetworkConfig.myPeerAddress()]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
+
+        // Tell listeners about the new peer that connected.
+        this.fire('handshake', this._peer, this);
 
         // Request new network addresses from the peer.
         this._requestAddresses();
@@ -172,13 +172,23 @@ class NetworkAgent extends Observable {
         // fire the address event with empty addresses.
         this._timers.setTimeout('getaddr', () => {
             console.warn('Peer ' + this._channel + ' did not send addresses when asked for');
+            this._timers.clearTimeout('getaddr');
             this.fire('addresses', [], this);
         }, NetworkAgent.GETADDR_TIMEOUT);
     }
 
     async _onAddr(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
+
+        // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
+        if (msg.addresses.length > 1000) {
+            console.warn('Rejecting addr message - too many addresses');
+            this._channel.ban('addr message too large');
+            return;
+        }
 
         console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
 
@@ -187,11 +197,11 @@ class NetworkAgent extends Observable {
 
         // Remember that the peer has sent us these addresses.
         for (let addr of msg.addresses) {
-            this._knownAddresses[addr] = true;
+            this._knownAddresses.add(addr);
         }
 
         // Put the new addresses in the address pool.
-        await this._addresses.push(this._channel, msg.addresses);
+        await this._addresses.add(this._channel, msg.addresses);
 
         // Tell listeners that we have received new addresses.
         this.fire('addr', msg.addresses, this);
@@ -199,17 +209,28 @@ class NetworkAgent extends Observable {
 
     _onGetAddr(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[GETADDR] serviceMask=' + msg.serviceMask);
 
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.findByServices(msg.serviceMask);
 
-        // TODO we could exclude the knowAddresses from the response.
+        const filteredAddresses = addresses.filter(addr => {
+            // Exclude RTC addresses that are already at MAX_DISTANCE.
+            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+                return false;
+            }
+
+            // Exclude known addresses from the response unless they are older than RELAY_THROTTLE.
+            const knownAddress = this._knownAddresses.get(addr);
+            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
+        });
 
         // Send the addresses back to the peer.
-        this._channel.addr(addresses);
+        this._channel.addr(filteredAddresses);
     }
 
 
@@ -228,7 +249,9 @@ class NetworkAgent extends Observable {
 
     _onPing(msg) {
         // Make sure this is a valid message in our current state.
-        if (!this._canAcceptMessage(msg)) return;
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
 
         console.log('[PING] nonce=' + msg.nonce);
 
@@ -252,18 +275,13 @@ class NetworkAgent extends Observable {
     }
 
     _canAcceptMessage(msg) {
-        const isHandshakeMsg =
-            msg.type == Message.Type.VERSION
-            || msg.type == Message.Type.VERACK;
-
-        // We accept handshake messages only if we are not connected, all other
-        // messages otherwise.
-        const accept = isHandshakeMsg != this._connected;
-        if (!accept) {
-            console.warn('Discarding message from ' + this._channel
-                + ' - not acceptable in state connected=' + this._connected, msg);
+        // The first message must be the version message.
+        if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
+            console.warn(`Discarding ${msg.type} message from ${this._channel}`
+                + ' - no version message received previously');
+            return false;
         }
-        return accept;
+        return true;
     }
 
     get channel() {
@@ -274,4 +292,12 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
+NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
+NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
+NetworkAgent.GETADDR_TIMEOUT = 1000 * 5; // 5 seconds
+NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
+NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
+NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 5; // 5 minutes
+NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
+NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
 Class.register(NetworkAgent);

@@ -1,20 +1,24 @@
-// TODO V2: should be a singleton
-// TODO V2: should cache the certificate in it's scope
+// TODO The certificate is going to expire eventually. Automatically renew it.
 window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 class WebRtcCertificate {
-    static get() {
-        // TODO the certificate is going to expire eventually. Automatically renew it.
+    static async get() {
+        if (!WebRtcCertificate._certificate) {
+            WebRtcCertificate._certificate = await WebRtcCertificate._getOrCreate();
+        }
+        return WebRtcCertificate._certificate;
+    }
+
+    static async _getOrCreate() {
         const db = new TypedDB('certificate');
-        return db.getObject('certKey').then(value => {
-            if (value) return value;
-            return RTCPeerConnection.generateCertificate({
+        let cert = await db.getObject('certKey');
+        if (!cert) {
+            cert = await RTCPeerConnection.generateCertificate({
                 name: 'ECDSA',
                 namedCurve: 'P-256'
-            })
-                .then(cert => {
-                    db.putObject('certKey', cert);
-                    return cert;
-                });
-        });
+            });
+            await db.putObject('certKey', cert);
+        }
+        return cert;
     }
 }
+WebRtcCertificate._certificate = null;

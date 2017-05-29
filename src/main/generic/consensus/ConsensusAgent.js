@@ -74,6 +74,11 @@ class ConsensusAgent extends Observable {
     /* Public API */
 
     async relayBlock(block) {
+        // Don't relay if no consensus established yet.
+        if (!this._synced) {
+            return;
+        }
+
         // Don't relay block to this peer if it already knows it.
         const hash = await block.hash();
         if (this._knownObjects[hash]) return;
@@ -84,6 +89,8 @@ class ConsensusAgent extends Observable {
     }
 
     async relayTransaction(transaction) {
+        // TODO Don't relay if no consensus established yet ???
+
         // Don't relay transaction to this peer if it already knows it.
         const hash = await transaction.hash();
         if (this._knownObjects[hash]) return;
@@ -107,7 +114,7 @@ class ConsensusAgent extends Observable {
             if (this._failedSyncs < ConsensusAgent.MAX_SYNC_ATTEMPTS) {
                 this._requestBlocks();
             } else {
-                this._peer.channel.close('blockchain sync failed');
+                this._peer.channel.ban('blockchain sync failed');
             }
         }
         // If the peer has a longer chain than us, request blocks from it.
@@ -156,6 +163,7 @@ class ConsensusAgent extends Observable {
         this._peer.channel.getblocks(hashes);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
+        // TODO should we ban here instead?
         this._timers.setTimeout('getblocks', () => this._peer.channel.close('getblocks timeout'), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
