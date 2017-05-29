@@ -74,7 +74,7 @@ class PeerChannel extends Observable {
         return this._send(new TxMessage(transaction));
     }
 
-    getblocks(hashes, hashStop = new Hash()) {
+    getblocks(hashes, hashStop = new Hash(null)) {
         return this._send(new GetBlocksMessage(hashes, hashStop));
     }
 
