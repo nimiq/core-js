@@ -173,8 +173,8 @@ class Network extends Observable {
 
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
-        agent.on('handshake', peer => this._onHandshake(peer));
-        agent.on('close', (peer, channel) => this._onClose(peer, channel));
+        agent.on('handshake', peer => this._onHandshake(peer, agent));
+        agent.on('close', peer => this._onClose(peer, channel));
         agent.on('addr', () => this._onAddr());
 
         // XXX If we don't know the peer's peerAddress yet, store the agent
