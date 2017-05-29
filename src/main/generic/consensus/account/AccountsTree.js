@@ -1,12 +1,12 @@
 class AccountsTree extends Observable {
-    static async getPersistent() {
+    static getPersistent() {
         const store = AccountsTreeStore.getPersistent();
-        return await new AccountsTree(store);
+        return new AccountsTree(store);
     }
 
-    static async createVolatile() {
+    static createVolatile() {
         const store = AccountsTreeStore.createVolatile();
-        return await new AccountsTree(store);
+        return new AccountsTree(store);
     }
 
     constructor(treeStore) {
@@ -29,7 +29,7 @@ class AccountsTree extends Observable {
 
     put(address, balance, transaction) {
         return new Promise((resolve, error) => {
-            this._synchronizer.push(_ => {
+            this._synchronizer.push(() => {
                 return this._put(address, balance, transaction);
             }, resolve, error);
         });
@@ -73,7 +73,7 @@ class AccountsTree extends Observable {
             newParent.putChild(newChild.prefix, newChildKey);
             const newParentKey = await transaction.put(newParent);
 
-            return await this._updateKeys(transaction, newParent.prefix, newParentKey, rootPath);
+            return this._updateKeys(transaction, newParent.prefix, newParentKey, rootPath);
         }
 
         // If the remaining address is empty, we have found an (existing) node
@@ -87,14 +87,14 @@ class AccountsTree extends Observable {
             // in the first place. Delete the node in this case.
             if (Balance.INITIAL.equals(balance)) {
                 // We have already deleted the node, remove the subtree it was on.
-                return await this._prune(transaction, node.prefix, rootPath);
+                return this._prune(transaction, node.prefix, rootPath);
             }
 
             // Update the balance.
             node.balance = balance;
             const nodeKey = await transaction.put(node);
 
-            return await this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+            return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
         }
 
         // If the node prefix matches and there are address bytes left, descend into
@@ -103,7 +103,7 @@ class AccountsTree extends Observable {
         if (childKey) {
             const childNode = await transaction.get(childKey);
             rootPath.push(node);
-            return await this._insert(transaction, childNode, address, balance, rootPath);
+            return this._insert(transaction, childNode, address, balance, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
@@ -114,7 +114,7 @@ class AccountsTree extends Observable {
         node.putChild(newChild.prefix, newChildKey);
         const nodeKey = await transaction.put(node);
 
-        return await this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+        return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
     }
 
     async _prune(transaction, prefix, rootPath) {
@@ -125,7 +125,7 @@ class AccountsTree extends Observable {
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
-            let nodeKey = await transaction.delete(node);
+            let nodeKey = await transaction.delete(node); // eslint-disable-line no-await-in-loop
 
             node.removeChild(prefix);
 
@@ -133,8 +133,8 @@ class AccountsTree extends Observable {
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
             if (node.hasChildren() || nodeKey === rootKey) {
-                nodeKey = await transaction.put(node);
-                return await this._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
+                nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
+                return this._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
             }
 
             // The node has no children left, continue pruning.
@@ -149,11 +149,11 @@ class AccountsTree extends Observable {
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
-            await transaction.delete(node);
+            await transaction.delete(node); // eslint-disable-line no-await-in-loop
 
             node.putChild(prefix, nodeKey);
 
-            nodeKey = await transaction.put(node);
+            nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
             prefix = node.prefix;
         }
 
@@ -168,7 +168,7 @@ class AccountsTree extends Observable {
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
 
-        return await this._retrieve(transaction, rootNode, address);
+        return this._retrieve(transaction, rootNode, address);
     }
 
     async _retrieve(transaction, node, address) {
@@ -182,15 +182,14 @@ class AccountsTree extends Observable {
         // Cut common prefix off the new address.
         address = address.subarray(commonPrefix.length);
 
-        // If the address remaining address is empty, we have found the requested
-        // node.
+        // If the remaining address is empty, we have found the requested node.
         if (!address.length) return node.balance;
 
         // Descend into the matching child node if one exists.
         const childKey = node.getChild(address);
         if (childKey) {
             const childNode = await transaction.get(childKey);
-            return await this._retrieve(transaction, childNode, address);
+            return this._retrieve(transaction, childNode, address);
         }
 
         // No matching child exists, the requested address is not part of this node.
@@ -216,7 +215,7 @@ class AccountsTree extends Observable {
     }
 
     static _commonPrefix(arr1, arr2) {
-        let commonPrefix = new Uint8Array(arr1.length);
+        const commonPrefix = new Uint8Array(arr1.length);
         let i = 0;
         for (; i < arr1.length; ++i) {
             if (arr1[i] !== arr2[i]) break;

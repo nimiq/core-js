@@ -19,7 +19,7 @@ class Mempool extends Observable {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
         if (this._transactions[hash]) {
-            console.log('Mempool ignoring known transaction ' + hash.toBase64());
+            console.log(`Mempool ignoring known transaction ${hash.toBase64()}`);
             return false;
         }
 
@@ -46,15 +46,15 @@ class Mempool extends Observable {
     }
 
     // Currently not asynchronous, but might be in the future.
-    async getTransaction(hash) {
+    getTransaction(hash) {
         return this._transactions[hash];
     }
 
     // Currently not asynchronous, but might be in the future.
-    async getTransactions(maxCount = 5000) {
+    getTransactions(maxCount = 5000) {
         // TODO Add logic here to pick the "best" transactions.
         const transactions = [];
-        for (let hash in this._transactions) {
+        for (const hash in this._transactions) {
             if (transactions.length >= maxCount) break;
             transactions.push(this._transactions[hash]);
         }
@@ -69,7 +69,7 @@ class Mempool extends Observable {
         }
 
         // Verify transaction balance.
-        return await this._verifyTransactionBalance(transaction);
+        return this._verifyTransactionBalance(transaction);
     }
 
     async _verifyTransactionBalance(transaction, quiet) {
@@ -78,11 +78,6 @@ class Mempool extends Observable {
         // - sender account nonce must match the transaction nonce.
         const senderAddr = await transaction.senderAddr();
         const senderBalance = await this._accounts.getBalance(senderAddr);
-        if (!senderBalance) {
-            if (!quiet) console.warn('Mempool rejected transaction - sender account unknown');
-            return false;
-        }
-
         if (senderBalance.value < (transaction.value + transaction.fee)) {
             if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
             return false;
@@ -101,9 +96,9 @@ class Mempool extends Observable {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
-        for (let hash in this._transactions) {
+        for (const hash in this._transactions) {
             const transaction = this._transactions[hash];
-            if (!await this._verifyTransactionBalance(transaction, true)) {
+            if (!await this._verifyTransactionBalance(transaction, true)) { // eslint-disable-line no-await-in-loop
                 delete this._transactions[hash];
                 delete this._senderPubKeys[transaction.senderPubKey];
             }

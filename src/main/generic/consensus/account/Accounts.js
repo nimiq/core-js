@@ -28,17 +28,17 @@ class Accounts extends Observable {
 
         const treeTx = await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a + b);
-        return await treeTx.commit();
+        return treeTx.commit();
     }
 
     async revertBlock(block) {
         const treeTx = await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a - b);
-        return await treeTx.commit();
+        return treeTx.commit();
     }
 
-    getBalance(address) {
-        return this._tree.get(address);
+    async getBalance(address) {
+        return await this._tree.get(address) || Balance.INITIAL;
     }
 
     async _execute(treeTx, block, operator) {
@@ -53,8 +53,8 @@ class Accounts extends Observable {
     }
 
     async _executeTransactions(treeTx, body, op) {
-        for (let tx of body.transactions) {
-            await this._executeTransaction(treeTx, tx, op);
+        for (const tx of body.transactions) {
+            await this._executeTransaction(treeTx, tx, op); // eslint-disable-line no-await-in-loop
         }
     }
 
