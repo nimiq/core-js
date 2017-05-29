@@ -5,14 +5,16 @@ Just include the nimiq core library:
 ```<script src="dist/web.js"></script>```
 
 ## Usage 
-Initialize nimiq core:
+### Core
+
+#### Basic initialization
 ```
 Core.init($ => {
 	// $ is the instance
 });
 ```
 
-Initialize nimiq core (with error callback):
+#### Initialization with error callback
 Currently, the error callback will only be called if an instance of core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
 ```
 Core.init($ => {
@@ -20,56 +22,37 @@ Core.init($ => {
 }, () => alert('Another nimiq instance is already running'));
 ```
 
-Get an existing core instance:
+#### Get an existing core instance
 ```
 Core.get().then($ => {
 	// $ is the instance 
 });
 ```
 
+### Network
+Available via ```$.network```.
+The network will not connect automatically, call ```$.network.connect()``` to do so.
+
+#### Properties
+- ```peerCount```
+- ```peerCountWebSocket```
+- ```peerCountWebRtc```
+- ```bytesReceived```
+- ```bytesSent```
+
+#### Methods
+- ```connect()```
+- ```disconnect()```
+
+#### Events
+- ```peers-changed```
+- ```peer-joined (peer)```
+- ```peer-left (peer)```
+
+#### Examples
 Connect to the network:
 ```
 $.network.connect()
-```
-
-Listen for `consensusEstablished` event:
-```
-$.consensus.on('established', () => console.log('consensus established!'))
-```
-
-Query an account's balance:
-```
-$.accounts.getBalance(<<address>>).then(balance => {
-	console.log(balance.value)
-	console.log(balance.nonce)
-})
-```
-
-Query your wallet's balance:
-```
-$.wallet.getBalance().then(balance => {
-	console.log(balance.value)
-	console.log(balance.nonce)
-})
-```
-
-Create a transaction:
-```
-$.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction => {
-	console.log(transaction)
-})
-```
-
-Listen for an account's balance change:
-```
-$.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
-	console.log(balance)
-})
-```
-
-Start mining
-```
-$.miner.startWork();
 ```
 
 Listen for peer connections:
@@ -80,7 +63,82 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 ```
 
 
-## Show the blockchain sync progress
+### Consensus
+Available via ```$.consensus```.
+
+#### Properties
+- ```established```
+
+#### Methods
+No public methods.
+
+#### Events
+- ```established```
+- ```syncing (targetHeight)```
+
+#### Examples
+Listen for `consensusEstablished` event:
+```
+$.consensus.on('established', () => console.log('consensus established!'))
+```
+
+
+
+### Accounts
+Available via ```$.accounts```.
+
+#### Properties
+No public properties.
+
+#### Methods
+- ```getBalance(address)```
+- ```commitBlock(block)```
+- ```revertBlock(block)```
+- ```async hash()```
+
+#### Events
+- ```<<base64(address)>> (balance, address)``` when balance of address changes.
+
+#### Examples
+Query an account's balance:
+```
+$.accounts.getBalance(<<address>>).then(balance => {
+	console.log(balance.value)
+	console.log(balance.nonce)
+})
+```
+Listen for an account balance change:
+```
+$.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
+	console.log(balance)
+})
+```
+
+
+
+### Blockchain
+Available via ```$.blockchain```.
+
+#### Properties
+- ```head```
+- ```headHash```
+- ```totalWork```
+- ```height```
+- ```path```
+- ```busy```
+
+#### Methods
+- ```pushBlock(block)```
+- ```getBlock(hash)```
+- ```getNextCompactTarget()```
+- ```async accountsHash()```
+
+#### Events
+- ```head-changed```
+- ```ready```
+
+#### Examples
+Show the blockchain sync progress
 ```
 let targetHeight = 0;
 $.consensus.on('syncing', _targetHeight => {
@@ -91,4 +149,82 @@ $.blockchain.on('head-changed', () => {
     const height = $.blockchain.height;
     ui.setProgress(height / targetHeight);
 })
+```
+
+
+
+
+### Mempool
+Available via ```$.mempool```.
+
+#### Properties
+No public properties.
+
+#### Methods
+- ```pushTransaction(transaction)```
+- ```getTransaction(hash)```
+- ```getTransactions(maxCount = 5000)```
+
+#### Events
+- ```transaction-added```
+- ```transactions-ready```
+
+#### Examples
+<TODO>
+
+
+
+### Wallet
+Available via ```$.wallet```.
+
+#### Properties
+- ```address```
+- ```publicKey```
+
+#### Methods
+- ```getBalance()```
+- ```createTransaction(recipientAddr, value, fee, nonce)```
+- ```transferFunds(recipientAddr, value, fee)```
+
+#### Events
+No events.
+
+#### Examples
+Query your wallet's balance:
+```
+$.wallet.getBalance().then(balance => {
+	console.log(balance.value)
+	console.log(balance.nonce)
+})
+```
+Create a transaction:
+```
+$.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction => {
+	console.log(transaction)
+})
+```
+
+
+### Miner
+Available via ```$.miner```.
+
+#### Properties
+- ```working```
+- ```address```
+- ```hashrate```
+
+#### Methods
+- ```startWork()```
+- ```stopWork()```
+
+#### Events
+- ```start```
+- ```stop```
+- ```block-mined```
+- ```hashrate-changed```
+
+#### Examples
+Start mining
+```
+$.miner.startWork();
 ```
