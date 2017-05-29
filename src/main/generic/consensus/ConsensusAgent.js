@@ -74,7 +74,10 @@ class ConsensusAgent extends Observable {
     /* Public API */
 
     async relayBlock(block) {
-        // TODO Don't relay if no consensus established yet.
+        // Don't relay if no consensus established yet.
+        if (!this._synced) {
+            return;
+        }
 
         // Don't relay block to this peer if it already knows it.
         const hash = await block.hash();
