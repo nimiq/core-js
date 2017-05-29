@@ -243,10 +243,16 @@ class PeerAddresses extends Observable {
     // Called when a connection to this peerAddress has been established.
     // The connection might have been initiated by the other peer, so address
     // may not be known previously.
-    connected(peerAddress) {
+    connected(channel, peerAddress) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
+
+            if (peerAddress.protocol === Protocol.RTC) {
+                peerAddress.signalChannel = channel;
+                this._signalIds.put(peerAddress.signalId, peerAddress);
+            }
+
             this._store.add(peerAddressState);
         }
         if (peerAddressState.state === PeerAddressState.BANNED) {

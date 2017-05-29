@@ -139,17 +139,6 @@ class Network extends Observable {
             return;
         }
 
-        // Check if we already have a connection to the same peerAddress.
-        // The peerAddress is null for incoming connections.
-        if (conn.peerAddress) {
-            if (this._addresses.isConnected(conn.peerAddress)) {
-                conn.close('duplicate connection (peerAddress)');
-                return;
-            }
-
-            this._addresses.connected(conn.peerAddress);
-        }
-
         // Track & limit concurrent connections to the same IP address.
         const maxConnections = conn.protocol === Protocol.WS ?
             Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
@@ -161,19 +150,35 @@ class Network extends Observable {
         }
         this._connectionCounts.put(conn.netAddress, numConnections);
 
+        // Create peer channel.
+        const channel = new PeerChannel(conn);
+
+        // Check if we already have a connection to the same peerAddress.
+        // The peerAddress is null for incoming connections.
+        if (conn.peerAddress) {
+            if (this._addresses.isConnected(conn.peerAddress)) {
+                conn.close('duplicate connection (peerAddress)');
+                return;
+            }
+
+            this._addresses.connected(channel, conn.peerAddress);
+        }
+
+        // Connection accepted.
         console.log(`Connection established ${conn.peerAddress} ${conn.netAddress} (${numConnections})`);
 
-        const channel = new PeerChannel(conn);
+        // Setup peer channel.
         channel.on('signal', msg => this._onSignal(channel, msg));
         channel.on('ban', reason => this._onBan(channel, reason));
 
+        // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
         agent.on('handshake', peer => this._onHandshake(peer));
         agent.on('close', (peer, channel) => this._onClose(peer, channel));
         agent.on('addr', () => this._onAddr());
 
-        // XXX If we don't know the peer address yet, store the agent indexed by
-        // the netAddress of the peer.
+        // XXX If we don't know the peer's peerAddress yet, store the agent
+        // indexed by the netAddress of the peer.
         if (conn.peerAddress) {
             this._agents.put(conn.peerAddress, agent);
         } else {
@@ -242,7 +247,7 @@ class Network extends Observable {
         if (!this._agents.contains(peer.peerAddress)) {
             this._agents.delete(peer.netAddress);
             this._agents.put(peer.peerAddress, agent);
-            this._addresses.connected(peer.peerAddress);
+            this._addresses.connected(agent.channel, peer.peerAddress);
         }
         // Don't allow the same peerAddress two connect more than once from different netAddresses.
         else if (this._agents.contains(peer.netAddress)) {
