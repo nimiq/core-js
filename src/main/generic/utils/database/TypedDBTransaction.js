@@ -19,13 +19,16 @@ class TypedDBTransaction {
             });
             tx.on('error', e => reject(e));
 
-            for (let key in this._objects) {
+            for (const key in this._objects) {
+                // FIXME Firefox seems to hang here!!!
                 tx.putObject(key, this._objects[key]);
             }
-            for (let key in this._strings) {
+
+            for (const key in this._strings) {
                 tx.putString(key, this._strings[key]);
             }
-            for (let key in this._deletions) {
+
+            for (const key in this._deletions) {
                 tx.delete(key);
             }
 
