@@ -1,20 +1,15 @@
 # Nimiq Core API documentation
 
-## Installation
-Just include the nimiq core library:
-```<script src="dist/web.js"></script>```
+## Core
 
-## Usage 
-### Core
-
-#### Basic initialization
+### Basic initialization
 ```
 Core.init($ => {
 	// $ is the instance
 });
 ```
 
-#### Initialization with error callback
+### Initialization with error callback
 Currently, the error callback will only be called if an instance of core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
 ```
 Core.init($ => {
@@ -22,34 +17,34 @@ Core.init($ => {
 }, () => alert('Another nimiq instance is already running'));
 ```
 
-#### Get an existing core instance
+### Get an existing core instance
 ```
 Core.get().then($ => {
 	// $ is the instance 
 });
 ```
 
-### Network
+## Network
 Available via ```$.network```.
 The network will not connect automatically, call ```$.network.connect()``` to do so.
 
-#### Properties
+### Properties
 - ```peerCount```
 - ```peerCountWebSocket```
 - ```peerCountWebRtc```
 - ```bytesReceived```
 - ```bytesSent```
 
-#### Methods
+### Methods
 - ```connect()```
 - ```disconnect()```
 
-#### Events
+### Events
 - ```peers-changed```
 - ```peer-joined (peer)```
 - ```peer-left (peer)```
 
-#### Examples
+### Examples
 Connect to the network:
 ```
 $.network.connect()
@@ -63,20 +58,20 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 ```
 
 
-### Consensus
+## Consensus
 Available via ```$.consensus```.
 
-#### Properties
+### Properties
 - ```established```
 
-#### Methods
+### Methods
 No public methods.
 
-#### Events
+### Events
 - ```established```
 - ```syncing (targetHeight)```
 
-#### Examples
+### Examples
 Listen for `consensusEstablished` event:
 ```
 $.consensus.on('established', () => console.log('consensus established!'))
@@ -84,22 +79,22 @@ $.consensus.on('established', () => console.log('consensus established!'))
 
 
 
-### Accounts
+## Accounts
 Available via ```$.accounts```.
 
-#### Properties
+### Properties
 No public properties.
 
-#### Methods
+### Methods
 - ```getBalance(address)```
 - ```commitBlock(block)```
 - ```revertBlock(block)```
 - ```async hash()```
 
-#### Events
+### Events
 - ```<<base64(address)>> (balance, address)``` when balance of address changes.
 
-#### Examples
+### Examples
 Query an account's balance:
 ```
 $.accounts.getBalance(<<address>>).then(balance => {
@@ -116,10 +111,10 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 
 
 
-### Blockchain
+## Blockchain
 Available via ```$.blockchain```.
 
-#### Properties
+### Properties
 - ```head```
 - ```headHash```
 - ```totalWork```
@@ -127,17 +122,17 @@ Available via ```$.blockchain```.
 - ```path```
 - ```busy```
 
-#### Methods
+### Methods
 - ```pushBlock(block)```
 - ```getBlock(hash)```
 - ```getNextCompactTarget()```
 - ```async accountsHash()```
 
-#### Events
+### Events
 - ```head-changed```
 - ```ready```
 
-#### Examples
+### Examples
 Show the blockchain sync progress
 ```
 let targetHeight = 0;
@@ -154,42 +149,42 @@ $.blockchain.on('head-changed', () => {
 
 
 
-### Mempool
+## Mempool
 Available via ```$.mempool```.
 
-#### Properties
+### Properties
 No public properties.
 
-#### Methods
+### Methods
 - ```pushTransaction(transaction)```
 - ```getTransaction(hash)```
 - ```getTransactions(maxCount = 5000)```
 
-#### Events
+### Events
 - ```transaction-added```
 - ```transactions-ready```
 
-#### Examples
+### Examples
 <TODO>
 
 
 
-### Wallet
+## Wallet
 Available via ```$.wallet```.
 
-#### Properties
+### Properties
 - ```address```
 - ```publicKey```
 
-#### Methods
+### Methods
 - ```getBalance()```
 - ```createTransaction(recipientAddr, value, fee, nonce)```
 - ```transferFunds(recipientAddr, value, fee)```
 
-#### Events
+### Events
 No events.
 
-#### Examples
+### Examples
 Query your wallet's balance:
 ```
 $.wallet.getBalance().then(balance => {
@@ -205,25 +200,25 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 ```
 
 
-### Miner
+## Miner
 Available via ```$.miner```.
 
-#### Properties
+### Properties
 - ```working```
 - ```address```
 - ```hashrate```
 
-#### Methods
+### Methods
 - ```startWork()```
 - ```stopWork()```
 
-#### Events
+### Events
 - ```start```
 - ```stop```
 - ```block-mined```
 - ```hashrate-changed```
 
-#### Examples
+### Examples
 Start mining
 ```
 $.miner.startWork();
