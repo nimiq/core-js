@@ -261,7 +261,7 @@ class PeerAddresses extends Observable {
             this._store.add(peerAddressState);
         }
         if (peerAddressState.state === PeerAddressState.BANNED
-            // Allow recovering seed peer's incoming connection to succeed.
+            // Allow recovering seed peer's inbound connection to succeed.
             && peerAddressState.peerAddress.timestamp !== 0) {
 
             throw 'Connected to banned address';
@@ -361,7 +361,7 @@ class PeerAddresses extends Observable {
             && peerAddressState.state === PeerAddressState.BANNED
             // XXX Never consider seed peers to be banned. This allows us to use
             // the banning mechanism to prevent seed peers from being picked when
-            // they are down, but still allows recovering seed peers' incoming
+            // they are down, but still allows recovering seed peers' inbound
             // connections to succeed.
             && peerAddressState.peerAddress.timestamp !== 0;
     }

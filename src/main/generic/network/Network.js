@@ -145,7 +145,7 @@ class Network extends Observable {
 
     _onConnection(conn) {
         // Decrement connectingCount if we have initiated this connection.
-        if (!conn.incoming && this._addresses.isConnecting(conn.peerAddress)) {
+        if (!conn.inbound && this._addresses.isConnecting(conn.peerAddress)) {
             this._connectingCount--;
         }
 
@@ -167,7 +167,8 @@ class Network extends Observable {
         this._connectionCounts.put(conn.netAddress, numConnections);
 
         // Connection accepted.
-        console.log(`Connection established #${conn.id} ${conn.netAddress} (${numConnections})`);
+        const connType = conn.inbound ? 'inbound' : 'outbound';
+        console.log(`Connection established (${connType}) #${conn.id} ${conn.netAddress} (${numConnections})`);
 
         // Create peer channel.
         const channel = new PeerChannel(conn);
@@ -235,7 +236,7 @@ class Network extends Observable {
 
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
-        // The peerAddress is null pre-handshake for incoming connections.
+        // The peerAddress is null pre-handshake for inbound connections.
         if (channel.peerAddress) {
             this._addresses.disconnected(channel.peerAddress, closedByRemote);
         }
@@ -263,7 +264,7 @@ class Network extends Observable {
         } else {
             // The connection was closed before the handshake completed.
             // Treat this as failed connection attempt.
-            // TODO incoming WS connections.
+            // TODO inbound WS connections.
             console.log(`Connection to ${channel.peerAddress} closed pre-handshake`);
             if (channel.peerAddress) {
                 this._addresses.unreachable(channel.peerAddress);
@@ -275,7 +276,7 @@ class Network extends Observable {
 
     // This peer channel was banned.
     _onBan(channel, reason) {
-        // TODO If this is an incoming connection, the peerAddres might not be set yet.
+        // TODO If this is an inbound connection, the peerAddres might not be set yet.
         // Ban the netAddress in this case.
         // XXX We should probably always ban the netAddress as well.
         if (channel.peerAddress) {
@@ -295,12 +296,12 @@ class Network extends Observable {
             return;
         }
 
-        // Can be null for non-rtc nodes.
+        // Can be undefined for non-rtc nodes.
         const mySignalId = NetworkConfig.myPeerAddress().signalId;
 
         // Discard signals from myself.
         if (msg.senderId === mySignalId) {
-            console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel + ' (myId: ' + mySignalId + ')');
+            console.warn(`Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${mySignalId})`);
             return;
         }
 
@@ -312,6 +313,7 @@ class Network extends Observable {
 
         // Discard signals that have reached their TTL.
         if (msg.ttl <= 0) {
+            console.warn(`Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             return;
         }
 
@@ -319,7 +321,7 @@ class Network extends Observable {
         const peerAddress = this._addresses.findBySignalId(msg.recipientId);
         if (!peerAddress) {
             // TODO send reject/unreachable message/signal if we cannot forward the signal
-            console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found');
+            console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
             return;
         }
 

@@ -110,7 +110,7 @@ class NetworkAgent extends Observable {
         this._timers.clearTimeout('version');
 
         // Check that the given peerAddress matches the one we expect.
-        // In case of incoming WebSocket connections, this is the first time we
+        // In case of inbound WebSocket connections, this is the first time we
         // see the remote peer's peerAddress.
         // TODO We should validate that the given peerAddress actually resolves
         // to the peer's netAddress!

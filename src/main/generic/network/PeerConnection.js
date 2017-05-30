@@ -10,7 +10,7 @@ class PeerConnection extends Observable {
         this._bytesReceived = 0;
         this._bytesSent = 0;
 
-        this._incoming = peerAddress === null;
+        this._inbound = peerAddress === null;
         this._closedByUs = false;
         this._closed = false;
 
@@ -102,7 +102,7 @@ class PeerConnection extends Observable {
         return this._peerAddress;
     }
 
-    // Set when the VERSION message is received on an incoming connection.
+    // Set when the VERSION message is received on an inbound connection.
     set peerAddress(value) {
         this._peerAddress = value;
     }
@@ -119,8 +119,8 @@ class PeerConnection extends Observable {
         return this._bytesSent;
     }
 
-    get incoming() {
-        return this._incoming;
+    get inbound() {
+        return this._inbound;
     }
 
     get closed() {
