@@ -279,7 +279,7 @@ class Blockchain extends Observable {
 
     async _rebranch(newChain) {
         const hash = await newChain.hash();
-        console.log(`Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}, newChain`);
+        console.log(`Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`, newChain);
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
