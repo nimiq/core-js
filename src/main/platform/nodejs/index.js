@@ -5,7 +5,7 @@ Error.prototype.toString = function () {
 
 // Don't exit on uncaught exceptions.
 process.on('uncaughtException', (err) => {
-    console.error(`Uncaught exception: ${err}`);
+    console.error(`Uncaught exception: ${err.message || err}`);
 });
 
 global.atob = require('atob');
