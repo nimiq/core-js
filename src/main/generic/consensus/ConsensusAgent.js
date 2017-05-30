@@ -1,27 +1,4 @@
 class ConsensusAgent extends Observable {
-    // Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
-    static get REQUEST_THRESHOLD() {
-        return 50;
-    }
-
-    // Time to wait after the last received inv message before sending getdata.
-    static get REQUEST_THROTTLE() {
-        return 500; // ms
-    }
-
-    // Maximum time to wait after sending out getdata or receiving the last object for this request.
-    static get REQUEST_TIMEOUT() {
-        return 5000; // ms
-    }
-
-    // Maximum number of blockchain sync retries before closing the connection.
-    // XXX If the peer is on a long fork, it will count as a failed sync attempt
-    // if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
-    // blocks.
-    static get MAX_SYNC_ATTEMPTS() {
-        return 5;
-    }
-
     constructor(blockchain, mempool, peer) {
         super();
         this._blockchain = blockchain;
@@ -54,13 +31,13 @@ class ConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv', msg => this._onInv(msg));
-        peer.channel.on('getdata', msg => this._onGetData(msg));
-        peer.channel.on('notfound', msg => this._onNotFound(msg));
-        peer.channel.on('block', msg => this._onBlock(msg));
-        peer.channel.on('tx', msg => this._onTx(msg));
-        peer.channel.on('getblocks', msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool', msg => this._onMempool(msg));
+        peer.channel.on('inv',          msg => this._onInv(msg));
+        peer.channel.on('getdata',      msg => this._onGetData(msg));
+        peer.channel.on('notfound',     msg => this._onNotFound(msg));
+        peer.channel.on('block',        msg => this._onBlock(msg));
+        peer.channel.on('tx',           msg => this._onTx(msg));
+        peer.channel.on('getblocks',    msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool',      msg => this._onMempool(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -164,7 +141,10 @@ class ConsensusAgent extends Observable {
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
-        this._timers.setTimeout('getblocks', () => this._peer.channel.close('getblocks timeout'), ConsensusAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getblocks', () => {
+            this._peer.channel.close('getblocks timeout');
+            this._timers.clearTimeout('getblocks');
+        }, ConsensusAgent.REQUEST_TIMEOUT);
     }
 
     async _onInv(msg) {
@@ -178,7 +158,6 @@ class ConsensusAgent extends Observable {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
-                    //console.log('[INV] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (!block) {
                         unknownObjects.push(vector);
                     }
@@ -186,7 +165,6 @@ class ConsensusAgent extends Observable {
                 }
                 case InvVector.Type.TRANSACTION: {
                     const tx = await this._mempool.getTransaction(vector.hash);
-                    //console.log('[INV] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (!tx) {
                         unknownObjects.push(vector);
                     }
@@ -265,12 +243,11 @@ class ConsensusAgent extends Observable {
 
     async _onBlock(msg) {
         const hash = await msg.block.hash();
-        //console.log('[BLOCK] Received block ' + hash.toBase64());
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer + ', discarding');
+            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer.peerAddress + ', discarding');
             return;
         }
 
@@ -291,7 +268,7 @@ class ConsensusAgent extends Observable {
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer + ', discarding');
+            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer.peerAddress + ', discarding');
             return;
         }
 
@@ -306,16 +283,16 @@ class ConsensusAgent extends Observable {
     }
 
     _onNotFound(msg) {
-        console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects', msg.vectors);
+        console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects');
 
         // Remove unknown objects from in-flight list.
         for (let vector of msg.vectors) {
             if (this._objectsInFlight.indexOf(vector) < 0) {
-                console.warn('Unsolicited notfound vector ' + vector + ' from peer ' + this._peer, vector);
+                console.warn('Unsolicited notfound vector ' + vector + ' from peer ' + this._peer.peerAddress);
                 continue;
             }
 
-            console.log('Peer ' + this._peer + ' did not find ' + obj, obj);
+            console.log('Peer ' + this._peer.peerAddress + ' did not find ' + obj);
 
             this._onObjectReceived(vector);
         }
@@ -347,7 +324,6 @@ class ConsensusAgent extends Observable {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
-                    console.log('[GETDATA] Check if block ' + vector.hash.toBase64() + ' is known: ' + !!block);
                     if (block) {
                         // We have found a requested block, send it back to the sender.
                         this._peer.channel.block(block);
@@ -359,7 +335,6 @@ class ConsensusAgent extends Observable {
                 }
                 case InvVector.Type.TRANSACTION: {
                     const tx = await this._mempool.getTransaction(vector.hash);
-                    console.log('[GETDATA] Check if transaction ' + vector.hash.toBase64() + ' is known: ' + !!tx);
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
                         this._peer.channel.tx(tx);
@@ -465,4 +440,15 @@ class ConsensusAgent extends Observable {
         return this._synced;
     }
 }
+// Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
+ConsensusAgent.REQUEST_THRESHOLD = 50;
+// Time to wait after the last received inv message before sending getdata.
+ConsensusAgent.REQUEST_THROTTLE = 500; // ms
+// Maximum time to wait after sending out getdata or receiving the last object for this request.
+ConsensusAgent.REQUEST_TIMEOUT = 5000; // ms
+// Maximum number of blockchain sync retries before closing the connection.
+// XXX If the peer is on a long fork, it will count as a failed sync attempt
+// if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
+// blocks.
+ConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
 Class.register(ConsensusAgent);

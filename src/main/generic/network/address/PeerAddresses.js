@@ -276,7 +276,7 @@ class PeerAddresses extends Observable {
     }
 
     // Called when a connection to this peerAddress is closed.
-    disconnected(peerAddress) {
+    disconnected(peerAddress, closedByRemote) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -299,8 +299,8 @@ class PeerAddresses extends Observable {
         }
 
         if (peerAddressState.state !== PeerAddressState.BANNED) {
-            // XXX Immediately delete WebRTC addresses when they disconnect.
-            if (peerAddress.protocol === Protocol.RTC) {
+            // XXX Immediately delete address if the remote host closed the connection.
+            if (closedByRemote) {
                 this._delete(peerAddress);
             } else {
                 peerAddressState.state = PeerAddressState.TRIED;
@@ -446,7 +446,7 @@ class PeerAddresses extends Observable {
         return this._peerCountRtc;
     }
 }
-PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 60 * 24; // 24 hours
+PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 60 * 12; // 12 hours
 PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 30; // 30 minutes
 PeerAddresses.MAX_DISTANCE = 3;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;

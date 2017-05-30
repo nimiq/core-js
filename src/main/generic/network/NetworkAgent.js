@@ -24,15 +24,15 @@ class NetworkAgent extends Observable {
         this._versionAttempts = 0;
 
         // Listen to network/control messages from the peer.
-        channel.on('version',    msg => this._onVersion(msg));
-        channel.on('verack',     msg => this._onVerAck(msg));
-        channel.on('addr',       msg => this._onAddr(msg));
-        channel.on('getaddr',    msg => this._onGetAddr(msg));
-        channel.on('ping',       msg => this._onPing(msg));
-        channel.on('pong',       msg => this._onPong(msg));
+        channel.on('version',   msg => this._onVersion(msg));
+        channel.on('verack',    msg => this._onVerAck(msg));
+        channel.on('addr',      msg => this._onAddr(msg));
+        channel.on('getaddr',   msg => this._onGetAddr(msg));
+        channel.on('ping',      msg => this._onPing(msg));
+        channel.on('pong',      msg => this._onPong(msg));
 
         // Clean up when the peer disconnects.
-        channel.on('close',      () => this._onClose());
+        channel.on('close', closedByRemote => this._onClose(closedByRemote));
 
         // Initiate the protocol with the new peer.
         this._handshake();
@@ -190,7 +190,7 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        console.log('[ADDR] ' + msg.addresses.length + ' addresses: ' + msg.addresses);
+        console.log('[ADDR] ' + msg.addresses.length + ' addresses');
 
         // Clear the getaddr timeout.
         this._timers.clearTimeout('getaddr');
@@ -220,6 +220,7 @@ class NetworkAgent extends Observable {
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
+            // FIXME check if this works as intended.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
             }
@@ -253,25 +254,21 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        console.log('[PING] nonce=' + msg.nonce);
-
         // Respond with a pong message
         this._channel.pong(msg.nonce);
     }
 
     _onPong(msg) {
-        console.log('[PONG] nonce=' + msg.nonce);
-
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout('ping_' + msg.nonce);
     }
 
-    _onClose() {
+    _onClose(closedByRemote) {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
 
         // Tell listeners that the peer has disconnected.
-        this.fire('close', this._peer, this._channel, this);
+        this.fire('close', this._peer, this._channel, closedByRemote, this);
     }
 
     _canAcceptMessage(msg) {

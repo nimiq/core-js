@@ -10,13 +10,15 @@ class PeerConnection extends Observable {
         this._bytesReceived = 0;
         this._bytesSent = 0;
 
+        this._closedByUs = false;
+
         if (this._channel.on) {
             this._channel.on('message', msg => this._onMessage(msg.data || msg));
-            this._channel.on('close', () => this.fire('close', this));
+            this._channel.on('close', () => this.fire('close', !this._closedByUs, this));
             this._channel.on('error', e => this.fire('error', e, this));
         } else {
             this._channel.onmessage = msg => this._onMessage(msg.data || msg);
-            this._channel.onclose = () => this.fire('close', this);
+            this._channel.onclose = () => this.fire('close', !this._closedByUs, this);
             this._channel.onerror = e => this.fire('error', e, this);
         }
     }
@@ -48,11 +50,13 @@ class PeerConnection extends Observable {
 
     close(reason) {
         console.log('Closing peer connection ' + this + (reason ? ' - ' + reason : ''));
+        this._closedByUs = true;
         this._channel.close();
     }
 
     ban(reason) {
         console.warn(`Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
+        this._closedByUs = true;
         this._channel.close();
         this.fire('ban', reason, this);
     }

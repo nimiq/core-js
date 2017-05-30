@@ -40,7 +40,10 @@ class Network extends Observable {
         this._addresses = new PeerAddresses();
 
         // Relay new addresses to peers.
-        this._addresses.on('added', addresses => this._relayAddresses(addresses));
+        this._addresses.on('added', addresses => {
+            this._relayAddresses(addresses);
+            this._checkPeerCount();
+        });
 
         return this;
     }
@@ -95,6 +98,8 @@ class Network extends Observable {
     }
 
     _checkPeerCount() {
+        // TODO Peer count reflects only established connections, but not the ones
+        // currently being established.
         if (this._autoConnect && this._peerCount < Network.PEER_COUNT_DESIRED) {
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._addresses.pickAddress();
@@ -161,6 +166,11 @@ class Network extends Observable {
                 return;
             }
 
+            if (this._addresses.isBanned(conn.peerAddress)) {
+                conn.close('peer is banned');
+                return;
+            }
+
             this._addresses.connected(channel, conn.peerAddress);
         }
 
@@ -174,8 +184,8 @@ class Network extends Observable {
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
-        agent.on('close', peer => this._onClose(peer, channel));
-        agent.on('addr', () => this._onAddr());
+        agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
+        //agent.on('addr', () => this._onAddr());
 
         // XXX If we don't know the peer's peerAddress yet, store the agent
         // indexed by the netAddress of the peer.
@@ -196,10 +206,10 @@ class Network extends Observable {
     }
 
     // This peer channel was closed.
-    _onClose(peer, channel) {
+    _onClose(peer, channel, closedByRemote) {
         // Delete agent.
         if (channel.peerAddress) {
-            this._addresses.disconnected(channel.peerAddress);
+            this._addresses.disconnected(channel.peerAddress, closedByRemote);
             this._agents.delete(channel.peerAddress);
         }
         this._agents.delete(channel.netAddress);
@@ -252,13 +262,23 @@ class Network extends Observable {
         // to index the agent), update the mapping in _agents to use the peerAddress.
         // Also mark the peerAddress as connected.
         if (!this._agents.contains(peer.peerAddress)) {
+            if (this._addresses.isConnected(peer.peerAddress)) {
+                agent.channel.close('duplicate connection (peerAddress, after handshake)');
+                return;
+            }
+
+            if (this._addresses.isBanned(peer.peerAddress)) {
+                agent.channel.close('peer is banned (after handshake)');
+                return;
+            }
+
             this._agents.delete(peer.netAddress);
             this._agents.put(peer.peerAddress, agent);
             this._addresses.connected(agent.channel, peer.peerAddress);
         }
         // Don't allow the same peerAddress two connect more than once from different netAddresses.
         else if (this._agents.contains(peer.netAddress)) {
-            agent.channel.close('duplicate connection (incoming, after handshake)');
+            agent.channel.close('duplicate connection (after handshake)');
             return;
         }
 
@@ -275,11 +295,6 @@ class Network extends Observable {
         this.fire('peers-changed');
 
         console.log('[PEER-JOINED] ' + peer);
-    }
-
-    // A peer has sent us new addresses.
-    _onAddr() {
-        this._checkPeerCount();
     }
 
 
