@@ -262,6 +262,7 @@ class ConsensusAgent extends Observable {
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
             console.warn(`Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
+            // TODO what should happen here? ban? drop connection?
             return;
         }
 
@@ -420,9 +421,9 @@ class ConsensusAgent extends Observable {
             startIndex = 0;
         }
 
-        // Collect up to 500 inventory vectors for the blocks starting right
+        // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
+        const stopIndex = Math.min(mainPath.length - 1, startIndex + ConsensusAgent.GETBLOCKS_VECTORS_MAX);
         const vectors = [];
         for (let i = startIndex + 1; i <= stopIndex; ++i) {
             vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
@@ -468,4 +469,6 @@ ConsensusAgent.REQUEST_TIMEOUT = 5000; // ms
 // if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
 // blocks.
 ConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+// Maximum number of inventory vectors to sent in the response for onGetBlocks.
+ConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
 Class.register(ConsensusAgent);
