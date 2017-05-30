@@ -460,11 +460,11 @@ class PeerAddresses extends Observable {
                     }
                     break;
 
-                case CONNECTED:
+                case PeerAddressState.CONNECTED:
                     // Keep timestamp up-to-date while we are connected.
                     addr.timestamp = Date.now();
                     break;
-                    
+
                 default:
                     // Do nothing for CONNECTING peers.
             }
