@@ -29,12 +29,16 @@ class InvVector {
 
     equals(o) {
         return o instanceof InvVector
-            && this._type == o.type
+            && this._type === o.type
             && this._hash.equals(o.hash);
     }
 
+    hashCode() {
+        return `${this._type}|${this._hash}`;
+    }
+
     toString() {
-        return "InvVector{type=" + this._type + ", hash=" + this.hash + "}";
+        return `InvVector{type=${this._type}, hash=${this._hash}}`;
     }
 
     get serializedSize() {
