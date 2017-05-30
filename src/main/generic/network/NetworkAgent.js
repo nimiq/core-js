@@ -46,10 +46,10 @@ class NetworkAgent extends Observable {
 
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
-        // We also relay addresses that the peer might not be able to connect to (e.g. NodeJS -> Browser).
         const filteredAddresses = addresses.filter(addr => {
             const knownAddress = this._knownAddresses.get(addr);
-            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
+            return addr.timestamp !== 0 // Never relay seed addresses.
+                && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
         });
 
         if (filteredAddresses.length) {
