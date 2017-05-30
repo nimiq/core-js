@@ -75,7 +75,7 @@ class PeerAddresses extends Observable {
                 return (this._peerCount() < 6 ? 2 : 1) * score;
 
             case PeerAddressState.FAILED:
-                return 0.5 * score;
+                return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
 
             default:
                 return -1;
