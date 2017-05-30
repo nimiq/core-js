@@ -136,15 +136,17 @@ class PeerConnector extends Observable {
                 return;
             }
 
-            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal)).then(() => {
-                if (signal.type == 'offer') {
-                    this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
-                }
-            });
+            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal))
+                .then(() => {
+                    if (signal.type == 'offer') {
+                        this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
+                    }
+                })
+                .catch(e => e);
         } else if (signal.candidate) {
             this._lastIceCandidate = new RTCIceCandidate(signal);
             this._rtcConnection.addIceCandidate(this._lastIceCandidate)
-                .catch( e => e );
+                .catch(e => e);
         }
     }
 
