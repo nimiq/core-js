@@ -218,7 +218,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        console.log('[PEER-JOINED] ' + peer);
+        console.log(`[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight})`);
     }
 
     // Connection to this peer address failed.
@@ -260,12 +260,16 @@ class Network extends Observable {
             // Let listeners know that the peers changed.
             this.fire('peers-changed');
 
-            console.log('[PEER-LEFT] ' + peer);
+            const kbTransferred = ((channel.connection.bytesSent
+                + channel.connection.bytesReceived) / 1000).toFixed(2);
+            console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
+                + `(version=${peer.version}, startHeight=${peer.startHeight}, `
+                + ` transferred=${kbTransferred} kB)`);
         } else {
             // The connection was closed before the handshake completed.
             // Treat this as failed connection attempt.
             // TODO inbound WS connections.
-            console.log(`Connection to ${channel.peerAddress} closed pre-handshake`);
+            console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
             if (channel.peerAddress) {
                 this._addresses.unreachable(channel.peerAddress);
             }
@@ -322,6 +326,13 @@ class Network extends Observable {
         if (!peerAddress) {
             // TODO send reject/unreachable message/signal if we cannot forward the signal
             console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            return;
+        }
+
+        // Discard signal if our shortest route to the target is via the sending peer.
+        // XXX Can this happen?
+        if (peerAddress.signalChannel.peerAddress.equals(channel.peerAddress)) {
+            console.error(`Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             return;
         }
 

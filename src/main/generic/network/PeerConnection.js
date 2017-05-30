@@ -64,7 +64,7 @@ class PeerConnection extends Observable {
     }
 
     close(reason) {
-        console.log('Closing peer connection ' + this + (reason ? ' - ' + reason : ''));
+        console.log(`Closing connection #${this._id} ${this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._closedByUs = true;
         this._channel.close();
     }

@@ -22,7 +22,7 @@ class WebRtcConnector extends Observable {
 
         const signalId = peerAddress.signalId;
         if (this._connectors[signalId]) {
-            console.warn('WebRtc: Already connecting/connected to ' + signalId);
+            console.warn(`WebRtc: Already connecting/connected to ${signalId}`);
             return false;
         }
 
@@ -44,12 +44,12 @@ class WebRtcConnector extends Observable {
         try {
             payload = JSON.parse(BufferUtils.toAscii(msg.payload));
         } catch (e) {
-            console.error('Failed to parse signal payload from ' + msg.senderId);
+            console.error(`Failed to parse signal payload from ${msg.senderId}`);
             return;
         }
 
         if (!payload) {
-            console.warn('Discarding signal from ' + msg.senderId + ' - empty payload');
+            console.warn(`Discarding signal from ${msg.senderId} - empty payload`);
             return;
         }
 
@@ -62,12 +62,12 @@ class WebRtcConnector extends Observable {
             if (this._connectors[msg.senderId]) {
                 if (msg.recipientId > msg.senderId) {
                     // Discard the offer.
-                    console.log('Simultaneous connection, discarding offer from ' + msg.senderId + ' (<' + msg.recipientId + ')');
+                    console.log(`Simultaneous connection, discarding offer from ${msg.senderId} (<${msg.recipientId})`);
                     return;
                 } else {
                     // We are going to accept the offer. Clear the connect timeout
                     // from our previous Outbound connection attempt to this peer.
-                    console.log('Simultaneous connection, accepting offer from ' + msg.senderId + ' (>' + msg.recipientId + ')');
+                    console.log(`Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
                     this._timers.clearTimeout('connect_' + msg.senderId);
                 }
             }
@@ -78,8 +78,8 @@ class WebRtcConnector extends Observable {
             this._connectors[msg.senderId] = connector;
 
             this._timers.setTimeout('connect_' + msg.senderId, () => {
-                delete this._connectors[msg.senderId];
                 this._timers.clearTimeout('connect_' + msg.senderId);
+                delete this._connectors[msg.senderId];
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
 
@@ -91,7 +91,7 @@ class WebRtcConnector extends Observable {
 
         // Invalid signal.
         else {
-            console.warn('WebRtc: Discarding invalid signal received from ' + msg.senderId + ' via ' + channel + ': ' + BufferUtils.toAscii(msg.payload));
+            console.warn(`Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress}`);
         }
     }
 
@@ -132,7 +132,7 @@ class PeerConnector extends Observable {
             const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
             if (signalId !== this._signalId) {
                 // TODO what to do here?
-                console.error('Invalid remote description received: expected signalId ' + this._signalId + ', got ' + signalId);
+                console.error(`Invalid remote description received: expected signalId ${this._signalId}, got {signalId}`);
                 return;
             }
 

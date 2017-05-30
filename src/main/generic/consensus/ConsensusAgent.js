@@ -102,7 +102,7 @@ class ConsensusAgent extends Observable {
         // The peer has a shorter chain than us.
         // TODO what do we do here?
         else if (this._blockchain.height > this._peer.startHeight) {
-            console.log('Peer ' + this._peer + ' has a shorter chain (' + this._peer.startHeight + ') than us');
+            console.log(`Peer ${this._peer.peerAddress} has a shorter chain (${this._peer.startHeight}) than us`);
 
             // XXX assume consensus state?
             this._syncing = false;
@@ -142,8 +142,8 @@ class ConsensusAgent extends Observable {
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
         this._timers.setTimeout('getblocks', () => {
-            this._peer.channel.close('getblocks timeout');
             this._timers.clearTimeout('getblocks');
+            this._peer.channel.close('getblocks timeout');
         }, ConsensusAgent.REQUEST_TIMEOUT);
     }
 
@@ -175,7 +175,7 @@ class ConsensusAgent extends Observable {
             }
         }
 
-        console.log('[INV] ' + msg.vectors.length + ' vectors, ' + unknownObjects.length + ' previously unknown');
+        console.log(`[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         // Keep track of the objects the peer knows.
         for (let obj of unknownObjects) {
@@ -247,7 +247,7 @@ class ConsensusAgent extends Observable {
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn('Unsolicited block ' + hash + ' received from peer ' + this._peer.peerAddress + ', discarding');
+            console.warn(`Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
 
@@ -263,12 +263,12 @@ class ConsensusAgent extends Observable {
 
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        console.log('[TX] Received transaction ' + hash.toBase64());
+        console.log(`[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn('Unsolicited transaction ' + hash + ' received from peer ' + this._peer.peerAddress + ', discarding');
+            console.warn(`Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
 
@@ -283,16 +283,14 @@ class ConsensusAgent extends Observable {
     }
 
     _onNotFound(msg) {
-        console.log('[NOTFOUND] ' + msg.vectors.length + ' unknown objects');
+        console.log(`[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
         // Remove unknown objects from in-flight list.
         for (let vector of msg.vectors) {
             if (this._objectsInFlight.indexOf(vector) < 0) {
-                console.warn('Unsolicited notfound vector ' + vector + ' from peer ' + this._peer.peerAddress);
+                console.warn(`Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
-
-            console.log('Peer ' + this._peer.peerAddress + ' did not find ' + obj);
 
             this._onObjectReceived(vector);
         }
@@ -356,7 +354,7 @@ class ConsensusAgent extends Observable {
     }
 
     async _onGetBlocks(msg) {
-        console.log('[GETBLOCKS] Request for blocks, ' + msg.hashes.length + ' block locators');
+        console.log(`[GETBLOCKS] ${msg.hashes.length} block locators received from ${this._peer.peerAddress}`);
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main

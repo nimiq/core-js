@@ -186,7 +186,7 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        console.log('[ADDR] ' + msg.addresses.length + ' addresses');
+        console.log(`[ADDR] ${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
 
         // Clear the getaddr timeout.
         this._timers.clearTimeout('getaddr');

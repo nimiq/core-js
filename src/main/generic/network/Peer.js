@@ -17,6 +17,10 @@ class Peer {
         return this._startHeight;
     }
 
+    get id() {
+        return this._channel.id;
+    }
+
     get peerAddress() {
         return this._channel.peerAddress;
     }
