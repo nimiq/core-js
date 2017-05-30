@@ -406,6 +406,8 @@ class PeerAddresses extends Observable {
 
     _housekeeping() {
         const now = Date.now();
+        const unbannedAddresses = [];
+
         for (let peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
 
@@ -428,6 +430,7 @@ class PeerAddresses extends Observable {
                             peerAddressState.state = PeerAddressState.NEW;
                             peerAddressState.failedAttempts = 0;
                             peerAddressState.bannedUntil = -1;
+                            unbannedAddresses.push(addr);
                         } else {
                             // Delete expires bans.
                             this._store.delete(addr);
@@ -438,6 +441,10 @@ class PeerAddresses extends Observable {
                 default:
                     // Do nothing for CONNECTING/CONNECTED peers.
             }
+        }
+
+        if (unbannedAddresses.length) {
+            this.fire('added', unbannedAddresses, this);
         }
     }
 
