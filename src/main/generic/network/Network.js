@@ -212,7 +212,9 @@ class Network extends Observable {
     _onError(peerAddress) {
         console.warn('Connection to ' + peerAddress + ' failed');
 
-        this._connectingCount--;
+        if (this._addresses.isConnecting(peerAddress)) {
+            this._connectingCount--;
+        }
 
         this._addresses.unreachable(peerAddress);
 
