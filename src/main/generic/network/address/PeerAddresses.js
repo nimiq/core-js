@@ -61,7 +61,9 @@ class PeerAddresses extends Observable {
             return -1;
         }
 
-        const score = this._scoreProtocol(peerAddress) * (peerAddress.timestamp + 1);
+        const score = this._scoreProtocol(peerAddress)
+            * ((peerAddress.timestamp / 1000) + 1);
+
         switch (peerAddressState.state) {
             case PeerAddressState.CONNECTING:
             case PeerAddressState.CONNECTED:
@@ -69,10 +71,10 @@ class PeerAddresses extends Observable {
                 return -1;
 
             case PeerAddressState.NEW:
-                return (this._peerCount() > 6 ? 2 : 1) * score;
+                return (this._peerCount() > 6 ? 1.5 : 1) * score;
 
             case PeerAddressState.TRIED:
-                return (this._peerCount() < 6 ? 2 : 1) * score;
+                return (this._peerCount() < 6 ? 3 : 1) * score;
 
             case PeerAddressState.FAILED:
                 return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
@@ -83,11 +85,26 @@ class PeerAddresses extends Observable {
     }
 
     _scoreProtocol(peerAddress) {
+        let score = 1;
+
+        // Prefer WebSocket addresses if we have less than three WebSocket connections.
         if (this._peerCountWs < 3) {
-            return peerAddress.protocol === Protocol.WS ? 2 : 1;
+            score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
         } else {
-            return peerAddress.protocol === Protocol.RTC ? 2 : 1;
+            score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
         }
+
+        // Prefer WebRTC addresses with lower distance:
+        //  distance = 0: self
+        //  distance = 1: direct connection
+        //  distance = 2: 1 hop
+        //  ...
+        // We only expect distance >= 2 here.
+        if (peerAddress.protocol === Protocol.RTC) {
+            score *= 1 + ((PeerAddresses.MAX_DISTANCE - peerAddress.distance) / 2);
+        }
+
+        return score;
     }
 
     _peerCount() {
@@ -156,13 +173,13 @@ class PeerAddresses extends Observable {
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
         if (channel && this._exceedsAge(peerAddress)) {
-            console.log('Ignoring address ' + peerAddress + ' - too old');
+            console.log(`Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
 
         // Ignore address if its timestamp is too far in the future.
         if (peerAddress.timestamp > Date.now() + PeerAddresses.MAX_TIMESTAMP_DRIFT) {
-            console.log('Ignoring addresses ' + peerAddress + ' - timestamp in the future');
+            console.log(`Ignoring addresses ${peerAddress} - timestamp in the future`);
             return false;
         }
 
@@ -172,7 +189,7 @@ class PeerAddresses extends Observable {
 
             // Ignore address if it exceeds max distance.
             if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
-                console.log('Ignoring address ' + peerAddress + ' - max distance exceeded');
+                console.log(`Ignoring address ${peerAddress} - max distance exceeded`);
                 return false;
             }
         }
@@ -283,6 +300,8 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.CONNECTED;
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
+
+        peerAddressState.peerAddress.timestamp = Date.now();
     }
 
     // Called when a connection to this peerAddress is closed.
@@ -441,8 +460,13 @@ class PeerAddresses extends Observable {
                     }
                     break;
 
+                case CONNECTED:
+                    // Keep timestamp up-to-date while we are connected.
+                    addr.timestamp = Date.now();
+                    break;
+                    
                 default:
-                    // Do nothing for CONNECTING/CONNECTED peers.
+                    // Do nothing for CONNECTING peers.
             }
         }
 
@@ -473,7 +497,7 @@ class PeerAddresses extends Observable {
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
 PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 15 minutes
-PeerAddresses.MAX_DISTANCE = 3;
+PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
