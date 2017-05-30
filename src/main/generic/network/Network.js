@@ -289,10 +289,16 @@ class Network extends Observable {
     /* Signaling */
 
     _onSignal(channel, msg) {
+        // Discard signals with invalid TTL.
+        if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
+            channel.ban('invalid signal ttl');
+            return;
+        }
+
         // Can be null for non-rtc nodes.
         const mySignalId = NetworkConfig.myPeerAddress().signalId;
 
-        // XXX Discard signals from myself.
+        // Discard signals from myself.
         if (msg.senderId === mySignalId) {
             console.warn('Received signal from myself to ' + msg.recipientId + ' on channel ' + channel + ' (myId: ' + mySignalId + ')');
             return;
@@ -301,21 +307,27 @@ class Network extends Observable {
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
             this._rtcConnector.onSignal(channel, msg);
+            return;
+        }
+
+        // Discard signals that have reached their TTL.
+        if (msg.ttl <= 0) {
+            return;
         }
 
         // Otherwise, try to forward the signal to the intented recipient.
-        else {
-            const peerAddress = this._addresses.findBySignalId(msg.recipientId);
-            if (!peerAddress) {
-                // TODO send reject/unreachable message/signal if we cannot forward the signal
-                console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found');
-                return;
-            }
-
-            // XXX PeerChannel API doesn't fit here, no need to re-create the message.
-            peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.payload);
-            console.log(`Forwarding signal from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);
+        const peerAddress = this._addresses.findBySignalId(msg.recipientId);
+        if (!peerAddress) {
+            // TODO send reject/unreachable message/signal if we cannot forward the signal
+            console.warn('Failed to forward signal from ' + msg.senderId + ' to ' + msg.recipientId + ' - no route found');
+            return;
         }
+
+        // Decrement ttl and forward signal.
+        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.ttl - 1, msg.payload);
+
+        // XXX This is very spammy!!!
+        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);
     }
 
     get peerCount() {
@@ -341,4 +353,5 @@ class Network extends Observable {
 Network.PEER_COUNT_DESIRED = 12;
 Network.PEER_COUNT_RELAY = 6;
 Network.CONNECTING_COUNT_MAX = 3;
+Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);

@@ -1,11 +1,13 @@
 class SignalMessage extends Message {
-    constructor(senderId, recipientId, payload) {
+    constructor(senderId, recipientId, ttl, payload) {
         super(Message.Type.SIGNAL);
-        if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId ' + senderId;
-        if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId ' + recipientId;
+        if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId';
+        if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId';
+        if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
         if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         this._senderId = senderId;
         this._recipientId = recipientId;
+        this._ttl = ttl;
         this._payload = payload;
     }
 
@@ -13,9 +15,10 @@ class SignalMessage extends Message {
         Message.unserialize(buf);
         const senderId = buf.readString(32);
         const recipientId = buf.readString(32);
+        const ttl = buf.readUint8();
         const length = buf.readUint16();
         const payload = buf.read(length);
-        return new SignalMessage(senderId, recipientId, payload);
+        return new SignalMessage(senderId, recipientId, ttl, payload);
     }
 
     serialize(buf) {
@@ -23,6 +26,7 @@ class SignalMessage extends Message {
         super.serialize(buf);
         buf.writeString(this._senderId, 32);
         buf.writeString(this._recipientId, 32);
+        buf.writeUint8(this._ttl);
         buf.writeUint16(this._payload.byteLength);
         buf.write(this._payload);
         return buf;
@@ -32,6 +36,7 @@ class SignalMessage extends Message {
         return super.serializedSize
             + /*senderId*/ 32
             + /*recipientId*/ 32
+            + /*ttl*/ 1
             + /*payloadLength*/ 2
             + this._payload.byteLength;
     }
@@ -42,6 +47,10 @@ class SignalMessage extends Message {
 
     get recipientId() {
         return this._recipientId;
+    }
+
+    get ttl() {
+        return this._ttl;
     }
 
     get payload() {
