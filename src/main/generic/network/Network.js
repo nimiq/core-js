@@ -22,6 +22,8 @@ class Network extends Observable {
 
         this._peerCount = 0;
 
+        this._connectingCount = 0;
+
         this._agents = new HashMap();
 
         // Map from netAddress.host -> number of connections to this host.
@@ -59,7 +61,7 @@ class Network extends Observable {
         this._autoConnect = false;
 
         // Close all active connections.
-        for (let agent of this._agents.values()) {
+        for (const agent of this._agents.values()) {
             agent.channel.close('manual network disconnect');
         }
     }
@@ -69,7 +71,7 @@ class Network extends Observable {
         this._autoConnect = false;
 
         // Close all websocket connections.
-        for (let agent of this._agents.values()) {
+        for (const agent of this._agents.values()) {
             if (agent.peer.peerAddress.protocol === Protocol.WS) {
                 agent.channel.close('manual websocket disconnect');
             }
@@ -98,9 +100,10 @@ class Network extends Observable {
     }
 
     _checkPeerCount() {
-        // TODO Peer count reflects only established connections, but not the ones
-        // currently being established.
-        if (this._autoConnect && this._peerCount < Network.PEER_COUNT_DESIRED) {
+        if (this._autoConnect
+            && this._peerCount < Network.PEER_COUNT_DESIRED
+            && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
+
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._addresses.pickAddress();
 
@@ -121,6 +124,7 @@ class Network extends Observable {
                 console.log(`Connecting to ${peerAddress} ...`);
                 if (this._wsConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
+                    this._connectingCount++;
                 }
                 break;
 
@@ -128,6 +132,7 @@ class Network extends Observable {
                 console.log(`Connecting to ${peerAddress} via ${peerAddress.signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
+                    this._connectingCount++;
                 }
                 break;
 
@@ -138,6 +143,10 @@ class Network extends Observable {
     }
 
     _onConnection(conn) {
+        if (conn.peerAddress && this._addresses.isConnecting(conn.peerAddress)) {
+            this._connectingCount--;
+        }
+
         // Reject peer if we have reached max peer count.
         if (this._peerCount >= Network.PEER_COUNT_MAX) {
             conn.close('max peer count reached (' + this._maxPeerCount + ')');
@@ -185,7 +194,6 @@ class Network extends Observable {
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
         agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
-        //agent.on('addr', () => this._onAddr());
 
         // XXX If we don't know the peer's peerAddress yet, store the agent
         // indexed by the netAddress of the peer.
@@ -194,11 +202,17 @@ class Network extends Observable {
         } else {
             this._agents.put(conn.netAddress, agent);
         }
+
+        // Call _checkPeerCount() here in case the peer doesn't send us any (new)
+        // addresses to keep on connecting.
+        this._checkPeerCount();
     }
 
     // Connection to this peer address failed.
     _onError(peerAddress) {
         console.warn('Connection to ' + peerAddress + ' failed');
+
+        this._connectingCount--;
 
         this._addresses.unreachable(peerAddress);
 
@@ -352,4 +366,5 @@ class Network extends Observable {
 }
 Network.PEER_COUNT_DESIRED = 12;
 Network.PEER_COUNT_RELAY = 6;
+Network.CONNECTING_COUNT_MAX = 3;
 Class.register(Network);
