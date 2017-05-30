@@ -58,4 +58,16 @@ describe('Accounts', () => {
         }
         test();
     });
+
+    it('can handle larger chains', (done) => {
+        async function test() {
+            console.log('START LONG TEST');
+            const testBlockchain = await TestBlockchain.createVolatileTest(100);
+
+            console.log('END LONG TEST');
+            done();
+        }
+        test();
+    }, jasmine.DEFAULT_TIMEOUT_INTERVAL * 2);
+
 });

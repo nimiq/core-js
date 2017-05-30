@@ -90,19 +90,44 @@ class Block {
 }
 
 /* Genesis Block */
-Block.GENESIS = new Block(
-    new BlockHeader(
+Block.GENESIS = (() => {
+    // const body = new BlockBody(new Address(Dummy.users[0].address), []); // dummy only defined for testing -> address copied
+    const body = new BlockBody(new Address('EiJjyealvCC4ebY23bEzy4aoF90='), []);
+    const header = new BlockHeader(
         new Hash(null),
-        new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='),
-        new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),
+        new Hash('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE='),   // hardcoded body hash: no async
+        new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),   // copied from old genesis
         BlockUtils.difficultyToCompact(1),
         0,
-        0),
-    new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
-);
+        0);
+    console.log('created genesis');
+    return new Block(header, body);
+})();
+
 // Store hash for synchronous access
 Block.GENESIS.hash().then(hash => {
     Block.GENESIS.HASH = hash;
     Object.freeze(Block.GENESIS);
 });
 Class.register(Block);
+
+
+// old genesis block
+
+// /* Genesis Block */
+// Block.GENESIS = new Block(
+//     new BlockHeader(
+//         new Hash(null),
+//         new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='),
+//         new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),
+//         BlockUtils.difficultyToCompact(1),
+//         0,
+//         0),
+//     new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
+// );
+// // Store hash for synchronous access
+// Block.GENESIS.hash().then(hash => {
+//     Block.GENESIS.HASH = hash;
+//     Object.freeze(Block.GENESIS);
+// });
+// Class.register(Block);
