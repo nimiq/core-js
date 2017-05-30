@@ -312,6 +312,11 @@
 				this._networkChanged();
 				this._minerChanged();
 				this._mempoolChanged();
+
+				// Check for miner auto start.
+				if(window.location.hash && window.location.hash == '#miner') {
+					this._toggleMining();
+				}
 			}
 
 			_submitTransaction(e) {
