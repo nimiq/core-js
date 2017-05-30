@@ -8,7 +8,7 @@ class Consensus extends Observable {
         this._blockchain = blockchain;
         this._mempool = mempool;
 
-        this._agents = {};
+        this._agents = new HashMap();
         this._timers = new Timers();
         this._syncing = false;
         this._established = false;
@@ -21,8 +21,8 @@ class Consensus extends Observable {
             // Don't announce head changes if we are not synced yet.
             if (!this._established) return;
 
-            for (const peerId in this._agents) {
-                this._agents[peerId].relayBlock(head);
+            for (const agent of this._agents.values()) {
+                agent.relayBlock(head);
             }
         });
 
@@ -31,8 +31,8 @@ class Consensus extends Observable {
             // Don't relay transactions if we are not synced yet.
             if (!this._established) return;
 
-            for (const peerId in this._agents) {
-                this._agents[peerId].relayTransaction(tx);
+            for (const agent of this._agents.values()) {
+                agent.relayTransaction(tx);
             }
         });
     }
@@ -40,14 +40,14 @@ class Consensus extends Observable {
     _onPeerJoined(peer) {
         // Create a ConsensusAgent for each peer that connects.
         const agent = new ConsensusAgent(this._blockchain, this._mempool, peer);
-        this._agents[peer.netAddress] = agent;
+        this._agents.put(peer.id, agent);
 
         // If no more peers connect within the specified timeout, start syncing.
         this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), Consensus.SYNC_THROTTLE);
     }
 
     _onPeerLeft(peer) {
-        delete this._agents[peer.netAddress];
+        this._agents.delete(peer.id);
     }
 
     _syncBlockchain() {
@@ -59,8 +59,7 @@ class Consensus extends Observable {
         // Find the peer with the highest chain that isn't sync'd yet.
         let bestHeight = -1;
         let bestAgent = null;
-        for (const key in this._agents) {
-            const agent = this._agents[key];
+        for (const agent of this._agents.values()) {
             if (!agent.synced && agent.peer.startHeight >= bestHeight) {
                 bestHeight = agent.peer.startHeight;
                 bestAgent = agent;
@@ -69,8 +68,8 @@ class Consensus extends Observable {
 
         if (!bestAgent) {
             // We are synced with all connected peers.
-            console.log(`Synced with all connected peers (${Object.keys(this._agents).length}), consensus established.`);
-            console.log(`Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash.toBase64()}`);
+            console.log(`Synced with all connected peers (${this._agents.length}), consensus established.`);
+            console.log(`Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
 
             this._syncing = false;
             this._established = true;
@@ -79,7 +78,7 @@ class Consensus extends Observable {
             return;
         }
 
-        console.log(`Syncing blockchain with peer ${bestAgent.peer}`);
+        console.log(`Syncing blockchain with peer ${bestAgent.peer.peerAddress}`);
 
         this._syncing = true;
 
