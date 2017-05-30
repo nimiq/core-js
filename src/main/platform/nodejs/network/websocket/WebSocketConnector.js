@@ -39,30 +39,30 @@ class WebSocketConnector extends Observable {
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
-            if (ws._errorSeen) {
-                console.error('Connection opened after error seen !?!?');
-                ws.close();
-                return;
-            }
-
             const netAddress = NetAddress.fromHostname(peerAddress.host, peerAddress.port);
             const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {
-            // XXX Debug
-            ws._errorSeen = true;
             this._timers.clearTimeout(timeoutKey);
             this.fire('error', peerAddress, e);
         };
 
         this._timers.setTimeout(timeoutKey, () => {
             this._timers.clearTimeout(timeoutKey);
-            this.fire('error', peerAddress);
 
             // We don't want to fire the error event again if the websocket
             // connect fails at a later time.
             ws.onerror = null;
+
+            // If the connection succeeds after we have fired the error event,
+            // close it.
+            ws.onopen = () => {
+                console.warn(`Connection to ${peerAddress} succeeded after timeout - closing it`);
+                ws.close();
+            };
+
+            this.fire('error', peerAddress);
         }, WebSocketConnector.CONNECT_TIMEOUT);
 
         return true;
@@ -74,4 +74,5 @@ class WebSocketConnector extends Observable {
         this.fire('connection', conn);
     }
 }
+WebSocketConnector.CONNECT_TIMEOUT = 1000 * 5; // 5 seconds
 Class.register(WebSocketConnector);

@@ -28,11 +28,19 @@ class WebSocketConnector extends Observable {
 
         this._timers.setTimeout(timeoutKey, () => {
             this._timers.clearTimeout(timeoutKey);
-            this.fire('error', peerAddress);
 
             // We don't want to fire the error event again if the websocket
             // connect fails at a later time.
             ws.onerror = null;
+
+            // If the connection succeeds after we have fired the error event,
+            // close it.
+            ws.onopen = () => {
+                console.warn(`Connection to ${peerAddress} succeeded after timeout - closing it`);
+                ws.close();
+            };
+
+            this.fire('error', peerAddress);
         }, WebSocketConnector.CONNECT_TIMEOUT);
 
         return true;
