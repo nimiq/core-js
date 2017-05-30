@@ -126,8 +126,6 @@ class Network extends Observable {
                 if (this._wsConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
-                } else if (!this._addresses.isConnecting()) {
-                    this._addresses.unreachable(peerAddress);
                 }
                 break;
 
@@ -136,8 +134,6 @@ class Network extends Observable {
                 if (this._rtcConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
-                } else if (!this._addresses.isConnecting()) {
-                    this._addresses.unreachable(peerAddress);
                 }
                 break;
 
