@@ -267,20 +267,22 @@ class PeerAddresses extends Observable {
             throw 'Connected to banned address';
         }
 
+        if (peerAddressState.state !== PeerAddressState.CONNECTED) {
+            switch (peerAddress.protocol) {
+                case Protocol.WS:
+                    this._peerCountWs++;
+                    break;
+                case Protocol.RTC:
+                    this._peerCountRtc++;
+                    break;
+                default:
+                    console.warn('Unknown protocol ' + peerAddress.protocol);
+            }
+        }
+
         peerAddressState.state = PeerAddressState.CONNECTED;
         peerAddressState.lastConnected = Date.now();
-        //peerAddressState.failedAttempts = 0;
-
-        switch (peerAddress.protocol) {
-            case Protocol.WS:
-                this._peerCountWs++;
-                break;
-            case Protocol.RTC:
-                this._peerCountRtc++;
-                break;
-            default:
-                console.warn('Unknown protocol ' + peerAddress.protocol);
-        }
+        peerAddressState.failedAttempts = 0;
     }
 
     // Called when a connection to this peerAddress is closed.
@@ -292,15 +294,17 @@ class PeerAddresses extends Observable {
 
         this._deleteBySignalingPeer(peerAddress);
 
-        switch (peerAddress.protocol) {
-            case Protocol.WS:
-                this._peerCountWs--;
-                break;
-            case Protocol.RTC:
-                this._peerCountRtc--;
-                break;
-            default:
-                console.warn('Unknown protocol ' + peerAddress.protocol);
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            switch (peerAddress.protocol) {
+                case Protocol.WS:
+                    this._peerCountWs--;
+                    break;
+                case Protocol.RTC:
+                    this._peerCountRtc--;
+                    break;
+                default:
+                    console.warn('Unknown protocol ' + peerAddress.protocol);
+            }
         }
 
         if (peerAddressState.state !== PeerAddressState.BANNED) {
@@ -319,7 +323,6 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             return;
         }
-
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
@@ -397,12 +400,6 @@ class PeerAddresses extends Observable {
             if (addr.protocol === Protocol.RTC
                 && addr.signalChannel
                 && peerAddress.equals(addr.signalChannel.peerAddress)) {
-
-                if (peerAddressState.state === PeerAddressState.CONNECTED) {
-                    // FIXME This shouldn't happen!
-                    console.error('Tried to delete connected ' + addr + ' - signaling channel ' + peerAddress + ' closing');
-                    return;
-                }
 
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);

@@ -112,7 +112,7 @@ class PeerChannel extends Observable {
     }
 
     hashCode() {
-        return this.toString();
+        return this._conn.hashCode();
     }
 
     toString() {
@@ -121,6 +121,10 @@ class PeerChannel extends Observable {
 
     get connection() {
         return this._conn;
+    }
+
+    get id() {
+        return this._conn.id;
     }
 
     get protocol() {
@@ -138,6 +142,10 @@ class PeerChannel extends Observable {
 
     get netAddress() {
         return this._conn.netAddress;
+    }
+
+    get closed() {
+        return this._conn.closed;
     }
 }
 Class.register(PeerChannel);

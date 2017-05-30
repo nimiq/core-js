@@ -24,6 +24,7 @@ class Network extends Observable {
 
         this._connectingCount = 0;
 
+        // Map of agents indexed by connection ids.
         this._agents = new HashMap();
 
         // Map from netAddress.host -> number of connections to this host.
@@ -143,7 +144,8 @@ class Network extends Observable {
     }
 
     _onConnection(conn) {
-        if (conn.peerAddress && this._addresses.isConnecting(conn.peerAddress)) {
+        // Decrement connectingCount if we have initiated this connection.
+        if (!conn.incoming && this._addresses.isConnecting(conn.peerAddress)) {
             this._connectingCount--;
         }
 
@@ -164,29 +166,11 @@ class Network extends Observable {
         }
         this._connectionCounts.put(conn.netAddress, numConnections);
 
+        // Connection accepted.
+        console.log(`Connection established #${conn.id} ${conn.netAddress} (${numConnections})`);
+
         // Create peer channel.
         const channel = new PeerChannel(conn);
-
-        // Check if we already have a connection to the same peerAddress.
-        // The peerAddress is null for incoming connections.
-        if (conn.peerAddress) {
-            if (this._addresses.isConnected(conn.peerAddress)) {
-                conn.close('duplicate connection (peerAddress)');
-                return;
-            }
-
-            if (this._addresses.isBanned(conn.peerAddress)) {
-                conn.close('peer is banned');
-                return;
-            }
-
-            this._addresses.connected(channel, conn.peerAddress);
-        }
-
-        // Connection accepted.
-        console.log(`Connection established ${conn.peerAddress} ${conn.netAddress} (${numConnections})`);
-
-        // Setup peer channel.
         channel.on('signal', msg => this._onSignal(channel, msg));
         channel.on('ban', reason => this._onBan(channel, reason));
 
@@ -195,17 +179,45 @@ class Network extends Observable {
         agent.on('handshake', peer => this._onHandshake(peer, agent));
         agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
 
-        // XXX If we don't know the peer's peerAddress yet, store the agent
-        // indexed by the netAddress of the peer.
-        if (conn.peerAddress) {
-            this._agents.put(conn.peerAddress, agent);
-        } else {
-            this._agents.put(conn.netAddress, agent);
-        }
+        // Store the agent.
+        this._agents.put(conn.id, agent);
 
         // Call _checkPeerCount() here in case the peer doesn't send us any (new)
         // addresses to keep on connecting.
         this._checkPeerCount();
+    }
+
+
+    // Handshake with this peer was successful.
+    _onHandshake(peer, agent) {
+        // Close connection if we are already connected to this peer.
+        if (this._addresses.isConnected(peer.peerAddress)) {
+            agent.channel.close('duplicate connection (peerAddress)');
+            return;
+        }
+
+        // Close connection if this peer is banned.
+        if (this._addresses.isBanned(peer.peerAddress)) {
+            agent.channel.close('peer is banned');
+            return;
+        }
+
+        // Mark the peer's address as connected.
+        this._addresses.connected(agent.channel, peer.peerAddress);
+
+        // Tell others about the address that we just connected to.
+        this._relayAddresses([peer.peerAddress]);
+
+        // Increment the peerCount.
+        this._peerCount++;
+
+        // Let listeners know about this peer.
+        this.fire('peer-joined', peer);
+
+        // Let listeners know that the peers changed.
+        this.fire('peers-changed');
+
+        console.log('[PEER-JOINED] ' + peer);
     }
 
     // Connection to this peer address failed.
@@ -223,12 +235,13 @@ class Network extends Observable {
 
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
-        // Delete agent.
+        // The peerAddress is null pre-handshake for incoming connections.
         if (channel.peerAddress) {
             this._addresses.disconnected(channel.peerAddress, closedByRemote);
-            this._agents.delete(channel.peerAddress);
         }
-        this._agents.delete(channel.netAddress);
+
+        // Delete agent.
+        this._agents.delete(channel.id);
 
         // Decrement connection count per IP.
         let numConnections = this._connectionCounts.get(channel.netAddress) || 1;
@@ -251,7 +264,7 @@ class Network extends Observable {
             // The connection was closed before the handshake completed.
             // Treat this as failed connection attempt.
             // TODO incoming WS connections.
-            console.log(`Connection to ${channel} closed pre-handshake`);
+            console.log(`Connection to ${channel.peerAddress} closed pre-handshake`);
             if (channel.peerAddress) {
                 this._addresses.unreachable(channel.peerAddress);
             }
@@ -264,53 +277,12 @@ class Network extends Observable {
     _onBan(channel, reason) {
         // TODO If this is an incoming connection, the peerAddres might not be set yet.
         // Ban the netAddress in this case.
-        // XXX Should we always ban the netAddress as well?
+        // XXX We should probably always ban the netAddress as well.
         if (channel.peerAddress) {
             this._addresses.ban(channel.peerAddress);
         } else {
             // TODO ban netAddress
         }
-    }
-
-    // Handshake with this peer was successful.
-    _onHandshake(peer, agent) {
-        // XXX If we didn't know the peerAddress earlier (and therefore use the netAddress
-        // to index the agent), update the mapping in _agents to use the peerAddress.
-        // Also mark the peerAddress as connected.
-        if (!this._agents.contains(peer.peerAddress)) {
-            if (this._addresses.isConnected(peer.peerAddress)) {
-                agent.channel.close('duplicate connection (peerAddress, after handshake)');
-                return;
-            }
-
-            if (this._addresses.isBanned(peer.peerAddress)) {
-                agent.channel.close('peer is banned (after handshake)');
-                return;
-            }
-
-            this._agents.delete(peer.netAddress);
-            this._agents.put(peer.peerAddress, agent);
-            this._addresses.connected(agent.channel, peer.peerAddress);
-        }
-        // Don't allow the same peerAddress two connect more than once from different netAddresses.
-        else if (this._agents.contains(peer.netAddress)) {
-            agent.channel.close('duplicate connection (after handshake)');
-            return;
-        }
-
-        // Tell others about the address that we just connected to.
-        this._relayAddresses([peer.peerAddress]);
-
-        // Increment the peerCount.
-        this._peerCount++;
-
-        // Let listeners know about this peer.
-        this.fire('peer-joined', peer);
-
-        // Let listeners know that the peers changed.
-        this.fire('peers-changed');
-
-        console.log('[PEER-JOINED] ' + peer);
     }
 
 

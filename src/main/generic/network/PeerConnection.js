@@ -10,15 +10,20 @@ class PeerConnection extends Observable {
         this._bytesReceived = 0;
         this._bytesSent = 0;
 
+        this._incoming = peerAddress === null;
         this._closedByUs = false;
+        this._closed = false;
+
+        // Unique id for this connection.
+        this._id = PeerConnection._instanceCount++;
 
         if (this._channel.on) {
             this._channel.on('message', msg => this._onMessage(msg.data || msg));
-            this._channel.on('close', () => this.fire('close', !this._closedByUs, this));
+            this._channel.on('close', () => this._onClose());
             this._channel.on('error', e => this.fire('error', e, this));
         } else {
             this._channel.onmessage = msg => this._onMessage(msg.data || msg);
-            this._channel.onclose = () => this.fire('close', !this._closedByUs, this);
+            this._channel.onclose = () => this._onClose();
             this._channel.onerror = e => this.fire('error', e, this);
         }
     }
@@ -37,13 +42,23 @@ class PeerConnection extends Observable {
         }
     }
 
+    _onClose() {
+        this._closed = true;
+        this.fire('close', !this._closedByUs, this);
+    }
+
     send(msg) {
         try {
+            if (this._channel.closed) {
+                console.error('Tried to send data over closed channel ${this}');
+                return false;
+            }
+
             this._channel.send(msg);
             this._bytesSent += msg.byteLength || msg.length;
             return true;
         } catch (e) {
-            console.error(`Failed to send data over ${this}: ${e}`);
+            console.error(`Failed to send data over ${this}: ${e.message || e}`);
             return false;
         }
     }
@@ -68,11 +83,15 @@ class PeerConnection extends Observable {
     }
 
     hashCode() {
-        return this._protocol + '|' + this._peerAddress.hashCode() + '|' + this._netAddress.hashCode();
+        return this._id;
     }
 
     toString() {
-        return `PeerConnection{protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+        return `PeerConnection{id=${this._id}, protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+    }
+
+    get id() {
+        return this._id;
     }
 
     get protocol() {
@@ -99,5 +118,15 @@ class PeerConnection extends Observable {
     get bytesSent() {
         return this._bytesSent;
     }
+
+    get incoming() {
+        return this._incoming;
+    }
+
+    get closed() {
+        return this._closed;
+    }
 }
+// Used to generate unique PeerConnection ids.
+PeerConnection._instanceCount = 0;
 Class.register(PeerConnection);

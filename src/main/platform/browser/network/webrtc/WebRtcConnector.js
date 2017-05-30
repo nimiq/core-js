@@ -216,11 +216,6 @@ class InboundPeerConnector extends PeerConnector {
     _onP2PChannel(event) {
         const channel = event.channel || event.target;
 
-        // Speculatively generate a peerAddress for incoming peers to prevent
-        // duplicate connections. It will be updated once the peer sends its
-        // version message.
-        const peerAddress = new RtcPeerAddress(Services.WEBRTC, Date.now(), this._signalId, 0);
-
         // FIXME it is not really robust to assume that the last iceCandidate seen is
         // actually the address that we connected to.
         let netAddress;
@@ -232,7 +227,7 @@ class InboundPeerConnector extends PeerConnector {
             netAddress = new NetAddress(this._signalId, 1);
         }
 
-        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, peerAddress);
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, /*peerAddress*/ null);
         this.fire('connection', conn);
     }
 }
