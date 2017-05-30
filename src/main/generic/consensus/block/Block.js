@@ -97,6 +97,6 @@ Block.GENESIS = new Block(
 Block.GENESIS.HASH = Hash.fromBase64('oHBViWWDBq8N0gSooW6NrUTKSRbXbhJ0B7IABShyRyA=');
 Block.GENESIS.hash().then(hash => {
     Block.GENESIS.HASH = hash;
-    Object.freeze(Block.GENESIS);
+    //Object.freeze(Block.GENESIS);
 });
 Class.register(Block);

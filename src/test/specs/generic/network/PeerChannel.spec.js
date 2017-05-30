@@ -3,19 +3,23 @@ describe('PeerChannel', () => {
     const hash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
     const vec1 = new InvVector(type, hash);
     const count = 1;
-    const message = new InvMessage([vec1]);
     const addr = new WsPeerAddress(Services.WEBSOCKET, Date.now(), 'node1.nimiq.com', 8443);
 
     it('can send a VersionMessage', (done) => {
-        const spy = new SpyConnection(msg => {
-            const vMsg = VersionMessage.unserialize(msg);
-            expect(vMsg.version).toBe(1);
-            expect(vMsg.peerAddress.equals(addr)).toBe(true);
-            expect(vMsg.startHeight).toBe(42);
-            done();
-        });
-        const client = new PeerChannel(spy);
-        client.version(addr, 42);
+        (async function () {
+            // We need this to prevent a race condition where a new
+            // VersionMessage would be created before Block.GENESIS.HASH
+            // is set in the object
+            await Block.GENESIS.hash();
+            const spy = new SpyConnection(msg => {
+                const vMsg = VersionMessage.unserialize(msg);
+                expect(vMsg.version).toBe(1);
+                expect(vMsg.peerAddress.equals(addr)).toBe(true);
+                expect(vMsg.startHeight).toBe(42);
+            });
+            const client = new PeerChannel(spy);
+            client.version(addr, 42);
+        })().then(done, done.fail);
     });
 
     it('can send a InvMessage', (done) => {
@@ -62,24 +66,30 @@ describe('PeerChannel', () => {
     });
 
     it('can send a BlockMessage', (done) => {
-        const spy = new SpyConnection(msg => {
-            const blockMsg = BlockMessage.unserialize(msg);
-            expect(blockMsg.block.header.equals(Dummy.block1.header)).toBe(true);
-            expect(blockMsg.block.body.equals(Dummy.block1.body)).toBe(true);
-            done();
-        });
-        const client = new PeerChannel(spy);
-        client.block(Dummy.block1);
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const spy = new SpyConnection(msg => {
+                const blockMsg = BlockMessage.unserialize(msg);
+                expect(blockMsg.block.header.equals(block.header)).toBe(true);
+                expect(blockMsg.block.body.equals(block.body)).toBe(true);
+            });
+            const client = new PeerChannel(spy);
+            client.block(block);
+        })().then(done, done.fail);
     });
 
     it('can send a TxMessage', (done) => {
-        const spy = new SpyConnection(msg => {
-            const txMsg = TxMessage.unserialize(msg);
-            expect(txMsg.transaction.equals(Dummy.block1.transactions[0])).toBe(true);
-            done();
-        });
-        const client = new PeerChannel(spy);
-        client.tx(Dummy.block1.transactions[0]);
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const spy = new SpyConnection(msg => {
+                const txMsg = TxMessage.unserialize(msg);
+                expect(txMsg.transaction.equals(block.transactions[0])).toBe(true);
+            });
+            const client = new PeerChannel(spy);
+            client.tx(block.transactions[0]);
+        })().then(done, done.fail);
     });
 
     it('can receive a InvMessage', (done) => {
@@ -134,26 +144,32 @@ describe('PeerChannel', () => {
     });
 
     it('can receive a BlockMessage', (done) => {
-        const message = new BlockMessage(Dummy.block1);
-        const spy = new SpyConnection();
-        const client = new PeerChannel(spy);
-        client.on(message.type, blockMsgTest => {
-            expect(blockMsgTest.block.header.equals(Dummy.block1.header)).toBe(true);
-            expect(blockMsgTest.block.body.equals(Dummy.block1.body)).toBe(true);
-            done();
-        });
-        spy.onmessage(message.serialize());
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const message = new BlockMessage(block);
+            const spy = new SpyConnection();
+            const client = new PeerChannel(spy);
+            client.on(message.type, blockMsgTest => {
+                expect(blockMsgTest.block.header.equals(block.header)).toBe(true);
+                expect(blockMsgTest.block.body.equals(block.body)).toBe(true);
+            });
+            spy.onmessage(message.serialize());
+        })().then(done, done.fail);
     });
 
     it('can receive a TxMessage', (done) => {
-        const message = new TxMessage(Dummy.block1.transactions[0]);
-        const spy = new SpyConnection();
-        const client = new PeerChannel(spy);
-        client.on(message.type, txMsgTest => {
-            expect(txMsgTest.transaction.equals(Dummy.block1.transactions[0])).toBe(true);
-            done();
-        });
-        spy.onmessage(message.serialize());
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const message = new TxMessage(block.transactions[0]);
+            const spy = new SpyConnection();
+            const client = new PeerChannel(spy);
+            client.on(message.type, txMsgTest => {
+                expect(txMsgTest.transaction.equals(block.transactions[0])).toBe(true);
+            });
+            spy.onmessage(message.serialize());
+        })().then(done, done.fail);
     });
 });
 class SpyConnection extends Observable {

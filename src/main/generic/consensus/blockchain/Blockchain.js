@@ -332,7 +332,7 @@ class Blockchain extends Observable {
         // the fork chain until we reach the new head.
         for (const chain of forkChain) {
             // XXX optimize!
-            const hash = await chain.hash();
+            const hash = await chain.hash(); // eslint-disable-line no-await-in-loop
             await this._extend(chain, hash); // eslint-disable-line no-await-in-loop
         }
     }
