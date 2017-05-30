@@ -87,8 +87,8 @@ class NetworkAgent extends Observable {
         if (!this._versionReceived) {
             // TODO Should we ban instead?
             this._timers.setTimeout('version', () => {
-                this._channel.close('version timeout');
                 this._timers.clearTimeout('version');
+                this._channel.close('version timeout');
             }, NetworkAgent.HANDSHAKE_TIMEOUT);
         } else {
             // The peer has sent us his version message already.
@@ -101,8 +101,6 @@ class NetworkAgent extends Observable {
         if (!this._canAcceptMessage(msg)) {
             return;
         }
-
-        console.log('[VERSION] startHeight=' + msg.startHeight);
 
         // TODO actually check version, services and stuff.
 
@@ -168,12 +166,10 @@ class NetworkAgent extends Observable {
         // Request addresses from peer.
         this._channel.getaddr(Services.myServiceMask());
 
-        // If the peer doesn't send addresses within the specified timeout,
-        // fire the address event with empty addresses.
+        // XXX Do we need this timeout?
         this._timers.setTimeout('getaddr', () => {
-            console.warn('Peer ' + this._channel + ' did not send addresses when asked for');
             this._timers.clearTimeout('getaddr');
-            this.fire('addresses', [], this);
+            console.warn(`Peer ${this._channel.peerAddress} did not send any addresses when asked`);
         }, NetworkAgent.GETADDR_TIMEOUT);
     }
 
@@ -213,8 +209,6 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        console.log('[GETADDR] serviceMask=' + msg.serviceMask);
-
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.findByServices(msg.serviceMask);
 
@@ -231,7 +225,9 @@ class NetworkAgent extends Observable {
         });
 
         // Send the addresses back to the peer.
-        this._channel.addr(filteredAddresses);
+        if (filteredAddresses.length) {
+            this._channel.addr(filteredAddresses);
+        }
     }
 
 
@@ -245,7 +241,10 @@ class NetworkAgent extends Observable {
         this._channel.ping(nonce);
 
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
-        this._timers.setTimeout('ping_' + nonce, () => this._channel.close('ping timeout'), NetworkAgent.PING_TIMEOUT);
+        this._timers.setTimeout('ping_' + nonce, () => {
+            this._timers.clearTimeout('ping_' + nonce);
+            this._channel.close('ping timeout');
+        }, NetworkAgent.PING_TIMEOUT);
     }
 
     _onPing(msg) {
