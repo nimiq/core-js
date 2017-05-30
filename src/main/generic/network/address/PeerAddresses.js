@@ -290,10 +290,7 @@ class PeerAddresses extends Observable {
             return;
         }
 
-        const channel = peerAddressState.peerAddress.signalChannel;
-        if (peerAddress.protocol === Protocol.RTC && channel) {
-            this._deleteBySignalChannel(channel);
-        }
+        this._deleteBySignalingPeer(peerAddress);
 
         switch (peerAddress.protocol) {
             case Protocol.WS:
@@ -392,12 +389,21 @@ class PeerAddresses extends Observable {
         this._store.delete(peerAddress);
     }
 
-    // Delete all RTC-only peer addresses that are signalable over the given channel.
-    _deleteBySignalChannel(channel) {
+    // Delete all RTC-only peer addresses that are signalable over the given peer.
+    _deleteBySignalingPeer(peerAddress) {
         // XXX inefficient linear scan
         for (let peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
-            if (addr.protocol === Protocol.RTC && channel.equals(addr.signalChannel)) {
+            if (addr.protocol === Protocol.RTC
+                && addr.signalChannel
+                && peerAddress.equals(addr.signalChannel.peerAddress)) {
+
+                if (peerAddressState.state === PeerAddressState.CONNECTED) {
+                    // FIXME This shouldn't happen!
+                    console.error('Tried to delete connected ' + addr + ' - signaling channel ' + peerAddress + ' closing');
+                    return;
+                }
+
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);
             }
