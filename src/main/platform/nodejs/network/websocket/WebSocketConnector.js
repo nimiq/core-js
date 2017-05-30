@@ -39,11 +39,19 @@ class WebSocketConnector extends Observable {
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
+            if (ws._errorSeen) {
+                console.error('Connection opened after error seen !?!?');
+                ws.close();
+                return;
+            }
+
             const netAddress = NetAddress.fromHostname(peerAddress.host, peerAddress.port);
             const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {
+            // XXX Debug
+            ws._errorSeen = true;
             this._timers.clearTimeout(timeoutKey);
             this.fire('error', peerAddress, e);
         };
