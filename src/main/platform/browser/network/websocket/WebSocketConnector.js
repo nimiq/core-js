@@ -22,13 +22,13 @@ class WebSocketConnector extends Observable {
             this.fire('connection', conn);
         };
         ws.onerror = e => {
-            this.fire('error', peerAddress, e);
             this._timers.clearTimeout(timeoutKey);
+            this.fire('error', peerAddress, e);
         };
 
         this._timers.setTimeout(timeoutKey, () => {
-            this.fire('error', peerAddress);
             this._timers.clearTimeout(timeoutKey);
+            this.fire('error', peerAddress);
 
             // We don't want to fire the error event again if the websocket
             // connect fails at a later time.
