@@ -20,7 +20,7 @@ Core.init($ => {
 ### Get an existing core instance
 ```
 Core.get().then($ => {
-	// $ is the instance 
+	// $ is the instance
 });
 ```
 
@@ -177,21 +177,12 @@ Available via ```$.wallet```.
 - ```publicKey```
 
 ### Methods
-- ```getBalance()```
 - ```createTransaction(recipientAddr, value, fee, nonce)```
-- ```transferFunds(recipientAddr, value, fee)```
 
 ### Events
 No events.
 
 ### Examples
-Query your wallet's balance:
-```
-$.wallet.getBalance().then(balance => {
-	console.log(balance.value)
-	console.log(balance.nonce)
-})
-```
 Create a transaction:
 ```
 $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction => {

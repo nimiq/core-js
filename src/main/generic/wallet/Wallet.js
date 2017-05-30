@@ -1,25 +1,22 @@
 // TODO V2: Store private key encrypted
 class Wallet {
-
-    static async getPersistent(accounts, mempool) {
+    static async getPersistent() {
         const db = new WalletStore();
         let keys = await db.get('keys');
         if (!keys) {
             keys = await Crypto.generateKeys();
             await db.put('keys', keys);
         }
-        return new Wallet(keys, accounts, mempool);
+        return new Wallet(keys);
     }
 
-    static async createVolatile(accounts, mempool) {
+    static async createVolatile() {
         const keys = await Crypto.generateKeys();
-        return new Wallet(keys, accounts, mempool);
+        return new Wallet(keys);
     }
 
-    constructor(keys, accounts, mempool) {
+    constructor(keys) {
         this._keys = keys;
-        this._accounts = accounts;
-        this._mempool = mempool;
         return this._init();
     }
 
@@ -50,22 +47,12 @@ class Wallet {
             });
     }
 
-    async transferFunds(recipientAddr, value, fee) {
-        await this.getBalance()
-            .then(balance => this.createTransaction(recipientAddr, value, fee, balance.nonce)
-                .then(transaction => this._mempool.pushTransaction(transaction)));
-    }
-
     get address() {
         return this._address;
     }
 
     get publicKey() {
         return this._publicKey;
-    }
-
-    getBalance() {
-        return this._accounts.getBalance(this.address);
     }
 }
 Class.register(Wallet);
