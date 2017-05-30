@@ -5,6 +5,16 @@ Error.prototype.toString = function () {
 
 // Don't exit on uncaught exceptions.
 process.on('uncaughtException', (err) => {
+    // Blacklist unsupressable WebSocket errors.
+    const message = err.message;
+    if (message
+        && (
+            message.startsWith('connect ECONNREFUSED')
+            || message === "Cannot read property 'aborted' of null")
+        ) {
+        return;
+    }
+
     console.error(`Uncaught exception: ${err.message || err}`);
 });
 
