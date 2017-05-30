@@ -260,7 +260,10 @@ class PeerAddresses extends Observable {
 
             this._store.add(peerAddressState);
         }
-        if (peerAddressState.state === PeerAddressState.BANNED) {
+        if (peerAddressState.state === PeerAddressState.BANNED
+            // Allow recovering seed peer's incoming connection to succeed.
+            && peerAddressState.peerAddress.timestamp !== 0) {
+
             throw 'Connected to banned address';
         }
 
