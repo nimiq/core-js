@@ -471,8 +471,8 @@ class PeerAddresses extends Observable {
         return this._peerCountRtc;
     }
 }
-PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 60 * 12; // 12 hours
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 30; // 30 minutes
+PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
+PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 15 minutes
 PeerAddresses.MAX_DISTANCE = 3;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes

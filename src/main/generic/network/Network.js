@@ -351,7 +351,7 @@ class Network extends Observable {
     }
 }
 Network.PEER_COUNT_DESIRED = 12;
-Network.PEER_COUNT_RELAY = 6;
+Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 3;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
