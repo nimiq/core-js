@@ -197,6 +197,11 @@ class PeerAddresses extends Observable {
                 return false;
             }
 
+            // Never update the timestamp of seed peers.
+            if (knownAddress.timestamp === 0) {
+                peerAddress.timestamp = 0;
+            }
+
             // Ignore address if we already know a better route to this address.
             // TODO save anyways to have a backup route?
             if (peerAddress.protocol === Protocol.RTC && knownAddress.distance < peerAddress.distance) {
@@ -327,9 +332,10 @@ class PeerAddresses extends Observable {
     }
 
     ban(peerAddress, duration = 10 /*minutes*/) {
-        const peerAddressState = this._store.get(peerAddress);
+        let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
-            throw 'Unknown peerAddress';
+            peerAddressState = new PeerAddressState(peerAddress);
+            this._store.add(peerAddressState);
         }
 
         peerAddressState.state = PeerAddressState.BANNED;
@@ -348,7 +354,13 @@ class PeerAddresses extends Observable {
 
     isBanned(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
-        return peerAddressState && peerAddressState.state === PeerAddressState.BANNED;
+        return peerAddressState
+            && peerAddressState.state === PeerAddressState.BANNED
+            // XXX Never consider seed peers to be banned. This allows us to use
+            // the banning mechanism to prevent seed peers from being picked when
+            // they are down, but still allows recovering seed peers' incoming
+            // connections to succeed.
+            && peerAddressState.peerAddress.timestamp !== 0;
     }
 
     _delete(peerAddress) {
