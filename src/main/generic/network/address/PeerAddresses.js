@@ -285,16 +285,7 @@ class PeerAddresses extends Observable {
         }
 
         if (peerAddressState.state !== PeerAddressState.CONNECTED) {
-            switch (peerAddress.protocol) {
-                case Protocol.WS:
-                    this._peerCountWs++;
-                    break;
-                case Protocol.RTC:
-                    this._peerCountRtc++;
-                    break;
-                default:
-                    console.warn('Unknown protocol ' + peerAddress.protocol);
-            }
+            this._updateConnectedPeerCount(peerAddress, 1);
         }
 
         peerAddressState.state = PeerAddressState.CONNECTED;
@@ -314,16 +305,7 @@ class PeerAddresses extends Observable {
         this._deleteBySignalingPeer(peerAddress);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            switch (peerAddress.protocol) {
-                case Protocol.WS:
-                    this._peerCountWs--;
-                    break;
-                case Protocol.RTC:
-                    this._peerCountRtc--;
-                    break;
-                default:
-                    console.warn('Unknown protocol ' + peerAddress.protocol);
-            }
+            this._updateConnectedPeerCount(peerAddress, -1);
         }
 
         if (peerAddressState.state !== PeerAddressState.BANNED) {
@@ -345,6 +327,7 @@ class PeerAddresses extends Observable {
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
+
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
 
@@ -358,6 +341,9 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
+        }
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            this._updateConnectedPeerCount(peerAddress, -1);
         }
 
         peerAddressState.state = PeerAddressState.BANNED;
@@ -423,6 +409,19 @@ class PeerAddresses extends Observable {
                 console.log('Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);
             }
+        }
+    }
+
+    _updateConnectedPeerCount(peerAddress, delta) {
+        switch (peerAddress.protocol) {
+            case Protocol.WS:
+                this._peerCountWs += delta;
+                break;
+            case Protocol.RTC:
+                this._peerCountRtc += delta;
+                break;
+            default:
+                console.warn('Unknown protocol ' + peerAddress.protocol);
         }
     }
 
