@@ -14,6 +14,7 @@ class TxMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         this._transaction.serialize(buf);
+        super._setChecksum(buf);
         return buf;
     }
 

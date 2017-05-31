@@ -18,38 +18,27 @@ describe('Message', () => {
         expect(msg1.serializedSize).toBe(24);
     });
 
-
-    it('is serializable and unserializable', () => {
-        const msg1 = new Message(type);
-        const msg2 = Message.unserialize(msg1.serialize());
-
-        expect(msg2.type).toEqual(type);
-        // TODO check length
-        // TODO check checksum
-    });
-
     it('must have a well defined type (12 bytes)', () => {
         expect( () => {
-            const test1 = new Message(undefined);
+            const test1 = new Message(undefined); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
         expect( () => {
-            const test2 = new Message(null);
+            const test2 = new Message(null); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
         expect( () => {
-            const test3 = new Message(false);
+            const test3 = new Message(false); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
         expect( () => {
-            const test4 = new Message(true);
+            const test4 = new Message(true); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
         expect( () => {
-            const test5 = new Message('');
+            const test5 = new Message(''); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
         expect( () => {
-            const test7 = new Message('aaaaaaaaaaaaa');
+            const test7 = new Message('aaaaaaaaaaaaa'); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
     });
 
-    // TOD Message.length || Message.checksum 
     /*
     it('must have a well defined length (4 bytes)', () => {
         expect( () => {

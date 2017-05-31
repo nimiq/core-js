@@ -28,6 +28,7 @@ class RejectMessage extends Message {
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
         // TODO extraData
+        super._setChecksum(buf);
         return buf;
     }
 

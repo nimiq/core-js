@@ -3,7 +3,7 @@ class MessageFactory {
         const buf = new SerialBuffer(buffer);
         const type = Message.peekType(buf);
         const clazz = MessageFactory.CLASSES[type];
-        if (!clazz || !clazz.unserialize) throw 'Invalid message type: ' + type;
+        if (!clazz || !clazz.unserialize) throw `Invalid message type: ${type}`;
         return clazz.unserialize(buf);
     }
 }

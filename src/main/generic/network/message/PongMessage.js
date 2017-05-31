@@ -14,6 +14,7 @@ class PongMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         buf.writeUint32(this._nonce);
+        super._setChecksum(buf);
         return buf;
     }
 

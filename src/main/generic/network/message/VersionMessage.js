@@ -20,6 +20,7 @@ class VersionMessage extends Message {
         buf.writeUint32(this._version);
         this._peerAddress.serialize(buf);
         buf.writeUint32(this._startHeight);
+        super._setChecksum(buf);
         return buf;
     }
 

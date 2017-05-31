@@ -22,10 +22,11 @@ class GetBlocksMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         buf.writeUint16(this._hashes.length);
-        for (let hash of this._hashes) {
+        for (const hash of this._hashes) {
             hash.serialize(buf);
         }
         this._hashStop.serialize(buf);
+        super._setChecksum(buf);
         return buf;
     }
 
@@ -33,7 +34,7 @@ class GetBlocksMessage extends Message {
         let size = super.serializedSize
             + /*count*/ 2
             + this._hashStop.serializedSize;
-        for (let hash of this._hashes) {
+        for (const hash of this._hashes) {
             size += hash.serializedSize;
         }
         return size;
