@@ -4,7 +4,7 @@ class RejectMessage extends Message {
         if (StringUtils.isMultibyte(messageType) || messageType.length > 12) throw 'Malformed type';
         if (!NumberUtils.isUint8(code)) throw 'Malformed code';
         if (StringUtils.isMultibyte(reason) || reason.length > 255) throw 'Malformed reason';
-        // TODO extraData
+        if (!extraData || !(extraData instanceof Uint8Array) || !NumberUtils.isUint16(extraData.byteLength)) throw 'Malformed extraData';
 
         this._messageType = messageType;
         this._code = code;
@@ -17,8 +17,9 @@ class RejectMessage extends Message {
         const messageType = buf.readVarLengthString();
         const code = buf.readUint8();
         const reason = buf.readVarLengthString();
-        // TODO extraData
-        return new BlockMessage(block);
+        const length = buf.readUint16();
+        const extraData = buf.read(length);
+        return new RejectMessage(messageType, code, reason, extraData);
     }
 
     serialize(buf) {
@@ -27,7 +28,8 @@ class RejectMessage extends Message {
         buf.writeVarLengthString(this._messageType);
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
-        // TODO extraData
+        buf.writeUint16(this._extraData.byteLength);
+        buf.write(this._extraData);
         return buf;
     }
 
@@ -37,7 +39,9 @@ class RejectMessage extends Message {
             + this._messageType.length
             + /*code*/ 1
             + /*reason VarLengthString extra byte*/ 1
-            + this._reason.length;
+            + this._reason.length
+            + /*extraDataLength*/ 2
+            + this._extraData.byteLength;
     }
 
     get messageType() {
@@ -58,4 +62,5 @@ class RejectMessage extends Message {
 }
 RejectMessage.Code = {};
 RejectMessage.Code.DUPLICATE = 0x12;
+RejectMessage.Code.NO_ROUTE = 0x60;
 Class.register(RejectMessage);
