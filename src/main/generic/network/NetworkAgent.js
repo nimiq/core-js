@@ -238,7 +238,11 @@ class NetworkAgent extends Observable {
         const nonce = Math.round(Math.random() * NumberUtils.UINT32_MAX);
 
         // Send ping message to peer.
-        this._channel.ping(nonce);
+        // If sending the ping message fails, assume the connection has died.
+        if (!this._channel.ping(nonce)) {
+            this._channel.close('sending ping message failed').
+            return;
+        }
 
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout('ping_' + nonce, () => {

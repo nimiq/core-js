@@ -18,10 +18,11 @@ class Network extends Observable {
     }
 
     async _init() {
+        // Flag indicating whether we should actively connect to other peers
+        // if our peer count is below PEER_COUNT_DESIRED.
         this._autoConnect = false;
 
-        this._peerCount = 0;
-
+        // Number of ongoing outbound connection attempts.
         this._connectingCount = 0;
 
         // Map of agents indexed by connection ids.
@@ -102,7 +103,7 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this._peerCount < Network.PEER_COUNT_DESIRED
+            && this.peerCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
@@ -159,7 +160,7 @@ class Network extends Observable {
         }
 
         // Reject peer if we have reached max peer count.
-        if (this._peerCount >= Network.PEER_COUNT_MAX) {
+        if (this.peerCount >= Network.PEER_COUNT_MAX) {
             conn.close('max peer count reached (' + this._maxPeerCount + ')');
             return;
         }
@@ -218,9 +219,6 @@ class Network extends Observable {
         // Tell others about the address that we just connected to.
         this._relayAddresses([peer.peerAddress]);
 
-        // Increment the peerCount.
-        this._peerCount++;
-
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
 
@@ -259,9 +257,6 @@ class Network extends Observable {
             if (this._addresses.isConnected(channel.peerAddress)) {
                 // Mark peer as disconnected.
                 this._addresses.disconnected(channel.peerAddress, closedByRemote);
-
-                // Decrement the peerCount.
-                this._peerCount--;
 
                 // Tell listeners that this peer has gone away.
                 this.fire('peer-left', peer);
@@ -346,11 +341,13 @@ class Network extends Observable {
         peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.ttl - 1, msg.payload);
 
         // XXX This is very spammy!!!
-        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);
+        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
+            + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
+            + `(via ${peerAddress.signalChannel.peerAddress})`);
     }
 
     get peerCount() {
-        return this._peerCount;
+        return this._addresses.peerCountWs + this._addresses.peerCountRtc;
     }
 
     get peerCountWebSocket() {
