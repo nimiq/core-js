@@ -52,16 +52,16 @@ class SignalMessage extends Message {
             + this._payload.byteLength;
     }
 
-    get nonce() {
-        return this._nonce;
-    }
-
     get senderId() {
         return this._senderId;
     }
 
     get recipientId() {
         return this._recipientId;
+    }
+
+    get nonce() {
+        return this._nonce;
     }
 
     get ttl() {

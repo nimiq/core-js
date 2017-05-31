@@ -63,5 +63,4 @@ class RejectMessage extends Message {
 }
 RejectMessage.Code = {};
 RejectMessage.Code.DUPLICATE = 0x12;
-RejectMessage.Code.NO_ROUTE = 0x60;
 Class.register(RejectMessage);
