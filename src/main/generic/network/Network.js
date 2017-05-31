@@ -324,8 +324,9 @@ class Network extends Observable {
         // Otherwise, try to forward the signal to the intented recipient.
         const peerAddress = this._addresses.findBySignalId(msg.recipientId);
         if (!peerAddress) {
-            // TODO send reject/unreachable message/signal if we cannot forward the signal
+            // send reject/unreachable message/signal if we cannot forward the signal
             console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, new Uint8Array(), SignalMessage.Flags.UNROUTABLE);
             return;
         }
 
@@ -337,7 +338,7 @@ class Network extends Observable {
         }
 
         // Decrement ttl and forward signal.
-        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.ttl - 1, msg.payload);
+        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.payload);
 
         // XXX This is very spammy!!!
         console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);

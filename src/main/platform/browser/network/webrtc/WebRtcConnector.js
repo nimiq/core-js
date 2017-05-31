@@ -154,6 +154,7 @@ class PeerConnector extends Observable {
         this._signalChannel.signal(
             NetworkConfig.myPeerAddress().signalId,
             this._signalId,
+            NumberUtils.randomUint32(),
             Network.SIGNAL_TTL_INITIAL,
             BufferUtils.fromAscii(JSON.stringify(signal))
         );
