@@ -161,7 +161,7 @@ class Network extends Observable {
 
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
-            conn.close('max peer count reached (' + this._maxPeerCount + ')');
+            conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return;
         }
 
