@@ -20,16 +20,17 @@ class AddrMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         buf.writeUint16(this._addresses.length);
-        for (let addr of this._addresses) {
+        for (const addr of this._addresses) {
             addr.serialize(buf);
         }
+        super._setChecksum(buf);
         return buf;
     }
 
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2;
-        for (let addr of this._addresses) {
+        for (const addr of this._addresses) {
             size += addr.serializedSize;
         }
         return size;

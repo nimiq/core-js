@@ -19,6 +19,7 @@ require('../../generic/utils/buffer/SerialBuffer.js');
 require('../../generic/utils/buffer/BufferUtils.js');
 require('./crypto/CryptoLib.js');
 require('../../generic/utils/crypto/Crypto.js');
+require('../../generic/utils/crc/CRC32.js');
 require('../../generic/utils/number/NumberUtils.js');
 require('../../generic/utils/object/ObjectUtils.js');
 require('../../generic/utils/platform/PlatformUtils.js');
