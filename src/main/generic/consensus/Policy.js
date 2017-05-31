@@ -4,8 +4,7 @@ class Policy {
     }
 
     static get BLOCK_TIME() {
-        return 30;
-        /* in seconds */
+        return 30; // Seconds
     }
 
     static get BLOCK_REWARD() {

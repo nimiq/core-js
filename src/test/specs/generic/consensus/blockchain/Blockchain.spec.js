@@ -8,7 +8,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('will always verify a block before accepting it', (done) => {
+    xit('will always verify a block before accepting it', (done) => {
         (async function () {
             // This is needed to check which reason caused pushBlock() to fail
             spyOn(console, 'log').and.callThrough();
@@ -100,7 +100,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can push and get a valid block, and get the next compact target', (done) => {
+    xit('can push and get a valid block, and get the next compact target', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
@@ -164,7 +164,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
+    xit('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
@@ -211,7 +211,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('has getters that return correct values for its properties', (done) => {
+    xit('has getters that return correct values for its properties', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
