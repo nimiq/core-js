@@ -41,7 +41,7 @@ class WebRtcConnector extends Observable {
 
     onSignal(channel, msg) {
         // first check flags
-        if (!(msg.flags & SignalMessage.Flags.OK)) {
+        if (msg.flags & SignalMessage.Flags.UNROUTABLE) {
             // handle error cases
             // check for relevant connector
             if (this._connectors[msg.senderId] && this._connectors[msg.senderId].nonce == msg.nonce) {
