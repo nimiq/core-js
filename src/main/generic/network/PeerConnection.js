@@ -7,8 +7,8 @@ class PeerConnection extends Observable {
         this._netAddress = netAddress;
         this._peerAddress = peerAddress;
 
-        this._bytesReceived = 0;
         this._bytesSent = 0;
+        this._bytesReceived = 0;
 
         this._inbound = peerAddress === null;
         this._closedByUs = false;
@@ -144,12 +144,12 @@ class PeerConnection extends Observable {
         return this._netAddress;
     }
 
-    get bytesReceived() {
-        return this._bytesReceived;
-    }
-
     get bytesSent() {
         return this._bytesSent;
+    }
+
+    get bytesReceived() {
+        return this._bytesReceived;
     }
 
     get inbound() {
