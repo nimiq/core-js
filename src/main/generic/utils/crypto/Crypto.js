@@ -43,8 +43,8 @@ class Crypto {
         return Crypto.lib.exportKey('jwk', privateKey);
     }
 
-    static importPrivate(privateKey) {
-        return Crypto.lib.importKey('jwk', privateKey, Crypto.settings.keys, true, ['sign']);
+    static importPrivate(privateKey, format = 'jwk') {
+        return Crypto.lib.importKey(format, privateKey, Crypto.settings.keys, true, ['sign']);
     }
 
     static exportPublic(publicKey, format = 'raw') {
