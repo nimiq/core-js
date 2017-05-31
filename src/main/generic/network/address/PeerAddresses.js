@@ -61,6 +61,11 @@ class PeerAddresses extends Observable {
             return -1;
         }
 
+        // Filter addresses that are too old.
+        if (this._exceedsAge(peerAddress)) {
+            return -1;
+        }
+
         const score = this._scoreProtocol(peerAddress)
             * ((peerAddress.timestamp / 1000) + 1);
 
@@ -325,20 +330,23 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             return;
         }
+        if (peerAddressState.state !== PeerAddressState.CONNECTING
+            && peerAddressState.state !== PeerAddressState.CONNECTED) {
+            throw 'disconnected() called in unexpected state ' + peerAddressState.state;
+        }
 
+        // Delete all addresses that were signalable over the disconnected peer.
         this._deleteBySignalingPeer(peerAddress);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
         }
 
-        if (peerAddressState.state !== PeerAddressState.BANNED) {
-            // XXX Immediately delete address if the remote host closed the connection.
-            if (closedByRemote) {
-                this._delete(peerAddress);
-            } else {
-                peerAddressState.state = PeerAddressState.TRIED;
-            }
+        // XXX Immediately delete address if the remote host closed the connection.
+        if (closedByRemote) {
+            this._delete(peerAddress);
+        } else {
+            peerAddressState.state = PeerAddressState.TRIED;
         }
     }
 
@@ -461,8 +469,7 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.TRIED:
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
-                    // Special case: don't delete seed addresses (timestamp == 0)
-                    if (addr.timestamp > 0 && this._exceedsAge(addr)) {
+                    if (this._exceedsAge(addr)) {
                         console.log('Deleting old peer address ' + addr);
                         this.delete(addr);
                     }
@@ -500,6 +507,11 @@ class PeerAddresses extends Observable {
     }
 
     _exceedsAge(peerAddress) {
+        // Seed addresses are never too old.
+        if (peerAddress.timestamp === 0) {
+            return false;
+        }
+
         const age = Date.now() - peerAddress.timestamp;
         switch (peerAddress.protocol) {
             case Protocol.WS:
