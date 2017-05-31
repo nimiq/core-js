@@ -107,8 +107,8 @@ describe('BlockHeader', () => {
         expect(compact2).toBe(compact1);
     });
 
-    it('must have a well defined timestamp (8 bytes)', () => {
-        const timestamp1 = NumberUtils.UINT64_MAX;
+    it('must have a well defined timestamp (4 bytes)', () => {
+        const timestamp1 = NumberUtils.UINT32_MAX;
         const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp1, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const timestamp2 = blockHeader2.timestamp;
