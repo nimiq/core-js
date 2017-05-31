@@ -113,9 +113,8 @@ class Network extends Observable {
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._addresses.pickAddress();
 
-            // If we are connected to all addresses we know, wait for more.
+            // We can't connect if we don't know any more addresses.
             if (!peerAddress) {
-                Log.w(Network, 'Not connecting to more peers - no addresses left');
                 return;
             }
 
