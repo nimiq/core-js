@@ -75,7 +75,7 @@ class SignalMessage extends Message {
         return this._flags;
     }
 }
-SignalMessage.flagss = {};
-SignalMessage.flagss.OK = 0x0;
-SignalMessage.flagss.UNROUTABLE = 0x1;
+SignalMessage.Flags = {};
+SignalMessage.Flags.OK = 0x1;
+SignalMessage.Flags.UNROUTABLE = 0x2;
 Class.register(SignalMessage);
