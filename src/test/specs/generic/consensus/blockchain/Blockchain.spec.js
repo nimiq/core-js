@@ -1,10 +1,32 @@
 describe('Blockchain', () => {
-    let accounts, blockchain;
+    let testBlockchain, largeUserbaseBlockchain;
+
+    // TODO the setup of largeUserbaseBlockchain and the test for a block exceeding the size limit are extremely slow
+    // since they require to create 6060 users for a block size limit of 1MB. Either deactivate them in case they become
+    // impractical or find faster alternative
+
+    beforeAll(function (done) {
+        (async function () {
+            console.log('Blockchain: start of long-running one-time setup');
+            // create testing blockchain with only genesis but large amount of users
+            const largeUserBase = await TestBlockchain.generateUsers(TestBlockchain.MAX_NUM_TRANSACTIONS + 1);
+            largeUserbaseBlockchain = await TestBlockchain.createVolatileTest(0, largeUserBase);
+
+            // make sure all users have a non-zero balance
+            let i = 1;
+            for(const user of largeUserBase) {
+                // console.log('Granting user ' + i + ' a non-zero balance');
+                await largeUserbaseBlockchain.accounts._tree.put(new Address(user.address), new Balance(500, 0));
+                i++;
+            }
+            console.log('Blockchain: end of long-running one-time setup');
+        })().then(done, done.fail);
+    }, jasmine.DEFAULT_TIMEOUT_INTERVAL * 10);
 
     beforeEach(function (done) {
         (async function () {
-            accounts = await Accounts.createVolatile();
-            blockchain = await Blockchain.createVolatile(accounts);
+            // create testing blockchain with only genesis and dummy users
+            testBlockchain = await TestBlockchain.createVolatileTest(0);
         })().then(done, done.fail);
     });
 
@@ -15,90 +37,124 @@ describe('Blockchain', () => {
             spyOn(console, 'warn').and.callThrough();
 
             // Try to push a block with an invalid prevHash and check that it fails
-            let block = await Dummy.block1;
-            let status = await blockchain.pushBlock(block);
+
+            // hash that does NOT match the one from Genesis
+            const zeroHash = new Hash('0000000000000000000000000000000000000000000');
+            // create block with invalid prevHash
+            let block = await testBlockchain.createBlock(undefined, zeroHash);
+            // set wrong* prevHash      *(with close-to-1 probability)
+
+            let status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             let hash = await block.hash();
             expect(console.log).toHaveBeenCalledWith(`Blockchain discarding block ${hash.toBase64()} - previous block ${block.prevHash.toBase64()} unknown`);
 
-            //// Now try to push a block which exceeds the maximum block size
-            block = await Dummy.block2;
-            status = await blockchain.pushBlock(block);
+            // Now try to push a block which exceeds the maximum block size
+
+            const numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS + 1;
+            console.info(`creating ${  numTransactions  } transactions`);
+            let transactions = await largeUserbaseBlockchain.generateTransactions(numTransactions, true, false);
+            console.info(`finished creating ${  numTransactions  } transactions`);
+            block = await largeUserbaseBlockchain.createBlock(transactions);
+            status = await largeUserbaseBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - max block size exceeded');
 
             // Now try to push a block that has more than one transaction from the same
             // sender public key
-            block = await Dummy.block3;
-            status = await blockchain.pushBlock(block);
+            const senderPubKey = new PublicKey(Dummy.users[0].publicKey);
+            const senderPrivKey = Dummy.users[0].privateKey;
+            const receiverAddr1 = new Address(Dummy.users[1].address);
+            const receiverAddr2 = new Address(Dummy.users[2].address);
+            // user[0] -> user[1] & user[0] -> user[2]
+            transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0,
+                senderPrivKey),
+                await TestBlockchain.createTransaction(senderPubKey, receiverAddr2, 1, 1, 0, undefined, senderPrivKey),
+            ];
+            block = await testBlockchain.createBlock(transactions);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - more than one transaction per sender');
 
             // Now try to push a block with a timestamp that's more than
-            // Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX miliseconds into the future
-            block = await Dummy.block4;
-            status = await blockchain.pushBlock(block);
+            // Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX milliseconds into the future
+            const timestamp = Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX * 2;
+            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
+                timestamp);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - timestamp too far in the future');
 
             // Now try to push a block with the wrong difficulty
-            block = await Dummy.block5;
-            status = await blockchain.pushBlock(block);
+            const correctDifficulty = BlockUtils.compactToDifficulty(await testBlockchain.getNextCompactTarget());
+            const compactWrongDifficulty = BlockUtils.difficultyToCompact(correctDifficulty + 1);
+            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined,
+                compactWrongDifficulty);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejecting block - difficulty mismatch');
 
+
             // Now try to push a block with an invalid body hash
-            block = await Dummy.block6;
-            status = await blockchain.pushBlock(block);
+            block = await testBlockchain.createBlock(undefined, undefined, undefined, zeroHash);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejecting block - body hash mismatch');
 
+
             // Now try to push a block with an invalid transaction signature
-            block = await Dummy.block7;
-            status = await blockchain.pushBlock(block);
+            const data = new ArrayBuffer(32);
+            const wrongSignature = new Signature(await Crypto.sign(await Crypto.importPrivate(Dummy.users[0].privateKey), data));
+            transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, undefined, wrongSignature)];
+            block = await testBlockchain.createBlock(transactions);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - invalid transaction signature');
 
+
             // Now try to push a block that is not compliant with Proof of Work requirements
-            block = await Dummy.block8;
-            status = await blockchain.pushBlock(block);
+            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, false);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - PoW verification failed');
 
-            // Change the balance of the sender account referenced in the transaction
-            // of this block so that the block can be pushed without failing the
-            // balance checks
-            await accounts._tree.put(new Address(Dummy['address5']), new Balance(9007199254740991, 0));
-
-            // Now change the block's nonce to make compliant with the PoW requirements and
-            // try to push it again, this time it should succeed
-            block.header.nonce = 32401;
-            status = await blockchain.pushBlock(block);
+            // we mock instead of finding an actual value (mining) for time reasons: push otherwise valid block
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(true);
             expect(console.log.calls.count()).toEqual(1);
 
+
+
             // Try to push the same block again, the call should succeed, but the console
             // should log what happened
-            status = await blockchain.pushBlock(block);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(true);
             hash = await block.hash();
             expect(console.log).toHaveBeenCalledWith(`Blockchain ignoring known block ${hash.toBase64()}`);
 
+
             // Try to push a block that has a lower timestamp than the one
             // successfully pushed before and check that it fails
-            block = await Dummy.block9;
-            status = await blockchain.pushBlock(block);
+
+            const older = block.timestamp - 1;
+            console.log(older);
+            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
+                older);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejecting block - timestamp mismatch');
 
             // Finally, try to push a block that has an invalid AccountsHash
-            block = await Dummy.block10_2;
-            status = await blockchain.pushBlock(block);
+            block = await testBlockchain.createBlock(undefined, undefined, zeroHash);
+            status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
-            expect(console.log).toHaveBeenCalledWith('Blockchain rejecting block, AccountsHash mismatch: current=ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=, block=R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA=');
+            expect(console.log).toHaveBeenCalledWith(jasmine.stringMatching(/Blockchain rejecting block, AccountsHash mismatch/));
+            // expect(console.log).toHaveBeenCalledWith('Blockchain rejecting block, AccountsHash mismatch: current=ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=, block=R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA=');
 
         })().then(done, done.fail);
-    });
+    }, jasmine.DEFAULT_TIMEOUT_INTERVAL * 2);
 
     it('can push and get a valid block, and get the next compact target', (done) => {
         (async function () {
@@ -111,7 +167,7 @@ describe('Blockchain', () => {
             let block = await Dummy.block8;
             const hash1 = await block.hash();
             block.header.nonce = 32401;
-            let status = await blockchain.pushBlock(block);
+            let status = await blockchain.commitBlock(block);
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
