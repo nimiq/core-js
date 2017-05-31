@@ -13,7 +13,7 @@ class CRC32 {
         return table;
     }
 
-    static execute(buf) {
+    static compute(buf) {
         if (!CRC32._table) CRC32._table = CRC32._createTable();
         if (!CRC32._hex_chars) CRC32._hex_chars = '0123456789abcdef'.split('');
 
@@ -33,7 +33,7 @@ class CRC32 {
             CRC32._hex_chars[(crc >> 12) & 0x0F] + CRC32._hex_chars[(crc >> 8) & 0x0F] +
             CRC32._hex_chars[(crc >> 4) & 0x0F] + CRC32._hex_chars[crc & 0x0F];
 
-        return hex;
+        return parseInt(hex, 16);
     }
 }
 CRC32._table = null;
