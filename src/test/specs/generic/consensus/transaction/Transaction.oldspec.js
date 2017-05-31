@@ -1,6 +1,6 @@
 describe('RawTransaction', () => {
-    const senderPubKey = new PublicKey(Dummy.publicKey1);
-    const recipientAddr = new Address(Dummy.address1);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
 
     const fee = 1;
@@ -19,21 +19,21 @@ describe('RawTransaction', () => {
 });
 
 describe('RawTransaction.senderPubKey', () => {
-    const recipientAddr = new Address(Dummy.address1);
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 1;
     const nonce = 0;
 
     it(' is set in the constructor', () => {
-        const senderPubKey = new PublicKey(Dummy.publicKey1);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
         const tx = new RawTransaction(senderPubKey, recipientAddr, value, fee, nonce);
         expect(tx.senderPubKey.equals(senderPubKey)).toEqual(true);
     });
 });
 
 describe('RawTransaction.value', () => {
-    const senderPubKey = new PublicKey(Dummy.publicKey1);
-    const recipientAddr = new Address(Dummy.address1);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const fee = 1;
     const nonce = 0;
 
@@ -72,8 +72,8 @@ describe('RawTransaction.value', () => {
 });
 
 describe('RawTransaction.fee', () => {
-    const senderPubKey = new PublicKey(Dummy.publicKey1);
-    const recipientAddr = new Address(Dummy.address1);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const nonce = 0;
 
@@ -99,8 +99,8 @@ describe('RawTransaction.fee', () => {
 });
 
 describe('RawTransaction.nonce', () => {
-    const senderPubKey = new PublicKey(Dummy.publicKey1);
-    const recipientAddr = new Address(Dummy.address1);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 10;
 
@@ -126,8 +126,8 @@ describe('RawTransaction.nonce', () => {
 
 
 describe('Transaction', () => {
-    const senderPubKey = new PublicKey(Dummy.publicKey1);
-    const recipientAddr = new Address(Dummy.address1);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 1;
     const nonce = 1;

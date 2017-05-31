@@ -4,47 +4,34 @@ class Wallet {
         const db = new WalletStore();
         let keys = await db.get('keys');
         if (!keys) {
-            keys = await Crypto.generateKeys();
+            keys = await KeyPair.generate();
             await db.put('keys', keys);
         }
         return new Wallet(keys);
     }
 
     static async createVolatile() {
-        const keys = await Crypto.generateKeys();
-        return new Wallet(keys);
+        return new Wallet(await KeyPair.generate());
     }
 
-    constructor(keys) {
-        this._keys = keys;
+    constructor(keyPair) {
+        this._keyPair = keyPair;
         return this._init();
     }
 
     async _init() {
-        this._publicKey = await Crypto.exportPublic(this._keys.publicKey);
-        this._address = await Crypto.exportAddress(this._keys.publicKey);
+        this._address = await this._keyPair.publicKey.toAddress();
         return this;
     }
 
-    importPrivate(privateKey) {
-        return Crypto.importPrivate(privateKey);
-    }
-
-    exportPrivate() {
-        return Crypto.exportPrivate(this._keys.privateKey);
-    }
-
     createTransaction(recipientAddr, value, fee, nonce) {
-        const transaction = new Transaction(this._publicKey, recipientAddr, value, fee, nonce);
+        const transaction = new Transaction(this._keyPair.publicKey, recipientAddr, value, fee, nonce);
         return this._signTransaction(transaction);
     }
 
-    _signTransaction(transaction) {
-        return Crypto.sign(this._keys.privateKey, transaction.serializeContent())
-            .then(signature => {
-                transaction.signature = signature;
-                return transaction;
-            });
+    async _signTransaction(transaction) {
+        transaction.signature = await Signature.create(this._keyPair.privateKey, transaction.serializeContent());
+        return transaction;
     }
 
     get address() {
@@ -52,7 +39,7 @@ class Wallet {
     }
 
     get publicKey() {
-        return this._publicKey;
+        return this._keyPair._publicKey;
     }
 }
 Class.register(Wallet);

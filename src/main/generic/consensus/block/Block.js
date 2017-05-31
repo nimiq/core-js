@@ -6,14 +6,6 @@ class Block {
         this._body = body;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, Block);
-        BlockHeader.cast(o._header);
-        BlockBody.cast(o._body);
-        return o;
-    }
-
     static unserialize(buf) {
         var header = BlockHeader.unserialize(buf);
         var body = BlockBody.unserialize(buf);
@@ -93,14 +85,15 @@ class Block {
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
-        new Hash('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg='),
-        new Hash('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw='),
+        new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
+        new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
         BlockUtils.difficultyToCompact(1),
         0,
         0),
-    new BlockBody(new Address('kekkD0FSI5gu3DRVMmMHEOlKf1I'), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
 );
 // Store hash for synchronous access
+Block.GENESIS.HASH = Hash.fromBase64('oHBViWWDBq8N0gSooW6NrUTKSRbXbhJ0B7IABShyRyA=');
 Block.GENESIS.hash().then(hash => {
     Block.GENESIS.HASH = hash;
     Object.freeze(Block.GENESIS);

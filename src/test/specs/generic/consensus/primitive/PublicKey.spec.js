@@ -1,38 +1,21 @@
 describe('PublicKey', () => {
 
-    it('is 65 bytes long (for now, because of WebCrypto API)', () => {
-        // See: https://w3c.github.io/webcrypto/Overview.html#subtlecrypto-interface-datatypes
+    it('is serializable and unserializable', (done) => {
+        (async function () {
+            const pubKey1 = (await KeyPair.generate()).publicKey;
+            const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
 
-        const pubKey1 = new PublicKey(Dummy.publicKey1);
-        expect(pubKey1.serializedSize).toEqual(65);
-        expect(() => {
-            const pubKey = new PublicKey(new ArrayBuffer(16));
-        }).toThrow('Primitive: Invalid length');
-
-        expect(() => {
-            const pubKey = new PublicKey(new ArrayBuffer(20));
-        }).toThrow('Primitive: Invalid length');
-
-        expect(() => {
-            const pubKey = new PublicKey(new ArrayBuffer(66));
-        }).toThrow('Primitive: Invalid length');
-
-        expect(() => {
-            const pubKey = new PublicKey(new ArrayBuffer(64));
-        }).toThrow('Primitive: Invalid length');
-    });
-
-    it('is serializable and unserializable', () => {
-        const pubKey1 = new PublicKey(null);
-        const pubKey2 = PublicKey.unserialize(pubKey1.serialize());
-
-        expect(pubKey1.equals(pubKey2)).toEqual(true);
+            expect(pubKey1.equals(pubKey2)).toEqual(true);
+            expect(pubKey1.serialize().byteLength).toEqual(pubKey1.serializedSize);
+            expect(pubKey2.serialize().byteLength).toEqual(pubKey2.serializedSize);
+            done();
+        })();
     });
 
     it('has an equals method', () => {
-        const pubKey1 = new PublicKey(Dummy.publicKey1);
-        const pubKey2 = new PublicKey(Dummy.publicKey2);
-        const pubKey3 = new PublicKey(Dummy.publicKey2);
+        const pubKey1 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+        const pubKey2 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2));
+        const pubKey3 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2));
 
         expect(pubKey1.equals(1)).toEqual(false);
         expect(pubKey1.equals(null)).toEqual(false);

@@ -32,7 +32,7 @@ class VolatileBlockchainStore {
     }
 
     async key(value) {
-        return BufferUtils.toBase64(await value.hash());
+        return (await value.hash()).toBase64();
     }
 
     get(key) {

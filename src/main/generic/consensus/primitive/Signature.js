@@ -1,30 +1,32 @@
 class Signature extends Primitive {
-
-    static get SERIALIZED_SIZE() {
-        return 64;
+    constructor(arg) {
+        super(arg, Crypto.signatureType, Crypto.signatureSize);
     }
 
-    constructor(arg) {
-        super(arg, Signature.SERIALIZED_SIZE);
+    static async create(privateKey, data) {
+        return new Signature(await Crypto.signatureCreate(privateKey._obj, data));
     }
 
     static unserialize(buf) {
-        return new Signature(buf.read(Signature.SERIALIZED_SIZE));
+        return new Signature(Crypto.signatureUnserialize(buf.read(Crypto.signatureSize)));
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(this);
+        buf.write(Crypto.signatureSerialize(this._obj));
         return buf;
     }
 
     get serializedSize() {
-        return Signature.SERIALIZED_SIZE;
+        return Crypto.signatureSize;
+    }
+
+    verify(publicKey, data) {
+        return Crypto.signatureVerify(publicKey._obj, data, this._obj);
     }
 
     equals(o) {
-        return o instanceof Signature
-            && super.equals(o);
+        return o instanceof Signature && super.equals(o);
     }
 }
 Class.register(Signature);

@@ -21,15 +21,6 @@ class Transaction {
         this._signature = signature;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, Transaction);
-        o._senderPubKey = new PublicKey(o._senderPubKey);
-        o._recipientAddr = new Address(o._recipientAddr);
-        o._signature = new Signature(o.signature);
-        return o;
-    }
-
     static unserialize(buf) {
         const senderPubKey = PublicKey.unserialize(buf);
         const recipientAddr = Address.unserialize(buf);
@@ -70,15 +61,15 @@ class Transaction {
             + /*nonce*/ 4;
     }
 
-    verifySignature() {
-        return Crypto.verify(this._senderPubKey, this._signature, this.serializeContent());
+    async verifySignature() {
+        return this._signature.verify(this._senderPubKey, this.serializeContent());
     }
 
     hash() {
         // Exclude the signature, we don't want transactions to be malleable.
         // TODO Think about this! This means that the signatures will not be
         // captured by the proof of work!
-        return Crypto.sha256(this.serializeContent());
+        return Hash.light(this.serializeContent());
     }
 
     equals(o) {

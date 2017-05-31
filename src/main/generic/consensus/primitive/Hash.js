@@ -1,30 +1,39 @@
 class Hash extends Primitive {
-
-    static get SERIALIZED_SIZE() {
-        return 32;
+    constructor(arg) {
+        if (arg === null) {
+            arg = new Uint8Array(Crypto.hashSize);
+        }
+        super(arg, Crypto.hashType, Crypto.hashSize);
     }
 
-    constructor(arg) {
-        super(arg, Hash.SERIALIZED_SIZE);
+    static async light(arr) {
+        return new Hash(await Crypto.hashLight(arr));
+    }
+
+    static async hard(arr) {
+        return new Hash(await Crypto.hashHard(arr));
     }
 
     static unserialize(buf) {
-        return new Hash(buf.read(Hash.SERIALIZED_SIZE));
+        return new Hash(buf.read(Crypto.hashSize));
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(this);
+        buf.write(this._obj);
         return buf;
     }
 
+    subarray(begin, end) {
+        return this._obj.subarray(begin, end);
+    }
+
     get serializedSize() {
-        return Hash.SERIALIZED_SIZE;
+        return Crypto.hashSize;
     }
 
     equals(o) {
-        return o instanceof Hash
-            && super.equals(o);
+        return o instanceof Hash && super.equals(o);
     }
 
     static fromBase64(base64) {

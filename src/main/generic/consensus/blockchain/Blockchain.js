@@ -110,12 +110,12 @@ class Blockchain extends Observable {
         }
 
         // Check all intrinsic block invariants.
-        if (!await this._verifyBlock(block)) {
+        if (!(await this._verifyBlock(block))) {
             return Blockchain.PUSH_ERR_INVALID_BLOCK;
         }
 
         // Check that the block is a valid extension of its previous block.
-        if (!await this._isValidExtension(prevChain, block)) {
+        if (!(await this._isValidExtension(prevChain, block))) {
             return Blockchain.PUSH_ERR_INVALID_BLOCK;
         }
 
@@ -130,7 +130,7 @@ class Blockchain extends Observable {
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
             // Append new block to the main chain.
-            if (!await this._extend(newChain, hash)) {
+            if (!(await this._extend(newChain, hash))) {
                 return Blockchain.PUSH_ERR_INVALID_BLOCK;
             }
 
@@ -199,7 +199,7 @@ class Blockchain extends Observable {
         }
 
         // Check that the headerHash matches the difficulty.
-        if (!await block.header.verifyProofOfWork()) {
+        if (!(await block.header.verifyProofOfWork())) {
             Log.w(Blockchain, 'Rejected block - PoW verification failed');
             return false;
         }
@@ -212,7 +212,7 @@ class Blockchain extends Observable {
         }
         // Check that all transaction signatures are valid.
         for (const tx of block.body.transactions) {
-            if (!await tx.verifySignature()) { // eslint-disable-line no-await-in-loop
+            if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
                 Log.w(Blockchain, 'Rejected block - invalid transaction signature');
                 return false;
             }
@@ -413,13 +413,6 @@ class Chain {
         this._head = head;
         this._totalWork = totalWork ? totalWork : head.difficulty;
         this._height = height;
-    }
-
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, Chain);
-        Block.cast(o._head);
-        return o;
     }
 
     static unserialize(buf) {

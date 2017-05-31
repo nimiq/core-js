@@ -26,33 +26,3 @@ Dummy.validTransaction = 'BHRjt7rp/Rt0BfsHyEDpJcCdpLS9811yp76Yy1An/NJ0voiRWw2sOt
 if (typeof global !== 'undefined') {
     global.Dummy = Dummy;
 }
-
-
-// # Dummy Generators
-//
-// ## sha256 hash
-//
-// Crypto
-// 	.sha256(BufferUtils.fromAscii('hello'))
-//     .then(BufferUtils.toBase64)
-//     .then(copy)
-//
-//
-//
-// ## Address
-//
-// Crypto
-// 	.sha256(BufferUtils.fromAscii('should be the public key'))
-//     .then(hash => hash.slice(0,20))
-//     .then(BufferUtils.toBase64)
-//     .then(copy)
-//
-//
-//
-// ## publicKey
-//
-// Crypto
-// 	.generateKeys()
-// 	.then(keys => Crypto.exportPublic(keys.publicKey))
-// 	.then(BufferUtils.toBase64)
-// 	.then(copy)

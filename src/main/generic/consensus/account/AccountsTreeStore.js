@@ -42,7 +42,7 @@ class VolatileAccountsTreeStore {
     }
 
     async key(node) {
-        return BufferUtils.toBase64(await node.hash());
+        return (await node.hash()).toBase64();
     }
 
     get(key) {

@@ -1,6 +1,6 @@
 describe('PeerChannel', () => {
     const type = 42;
-    const hash = new Hash(Dummy.hash1);
+    const hash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
     const vec1 = new InvVector(type, hash);
     const count = 1;
     const message = new InvMessage([vec1]);

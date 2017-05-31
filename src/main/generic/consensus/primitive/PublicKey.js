@@ -1,34 +1,32 @@
 class PublicKey extends Primitive {
-
-    static get SERIALIZED_SIZE() {
-        return 65;
+    constructor(arg) {
+        super(arg, Crypto.publicKeyType, Crypto.publicKeySize);
     }
 
-    constructor(arg) {
-        super(arg, PublicKey.SERIALIZED_SIZE);
+    static async derive(privateKey) {
+        return new PublicKey(await Crypto.publicKeyDerive(privateKey._obj));
     }
 
     static unserialize(buf) {
-        return new PublicKey(buf.read(PublicKey.SERIALIZED_SIZE));
+        return new PublicKey(Crypto.publicKeyUnserialize(buf.read(Crypto.publicKeySize)));
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(this);
+        buf.write(Crypto.publicKeySerialize(this._obj));
         return buf;
     }
 
     get serializedSize() {
-        return PublicKey.SERIALIZED_SIZE;
+        return Crypto.publicKeySize;
     }
 
     equals(o) {
-        return o instanceof PublicKey
-            && super.equals(o);
+        return o instanceof PublicKey && super.equals(o);
     }
 
-    toAddress() {
-        return Crypto.publicToAddress(this);
+    async toAddress() {
+        return new Address((await Hash.light(this.serialize())).subarray(0, 20));
     }
 }
 Class.register(PublicKey);

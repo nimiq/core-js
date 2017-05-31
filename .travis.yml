@@ -28,7 +28,7 @@ script:
 - if [ "$TO_TEST" = "chrome" ]; then karma start --single-run --browsers Chrome_travis_ci; fi
 - if [ "$TO_TEST" = "firefox" ]; then karma start --single-run --browsers Firefox; fi
 - if [ "$TO_TEST" = "node" ]; then jasmine; fi
-- if [ "$TO_TEST" = "lint" ]; then eslint src *.js; fi
+- if [ "$TO_TEST" = "lint" ]; then eslint src/main src/test *.js; fi
 
 notifications:
   slack:

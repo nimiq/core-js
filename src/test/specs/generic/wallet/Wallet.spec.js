@@ -1,5 +1,5 @@
 describe('Wallet', () => {
-    const recipient = new Address(Dummy.address1);
+    const recipient = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 8888888;
     const fee = 888;
     const nonce = 8;

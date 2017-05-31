@@ -1,6 +1,6 @@
-const WebCrypto = require("node-webcrypto-ossl");
+const WebCrypto = require('node-webcrypto-ossl');
 global.webcrypto = new WebCrypto({
-    directory: "database/keys"
+    directory: 'database/keys'
 });
 
 class CryptoLib {
