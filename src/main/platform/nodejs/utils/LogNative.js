@@ -20,7 +20,7 @@ class LogNative {
         if (!this.isLoggable(tag, level)) return;
         if (tag && tag.name) tag = tag.name;
         if (tag) args.unshift(tag + ':');
-        let prefix = `[${new Date().toTimeString().substr(0, 8)}:${Log._level_tag(level)}] `;
+        let prefix = `[${new Date().toTimeString().substr(0, 8)}|${Log._level_tag(level)}] `;
         const chalk = this._chalk;
         if (level >= Log.ERROR) {
             console.log(prefix + chalk.red(args.join(' ')));
