@@ -9,7 +9,7 @@ process.on('uncaughtException', (err) => {
     const message = err.message;
     if (message
         && (
-            message.startsWith('connect ECONNREFUSED')
+            message.startsWith('connect E')
             || message === "Cannot read property 'aborted' of null")
         ) {
         return;
