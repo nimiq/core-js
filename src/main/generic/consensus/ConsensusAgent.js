@@ -273,8 +273,8 @@ class ConsensusAgent extends Observable {
         const status = await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
-        if(status < Blockchain.PUSH_OK) {
-            this._peer.channel.ban('received at least one invalid block');
+        if (status === Blockchain.PUSH_ERR_INVALID_BLOCK) {
+            this._peer.channel.ban('received invalid block');
         }
     }
 
