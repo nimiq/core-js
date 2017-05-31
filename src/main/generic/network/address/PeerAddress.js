@@ -5,10 +5,6 @@ class PeerAddress {
         this._timestamp = timestamp;
     }
 
-    isSeed() {
-        return this._timestamp === 0;
-    }
-
     static unserialize(buf) {
         const protocol = buf.readUint8();
         switch (protocol) {
@@ -19,7 +15,7 @@ class PeerAddress {
                 return RtcPeerAddress.unserialize(buf);
 
             default:
-                throw 'Malformed PeerAddress protocol ' + protocol;
+                throw `Malformed PeerAddress protocol ${protocol}`;
         }
     }
 
@@ -55,6 +51,10 @@ class PeerAddress {
 
     set timestamp(value) {
         this._timestamp = value;
+    }
+
+    isSeed() {
+        return this._timestamp === 0;
     }
 }
 Class.register(PeerAddress);

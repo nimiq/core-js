@@ -25,7 +25,7 @@ class PeerAddresses extends Observable {
         const numAddresses = addresses.length;
 
         // Pick a random start index.
-        let index = Math.floor(Math.random() * (numAddresses + 1));
+        const index = Math.floor(Math.random() * (numAddresses + 1));
 
         // Score up to 500 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
@@ -43,7 +43,7 @@ class PeerAddresses extends Observable {
             }
         }
 
-        if (candidates.length == 0) {
+        if (candidates.length === 0) {
             return null;
         }
 
@@ -136,7 +136,7 @@ class PeerAddresses extends Observable {
         // XXX inefficient linear scan
         const now = Date.now();
         const addresses = [];
-        for (let peerAddressState of this._store.values()) {
+        for (const peerAddressState of this._store.values()) {
             // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED
                     || peerAddressState.state === PeerAddressState.FAILED) {
@@ -145,7 +145,7 @@ class PeerAddresses extends Observable {
 
             // Never return seed peers.
             const address = peerAddressState.peerAddress;
-            if (address.timestamp === 0) {
+            if (address.isSeed()) {
                 continue;
             }
 
@@ -162,7 +162,7 @@ class PeerAddresses extends Observable {
             // Never return addresses that are too old.
             if (this._exceedsAge(address)) {
                 // XXX Debug
-                Log.d(PeerAddresses, 'Not returning old address: ' + peerAddressState);
+                Log.d(PeerAddresses, `Not returning old address ${peerAddressState}`);
                 continue;
             }
 
@@ -254,10 +254,10 @@ class PeerAddresses extends Observable {
 
             // Ignore address if we already know this address with a more recent timestamp and the same distance (if applicable).
             if (knownAddress.timestamp >= peerAddress.timestamp) {
-                if(peerAddress.protocol === Protocol.RTC && knownAddress.distance <= peerAddress.distance) {
+                if (peerAddress.protocol === Protocol.RTC && knownAddress.distance <= peerAddress.distance) {
                     return false;
                 }
-                if(peerAddress.protocol === Protocol.WS) {
+                if (peerAddress.protocol === Protocol.WS) {
                     return false;
                 }
             }
@@ -290,7 +290,7 @@ class PeerAddresses extends Observable {
             throw 'Connecting to banned address';
         }
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            throw 'Duplicate connection to ' + peerAddress;
+            throw `Duplicate connection to ${peerAddress}`;
         }
 
         peerAddressState.state = PeerAddressState.CONNECTING;
@@ -313,7 +313,7 @@ class PeerAddresses extends Observable {
         }
         if (peerAddressState.state === PeerAddressState.BANNED
             // Allow recovering seed peer's inbound connection to succeed.
-            && peerAddressState.peerAddress.timestamp !== 0) {
+            && !peerAddressState.peerAddress.isSeed()) {
 
             throw 'Connected to banned address';
         }
@@ -337,7 +337,7 @@ class PeerAddresses extends Observable {
         }
         if (peerAddressState.state !== PeerAddressState.CONNECTING
             && peerAddressState.state !== PeerAddressState.CONNECTED) {
-            throw 'disconnected() called in unexpected state ' + peerAddressState.state;
+            throw `disconnected() called in unexpected state ${peerAddressState.state}`;
         }
 
         // Delete all addresses that were signalable over the disconnected peer.
@@ -405,7 +405,7 @@ class PeerAddresses extends Observable {
             // the banning mechanism to prevent seed peers from being picked when
             // they are down, but still allows recovering seed peers' inbound
             // connections to succeed.
-            && peerAddressState.peerAddress.timestamp !== 0;
+            && !peerAddressState.peerAddress.isSeed();
     }
 
     _delete(peerAddress) {
@@ -415,7 +415,7 @@ class PeerAddresses extends Observable {
         }
 
         // Never delete seed addresses, ban them instead for 5 minutes.
-        if (peerAddressState.peerAddress.timestamp === 0) {
+        if (peerAddressState.peerAddress.isSeed()) {
             this.ban(peerAddress, 5);
             return;
         }
@@ -437,13 +437,13 @@ class PeerAddresses extends Observable {
     // Delete all RTC-only peer addresses that are signalable over the given peer.
     _deleteBySignalingPeer(peerAddress) {
         // XXX inefficient linear scan
-        for (let peerAddressState of this._store.values()) {
+        for (const peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
             if (addr.protocol === Protocol.RTC
                 && addr.signalChannel
                 && peerAddress.equals(addr.signalChannel.peerAddress)) {
 
-                Log.d(PeerAddresses, 'Deleting peer address ' + addr + ' - signaling channel closing');
+                Log.d(PeerAddresses, `Deleting peer address ${addr} - signaling channel closing`);
                 this._delete(addr);
             }
         }
@@ -458,7 +458,7 @@ class PeerAddresses extends Observable {
                 this._peerCountRtc += delta;
                 break;
             default:
-                Log.w(PeerAddresses, 'Unknown protocol ' + peerAddress.protocol);
+                Log.w(PeerAddresses, `Unknown protocol ${peerAddress.protocol}`);
         }
     }
 
@@ -466,7 +466,7 @@ class PeerAddresses extends Observable {
         const now = Date.now();
         const unbannedAddresses = [];
 
-        for (let peerAddressState of this._store.values()) {
+        for (const peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
 
             switch (peerAddressState) {
@@ -475,14 +475,14 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this._exceedsAge(addr)) {
-                        Log.d(PeerAddresses, 'Deleting old peer address ' + addr);
+                        Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
                         this.delete(addr);
                     }
                     break;
 
                 case PeerAddressState.BANNED:
                     if (peerAddressState.bannedUntil <= now) {
-                        if (addr.timestamp === 0) {
+                        if (addr.isSeed()) {
                             // Restore banned seed addresses to the NEW state.
                             peerAddressState.state = PeerAddressState.NEW;
                             peerAddressState.failedAttempts = 0;
@@ -543,9 +543,9 @@ PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    new WsPeerAddress(Services.WEBSOCKET, 0, "alpacash.com", 8080),
-    new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq1.styp-rekowsky.de", 8080),
-    new WsPeerAddress(Services.WEBSOCKET, 0, "nimiq2.styp-rekowsky.de", 8080)
+    new WsPeerAddress(Services.WEBSOCKET, 0, 'alpacash.com', 8080),
+    new WsPeerAddress(Services.WEBSOCKET, 0, 'nimiq1.styp-rekowsky.de', 8080),
+    new WsPeerAddress(Services.WEBSOCKET, 0, 'nimiq2.styp-rekowsky.de', 8080)
 ];
 Class.register(PeerAddresses);
 
