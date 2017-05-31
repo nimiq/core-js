@@ -40,7 +40,7 @@ class WebRtcConnector extends Observable {
     }
 
     onSignal(channel, msg) {
-        // first check flags
+        // Check if we received an unroutable response from one of the signaling peers.
         if (msg.flags & SignalMessage.Flags.UNROUTABLE) {
             // handle error cases
             // check for relevant connector
@@ -52,6 +52,7 @@ class WebRtcConnector extends Observable {
                     delete this._connectors[msg.senderId];
                 }
             }
+
             return;
         }
 
@@ -172,6 +173,7 @@ class PeerConnector extends Observable {
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,
+            0, /*flags*/
             BufferUtils.fromAscii(JSON.stringify(signal))
         );
     }

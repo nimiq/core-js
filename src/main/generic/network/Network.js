@@ -325,10 +325,11 @@ class Network extends Observable {
         // Otherwise, try to forward the signal to the intented recipient.
         const peerAddress = this._addresses.findBySignalId(msg.recipientId);
         if (!peerAddress) {
-            // send unreachable signal if we cannot forward the signal and the current message is not yet flagged as unroutable
+            // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
+            // Only do this if the signal is not already a unroutable response.
             console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            if(!(msg.flags & SignalMessage.Flags.UNROUTABLE)) {
-                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, new Uint8Array(), SignalMessage.Flags.UNROUTABLE);
+            if (!(msg.flags & SignalMessage.Flags.UNROUTABLE)) {
+                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             }
             return;
         }
@@ -341,7 +342,7 @@ class Network extends Observable {
         }
 
         // Decrement ttl and forward signal.
-        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.payload);
+        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
 
         // XXX This is very spammy!!!
         console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `

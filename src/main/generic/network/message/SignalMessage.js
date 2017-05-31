@@ -1,18 +1,18 @@
 class SignalMessage extends Message {
-    constructor(senderId, recipientId, nonce, ttl, payload, flags=0) {
+    constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array()) {
         super(Message.Type.SIGNAL);
         if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId';
         if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
-        if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         if (!NumberUtils.isUint8(flags)) throw 'Malformed flags';
+        if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         this._senderId = senderId;
         this._recipientId = recipientId;
         this._nonce = nonce;
         this._ttl = ttl;
-        this._payload = payload;
         this._flags = flags;
+        this._payload = payload;
     }
 
     static unserialize(buf) {
@@ -21,9 +21,9 @@ class SignalMessage extends Message {
         const recipientId = buf.readString(32);
         const nonce = buf.readUint32();
         const ttl = buf.readUint8();
+        const flags = buf.readUint8();
         const length = buf.readUint16();
         const payload = buf.read(length);
-        const flags = buf.readUint8();
         return new SignalMessage(nonce, senderId, recipientId, ttl, flags, payload);
     }
 
@@ -34,9 +34,9 @@ class SignalMessage extends Message {
         buf.writeString(this._recipientId, 32);
         buf.writeUint32(this._nonce);
         buf.writeUint8(this._ttl);
+        buf.writeUint8(this._flags);
         buf.writeUint16(this._payload.byteLength);
         buf.write(this._payload);
-        buf.writeUint8(this._flags);
         return buf;
     }
 
@@ -44,11 +44,11 @@ class SignalMessage extends Message {
         return super.serializedSize
             + /*senderId*/ 32
             + /*recipientId*/ 32
-            + /*nonce*/ 32
+            + /*nonce*/ 4
             + /*ttl*/ 1
+            + /*flags*/ 1
             + /*payloadLength*/ 2
-            + this._payload.byteLength
-            + /*flags*/ 1;
+            + this._payload.byteLength;
     }
 
     get nonce() {
@@ -67,12 +67,12 @@ class SignalMessage extends Message {
         return this._ttl;
     }
 
-    get payload() {
-        return this._payload;
-    }
-
     get flags() {
         return this._flags;
+    }
+
+    get payload() {
+        return this._payload;
     }
 }
 SignalMessage.Flags = {};
