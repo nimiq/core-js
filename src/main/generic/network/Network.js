@@ -253,29 +253,32 @@ class Network extends Observable {
         numConnections = Math.max(numConnections - 1, 0);
         this._connectionCounts.put(channel.netAddress, numConnections);
 
-        // Check if this connection failed pre-handshake.
-        if (!channel.peerAddress || !this._addresses.isConnected(channel.peerAddress)) {
-            // Treat connections closed pre-handshake as failed attempts.
-            console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
-            this._addresses.unreachable(channel.peerAddress);
-        } else {
-            // Mark peer as disconnected.
-            this._addresses.disconnected(channel.peerAddress, closedByRemote);
+        // peerAddress is undefined for incoming connections pre-handshake.
+        if (channel.peerAddress) {
+            // Check if the handshake with this peer has completed.
+            if (this._addresses.isConnected(channel.peerAddress)) {
+                // Mark peer as disconnected.
+                this._addresses.disconnected(channel.peerAddress, closedByRemote);
 
-            // Decrement the peerCount.
-            this._peerCount--;
+                // Decrement the peerCount.
+                this._peerCount--;
 
-            // Tell listeners that this peer has gone away.
-            this.fire('peer-left', peer);
+                // Tell listeners that this peer has gone away.
+                this.fire('peer-left', peer);
 
-            // Let listeners know that the peers changed.
-            this.fire('peers-changed');
+                // Let listeners know that the peers changed.
+                this.fire('peers-changed');
 
-            const kbTransferred = ((channel.connection.bytesSent
-                + channel.connection.bytesReceived) / 1000).toFixed(2);
-            console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
-                + `(version=${peer.version}, startHeight=${peer.startHeight}, `
-                + `transferred=${kbTransferred} kB)`);
+                const kbTransferred = ((channel.connection.bytesSent
+                    + channel.connection.bytesReceived) / 1000).toFixed(2);
+                console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
+                    + `(version=${peer.version}, startHeight=${peer.startHeight}, `
+                    + `transferred=${kbTransferred} kB)`);
+            } else {
+                // Treat connections closed pre-handshake as failed attempts.
+                console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
+                this._addresses.unreachable(channel.peerAddress);
+            }
         }
 
         this._checkPeerCount();
