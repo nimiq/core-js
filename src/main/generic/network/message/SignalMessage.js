@@ -24,7 +24,7 @@ class SignalMessage extends Message {
         const flags = buf.readUint8();
         const length = buf.readUint16();
         const payload = buf.read(length);
-        return new SignalMessage(nonce, senderId, recipientId, ttl, flags, payload);
+        return new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload);
     }
 
     serialize(buf) {
