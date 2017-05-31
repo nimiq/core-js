@@ -63,12 +63,12 @@ class TestBlockchain extends Blockchain {
 
         if (noDupliateSenders && numTransactions > numUsers) {
             // only one transaction per user
-            console.warn('Reducing transactions to ' + numTransactions + ' to avoid sender duplication.');
+            console.warn('Reducing transactions from ' + numTransactions + ' to ' + numUsers+ ' to avoid sender duplication.');
             numTransactions = numUsers;
         }
 
         if (sizeLimit && numTransactions > TestBlockchain.MAX_NUM_TRANSACTIONS) {
-            console.warn('Reducing transactions to ' + numTransactions + ' to avoid exceeding the size limit.');
+            console.warn('Reducing transactions from ' + numTransactions + ' to ' + TestBlockchain.MAX_NUM_TRANSACTIONS + ' to avoid exceeding the size limit.');
             numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS;
         }
 
