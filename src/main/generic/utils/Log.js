@@ -1,18 +1,4 @@
 class Log {
-    static get TRACE() { return 1; }
-
-    static get VERBOSE() { return 2; }
-
-    static get DEBUG() { return 3; }
-
-    static get INFO() { return 4; }
-
-    static get WARNING() { return 5; }
-
-    static get ERROR() { return 6; }
-
-    static get ASSERT() { return 7; }
-
     static _level_tag(level) {
         switch (level) {
             case Log.TRACE:
@@ -33,7 +19,7 @@ class Log {
                 return '*';
         }
     }
-    
+
     static get instance() {
         if (!Log._instance) {
             Log._instance = new Log(new LogNative());
@@ -133,4 +119,12 @@ class Log {
         Log.instance.msg(Log.TRACE, tag, args);
     }
 }
+Log.TRACE = 1;
+Log.VERBOSE = 2;
+Log.DEBUG = 3;
+Log.INFO = 4;
+Log.WARNING = 5;
+Log.ERROR = 6;
+Log.ASSERT = 7;
+Log._instance = null;
 Class.register(Log);
