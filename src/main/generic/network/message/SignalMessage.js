@@ -1,5 +1,5 @@
 class SignalMessage extends Message {
-    constructor(senderId, recipientId, nonce, ttl, payload, flags=SignalMessage.flagss.OK) {
+    constructor(senderId, recipientId, nonce, ttl, payload, flags=SignalMessage.Flags.OK) {
         super(Message.Type.SIGNAL);
         if (!senderId || !RtcPeerAddress.isnonce(senderId)) throw 'Malformed senderId';
         if (!recipientId || !RtcPeerAddress.isnonce(recipientId)) throw 'Malformed recipientId';
