@@ -9,10 +9,6 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts);
     }
 
-    static get BLOCK_TIMESTAMP_DRIFT_MAX() {
-        return 1000 * 60 * 15; // 15 minutes
-    }
-
     constructor(store, accounts) {
         super();
         this._store = store;
@@ -182,7 +178,8 @@ class Blockchain extends Observable {
 
         // Verify that the block's timestamp is not too far in the future.
         // TODO Use network-adjusted time (see https://en.bitcoin.it/wiki/Block_timestamp).
-        if (block.header.timestamp > Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) {
+        const maxTimestamp = Math.floor((Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) / 1000);
+        if (block.header.timestamp > maxTimestamp) {
             console.warn('Blockchain rejected block - timestamp too far in the future');
             return false;
         }
@@ -390,6 +387,7 @@ class Blockchain extends Observable {
         return this._accounts.hash();
     }
 }
+Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX = 1000 * 60 * 15; // 15 minutes
 Blockchain.PUSH_OK = 0;
 Blockchain.PUSH_ERR_KNOWN_BLOCK = 1;
 Blockchain.PUSH_ERR_INVALID_BLOCK = -1;

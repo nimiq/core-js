@@ -4,7 +4,7 @@ class BlockHeader {
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
         if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
-        if (!NumberUtils.isUint64(timestamp)) throw 'Malformed timestamp';
+        if (!NumberUtils.isUint32(timestamp)) throw 'Malformed timestamp';
         if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
 
         this._prevHash = prevHash;
@@ -31,7 +31,7 @@ class BlockHeader {
         var bodyHash = Hash.unserialize(buf);
         var accountsHash = Hash.unserialize(buf);
         var nBits = buf.readUint32();
-        var timestamp = buf.readUint64();
+        var timestamp = buf.readUint32();
         var nonce = buf.readUint64();
         return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, timestamp, nonce);
     }
@@ -42,7 +42,7 @@ class BlockHeader {
         this._bodyHash.serialize(buf);
         this._accountsHash.serialize(buf);
         buf.writeUint32(this._nBits);
-        buf.writeUint64(this._timestamp);
+        buf.writeUint32(this._timestamp);
         buf.writeUint64(this._nonce);
         return buf;
     }
@@ -52,7 +52,7 @@ class BlockHeader {
             + this._bodyHash.serializedSize
             + this._accountsHash.serializedSize
             + /*nBits*/ 4
-            + /*timestamp*/ 8
+            + /*timestamp*/ 4
             + /*nonce*/ 8;
     }
 
