@@ -325,9 +325,11 @@ class Network extends Observable {
         // Otherwise, try to forward the signal to the intented recipient.
         const peerAddress = this._addresses.findBySignalId(msg.recipientId);
         if (!peerAddress) {
-            // send reject/unreachable message/signal if we cannot forward the signal
+            // send unreachable signal if we cannot forward the signal and the current message is not yet flagged as unroutable
             console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, new Uint8Array(), SignalMessage.Flags.UNROUTABLE);
+            if(!(msg.flags & SignalMessage.Flags.UNROUTABLE)) {
+                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, new Uint8Array(), SignalMessage.Flags.UNROUTABLE);
+            }
             return;
         }
 
