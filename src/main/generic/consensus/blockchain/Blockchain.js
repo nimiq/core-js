@@ -130,7 +130,7 @@ class Blockchain extends Observable {
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
             // Append new block to the main chain.
-            if (!await this._extend(newChain)) {
+            if (!await this._extend(newChain, hash)) {
                 return Blockchain.PUSH_ERR_INVALID_BLOCK;
             }
 
@@ -140,11 +140,25 @@ class Blockchain extends Observable {
             return Blockchain.PUSH_OK;
         }
 
-        // Otherwise, check if the new chain is harder than our current main chain.
-        // TODO Compare timestamp if totalWork is equal.
+        // Otherwise, check if the new chain is harder than our current main chain:
+        // - Pick chain with higher total work.
+        // - If identical, pick chain with higher timestamp.
+        // - If identical as well, pick chain with lower PoW hash.
+        let isHarderChain = false;
         if (newChain.totalWork > this.totalWork) {
+            isHarderChain = true;
+        } else if (newChain.totalWork === this.totalWork) {
+            if (newChain.head.timestamp > this.head.timestamp) {
+                isHarderChain = true;
+            } else if (newChain.head.timestamp === this.head.timestamp
+                    && parseInt(hash.toHex(), 16) < parseInt(this.headHash.toHex(), 16)) {
+                isHarderChain = true;
+            }
+        }
+
+        if (isHarderChain) {
             // A fork has become the hardest chain, rebranch to it.
-            await this._rebranch(newChain);
+            await this._rebranch(newChain, hash);
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -226,7 +240,7 @@ class Blockchain extends Observable {
         return true;
     }
 
-    async _extend(newChain) {
+    async _extend(newChain, headHash) {
         // Validate that the block matches the current account state.
         // XXX This is also enforced by Accounts.commitBlock()
         const accountsHash = await this.accountsHash();
@@ -242,10 +256,9 @@ class Blockchain extends Observable {
         await this._accounts.commitBlock(newChain.head);
 
         // Update main chain.
-        const hash = await newChain.hash();
         this._mainChain = newChain;
-        this._mainPath.push(hash);
-        this._headHash = hash;
+        this._mainPath.push(headHash);
+        this._headHash = headHash;
         await this._store.setMainChain(this._mainChain);
 
         return true;
@@ -274,9 +287,8 @@ class Blockchain extends Observable {
         await this._store.setMainChain(this._mainChain);
     }
 
-    async _rebranch(newChain) {
-        const hash = await newChain.hash();
-        console.log(`Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}, newChain`);
+    async _rebranch(newChain, headHash) {
+        console.log(`Rebranching to fork ${headHash}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
@@ -304,8 +316,10 @@ class Blockchain extends Observable {
 
         // We have reverted to the common ancestor state. Apply all blocks on
         // the fork chain until we reach the new head.
-        for (const block of forkChain) {
-            await this._extend(block); // eslint-disable-line no-await-in-loop
+        for (const chain of forkChain) {
+            // XXX optimize!
+            const hash = await chain.hash();
+            await this._extend(chain, hash); // eslint-disable-line no-await-in-loop
         }
     }
 
