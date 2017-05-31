@@ -144,9 +144,18 @@ class Network extends Observable {
     }
 
     _onConnection(conn) {
-        // Decrement connectingCount if we have initiated this connection.
-        if (!conn.inbound && this._addresses.isConnecting(conn.peerAddress)) {
-            this._connectingCount--;
+        if (!conn.inbound) {
+            // Decrement connectingCount if we have initiated this connection.
+            if (this._addresses.isConnecting(conn.peerAddress)) {
+                this._connectingCount--;
+            }
+            // Reject connection if we are already connected to this peer address.
+            // This can happen if the peer connects (inbound) while we are
+            // initiating a (outbound) connection to it.
+            else if (this._addresses.isConnected(conn.peerAddress)) {
+                conn.close('duplicate connection (pre handshake)');
+                return;
+            }
         }
 
         // Reject peer if we have reached max peer count.
@@ -193,7 +202,7 @@ class Network extends Observable {
     _onHandshake(peer, agent) {
         // Close connection if we are already connected to this peer.
         if (this._addresses.isConnected(peer.peerAddress)) {
-            agent.channel.close('duplicate connection (peerAddress)');
+            agent.channel.close('duplicate connection (post handshake)');
             return;
         }
 
@@ -236,11 +245,6 @@ class Network extends Observable {
 
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
-        // The peerAddress is null pre-handshake for inbound connections.
-        if (channel.peerAddress) {
-            this._addresses.disconnected(channel.peerAddress, closedByRemote);
-        }
-
         // Delete agent.
         this._agents.delete(channel.id);
 
@@ -249,13 +253,20 @@ class Network extends Observable {
         numConnections = Math.max(numConnections - 1, 0);
         this._connectionCounts.put(channel.netAddress, numConnections);
 
-        // This is true if the handshake with the peer completed.
-        if (peer) {
-            // Tell listeners that this peer has gone away.
-            this.fire('peer-left', peer);
+        // Check if this connection failed pre-handshake.
+        if (!channel.peerAddress || !this._addresses.isConnected(channel.peerAddress)) {
+            // Treat connections closed pre-handshake as failed attempts.
+            console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
+            this._addresses.unreachable(channel.peerAddress);
+        } else {
+            // Mark peer as disconnected.
+            this._addresses.disconnected(channel.peerAddress, closedByRemote);
 
             // Decrement the peerCount.
             this._peerCount--;
+
+            // Tell listeners that this peer has gone away.
+            this.fire('peer-left', peer);
 
             // Let listeners know that the peers changed.
             this.fire('peers-changed');
@@ -265,14 +276,6 @@ class Network extends Observable {
             console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
                 + `(version=${peer.version}, startHeight=${peer.startHeight}, `
                 + `transferred=${kbTransferred} kB)`);
-        } else {
-            // The connection was closed before the handshake completed.
-            // Treat this as failed connection attempt.
-            // TODO inbound WS connections.
-            console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
-            if (channel.peerAddress) {
-                this._addresses.unreachable(channel.peerAddress);
-            }
         }
 
         this._checkPeerCount();

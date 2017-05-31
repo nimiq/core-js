@@ -325,20 +325,23 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             return;
         }
+        if (peerAddressState.state !== PeerAddressState.CONNECTING
+            && peerAddressState.state !== PeerAddressState.CONNECTED) {
+            throw 'disconnected() called in unexpected state ' + peerAddressState.state;
+        }
 
+        // Delete all addresses that were signalable over the disconnected peer.
         this._deleteBySignalingPeer(peerAddress);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
         }
 
-        if (peerAddressState.state !== PeerAddressState.BANNED) {
-            // XXX Immediately delete address if the remote host closed the connection.
-            if (closedByRemote) {
-                this._delete(peerAddress);
-            } else {
-                peerAddressState.state = PeerAddressState.TRIED;
-            }
+        // XXX Immediately delete address if the remote host closed the connection.
+        if (closedByRemote) {
+            this._delete(peerAddress);
+        } else {
+            peerAddressState.state = PeerAddressState.TRIED;
         }
     }
 
