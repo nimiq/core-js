@@ -9,7 +9,7 @@ class WebSocketConnector extends Observable {
 
         const timeoutKey = 'connect_' + peerAddress;
         if (this._timers.timeoutExists(timeoutKey)) {
-            console.warn('WsConnector: Already connecting to ' + peerAddress);
+            Log.w(WebSocketConnector, 'Already connecting to ' + peerAddress);
             return false;
         }
 
@@ -36,7 +36,7 @@ class WebSocketConnector extends Observable {
             // If the connection succeeds after we have fired the error event,
             // close it.
             ws.onopen = () => {
-                console.warn(`Connection to ${peerAddress} succeeded after timeout - closing it`);
+                Log.w(WebSocketConnector, `Connection to ${peerAddress} succeeded after timeout - closing it`);
                 ws.close();
             };
 

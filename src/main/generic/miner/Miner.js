@@ -29,7 +29,7 @@ class Miner extends Observable {
 
     startWork() {
         if (this.working) {
-            console.warn('Miner already working');
+            Log.w(Miner, 'Already working');
             return;
         }
 
@@ -55,7 +55,7 @@ class Miner extends Observable {
         const block = await this._getNextBlock();
         const buffer = block.header.serialize();
 
-        console.log(`Miner starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
+        Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
         // Start hashing.
         this._mine(block, buffer);
@@ -138,7 +138,7 @@ class Miner extends Observable {
         // Tell listeners that we've stopped working.
         this.fire('stop', this);
 
-        console.log('Miner stopped work');
+        Log.i(Miner, 'Stopped work');
     }
 
     _updateHashrate() {

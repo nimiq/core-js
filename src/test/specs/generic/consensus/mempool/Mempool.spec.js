@@ -34,7 +34,7 @@ describe('Mempool', () => {
     it('will always verify a transaction before accepting it', (done) => {
         (async function () {
             // This is needed to check which reason caused pushTransaction() to fail
-            spyOn(console, 'warn').and.callThrough();
+            spyOn(Log, 'w');
 
             // Create a transaction
             const transaction = await wallet.createTransaction(new Address(Dummy.address1), 3523,23,42);
@@ -50,7 +50,7 @@ describe('Mempool', () => {
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
-            expect(console.warn).toHaveBeenCalledWith('Mempool rejected transaction - invalid signature', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid signature', transaction);
 
             // Set the valid transaction signature to test different scenarios
             transaction.signature = validSignature;
@@ -61,7 +61,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(console.warn).toHaveBeenCalledWith('Mempool rejected transaction - insufficient funds', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - insufficient funds', transaction);
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
@@ -70,7 +70,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(console.warn).toHaveBeenCalledWith('Mempool rejected transaction - invalid nonce', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid nonce', transaction);
 
         })().then(done, done.fail);
     });

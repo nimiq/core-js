@@ -96,7 +96,7 @@ class ConsensusAgent extends Observable {
 
         // If the blockchain is still busy processing blocks, wait for it to catch up.
         if (this._blockchain.busy) {
-            console.log('Blockchain busy, waiting ...');
+            Log.v(ConsensusAgent, 'Blockchain busy, waiting ...');
         }
         // If we already requested blocks from the peer but it didn't give us any
         // good ones, retry or drop the peer.
@@ -116,7 +116,7 @@ class ConsensusAgent extends Observable {
         // The peer has a shorter chain than us.
         // TODO what do we do here?
         else if (this._blockchain.height > this._peer.startHeight) {
-            console.log(`Peer ${this._peer.peerAddress} has a shorter chain (${this._peer.startHeight}) than us`);
+            Log.v(ConsensusAgent, `Peer ${this._peer.peerAddress} has a shorter chain (${this._peer.startHeight}) than us`);
 
             // XXX assume consensus state?
             this._syncing = false;
@@ -194,7 +194,7 @@ class ConsensusAgent extends Observable {
             }
         }
 
-        console.log(`[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
+        Log.v(ConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         if (unknownObjects.length) {
             // Store unknown vectors in objectsToRequest array.
@@ -261,7 +261,7 @@ class ConsensusAgent extends Observable {
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn(`Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
+            Log.w(ConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
             return;
@@ -281,12 +281,12 @@ class ConsensusAgent extends Observable {
 
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        console.log(`[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
+        Log.i(ConsensusAgent, `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
         if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-            console.warn(`Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
+            Log.w(ConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
 
@@ -301,12 +301,12 @@ class ConsensusAgent extends Observable {
     }
 
     _onNotFound(msg) {
-        console.log(`[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
+        Log.d(ConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
         // Remove unknown objects from in-flight list.
         for (let vector of msg.vectors) {
             if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-                console.warn(`Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
+                Log.w(ConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
 
@@ -377,7 +377,7 @@ class ConsensusAgent extends Observable {
     }
 
     async _onGetBlocks(msg) {
-        console.log(`[GETBLOCKS] ${msg.hashes.length} block locators received from ${this._peer.peerAddress}`);
+        Log.v(ConsensusAgent, `[GETBLOCKS] ${msg.hashes.length} block locators received from ${this._peer.peerAddress}`);
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main

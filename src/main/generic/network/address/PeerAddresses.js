@@ -162,7 +162,7 @@ class PeerAddresses extends Observable {
             // Never return addresses that are too old.
             if (this._exceedsAge(address)) {
                 // XXX Debug
-                console.log('Not returning old address: ' + peerAddressState);
+                Log.d(PeerAddresses, 'Not returning old address: ' + peerAddressState);
                 continue;
             }
 
@@ -202,13 +202,13 @@ class PeerAddresses extends Observable {
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
         if (channel && this._exceedsAge(peerAddress)) {
-            console.log(`Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
+            Log.d(PeerAddresses, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
 
         // Ignore address if its timestamp is too far in the future.
         if (peerAddress.timestamp > Date.now() + PeerAddresses.MAX_TIMESTAMP_DRIFT) {
-            console.log(`Ignoring addresses ${peerAddress} - timestamp in the future`);
+            Log.d(PeerAddresses, `Ignoring addresses ${peerAddress} - timestamp in the future`);
             return false;
         }
 
@@ -218,7 +218,7 @@ class PeerAddresses extends Observable {
 
             // Ignore address if it exceeds max distance.
             if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
-                console.log(`Ignoring address ${peerAddress} - max distance exceeded`);
+                Log.d(PeerAddresses, `Ignoring address ${peerAddress} - max distance exceeded`);
                 return false;
             }
         }
@@ -251,7 +251,7 @@ class PeerAddresses extends Observable {
             // Ignore address if we already know a better route to this address.
             // TODO save anyways to have a backup route?
             if (peerAddress.protocol === Protocol.RTC && knownAddress.distance < peerAddress.distance) {
-                console.log(`Ignoring address ${peerAddress} (distance ${peerAddress.distance} `
+                Log.d(PeerAddresses, `Ignoring address ${peerAddress} (distance ${peerAddress.distance} `
                     + `via ${channel.peerAddress}) - better route with distance ${knownAddress.distance} `
                     + `via ${knownAddress.signalChannel.peerAddress} exists`);
                 return false;
@@ -438,7 +438,7 @@ class PeerAddresses extends Observable {
                 && addr.signalChannel
                 && peerAddress.equals(addr.signalChannel.peerAddress)) {
 
-                console.log('Deleting peer address ' + addr + ' - signaling channel closing');
+                Log.d(PeerAddresses, 'Deleting peer address ' + addr + ' - signaling channel closing');
                 this._delete(addr);
             }
         }
@@ -453,7 +453,7 @@ class PeerAddresses extends Observable {
                 this._peerCountRtc += delta;
                 break;
             default:
-                console.warn('Unknown protocol ' + peerAddress.protocol);
+                Log.w(PeerAddresses, 'Unknown protocol ' + peerAddress.protocol);
         }
     }
 
@@ -470,7 +470,7 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this._exceedsAge(addr)) {
-                        console.log('Deleting old peer address ' + addr);
+                        Log.d(PeerAddresses, 'Deleting old peer address ' + addr);
                         this.delete(addr);
                     }
                     break;

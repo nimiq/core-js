@@ -13,7 +13,7 @@ class PeerChannel extends Observable {
         try {
             msg = MessageFactory.parse(rawMsg);
         } catch(e) {
-            console.warn(`Failed to parse message from ${this.peerAddress}: ${e}`);
+            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress}: ${e}`);
 
             // Ban client if it sends junk.
             // TODO We should probably be more lenient here. Bitcoin sends a
@@ -30,7 +30,7 @@ class PeerChannel extends Observable {
         try {
             this.fire(msg.type, msg, this);
         } catch (e) {
-            console.log('Error while processing message: ' + msg, e);
+            Log.w(PeerChannel, 'Error while processing message: ' + msg, e);
         }
     }
 

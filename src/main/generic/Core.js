@@ -8,7 +8,7 @@ class Core {
     static init(fnSuccess, fnError) {
         // Don't initialize core twice.
         if (Core._instance) {
-            console.warn('Core.init() called more than once.');
+            Log.w('Core.init() called more than once.');
 
             fnSuccess(Core._instance);
             return;

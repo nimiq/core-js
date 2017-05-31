@@ -4,6 +4,9 @@ global.Class = {
     }
 };
 
+
+require('./utils/LogNative.js');
+require('../../generic/utils/Log.js');
 require('../../generic/utils/Observable.js');
 require('../../generic/utils/Services.js');
 require('../../generic/utils/Synchronizer.js');
