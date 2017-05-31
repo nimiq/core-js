@@ -2,7 +2,7 @@ const Core = require('../../src/main/platform/nodejs/index.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--miner] [--passive]');
+    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--miner] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
     process.exit();
 }
 
@@ -13,6 +13,19 @@ const minerSpeed = argv['miner-speed'] || 75;
 const passive = argv.passive;
 const key = argv.key;
 const cert = argv.cert;
+
+if (argv['log']) {
+    Log.instance().level = argv['log'] === true ? Log.VERBOSE : argv['log'];
+}
+if (argv['log-tag']) {
+    if (!Array.isArray(argv['log-tag'])) {
+        argv['log-tag'] = [argv['log-tag']];
+    }
+    argv['log-tag'].forEach((lt) => {
+        let s = lt.split(':');
+        Log.instance().setLoggable(s[0], s.length == 1 ? 2 : s[1]);
+    });
+}
 
 console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ', miner=' + !!miner + ', passive=' + !!passive + ')');
 

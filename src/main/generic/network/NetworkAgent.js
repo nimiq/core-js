@@ -169,7 +169,7 @@ class NetworkAgent extends Observable {
         // XXX Do we need this timeout?
         this._timers.setTimeout('getaddr', () => {
             this._timers.clearTimeout('getaddr');
-            console.warn(`Peer ${this._channel.peerAddress} did not send any addresses when asked`);
+            Log.w(NetworkAgent, `Peer ${this._channel.peerAddress} did not send any addresses when asked`);
         }, NetworkAgent.GETADDR_TIMEOUT);
     }
 
@@ -181,12 +181,12 @@ class NetworkAgent extends Observable {
 
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > 1000) {
-            console.warn('Rejecting addr message - too many addresses');
+            Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
             this._channel.ban('addr message too large');
             return;
         }
 
-        console.log(`[ADDR] ${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
+        Log.d(NetworkAgent, `[ADDR] ${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
 
         // Clear the getaddr timeout.
         this._timers.clearTimeout('getaddr');
@@ -277,7 +277,7 @@ class NetworkAgent extends Observable {
     _canAcceptMessage(msg) {
         // The first message must be the version message.
         if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
-            console.warn(`Discarding ${msg.type} message from ${this._channel}`
+            Log.w(NetworkAgent, `Discarding ${msg.type} message from ${this._channel}`
                 + ' - no version message received previously');
             return false;
         }

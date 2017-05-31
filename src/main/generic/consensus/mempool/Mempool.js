@@ -19,7 +19,7 @@ class Mempool extends Observable {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
         if (this._transactions[hash]) {
-            console.log(`Mempool ignoring known transaction ${hash.toBase64()}`);
+            Log.v(Mempool, `Ignoring known transaction ${hash.toBase64()}`);
             return false;
         }
 
@@ -31,7 +31,7 @@ class Mempool extends Observable {
         // Only allow one transaction per senderPubKey at a time.
         // TODO This is a major limitation!
         if (this._senderPubKeys[transaction.senderPubKey]) {
-            console.warn('Mempool rejecting transaction - duplicate sender public key');
+            Log.w(Mempool, 'Rejecting transaction - duplicate sender public key');
             return false;
         }
         this._senderPubKeys[transaction.senderPubKey] = true;
@@ -64,7 +64,7 @@ class Mempool extends Observable {
     async _verifyTransaction(transaction) {
         // Verify transaction signature.
         if (!await transaction.verifySignature()) {
-            console.warn('Mempool rejected transaction - invalid signature', transaction);
+            Log.w(Mempool, 'Rejected transaction - invalid signature', transaction);
             return false;
         }
 
@@ -79,12 +79,12 @@ class Mempool extends Observable {
         const senderAddr = await transaction.senderAddr();
         const senderBalance = await this._accounts.getBalance(senderAddr);
         if (senderBalance.value < (transaction.value + transaction.fee)) {
-            if (!quiet) console.warn('Mempool rejected transaction - insufficient funds', transaction);
+            if (!quiet) Log.w(Mempool, 'Rejected transaction - insufficient funds', transaction);
             return false;
         }
 
         if (senderBalance.nonce !== transaction.nonce) {
-            if (!quiet) console.warn('Mempool rejected transaction - invalid nonce', transaction);
+            if (!quiet) Log.w(Mempool, 'Rejected transaction - invalid nonce', transaction);
             return false;
         }
 

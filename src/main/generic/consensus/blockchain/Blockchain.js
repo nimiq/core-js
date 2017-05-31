@@ -98,14 +98,14 @@ class Blockchain extends Observable {
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
-            console.log(`Blockchain ignoring known block ${hash.toBase64()}`);
+            Log.v(Blockchain, `Ignoring known block ${hash.toBase64()}`);
             return Blockchain.PUSH_ERR_KNOWN_BLOCK;
         }
 
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
-            console.log(`Blockchain discarding block ${hash.toBase64()} - previous block ${block.prevHash.toBase64()} unknown`);
+            Log.v(Blockchain, `Discarding block ${hash.toBase64()} - previous block ${block.prevHash.toBase64()} unknown`);
             return Blockchain.PUSH_ERR_ORPHAN_BLOCK;
         }
 
@@ -154,7 +154,7 @@ class Blockchain extends Observable {
 
         // Otherwise, we are creating/extending a fork. We have stored the block,
         // the head didn't change, nothing else to do.
-        console.log(`Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
+        Log.v(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
         return Blockchain.PUSH_OK;
     }
@@ -162,7 +162,7 @@ class Blockchain extends Observable {
     async _verifyBlock(block) {
         // Check that the maximum block size is not exceeded.
         if (block.serializedSize > Policy.BLOCK_SIZE_MAX) {
-            console.warn('Blockchain rejected block - max block size exceeded');
+            Log.w(Blockchain, 'Rejected block - max block size exceeded');
             return false;
         }
 
@@ -170,7 +170,7 @@ class Blockchain extends Observable {
         const senderPubKeys = {};
         for (const tx of block.body.transactions) {
             if (senderPubKeys[tx.senderPubKey]) {
-                console.warn('Blockchain rejected block - more than one transaction per sender');
+                Log.w(Blockchain, 'Rejected block - more than one transaction per sender');
                 return false;
             }
             senderPubKeys[tx.senderPubKey] = true;
@@ -180,26 +180,26 @@ class Blockchain extends Observable {
         // TODO Use network-adjusted time (see https://en.bitcoin.it/wiki/Block_timestamp).
         const maxTimestamp = Math.floor((Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) / 1000);
         if (block.header.timestamp > maxTimestamp) {
-            console.warn('Blockchain rejected block - timestamp too far in the future');
+            Log.w(Blockchain, 'Rejected block - timestamp too far in the future');
             return false;
         }
 
         // Check that the headerHash matches the difficulty.
         if (!await block.header.verifyProofOfWork()) {
-            console.warn('Blockchain rejected block - PoW verification failed');
+            Log.w(Blockchain, 'Rejected block - PoW verification failed');
             return false;
         }
 
         // Check that header bodyHash matches the actual bodyHash.
         const bodyHash = await block.body.hash();
         if (!block.header.bodyHash.equals(bodyHash)) {
-            console.warn('Blockchain rejecting block - body hash mismatch');
+            Log.w(Blockchain, 'Rejecting block - body hash mismatch');
             return false;
         }
         // Check that all transaction signatures are valid.
         for (const tx of block.body.transactions) {
             if (!await tx.verifySignature()) { // eslint-disable-line no-await-in-loop
-                console.warn('Blockchain rejected block - invalid transaction signature');
+                Log.w(Blockchain, 'Rejected block - invalid transaction signature');
                 return false;
             }
         }
@@ -212,13 +212,13 @@ class Blockchain extends Observable {
         // Check that the difficulty matches.
         const nextCompactTarget = await this.getNextCompactTarget(chain);
         if (nextCompactTarget !== block.nBits) {
-            console.warn('Blockchain rejecting block - difficulty mismatch');
+            Log.w(Blockchain, 'Rejecting block - difficulty mismatch');
             return false;
         }
 
         // Check that the timestamp is after (or equal) the previous block's timestamp.
         if (chain.head.timestamp > block.timestamp) {
-            console.warn('Blockchain rejecting block - timestamp mismatch');
+            Log.w(Blockchain, 'Rejecting block - timestamp mismatch');
             return false;
         }
 
@@ -233,7 +233,7 @@ class Blockchain extends Observable {
         if (!accountsHash.equals(newChain.head.accountsHash)) {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
-            console.log(`Blockchain rejecting block, AccountsHash mismatch: current=${accountsHash}, block=${newChain.head.accountsHash}`);
+            Log.d(Blockchain, `Rejecting block, AccountsHash mismatch: current=${accountsHash}, block=${newChain.head.accountsHash}`);
 
             return false;
         }
@@ -276,7 +276,7 @@ class Blockchain extends Observable {
 
     async _rebranch(newChain) {
         const hash = await newChain.hash();
-        console.log(`Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}, newChain`);
+        Log.v(Blockchain, `Rebranching to fork ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}, newChain`);
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
@@ -295,7 +295,7 @@ class Blockchain extends Observable {
         // The predecessor of forkHead is the desired common ancestor.
         const commonAncestor = forkHead.prevHash;
 
-        console.log(`Found common ancestor ${commonAncestor.toBase64()} ${forkChain.length} blocks up`);
+        Log.v(Blockchain, `Found common ancestor ${commonAncestor.toBase64()} ${forkChain.length} blocks up`);
 
         // Revert all blocks on the current main chain until the common ancestor.
         while (!this.headHash.equals(commonAncestor)) {

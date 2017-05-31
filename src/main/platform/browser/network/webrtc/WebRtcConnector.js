@@ -22,7 +22,7 @@ class WebRtcConnector extends Observable {
 
         const signalId = peerAddress.signalId;
         if (this._connectors[signalId]) {
-            console.warn(`WebRtc: Already connecting/connected to ${signalId}`);
+            Log.w(WebRtcConnector, `WebRtc: Already connecting/connected to ${signalId}`);
             return false;
         }
 
@@ -60,12 +60,12 @@ class WebRtcConnector extends Observable {
         try {
             payload = JSON.parse(BufferUtils.toAscii(msg.payload));
         } catch (e) {
-            console.error(`Failed to parse signal payload from ${msg.senderId}`);
+            Log.e(WebRtcConnector, `Failed to parse signal payload from ${msg.senderId}`);
             return;
         }
 
         if (!payload) {
-            console.warn(`Discarding signal from ${msg.senderId} - empty payload`);
+            Log.w(WebRtcConnector, `Discarding signal from ${msg.senderId} - empty payload`);
             return;
         }
 
@@ -78,12 +78,12 @@ class WebRtcConnector extends Observable {
             if (this._connectors[msg.senderId]) {
                 if (msg.recipientId > msg.senderId) {
                     // Discard the offer.
-                    console.log(`Simultaneous connection, discarding offer from ${msg.senderId} (<${msg.recipientId})`);
+                    Log.d(WebRtcConnector, `Simultaneous connection, discarding offer from ${msg.senderId} (<${msg.recipientId})`);
                     return;
                 } else {
                     // We are going to accept the offer. Clear the connect timeout
                     // from our previous Outbound connection attempt to this peer.
-                    console.log(`Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
+                    Log.d(WebRtcConnector, `Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
                     this._timers.clearTimeout('connect_' + msg.senderId);
                 }
             }
@@ -107,7 +107,7 @@ class WebRtcConnector extends Observable {
 
         // Invalid signal.
         else {
-            console.warn(`Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress}`);
+            Log.w(WebRtcConnector, `Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress}`);
         }
     }
 
@@ -149,7 +149,7 @@ class PeerConnector extends Observable {
             const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
             if (signalId !== this._signalId) {
                 // TODO what to do here?
-                console.error(`Invalid remote description received: expected signalId ${this._signalId}, got {signalId}`);
+                Log.e(PeerConnector, `Invalid remote description received: expected signalId ${this._signalId}, got {signalId}`);
                 return;
             }
 
@@ -191,7 +191,7 @@ class PeerConnector extends Observable {
     }
 
     _errorLog(error) {
-        console.error(error);
+        Log.e(PeerConnector, error);
     }
 
     get nonce() {
@@ -221,7 +221,7 @@ class OutboundPeerConnector extends PeerConnector {
             netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
         } else {
             // XXX Can/Why does this happen?
-            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            Log.w(OutboundPeerConnector, 'No ICE candidate seen for inbound connection, using pseudo netaddress');
             netAddress = new NetAddress(this._signalId, 1);
         }
 
@@ -251,7 +251,7 @@ class InboundPeerConnector extends PeerConnector {
             netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
         } else {
             // XXX Can/Why does this happen?
-            console.warn('No ICE candidate seen for inbound connection, using pseudo netaddress');
+            Log.w(InboundPeerConnector, 'No ICE candidate seen for inbound connection, using pseudo netaddress');
             netAddress = new NetAddress(this._signalId, 1);
         }
 

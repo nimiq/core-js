@@ -111,7 +111,7 @@ class Network extends Observable {
 
             // If we are connected to all addresses we know, wait for more.
             if (!peerAddress) {
-                console.warn('Not connecting to more peers - no addresses left');
+                Log.w(Network, 'Not connecting to more peers - no addresses left');
                 return;
             }
 
@@ -123,7 +123,7 @@ class Network extends Observable {
     _connect(peerAddress) {
         switch (peerAddress.protocol) {
             case Protocol.WS:
-                console.log(`Connecting to ${peerAddress} ...`);
+                Log.d(Network, `Connecting to ${peerAddress} ...`);
                 if (this._wsConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
@@ -131,7 +131,7 @@ class Network extends Observable {
                 break;
 
             case Protocol.RTC:
-                console.log(`Connecting to ${peerAddress} via ${peerAddress.signalChannel.peerAddress}...`);
+                Log.d(Network, `Connecting to ${peerAddress} via ${peerAddress.signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
@@ -139,7 +139,7 @@ class Network extends Observable {
                 break;
 
             default:
-                console.error(`Cannot connect to ${peerAddress} - unsupported protocol`);
+                Log.e(Network, `Cannot connect to ${peerAddress} - unsupported protocol`);
                 this._onError(peerAddress);
         }
     }
@@ -178,7 +178,7 @@ class Network extends Observable {
 
         // Connection accepted.
         const connType = conn.inbound ? 'inbound' : 'outbound';
-        console.log(`Connection established (${connType}) #${conn.id} ${conn.netAddress} (${numConnections})`);
+        Log.d(Network, `Connection established (${connType}) #${conn.id} ${conn.netAddress} (${numConnections})`);
 
         // Create peer channel.
         const channel = new PeerChannel(conn);
@@ -225,12 +225,12 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        console.log(`[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight})`);
+        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight})`);
     }
 
     // Connection to this peer address failed.
     _onError(peerAddress) {
-        console.warn('Connection to ' + peerAddress + ' failed');
+        Log.w(Network, 'Connection to ' + peerAddress + ' failed');
 
         if (this._addresses.isConnecting(peerAddress)) {
             this._connectingCount--;
@@ -266,12 +266,12 @@ class Network extends Observable {
 
                 const kbTransferred = ((channel.connection.bytesSent
                     + channel.connection.bytesReceived) / 1000).toFixed(2);
-                console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
+                Log.d(Network, `[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
                     + `(version=${peer.version}, startHeight=${peer.startHeight}, `
                     + `transferred=${kbTransferred} kB)`);
             } else {
                 // Treat connections closed pre-handshake as failed attempts.
-                console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
+                Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake`);
                 this._addresses.unreachable(channel.peerAddress);
             }
         }
@@ -306,7 +306,7 @@ class Network extends Observable {
 
         // Discard signals from myself.
         if (msg.senderId === mySignalId) {
-            console.warn(`Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${mySignalId})`);
+            Log.w(Network, `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${mySignalId})`);
             return;
         }
 
@@ -318,7 +318,7 @@ class Network extends Observable {
 
         // Discard signals that have reached their TTL.
         if (msg.ttl <= 0) {
-            console.warn(`Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
+            Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             return;
         }
 
@@ -327,7 +327,7 @@ class Network extends Observable {
         if (!peerAddress) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
-            console.warn(`Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
             if (!(msg.flags & SignalMessage.Flags.UNROUTABLE)) {
                 channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             }
@@ -337,7 +337,7 @@ class Network extends Observable {
         // Discard signal if our shortest route to the target is via the sending peer.
         // XXX Can this happen?
         if (peerAddress.signalChannel.peerAddress.equals(channel.peerAddress)) {
-            console.error(`Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
+            Log.e(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             return;
         }
 
@@ -345,7 +345,7 @@ class Network extends Observable {
         peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
 
         // XXX This is very spammy!!!
-        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
+        Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
             + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
             + `(via ${peerAddress.signalChannel.peerAddress})`);
     }

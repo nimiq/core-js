@@ -78,13 +78,13 @@ class PeerConnection extends Observable {
 
     send(msg) {
         if (this._channel.closed) {
-            console.error('Tried to send data over closed connection ${this}');
+            Log.e(PeerConnection, 'Tried to send data over closed connection ${this}');
             return false;
         }
 
         // Don't attempt to send if channel is opening/closing.
         if (!this._isChannelOpen()) {
-            console.warn('Not sending data over ${this} - not open (${this._channel.readyState})');
+            Log.w(PeerConnection, 'Not sending data over ${this} - not open (${this._channel.readyState})');
             return false;
         }
 
@@ -93,19 +93,19 @@ class PeerConnection extends Observable {
             this._bytesSent += msg.byteLength || msg.length;
             return true;
         } catch (e) {
-            console.error(`Failed to send data over ${this}: ${e.message || e}`);
+            Log.e(PeerConnection, `Failed to send data over ${this}: ${e.message || e}`);
             return false;
         }
     }
 
     close(reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
-        console.log(`Closing ${connType} connection #${this._id} ${this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        Log.d(PeerConnection, `Closing ${connType} connection #${this._id} ${this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
     }
 
     ban(reason) {
-        console.warn(`Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
+        Log.w(PeerConnection, `Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
         this._close();
         this.fire('ban', reason, this);
     }
