@@ -379,11 +379,11 @@
 				this._hdPrevHash.innerText = $.blockchain.head.prevHash;
 				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
 				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
-				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
+				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp);
 				this._hdNonce.innerText = $.blockchain.head.nonce;
 
 				const el = document.createElement('div');
-				const date = new Date(head.timestamp * 1000);
+				const date = new Date(head.timestamp);
 				let html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
 					+ `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
 

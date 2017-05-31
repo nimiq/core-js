@@ -122,7 +122,7 @@ class Miner extends Observable {
     }
 
     _getNextTimestamp() {
-        return Math.floor(Date.now());
+        return Date.now();
     }
 
     stopWork() {
