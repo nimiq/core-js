@@ -27,9 +27,9 @@ class PeerAddresses extends Observable {
         // Pick a random start index.
         let index = Math.round(Math.random() * numAddresses);
 
-        // Score up to 10 addresses starting from the start index and pick the
+        // Score up to 500 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 10);
+        const minCandidates = Math.min(numAddresses, 500);
         const candidates = new HashMap();
         for (let i = 0; i < numAddresses; i++) {
             const idx = (index + i) % numAddresses;
