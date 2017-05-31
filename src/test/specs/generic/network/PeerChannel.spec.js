@@ -29,6 +29,16 @@ describe('PeerChannel', () => {
         client.inv([vec1]);
     });
 
+    it('can send a MempoolMessage', (done) => {
+        const spy = new SpyConnection(msg => {
+            const memPoolMsg = MempoolMessage.unserialize(msg);
+            expect(memPoolMsg.type).toBe(Message.Type.MEMPOOL);
+            done();
+        });
+        const client = new PeerChannel(spy);
+        client.mempool();
+    });
+
     it('can send a NotFoundMessage', (done) => {
         const spy = new SpyConnection(msg => {
             const notFoundMsg = NotFoundMessage.unserialize(msg);
@@ -80,6 +90,18 @@ describe('PeerChannel', () => {
         client.on(message.type, invMsgTest => {
             expect(invMsgTest.vectors.length).toBe(count);
             expect(invMsgTest.vectors[0].equals(vec1)).toBe(true);
+            done();
+        });
+        spy.onmessage(message.serialize());
+    });
+
+    it('can receive a MempoolMessage', (done) => {
+        const message = new MempoolMessage();
+        const spy = new SpyConnection();
+        const client = new PeerChannel(spy);
+
+        client.on(message.type, memPoolMsgTest => {
+            expect(memPoolMsgTest.type).toBe(Message.Type.MEMPOOL);
             done();
         });
         spy.onmessage(message.serialize());

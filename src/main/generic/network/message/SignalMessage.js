@@ -37,6 +37,7 @@ class SignalMessage extends Message {
         buf.writeUint8(this._flags);
         buf.writeUint16(this._payload.byteLength);
         buf.write(this._payload);
+        super._setChecksum(buf);
         return buf;
     }
 

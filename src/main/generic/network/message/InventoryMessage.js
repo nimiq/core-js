@@ -15,8 +15,8 @@ class InvVector {
     }
 
     static unserialize(buf) {
-        let type = buf.readUint32();
-        let hash = Hash.unserialize(buf);
+        const type = buf.readUint32();
+        const hash = Hash.unserialize(buf);
         return new InvVector(type, hash);
     }
 
@@ -74,16 +74,17 @@ class BaseInventoryMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         buf.writeUint16(this._vectors.length);
-        for (let vector of this._vectors) {
+        for (const vector of this._vectors) {
             vector.serialize(buf);
         }
+        super._setChecksum(buf);
         return buf;
     }
 
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2;
-        for (let vector of this._vectors) {
+        for (const vector of this._vectors) {
             size += vector.serializedSize;
         }
         return size;

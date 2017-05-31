@@ -41,6 +41,7 @@ const sources = {
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
         './src/main/generic/utils/crypto/Crypto.js',
+        './src/main/generic/utils/crc/CRC32.js',
         './src/main/generic/utils/database/ObjectDB.js',
         './src/main/generic/utils/database/TypedDBTransaction.js',
         './src/main/generic/utils/number/NumberUtils.js',

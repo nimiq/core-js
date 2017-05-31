@@ -1,4 +1,7 @@
+// XXX Should we do this here or in a higher-level script?
 const WebSocket = require('ws');
+Class.register(WebSocket);
+
 const https = require('https');
 const fs = require('fs');
 

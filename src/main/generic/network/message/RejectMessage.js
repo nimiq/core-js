@@ -30,6 +30,7 @@ class RejectMessage extends Message {
         buf.writeVarLengthString(this._reason);
         buf.writeUint16(this._extraData.byteLength);
         buf.write(this._extraData);
+        super._setChecksum(buf);
         return buf;
     }
 
