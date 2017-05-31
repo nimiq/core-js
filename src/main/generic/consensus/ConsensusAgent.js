@@ -17,8 +17,8 @@ class ConsensusAgent extends Observable {
         // The number of failed blockchain sync attempts.
         this._failedSyncs = 0;
 
-        // Invectory of all objects that we think the remote peer knows.
-        this._knownObjects = {};
+        // Set of all objects (InvVectors) that we think the remote peer knows.
+        this._knownObjects = new HashSet();
 
         // InvVectors we want to request via getdata are collected here and
         // periodically requested.
@@ -56,25 +56,39 @@ class ConsensusAgent extends Observable {
             return;
         }
 
-        // Don't relay block to this peer if it already knows it.
+        // Create InvVector.
         const hash = await block.hash();
-        if (this._knownObjects[hash]) return;
+        const vector = new InvVector(InvVector.Type.BLOCK, hash);
+
+        // Don't relay block to this peer if it already knows it.
+        if (this._knownObjects.contains(vector)) {
+            return;
+        }
 
         // Relay block to peer.
-        const vector = new InvVector(InvVector.Type.BLOCK, hash);
         this._peer.channel.inv([vector]);
+
+        // Assume that the peer knows this block now.
+        this._knownObjects.add(vector);
     }
 
     async relayTransaction(transaction) {
         // TODO Don't relay if no consensus established yet ???
 
-        // Don't relay transaction to this peer if it already knows it.
+        // Create InvVector.
         const hash = await transaction.hash();
-        if (this._knownObjects[hash]) return;
+        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+
+        // Don't relay transaction to this peer if it already knows it.
+        if (this._knownObjects.contains(vector)) {
+            return;
+        }
 
         // Relay transaction to peer.
-        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
         this._peer.channel.inv([vector]);
+
+        // Assume that the peer knows this transaction now.
+        this._knownObjects.add(vector);
     }
 
     syncBlockchain() {
@@ -151,6 +165,11 @@ class ConsensusAgent extends Observable {
         // Clear the getblocks timeout.
         this._timers.clearTimeout('getblocks');
 
+        // Keep track of the objects the peer knows.
+        for (let vector of msg.vectors) {
+            this._knownObjects.add(vector);
+        }
+
         // Check which of the advertised objects we know
         // Request unknown objects, ignore known ones.
         const unknownObjects = [];
@@ -176,11 +195,6 @@ class ConsensusAgent extends Observable {
         }
 
         console.log(`[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
-
-        // Keep track of the objects the peer knows.
-        for (let obj of unknownObjects) {
-            this._knownObjects[obj.hash] = obj;
-        }
 
         if (unknownObjects.length) {
             // Store unknown vectors in objectsToRequest array.
@@ -248,6 +262,7 @@ class ConsensusAgent extends Observable {
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (this._objectsInFlight.indexOf(vector) < 0) {
             console.warn(`Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
+            // TODO what should happen here? ban? drop connection?
             return;
         }
 
@@ -255,10 +270,12 @@ class ConsensusAgent extends Observable {
         this._onObjectReceived(vector);
 
         // Put block into blockchain.
-        this._blockchain.pushBlock(msg.block);
+        const status = await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
-        // TODO what to do if the peer keeps sending invalid blocks?
+        if(status < Blockchain.PUSH_OK) {
+            this._peer.channel.ban('received at least one invalid block');
+        }
     }
 
     async _onTx(msg) {
@@ -314,9 +331,14 @@ class ConsensusAgent extends Observable {
     /* Request endpoints */
 
     async _onGetData(msg) {
-        // check which of the requested objects we know
-        // send back all known objects
-        // send notfound for unknown objects
+        // Keep track of the objects the peer knows.
+        for (let vector of msg.vectors) {
+            this._knownObjects.add(vector);
+        }
+
+        // Check which of the requested objects we know.
+        // Send back all known objects.
+        // Send notfound for unknown objects.
         const unknownObjects = [];
         for (let vector of msg.vectors) {
             switch (vector.type) {
@@ -401,9 +423,9 @@ class ConsensusAgent extends Observable {
             startIndex = 0;
         }
 
-        // Collect up to 500 inventory vectors for the blocks starting right
+        // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + 500);
+        const stopIndex = Math.min(mainPath.length - 1, startIndex + ConsensusAgent.GETBLOCKS_VECTORS_MAX);
         const vectors = [];
         for (let i = startIndex + 1; i <= stopIndex; ++i) {
             vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
@@ -449,4 +471,6 @@ ConsensusAgent.REQUEST_TIMEOUT = 5000; // ms
 // if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
 // blocks.
 ConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+// Maximum number of inventory vectors to sent in the response for onGetBlocks.
+ConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
 Class.register(ConsensusAgent);

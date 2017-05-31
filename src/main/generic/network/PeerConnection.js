@@ -29,6 +29,11 @@ class PeerConnection extends Observable {
     }
 
     _onMessage(msg) {
+        // Don't emit messages if this channel is closed.
+        if (this._closed) {
+            return;
+        }
+
         // XXX Cleanup!
         if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
             this._bytesReceived += msg.byteLength || msg.length;
@@ -43,17 +48,47 @@ class PeerConnection extends Observable {
     }
 
     _onClose() {
+        // Don't fire close event again when already closed.
+        if (this._closed) {
+            return;
+        }
+
+        // Mark this connection as closed.
         this._closed = true;
+
+        // Tell listeners that this connection has closed.
         this.fire('close', !this._closedByUs, this);
     }
 
-    send(msg) {
-        try {
-            if (this._channel.closed) {
-                console.error('Tried to send data over closed channel ${this}');
-                return false;
-            }
+    _close() {
+        this._closedByUs = true;
 
+        // Don't wait for the native close event to fire.
+        this._onClose();
+
+        // Close the native channel.
+        this._channel.close();
+    }
+
+    _isChannelOpen() {
+        // XXX Should work, but it's not pretty.
+        return this._channel.readyState === WebSocket.OPEN
+            || this._channel.readyState === 'open';
+    }
+
+    send(msg) {
+        if (this._channel.closed) {
+            console.error('Tried to send data over closed connection ${this}');
+            return false;
+        }
+
+        // Don't attempt to send if channel is opening/closing.
+        if (!this._isChannelOpen()) {
+            console.warn('Not sending data over ${this} - not open (${this._channel.readyState})');
+            return false;
+        }
+
+        try {
             this._channel.send(msg);
             this._bytesSent += msg.byteLength || msg.length;
             return true;
@@ -66,21 +101,18 @@ class PeerConnection extends Observable {
     close(reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
         console.log(`Closing ${connType} connection #${this._id} ${this._netAddress}` + (reason ? ` - ${reason}` : ''));
-        this._closedByUs = true;
-        this._channel.close();
+        this._close();
     }
 
     ban(reason) {
         console.warn(`Banning peer ${this._peerAddress} (${this._netAddress})` + (reason ? ` - ${reason}` : ''));
-        this._closedByUs = true;
-        this._channel.close();
+        this._close();
         this.fire('ban', reason, this);
     }
 
     equals(o) {
         return o instanceof PeerConnection
-            && this.peerAddress.equals(o.peerAddress)
-            && this.netAddress.equals(o.netAddress);
+            && this._id === o.id;
     }
 
     hashCode() {

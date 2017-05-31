@@ -18,10 +18,11 @@ class Network extends Observable {
     }
 
     async _init() {
+        // Flag indicating whether we should actively connect to other peers
+        // if our peer count is below PEER_COUNT_DESIRED.
         this._autoConnect = false;
 
-        this._peerCount = 0;
-
+        // Number of ongoing outbound connection attempts.
         this._connectingCount = 0;
 
         // Map of agents indexed by connection ids.
@@ -102,7 +103,7 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this._peerCount < Network.PEER_COUNT_DESIRED
+            && this.peerCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
@@ -144,13 +145,22 @@ class Network extends Observable {
     }
 
     _onConnection(conn) {
-        // Decrement connectingCount if we have initiated this connection.
-        if (!conn.inbound && this._addresses.isConnecting(conn.peerAddress)) {
-            this._connectingCount--;
+        if (!conn.inbound) {
+            // Decrement connectingCount if we have initiated this connection.
+            if (this._addresses.isConnecting(conn.peerAddress)) {
+                this._connectingCount--;
+            }
+            // Reject connection if we are already connected to this peer address.
+            // This can happen if the peer connects (inbound) while we are
+            // initiating a (outbound) connection to it.
+            else if (this._addresses.isConnected(conn.peerAddress)) {
+                conn.close('duplicate connection (pre handshake)');
+                return;
+            }
         }
 
         // Reject peer if we have reached max peer count.
-        if (this._peerCount >= Network.PEER_COUNT_MAX) {
+        if (this.peerCount >= Network.PEER_COUNT_MAX) {
             conn.close('max peer count reached (' + this._maxPeerCount + ')');
             return;
         }
@@ -193,7 +203,7 @@ class Network extends Observable {
     _onHandshake(peer, agent) {
         // Close connection if we are already connected to this peer.
         if (this._addresses.isConnected(peer.peerAddress)) {
-            agent.channel.close('duplicate connection (peerAddress)');
+            agent.channel.close('duplicate connection (post handshake)');
             return;
         }
 
@@ -208,9 +218,6 @@ class Network extends Observable {
 
         // Tell others about the address that we just connected to.
         this._relayAddresses([peer.peerAddress]);
-
-        // Increment the peerCount.
-        this._peerCount++;
 
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
@@ -236,11 +243,6 @@ class Network extends Observable {
 
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
-        // The peerAddress is null pre-handshake for inbound connections.
-        if (channel.peerAddress) {
-            this._addresses.disconnected(channel.peerAddress, closedByRemote);
-        }
-
         // Delete agent.
         this._agents.delete(channel.id);
 
@@ -249,28 +251,27 @@ class Network extends Observable {
         numConnections = Math.max(numConnections - 1, 0);
         this._connectionCounts.put(channel.netAddress, numConnections);
 
-        // This is true if the handshake with the peer completed.
-        if (peer) {
-            // Tell listeners that this peer has gone away.
-            this.fire('peer-left', peer);
+        // peerAddress is undefined for incoming connections pre-handshake.
+        if (channel.peerAddress) {
+            // Check if the handshake with this peer has completed.
+            if (this._addresses.isConnected(channel.peerAddress)) {
+                // Mark peer as disconnected.
+                this._addresses.disconnected(channel.peerAddress, closedByRemote);
 
-            // Decrement the peerCount.
-            this._peerCount--;
+                // Tell listeners that this peer has gone away.
+                this.fire('peer-left', peer);
 
-            // Let listeners know that the peers changed.
-            this.fire('peers-changed');
+                // Let listeners know that the peers changed.
+                this.fire('peers-changed');
 
-            const kbTransferred = ((channel.connection.bytesSent
-                + channel.connection.bytesReceived) / 1000).toFixed(2);
-            console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
-                + `(version=${peer.version}, startHeight=${peer.startHeight}, `
-                + `transferred=${kbTransferred} kB)`);
-        } else {
-            // The connection was closed before the handshake completed.
-            // Treat this as failed connection attempt.
-            // TODO inbound WS connections.
-            console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
-            if (channel.peerAddress) {
+                const kbTransferred = ((channel.connection.bytesSent
+                    + channel.connection.bytesReceived) / 1000).toFixed(2);
+                console.log(`[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
+                    + `(version=${peer.version}, startHeight=${peer.startHeight}, `
+                    + `transferred=${kbTransferred} kB)`);
+            } else {
+                // Treat connections closed pre-handshake as failed attempts.
+                console.warn(`Connection to ${channel.peerAddress} closed pre-handshake`);
                 this._addresses.unreachable(channel.peerAddress);
             }
         }
@@ -340,11 +341,13 @@ class Network extends Observable {
         peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.ttl - 1, msg.payload);
 
         // XXX This is very spammy!!!
-        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} (received from ${channel.peerAddress}) to ${msg.recipientId} (via ${peerAddress.signalChannel.peerAddress})`);
+        console.log(`Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
+            + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
+            + `(via ${peerAddress.signalChannel.peerAddress})`);
     }
 
     get peerCount() {
-        return this._peerCount;
+        return this._addresses.peerCountWs + this._addresses.peerCountRtc;
     }
 
     get peerCountWebSocket() {

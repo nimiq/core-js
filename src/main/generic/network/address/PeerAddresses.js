@@ -61,6 +61,11 @@ class PeerAddresses extends Observable {
             return -1;
         }
 
+        // Filter addresses that are too old.
+        if (this._exceedsAge(peerAddress)) {
+            return -1;
+        }
+
         const score = this._scoreProtocol(peerAddress)
             * ((peerAddress.timestamp / 1000) + 1);
 
@@ -129,20 +134,44 @@ class PeerAddresses extends Observable {
     // TODO improve this by returning the best addresses first.
     findByServices(serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
+        const now = Date.now();
         const addresses = [];
         for (let peerAddressState of this._store.values()) {
+            // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED
                     || peerAddressState.state === PeerAddressState.FAILED) {
                 continue;
             }
 
+            // Never return seed peers.
             const address = peerAddressState.peerAddress;
-            if (address.timestamp !== 0 && (address.services & serviceMask) !== 0) {
-                addresses.push(address);
+            if (address.timestamp === 0) {
+                continue;
+            }
 
-                if (addresses.length >= maxAddresses) {
-                    break;
-                }
+            // Only return addresses matching the service mask.
+            if ((address.services & serviceMask) === 0) {
+                continue;
+            }
+
+            // Update timestamp for connected peers.
+            if (peerAddressState.state === PeerAddressState.CONNECTED) {
+                address.timestamp = now;
+            }
+
+            // Never return addresses that are too old.
+            if (this._exceedsAge(address)) {
+                // XXX Debug
+                console.log('Not returning old address: ' + peerAddressState);
+                continue;
+            }
+
+            // Return this address.
+            addresses.push(address);
+
+            // Stop if we have collected maxAddresses.
+            if (addresses.length >= maxAddresses) {
+                break;
             }
         }
         return addresses;
@@ -285,16 +314,7 @@ class PeerAddresses extends Observable {
         }
 
         if (peerAddressState.state !== PeerAddressState.CONNECTED) {
-            switch (peerAddress.protocol) {
-                case Protocol.WS:
-                    this._peerCountWs++;
-                    break;
-                case Protocol.RTC:
-                    this._peerCountRtc++;
-                    break;
-                default:
-                    console.warn('Unknown protocol ' + peerAddress.protocol);
-            }
+            this._updateConnectedPeerCount(peerAddress, 1);
         }
 
         peerAddressState.state = PeerAddressState.CONNECTED;
@@ -310,29 +330,23 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             return;
         }
+        if (peerAddressState.state !== PeerAddressState.CONNECTING
+            && peerAddressState.state !== PeerAddressState.CONNECTED) {
+            throw 'disconnected() called in unexpected state ' + peerAddressState.state;
+        }
 
+        // Delete all addresses that were signalable over the disconnected peer.
         this._deleteBySignalingPeer(peerAddress);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            switch (peerAddress.protocol) {
-                case Protocol.WS:
-                    this._peerCountWs--;
-                    break;
-                case Protocol.RTC:
-                    this._peerCountRtc--;
-                    break;
-                default:
-                    console.warn('Unknown protocol ' + peerAddress.protocol);
-            }
+            this._updateConnectedPeerCount(peerAddress, -1);
         }
 
-        if (peerAddressState.state !== PeerAddressState.BANNED) {
-            // XXX Immediately delete address if the remote host closed the connection.
-            if (closedByRemote) {
-                this._delete(peerAddress);
-            } else {
-                peerAddressState.state = PeerAddressState.TRIED;
-            }
+        // XXX Immediately delete address if the remote host closed the connection.
+        if (closedByRemote) {
+            this._delete(peerAddress);
+        } else {
+            peerAddressState.state = PeerAddressState.TRIED;
         }
     }
 
@@ -345,6 +359,7 @@ class PeerAddresses extends Observable {
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
+
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
 
@@ -358,6 +373,9 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
+        }
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            this._updateConnectedPeerCount(peerAddress, -1);
         }
 
         peerAddressState.state = PeerAddressState.BANNED;
@@ -426,6 +444,19 @@ class PeerAddresses extends Observable {
         }
     }
 
+    _updateConnectedPeerCount(peerAddress, delta) {
+        switch (peerAddress.protocol) {
+            case Protocol.WS:
+                this._peerCountWs += delta;
+                break;
+            case Protocol.RTC:
+                this._peerCountRtc += delta;
+                break;
+            default:
+                console.warn('Unknown protocol ' + peerAddress.protocol);
+        }
+    }
+
     _housekeeping() {
         const now = Date.now();
         const unbannedAddresses = [];
@@ -438,8 +469,7 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.TRIED:
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
-                    // Special case: don't delete seed addresses (timestamp == 0)
-                    if (addr.timestamp > 0 && this._exceedsAge(addr)) {
+                    if (this._exceedsAge(addr)) {
                         console.log('Deleting old peer address ' + addr);
                         this.delete(addr);
                     }
@@ -462,10 +492,11 @@ class PeerAddresses extends Observable {
 
                 case PeerAddressState.CONNECTED:
                     // Keep timestamp up-to-date while we are connected.
-                    addr.timestamp = Date.now();
+                    addr.timestamp = now;
                     break;
 
                 default:
+                    // TODO What about peers who are stuck connecting? Can this happen?
                     // Do nothing for CONNECTING peers.
             }
         }
@@ -476,6 +507,11 @@ class PeerAddresses extends Observable {
     }
 
     _exceedsAge(peerAddress) {
+        // Seed addresses are never too old.
+        if (peerAddress.timestamp === 0) {
+            return false;
+        }
+
         const age = Date.now() - peerAddress.timestamp;
         switch (peerAddress.protocol) {
             case Protocol.WS:

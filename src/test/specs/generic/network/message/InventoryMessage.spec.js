@@ -48,4 +48,13 @@ describe('InvMessage', () => {
         }).toThrow('Malformed vectors');
     });
 
+    it('must have a length < 1000', () => {
+        expect( () => {
+            const test1 = new InvMessage(new Array(1000));
+        }).not.toThrow('Malformed vectors');
+        expect( () => {
+            const test2 = new InvMessage(new Array(1001));
+        }).toThrow('Malformed vectors');
+    });
+
 });

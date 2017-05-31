@@ -29,12 +29,16 @@ class InvVector {
 
     equals(o) {
         return o instanceof InvVector
-            && this._type == o.type
+            && this._type === o.type
             && this._hash.equals(o.hash);
     }
 
+    hashCode() {
+        return `${this._type}|${this._hash}`;
+    }
+
     toString() {
-        return "InvVector{type=" + this._type + ", hash=" + this.hash + "}";
+        return `InvVector{type=${this._type}, hash=${this._hash}}`;
     }
 
     get serializedSize() {
@@ -61,7 +65,8 @@ class BaseInventoryMessage extends Message {
     constructor(type, vectors) {
         super(type);
         if (!vectors || !NumberUtils.isUint16(vectors.length)
-            || vectors.some(it => !(it instanceof InvVector))) throw 'Malformed vectors';
+            || vectors.some(it => !(it instanceof InvVector))
+            || vectors.length > BaseInventoryMessage.LENGTH_MAX) throw 'Malformed vectors';
         this._vectors = vectors;
     }
 
@@ -88,6 +93,7 @@ class BaseInventoryMessage extends Message {
         return this._vectors;
     }
 }
+BaseInventoryMessage.LENGTH_MAX = 1000;
 Class.register(BaseInventoryMessage);
 
 class InvMessage extends BaseInventoryMessage {
