@@ -44,8 +44,14 @@ class NetworkAgent extends Observable {
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
+            // Exclude RTC addresses that are already at MAX_DISTANCE.
+            // FIXME check if this works as intended.
+            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+                return false;
+            }
+
             const knownAddress = this._knownAddresses.get(addr);
-            return addr.timestamp !== 0 // Never relay seed addresses.
+            return !addr.isSeed() // Never relay seed addresses.
                 && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
         });
 
