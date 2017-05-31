@@ -103,24 +103,24 @@ class Blockchain extends Observable {
         const knownChain = await this._store.get(hash.toBase64());
         if (knownChain) {
             console.log(`Blockchain ignoring known block ${hash.toBase64()}`);
-            return true;
+            return Blockchain.PUSH_ERR_KNOWN_BLOCK;
         }
 
         // Retrieve the previous block. Fail if we don't know it.
         const prevChain = await this._store.get(block.prevHash.toBase64());
         if (!prevChain) {
             console.log(`Blockchain discarding block ${hash.toBase64()} - previous block ${block.prevHash.toBase64()} unknown`);
-            return false;
+            return Blockchain.PUSH_ERR_ORPHAN_BLOCK;
         }
 
         // Check all intrinsic block invariants.
         if (!await this._verifyBlock(block)) {
-            return false;
+            return Blockchain.PUSH_ERR_INVALID_BLOCK;
         }
 
         // Check that the block is a valid extension of its previous block.
         if (!await this._isValidExtension(prevChain, block)) {
-            return false;
+            return Blockchain.PUSH_ERR_INVALID_BLOCK;
         }
 
         // Block looks good, compute the new total work & height.
@@ -135,13 +135,13 @@ class Blockchain extends Observable {
         if (block.prevHash.equals(this._headHash)) {
             // Append new block to the main chain.
             if (!await this._extend(newChain)) {
-                return false;
+                return Blockchain.PUSH_ERR_INVALID_BLOCK;
             }
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return true;
+            return Blockchain.PUSH_OK;
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
@@ -153,14 +153,14 @@ class Blockchain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return true;
+            return Blockchain.PUSH_OK;
         }
 
         // Otherwise, we are creating/extending a fork. We have stored the block,
         // the head didn't change, nothing else to do.
         console.log(`Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
-        return true;
+        return Blockchain.PUSH_OK;
     }
 
     async _verifyBlock(block) {
@@ -390,6 +390,10 @@ class Blockchain extends Observable {
         return this._accounts.hash();
     }
 }
+Blockchain.PUSH_OK = 0;
+Blockchain.PUSH_ERR_KNOWN_BLOCK = 1;
+Blockchain.PUSH_ERR_INVALID_BLOCK = -1;
+Blockchain.PUSH_ERR_ORPHAN_BLOCK = -2;
 Class.register(Blockchain);
 
 class Chain {
