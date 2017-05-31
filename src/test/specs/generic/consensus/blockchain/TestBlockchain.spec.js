@@ -170,7 +170,7 @@ class TestBlockchain extends Blockchain {
             }
         }
 
-        console.log(`successfully created ${  numBlocks  } blocks`);
+        console.info(`successfully created ${  numBlocks  } blocks`);
 
         return testBlockchain;
     }
