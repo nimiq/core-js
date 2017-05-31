@@ -260,9 +260,10 @@ class ConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
             console.warn(`Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
-            // TODO what should happen here? ban? drop connection?
+            // TODO What should happen here? ban? drop connection?
+            // Might not be unsolicited but just arrive after our timeout has triggered.
             return;
         }
 
@@ -284,7 +285,7 @@ class ConsensusAgent extends Observable {
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        if (this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
             console.warn(`Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -304,7 +305,7 @@ class ConsensusAgent extends Observable {
 
         // Remove unknown objects from in-flight list.
         for (let vector of msg.vectors) {
-            if (this._objectsInFlight.indexOf(vector) < 0) {
+            if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
                 console.warn(`Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
