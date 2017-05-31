@@ -102,8 +102,8 @@ class PeerChannel extends Observable {
         return this._send(new PongMessage(nonce));
     }
 
-    signal(senderId, recipientId, ttl, payload) {
-        return this._send(new SignalMessage(senderId, recipientId, ttl, payload));
+    signal(senderId, recipientId, nonce, ttl, flags, payload) {
+        return this._send(new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload));
     }
 
     equals(o) {

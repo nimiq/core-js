@@ -235,7 +235,7 @@ class NetworkAgent extends Observable {
 
     _checkConnectivity() {
         // Generate random nonce.
-        const nonce = Math.round(Math.random() * NumberUtils.UINT32_MAX);
+        const nonce = NumberUtils.randomUint32();
 
         // Send ping message to peer.
         // If sending the ping message fails, assume the connection has died.

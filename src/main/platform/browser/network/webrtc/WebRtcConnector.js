@@ -40,6 +40,22 @@ class WebRtcConnector extends Observable {
     }
 
     onSignal(channel, msg) {
+        // Check if we received an unroutable response from one of the signaling peers.
+        if (msg.flags & SignalMessage.Flags.UNROUTABLE) {
+            // handle error cases
+            // check for relevant connector
+            if (this._connectors[msg.senderId] && this._connectors[msg.senderId].nonce == msg.nonce) {
+                // if OutboundPeerConnector, clear timeout early
+                if(this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
+                    this._timers.clearTimeout('connect_' + msg.senderId);
+                    this.fire('error', this._connectors[msg.senderId].peerAddress);
+                    delete this._connectors[msg.senderId];
+                }
+            }
+
+            return;
+        }
+
         let payload;
         try {
             payload = JSON.parse(BufferUtils.toAscii(msg.payload));
@@ -118,6 +134,7 @@ class PeerConnector extends Observable {
         super();
         this._signalChannel = signalChannel;
         this._signalId = signalId;
+        this._nonce = NumberUtils.randomUint32();
 
         this._rtcConnection = new RTCPeerConnection(config);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
@@ -154,7 +171,9 @@ class PeerConnector extends Observable {
         this._signalChannel.signal(
             NetworkConfig.myPeerAddress().signalId,
             this._signalId,
+            this._nonce,
             Network.SIGNAL_TTL_INITIAL,
+            0, /*flags*/
             BufferUtils.fromAscii(JSON.stringify(signal))
         );
     }
@@ -173,6 +192,10 @@ class PeerConnector extends Observable {
 
     _errorLog(error) {
         console.error(error);
+    }
+
+    get nonce() {
+        return this._nonce;
     }
 }
 
@@ -204,6 +227,10 @@ class OutboundPeerConnector extends PeerConnector {
 
         const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
         this.fire('connection', conn);
+    }
+
+    get peerAddress() {
+        return this._peerAddress;
     }
 }
 
