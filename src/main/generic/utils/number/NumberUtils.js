@@ -18,6 +18,10 @@ class NumberUtils {
         return Number.isInteger(val)
             && val >= 0 && val <= NumberUtils.UINT64_MAX;
     }
+
+    static randomUint32() {
+        return Math.floor(Math.random() * (NumberUtils.UINT32_MAX + 1));
+    }
 }
 
 NumberUtils.UINT8_MAX = 255;
