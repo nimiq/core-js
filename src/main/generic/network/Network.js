@@ -31,6 +31,10 @@ class Network extends Observable {
         // Map from netAddress.host -> number of connections to this host.
         this._connectionCounts = new HashMap(netAddress => netAddress.host);
 
+        // Total bytes sent/received on past connections.
+        this._bytesSent = 0;
+        this._bytesReceived = 0;
+
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
         this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
@@ -251,6 +255,10 @@ class Network extends Observable {
         numConnections = Math.max(numConnections - 1, 0);
         this._connectionCounts.put(channel.netAddress, numConnections);
 
+        // Update total bytes sent/received.
+        this._bytesSent += channel.connection.bytesSent;
+        this._bytesReceived += channel.connection.bytesReceived;
+
         // peerAddress is undefined for incoming connections pre-handshake.
         if (channel.peerAddress) {
             // Check if the handshake with this peer has completed.
@@ -362,12 +370,14 @@ class Network extends Observable {
         return this._addresses.peerCountRtc;
     }
 
-    get bytesReceived() {
-        return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
+    get bytesSent() {
+        return this._bytesSent
+            + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
     }
 
-    get bytesSent() {
-        return this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
+    get bytesReceived() {
+        return this._bytesReceived
+            + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
     }
 }
 Network.PEER_COUNT_DESIRED = 12;
