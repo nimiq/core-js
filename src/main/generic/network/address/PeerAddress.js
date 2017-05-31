@@ -5,6 +5,10 @@ class PeerAddress {
         this._timestamp = timestamp;
     }
 
+    isSeed() {
+        return this._timestamp === 0;
+    }
+
     static unserialize(buf) {
         const protocol = buf.readUint8();
         switch (protocol) {

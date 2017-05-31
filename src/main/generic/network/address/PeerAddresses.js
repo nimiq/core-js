@@ -25,7 +25,7 @@ class PeerAddresses extends Observable {
         const numAddresses = addresses.length;
 
         // Pick a random start index.
-        let index = Math.round(Math.random() * numAddresses);
+        let index = Math.floor(Math.random() * (numAddresses + 1));
 
         // Score up to 500 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
@@ -238,13 +238,8 @@ class PeerAddresses extends Observable {
                 return false;
             }
 
-            // Ignore address if we already know this address with a more recent timestamp.
-            if (knownAddress.timestamp >= peerAddress.timestamp) {
-                return false;
-            }
-
             // Never update the timestamp of seed peers.
-            if (knownAddress.timestamp === 0) {
+            if (knownAddress.isSeed()) {
                 peerAddress.timestamp = 0;
             }
 
@@ -255,6 +250,16 @@ class PeerAddresses extends Observable {
                     + `via ${channel.peerAddress}) - better route with distance ${knownAddress.distance} `
                     + `via ${knownAddress.signalChannel.peerAddress} exists`);
                 return false;
+            }
+
+            // Ignore address if we already know this address with a more recent timestamp and the same distance (if applicable).
+            if (knownAddress.timestamp >= peerAddress.timestamp) {
+                if(peerAddress.protocol === Protocol.RTC && knownAddress.distance <= peerAddress.distance) {
+                    return false;
+                }
+                if(peerAddress.protocol === Protocol.WS) {
+                    return false;
+                }
             }
         }
 
