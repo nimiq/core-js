@@ -129,20 +129,44 @@ class PeerAddresses extends Observable {
     // TODO improve this by returning the best addresses first.
     findByServices(serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
+        const now = Date.now();
         const addresses = [];
         for (let peerAddressState of this._store.values()) {
+            // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED
                     || peerAddressState.state === PeerAddressState.FAILED) {
                 continue;
             }
 
+            // Never return seed peers.
             const address = peerAddressState.peerAddress;
-            if (address.timestamp !== 0 && (address.services & serviceMask) !== 0) {
-                addresses.push(address);
+            if (address.timestamp === 0) {
+                continue;
+            }
 
-                if (addresses.length >= maxAddresses) {
-                    break;
-                }
+            // Only return addresses matching the service mask.
+            if ((address.services & serviceMask) === 0) {
+                continue;
+            }
+
+            // Update timestamp for connected peers.
+            if (peerAddressState.state === PeerAddressState.CONNECTED) {
+                address.timestamp = now;
+            }
+
+            // Never return addresses that are too old.
+            if (this._exceedsAge(address)) {
+                // XXX Debug
+                console.log('Not returning old address: ' + peerAddressState);
+                continue;
+            }
+
+            // Return this address.
+            addresses.push(address);
+
+            // Stop if we have collected maxAddresses.
+            if (addresses.length >= maxAddresses) {
+                break;
             }
         }
         return addresses;
@@ -461,10 +485,11 @@ class PeerAddresses extends Observable {
 
                 case PeerAddressState.CONNECTED:
                     // Keep timestamp up-to-date while we are connected.
-                    addr.timestamp = Date.now();
+                    addr.timestamp = now;
                     break;
 
                 default:
+                    // TODO What about peers who are stuck connecting? Can this happen?
                     // Do nothing for CONNECTING peers.
             }
         }
