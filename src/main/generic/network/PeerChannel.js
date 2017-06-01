@@ -30,7 +30,7 @@ class PeerChannel extends Observable {
         try {
             this.fire(msg.type, msg, this);
         } catch (e) {
-            Log.w(PeerChannel, `Error while processing ${msg.type} message from ${this.peerAddress || this.netAddress}: ${e}`, e);
+            Log.w(PeerChannel, `Error while processing ${msg.type} message from ${this.peerAddress || this.netAddress}: ${e}`);
         }
     }
 

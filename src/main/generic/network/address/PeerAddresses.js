@@ -129,10 +129,8 @@ class PeerAddresses extends Observable {
 
     findChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
-        if (peerAddressState) {
-            if (peerAddressState.bestRoute) {
-                return peerAddressState.bestRoute.signalChannel;
-            }
+        if (peerAddressState && peerAddressState.bestRoute) {
+            return peerAddressState.bestRoute.signalChannel;
         }
         return null;
     }
@@ -253,7 +251,7 @@ class PeerAddresses extends Observable {
                 return false;
             }
         } else {
-            // add new peerAddressState
+            // Add new peerAddressState.
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
             if (peerAddress.protocol === Protocol.RTC) {
@@ -262,7 +260,7 @@ class PeerAddresses extends Observable {
             }
         }
 
-        // add route
+        // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
             peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
         }
@@ -272,7 +270,7 @@ class PeerAddresses extends Observable {
             return false;
         }
 
-        // update the address
+        // Update the address.
         peerAddressState.peerAddress = peerAddress;
 
         return true;
@@ -297,7 +295,7 @@ class PeerAddresses extends Observable {
     // Called when a connection to this peerAddress has been established.
     // The connection might have been initiated by the other peer, so address
     // may not be known previously.
-    // If it is alredy known, it has been updated by a previous version message.
+    // If it is already known, it has been updated by a previous version message.
     connected(channel, peerAddress) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -333,7 +331,7 @@ class PeerAddresses extends Observable {
         peerAddressState.peerAddress = peerAddress;
         peerAddressState.peerAddress.timestamp = Date.now();
 
-        // add route
+        // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
             peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
         }
@@ -385,9 +383,14 @@ class PeerAddresses extends Observable {
     }
 
     // Called when a message has been returned as unroutable.
-    unroutable(peerAddress) {
+    unroutable(peerAddress, channel) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
+            return;
+        }
+
+        if (!peerAddressState.bestRoute || !peerAddressState.bestRoute.signalChannel.equals(channel)) {
+            Log.w(PeerAddresses, `Got unroutable for ${peerAddress} on a channel other than the best route.`);
             return;
         }
 
@@ -410,7 +413,7 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.BANNED;
         peerAddressState.bannedUntil = Date.now() + duration * 60 * 1000;
 
-        // drop all routes to this peer
+        // Drop all routes to this peer.
         peerAddressState.deleteAllRoutes();
     }
 
@@ -586,19 +589,24 @@ class PeerAddressState {
 
         this._bestRoute = null;
         this._routes = new HashSet();
+
+        this._failedAttempts = 0;
     }
 
     get failedAttempts() {
         if (this._bestRoute) {
             return this._bestRoute.failedAttempts;
+        } else {
+            return this._failedAttempts;
         }
-        return 0;
     }
 
     set failedAttempts(value) {
         if (this._bestRoute) {
             this._bestRoute.failedAttempts = value;
             this._updateBestRoute(); // scores may have changed
+        } else {
+            this._failedAttempts = value;
         }
     }
 
@@ -611,13 +619,13 @@ class PeerAddressState {
         const newRoute = new SignalRoute(signalChannel, distance, timestamp);
 
         if (oldRoute) {
-            // do not reset failed attempts
+            // Do not reset failed attempts.
             newRoute.failedAttempts = oldRoute.failedAttempts;
         }
         this._routes.add(newRoute);
 
         if (!this._bestRoute || newRoute.score > this._bestRoute.score
-            || (newRoute.score == this._bestRoute.score && timestamp > this._bestRoute.timestamp)) {
+            || (newRoute.score === this._bestRoute.score && timestamp > this._bestRoute.timestamp)) {
 
             this._bestRoute = newRoute;
             this.peerAddress.distance = this._bestRoute.distance;
@@ -648,10 +656,10 @@ class PeerAddressState {
 
     _updateBestRoute() {
         let bestRoute = null;
-        // choose the route with minimal distance and maximal timestamp
+        // Choose the route with minimal distance and maximal timestamp.
         for (const route of this._routes.values()) {
             if (bestRoute === null || route.score > bestRoute.score
-                || (route.score == bestRoute.score && route.timestamp > bestRoute.timestamp)) {
+                || (route.score === bestRoute.score && route.timestamp > bestRoute.timestamp)) {
 
                 bestRoute = route;
             }
@@ -713,7 +721,7 @@ class SignalRoute {
     }
 
     toString() {
-        return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this.timestamp}, failedAttempts=${this.failedAttempts}`;
+        return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this.timestamp}, failedAttempts=${this.failedAttempts}}`;
     }
 }
 Class.register(SignalRoute);

@@ -45,7 +45,6 @@ class NetworkAgent extends Observable {
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
-            // FIXME check if this works as intended.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
             }
@@ -146,10 +145,6 @@ class NetworkAgent extends Observable {
         // Remember that the peer has sent us this address.
         this._knownAddresses.add(msg.peerAddress);
 
-        // Store/update the peerAddress.
-        // TODO test that this removal is valid
-        // this._addresses.add(this._channel, msg.peerAddress);
-
         this._versionReceived = true;
 
         if (this._versionSent) {
@@ -231,7 +226,6 @@ class NetworkAgent extends Observable {
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
-            // FIXME check if this works as intended.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
             }

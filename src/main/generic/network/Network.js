@@ -324,14 +324,14 @@ class Network extends Observable {
 
         // If message contains unroutable event, update routes
         if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0) {
-            this._addresses.unroutable(msg.senderId);
+            this._addresses.unroutable(msg.senderId, channel);
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
             // If we sent out a signal that did not reach the recipient because of TTL, delete this route.
             if ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0) {
-                this._addresses.unroutable(msg.senderId);
+                this._addresses.unroutable(msg.senderId, channel);
             }
             this._rtcConnector.onSignal(channel, msg);
             return;
@@ -348,13 +348,11 @@ class Network extends Observable {
 
         // Otherwise, try to forward the signal to the intented recipient.
         const signalChannel = this._addresses.findChannelBySignalId(msg.recipientId);
-        if (!signalChannel) {
+        if (!signalChannel && msg.flags === 0) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            if (msg.flags === 0) {
-                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
-            }
+            channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             return;
         }
 
