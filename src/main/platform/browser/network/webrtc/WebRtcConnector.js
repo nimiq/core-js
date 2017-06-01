@@ -16,9 +16,8 @@ class WebRtcConnector extends Observable {
         return this;
     }
 
-    connect(peerAddress) {
+    connect(peerAddress, signalChannel) {
         if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
-        if (!peerAddress.signalChannel) throw 'peerAddress.signalChannel not set';
 
         const signalId = peerAddress.signalId;
         if (this._connectors[signalId]) {
@@ -26,7 +25,7 @@ class WebRtcConnector extends Observable {
             return false;
         }
 
-        const connector = new OutboundPeerConnector(this._config, peerAddress);
+        const connector = new OutboundPeerConnector(this._config, peerAddress, signalChannel);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors[signalId] = connector;
 
@@ -200,8 +199,8 @@ class PeerConnector extends Observable {
 }
 
 class OutboundPeerConnector extends PeerConnector {
-    constructor(config, peerAddress) {
-        super(config, peerAddress.signalChannel, peerAddress.signalId);
+    constructor(config, peerAddress, signalChannel) {
+        super(config, signalChannel, peerAddress.signalId);
         this._peerAddress = peerAddress;
 
         // Create offer.

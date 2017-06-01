@@ -134,8 +134,9 @@ class Network extends Observable {
                 break;
 
             case Protocol.RTC:
-                Log.d(Network, `Connecting to ${peerAddress} via ${peerAddress.signalChannel.peerAddress}...`);
-                if (this._rtcConnector.connect(peerAddress)) {
+                const signalChannel = this._addresses.findChannelBySignalId(peerAddress.signalId);
+                Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
+                if (this._rtcConnector.connect(peerAddress, signalChannel)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
                 }
