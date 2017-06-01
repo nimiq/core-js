@@ -1,7 +1,7 @@
 describe('Blockchain', () => {
     let testBlockchain, largeUserbaseBlockchain;
 
-    // TODO the setup of largeUserbaseBlockchain and the test for a block exceeding the size limit are extremely slow
+    // The setup of largeUserbaseBlockchain and the test for a block exceeding the size limit are extremely slow
     // since they require to create 6060 users for a block size limit of 1MB. Either deactivate them in case they become
     // impractical or find faster alternative
 
@@ -13,10 +13,7 @@ describe('Blockchain', () => {
             largeUserbaseBlockchain = await TestBlockchain.createVolatileTest(0, largeUserBase);
 
             // make sure all users have a non-zero balance
-            //let i = 1;
             for(const user of largeUserBase) {
-                // console.log('Granting user ' + i + ' a non-zero balance');
-                //i++;
                 await largeUserbaseBlockchain.accounts._tree.put(new Address(user.address), new Balance(500, 0));
             }
             console.log('Blockchain: end of long-running one-time setup');
@@ -62,6 +59,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block that has more than one transaction from the same
             // sender public key
+
             const senderPubKey = new PublicKey(Dummy.users[0].publicKey);
             const senderPrivKey = Dummy.users[0].privateKey;
             const receiverAddr1 = new Address(Dummy.users[1].address);
@@ -78,6 +76,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block with a timestamp that's more than
             // Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX milliseconds into the future
+
             const timestamp = Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX * 2;
             block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
                 timestamp);
@@ -86,6 +85,7 @@ describe('Blockchain', () => {
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - timestamp too far in the future');
 
             // Now try to push a block with the wrong difficulty
+
             const correctDifficulty = BlockUtils.compactToDifficulty(await testBlockchain.getNextCompactTarget());
             const compactWrongDifficulty = BlockUtils.difficultyToCompact(correctDifficulty + 1);
             block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined,
@@ -96,6 +96,7 @@ describe('Blockchain', () => {
 
 
             // Now try to push a block with an invalid body hash
+
             block = await testBlockchain.createBlock(undefined, undefined, undefined, zeroHash);
             status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
@@ -103,6 +104,7 @@ describe('Blockchain', () => {
 
 
             // Now try to push a block with an invalid transaction signature
+
             const data = new ArrayBuffer(32);
             const wrongSignature = new Signature(await Crypto.sign(await Crypto.importPrivate(Dummy.users[0].privateKey), data));
             transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, undefined, wrongSignature)];
@@ -113,22 +115,25 @@ describe('Blockchain', () => {
 
 
             // Now try to push a block that is not compliant with Proof of Work requirements
+
             block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
                 undefined, undefined, false);
             status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejected block - PoW verification failed');
 
+
             // we mock instead of finding an actual value (mining) for time reasons: push otherwise valid block
+
             block = await testBlockchain.createBlock();
             status = await testBlockchain.commitBlock(block);
             expect(status).toBe(true);
             expect(console.log.calls.count()).toEqual(1);
 
 
-
             // Try to push the same block again, the call should succeed, but the console
             // should log what happened
+
             status = await testBlockchain.commitBlock(block);
             expect(status).toBe(true);
             hash = await block.hash();
@@ -147,11 +152,11 @@ describe('Blockchain', () => {
             expect(console.warn).toHaveBeenCalledWith('Blockchain rejecting block - timestamp mismatch');
 
             // Finally, try to push a block that has an invalid AccountsHash
+
             block = await testBlockchain.createBlock(undefined, undefined, zeroHash);
             status = await testBlockchain.commitBlock(block);
             expect(status).toBe(false);
             expect(console.log).toHaveBeenCalledWith(jasmine.stringMatching(/Blockchain rejecting block, AccountsHash mismatch/));
-            // expect(console.log).toHaveBeenCalledWith('Blockchain rejecting block, AccountsHash mismatch: current=ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=, block=R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA=');
 
         })().then(done, done.fail);
     }, jasmine.DEFAULT_TIMEOUT_INTERVAL * 2);
@@ -161,7 +166,6 @@ describe('Blockchain', () => {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(console, 'log').and.callThrough();
-            // await accounts._tree.put(new Address(Dummy['address5']), new Balance(9007199254740991, 0));
 
             // all timestamps are explicitly set to trigger an increase in difficulty after the last block
 
@@ -219,7 +223,7 @@ describe('Blockchain', () => {
             expect(console.log).not.toHaveBeenCalled();
 
             // Check that the difficulty was increased to 2,
-            // since the timestamp in the blocks was crafted to double the difficulty
+            // since the timestamps in the blocks were crafted to double the difficulty
             nextCompactTarget = await testBlockchain.getNextCompactTarget();
             expect(nextCompactTarget).toBe(BlockUtils.difficultyToCompact(2));
         })().then(done, done.fail);
@@ -252,7 +256,7 @@ describe('Blockchain', () => {
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
-            console.info('new height: ' + first.height);
+            console.info(`new height: ${  first.height}`);
 
             // Push another block to the first blockchain
             block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, undefined, 1);
@@ -261,7 +265,7 @@ describe('Blockchain', () => {
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
-            console.info('new height: ' + first.height);
+            console.info(`new height: ${  first.height}`);
 
             // Push that same block to our second blockchain
             status = await second.commitBlock(block);
@@ -279,7 +283,6 @@ describe('Blockchain', () => {
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
-            console.info('new height: ' + first.height);
 
             // Push the first block of the forked branch to our first blockchain
             block = await first.createBlock(undefined, prevHash, prevAccountsHash, undefined, undefined, undefined, undefined, 2, true, 3); // create from second chain -> incompatible with first chain
@@ -289,7 +292,6 @@ describe('Blockchain', () => {
             expect(status).toBe(true);
             expect(console.log).toHaveBeenCalledWith(`Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
-            console.info('new height: ' + first.height);
 
             // Push it to the second blockchain (notice that in this blockchain we skipped
             // one block, since that block is not part of the forked branch)
@@ -310,7 +312,6 @@ describe('Blockchain', () => {
             expect(status).toBe(true);
             expect(console.log).toHaveBeenCalledWith('Found common ancestor 7HC2g8KJ0FBk2/r0WKKhePp4wD+RM1NoHytyKPpLyQ0= 2 blocks up');
 
-            console.info('new height: ' + first.height);
 
             // Also check that the first blockchain has the correct number of blocks and
             // that head of the blockchain is the head of the forked branch
@@ -344,7 +345,7 @@ describe('Blockchain', () => {
             expect(testBlockchain.path).toEqual(hashes);
             expect(await testBlockchain.accountsHash()).toEqual(await testBlockchain._accounts.hash());
 
-            //// Push some more blocks
+            // Push some more blocks
             block = await testBlockchain.createBlock();
             status = await testBlockchain.pushBlock(block);
             expect(console.log).not.toHaveBeenCalled();
