@@ -44,7 +44,8 @@ class WebRtcConnector extends Observable {
 
     onSignal(channel, msg) {
         // Check if we received an unroutable response from one of the signaling peers.
-        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0) {
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0
+            || (msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0) {
             // handle error cases
             // check for relevant connector
             if (this.isValidSignal(msg)) {

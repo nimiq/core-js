@@ -452,7 +452,7 @@ class SignalStore {
         const valid = lastSeen + ForwardedSignal.SIGNAL_MAX_AGE > Date.now();
         if (!valid) {
             // Because of the ordering, we know that everything after that is invalid too.
-            const toDelete = this._queue.dequeueUntil(msg);
+            const toDelete = this._queue.dequeueUntil(signal);
             for (const dSignal of toDelete) {
                 this._store.delete(dSignal);
             }
