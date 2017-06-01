@@ -195,7 +195,10 @@ class Crypto {
     }
 
     static keyPairDerive(privateKey) {
-        throw 'Not supported';
+        return {
+            secretKey: privateKey,
+            publicKey: Crypto.publicKeyUnserialize(new Uint8Array([4].concat(Array.prototype.slice.call(Crypto.privateKeySerialize(privateKey), 32))))
+        };
     }
 
     static keyPairPrivate(obj) {
@@ -214,12 +217,12 @@ class Crypto {
         return Crypto.lib.verify(Crypto._signConfig, await Crypto._publicKeyNative(publicKey), signature, data);
     }
 
-    static signatureSerialize(arr) {
-        return arr;
+    static signatureSerialize(obj) {
+        return obj;
     }
 
-    static signatureUnserialize(obj) {
-        return obj;
+    static signatureUnserialize(arr) {
+        return arr;
     }
 
     static get signatureSize() {

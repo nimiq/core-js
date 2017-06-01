@@ -14,23 +14,45 @@ describe('Crypto', () => {
             const keyPair = await Crypto.keyPairGenerate();
             const data = new Uint8Array([1, 2, 3]);
             const data2 = new Uint8Array([1, 2, 4]);
-            let privateSerialized = Crypto.privateKeySerialize(Crypto.keyPairPrivate(keyPair));
-            let publicSerialized = Crypto.publicKeySerialize(Crypto.keyPairPublic(keyPair));
-            let sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), data);
-            let verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
-            let falsify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data2, sign);
+            const privateSerialized = Crypto.privateKeySerialize(Crypto.keyPairPrivate(keyPair));
+            const publicSerialized = Crypto.publicKeySerialize(Crypto.keyPairPublic(keyPair));
+            const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), data);
+            const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
+            const falsify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data2, sign);
 
-            let privateUnserialized = Crypto.privateKeyUnserialize(privateSerialized);
-            let publicUnserialized = Crypto.publicKeyUnserialize(publicSerialized);
+            const privateUnserialized = Crypto.privateKeyUnserialize(privateSerialized);
+            const publicUnserialized = Crypto.publicKeyUnserialize(publicSerialized);
 
-            let verify2 = await Crypto.signatureVerify(publicUnserialized, data, sign);
+            const verify2 = await Crypto.signatureVerify(publicUnserialized, data, sign);
             expect(verify2).toBe(verify);
 
-            let falsify2 = await Crypto.signatureVerify(publicUnserialized, data2, sign);
+            const falsify2 = await Crypto.signatureVerify(publicUnserialized, data2, sign);
             expect(falsify2).toBe(falsify);
 
-            let sign2 = await Crypto.signatureCreate(privateUnserialized, data);
+            const sign2 = await Crypto.signatureCreate(privateUnserialized, data);
             expect(sign2.length).toBe(sign.length);
+
+            done();
+        })();
+    });
+
+    it('can derive a functional key pair from private key', (done) => {
+        (async function () {
+            const keyPair = await Crypto.keyPairGenerate();
+            const data = new Uint8Array([1, 2, 3]);
+            const keyPair2 = Crypto.keyPairDerive(Crypto.keyPairPrivate(keyPair));
+
+            try {
+                const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), data);
+                const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign);
+                expect(verify).toBe(true);
+
+                const sign2 = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair2), data);
+                const verify2 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign2);
+                expect(verify2).toBe(true);
+            } catch (e) {
+                console.log(e);
+            }
 
             done();
         })();
