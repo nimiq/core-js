@@ -41,7 +41,7 @@ class Network extends Observable {
 
         this._rtcConnector = await new WebRtcConnector();
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
-        this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
+        this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
         // Helper objects to manage PeerAddresses.
         // Must be initialized AFTER the WebSocket/WebRtcConnector.
