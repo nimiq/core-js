@@ -109,7 +109,7 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this.peerCount < Network.PEER_COUNT_DESIRED
+            && this.peerCount + this._connectingCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
