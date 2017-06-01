@@ -323,14 +323,14 @@ class Network extends Observable {
         }
 
         // If message contains unroutable event, update routes
-        if (msg.flags & SignalMessage.Flags.UNROUTABLE) {
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0) {
             this._addresses.unroutable(msg.senderId);
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
             // If we sent out a signal that did not reach the recipient because of TTL, delete this route.
-            if (msg.flags & SignalMessage.Flags.TTL_EXCEEDED) {
+            if ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0) {
                 this._addresses.unroutable(msg.senderId);
             }
             this._rtcConnector.onSignal(channel, msg);
