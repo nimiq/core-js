@@ -25,24 +25,24 @@ Core.get().then($ => {
 ```
 
 ## Network
-Available via ```$.network```.
-The network will not connect automatically, call ```$.network.connect()``` to do so.
+Available via `$.network`.
+The network will not connect automatically, call `$.network.connect()` to do so.
 
 ### Properties
-- ```peerCount```
-- ```peerCountWebSocket```
-- ```peerCountWebRtc```
-- ```bytesReceived```
-- ```bytesSent```
+- `peerCount`
+- `peerCountWebSocket`
+- `peerCountWebRtc`
+- `bytesReceived`
+- `bytesSent`
 
 ### Methods
-- ```connect()```
-- ```disconnect()```
+- `connect()`
+- `disconnect()`
 
 ### Events
-- ```peers-changed```
-- ```peer-joined (peer)```
-- ```peer-left (peer)```
+- `peers-changed`
+- `peer-joined (peer)`
+- `peer-left (peer)`
 
 ### Examples
 Connect to the network:
@@ -59,17 +59,18 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 
 
 ## Consensus
-Available via ```$.consensus```.
+Available via `$.consensus`.
 
 ### Properties
-- ```established```
+- `established`
 
 ### Methods
 No public methods.
 
 ### Events
-- ```established```
-- ```syncing (targetHeight)```
+- `syncing (targetHeight)`
+- `established`
+- `lost`
 
 ### Examples
 Listen for `consensusEstablished` event:
@@ -80,19 +81,19 @@ $.consensus.on('established', () => console.log('consensus established!'))
 
 
 ## Accounts
-Available via ```$.accounts```.
+Available via `$.accounts`.
 
 ### Properties
 No public properties.
 
 ### Methods
-- ```getBalance(address)```
-- ```commitBlock(block)```
-- ```revertBlock(block)```
-- ```async hash()```
+- `getBalance(address)`
+- `commitBlock(block)`
+- `revertBlock(block)`
+- `async hash()`
 
 ### Events
-- ```<<base64(address)>> (balance, address)``` when balance of address changes.
+- `<<base64(address)>> (balance, address)` when balance of address changes.
 
 ### Examples
 Query an account's balance:
@@ -112,25 +113,25 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 
 
 ## Blockchain
-Available via ```$.blockchain```.
+Available via `$.blockchain`.
 
 ### Properties
-- ```head```
-- ```headHash```
-- ```totalWork```
-- ```height```
-- ```path```
-- ```busy```
+- `head`
+- `headHash`
+- `totalWork`
+- `height`
+- `path`
+- `busy`
 
 ### Methods
-- ```pushBlock(block)```
-- ```getBlock(hash)```
-- ```getNextCompactTarget()```
-- ```async accountsHash()```
+- `pushBlock(block)`
+- `getBlock(hash)`
+- `getNextCompactTarget()`
+- `async accountsHash()`
 
 ### Events
-- ```head-changed```
-- ```ready```
+- `head-changed`
+- `ready`
 
 ### Examples
 Show the blockchain sync progress
@@ -150,19 +151,19 @@ $.blockchain.on('head-changed', () => {
 
 
 ## Mempool
-Available via ```$.mempool```.
+Available via `$.mempool`.
 
 ### Properties
 No public properties.
 
 ### Methods
-- ```pushTransaction(transaction)```
-- ```getTransaction(hash)```
-- ```getTransactions(maxCount = 5000)```
+- `pushTransaction(transaction)`
+- `getTransaction(hash)`
+- `getTransactions(maxCount = 5000)`
 
 ### Events
-- ```transaction-added```
-- ```transactions-ready```
+- `transaction-added`
+- `transactions-ready`
 
 ### Examples
 <TODO>
@@ -170,14 +171,14 @@ No public properties.
 
 
 ## Wallet
-Available via ```$.wallet```.
+Available via `$.wallet`.
 
 ### Properties
-- ```address```
-- ```publicKey```
+- `address`
+- `publicKey`
 
 ### Methods
-- ```createTransaction(recipientAddr, value, fee, nonce)```
+- `createTransaction(recipientAddr, value, fee, nonce)`
 
 ### Events
 No events.
@@ -192,22 +193,22 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 
 
 ## Miner
-Available via ```$.miner```.
+Available via `$.miner`.
 
 ### Properties
-- ```working```
-- ```address```
-- ```hashrate```
+- `working`
+- `address`
+- `hashrate`
 
 ### Methods
-- ```startWork()```
-- ```stopWork()```
+- `startWork()`
+- `stopWork()`
 
 ### Events
-- ```start```
-- ```stop```
-- ```block-mined```
-- ```hashrate-changed```
+- `start`
+- `stop`
+- `block-mined`
+- `hashrate-changed`
 
 ### Examples
 Start mining
