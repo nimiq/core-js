@@ -53,6 +53,11 @@ class PeerAddress {
     }
 
     set timestamp(value) {
+        // Never change the timestamp of a seed address.
+        if (this.isSeed()) {
+            return;
+        }
+
         this._timestamp = value;
     }
 

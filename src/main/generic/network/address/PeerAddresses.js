@@ -143,13 +143,13 @@ class PeerAddresses extends Observable {
                 continue;
             }
 
-            // Only return addresses matching the service mask.
-            if ((address.services & serviceMask) === 0) {
+            // Only return addresses matching the protocol mask.
+            if ((address.protocol & protocolMask) === 0) {
                 continue;
             }
 
-            // Only return addresses matching the protocol mask.
-            if ((address.protocol & protocolMask) === 0) {
+            // Only return addresses matching the service mask.
+            if ((address.services & serviceMask) === 0) {
                 continue;
             }
 
@@ -544,7 +544,7 @@ class PeerAddresses extends Observable {
 
     _exceedsAge(peerAddress) {
         // Seed addresses are never too old.
-        if (peerAddress.timestamp === 0) {
+        if (peerAddress.isSeed()) {
             return false;
         }
 
@@ -676,6 +676,8 @@ class PeerAddressState {
         this._bestRoute = bestRoute;
         if (this._bestRoute) {
             this.peerAddress.distance = this._bestRoute.distance;
+        } else {
+            this.peerAddress.distance = PeerAddresses.MAX_DISTANCE + 1;
         }
     }
 

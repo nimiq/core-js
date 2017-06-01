@@ -83,7 +83,7 @@ class NetworkAgent extends Observable {
                 return;
             }
 
-            setTimeout(this._handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
+            setTimeout(this.handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
             return;
         }
 
