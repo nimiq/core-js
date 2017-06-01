@@ -147,7 +147,8 @@ class NetworkAgent extends Observable {
         this._knownAddresses.add(msg.peerAddress);
 
         // Store/update the peerAddress.
-        this._addresses.add(this._channel, msg.peerAddress);
+        // TODO test that this removal is valid
+        // this._addresses.add(this._channel, msg.peerAddress);
 
         this._versionReceived = true;
 

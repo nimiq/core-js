@@ -127,8 +127,14 @@ class PeerAddresses extends Observable {
         }
     }
 
-    findBySignalId(signalId) {
-        return this._signalIds.get(signalId);
+    findChannelBySignalId(signalId) {
+        const peerAddressState = this._signalIds.get(signalId);
+        if (peerAddressState) {
+            if (peerAddressState.bestRoute) {
+                return peerAddressState.bestRoute.signalChannel;
+            }
+        }
+        return null;
     }
 
     // TODO improve this by returning the best addresses first.
@@ -224,7 +230,7 @@ class PeerAddresses extends Observable {
         }
 
         // Check if we already know this address.
-        const peerAddressState = this._store.get(peerAddress);
+        let peerAddressState = this._store.get(peerAddress);
         if (peerAddressState) {
             const knownAddress = peerAddressState.peerAddress;
 
@@ -233,49 +239,35 @@ class PeerAddresses extends Observable {
                 return false;
             }
 
-            // Don't allow address updates if we are currenly connected to this address.
-            if (peerAddressState.state === PeerAddressState.CONNECTED) {
-                return false;
-            }
-
             // Never update the timestamp of seed peers.
             if (knownAddress.isSeed()) {
                 peerAddress.timestamp = 0;
             }
 
-            // Ignore address if we already know a better route to this address.
-            // TODO save anyways to have a backup route?
-            if (peerAddress.protocol === Protocol.RTC && knownAddress.distance < peerAddress.distance) {
-                Log.d(PeerAddresses, `Ignoring address ${peerAddress} (distance ${peerAddress.distance} `
-                    + `via ${channel.peerAddress}) - better route with distance ${knownAddress.distance} `
-                    + `via ${knownAddress.signalChannel.peerAddress} exists`);
+            // Ignore address if we already know this address with a more recent timestamp and the same distance (if applicable).
+            if (peerAddress.protocol === Protocol.WS && knownAddress.timestamp >= peerAddress.timestamp) {
                 return false;
             }
-
-            // Ignore address if we already know this address with a more recent timestamp and the same distance (if applicable).
-            if (knownAddress.timestamp >= peerAddress.timestamp) {
-                if (peerAddress.protocol === Protocol.RTC && knownAddress.distance <= peerAddress.distance) {
-                    return false;
-                }
-                if (peerAddress.protocol === Protocol.WS) {
-                    return false;
-                }
-            }
-        }
-
-        if (peerAddress.protocol === Protocol.RTC) {
-            peerAddress.signalChannel = channel;
-
-            // Index by signalId.
-            this._signalIds.put(peerAddress.signalId, peerAddress);
-        }
-
-        // Store the new/updated address.
-        if (peerAddressState) {
-            peerAddressState.peerAddress = peerAddress;
         } else {
-            this._store.add(new PeerAddressState(peerAddress));
+            // add new peerAddressState
+            peerAddressState = new PeerAddressState(peerAddress);
+            this._store.add(peerAddressState);
+            // Index by signalId.
+            this._signalIds.put(peerAddress.signalId, peerAddressState);
         }
+
+        // add route
+        if (peerAddress.protocol === Protocol.RTC) {
+            peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
+        }
+
+        // Don't allow address updates if we are currenly connected to this address.
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            return false;
+        }
+
+        // update the address
+        peerAddressState.peerAddress = peerAddress;
 
         return true;
     }
@@ -299,18 +291,24 @@ class PeerAddresses extends Observable {
     // Called when a connection to this peerAddress has been established.
     // The connection might have been initiated by the other peer, so address
     // may not be known previously.
+    // If it is alredy known, it has been updated by a previous version message.
     connected(channel, peerAddress) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
 
             if (peerAddress.protocol === Protocol.RTC) {
-                peerAddress.signalChannel = channel;
-                this._signalIds.put(peerAddress.signalId, peerAddress);
+                this._signalIds.put(peerAddress.signalId, peerAddressState);
             }
 
             this._store.add(peerAddressState);
+        } else {
+            // Never update the timestamp of seed peers.
+            if (peerAddressState.peerAddress.isSeed()) {
+                peerAddress.timestamp = 0;
+            }
         }
+
         if (peerAddressState.state === PeerAddressState.BANNED
             // Allow recovering seed peer's inbound connection to succeed.
             && !peerAddressState.peerAddress.isSeed()) {
@@ -326,11 +324,18 @@ class PeerAddresses extends Observable {
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
 
+        peerAddressState.peerAddress = peerAddress;
         peerAddressState.peerAddress.timestamp = Date.now();
+
+        // add route
+        if (peerAddress.protocol === Protocol.RTC) {
+            peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
+        }
     }
 
     // Called when a connection to this peerAddress is closed.
-    disconnected(peerAddress, closedByRemote) {
+    disconnected(channel, closedByRemote) {
+        peerAddress = channel.peerAddress
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -341,7 +346,7 @@ class PeerAddresses extends Observable {
         }
 
         // Delete all addresses that were signalable over the disconnected peer.
-        this._deleteBySignalingPeer(peerAddress);
+        this._deleteBySignalChannel(channel);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
@@ -385,6 +390,9 @@ class PeerAddresses extends Observable {
 
         peerAddressState.state = PeerAddressState.BANNED;
         peerAddressState.bannedUntil = Date.now() + duration * 60 * 1000;
+
+        // drop all routes to this peer
+        peerAddressState.deleteAllRoutes();
     }
 
     isConnecting(peerAddress) {
@@ -434,18 +442,11 @@ class PeerAddresses extends Observable {
         this._store.delete(peerAddress);
     }
 
-    // Delete all RTC-only peer addresses that are signalable over the given peer.
-    _deleteBySignalingPeer(peerAddress) {
+    // Delete all RTC-only routes that are signalable over the given peer.
+    _deleteBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
-            const addr = peerAddressState.peerAddress;
-            if (addr.protocol === Protocol.RTC
-                && addr.signalChannel
-                && peerAddress.equals(addr.signalChannel.peerAddress)) {
-
-                Log.d(PeerAddresses, `Deleting peer address ${addr} - signaling channel closing`);
-                this._delete(addr);
-            }
+            peerAddressState.deleteRoute(channel);
         }
     }
 
@@ -476,7 +477,7 @@ class PeerAddresses extends Observable {
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this._exceedsAge(addr)) {
                         Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
-                        this.delete(addr);
+                        this._delete(addr);
                     }
                     break;
 
@@ -557,6 +558,51 @@ class PeerAddressState {
         this.lastConnected = -1;
         this.failedAttempts = 0;
         this.bannedUntil = -1;
+
+        this._bestRoute = null;
+        this._routes = new HashSet();
+    }
+
+    get bestRoute() {
+        return this._bestRoute;
+    }
+
+    addRoute(signalChannel, distance, timestamp) {
+        let newRoute = new SignalRoute(signalChannel, distance, timestamp);
+        this._routes.add(newRoute);
+
+        if (newRoute.distance < this._bestRoute.distance
+            || (newRoute.distance == this._bestRoute.distance && timestamp > this._bestRoute.timestamp)) {
+
+            this._bestRoute = newRoute;
+            this.peerAddress.distance = this._bestRoute.distance;
+        }
+    }
+
+    deleteRoute(signalChannel) {
+        this._routes.delete(signalChannel); // maps to same hashCode
+        if (this._bestRoute.signalChannel.equals(signalChannel)) {
+            this._updateBestRoute();
+        }
+    }
+
+    deleteAllRoutes() {
+        this._bestRoute = null;
+        this._routes = new HashSet();
+    }
+
+    _updateBestRoute() {
+        let bestRoute = null;
+        // choose the route with minimal distance and maximal timestamp
+        for (const route of this._routes.values()) {
+            if (bestRoute === null || route.distance < bestRoute.distance
+                || (route.distance == bestRoute.distance && route.timestamp > bestRoute.timestamp)) {
+
+                bestRoute = route;
+            }
+        }
+        this._bestRoute = bestRoute;
+        this.peerAddress.distance = this._bestRoute.distance;
     }
 
     equals(o) {
@@ -581,3 +627,37 @@ PeerAddressState.TRIED = 4;
 PeerAddressState.FAILED = 5;
 PeerAddressState.BANNED = 6;
 Class.register(PeerAddressState);
+
+class SignalRoute {
+    constructor(signalChannel, distance, timestamp) {
+        this._signalChannel = signalChannel;
+        this._distance = distance;
+        this._timestamp = timestamp;
+    }
+
+    get signalChannel() {
+        return this._signalChannel;
+    }
+
+    get distance() {
+        return this._distance;
+    }
+
+    get timestamp() {
+        return this._timestamp;
+    }
+
+    equals(o) {
+        return o instanceof SignalRoute
+            && this._signalChannel.equals(o._signalChannel);
+    }
+
+    hashCode() {
+        return this._signalChannel.hashCode();
+    }
+
+    toString() {
+        return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this._timestamp}}`;
+    }
+}
+Class.register(SignalRoute);

@@ -266,7 +266,7 @@ class Network extends Observable {
             // Check if the handshake with this peer has completed.
             if (this._addresses.isConnected(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._addresses.disconnected(channel.peerAddress, closedByRemote);
+                this._addresses.disconnected(channel, closedByRemote);
 
                 // Tell listeners that this peer has gone away.
                 this.fire('peer-left', peer);
