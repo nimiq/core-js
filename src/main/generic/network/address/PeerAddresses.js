@@ -335,7 +335,7 @@ class PeerAddresses extends Observable {
 
     // Called when a connection to this peerAddress is closed.
     disconnected(channel, closedByRemote) {
-        peerAddress = channel.peerAddress
+        const peerAddress = channel.peerAddress;
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;

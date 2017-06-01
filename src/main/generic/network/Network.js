@@ -133,7 +133,7 @@ class Network extends Observable {
                 }
                 break;
 
-            case Protocol.RTC:
+            case Protocol.RTC: {
                 const signalChannel = this._addresses.findChannelBySignalId(peerAddress.signalId);
                 Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress, signalChannel)) {
@@ -141,6 +141,7 @@ class Network extends Observable {
                     this._connectingCount++;
                 }
                 break;
+            }
 
             default:
                 Log.e(Network, `Cannot connect to ${peerAddress} - unsupported protocol`);
