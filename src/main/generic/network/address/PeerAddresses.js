@@ -252,8 +252,10 @@ class PeerAddresses extends Observable {
             // add new peerAddressState
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
-            // Index by signalId.
-            this._signalIds.put(peerAddress.signalId, peerAddressState);
+            if (peerAddress.protocol === Protocol.RTC) {
+                // Index by signalId.
+                this._signalIds.put(peerAddress.signalId, peerAddressState);
+            }
         }
 
         // add route
@@ -386,6 +388,9 @@ class PeerAddresses extends Observable {
         }
 
         peerAddressState.deleteBestRoute();
+        if (!peerAddressState.hasRoute()) {
+            this._delete(peerAddressState.peerAddress);
+        }
     }
 
     ban(peerAddress, duration = 10 /*minutes*/) {
@@ -584,7 +589,7 @@ class PeerAddressState {
         let newRoute = new SignalRoute(signalChannel, distance, timestamp);
         this._routes.add(newRoute);
 
-        if (newRoute.distance < this._bestRoute.distance
+        if (!this._bestRoute || newRoute.distance < this._bestRoute.distance
             || (newRoute.distance == this._bestRoute.distance && timestamp > this._bestRoute.timestamp)) {
 
             this._bestRoute = newRoute;
