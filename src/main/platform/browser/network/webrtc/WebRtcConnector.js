@@ -107,11 +107,7 @@ class WebRtcConnector extends Observable {
         else if (this._connectors[msg.senderId]) {
             this._connectors[msg.senderId].onSignal(payload);
         }
-
-        // Invalid signal.
-        else {
-            Log.w(WebRtcConnector, `Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress} with payload ${BufferUtils.toAscii(msg.payload)}`);
-        }
+        // If none of the above conditions is met, the signal is invalid and we discard it.
     }
 
     _onConnection(conn, signalId) {
