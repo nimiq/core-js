@@ -32,7 +32,7 @@ class WebRtcConnector extends Observable {
         this._timers.setTimeout('connect_' + signalId, () => {
             delete this._connectors[signalId];
             this._timers.clearTimeout('connect_' + signalId);
-            this.fire('error', peerAddress);
+            this.fire('error', peerAddress, 'timeout');
         }, WebRtcConnector.CONNECT_TIMEOUT);
 
         return true;
@@ -52,7 +52,7 @@ class WebRtcConnector extends Observable {
                 // if OutboundPeerConnector, clear timeout early
                 if (this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
                     this._timers.clearTimeout('connect_' + msg.senderId);
-                    this.fire('error', this._connectors[msg.senderId].peerAddress);
+                    this.fire('error', this._connectors[msg.senderId].peerAddress, `flags ${msg.flags}`);
                     delete this._connectors[msg.senderId];
                 }
             }

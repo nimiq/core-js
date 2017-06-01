@@ -239,8 +239,8 @@ class Network extends Observable {
     }
 
     // Connection to this peer address failed.
-    _onError(peerAddress) {
-        Log.w(Network, `Connection to ${peerAddress} failed`);
+    _onError(peerAddress, reason) {
+        Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
         if (this._addresses.isConnecting(peerAddress)) {
             this._connectingCount--;
