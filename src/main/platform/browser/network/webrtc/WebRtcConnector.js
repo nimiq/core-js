@@ -38,14 +38,19 @@ class WebRtcConnector extends Observable {
         return true;
     }
 
+    isValidSignal(msg) {
+        return !!this._connectors[msg.senderId] && this._connectors[msg.senderId].nonce === msg.nonce;
+
+    }
+
     onSignal(channel, msg) {
         // Check if we received an unroutable response from one of the signaling peers.
-        if (msg.flags & SignalMessage.Flags.UNROUTABLE) {
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0) {
             // handle error cases
             // check for relevant connector
-            if (this._connectors[msg.senderId] && this._connectors[msg.senderId].nonce == msg.nonce) {
+            if (this.isValidSignal(msg)) {
                 // if OutboundPeerConnector, clear timeout early
-                if(this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
+                if (this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
                     this._timers.clearTimeout('connect_' + msg.senderId);
                     this.fire('error', this._connectors[msg.senderId].peerAddress);
                     delete this._connectors[msg.senderId];

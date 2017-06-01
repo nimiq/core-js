@@ -640,7 +640,7 @@ class PeerAddressState {
 
     deleteRoute(signalChannel) {
         this._routes.delete(signalChannel); // maps to same hashCode
-        if (this._bestRoute.signalChannel.equals(signalChannel)) {
+        if (this._bestRoute && this._bestRoute.signalChannel.equals(signalChannel)) {
             this._updateBestRoute();
         }
     }

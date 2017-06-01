@@ -53,6 +53,8 @@ class Network extends Observable {
             this._checkPeerCount();
         });
 
+        this._forwards = new ForwardedSignalStore();
+
         return this;
     }
 
@@ -323,14 +325,17 @@ class Network extends Observable {
         }
 
         // If message contains unroutable event, update routes
-        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0) {
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 && this._forwards.signalForwarded(msg.recipientId, msg.senderId, msg.nonce)) {
             this._addresses.unroutable(msg.senderId, channel);
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
-            // If we sent out a signal that did not reach the recipient because of TTL, delete this route.
-            if ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0) {
+            // If we sent out a signal that did not reach the recipient because of TTL
+            // or it was unroutable, delete this route.
+            if (this._rtcConnector.isValidSignal(msg)
+                 && ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0
+                    || (msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0)) {
                 this._addresses.unroutable(msg.senderId, channel);
             }
             this._rtcConnector.onSignal(channel, msg);
@@ -365,6 +370,10 @@ class Network extends Observable {
 
         // Decrement ttl and forward signal.
         signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+        // We store forwarded messages if there are no special flags set.
+        if (msg.flags === 0) {
+            this._forwards.add(msg.senderId, msg.recipientId, msg.nonce);
+        }
 
         // XXX This is very spammy!!!
         Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
@@ -399,3 +408,80 @@ Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 3;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
+
+class ForwardedSignalStore {
+    constructor(maxSize=1000 /* maximum number of entries */) {
+        this._maxSize = maxSize;
+        this._queue = new Queue();
+        this._store = new HashMap();
+    }
+
+    get length() {
+        return this._queue.length;
+    }
+
+    add(senderId, recipientId, nonce) {
+        // If we already forwarded such a message, just update timestamp.
+        if (this.contains(senderId, recipientId, nonce)) {
+            const signal = new ForwardedSignal(senderId, recipientId, nonce);
+            this._store.put(signal, Date.now());
+            this._queue.delete(signal);
+            this._queue.enqueue(signal);
+            return;
+        }
+
+        // Delete oldest if needed.
+        if (this.length >= this._maxSize) {
+            const oldest = this._queue.dequeue();
+            this._store.delete(oldest);
+        }
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        this._queue.enqueue(signal);
+        this._store.put(signal, Date.now());
+    }
+
+    contains(senderId, recipientId, nonce) {
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        return this._store.contains(signal);
+    }
+
+    signalForwarded(senderId, recipientId, nonce) {
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        const lastSeen = this._store.get(signal);
+        const valid = lastSeen + ForwardedSignal.MAX_AGE_MESSAGE > Date.now();
+        if (!valid) {
+            // Because of the ordering, we know that everything after that is invalid too.
+            const toDelete = this._queue.dequeueUntil(msg);
+            for (const dSignal of toDelete) {
+                this._store.delete(dSignal);
+            }
+        }
+        return valid;
+    }
+}
+ForwardedSignalStore.MAX_AGE_MESSAGE = 10 /* seconds */;
+Class.register(ForwardedSignalStore);
+
+class ForwardedSignal {
+    constructor(senderId, recipientId, nonce) {
+        this._senderId = senderId;
+        this._recipientId = recipientId;
+        this._nonce = nonce;
+    }
+
+    equals(o) {
+        return o instanceof ForwardedSignal
+            && this._senderId === o._senderId
+            && this._recipientId === o._recipientId
+            && this._nonce === o._nonce;
+    }
+
+    hashCode() {
+        return this.toString();
+    }
+
+    toString() {
+        return `ForwardedSignal{senderId=${this._senderId}, recipientId=${this._recipientId}, nonce=${this._nonce}}`;
+    }
+}
+Class.register(ForwardedSignal);
