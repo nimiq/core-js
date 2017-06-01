@@ -394,7 +394,7 @@ class Network extends Observable {
         return this._addresses.peerCountRtc;
     }
 
-    get peerCountWebDumb() {
+    get peerCountDumb() {
         return this._addresses.peerCountDumb;
     }
 
