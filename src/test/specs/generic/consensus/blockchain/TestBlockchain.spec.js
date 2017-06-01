@@ -99,9 +99,10 @@ class TestBlockchain extends Blockchain {
         return transactions;
     }
 
-    async createBlock(transactions, prevHash, accountsHash, bodyHash, miner, difficulty, timestamp, nonce, mockPoW = true) {
+    async createBlock(transactions, prevHash, accountsHash, bodyHash, miner, difficulty, timestamp, nonce, mockPoW = true, numTransactions = 0) {
 
 
+        numTransactions = numTransactions || this.height;
         // index of block in the chain, genesis is omitted
         const blockIndex = this.height - 1;
 
@@ -109,7 +110,7 @@ class TestBlockchain extends Blockchain {
 
         // create transactions
         if (!transactions) {
-            transactions = await this.generateTransactions(this.height);
+            transactions = await this.generateTransactions(numTransactions);
         }
 
         prevHash = prevHash || this.headHash;

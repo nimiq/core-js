@@ -13,11 +13,11 @@ describe('Blockchain', () => {
             largeUserbaseBlockchain = await TestBlockchain.createVolatileTest(0, largeUserBase);
 
             // make sure all users have a non-zero balance
-            let i = 1;
+            //let i = 1;
             for(const user of largeUserBase) {
                 // console.log('Granting user ' + i + ' a non-zero balance');
+                //i++;
                 await largeUserbaseBlockchain.accounts._tree.put(new Address(user.address), new Balance(500, 0));
-                i++;
             }
             console.log('Blockchain: end of long-running one-time setup');
         })().then(done, done.fail);
@@ -225,7 +225,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    xit('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
+    it('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
@@ -234,39 +234,56 @@ describe('Blockchain', () => {
             // note that we explicitly set all nonces to make sure blocks at the same position in different
             // (test)blockchains have different hashes.
 
+            // We need to have two blockchains: the first one in which we're going to test
+            // everything and the second one with only the forked branch because we need
+            // the accountsHash of this second version to be able to push the block that
+            // changes the main chain of the first blockchain to the forked branch
             const first = testBlockchain;
             const second = await TestBlockchain.createVolatileTest(0);
 
             // Push the first block and check that it went through successfully
-            let block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, 1);
+            let block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, undefined, 1);
             let status = await first.commitBlock(block);
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
-            console.info('new height: ' + first.height);
-
-            // Push some more blocks to create the first chain
-            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, 1);
-            status = await first.commitBlock(block);
+            // Push that same block to our second blockchain
+            status = await second.commitBlock(block);
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
 
             console.info('new height: ' + first.height);
 
-            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, 1);
-            status = await first.commitBlock(block);
-            expect(status).toBe(true);
-            expect(console.log).not.toHaveBeenCalled();
-
-            console.info('new height: ' + first.height);
-
-            // Push the first block of a second chain (which would start a fork)
-            block = await second.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, 2); // create from second chain -> incompatible with first chain
+            // Push another block to the first blockchain
+            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, undefined, 1);
             let hash = await block.hash();
+            status = await first.commitBlock(block);
+            expect(status).toBe(true);
+            expect(console.log).not.toHaveBeenCalled();
+
+            console.info('new height: ' + first.height);
+
+            // Push that same block to our second blockchain
+            status = await second.commitBlock(block);
+            expect(status).toBe(true);
+            expect(console.log).not.toHaveBeenCalled();
+
+            // We need to save these values to start the forked branch later
+            const prevHash = hash;
+            let prevAccountsHash = await first._accounts.hash();
+
+            // Push another block, this one is not going to be part of the forked branch,
+            // so we don't want to push it to the second blockchain
+            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, undefined, 1);
+            status = await first.commitBlock(block);
+            expect(status).toBe(true);
+            expect(console.log).not.toHaveBeenCalled();
+
+            console.info('new height: ' + first.height);
+
+            // Push the first block of the forked branch to our first blockchain
+            block = await first.createBlock(undefined, prevHash, prevAccountsHash, undefined, undefined, undefined, undefined, 2, true, 3); // create from second chain -> incompatible with first chain
+            hash = await block.hash();
             let newChain = new Chain(block, first.totalWork, first.height);
             status = await first.commitBlock(block);
             expect(status).toBe(true);
@@ -274,80 +291,92 @@ describe('Blockchain', () => {
 
             console.info('new height: ' + first.height);
 
-            // // Push another block to the second chain (turning this fork into the
-            // // chain with more effort put into it) and check that this becomes the main chain
-            // block = await second.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-            //     undefined, 2);
-            // hash = await block.hash();
-            // status = await first.commitBlock(block);
-            // newChain = new Chain(block, first.totalWork, first.height);
-            // expect(status).toBe(true);
-            // expect(console.log).toHaveBeenCalledWith('Found common ancestor AAAEg/ITvgDI5QOBxuCFYj0ngLxCWu0jjGzeJzp96Wc= 2 blocks up');
+            // Push it to the second blockchain (notice that in this blockchain we skipped
+            // one block, since that block is not part of the forked branch)
+            status = await second.commitBlock(block);
+            expect(status).toBe(true);
+
+            // Get the accountsHash from the second blockchain where the forked branch
+            // is already the main chain (which means its accountsHash is the same
+            // that the first blockchain would have if it switched to the forked branch)
+            prevAccountsHash = await second._accounts.hash();
+
+            // Push another block to the forked branch (turning this fork into the chain
+            // with more effort put into it) and check that this becomes the main chain
+            block = await first.createBlock(undefined, hash, prevAccountsHash, undefined, undefined, undefined, undefined, 2, true, 4);
+            hash = await block.hash();
+            status = await first.commitBlock(block);
+            newChain = new Chain(block, first.totalWork, first.height);
+            expect(status).toBe(true);
+            expect(console.log).toHaveBeenCalledWith('Found common ancestor 7HC2g8KJ0FBk2/r0WKKhePp4wD+RM1NoHytyKPpLyQ0= 2 blocks up');
 
             console.info('new height: ' + first.height);
 
-            // Also check that the head of the blockchain has switched
-            // expect(first.head).toBe(block);
+            // Also check that the first blockchain has the correct number of blocks and
+            // that head of the blockchain is the head of the forked branch
+            expect(first.height).toBe(5);
+            expect(first.head).toBe(block);
         })().then(done, done.fail);
     });
 
-    xit('has getters that return correct values for its properties', (done) => {
+    it('has getters that return correct values for its properties', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(console, 'log').and.callThrough();
 
             // Push a valid block and check that it went through successfully
-            await accounts._tree.put(new Address(Dummy['address5']), new Balance(9007199254740991, 0));
             const hashes = [await Block.GENESIS.hash()];
-            let block = await Dummy.block8;
-            let hash = await block.hash();
-            block.header.nonce = 32401;
-            let status = await blockchain.pushBlock(block);
+            let block = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block);
             expect(status).toBe(true);
             expect(console.log).not.toHaveBeenCalled();
+
+            // Push its hash to the array to check the path of this blockchain later
+            let hash = await block.hash();
             hashes.push(hash);
 
             // Check that the getters return the expected values
-            expect(blockchain.head).toBe(block);
-            expect(blockchain.totalWork).toBe(2);
-            expect(blockchain.height).toBe(2);
-            expect(blockchain.headHash).toEqual(hash);
-            expect(blockchain.path).toEqual(hashes);
-            hash = await blockchain.accountsHash();
-            expect(hash.toBase64()).toEqual('ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=');
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.totalWork).toBe(2);
+            expect(testBlockchain.height).toBe(2);
+            expect(testBlockchain.headHash).toEqual(hash);
+            expect(testBlockchain.path).toEqual(hashes);
+            expect(await testBlockchain.accountsHash()).toEqual(await testBlockchain._accounts.hash());
 
-            // Push some more blocks
-            block = await Dummy.block10;
-            hash = await block.hash();
-            status = await blockchain.pushBlock(block);
+            //// Push some more blocks
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.pushBlock(block);
             expect(console.log).not.toHaveBeenCalled();
+
+            // Push its hash to the array to check the path of this blockchain later
+            hash = await block.hash();
             hashes.push(hash);
 
-            block = await Dummy.block11;
-            hash = await block.hash();
-            status = await blockchain.pushBlock(block);
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.pushBlock(block);
             expect(console.log).not.toHaveBeenCalled();
+
+            // Push its hash to the array to check the path of this blockchain later
+            hash = await block.hash();
             hashes.push(hash);
 
             // Check that the getters return the new expected values
-            expect(blockchain.head).toBe(block);
-            expect(blockchain.totalWork).toBe(4);
-            expect(blockchain.height).toBe(4);
-            expect(blockchain.headHash).toEqual(hash);
-            expect(blockchain.path).toEqual(hashes);
-            hash = await blockchain.accountsHash();
-            expect(hash.toBase64()).toEqual('XlgVHCUFob+LDuWcN8Kg5i+lRLc+wVvOK9aYCgkOlPY=');
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.totalWork).toBe(4);
+            expect(testBlockchain.height).toBe(4);
+            expect(testBlockchain.headHash).toEqual(hash);
+            expect(testBlockchain.path).toEqual(hashes);
+            expect(await testBlockchain.accountsHash()).toEqual(await testBlockchain._accounts.hash());
 
             // Asynchronously test the busy getter
-            blockchain._synchronizer.on('work-start', function() {
-                expect(blockchain.busy).toBe(true);
+            testBlockchain._synchronizer.on('work-start', function() {
+                expect(testBlockchain.busy).toBe(true);
             });
 
-            blockchain._synchronizer.on('work-end', function() {
-                expect(blockchain.busy).toBe(false);
+            testBlockchain._synchronizer.on('work-end', function() {
+                expect(testBlockchain.busy).toBe(false);
             });
-
         })().then(done, done.fail);
     });
 });
