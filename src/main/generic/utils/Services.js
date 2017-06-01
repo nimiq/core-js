@@ -5,9 +5,8 @@ class Services {
     }
 
     // Used for filtering peer addresses by services.
-    // XXX cleanup
     static myServiceMask() {
-        return 0;
+        return 0xffffffff;
     }
 }
 Class.register(Services);

@@ -13,86 +13,7 @@
 		<span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
 	</header>
 
-	<!--beginjs--
-	<script src="../../src/main/platform/browser/Class.js"></script>
-	<script src="../../src/main/generic/utils/Observable.js"></script>
-	<script src="../../src/main/generic/utils/Services.js"></script>
-	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
-	<script src="../../src/main/generic/utils/Timers.js"></script>
-	<script src="../../src/main/generic/utils/database/TypedDBTransaction.js"></script>
-	<script src="../../src/main/platform/browser/database/BaseTypedDB.js"></script>
-	<script src="../../src/main/platform/browser/database/TypedDB.js"></script>
-	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
-	<script src="../../src/main/generic/utils/array/IndexedArray.js"></script>
-	<script src="../../src/main/generic/utils/array/HashMap.js"></script>
-	<script src="../../src/main/generic/utils/array/HashSet.js"></script>
-	<script src="../../src/main/generic/utils/array/ArrayUtils.js"></script>
-	<script src="../../src/main/generic/utils/buffer/SerialBuffer.js"></script>
-	<script src="../../src/main/generic/utils/buffer/BufferUtils.js"></script>
-	<script src="../../src/main/platform/browser/crypto/CryptoLib.js"></script>
-	<script src="../../src/main/generic/utils/crypto/Crypto.js"></script>
-	<script src="../../src/main/generic/utils/number/NumberUtils.js"></script>
-	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
-	<script src="../../src/main/generic/utils/platform/PlatformUtils.js"></script>
-	<script src="../../src/main/generic/utils/string/StringUtils.js"></script>
-	<script src="../../src/main/generic/consensus/Policy.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Primitive.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Hash.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/PrivateKey.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/PublicKey.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Signature.js"></script>
-	<script src="../../src/main/generic/consensus/account/Accounts.js"></script>
-	<script src="../../src/main/generic/consensus/account/AccountsTree.js"></script>
-	<script src="../../src/main/generic/consensus/account/AccountsTreeStore.js"></script>
-	<script src="../../src/main/generic/consensus/account/Address.js"></script>
-	<script src="../../src/main/generic/consensus/account/Balance.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockUtils.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockBody.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockHeader.js"></script>
-	<script src="../../src/main/generic/consensus/block/Block.js"></script>
-	<script src="../../src/main/generic/consensus/blockchain/Blockchain.js"></script>
-	<script src="../../src/main/generic/consensus/blockchain/BlockchainStore.js"></script>
-	<script src="../../src/main/generic/consensus/transaction/Transaction.js"></script>
-	<script src="../../src/main/generic/consensus/mempool/Mempool.js"></script>
-	<script src="../../src/main/generic/consensus/ConsensusAgent.js"></script>
-	<script src="../../src/main/generic/consensus/Consensus.js"></script>
-	<script src="../../src/main/generic/network/Protocol.js"></script>
-	<script src="../../src/main/generic/network/address/NetAddress.js"></script>
-	<script src="../../src/main/generic/network/address/PeerAddress.js"></script>
-	<script src="../../src/main/generic/network/address/PeerAddresses.js"></script>
-	<script src="../../src/main/generic/network/message/Message.js"></script>
-	<script src="../../src/main/generic/network/message/AddrMessage.js"></script>
-	<script src="../../src/main/generic/network/message/BlockMessage.js"></script>
-	<script src="../../src/main/generic/network/message/GetAddrMessage.js"></script>
-	<script src="../../src/main/generic/network/message/GetBlocksMessage.js"></script>
-	<script src="../../src/main/generic/network/message/InventoryMessage.js"></script>
-	<script src="../../src/main/generic/network/message/MempoolMessage.js"></script>
-	<script src="../../src/main/generic/network/message/PingMessage.js"></script>
-	<script src="../../src/main/generic/network/message/PongMessage.js"></script>
-	<script src="../../src/main/generic/network/message/RejectMessage.js"></script>
-	<script src="../../src/main/generic/network/message/SignalMessage.js"></script>
-	<script src="../../src/main/generic/network/message/TxMessage.js"></script>
-	<script src="../../src/main/generic/network/message/VersionMessage.js"></script>
-	<script src="../../src/main/generic/network/message/MessageFactory.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcCertificate.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConfig.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConnector.js"></script>
-    <script src="../../src/main/platform/browser/network/webrtc/WebRtcUtils.js"></script>
-	<script src="../../src/main/platform/browser/network/websocket/WebSocketConnector.js"></script>
-	<script src="../../src/main/platform/browser/network/NetworkConfig.js"></script>
-	<script src="../../src/main/generic/network/PeerConnection.js"></script>
-	<script src="../../src/main/generic/network/PeerChannel.js"></script>
-	<script src="../../src/main/generic/network/Peer.js"></script>
-	<script src="../../src/main/generic/network/NetworkAgent.js"></script>
-	<script src="../../src/main/generic/network/Network.js"></script>
-	<script src="../../src/main/generic/miner/Miner.js"></script>
-	<script src="../../src/main/platform/browser/wallet/WalletStore.js"></script>
-	<script src="../../src/main/generic/wallet/Wallet.js"></script>
-	<script src="../../src/main/platform/browser/utils/WindowDetector.js"></script>
-	<script src="../../src/main/generic/Core.js"></script>
-	<!--endjs-->
 	<script src="../../dist/web.js"></script>
-	<!--endjs-->
 
 	<div id="content">
 		<div id="overlay">
@@ -215,7 +136,7 @@
 
 				<div class="info-block">
 					<strong>Peers</strong>
-					<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC / <span id="netPeerCountDumb"></span> Dumb)</small>
+					<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
 				</div>
 				<div class="info-block">
 					<strong>Received</strong>
@@ -278,7 +199,6 @@
 				this._netPeerCount = document.querySelector('#netPeerCount');
 				this._netPeerCountWs = document.querySelector('#netPeerCountWs');
 				this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
-                this._netPeerCountDumb = document.querySelector('#netPeerCountDumb');
 				this._netBytesReceived = document.querySelector('#netBytesReceived');
 				this._netBytesSent = document.querySelector('#netBytesSent');
 
@@ -421,7 +341,6 @@
 				this._netPeerCount.innerText = $.network.peerCount;
 				this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
 				this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
-                this._netPeerCountDumb.innerText = $.network.peerCountDumb;
 				this._netBytesReceived.innerText = this._humanBytes($.network.bytesReceived);
 				this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
 			}

@@ -574,15 +574,15 @@ class PeerAddresses extends Observable {
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
 PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60; // 1 minute
-PeerAddresses.MAX_AGE_DUMB = 1000 * 60 * 15; // 15 minutes
+PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
 PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    new WsPeerAddress(Services.WEBSOCKET, 0, 'alpacash.com', 8080),
-    new WsPeerAddress(Services.WEBSOCKET, 0, 'nimiq1.styp-rekowsky.de', 8080),
-    new WsPeerAddress(Services.WEBSOCKET, 0, 'nimiq2.styp-rekowsky.de', 8080)
+    new WsPeerAddress(0, 0, 'alpacash.com', 8080),
+    new WsPeerAddress(0, 0, 'nimiq1.styp-rekowsky.de', 8080),
+    new WsPeerAddress(0, 0, 'nimiq2.styp-rekowsky.de', 8080)
 ];
 Class.register(PeerAddresses);
 

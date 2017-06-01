@@ -181,7 +181,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getaddr(Protocol.myProtocolMask(), Services.myServiceMask());
+        this._channel.getaddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
 
         // XXX Do we need this timeout?
         this._timers.setTimeout('getaddr', () => {
