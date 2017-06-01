@@ -378,6 +378,16 @@ class PeerAddresses extends Observable {
         }
     }
 
+    // Called when a message has been returned as unroutable.
+    unroutable(peerAddress) {
+        const peerAddressState = this._store.get(peerAddress);
+        if (!peerAddressState) {
+            return;
+        }
+
+        peerAddressState.deleteBestRoute();
+    }
+
     ban(peerAddress, duration = 10 /*minutes*/) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -447,6 +457,9 @@ class PeerAddresses extends Observable {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
             peerAddressState.deleteRoute(channel);
+            if (!peerAddressState.hasRoute()) {
+                this._delete(peerAddressState.peerAddress);
+            }
         }
     }
 
@@ -579,6 +592,12 @@ class PeerAddressState {
         }
     }
 
+    deleteBestRoute() {
+        if (this._bestRoute) {
+            this.deleteRoute(this._bestRoute.signalChannel);
+        }
+    }
+
     deleteRoute(signalChannel) {
         this._routes.delete(signalChannel); // maps to same hashCode
         if (this._bestRoute.signalChannel.equals(signalChannel)) {
@@ -589,6 +608,10 @@ class PeerAddressState {
     deleteAllRoutes() {
         this._bestRoute = null;
         this._routes = new HashSet();
+    }
+
+    hasRoute() {
+        return this._routes.length > 0;
     }
 
     _updateBestRoute() {
