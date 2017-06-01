@@ -1,6 +1,6 @@
 class NetworkConfig {
     static myPeerAddress() {
-        if (!WebRtcConfig.supportsWebRTC()) {
+        if (!PlatformUtils.supportsWebRTC()) {
             return new DumbPeerAddress(
                 /*serviceMask*/ 0, Date.now(),
                 /*id*/ NumberUtils.randomUint64());
@@ -17,5 +17,19 @@ class NetworkConfig {
 
     static configurePeerAddress(signalId) {
         NetworkConfig._mySignalId = signalId;
+    }
+
+    static canConnect(protocol) {
+        switch (protocol) {
+            case Protocol.WS:
+                return true;
+
+            case Protocol.RTC:
+                return PlatformUtils.supportsWebRTC();
+
+            case Protocol.DUMB:
+            default:
+                return false;
+        }
     }
 }

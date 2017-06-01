@@ -49,6 +49,11 @@ class NetworkAgent extends Observable {
                 return false;
             }
 
+            // Exclude DumbPeerAddresses.
+            if (addr.protocol === Protocol.DUMB) {
+                return false;
+            }
+
             const knownAddress = this._knownAddresses.get(addr);
             return !addr.isSeed() // Never relay seed addresses.
                 && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);

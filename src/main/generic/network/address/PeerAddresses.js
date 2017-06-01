@@ -57,7 +57,7 @@ class PeerAddresses extends Observable {
         const peerAddress = peerAddressState.peerAddress;
 
         // Filter addresses that we cannot connect to.
-        if (!this._canConnect(peerAddress)) {
+        if (!NetworkConfig.canConnect(peerAddress.protocol)) {
             return -1;
         }
 
@@ -114,17 +114,6 @@ class PeerAddresses extends Observable {
 
     _peerCount() {
         return this._peerCountWs + this._peerCountRtc;
-    }
-
-    _canConnect(peerAddress) {
-        switch (peerAddress.protocol) {
-            case Protocol.WS:
-                return true;
-            case Protocol.RTC:
-                return PlatformUtils.isBrowser();
-            default:
-                return false;
-        }
     }
 
     getChannelBySignalId(signalId) {

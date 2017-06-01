@@ -1,13 +1,9 @@
 class WebRtcConfig {
-    static supportsWebRTC() {
-        return !!(window.RTCPeerConnection || window.webkitRTCPeerConnection);
-    }
-
     static async get() {
         // Initialize singleton.
         if (!WebRtcConfig._config) {
             // If browser does not support WebRTC, simply return empty config.
-            if (!WebRtcConfig.supportsWebRTC()) {
+            if (!PlatformUtils.supportsWebRTC()) {
                 WebRtcConfig._config = {};
                 return WebRtcConfig._config;
             }
