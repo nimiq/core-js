@@ -48,7 +48,10 @@ class WebRtcConnector extends Observable {
                 // if OutboundPeerConnector, clear timeout early
                 if (this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
                     this._timers.clearTimeout('connect_' + msg.senderId);
-                    this.fire('error', this._connectors[msg.senderId].peerAddress, `flags ${msg.flags}`);
+                    const reason1 = ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 ? 'unroutable' : '');
+                    const reason2 = ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0 ? 'ttl_exceeded' : '');
+                    const reason = reason1 + (reason1.length > 0 && reason2.length > 0 ? ' & ' : '') + reason2;
+                    this.fire('error', this._connectors[msg.senderId].peerAddress, `flags ${reason}`);
                     delete this._connectors[msg.senderId];
                 }
             }
@@ -107,7 +110,7 @@ class WebRtcConnector extends Observable {
 
         // Invalid signal.
         else {
-            Log.w(WebRtcConnector, `Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress}`);
+            Log.w(WebRtcConnector, `Unexpected signal (type ${payload.type}) received from ${msg.senderId} via ${channel.peerAddress} with payload ${BufferUtils.toAscii(msg.payload)}`);
         }
     }
 
