@@ -383,7 +383,7 @@ class Network extends Observable {
     }
 
     get peerCount() {
-        return this._addresses.peerCountWs + this._addresses.peerCountRtc;
+        return this._addresses.peerCount;
     }
 
     get peerCountWebSocket() {
@@ -392,6 +392,10 @@ class Network extends Observable {
 
     get peerCountWebRtc() {
         return this._addresses.peerCountRtc;
+    }
+
+    get peerCountWebDumb() {
+        return this._addresses.peerCountDumb;
     }
 
     get bytesSent() {

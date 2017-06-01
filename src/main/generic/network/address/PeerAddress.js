@@ -14,6 +14,9 @@ class PeerAddress {
             case Protocol.RTC:
                 return RtcPeerAddress.unserialize(buf);
 
+            case Protocol.DUMB:
+                return DumbPeerAddress.unserialize(buf);
+
             default:
                 throw `Malformed PeerAddress protocol ${protocol}`;
         }

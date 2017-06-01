@@ -12,6 +12,7 @@ class PeerAddresses extends Observable {
         // Number of WebSocket/WebRTC peers.
         this._peerCountWs = 0;
         this._peerCountRtc = 0;
+        this._peerCountDumb = 0;
 
         // Init seed peers.
         this.add(/*channel*/ null, PeerAddresses.SEED_PEERS);
@@ -76,10 +77,10 @@ class PeerAddresses extends Observable {
                 return -1;
 
             case PeerAddressState.NEW:
-                return (this._peerCount() > 6 ? 1.5 : 1) * score;
+                return (this.peerCount > 6 ? 1.5 : 1) * score;
 
             case PeerAddressState.TRIED:
-                return (this._peerCount() < 6 ? 3 : 1) * score;
+                return (this.peerCount < 6 ? 3 : 1) * score;
 
             case PeerAddressState.FAILED:
                 return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
@@ -112,8 +113,8 @@ class PeerAddresses extends Observable {
         return score;
     }
 
-    _peerCount() {
-        return this._peerCountWs + this._peerCountRtc;
+    get peerCount() {
+        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
     }
 
     getChannelBySignalId(signalId) {
@@ -351,7 +352,8 @@ class PeerAddresses extends Observable {
         }
 
         // XXX Immediately delete address if the remote host closed the connection.
-        if (closedByRemote) {
+        // Also immediately delete dumb clients, since we cannot connect to those anyway.
+        if (closedByRemote || peerAddress.protocol === Protocol.DUMB) {
             this._delete(peerAddress);
         } else {
             peerAddressState.state = PeerAddressState.TRIED;
@@ -477,6 +479,9 @@ class PeerAddresses extends Observable {
             case Protocol.RTC:
                 this._peerCountRtc += delta;
                 break;
+            case Protocol.DUMB:
+                this._peerCountDumb += delta;
+                break;
             default:
                 Log.w(PeerAddresses, `Unknown protocol ${peerAddress.protocol}`);
         }
@@ -548,6 +553,9 @@ class PeerAddresses extends Observable {
 
             case Protocol.RTC:
                 return age > PeerAddresses.MAX_AGE_WEBRTC;
+
+            case Protocol.DUMB:
+                return age > PeerAddresses.MAX_AGE_DUMB;
         }
         return false;
     }
@@ -559,9 +567,14 @@ class PeerAddresses extends Observable {
     get peerCountRtc() {
         return this._peerCountRtc;
     }
+
+    get peerCountDumb() {
+        return this._peerCountDumb;
+    }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 15 minutes
+PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60; // 1 minute
+PeerAddresses.MAX_AGE_DUMB = 1000 * 60 * 15; // 15 minutes
 PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
