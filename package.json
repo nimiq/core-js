@@ -13,6 +13,7 @@
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.5.1",
     "babel-preset-es2016": "^6.24.1",
     "babel-preset-es2017": "^6.24.1",
     "browserify": "^14.4.0",

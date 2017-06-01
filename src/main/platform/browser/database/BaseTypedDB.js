@@ -93,6 +93,7 @@ class BaseTypedDB {
         return BaseTypedDB.db.then(db => new NativeDBTransaction(db, this._tableName));
     }
 }
+Class.register(BaseTypedDB);
 
 class NativeDBTransaction extends Observable {
     constructor(db, tableName) {
@@ -120,3 +121,4 @@ class NativeDBTransaction extends Observable {
         // no-op on IndexedDB
     }
 }
+Class.register(NativeDBTransaction);

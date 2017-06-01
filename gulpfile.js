@@ -27,7 +27,6 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/websocket/WebSocketConnector.js',
-            './src/main/platform/browser/utils/WindowDetector.js',
             './src/main/platform/browser/WorkerBuilder.js'
         ],
         node: []
@@ -117,8 +116,13 @@ const sources = {
 };
 
 const babel_config = {
-    plugins: ['transform-runtime'],
+    plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
     presets: ['es2016', 'es2017']
+};
+
+const babel_loader = {
+    plugins: ['transform-runtime'],
+    presets: ['env']
 };
 
 gulp.task('build-web-babel', function () {
@@ -146,7 +150,7 @@ gulp.task('build-web-babel', function () {
             .pipe(source('babel.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(sources.platform.browser.concat(sources.generic))
+        gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
             .pipe(sourcemaps.init())
             .pipe(concat('web.js'))
             .pipe(babel(babel_config)))
@@ -167,7 +171,7 @@ gulp.task('build-web-crypto', function () {
             .pipe(source('crypto.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(sources.platform.browser.concat(sources.generic))
+        gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
             .pipe(sourcemaps.init())
             .pipe(concat('web.js')))
         .pipe(sourcemaps.init())
@@ -177,12 +181,36 @@ gulp.task('build-web-crypto', function () {
 });
 
 gulp.task('build-web', function () {
-    return gulp.src(sources.platform.browser.concat(sources.generic))
+    return gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
         .pipe(sourcemaps.init())
         .pipe(concat('web.js'))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
+});
+
+gulp.task('build-loader', function () {
+    return merge(
+        browserify([], {
+            require: [
+                'babel-runtime/core-js/number/max-safe-integer',
+                'babel-runtime/regenerator',
+                'babel-runtime/helpers/asyncToGenerator',
+                'babel-runtime/core-js/promise',
+                'babel-runtime/helpers/classCallCheck',
+                'babel-runtime/helpers/createClass'
+            ]
+        }).bundle()
+            .pipe(source('babel-runtime.js'))
+            .pipe(buffer())
+            .pipe(sourcemaps.init())
+            .pipe(uglify()),
+        gulp.src(['./src/main/platform/browser/utils/WindowDetector.js', './src/main/platform/browser/loader.js'])
+            .pipe(sourcemaps.init())
+            .pipe(babel(babel_loader)))
+        .pipe(concat('nimiq.js'))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build-node', function () {
@@ -245,6 +273,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-node']);
+gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node']);
 
 gulp.task('default', ['build', 'serve']);

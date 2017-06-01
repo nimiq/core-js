@@ -131,3 +131,4 @@ class CryptoLib {
     }
 }
 CryptoLib._poly_instance = null;
+Class.register(CryptoLib);

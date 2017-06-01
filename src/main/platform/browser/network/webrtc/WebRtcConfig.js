@@ -34,3 +34,4 @@ class WebRtcConfig {
         });
     }
 }
+Class.register(WebRtcConfig);

@@ -53,3 +53,4 @@ class TypedDB extends BaseTypedDB {
         return new TypedDBTransaction(this);
     }
 }
+Class.register(TypedDB);
