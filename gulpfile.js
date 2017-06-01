@@ -36,6 +36,7 @@ const sources = {
         './src/main/generic/utils/Services.js',
         './src/main/generic/utils/Synchronizer.js',
         './src/main/generic/utils/Timers.js',
+        './src/main/generic/utils/Version.js',
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/array/HashMap.js',
         './src/main/generic/utils/array/HashSet.js',

@@ -10,6 +10,8 @@ class InvVector {
     }
 
     constructor(type, hash) {
+        // TODO validate type
+        if (!Hash.isHash(hash)) throw 'Malformed hash';
         this._type = type;
         this._hash = hash;
     }

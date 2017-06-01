@@ -56,24 +56,32 @@ class Consensus extends Observable {
             return;
         }
 
-        // Find the peer with the highest chain that isn't sync'd yet.
-        let bestHeight = -1;
+        // Find the peer with the hardest chain that isn't sync'd yet.
+        let bestTotalWork = -1;
         let bestAgent = null;
         for (const agent of this._agents.values()) {
-            if (!agent.synced && agent.peer.startHeight >= bestHeight) {
-                bestHeight = agent.peer.startHeight;
+            if (!agent.synced && agent.peer.totalWork >= bestTotalWork) {
+                bestTotalWork = agent.peer.totalWork;
                 bestAgent = agent;
             }
         }
 
         if (!bestAgent) {
             // We are synced with all connected peers.
-            Log.d(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-            Log.d(Consensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
-
             this._syncing = false;
-            this._established = true;
-            this.fire('established');
+
+            if (this._agents.length > 0) {
+                // Report consensus-established if we have at least one connected peer.
+                Log.d(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                Log.d(Consensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
+
+                this._established = true;
+                this.fire('established');
+            } else {
+                // We are not connected to any peers anymore. Report consensus-lost.
+                this._established = false;
+                this.fire('lost');
+            }
 
             return;
         }
@@ -83,8 +91,8 @@ class Consensus extends Observable {
         this._syncing = true;
 
         // If we expect this sync to change our blockchain height, tell listeners about it.
-        if (bestHeight > this._blockchain.height) {
-            this.fire('syncing', bestHeight);
+        if (bestAgent.peer.startHeight > this._blockchain.height) {
+            this.fire('syncing', bestAgent.peer.startHeight);
         }
 
         bestAgent.on('sync', () => this._onPeerSynced());

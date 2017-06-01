@@ -196,6 +196,9 @@ class Network extends Observable {
         // Store the agent.
         this._agents.put(conn.id, agent);
 
+        // Initiate handshake with the peer.
+        agent.handshake();
+
         // Call _checkPeerCount() here in case the peer doesn't send us any (new)
         // addresses to keep on connecting.
         this._checkPeerCount();
@@ -233,7 +236,7 @@ class Network extends Observable {
 
     // Connection to this peer address failed.
     _onError(peerAddress) {
-        Log.w(Network, 'Connection to ' + peerAddress + ' failed');
+        Log.w(Network, `Connection to ${peerAddress} failed`);
 
         if (this._addresses.isConnecting(peerAddress)) {
             this._connectingCount--;

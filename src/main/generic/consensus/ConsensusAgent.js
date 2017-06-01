@@ -100,7 +100,7 @@ class ConsensusAgent extends Observable {
         }
         // If we already requested blocks from the peer but it didn't give us any
         // good ones, retry or drop the peer.
-        else if (this._lastChainHeight == this._blockchain.height) {
+        else if (this._lastChainHeight === this._blockchain.height) {
             this._failedSyncs++;
             if (this._failedSyncs < ConsensusAgent.MAX_SYNC_ATTEMPTS) {
                 this._requestBlocks();
@@ -166,14 +166,14 @@ class ConsensusAgent extends Observable {
         this._timers.clearTimeout('getblocks');
 
         // Keep track of the objects the peer knows.
-        for (let vector of msg.vectors) {
+        for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
         }
 
         // Check which of the advertised objects we know
         // Request unknown objects, ignore known ones.
         const unknownObjects = [];
-        for (let vector of msg.vectors) {
+        for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
@@ -190,7 +190,7 @@ class ConsensusAgent extends Observable {
                     break;
                 }
                 default:
-                    throw 'Invalid inventory type: ' + vector.type;
+                    throw `Invalid inventory type: ${vector.type}`;
             }
         }
 
@@ -198,7 +198,7 @@ class ConsensusAgent extends Observable {
 
         if (unknownObjects.length) {
             // Store unknown vectors in objectsToRequest array.
-            for (let obj of unknownObjects) {
+            for (const obj of unknownObjects) {
                 this._objectsToRequest.push(obj);
             }
 
@@ -216,7 +216,7 @@ class ConsensusAgent extends Observable {
         }
     }
 
-    async _requestData() {
+    _requestData() {
         // Only one request at a time.
         if (this._objectsInFlight) return;
 
@@ -304,7 +304,7 @@ class ConsensusAgent extends Observable {
         Log.d(ConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
         // Remove unknown objects from in-flight list.
-        for (let vector of msg.vectors) {
+        for (const vector of msg.vectors) {
             if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
                 Log.w(ConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
@@ -333,7 +333,7 @@ class ConsensusAgent extends Observable {
 
     async _onGetData(msg) {
         // Keep track of the objects the peer knows.
-        for (let vector of msg.vectors) {
+        for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
         }
 
@@ -341,7 +341,7 @@ class ConsensusAgent extends Observable {
         // Send back all known objects.
         // Send notfound for unknown objects.
         const unknownObjects = [];
-        for (let vector of msg.vectors) {
+        for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash);
@@ -366,7 +366,7 @@ class ConsensusAgent extends Observable {
                     break;
                 }
                 default:
-                    throw 'Invalid inventory type: ' + vector.type;
+                    throw `Invalid inventory type: ${vector.type}`;
             }
         }
 
@@ -388,7 +388,7 @@ class ConsensusAgent extends Observable {
         const mainPath = this._blockchain.path;
         let startIndex = -1;
 
-        for (let hash of msg.hashes) {
+        for (const hash of msg.hashes) {
             // Shortcut for genesis block which will be the only block sent by
             // fresh peers.
             if (Block.GENESIS.HASH.equals(hash)) {
@@ -441,7 +441,7 @@ class ConsensusAgent extends Observable {
         const transactions = await this._mempool.getTransactions();
 
         // Send transactions back to sender.
-        for (let tx of transactions) {
+        for (const tx of transactions) {
             this._peer.channel.tx(tx);
         }
     }

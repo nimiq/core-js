@@ -11,6 +11,7 @@ require('../../generic/utils/Observable.js');
 require('../../generic/utils/Services.js');
 require('../../generic/utils/Synchronizer.js');
 require('../../generic/utils/Timers.js');
+require('../../generic/utils/Version.js');
 require('../../generic/utils/database/TypedDBTransaction.js');
 require('./database/TypedDB.js');
 require('../../generic/utils/database/ObjectDB.js');

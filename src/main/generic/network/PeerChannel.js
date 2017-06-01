@@ -46,8 +46,8 @@ class PeerChannel extends Observable {
         this._conn.ban(reason);
     }
 
-    version(peerAddress, startHeight) {
-        return this._send(new VersionMessage(1, peerAddress, startHeight));
+    version(peerAddress, startHeight, totalWork) {
+        return this._send(new VersionMessage(Version.CODE, peerAddress, Block.GENESIS.HASH, startHeight, totalWork));
     }
 
     verack() {

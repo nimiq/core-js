@@ -332,7 +332,7 @@ class Blockchain extends Observable {
         chain = chain || this._mainChain;
 
         // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-        if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS == 0) {
+        if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS === 0) {
             // If the given chain is the main chain, get the last DIFFICULTY_ADJUSTMENT_BLOCKS
             // blocks via this._mainChain, otherwise fetch the path.
             let startHash;

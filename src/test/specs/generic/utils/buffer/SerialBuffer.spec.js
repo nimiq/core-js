@@ -184,7 +184,7 @@ describe('SerialBuffer', () => {
     });
 
     it('throws an error on invalid writes/reads', () => {
-        const value1 = Number.MAX_SAFE_INTEGER + 1;
+        const value1 = Number.MAX_SAFE_INTEGER;
 
         const buffer = new SerialBuffer(8);
         buffer.writeUint64(value1);

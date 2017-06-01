@@ -1,8 +1,9 @@
 class Peer {
-    constructor(channel, version, startHeight) {
+    constructor(channel, version, startHeight, totalWork) {
         this._channel = channel;
         this._version = version;
         this._startHeight = startHeight;
+        this._totalWork = totalWork;
     }
 
     get channel() {
@@ -15,6 +16,10 @@ class Peer {
 
     get startHeight() {
         return this._startHeight;
+    }
+
+    get totalWork() {
+        return this._totalWork;
     }
 
     get id() {

@@ -14,7 +14,7 @@ class SerialBuffer extends Uint8Array {
         return this._readPos;
     }
     set readPos(value) {
-        if (value < 0 || value > this.byteLength) throw 'Invalid readPos ' + value;
+        if (value < 0 || value > this.byteLength) throw `Invalid readPos ${value}`;
         this._readPos = value;
     }
 
@@ -22,12 +22,12 @@ class SerialBuffer extends Uint8Array {
         return this._writePos;
     }
     set writePos(value) {
-        if (value < 0 || value > this.byteLength) throw 'Invalid writePos ' + value;
+        if (value < 0 || value > this.byteLength) throw `Invalid writePos ${value}`;
         this._writePos = value;
     }
 
     read(length) {
-        var value = this.subarray(this._readPos, this._readPos + length);
+        const value = this.subarray(this._readPos, this._readPos + length);
         this._readPos += length;
         return value;
     }
@@ -65,10 +65,23 @@ class SerialBuffer extends Uint8Array {
 
     readUint64() {
         const value = this._view.getFloat64(this._readPos);
+        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
         this._readPos += 8;
         return value;
     }
     writeUint64(value) {
+        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        this._view.setFloat64(this._writePos, value);
+        this._writePos += 8;
+    }
+
+    readFloat64() {
+        const value = this._view.getFloat64(this._readPos);
+        this._readPos += 8;
+        return value;
+
+    }
+    writeFloat64(value) {
         this._view.setFloat64(this._writePos, value);
         this._writePos += 8;
     }
@@ -86,7 +99,7 @@ class SerialBuffer extends Uint8Array {
     readPaddedString(length) {
         const bytes = this.read(length);
         let i = 0;
-        while (i < length && bytes[i] != 0x0) i++;
+        while (i < length && bytes[i] !== 0x0) i++;
         const view = new Uint8Array(bytes.buffer, bytes.byteOffset, i);
         return BufferUtils.toAscii(view);
     }

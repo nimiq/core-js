@@ -33,9 +33,6 @@ class NetworkAgent extends Observable {
 
         // Clean up when the peer disconnects.
         channel.on('close', closedByRemote => this._onClose(closedByRemote));
-
-        // Initiate the protocol with the new peer.
-        this._handshake();
     }
 
     relayAddresses(addresses) {
@@ -65,11 +62,11 @@ class NetworkAgent extends Observable {
 
     /* Handshake */
 
-    async _handshake() {
+    handshake() {
         // Kick off the handshake by telling the peer our version, network address & blockchain height.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height)) {
+        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height, this._blockchain.totalWork)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
                 this._channel.close('sending of version message failed');
@@ -96,16 +93,28 @@ class NetworkAgent extends Observable {
         }
     }
 
-    async _onVersion(msg) {
+    _onVersion(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
         }
 
-        // TODO actually check version, services and stuff.
-
         // Clear the version timeout.
         this._timers.clearTimeout('version');
+
+        // Check if the peer is running a compatible version.
+        if (!Version.isCompatible(msg.version)) {
+            this._channel.close(`incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
+            return;
+        }
+
+        // Check if the peer is working on the same genesis block.
+        if (!Block.GENESIS.HASH.equals(msg.genesisHash)) {
+            this._channel.close(`different genesis block (${msg.genesisHash})`);
+            return;
+        }
+
+        // TODO check services?
 
         // Check that the given peerAddress matches the one we expect.
         // In case of inbound WebSocket connections, this is the first time we
@@ -124,7 +133,8 @@ class NetworkAgent extends Observable {
         this._peer = new Peer(
             this._channel,
             msg.version,
-            msg.startHeight
+            msg.startHeight,
+            msg.totalWork
         );
 
         // Remember that the peer has sent us this address.
@@ -186,7 +196,7 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        Log.d(NetworkAgent, `[ADDR] ${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
+        Log.d(NetworkAgent, `${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
 
         // Clear the getaddr timeout.
         this._timers.clearTimeout('getaddr');
@@ -240,13 +250,13 @@ class NetworkAgent extends Observable {
         // Send ping message to peer.
         // If sending the ping message fails, assume the connection has died.
         if (!this._channel.ping(nonce)) {
-            this._channel.close('sending ping message failed').
+            this._channel.close('sending ping message failed');
             return;
         }
 
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
-        this._timers.setTimeout('ping_' + nonce, () => {
-            this._timers.clearTimeout('ping_' + nonce);
+        this._timers.setTimeout(`ping_${nonce}`, () => {
+            this._timers.clearTimeout(`ping_${nonce}`);
             this._channel.close('ping timeout');
         }, NetworkAgent.PING_TIMEOUT);
     }
@@ -263,7 +273,7 @@ class NetworkAgent extends Observable {
 
     _onPong(msg) {
         // Clear the ping timeout for this nonce.
-        this._timers.clearTimeout('ping_' + msg.nonce);
+        this._timers.clearTimeout(`ping_${msg.nonce}`);
     }
 
     _onClose(closedByRemote) {

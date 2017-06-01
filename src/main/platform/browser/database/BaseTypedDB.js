@@ -15,11 +15,24 @@ class BaseTypedDB {
 
             request.onupgradeneeded = event => {
                 const db = event.target.result;
+
+                // XXX For testing, delete local blockchain copy on upgrade.
+                // TODO remove for production!!!
+                try {
+                    db.deleteObjectStore('accounts');
+                } catch (e) {
+                    // ignore
+                }
+                try {
+                    db.deleteObjectStore('blocks');
+                } catch (e) {
+                    // ignore
+                }
+
                 db.createObjectStore('accounts');
                 db.createObjectStore('blocks');
                 db.createObjectStore('certificate');
                 db.createObjectStore('wallet');
-                db.createObjectStore('peers');
             };
         });
     }
