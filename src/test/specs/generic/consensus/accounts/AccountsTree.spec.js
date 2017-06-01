@@ -3,14 +3,14 @@ describe('AccountsTree', () => {
     it('has a 32 bytes root hash', (done) => {
         const balance1 = new Balance(80000, 8);
         const balance2 = new Balance(8000000, 8);
-        const address = new Address(Dummy.address1);
+        const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
             await tree.put(address, balance1);
 
             const root = await tree.root();
-            expect(root.byteLength).toEqual(32);
+            expect(root._obj.byteLength).toEqual(32);
             done();
         }
 
@@ -21,7 +21,7 @@ describe('AccountsTree', () => {
         const value = 20;
         const nonce = 2;
         const balance1 = new Balance(value, nonce);
-        const address = new Address(Dummy.address1);
+        const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
@@ -41,17 +41,17 @@ describe('AccountsTree', () => {
         const value1 = 8;
         const nonce1 = 8;
         const balance1 = new Balance(value1, nonce1);
-        const address1 = new Address(Dummy.address1);
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         const value2 = 88;
         const nonce2 = 88;
         const balance2 = new Balance(value2, nonce2);
-        const address2 = new Address(Dummy.address2);
+        const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         const value3 = 88888888;
         const nonce3 = 88888888;
         const balance3 = new Balance(value3, nonce3);
-        const address3 = new Address(Dummy.address3);
+        const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
@@ -81,7 +81,7 @@ describe('AccountsTree', () => {
     it('root hash is invariant to history', (done) => {
         const balance1 = new Balance(80000, 8);
         const balance2 = new Balance(8000000, 8);
-        const address = new Address(Dummy.address1);
+        const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
@@ -107,17 +107,17 @@ describe('AccountsTree', () => {
         const value1 = 8;
         const nonce1 = 8;
         const balance1 = new Balance(value1, nonce1);
-        const address1 = new Address(Dummy.address1);
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         const value2 = 88;
         const nonce2 = 88;
         const balance2 = new Balance(value2, nonce2);
-        const address2 = new Address(Dummy.address2);
+        const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         const value3 = 88888888;
         const nonce3 = 88888888;
         const balance3 = new Balance(value3, nonce3);
-        const address3 = new Address(Dummy.address3);
+        const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
@@ -176,17 +176,17 @@ describe('AccountsTree', () => {
         const value1 = 8;
         const nonce1 = 8;
         const balance1 = new Balance(value1, nonce1);
-        const address1 = new Address(Dummy.address1);
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
         const value2 = 88;
         const nonce2 = 88;
         const balance2 = new Balance(value2, nonce2);
-        const address2 = new Address(Dummy.address2);
+        const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         const value3 = 88888888;
         const nonce3 = 88888888;
         const balance3 = new Balance(value3, nonce3);
-        const address3 = new Address(Dummy.address3);
+        const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
 
         async function test() {
             const tree = await AccountsTree.createVolatile();
@@ -226,12 +226,12 @@ describe('AccountsTree', () => {
             const value1 = 8;
             const nonce1 = 8;
             const balance1 = new Balance(value1, nonce1);
-            const address1 = new Address(Dummy.address1);
+            const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             const value2 = 88;
             const nonce2 = 88;
             const balance2 = new Balance(value2, nonce2);
-            const address2 = new Address(Dummy.address2);
+            const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
 
             await tree.put(address1, balance1);

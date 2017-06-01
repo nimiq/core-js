@@ -7,14 +7,6 @@ class BlockBody {
         this._transactions = transactions;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, BlockBody);
-        o._minerAddr = new Address(o._minerAddr);
-        o._transactions.forEach(tx => Transaction.cast(tx));
-        return o;
-    }
-
     static unserialize(buf) {
         const minerAddr = Address.unserialize(buf);
         const numTransactions = buf.readUint16();
@@ -55,7 +47,7 @@ class BlockBody {
         const len = values.length;
         if (len == 1) {
             const value = values[0];
-            return value.hash ? /*transaction*/ value.hash() : /*miner address*/ Crypto.sha256(value);
+            return value.hash ? /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
         }
 
         const mid = Math.round(len / 2);
@@ -64,8 +56,7 @@ class BlockBody {
         return Promise.all([
             BlockBody._computeRoot(left),
             BlockBody._computeRoot(right)
-        ])
-            .then(hashes => Crypto.sha256(BufferUtils.concat(hashes[0], hashes[1])));
+        ]).then(hashes => Hash.light(BufferUtils.concat(hashes[0].serialize(), hashes[1].serialize())));
     }
 
     equals(o) {

@@ -16,7 +16,7 @@ class BufferUtils {
     }
 
     static fromBase64(base64) {
-        return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        return new SerialBuffer(Uint8Array.from(atob(base64), c => c.charCodeAt(0)));
     }
 
     static toBase64Clean(buffer) {

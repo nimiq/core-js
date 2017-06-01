@@ -23,7 +23,7 @@ describe('Accounts', () => {
             const accountState = new Balance(10, 0);
 
             for (let i = 3; i > 0; i--) {
-                const senderPubKey = new PublicKey(Dummy[`publicKey${i}`]);
+                const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${i}`]));
                 const addr = await senderPubKey.toAddress(); // eslint-disable-line no-await-in-loop
                 await accounts._tree.put(addr, accountState); // eslint-disable-line no-await-in-loop
             }
@@ -42,18 +42,17 @@ describe('Accounts', () => {
         const balance = 42;
         const nonce = 192049;
         const accountState1 = new Balance(balance, nonce);
-        const accountAddress = new Address(Dummy.address2);
+        const accountAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         async function test() {
             account = await Accounts.createVolatile();
             await account._tree.put(accountAddress, accountState1);
             const accountState2 = await account.getBalance(accountAddress);
-            expect(accountState1.nonce).toBe(accountState2.nonce);
+            expect(accountState2.nonce).toBe(accountState1.nonce);
 
             // Verify that getBalance() returns Balance.INITIAL when called with an unknown address
-            const accountState3 = await account.getBalance(new Address(Dummy.address3));
+            const accountState3 = await account.getBalance(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)));
             expect(Balance.INITIAL.equals(accountState3)).toBe(true);
-
             done();
         }
         test();

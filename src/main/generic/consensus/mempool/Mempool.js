@@ -24,7 +24,7 @@ class Mempool extends Observable {
         }
 
         // Fully verify the transaction against the current accounts state.
-        if (!await this._verifyTransaction(transaction)) {
+        if (!(await this._verifyTransaction(transaction))) {
             return false;
         }
 
@@ -63,7 +63,7 @@ class Mempool extends Observable {
 
     async _verifyTransaction(transaction) {
         // Verify transaction signature.
-        if (!await transaction.verifySignature()) {
+        if (!(await transaction.verifySignature())) {
             Log.w(Mempool, 'Rejected transaction - invalid signature', transaction);
             return false;
         }
@@ -98,7 +98,7 @@ class Mempool extends Observable {
         // in a newly mined block). No need to re-check signatures.
         for (const hash in this._transactions) {
             const transaction = this._transactions[hash];
-            if (!await this._verifyTransactionBalance(transaction, true)) { // eslint-disable-line no-await-in-loop
+            if (!(await this._verifyTransactionBalance(transaction, true))) { // eslint-disable-line no-await-in-loop
                 delete this._transactions[hash];
                 delete this._senderPubKeys[transaction.senderPubKey];
             }

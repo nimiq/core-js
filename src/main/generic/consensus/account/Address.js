@@ -5,7 +5,7 @@ class Address extends Primitive {
     }
 
     constructor(arg) {
-        super(arg, Address.SERIALIZED_SIZE);
+        super(arg, Uint8Array, Address.SERIALIZED_SIZE);
     }
 
     static unserialize(buf) {
@@ -14,8 +14,12 @@ class Address extends Primitive {
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(this);
+        buf.write(this._obj);
         return buf;
+    }
+
+    subarray(begin, end) {
+        return this._obj.subarray(begin, end);
     }
 
     get serializedSize() {

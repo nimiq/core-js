@@ -7,10 +7,6 @@ class Balance {
         this._nonce = nonce;
     }
 
-    static cast(o) {
-        return ObjectUtils.cast(o, Balance);
-    }
-
     static unserialize(buf) {
         let value = buf.readUint64();
         let nonce = buf.readUint32();

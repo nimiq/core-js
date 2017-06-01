@@ -3,12 +3,11 @@ class BaseTypedDB {
         if (BaseTypedDB._db) return Promise.resolve(BaseTypedDB._db);
 
         const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB;
-        const IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.OIDBTransaction || window.msIDBTransaction;
         const dbVersion = 1;
-        const request = indexedDB.open('lovicash', dbVersion);
+        const request = indexedDB.open('nimiq', dbVersion);
 
-        return new Promise((resolve,error) => {
-            request.onsuccess = event => {
+        return new Promise((resolve, error) => {
+            request.onsuccess = () => {
                 BaseTypedDB._db = request.result;
                 resolve(request.result);
             };
@@ -38,12 +37,13 @@ class BaseTypedDB {
     }
 
     constructor(tableName, type) {
+        if (type && !type.unserialize) throw 'TypedDB requires type with .unserialize()';
         this._tableName = tableName;
         this._type = type;
     }
 
     _get(key) {
-        return BaseTypedDB.db.then( db => new Promise( (resolve,error) => {
+        return BaseTypedDB.db.then(db => new Promise((resolve, error) => {
             const getTx = db.transaction([this._tableName])
                 .objectStore(this._tableName)
                 .get(key);
@@ -53,7 +53,7 @@ class BaseTypedDB {
     }
 
     _put(key, value) {
-        return BaseTypedDB.db.then( db => new Promise( (resolve,error) => {
+        return BaseTypedDB.db.then(db => new Promise((resolve, error) => {
             const putTx = db.transaction([this._tableName], 'readwrite')
                 .objectStore(this._tableName)
                 .put(value, key);
@@ -63,12 +63,12 @@ class BaseTypedDB {
     }
 
     getObject(key) {
-        return this._get(key)
-            .then( value => this._type && this._type.cast && !(value instanceof this._type) ? this._type.cast(value) : value);
+        return this._get(key).then(value => value && this._type ? this._type.unserialize(new SerialBuffer(value)) : value);
     }
 
     putObject(key, value) {
-        return this._put(key, value);
+        if (this._type && !value.serialize) throw 'TypedDB required objects with .serialize()';
+        return this._put(key, this._type ? value.serialize() : value);
     }
 
     getString(key) {
@@ -80,7 +80,7 @@ class BaseTypedDB {
     }
 
     delete(key) {
-        return BaseTypedDB.db.then(db => new Promise( (resolve, error) => {
+        return BaseTypedDB.db.then(db => new Promise((resolve, error) => {
             const deleteTx = db.transaction([this._tableName], 'readwrite')
                 .objectStore(this._tableName)
                 .delete(key);
@@ -90,7 +90,7 @@ class BaseTypedDB {
     }
 
     nativeTransaction() {
-        return BaseTypedDB.db.then( db => new NativeDBTransaction(db, this._tableName));
+        return BaseTypedDB.db.then(db => new NativeDBTransaction(db, this._tableName));
     }
 }
 

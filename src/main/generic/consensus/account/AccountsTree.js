@@ -238,13 +238,6 @@ class AccountsTreeNode {
         this.children = children;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, AccountsTreeNode);
-        Balance.cast(o.balance);
-        return o;
-    }
-
     static unserialize(buf) {
         const type = buf.readUint8();
         const prefixLength = buf.readUint8();
@@ -325,7 +318,7 @@ class AccountsTreeNode {
     }
 
     hash() {
-        return Crypto.sha256(this.serialize());
+        return Hash.light(this.serialize());
     }
 }
 Class.register(AccountsTreeNode);
