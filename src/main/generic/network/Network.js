@@ -449,6 +449,9 @@ class SignalStore {
     signalForwarded(senderId, recipientId, nonce) {
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         const lastSeen = this._store.get(signal);
+        if (!lastSeen) {
+            return false;
+        }
         const valid = lastSeen + ForwardedSignal.SIGNAL_MAX_AGE > Date.now();
         if (!valid) {
             // Because of the ordering, we know that everything after that is invalid too.
