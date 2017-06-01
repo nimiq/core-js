@@ -665,7 +665,9 @@ class PeerAddressState {
             }
         }
         this._bestRoute = bestRoute;
-        this.peerAddress.distance = this._bestRoute.distance;
+        if (this._bestRoute) {
+            this.peerAddress.distance = this._bestRoute.distance;
+        }
     }
 
     equals(o) {
