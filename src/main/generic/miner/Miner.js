@@ -126,12 +126,12 @@ class Miner extends Observable {
 
     stopWork() {
         // TODO unregister from blockchain head-changed events.
-
-        if (this._hashrateWorker) {
-            clearInterval(this._hashrateWorker);
-            this._hashrateWorker = null;
+        if (!this.working) {
+            return;
         }
 
+        clearInterval(this._hashrateWorker);
+        this._hashrateWorker = null;
         this._hashrate = 0;
 
         // Tell listeners that we've stopped working.

@@ -464,9 +464,11 @@ class PeerAddresses extends Observable {
     _deleteBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
-            peerAddressState.deleteRoute(channel);
-            if (!peerAddressState.hasRoute()) {
-                this._delete(peerAddressState.peerAddress);
+            if (peerAddressState.peerAddress.protocol === Protocol.RTC) {
+                peerAddressState.deleteRoute(channel);
+                if (!peerAddressState.hasRoute()) {
+                    this._delete(peerAddressState.peerAddress);
+                }
             }
         }
     }
