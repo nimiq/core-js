@@ -246,7 +246,7 @@ class PeerAddresses extends Observable {
                 peerAddress.timestamp = 0;
             }
 
-            // Ignore address if we already know this address with a more recent timestamp and the same distance (if applicable).
+            // Ignore address if it is a websocket address and we already know this address with a more recent timestamp.
             if (peerAddress.protocol === Protocol.WS && knownAddress.timestamp >= peerAddress.timestamp) {
                 return false;
             }
@@ -383,7 +383,7 @@ class PeerAddresses extends Observable {
     }
 
     // Called when a message has been returned as unroutable.
-    unroutable(peerAddress, channel) {
+    unroutable(channel, peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;

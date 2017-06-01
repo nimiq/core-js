@@ -1,7 +1,7 @@
 class Queue {
     constructor(fnHash) {
         this._queue = [];
-        this._fnHash = fnHash || HashSet._hash;
+        this._fnHash = fnHash || Queue._hash;
     }
 
     static _hash(o) {

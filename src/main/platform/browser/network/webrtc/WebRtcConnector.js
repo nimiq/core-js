@@ -40,7 +40,6 @@ class WebRtcConnector extends Observable {
 
     isValidSignal(msg) {
         return !!this._connectors[msg.senderId] && this._connectors[msg.senderId].nonce === msg.nonce;
-
     }
 
     onSignal(channel, msg) {

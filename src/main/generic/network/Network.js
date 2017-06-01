@@ -53,7 +53,7 @@ class Network extends Observable {
             this._checkPeerCount();
         });
 
-        this._forwards = new ForwardedSignalStore();
+        this._forwards = new SignalStore();
 
         return this;
     }
@@ -324,9 +324,10 @@ class Network extends Observable {
             return;
         }
 
-        // If message contains unroutable event, update routes
-        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 && this._forwards.signalForwarded(msg.recipientId, msg.senderId, msg.nonce)) {
-            this._addresses.unroutable(msg.senderId, channel);
+        // If message contains unroutable event, update routes.
+        // We also need to test whether we forwarded the original message in reverse direction.
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 && this._forwards.signalForwarded(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, /* nonce */ msg.nonce)) {
+            this._addresses.unroutable(channel, msg.senderId);
         }
 
         // If the signal is intented for us, pass it on to our WebRTC connector.
@@ -336,18 +337,17 @@ class Network extends Observable {
             if (this._rtcConnector.isValidSignal(msg)
                  && ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0
                     || (msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0)) {
-                this._addresses.unroutable(msg.senderId, channel);
+                this._addresses.unroutable(channel, msg.senderId);
             }
             this._rtcConnector.onSignal(channel, msg);
             return;
         }
 
         // Discard signals that have reached their TTL.
-        if (msg.ttl <= 0) {
+        if (msg.ttl <= 0 && msg.flags === 0) {
             Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
-            if (msg.flags === 0) {
-                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
-            }
+            // Send signal containing TTL_EXCEEDED flag back in reverse direction.
+            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
             return;
         }
 
@@ -357,7 +357,8 @@ class Network extends Observable {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
+            // Send signal containing UNROUTABLE flag back in reverse direction.
+            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             return;
         }
 
@@ -409,7 +410,7 @@ Network.CONNECTING_COUNT_MAX = 3;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
 
-class ForwardedSignalStore {
+class SignalStore {
     constructor(maxSize=1000 /* maximum number of entries */) {
         this._maxSize = maxSize;
         this._queue = new Queue();
@@ -448,7 +449,7 @@ class ForwardedSignalStore {
     signalForwarded(senderId, recipientId, nonce) {
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         const lastSeen = this._store.get(signal);
-        const valid = lastSeen + ForwardedSignal.MAX_AGE_MESSAGE > Date.now();
+        const valid = lastSeen + ForwardedSignal.SIGNAL_MAX_AGE > Date.now();
         if (!valid) {
             // Because of the ordering, we know that everything after that is invalid too.
             const toDelete = this._queue.dequeueUntil(msg);
@@ -459,8 +460,8 @@ class ForwardedSignalStore {
         return valid;
     }
 }
-ForwardedSignalStore.MAX_AGE_MESSAGE = 10 /* seconds */;
-Class.register(ForwardedSignalStore);
+SignalStore.SIGNAL_MAX_AGE = 10 /* seconds */;
+Class.register(SignalStore);
 
 class ForwardedSignal {
     constructor(senderId, recipientId, nonce) {
