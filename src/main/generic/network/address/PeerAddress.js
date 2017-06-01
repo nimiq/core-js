@@ -134,8 +134,6 @@ class RtcPeerAddress extends PeerAddress {
 
         this._signalId = signalId;
         this._distance = distance;
-
-        this._signalChannel = null;
     }
 
     static isSignalId(arg) {
