@@ -18,6 +18,7 @@ require('../../generic/utils/database/ObjectDB.js');
 require('../../generic/utils/array/IndexedArray.js');
 require('../../generic/utils/array/HashMap.js');
 require('../../generic/utils/array/HashSet.js');
+require('../../generic/utils/array/Queue.js');
 require('../../generic/utils/array/ArrayUtils.js');
 require('../../generic/utils/buffer/SerialBuffer.js');
 require('../../generic/utils/buffer/BufferUtils.js');

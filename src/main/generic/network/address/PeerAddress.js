@@ -188,14 +188,5 @@ class RtcPeerAddress extends PeerAddress {
     set distance(value) {
         this._distance = value;
     }
-
-    get signalChannel() {
-        return this._signalChannel;
-    }
-
-    // Set to the receiving channel when received from other peers.
-    set signalChannel(value) {
-        this._signalChannel = value;
-    }
 }
 Class.register(RtcPeerAddress);

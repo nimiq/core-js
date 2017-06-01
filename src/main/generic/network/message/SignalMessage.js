@@ -78,4 +78,5 @@ class SignalMessage extends Message {
 }
 SignalMessage.Flags = {};
 SignalMessage.Flags.UNROUTABLE = 0x1;
+SignalMessage.Flags.TTL_EXCEEDED = 0x2;
 Class.register(SignalMessage);
