@@ -40,7 +40,7 @@ class WebSocketConnector extends Observable {
                 ws.close();
             };
 
-            this.fire('error', peerAddress);
+            this.fire('error', peerAddress, 'timeout');
         }, WebSocketConnector.CONNECT_TIMEOUT);
 
         return true;

@@ -195,6 +195,16 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 ## Miner
 Available via `$.miner`.
 
+Mining should not start before consensus is established and stop when consensus is lost. The Miner does not explicitely enforce this, but callers should ensure this behavior.
+
+```
+// Start mining automatically once consensus is (re-)established.
+$.consensus.on('established', () => $.miner.startWork());
+
+// Stop mining when consensus is lost. All clients should do this!
+$.consensus.on('lost', () => $.miner.stopWork());
+```
+
 ### Properties
 - `working`
 - `address`

@@ -41,7 +41,7 @@ class Network extends Observable {
 
         this._rtcConnector = await new WebRtcConnector();
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
-        this._rtcConnector.on('error', peerAddr => this._onError(peerAddr));
+        this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
         // Helper objects to manage PeerAddresses.
         // Must be initialized AFTER the WebSocket/WebRtcConnector.
@@ -52,6 +52,8 @@ class Network extends Observable {
             this._relayAddresses(addresses);
             this._checkPeerCount();
         });
+
+        this._forwards = new SignalStore();
 
         return this;
     }
@@ -133,13 +135,15 @@ class Network extends Observable {
                 }
                 break;
 
-            case Protocol.RTC:
-                Log.d(Network, `Connecting to ${peerAddress} via ${peerAddress.signalChannel.peerAddress}...`);
-                if (this._rtcConnector.connect(peerAddress)) {
+            case Protocol.RTC: {
+                const signalChannel = this._addresses.getChannelBySignalId(peerAddress.signalId);
+                Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
+                if (this._rtcConnector.connect(peerAddress, signalChannel)) {
                     this._addresses.connecting(peerAddress);
                     this._connectingCount++;
                 }
                 break;
+            }
 
             default:
                 Log.e(Network, `Cannot connect to ${peerAddress} - unsupported protocol`);
@@ -235,8 +239,8 @@ class Network extends Observable {
     }
 
     // Connection to this peer address failed.
-    _onError(peerAddress) {
-        Log.w(Network, `Connection to ${peerAddress} failed`);
+    _onError(peerAddress, reason) {
+        Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
         if (this._addresses.isConnecting(peerAddress)) {
             this._connectingCount--;
@@ -266,7 +270,7 @@ class Network extends Observable {
             // Check if the handshake with this peer has completed.
             if (this._addresses.isConnected(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._addresses.disconnected(channel.peerAddress, closedByRemote);
+                this._addresses.disconnected(channel, closedByRemote);
 
                 // Tell listeners that this peer has gone away.
                 this.fire('peer-left', peer);
@@ -320,48 +324,66 @@ class Network extends Observable {
             return;
         }
 
+        // If message contains unroutable event, update routes.
+        // We also need to test whether we forwarded the original message in reverse direction.
+        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 && this._forwards.signalForwarded(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, /* nonce */ msg.nonce)) {
+            this._addresses.unroutable(channel, msg.senderId);
+        }
+
         // If the signal is intented for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
+            // If we sent out a signal that did not reach the recipient because of TTL
+            // or it was unroutable, delete this route.
+            if (this._rtcConnector.isValidSignal(msg)
+                 && ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0
+                    || (msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0)) {
+                this._addresses.unroutable(channel, msg.senderId);
+            }
             this._rtcConnector.onSignal(channel, msg);
             return;
         }
 
         // Discard signals that have reached their TTL.
-        if (msg.ttl <= 0) {
+        if (msg.ttl <= 0 && msg.flags === 0) {
             Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
+            // Send signal containing TTL_EXCEEDED flag back in reverse direction.
+            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
             return;
         }
 
         // Otherwise, try to forward the signal to the intented recipient.
-        const peerAddress = this._addresses.findBySignalId(msg.recipientId);
-        if (!peerAddress) {
+        const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
+        if (!signalChannel && msg.flags === 0) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            if (!(msg.flags & SignalMessage.Flags.UNROUTABLE)) {
-                channel.signal(msg.recipientId, msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
-            }
+            // Send signal containing UNROUTABLE flag back in reverse direction.
+            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             return;
         }
 
         // Discard signal if our shortest route to the target is via the sending peer.
         // XXX Can this happen?
-        if (peerAddress.signalChannel.peerAddress.equals(channel.peerAddress)) {
+        if (signalChannel.peerAddress.equals(channel.peerAddress)) {
             Log.e(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             return;
         }
 
         // Decrement ttl and forward signal.
-        peerAddress.signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+        // We store forwarded messages if there are no special flags set.
+        if (msg.flags === 0) {
+            this._forwards.add(msg.senderId, msg.recipientId, msg.nonce);
+        }
 
         // XXX This is very spammy!!!
         Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
             + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
-            + `(via ${peerAddress.signalChannel.peerAddress})`);
+            + `(via ${signalChannel.peerAddress})`);
     }
 
     get peerCount() {
-        return this._addresses.peerCountWs + this._addresses.peerCountRtc;
+        return this._addresses.peerCount;
     }
 
     get peerCountWebSocket() {
@@ -370,6 +392,10 @@ class Network extends Observable {
 
     get peerCountWebRtc() {
         return this._addresses.peerCountRtc;
+    }
+
+    get peerCountDumb() {
+        return this._addresses.peerCountDumb;
     }
 
     get bytesSent() {
@@ -387,3 +413,83 @@ Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 3;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
+
+class SignalStore {
+    constructor(maxSize=1000 /* maximum number of entries */) {
+        this._maxSize = maxSize;
+        this._queue = new Queue();
+        this._store = new HashMap();
+    }
+
+    get length() {
+        return this._queue.length;
+    }
+
+    add(senderId, recipientId, nonce) {
+        // If we already forwarded such a message, just update timestamp.
+        if (this.contains(senderId, recipientId, nonce)) {
+            const signal = new ForwardedSignal(senderId, recipientId, nonce);
+            this._store.put(signal, Date.now());
+            this._queue.delete(signal);
+            this._queue.enqueue(signal);
+            return;
+        }
+
+        // Delete oldest if needed.
+        if (this.length >= this._maxSize) {
+            const oldest = this._queue.dequeue();
+            this._store.delete(oldest);
+        }
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        this._queue.enqueue(signal);
+        this._store.put(signal, Date.now());
+    }
+
+    contains(senderId, recipientId, nonce) {
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        return this._store.contains(signal);
+    }
+
+    signalForwarded(senderId, recipientId, nonce) {
+        const signal = new ForwardedSignal(senderId, recipientId, nonce);
+        const lastSeen = this._store.get(signal);
+        if (!lastSeen) {
+            return false;
+        }
+        const valid = lastSeen + ForwardedSignal.SIGNAL_MAX_AGE > Date.now();
+        if (!valid) {
+            // Because of the ordering, we know that everything after that is invalid too.
+            const toDelete = this._queue.dequeueUntil(signal);
+            for (const dSignal of toDelete) {
+                this._store.delete(dSignal);
+            }
+        }
+        return valid;
+    }
+}
+SignalStore.SIGNAL_MAX_AGE = 10 /* seconds */;
+Class.register(SignalStore);
+
+class ForwardedSignal {
+    constructor(senderId, recipientId, nonce) {
+        this._senderId = senderId;
+        this._recipientId = recipientId;
+        this._nonce = nonce;
+    }
+
+    equals(o) {
+        return o instanceof ForwardedSignal
+            && this._senderId === o._senderId
+            && this._recipientId === o._recipientId
+            && this._nonce === o._nonce;
+    }
+
+    hashCode() {
+        return this.toString();
+    }
+
+    toString() {
+        return `ForwardedSignal{senderId=${this._senderId}, recipientId=${this._recipientId}, nonce=${this._nonce}}`;
+    }
+}
+Class.register(ForwardedSignal);

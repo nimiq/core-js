@@ -90,8 +90,8 @@ class PeerChannel extends Observable {
         return this._send(new AddrMessage(addresses));
     }
 
-    getaddr(serviceMask) {
-        return this._send(new GetAddrMessage(serviceMask));
+    getaddr(protocolMask, serviceMask) {
+        return this._send(new GetAddrMessage(protocolMask, serviceMask));
     }
 
     ping(nonce) {

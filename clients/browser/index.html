@@ -182,10 +182,10 @@
             $.miner.on('hashrate-changed', () => this._minerChanged());
             $.miner.on('block-mined', () => this._blockMined());
 
-				$.consensus.on('lost', () => $.miner.stopWork());// Blockchain
-				this._bcTotalWork = document.querySelector('#bcTotalWork');
-				this._bcHeight = document.querySelector('#bcHeight');
-				this._bcAccountsHash = document.querySelector('#bcAccountsHash');
+            $.consensus.on('lost', () => $.miner.stopWork());// Blockchain
+            this._bcTotalWork = document.querySelector('#bcTotalWork');
+            this._bcHeight = document.querySelector('#bcHeight');
+            this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
             // Head block
             this._hdHash = document.querySelector('#hdHash');
@@ -236,11 +236,11 @@
             this._minerChanged();
             this._mempoolChanged();
 
-				// Check for miner auto start.
-				if(window.location.hash && window.location.hash === '#miner') {
-					$.consensus.on('established', () => $.miner.startWork());
-				}
-			}
+            // Check for miner auto start.
+            if (window.location.hash && window.location.hash === '#miner') {
+                $.consensus.on('established', () => $.miner.startWork());
+            }
+        }
 
         _submitTransaction(e) {
             const elRecipientAddr = document.querySelector('#txRecipientAddr');
@@ -324,21 +324,21 @@
             this._blockHistory.appendChild(el);
         }
 
-			_toggleMining() {
-				if (!$.consensus.established) {
-					console.warn('Not starting miner - consensus not established');
-			        return;
-				}
+        _toggleMining() {
+            if (!$.consensus.established) {
+                console.warn('Not starting miner - consensus not established');
+                return;
+            }
 
-				if (!$.miner.working) {
-					$.miner.startWork();
-					
-				} else {
-					
-					$.miner.stopWork();
-					
-				}
-			}
+            if (!$.miner.working) {
+                $.miner.startWork();
+
+            } else {
+
+                $.miner.stopWork();
+
+            }
+        }
 
         _networkChanged() {
             this._netPeerCount.innerText = $.network.peerCount;
@@ -348,26 +348,27 @@
             this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
         }
 
-			_humanBytes(bytes) {
-			    let i = 0;
-			    let units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-				while (bytes > 1024) {
-					bytes /= 1024;
-					i++;
-				}
-			    return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
-			};
+        _humanBytes(bytes) {
+            let i = 0;
+            let units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            while (bytes > 1024) {
+                bytes /= 1024;
+                i++;
+            }
+            return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
+        };
 
-			_minerChanged() {
-				this._mnrWorking.innerText = $.miner.working;
-				this._mnrHashrate.innerText = $.miner.hashrate;
-				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
-					new Date(this._lastBlockMinedTs) : '-';
-			if ($.miner.working) {
-                    this._mnrStartBtn.innerText = 'Stop Mining';
-                } else {
-                    this._mnrStartBtn.innerText = 'Start Mining';
-                }}
+        _minerChanged() {
+            this._mnrWorking.innerText = $.miner.working;
+            this._mnrHashrate.innerText = $.miner.hashrate;
+            this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
+                new Date(this._lastBlockMinedTs) : '-';
+            if ($.miner.working) {
+                this._mnrStartBtn.innerText = 'Stop Mining';
+            } else {
+                this._mnrStartBtn.innerText = 'Start Mining';
+            }
+        }
 
         _blockMined() {
             this._lastBlockMinedTs = Date.now();
@@ -412,7 +413,6 @@
     }, () => {
         overlay_.style.display = 'block';
     });
-
 </script>
 </body>
 </html>

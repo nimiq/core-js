@@ -1,13 +1,28 @@
 class WebRtcConfig {
     static async get() {
-        const certificate = await WebRtcCertificate.get();
-        return {
-            iceServers: [
-                { urls: 'stun:stun.services.mozilla.com' },
-                { urls: 'stun:stun.l.google.com:19302' }
-            ],
-            certificates : [certificate]
-        };
+        // Initialize singleton.
+        if (!WebRtcConfig._config) {
+            // If browser does not support WebRTC, simply return empty config.
+            if (!PlatformUtils.supportsWebRTC()) {
+                WebRtcConfig._config = {};
+                return WebRtcConfig._config;
+            }
+
+            const certificate = await WebRtcCertificate.get();
+            WebRtcConfig._config = {
+                iceServers: [
+                    { urls: 'stun:stun.services.mozilla.com' },
+                    { urls: 'stun:stun.l.google.com:19302' }
+                ],
+                certificates : [certificate]
+            };
+
+            // Configure our peer address.
+            const signalId = await WebRtcConfig.mySignalId();
+            NetworkConfig.configurePeerAddress(signalId);
+        }
+
+        return WebRtcConfig._config;
     }
 
     static async mySignalId() {

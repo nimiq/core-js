@@ -71,19 +71,35 @@ class PeerConnection extends Observable {
     }
 
     _isChannelOpen() {
-        // XXX Should work, but it's not pretty.
         return this._channel.readyState === WebSocket.OPEN
             || this._channel.readyState === 'open';
     }
 
+    _isChannelClosing() {
+        return this._channel.readyState === WebSocket.CLOSING
+            || this._channel.readyState === 'closing';
+    }
+
+    _isChannelClosed() {
+        return this._channel.readyState === WebSocket.CLOSED
+            || this._channel.readyState === 'closed';
+    }
+
     send(msg) {
         const logAddress = this._peerAddress || this._netAddress;
-        if (this._channel.closed) {
+        if (this._closed) {
             Log.e(PeerConnection, `Tried to send data over closed connection to ${logAddress}`);
             return false;
         }
 
-        // Don't attempt to send if channel is opening/closing.
+        // Fire close event (early) if channel is closing/closed.
+        if (this._isChannelClosing() || this._isChannelClosed()) {
+            Log.w(PeerConnection, `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
+            this._onClose();
+            return false;
+        }
+
+        // Don't attempt to send if channel is not (yet) open.
         if (!this._isChannelOpen()) {
             Log.w(PeerConnection, `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
             return false;
