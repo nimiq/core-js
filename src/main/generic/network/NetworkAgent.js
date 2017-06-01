@@ -176,7 +176,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getaddr(Services.myServiceMask());
+        this._channel.getaddr(Protocol.myProtocolMask(), Services.myServiceMask());
 
         // XXX Do we need this timeout?
         this._timers.setTimeout('getaddr', () => {
@@ -222,7 +222,7 @@ class NetworkAgent extends Observable {
         }
 
         // Find addresses that match the given serviceMask.
-        const addresses = this._addresses.findByServices(msg.serviceMask);
+        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask);
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.

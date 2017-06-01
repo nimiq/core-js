@@ -136,7 +136,7 @@ class Network extends Observable {
                 break;
 
             case Protocol.RTC: {
-                const signalChannel = this._addresses.findChannelBySignalId(peerAddress.signalId);
+                const signalChannel = this._addresses.getChannelBySignalId(peerAddress.signalId);
                 Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress, signalChannel)) {
                     this._addresses.connecting(peerAddress);
@@ -352,7 +352,7 @@ class Network extends Observable {
         }
 
         // Otherwise, try to forward the signal to the intented recipient.
-        const signalChannel = this._addresses.findChannelBySignalId(msg.recipientId);
+        const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
         if (!signalChannel && msg.flags === 0) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.

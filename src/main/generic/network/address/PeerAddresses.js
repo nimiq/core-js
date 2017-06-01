@@ -127,7 +127,7 @@ class PeerAddresses extends Observable {
         }
     }
 
-    findChannelBySignalId(signalId) {
+    getChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
         if (peerAddressState && peerAddressState.bestRoute) {
             return peerAddressState.bestRoute.signalChannel;
@@ -136,7 +136,7 @@ class PeerAddresses extends Observable {
     }
 
     // TODO improve this by returning the best addresses first.
-    findByServices(serviceMask, maxAddresses = 1000) {
+    query(protocolMask, serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
         const now = Date.now();
         const addresses = [];
@@ -155,6 +155,11 @@ class PeerAddresses extends Observable {
 
             // Only return addresses matching the service mask.
             if ((address.services & serviceMask) === 0) {
+                continue;
+            }
+
+            // Only return addresses matching the protocol mask.
+            if ((address.protocol & protocolMask) === 0) {
                 continue;
             }
 
