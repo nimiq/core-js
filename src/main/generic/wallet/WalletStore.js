@@ -11,3 +11,4 @@ class WalletStore extends TypedDB {
         return this.putObject(key, value);
     }
 }
+Class.register(WalletStore);
