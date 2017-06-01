@@ -9,10 +9,6 @@ class WebRtcConnector extends Observable {
         this._config = await WebRtcConfig.get();
         this._timers = new Timers();
 
-        // Configure our peer address.
-        const signalId = await WebRtcConfig.mySignalId();
-        NetworkConfig.configurePeerAddress(signalId);
-
         return this;
     }
 

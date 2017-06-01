@@ -49,6 +49,11 @@ class NetworkAgent extends Observable {
                 return false;
             }
 
+            // Exclude DumbPeerAddresses.
+            if (addr.protocol === Protocol.DUMB) {
+                return false;
+            }
+
             const knownAddress = this._knownAddresses.get(addr);
             return !addr.isSeed() // Never relay seed addresses.
                 && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
@@ -78,7 +83,7 @@ class NetworkAgent extends Observable {
                 return;
             }
 
-            setTimeout(this._handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
+            setTimeout(this.handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
             return;
         }
 
@@ -176,7 +181,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getaddr(Services.myServiceMask());
+        this._channel.getaddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
 
         // XXX Do we need this timeout?
         this._timers.setTimeout('getaddr', () => {
@@ -222,7 +227,7 @@ class NetworkAgent extends Observable {
         }
 
         // Find addresses that match the given serviceMask.
-        const addresses = this._addresses.findByServices(msg.serviceMask);
+        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask);
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
