@@ -28,7 +28,6 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/websocket/WebSocketConnector.js',
             './src/main/platform/browser/utils/WindowDetector.js',
-            './src/main/platform/browser/wallet/WalletStore.js',
             './src/main/platform/browser/WorkerBuilder.js'
         ],
         node: []
@@ -100,6 +99,7 @@ const sources = {
         './src/main/generic/network/PeerConnection.js',
         './src/main/generic/network/Peer.js',
         './src/main/generic/miner/Miner.js',
+        './src/main/generic/wallet/WalletStore.js',
         './src/main/generic/wallet/Wallet.js',
         './src/main/generic/Core.js'
     ],
