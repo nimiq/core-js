@@ -163,6 +163,10 @@ class PeerAddresses extends Observable {
             // Update timestamp for connected peers.
             if (peerAddressState.state === PeerAddressState.CONNECTED) {
                 address.timestamp = now;
+                // Also update timestamp for RTC connections
+                if (peerAddressState.bestRoute) {
+                    peerAddressState.bestRoute.timestamp = now;
+                }
             }
 
             // Never return addresses that are too old.
@@ -517,6 +521,10 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.CONNECTED:
                     // Keep timestamp up-to-date while we are connected.
                     addr.timestamp = now;
+                    // Also update timestamp for RTC connections
+                    if (peerAddressState.bestRoute) {
+                        peerAddressState.bestRoute.timestamp = now;
+                    }
                     break;
 
                 default:
@@ -574,11 +582,24 @@ class PeerAddressState {
 
         this.state = PeerAddressState.NEW;
         this.lastConnected = -1;
-        this.failedAttempts = 0;
         this.bannedUntil = -1;
 
         this._bestRoute = null;
         this._routes = new HashSet();
+    }
+
+    get failedAttempts() {
+        if (this._bestRoute) {
+            return this._bestRoute.failedAttempts;
+        }
+        return 0;
+    }
+
+    set failedAttempts(value) {
+        if (this._bestRoute) {
+            this._bestRoute.failedAttempts = value;
+            this._updateBestRoute(); // scores may have changed
+        }
     }
 
     get bestRoute() {
@@ -586,11 +607,17 @@ class PeerAddressState {
     }
 
     addRoute(signalChannel, distance, timestamp) {
-        let newRoute = new SignalRoute(signalChannel, distance, timestamp);
+        const oldRoute = this._routes.get(signalChannel);
+        const newRoute = new SignalRoute(signalChannel, distance, timestamp);
+
+        if (oldRoute) {
+            // do not reset failed attempts
+            newRoute.failedAttempts = oldRoute.failedAttempts;
+        }
         this._routes.add(newRoute);
 
-        if (!this._bestRoute || newRoute.distance < this._bestRoute.distance
-            || (newRoute.distance == this._bestRoute.distance && timestamp > this._bestRoute.timestamp)) {
+        if (!this._bestRoute || newRoute.score > this._bestRoute.score
+            || (newRoute.score == this._bestRoute.score && timestamp > this._bestRoute.timestamp)) {
 
             this._bestRoute = newRoute;
             this.peerAddress.distance = this._bestRoute.distance;
@@ -623,8 +650,8 @@ class PeerAddressState {
         let bestRoute = null;
         // choose the route with minimal distance and maximal timestamp
         for (const route of this._routes.values()) {
-            if (bestRoute === null || route.distance < bestRoute.distance
-                || (route.distance == bestRoute.distance && route.timestamp > bestRoute.timestamp)) {
+            if (bestRoute === null || route.score > bestRoute.score
+                || (route.score == bestRoute.score && route.timestamp > bestRoute.timestamp)) {
 
                 bestRoute = route;
             }
@@ -658,9 +685,10 @@ Class.register(PeerAddressState);
 
 class SignalRoute {
     constructor(signalChannel, distance, timestamp) {
+        this.failedAttempts = 0;
+        this.timestamp = timestamp;
         this._signalChannel = signalChannel;
         this._distance = distance;
-        this._timestamp = timestamp;
     }
 
     get signalChannel() {
@@ -671,8 +699,8 @@ class SignalRoute {
         return this._distance;
     }
 
-    get timestamp() {
-        return this._timestamp;
+    get score() {
+        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS));
     }
 
     equals(o) {
@@ -685,7 +713,7 @@ class SignalRoute {
     }
 
     toString() {
-        return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this._timestamp}}`;
+        return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this.timestamp}, failedAttempts=${this.failedAttempts}`;
     }
 }
 Class.register(SignalRoute);
