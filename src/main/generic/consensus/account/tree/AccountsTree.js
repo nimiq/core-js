@@ -21,35 +21,36 @@ class AccountsTree extends Observable {
     async _initRoot() {
         let rootKey = await this._store.getRootKey();
         if (!rootKey) {
-            rootKey = await this._store.put(new AccountsTreeNode());
+            const rootNode = AccountsTreeNode.branchNode(/*prefix*/ new Uint8Array(0), /*children*/ []);
+            rootKey = await this._store.put(rootNode);
             await this._store.setRootKey(rootKey);
         }
         return this;
     }
 
-    put(address, balance, transaction) {
+    put(address, account, transaction) {
         return new Promise((resolve, error) => {
             this._synchronizer.push(() => {
-                return this._put(address, balance, transaction);
+                return this._put(address, account, transaction);
             }, resolve, error);
         });
     }
 
-    async _put(address, balance, transaction) {
+    async _put(address, account, transaction) {
         transaction = transaction || this._store;
 
         // Fetch the root node. This should never fail.
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
 
-        // Insert balance into the tree at address.
-        await this._insert(transaction, rootNode, address, balance, []);
+        // Insert account into the tree at address.
+        await this._insert(transaction, rootNode, address, account, []);
 
-        // Tell listeners that the balance of address has changed.
-        this.fire(address, balance, address);
+        // Tell listeners that the account at address has changed.
+        this.fire(address, account, address);
     }
 
-    async _insert(transaction, node, address, balance, rootPath) {
+    async _insert(transaction, node, address, account, rootPath) {
         // Find common prefix between node and new address.
         const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
 
@@ -64,11 +65,11 @@ class AccountsTree extends Observable {
             const nodeKey = await transaction.put(node);
 
             // Insert the new account node.
-            const newChild = new AccountsTreeNode(address, balance);
+            const newChild = AccountsTreeNode.terminalNode(address, account);
             const newChildKey = await transaction.put(newChild);
 
             // Insert the new parent node.
-            const newParent = new AccountsTreeNode(commonPrefix);
+            const newParent = AccountsTreeNode.branchNode(commonPrefix, []);
             newParent.putChild(node.prefix, nodeKey);
             newParent.putChild(newChild.prefix, newChildKey);
             const newParentKey = await transaction.put(newParent);
@@ -77,21 +78,22 @@ class AccountsTree extends Observable {
         }
 
         // If the remaining address is empty, we have found an (existing) node
-        // with the given address. Update the balance.
+        // with the given address. Update the account.
         if (!address.length) {
             // Delete the existing node.
             await transaction.delete(node);
 
+            // XXX How does this generalize to more than one account type?
             // Special case: If the new balance is the initial balance
             // (i.e. balance=0, nonce=0), it is like the account never existed
             // in the first place. Delete the node in this case.
-            if (Balance.INITIAL.equals(balance)) {
+            if (Account.INITIAL.equals(account)) {
                 // We have already deleted the node, remove the subtree it was on.
                 return this._prune(transaction, node.prefix, rootPath);
             }
 
-            // Update the balance.
-            node.balance = balance;
+            // Update the account.
+            node.account = account;
             const nodeKey = await transaction.put(node);
 
             return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
@@ -103,11 +105,11 @@ class AccountsTree extends Observable {
         if (childKey) {
             const childNode = await transaction.get(childKey);
             rootPath.push(node);
-            return this._insert(transaction, childNode, address, balance, rootPath);
+            return this._insert(transaction, childNode, address, account, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
-        const newChild = new AccountsTreeNode(address, balance);
+        const newChild = AccountsTreeNode.terminalNode(address, account);
         const newChildKey = await transaction.put(newChild);
 
         await transaction.delete(node);
@@ -140,6 +142,8 @@ class AccountsTree extends Observable {
             // The node has no children left, continue pruning.
             prefix = node.prefix;
         }
+
+        // XXX This should never be reached.
         return undefined;
     }
 
@@ -183,7 +187,7 @@ class AccountsTree extends Observable {
         address = address.subarray(commonPrefix.length);
 
         // If the remaining address is empty, we have found the requested node.
-        if (!address.length) return node.balance;
+        if (!address.length) return node.account;
 
         // Descend into the matching child node if one exists.
         const childKey = node.getChild(address);
@@ -204,8 +208,8 @@ class AccountsTree extends Observable {
                 return that.get(address, tx);
             },
 
-            put: function (address, balance) {
-                return that.put(address, balance, tx);
+            put: function (address, account) {
+                return that.put(address, account, tx);
             },
 
             commit: function () {
@@ -231,101 +235,3 @@ class AccountsTree extends Observable {
 }
 Class.register(AccountsTree);
 
-class AccountsTreeNode {
-    constructor(prefix = new Uint8Array(), balance, children) {
-        this.prefix = prefix;
-        this.balance = balance;
-        this.children = children;
-    }
-
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, AccountsTreeNode);
-        Balance.cast(o.balance);
-        return o;
-    }
-
-    static unserialize(buf) {
-        const type = buf.readUint8();
-        const prefixLength = buf.readUint8();
-        const prefix = buf.read(prefixLength);
-
-        let balance = undefined;
-        let children = undefined;
-        if (type == 0xff) {
-            // Terminal node
-            balance = Balance.unserialize(buf);
-        } else {
-            // Branch node
-            children = [];
-            const childCount = buf.readUint8();
-            for (let i = 0; i < childCount; ++i) {
-                const childIndex = buf.readUint8();
-                const child = BufferUtils.toBase64(buf.read(32));
-                children[childIndex] = child;
-            }
-        }
-
-        return new AccountsTreeNode(prefix, balance, children);
-    }
-
-    serialize(buf) {
-        buf = buf || new SerialBuffer(this.serializedSize);
-        // node type: branch node = 0x00, terminal node = 0xff
-        buf.writeUint8(this.balance ? 0xff : 0x00);
-        // prefix length
-        buf.writeUint8(this.prefix.byteLength);
-        // prefix
-        buf.write(this.prefix);
-
-        if (this.balance) {
-            // terminal node
-            this.balance.serialize(buf);
-        } else if (this.children) {
-            // branch node
-            const childCount = this.children.reduce((count, val) => count + !!val, 0);
-            buf.writeUint8(childCount);
-            for (let i = 0; i < this.children.length; ++i) {
-                if (this.children[i]) {
-                    buf.writeUint8(i);
-                    buf.write(BufferUtils.fromBase64(this.children[i]));
-                }
-            }
-        }
-        return buf;
-    }
-
-    get serializedSize() {
-        return /*type*/ 1
-            + /*prefixLength*/ 1
-            + this.prefix.byteLength
-            + (this.balance ? this.balance.serializedSize : 0)
-            + (!this.balance ? /*childCount*/ 1 : 0)
-            // The children array contains undefined values for non existant children.
-            // Only count existing ones.
-            + (this.children ? this.children.reduce((count, val) => count + !!val, 0)
-                * (/*keySize*/ 32 + /*childIndex*/ 1) : 0);
-    }
-
-    getChild(prefix) {
-        return this.children && this.children[prefix[0]];
-    }
-
-    putChild(prefix, child) {
-        this.children = this.children || [];
-        this.children[prefix[0]] = child;
-    }
-
-    removeChild(prefix) {
-        if (this.children) delete this.children[prefix[0]];
-    }
-
-    hasChildren() {
-        return this.children && this.children.some(child => !!child);
-    }
-
-    hash() {
-        return Crypto.sha256(this.serialize());
-    }
-}
-Class.register(AccountsTreeNode);

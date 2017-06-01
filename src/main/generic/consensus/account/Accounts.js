@@ -36,8 +36,14 @@ class Accounts extends Observable {
         //return treeTx.commit();
     }
 
+    // We only support basic accounts at this time.
     async getBalance(address) {
-        return await this._tree.get(address) || Balance.INITIAL;
+        const account = await this._tree.get(address);
+        if (account) {
+            return account.balance;
+        } else {
+            return Account.INITIAL.balance;
+        }
     }
 
     async _execute(treeTx, block, operator) {
@@ -72,12 +78,7 @@ class Accounts extends Observable {
     }
 
     async _updateBalance(treeTx, address, value, operator) {
-        // XXX If we don't find a balance, we assume the account is empty for now.
-        // TODO retrieve the account balance by asking the network.
-        let balance = await treeTx.get(address);
-        if (!balance) {
-            balance = new Balance();
-        }
+        const balance = this.getBalance(address);
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) throw 'Balance Error!';
@@ -86,7 +87,8 @@ class Accounts extends Observable {
         if (newNonce < 0) throw 'Nonce Error!';
 
         const newBalance = new Balance(newValue, newNonce);
-        await treeTx.put(address, newBalance);
+        const newAccount = new Account(newBalance);
+        await treeTx.put(address, newAccount);
     }
 
     hash() {
