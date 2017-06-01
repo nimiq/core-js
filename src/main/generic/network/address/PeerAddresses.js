@@ -351,12 +351,15 @@ class PeerAddresses extends Observable {
             this._updateConnectedPeerCount(peerAddress, -1);
         }
 
+        // Always set state to tried, even when deciding to delete this address.
+        // In the latter case, this will not influence the deletion,
+        // but it will prevent decrementing the peer count twice when banning seed nodes.
+        peerAddressState.state = PeerAddressState.TRIED;
+
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
         if (closedByRemote || peerAddress.protocol === Protocol.DUMB) {
             this._delete(peerAddress);
-        } else {
-            peerAddressState.state = PeerAddressState.TRIED;
         }
     }
 
