@@ -259,6 +259,8 @@
 				$.miner.on('hashrate-changed', () => this._minerChanged());
 				$.miner.on('block-mined', () => this._blockMined());
 
+				$.consensus.on('lost', () => $.miner.stopWork());
+
 				// Blockchain
 				this._bcTotalWork = document.querySelector('#bcTotalWork');
 				this._bcHeight = document.querySelector('#bcHeight');
@@ -287,7 +289,7 @@
 				this._wltNonce = document.querySelector('#wltNonce');
 
 				this._wltAddress.innerText = $.wallet.address.toBase64();
-				$.accounts.getBalance($.wallet.address).then( balance => this._balanceChanged(balance));
+				$.accounts.getBalance($.wallet.address).then(balance => this._balanceChanged(balance));
 
 				const txSubmitBtn = document.querySelector('#txSubmitBtn');
 				txSubmitBtn.onclick = (e) => this._submitTransaction(e);
@@ -314,8 +316,8 @@
 				this._mempoolChanged();
 
 				// Check for miner auto start.
-				if(window.location.hash && window.location.hash == '#miner') {
-					this._toggleMining();
+				if (window.location.hash && window.location.hash === '#miner') {
+					$.consensus.on('established', () => $.miner.startWork());
 				}
 			}
 
@@ -402,14 +404,15 @@
 			}
 
 			_toggleMining() {
-				if (!this._isMining) {
-					this._isMining = true;
+			    if (!$.consensus.established) {
+			        console.warn('Not starting miner - consensus not established');
+			        return;
+				}
+
+				if (!$.miner.working) {
 					$.miner.startWork();
-					this._mnrStartBtn.innerText = 'Stop Mining';
 				} else {
-					this._isMining = false;
 					$.miner.stopWork();
-					this._mnrStartBtn.innerText = 'Start Mining';
 				}
 			}
 
@@ -422,8 +425,8 @@
 			}
 
 			_humanBytes(bytes) {
-			    var i = 0;
-			    var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+			    let i = 0;
+			    let units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 				while (bytes > 1024) {
 					bytes /= 1024;
 					i++;
@@ -436,7 +439,13 @@
 				this._mnrHashrate.innerText = $.miner.hashrate;
 				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
 					new Date(this._lastBlockMinedTs) : '-';
-			}
+
+                if ($.miner.working) {
+                    this._mnrStartBtn.innerText = 'Stop Mining';
+                } else {
+                    this._mnrStartBtn.innerText = 'Start Mining';
+                }
+            }
 
 			_blockMined() {
 				this._lastBlockMinedTs = Date.now();

@@ -37,6 +37,12 @@ NetworkConfig.configureSSL(key, cert);
 Core.init($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
-    if (!passive) $.network.connect();
-    if (miner) $.miner.startWork();
+    if (!passive) {
+        $.network.connect();
+    }
+
+    if (miner) {
+        $.consensus.on('established', () => $.miner.startWork());
+        $.consensus.on('lost', () => $.miner.stopWork());
+    }
 });
