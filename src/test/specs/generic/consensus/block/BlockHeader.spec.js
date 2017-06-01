@@ -137,7 +137,7 @@ describe('BlockHeader', () => {
     });
 
     it('can verify a valid proof-of-work', (done) => {
-        const blockHeader = BlockHeader.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.header2)));
+        const blockHeader = BlockHeader.unserialize(new SerialBuffer(BufferUtils.fromBase64('LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCSHKYzC8x+6cxgeoqnm7xDc4h7ZXpi9rJxOFQTqFvSG5EfqcM8IhyvbSvrTQysB2WOsfRZfa1dc1y70dJj0RZqQHwD//z/wAAAAAAAAQPfkEAAAAAA=')));;
         blockHeader.verifyProofOfWork()
             .then((isValid) => {
                 expect(isValid).toBe(true);

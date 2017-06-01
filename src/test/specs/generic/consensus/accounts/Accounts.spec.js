@@ -2,25 +2,27 @@
 describe('Accounts', () => {
 
     it('cannot commit a wrong block', (done) => {
-        const block = Dummy.block1;
-        Accounts.createVolatile().then( accounts =>
-            accounts.commitBlock(block)
-                .then( () => {
-                    expect(true).toBe(false);
-                    done();
-                })
-                .catch( (e) => {
-                    expect(e).toBe('AccountsHash mismatch');
-                    done();
-                })
-        );
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const accounts = await Accounts.createVolatile();
+            let error_thrown = false;
+            try {
+                await accounts.commitBlock(block);
+            } catch (e) {
+                expect(e).toBe('AccountsHash mismatch');
+                error_thrown = true;
+            }
+            expect(error_thrown).toBe(true);
+        })().then(done, done.fail);
     });
 
     it('can apply and revert a block', (done) => {
         // prepare everything and serialize accountstree
         async function test() {
-            const accounts = await Accounts.createVolatile();
             const accountState = new Balance(10, 0);
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const accounts = testBlockchain._accounts;
 
             for (let i = 3; i > 0; i--) {
                 const senderPubKey = new PublicKey(Dummy[`publicKey${i}`]);
@@ -29,9 +31,12 @@ describe('Accounts', () => {
             }
 
             const accountsHash1 = await accounts.hash();
-            await accounts.commitBlock(Dummy.accountsBlock);
-            await accounts.revertBlock(Dummy.accountsBlock);
-            const accountsHash2 = await accounts.hash();
+            const block = await testBlockchain.createBlock();
+            await accounts.commitBlock(block);
+            let accountsHash2 = await accounts.hash();
+            expect(accountsHash1.equals(accountsHash2)).toEqual(false);
+            await accounts.revertBlock(block);
+            accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
             done();
         }
