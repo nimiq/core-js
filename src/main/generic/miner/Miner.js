@@ -29,7 +29,6 @@ class Miner extends Observable {
 
     startWork() {
         if (this.working) {
-            Log.w(Miner, 'Already working');
             return;
         }
 

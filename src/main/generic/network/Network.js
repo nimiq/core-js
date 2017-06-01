@@ -235,7 +235,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight})`);
+        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight}, totalWork=${peer.totalWork})`);
     }
 
     // Connection to this peer address failed.
