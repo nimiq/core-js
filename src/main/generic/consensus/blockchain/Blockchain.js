@@ -424,7 +424,7 @@ class Chain {
 
     static unserialize(buf) {
         const head = Block.unserialize(buf);
-        const totalWork = buf.readUint64();
+        const totalWork = buf.readFloat64();
         const height = buf.readUint32();
         return new Chain(head, totalWork, height);
     }
@@ -432,7 +432,7 @@ class Chain {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._head.serialize(buf);
-        buf.writeUint64(this._totalWork);
+        buf.writeFloat64(this._totalWork);
         buf.writeUint32(this._height);
         return buf;
     }
