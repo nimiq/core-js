@@ -28,9 +28,9 @@ class PeerAddresses extends Observable {
         // Pick a random start index.
         const index = Math.floor(Math.random() * (numAddresses + 1));
 
-        // Score up to 500 addresses starting from the start index and pick the
+        // Score up to 1000 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 500);
+        const minCandidates = Math.min(numAddresses, 1000);
         const candidates = new HashMap();
         for (let i = 0; i < numAddresses; i++) {
             const idx = (index + i) % numAddresses;
@@ -77,10 +77,8 @@ class PeerAddresses extends Observable {
                 return -1;
 
             case PeerAddressState.NEW:
-                return (this.peerCount > 6 ? 1.5 : 1) * score;
-
             case PeerAddressState.TRIED:
-                return (this.peerCount < 6 ? 3 : 1) * score;
+                return score;
 
             case PeerAddressState.FAILED:
                 return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
@@ -93,8 +91,8 @@ class PeerAddresses extends Observable {
     _scoreProtocol(peerAddress) {
         let score = 1;
 
-        // Prefer WebSocket addresses if we have less than three WebSocket connections.
-        if (this._peerCountWs < 3) {
+        // We want at least two websocket connection
+        if (this._peerCountWs < 2) {
             score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
         } else {
             score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
@@ -182,7 +180,7 @@ class PeerAddresses extends Observable {
         const peerAddresses = arg.length !== undefined ? arg : [arg];
         const newAddresses = [];
 
-        for (let addr of peerAddresses) {
+        for (const addr of peerAddresses) {
             if (this._add(channel, addr)) {
                 newAddresses.push(addr);
             }
@@ -576,8 +574,8 @@ class PeerAddresses extends Observable {
     }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60; // 1 minute
-PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
+PeerAddresses.MAX_AGE_WEBRTC = 1000 * 45; // 45 seconds
+PeerAddresses.MAX_AGE_DUMB = 1000 * 45; // 45 seconds
 PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
