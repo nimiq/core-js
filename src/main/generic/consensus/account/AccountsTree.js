@@ -129,10 +129,19 @@ class AccountsTree extends Observable {
 
             node.removeChild(prefix);
 
-            // If the node has children left, update it and all keys on the
+            // If the node has only a single child, merge it with the next node.
+            if (node.hasSingleChild() && nodeKey !== rootKey) {
+                const childKey = node.getFirstChild();
+                const childNode = await transaction.get(childKey);
+                // Merge prefixes.
+                childNode.prefix = BufferUtils.concat(node.prefix, childNode.prefix);
+                nodeKey = await transaction.put(childNode); // eslint-disable-line no-await-in-loop
+                return this._updateKeys(transaction, childNode.prefix, nodeKey, rootPath.slice(0, i));
+            }
+            // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
-            if (node.hasChildren() || nodeKey === rootKey) {
+            else if (node.hasChildren() || nodeKey === rootKey) {
                 nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
                 return this._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
             }
@@ -315,6 +324,17 @@ class AccountsTreeNode {
 
     hasChildren() {
         return this.children && this.children.some(child => !!child);
+    }
+
+    hasSingleChild() {
+        return this.children && this.children.reduce((count, val) => count + !!val, 0) === 1;
+    }
+
+    getFirstChild() {
+        if (!this.children) {
+            return undefined;
+        }
+        return this.children.find(child => !!child);
     }
 
     hash() {
