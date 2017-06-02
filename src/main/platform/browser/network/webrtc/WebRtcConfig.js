@@ -1,13 +1,41 @@
 class WebRtcConfig {
     static async get() {
-        const certificate = await WebRtcCertificate.get();
-        return {
-            iceServers: [
-                { urls: 'stun:stun.services.mozilla.com' },
-                { urls: 'stun:stun.l.google.com:19302' }
-            ],
-            certificates : [certificate]
-        };
+        // Initialize singleton.
+        if (!WebRtcConfig._config) {
+            // If browser does not support WebRTC, simply return empty config.
+            if (!PlatformUtils.supportsWebRTC()) {
+                WebRtcConfig._config = {};
+                return WebRtcConfig._config;
+            }
+
+            const certificate = await WebRtcCertificate.get();
+            WebRtcConfig._config = {
+                iceServers: [
+                    { urls: [
+                        'stun:stun.l.google.com:19302',
+                        'stun:stun1.l.google.com:19302',
+                        'stun:stun2.l.google.com:19302',
+                        'stun:stun3.l.google.com:19302',
+                        'stun:stun4.l.google.com:19302'
+                    ]},
+                    { urls: [
+                        'stun:stun.nimiq-network.com:19302',
+                        'stun:stun1.nimiq-network.com:19302',
+                        'stun:stun2.nimiq-network.com:19302',
+                        'stun:stun3.nimiq-network.com:19302',
+                        'stun:stun4.nimiq-network.com:19302'
+                    ]},
+                    { urls: 'stun:stun.stunprotocol.org' }
+                ],
+                certificates : [certificate]
+            };
+
+            // Configure our peer address.
+            const signalId = await WebRtcConfig.mySignalId();
+            NetworkConfig.configurePeerAddress(signalId);
+        }
+
+        return WebRtcConfig._config;
     }
 
     static async mySignalId() {
@@ -19,3 +47,4 @@ class WebRtcConfig {
         });
     }
 }
+Class.register(WebRtcConfig);

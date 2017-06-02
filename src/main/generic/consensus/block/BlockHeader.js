@@ -15,17 +15,6 @@ class BlockHeader {
         this._nonce = nonce;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, BlockHeader);
-        o._prevHash = new Hash(o._prevHash);
-        o._bodyHash = new Hash(o._bodyHash);
-        o._accountsHash = new Hash(o._accountsHash);
-        // XXX clear out cached hash
-        o._hash = undefined;
-        return o;
-    }
-
     static unserialize(buf) {
         var prevHash = Hash.unserialize(buf);
         var bodyHash = Hash.unserialize(buf);
@@ -57,13 +46,18 @@ class BlockHeader {
     }
 
     async verifyProofOfWork(buf) {
-        const hash = await this.hash(buf);
-        return BlockUtils.isProofOfWork(hash, this.target);
+        const pow = await this.pow(buf);
+        return BlockUtils.isProofOfWork(pow, this.target);
     }
 
     async hash(buf) {
-        this._hash = this._hash || await Crypto.sha256(this.serialize(buf));
+        this._hash = this._hash || await Hash.light(this.serialize(buf));
         return this._hash;
+    }
+
+    async pow(buf) {
+        this._pow = this._pow || await Hash.hard(this.serialize(buf));
+        return this._pow;
     }
 
     equals(o) {
@@ -124,6 +118,7 @@ class BlockHeader {
     set nonce(n) {
         this._nonce = n;
         this._hash = null;
+        this._pow = null;
     }
 }
 Class.register(BlockHeader);

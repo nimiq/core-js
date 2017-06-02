@@ -32,7 +32,7 @@ class VolatileBlockchainStore {
     }
 
     async key(value) {
-        return BufferUtils.toBase64(await value.hash());
+        return (await value.hash()).toBase64();
     }
 
     get(key) {
@@ -45,7 +45,7 @@ class VolatileBlockchainStore {
         return key;
     }
 
-    async delete(value) {
+    async remove(value) {
         const key = await this.key(value);
         delete this._store[key];
     }

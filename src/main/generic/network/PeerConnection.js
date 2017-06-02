@@ -87,8 +87,9 @@ class PeerConnection extends Observable {
 
     send(msg) {
         const logAddress = this._peerAddress || this._netAddress;
-        if (this._channel.closed) {
-            Log.e(PeerConnection, `Tried to send data over closed connection to ${logAddress}`);
+        if (this._closed) {
+            // XXX Debug, spammy!!!
+            Log.e(PeerConnection, `Tried to send data over closed connection to ${logAddress}`, MessageFactory.parse(msg));
             return false;
         }
 
@@ -99,7 +100,7 @@ class PeerConnection extends Observable {
             return false;
         }
 
-        // Don't attempt to send if channel is opening
+        // Don't attempt to send if channel is not (yet) open.
         if (!this._isChannelOpen()) {
             Log.w(PeerConnection, `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
             return false;

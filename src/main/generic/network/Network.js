@@ -4,11 +4,11 @@ class Network extends Observable {
     }
 
     static get PEER_COUNT_PER_IP_WS_MAX() {
-        return PlatformUtils.isBrowser() ? 2 : 15;
+        return PlatformUtils.isBrowser() ? 1 : 25;
     }
 
     static get PEER_COUNT_PER_IP_RTC_MAX() {
-        return 3;
+        return 2;
     }
 
     constructor(blockchain) {
@@ -109,7 +109,7 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this.peerCount < Network.PEER_COUNT_DESIRED
+            && this.peerCount + this._connectingCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
@@ -136,7 +136,7 @@ class Network extends Observable {
                 break;
 
             case Protocol.RTC: {
-                const signalChannel = this._addresses.findChannelBySignalId(peerAddress.signalId);
+                const signalChannel = this._addresses.getChannelBySignalId(peerAddress.signalId);
                 Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress, signalChannel)) {
                     this._addresses.connecting(peerAddress);
@@ -254,7 +254,7 @@ class Network extends Observable {
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
         // Delete agent.
-        this._agents.delete(channel.id);
+        this._agents.remove(channel.id);
 
         // Decrement connection count per IP.
         let numConnections = this._connectionCounts.get(channel.netAddress) || 1;
@@ -344,15 +344,17 @@ class Network extends Observable {
         }
 
         // Discard signals that have reached their TTL.
-        if (msg.ttl <= 0 && msg.flags === 0) {
+        if (msg.ttl <= 0) {
             Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             // Send signal containing TTL_EXCEEDED flag back in reverse direction.
-            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
+            if (msg.flags === 0) {
+                channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
+            }
             return;
         }
 
         // Otherwise, try to forward the signal to the intented recipient.
-        const signalChannel = this._addresses.findChannelBySignalId(msg.recipientId);
+        const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
         if (!signalChannel && msg.flags === 0) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
@@ -383,7 +385,7 @@ class Network extends Observable {
     }
 
     get peerCount() {
-        return this._addresses.peerCountWs + this._addresses.peerCountRtc;
+        return this._addresses.peerCount;
     }
 
     get peerCountWebSocket() {
@@ -392,6 +394,10 @@ class Network extends Observable {
 
     get peerCountWebRtc() {
         return this._addresses.peerCountRtc;
+    }
+
+    get peerCountDumb() {
+        return this._addresses.peerCountDumb;
     }
 
     get bytesSent() {
@@ -404,14 +410,14 @@ class Network extends Observable {
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
     }
 }
-Network.PEER_COUNT_DESIRED = 12;
+Network.PEER_COUNT_DESIRED = 6;
 Network.PEER_COUNT_RELAY = 4;
-Network.CONNECTING_COUNT_MAX = 3;
+Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
 
 class SignalStore {
-    constructor(maxSize=1000 /* maximum number of entries */) {
+    constructor(maxSize = 1000 /*maximum number of entries*/) {
         this._maxSize = maxSize;
         this._queue = new Queue();
         this._store = new HashMap();
@@ -426,7 +432,7 @@ class SignalStore {
         if (this.contains(senderId, recipientId, nonce)) {
             const signal = new ForwardedSignal(senderId, recipientId, nonce);
             this._store.put(signal, Date.now());
-            this._queue.delete(signal);
+            this._queue.remove(signal);
             this._queue.enqueue(signal);
             return;
         }
@@ -434,7 +440,7 @@ class SignalStore {
         // Delete oldest if needed.
         if (this.length >= this._maxSize) {
             const oldest = this._queue.dequeue();
-            this._store.delete(oldest);
+            this._store.remove(oldest);
         }
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         this._queue.enqueue(signal);
@@ -457,7 +463,7 @@ class SignalStore {
             // Because of the ordering, we know that everything after that is invalid too.
             const toDelete = this._queue.dequeueUntil(signal);
             for (const dSignal of toDelete) {
-                this._store.delete(dSignal);
+                this._store.remove(dSignal);
             }
         }
         return valid;

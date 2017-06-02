@@ -25,7 +25,7 @@ class Queue {
         return -1;
     }
 
-    delete(value) {
+    remove(value) {
         const index = this.indexOf(value);
         if (index > -1) {
             this._queue.splice(index, 1);

@@ -1,30 +1,28 @@
 class PrivateKey extends Primitive {
-
-    static get SERIALIZED_SIZE() {
-        return 64;
+    constructor(arg) {
+        super(arg, Crypto.privateKeyType, Crypto.privateKeySize);
     }
 
-    constructor(arg) {
-        super(arg, PrivateKey.SERIALIZED_SIZE);
+    static async generate() {
+        return new PrivateKey(await Crypto.privateKeyGenerate());
     }
 
     static unserialize(buf) {
-        return new PublicKey(buf.read(PrivateKey.SERIALIZED_SIZE));
+        return new PrivateKey(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize)));
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(this);
+        buf.write(Crypto.privateKeySerialize(this._obj));
         return buf;
     }
 
     get serializedSize() {
-        return PrivateKey.SERIALIZED_SIZE;
+        return Crypto.privateKeySize;
     }
 
     equals(o) {
-        return o instanceof PrivateKey
-            && super.equals(o);
+        return o instanceof PrivateKey && super.equals(o);
     }
 }
 

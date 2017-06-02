@@ -60,7 +60,7 @@ class AccountsTree extends Observable {
         // If the node prefix does not fully match the new address, split the node.
         if (commonPrefix.length !== node.prefix.length) {
             // Cut the common prefix off the existing node.
-            await transaction.delete(node);
+            await transaction.remove(node);
             node.prefix = node.prefix.slice(commonPrefix.length);
             const nodeKey = await transaction.put(node);
 
@@ -81,7 +81,7 @@ class AccountsTree extends Observable {
         // with the given address. Update the account.
         if (!address.length) {
             // Delete the existing node.
-            await transaction.delete(node);
+            await transaction.remove(node);
 
             // XXX How does this generalize to more than one account type?
             // Special case: If the new balance is the initial balance
@@ -112,7 +112,7 @@ class AccountsTree extends Observable {
         const newChild = AccountsTreeNode.terminalNode(address, account);
         const newChildKey = await transaction.put(newChild);
 
-        await transaction.delete(node);
+        await transaction.remove(node);
         node.putChild(newChild.prefix, newChildKey);
         const nodeKey = await transaction.put(node);
 
@@ -127,7 +127,7 @@ class AccountsTree extends Observable {
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
-            let nodeKey = await transaction.delete(node); // eslint-disable-line no-await-in-loop
+            let nodeKey = await transaction.remove(node); // eslint-disable-line no-await-in-loop
 
             node.removeChild(prefix);
 
@@ -153,7 +153,7 @@ class AccountsTree extends Observable {
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             const node = rootPath[i];
-            await transaction.delete(node); // eslint-disable-line no-await-in-loop
+            await transaction.remove(node); // eslint-disable-line no-await-in-loop
 
             node.putChild(prefix, nodeKey);
 

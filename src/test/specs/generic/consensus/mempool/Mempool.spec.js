@@ -15,7 +15,7 @@ describe('Mempool', () => {
     it('will not push the same transaction twice', (done) => {
         (async function () {
             // Create a transaction
-            const transaction = await wallet.createTransaction(new Address(Dummy.address1), 543,42,23);
+            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543,42,23);
 
             // Make sure we have some good values in our account
             await accounts._tree.put(wallet.address, new Balance(745, 23));
@@ -37,11 +37,11 @@ describe('Mempool', () => {
             spyOn(Log, 'w');
 
             // Create a transaction
-            const transaction = await wallet.createTransaction(new Address(Dummy.address1), 3523,23,42);
+            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523,23,42);
 
             // Save the valid transaction signature and replace it with an invalid one
             const validSignature = transaction.signature;
-            transaction.signature = new Signature(Dummy.signature3);
+            transaction.signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature3));
 
             // Push the transaction, this should fail (return false) because of the
             // invalid signature
@@ -78,7 +78,7 @@ describe('Mempool', () => {
     it('can push and get a valid transaction', (done) => {
         (async function () {
             // Create a transaction
-            const referenceTransaction = await wallet.createTransaction(new Address(Dummy.address1), 523,23,42);
+            const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,42);
 
             // Add the correct values we need to our wallet's balance
             await accounts._tree.put(wallet.address, new Balance(745, 42));
@@ -113,7 +113,7 @@ describe('Mempool', () => {
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const transaction = await wallets[i].createTransaction(new Address(Dummy.address1), 234, 1, 42); // eslint-disable-line no-await-in-loop
+                const transaction = await wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 42); // eslint-disable-line no-await-in-loop
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);

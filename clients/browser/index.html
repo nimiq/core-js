@@ -1,495 +1,454 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8"/>
-	<title>Nimiq Blockchain Cockpit &ndash; Alpha</title>
+    <meta charset="utf-8"/>
+    <title>Nimiq Blockchain Cockpit &ndash; Alpha</title>
 
-	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 </head>
 <body>
-	<header>
-		<span class="name"><span class="icon-nimiq"></span>nimiq</span>
-		<span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
-	</header>
+<header>
+    <span class="name"><span class="icon-nimiq"></span>nimiq</span>
+    <span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
+</header>
 
-	<!--beginjs--
-	<script src="../../src/main/platform/browser/Class.js"></script>
-	<script src="../../src/main/generic/utils/Observable.js"></script>
-	<script src="../../src/main/generic/utils/Services.js"></script>
-	<script src="../../src/main/generic/utils/Synchronizer.js"></script>
-	<script src="../../src/main/generic/utils/Timers.js"></script>
-	<script src="../../src/main/generic/utils/database/TypedDBTransaction.js"></script>
-	<script src="../../src/main/platform/browser/database/BaseTypedDB.js"></script>
-	<script src="../../src/main/platform/browser/database/TypedDB.js"></script>
-	<script src="../../src/main/generic/utils/database/ObjectDB.js"></script>
-	<script src="../../src/main/generic/utils/array/IndexedArray.js"></script>
-	<script src="../../src/main/generic/utils/array/HashMap.js"></script>
-	<script src="../../src/main/generic/utils/array/HashSet.js"></script>
-	<script src="../../src/main/generic/utils/array/ArrayUtils.js"></script>
-	<script src="../../src/main/generic/utils/buffer/SerialBuffer.js"></script>
-	<script src="../../src/main/generic/utils/buffer/BufferUtils.js"></script>
-	<script src="../../src/main/platform/browser/crypto/CryptoLib.js"></script>
-	<script src="../../src/main/generic/utils/crypto/Crypto.js"></script>
-	<script src="../../src/main/generic/utils/number/NumberUtils.js"></script>
-	<script src="../../src/main/generic/utils/object/ObjectUtils.js"></script>
-	<script src="../../src/main/generic/utils/platform/PlatformUtils.js"></script>
-	<script src="../../src/main/generic/utils/string/StringUtils.js"></script>
-	<script src="../../src/main/generic/consensus/Policy.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Primitive.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Hash.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/PrivateKey.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/PublicKey.js"></script>
-	<script src="../../src/main/generic/consensus/primitive/Signature.js"></script>
-	<script src="../../src/main/generic/consensus/account/Accounts.js"></script>
-	<script src="../../src/main/generic/consensus/account/AccountsTree.js"></script>
-	<script src="../../src/main/generic/consensus/account/AccountsTreeStore.js"></script>
-	<script src="../../src/main/generic/consensus/account/Address.js"></script>
-	<script src="../../src/main/generic/consensus/account/Balance.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockUtils.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockBody.js"></script>
-	<script src="../../src/main/generic/consensus/block/BlockHeader.js"></script>
-	<script src="../../src/main/generic/consensus/block/Block.js"></script>
-	<script src="../../src/main/generic/consensus/blockchain/Blockchain.js"></script>
-	<script src="../../src/main/generic/consensus/blockchain/BlockchainStore.js"></script>
-	<script src="../../src/main/generic/consensus/transaction/Transaction.js"></script>
-	<script src="../../src/main/generic/consensus/mempool/Mempool.js"></script>
-	<script src="../../src/main/generic/consensus/ConsensusAgent.js"></script>
-	<script src="../../src/main/generic/consensus/Consensus.js"></script>
-	<script src="../../src/main/generic/network/Protocol.js"></script>
-	<script src="../../src/main/generic/network/address/NetAddress.js"></script>
-	<script src="../../src/main/generic/network/address/PeerAddress.js"></script>
-	<script src="../../src/main/generic/network/address/PeerAddresses.js"></script>
-	<script src="../../src/main/generic/network/message/Message.js"></script>
-	<script src="../../src/main/generic/network/message/AddrMessage.js"></script>
-	<script src="../../src/main/generic/network/message/BlockMessage.js"></script>
-	<script src="../../src/main/generic/network/message/GetAddrMessage.js"></script>
-	<script src="../../src/main/generic/network/message/GetBlocksMessage.js"></script>
-	<script src="../../src/main/generic/network/message/InventoryMessage.js"></script>
-	<script src="../../src/main/generic/network/message/MempoolMessage.js"></script>
-	<script src="../../src/main/generic/network/message/PingMessage.js"></script>
-	<script src="../../src/main/generic/network/message/PongMessage.js"></script>
-	<script src="../../src/main/generic/network/message/RejectMessage.js"></script>
-	<script src="../../src/main/generic/network/message/SignalMessage.js"></script>
-	<script src="../../src/main/generic/network/message/TxMessage.js"></script>
-	<script src="../../src/main/generic/network/message/VersionMessage.js"></script>
-	<script src="../../src/main/generic/network/message/MessageFactory.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcCertificate.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConfig.js"></script>
-	<script src="../../src/main/platform/browser/network/webrtc/WebRtcConnector.js"></script>
-    <script src="../../src/main/platform/browser/network/webrtc/WebRtcUtils.js"></script>
-	<script src="../../src/main/platform/browser/network/websocket/WebSocketConnector.js"></script>
-	<script src="../../src/main/platform/browser/network/NetworkConfig.js"></script>
-	<script src="../../src/main/generic/network/PeerConnection.js"></script>
-	<script src="../../src/main/generic/network/PeerChannel.js"></script>
-	<script src="../../src/main/generic/network/Peer.js"></script>
-	<script src="../../src/main/generic/network/NetworkAgent.js"></script>
-	<script src="../../src/main/generic/network/Network.js"></script>
-	<script src="../../src/main/generic/miner/Miner.js"></script>
-	<script src="../../src/main/platform/browser/wallet/WalletStore.js"></script>
-	<script src="../../src/main/generic/wallet/Wallet.js"></script>
-	<script src="../../src/main/platform/browser/utils/WindowDetector.js"></script>
-	<script src="../../src/main/generic/Core.js"></script>
-	<!--endjs-->
-	<script src="../../dist/web.js"></script>
-	<!--endjs-->
+<script src="../../dist/nimiq.js"></script>
 
-	<div id="content">
-		<div id="overlay">
-			<div class="message">
-				Nimiq Blockchain Cockpit is already running in another browser window or tab.
-				<br><br>
-				<small>Please use only one window/tab at a time.</small>
-			</div>
-		</div>
+<div id="content">
+    <div id="overlay">
+        <div class="message">
+            Nimiq Blockchain Cockpit is already running in another browser window or tab.
+            <br><br>
+            <small>Please use only one window/tab at a time.</small>
+        </div>
+    </div>
 
-		<div class="left">
-			<div class="info">
-				<div class="info-title">Wallet</div>
+    <div class="left">
+        <div class="info">
+            <div class="info-title">Wallet</div>
 
-				<div class="info-block">
-					<strong>Address</strong>
-					<span id="wltAddress"></span>
-				</div>
-				<div class="info-block">
-					<strong>Balance</strong>
-					<span id="wltBalance"></span>
-				</div>
-				<div class="info-block">
-					<strong>Nonce</strong>
-					<span id="wltNonce"></span>
-				</div>
-			</div>
+            <div class="info-block">
+                <strong>Address</strong>
+                <span id="wltAddress"></span>
+            </div>
+            <div class="info-block">
+                <strong>Balance</strong>
+                <span id="wltBalance"></span>
+            </div>
+            <div class="info-block">
+                <strong>Nonce</strong>
+                <span id="wltNonce"></span>
+            </div>
+        </div>
 
-			<div class="info">
-				<div class="info-title">Transaction</div>
-				<form>
-					<div class="input-group">
-						<label for="recipientAddr">Recipient</label>
-						<input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
-					</div>
-					<div class="input-group">
-						<label for="value">Value</label>
-						<input id="txValue" name="value" type="number">
-					</div>
-					<div class="input-group">
-						<label for="fee">Fee</label>
-						<input id="txFee" name="fee" type="number">
-					</div>
-					<div class="input-group">
-						<button type="button" id="txSubmitBtn">Send</button>
-					</div>
-				</form>
-			</div>
+        <div class="info">
+            <div class="info-title">Transaction</div>
+            <form>
+                <div class="input-group">
+                    <label for="recipientAddr">Recipient</label>
+                    <input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+                </div>
+                <div class="input-group">
+                    <label for="value">Value</label>
+                    <input id="txValue" name="value" type="number">
+                </div>
+                <div class="input-group">
+                    <label for="fee">Fee</label>
+                    <input id="txFee" name="fee" type="number">
+                </div>
+                <div class="input-group">
+                    <button type="button" id="txSubmitBtn">Send</button>
+                </div>
+            </form>
+        </div>
 
-			<div class="info">
-				<div class="info-title">Miner</div>
+        <div class="info">
+            <div class="info-title">Miner</div>
 
-				<div class="info-block">
-					<strong>Working</strong>
-					<span id="mnrWorking"></span>
-				</div>
-				<div class="info-block">
-					<strong>Hashrate</strong>
-					<span id="mnrHashrate"></span> H/s
-				</div>
-				<div class="info-block">
-					<strong>Last block mined at</strong>
-					<span id="mnrLastBlockTs"></span>
-				</div>
-				<div class="info-block">
-					<button id="mnrStartBtn">Start Mining</button>
-				</div>
-			</div>
-		</div>
+            <div class="info-block">
+                <strong>Working</strong>
+                <span id="mnrWorking"></span>
+            </div>
+            <div class="info-block">
+                <strong>Hashrate</strong>
+                <span id="mnrHashrate"></span> H/s
+            </div>
+            <div class="info-block">
+                <strong>Last block mined at</strong>
+                <span id="mnrLastBlockTs"></span>
+            </div>
+            <div class="info-block">
+                <button id="mnrStartBtn">Start Mining</button>
+            </div>
+        </div>
+    </div>
 
-		<div class="right">
-			<div class="info">
-				<div class="info-title">Blockchain</div>
+    <div class="right">
+        <div class="info">
+            <div class="info-title">Blockchain</div>
 
-				<div class="info-block">
-					<strong>Total work</strong>
-					<span id="bcTotalWork"></span>
-				</div>
-				<div class="info-block">
-					<strong>Height</strong>
-					<span id="bcHeight"></span>
-				</div>
-				<div class="info-block">
-					<strong>Accounts Hash</strong>
-					<hash id="bcAccountsHash"></hash>
-				</div>
-			</div>
+            <div class="info-block">
+                <strong>Total work</strong>
+                <span id="bcTotalWork"></span>
+            </div>
+            <div class="info-block">
+                <strong>Height</strong>
+                <span id="bcHeight"></span>
+            </div>
+            <div class="info-block">
+                <strong>Accounts Hash</strong>
+                <hash id="bcAccountsHash"></hash>
+            </div>
+        </div>
 
-			<div class="info">
-				<div class="info-title">Head Block</div>
+        <div class="info">
+            <div class="info-title">Head Block</div>
 
-				<div class="info-block">
-					<strong>Hash</strong>
-					<hash id="hdHash"></hash>
-				</div>
-				<div class="info-block">
-					<strong>Prev Hash</strong>
-					<hash id="hdPrevHash"></hash>
-				</div>
-				<div class="info-block">
-					<strong>Accounts Hash</strong>
-					<hash id="hdAccountsHash"></hash>
-				</div>
-				<div class="info-block">
-					<strong>Difficulty</strong>
-					<span id="hdDifficulty"></span>
-				</div>
-				<div class="info-block">
-					<strong>Timestamp</strong>
-					<span id="hdTimestamp"></span>
-				</div>
-				<div class="info-block">
-					<strong>Nonce</strong>
-					<span id="hdNonce"></span>
-				</div>
-			</div>
+            <div class="info-block">
+                <strong>Hash</strong>
+                <hash id="hdHash"></hash>
+            </div>
+            <div class="info-block">
+                <strong>Prev Hash</strong>
+                <hash id="hdPrevHash"></hash>
+            </div>
+            <div class="info-block">
+                <strong>Accounts Hash</strong>
+                <hash id="hdAccountsHash"></hash>
+            </div>
+            <div class="info-block">
+                <strong>Difficulty</strong>
+                <span id="hdDifficulty"></span>
+            </div>
+            <div class="info-block">
+                <strong>Timestamp</strong>
+                <span id="hdTimestamp"></span>
+            </div>
+            <div class="info-block">
+                <strong>Nonce</strong>
+                <span id="hdNonce"></span>
+            </div>
+        </div>
 
-			<div class="info">
-				<div class="info-title">Network</div>
+        <div class="info">
+            <div class="info-title">Network</div>
 
-				<div class="info-block">
-					<strong>Peers</strong>
-					<span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
-				</div>
-				<div class="info-block">
-					<strong>Received</strong>
-					<span id="netBytesReceived"></span>
-				</div>
-				<div class="info-block">
-					<strong>Sent</strong>
-					<span id="netBytesSent"></span>
-				</div>
-			</div>
-		</div>
+            <div class="info-block">
+                <strong>Peers</strong>
+                <span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span
+                    id="netPeerCountRtc"></span> RTC)
+            </small>
+            </div>
+            <div class="info-block">
+                <strong>Received</strong>
+                <span id="netBytesReceived"></span>
+            </div>
+            <div class="info-block">
+                <strong>Sent</strong>
+                <span id="netBytesSent"></span>
+            </div>
+        </div>
+    </div>
 
-		<div class="info" style="clear: left;">
-			<div class="info-title">Mempool</div>
-			<div class="info-block">
-				<strong>Transaction Count</strong>
-				<span id="mplTransactionCount"></span>
-			</div>
-			<div class="info-block" id="mplTransactions"></div>
-		</div>
+    <div class="info" style="clear: left;">
+        <div class="info-title">Mempool</div>
+        <div class="info-block">
+            <strong>Transaction Count</strong>
+            <span id="mplTransactionCount"></span>
+        </div>
+        <div class="info-block" id="mplTransactions"></div>
+    </div>
 
-		<div class="info">
-			<div class="info-title">Block History</div>
-			<div class="info-block" id="blockHistory"></div>
-		</div>
-	</div>
+    <div class="info">
+        <div class="info-title">Block History</div>
+        <div class="info-block" id="blockHistory"></div>
+    </div>
+</div>
 
-	<script type="text/javascript">
-		class MinerUI {
-			constructor($) {
-				$.blockchain.on('head-changed', head => this._headChanged(head));
+<script type="text/javascript">
+    class MinerUI {
+        constructor($) {
+            $.blockchain.on('head-changed', function(head) {
+                this._headChanged(head);
+            }.bind(this));
 
-				$.network.on('peers-changed', () => this._networkChanged());
+            $.network.on('peers-changed', function() {
+                this._networkChanged();
+            }.bind(this));
 
-				$.accounts.on($.wallet.address, (balance) => this._balanceChanged(balance));
+            $.accounts.on($.wallet.address, function(balance) {
+                this._balanceChanged(balance);
+            }.bind(this));
 
-				$.mempool.on('*', () => this._mempoolChanged());
+            $.mempool.on('*', function() {
+                this._mempoolChanged();
+            }.bind(this));
 
-				$.miner.on('start', () => this._minerChanged());
-				$.miner.on('stop', () => this._minerChanged());
-				$.miner.on('hashrate-changed', () => this._minerChanged());
-				$.miner.on('block-mined', () => this._blockMined());
+            $.miner.on('start', function() {
+                this._minerChanged()
+            }.bind(this));
 
-				$.consensus.on('lost', () => $.miner.stopWork());
+            $.miner.on('stop', function() {
+                this._minerChanged()
+            }.bind(this));
+            $.miner.on('hashrate-changed', function() {
+                this._minerChanged()
+            }.bind(this));
+            $.miner.on('block-mined', function() {
+                this._blockMined()
+            }.bind(this));
 
-				// Blockchain
-				this._bcTotalWork = document.querySelector('#bcTotalWork');
-				this._bcHeight = document.querySelector('#bcHeight');
-				this._bcAccountsHash = document.querySelector('#bcAccountsHash');
+            $.consensus.on('lost', function() {
+                $.miner.stopWork()
+            }.bind(this));
 
-				// Head block
-				this._hdHash = document.querySelector('#hdHash');
-				this._hdPrevHash = document.querySelector('#hdPrevHash');
-				this._hdAccountsHash = document.querySelector('#hdAccountsHash');
-				this._hdDifficulty = document.querySelector('#hdDifficulty');
-				this._hdTimestamp = document.querySelector('#hdTimestamp');
-				this._hdNonce = document.querySelector('#hdNonce');
+            // Blockchain
+            this._bcTotalWork = document.querySelector('#bcTotalWork');
+            this._bcHeight = document.querySelector('#bcHeight');
+            this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
-				// Network
-				this._netPeerCount = document.querySelector('#netPeerCount');
-				this._netPeerCountWs = document.querySelector('#netPeerCountWs');
-				this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
-				this._netBytesReceived = document.querySelector('#netBytesReceived');
-				this._netBytesSent = document.querySelector('#netBytesSent');
+            // Head block
+            this._hdHash = document.querySelector('#hdHash');
+            this._hdPrevHash = document.querySelector('#hdPrevHash');
+            this._hdAccountsHash = document.querySelector('#hdAccountsHash');
+            this._hdDifficulty = document.querySelector('#hdDifficulty');
+            this._hdTimestamp = document.querySelector('#hdTimestamp');
+            this._hdNonce = document.querySelector('#hdNonce');
 
-				setInterval( () => this._networkChanged(), 2500);
+            // Network
+            this._netPeerCount = document.querySelector('#netPeerCount');
+            this._netPeerCountWs = document.querySelector('#netPeerCountWs');
+            this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
+            this._netBytesReceived = document.querySelector('#netBytesReceived');
+            this._netBytesSent = document.querySelector('#netBytesSent');
 
-				// Wallet
-				this._wltAddress = document.querySelector('#wltAddress');
-				this._wltBalance = document.querySelector('#wltBalance');
-				this._wltNonce = document.querySelector('#wltNonce');
+            setInterval(this._networkChanged.bind(this), 2500);
 
-				this._wltAddress.innerText = $.wallet.address.toBase64();
-				$.accounts.getBalance($.wallet.address).then(balance => this._balanceChanged(balance));
+            // Wallet
+            this._wltAddress = document.querySelector('#wltAddress');
+            this._wltBalance = document.querySelector('#wltBalance');
+            this._wltNonce = document.querySelector('#wltNonce');
 
-				const txSubmitBtn = document.querySelector('#txSubmitBtn');
-				txSubmitBtn.onclick = (e) => this._submitTransaction(e);
+            this._wltAddress.innerText = $.wallet.address.toBase64();
+            $.accounts.getBalance($.wallet.address).then(function(balance) {
+                this._balanceChanged(balance)
+            }.bind(this));
 
-				// Mempool
-				this._mplTransactionCount = document.querySelector('#mplTransactionCount');
-				this._mplTransactions = document.querySelector('#mplTransactions');
+            var txSubmitBtn = document.querySelector('#txSubmitBtn');
+            txSubmitBtn.onclick = function(e) {
+                this._submitTransaction(e);
+            }.bind(this);
 
-				// Miner
-				this._mnrWorking = document.querySelector('#mnrWorking');
-				this._mnrHashrate = document.querySelector('#mnrHashrate');
-				this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
+            // Mempool
+            this._mplTransactionCount = document.querySelector('#mplTransactionCount');
+            this._mplTransactions = document.querySelector('#mplTransactions');
 
-				this._mnrStartBtn = document.querySelector('#mnrStartBtn');
-				this._mnrStartBtn.onclick = () => this._toggleMining();
+            // Miner
+            this._mnrWorking = document.querySelector('#mnrWorking');
+            this._mnrHashrate = document.querySelector('#mnrHashrate');
+            this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
-				// Block history
-				this._blockHistory = document.querySelector('#blockHistory');
+            this._mnrStartBtn = document.querySelector('#mnrStartBtn');
+            this._mnrStartBtn.onclick = this._toggleMining.bind(this);
 
-				// Init values.
-				this._headChanged($.blockchain.head);
-				this._networkChanged();
-				this._minerChanged();
-				this._mempoolChanged();
+            // Block history
+            this._blockHistory = document.querySelector('#blockHistory');
 
-				// Check for miner auto start.
-				if (window.location.hash && window.location.hash === '#miner') {
-					$.consensus.on('established', () => $.miner.startWork());
-				}
-			}
+            // Init values.
+            this._headChanged($.blockchain.head);
+            this._networkChanged();
+            this._minerChanged();
+            this._mempoolChanged();
 
-			_submitTransaction(e) {
-				const elRecipientAddr = document.querySelector('#txRecipientAddr');
-				const elValue = document.querySelector('#txValue');
-				const elFee = document.querySelector('#txFee');
-				elRecipientAddr.className = null;
-				elValue.className = null;
-				elFee.className = null;
+            // Check for miner auto start.
+            if (window.location.hash && window.location.hash === '#miner') {
+                $.consensus.on('established', function() {
+                    $.miner.startWork();
+                }.bind(this));
+            }
+        }
 
-				const recipientAddr = elRecipientAddr.value;
-				let value = parseFloat(elValue.value);
-				let fee = parseFloat(elFee.value);
+        _submitTransaction(e) {
+            var elRecipientAddr = document.querySelector('#txRecipientAddr');
+            var elValue = document.querySelector('#txValue');
+            var elFee = document.querySelector('#txFee');
+            elRecipientAddr.className = null;
+            elValue.className = null;
+            elFee.className = null;
 
-				if (!recipientAddr) {
-					elRecipientAddr.className = 'error';
-					return;
-				}
-				try {
-					new Address(recipientAddr);
-				} catch (e) {
-					elRecipientAddr.className = 'error';
-					return;
-				}
+            var recipientAddr = elRecipientAddr.value;
+            var value = parseFloat(elValue.value);
+            var fee = parseFloat(elFee.value);
 
-				if (isNaN(value) || value <= 0) {
-					elValue.className = 'error';
-					return;
-				}
-
-				if (isNaN(fee) || fee < 0) {
-					elFee.className = 'error';
-					return;
-				}
-
-				$.accounts.getBalance($.wallet.address).then( balance => {
-					value = Policy.coinsToSatoshis(value);
-					fee = Policy.coinsToSatoshis(fee);
-
-					if (balance.value < value + fee) {
-						elValue.className = 'error';
-						return;
-					}
-
-					$.wallet.createTransaction(new Address(recipientAddr), value, fee, balance.nonce).then( tx => {
-						$.mempool.pushTransaction(tx);
-					});
-				});
-
-				e.preventDefault();
-				return false;
-			}
-
-			async _headChanged(head) {
-				this._bcTotalWork.innerText = $.blockchain.totalWork;
-				this._bcHeight.innerText = $.blockchain.height;
-				this._bcAccountsHash.innerText = await $.blockchain.accountsHash();
-
-				this._hdHash.innerText = $.blockchain.headHash;
-				this._hdPrevHash.innerText = $.blockchain.head.prevHash;
-				this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
-				this._hdDifficulty.innerText = $.blockchain.head.difficulty;
-				this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
-				this._hdNonce.innerText = $.blockchain.head.nonce;
-
-				const el = document.createElement('div');
-				const date = new Date(head.timestamp * 1000);
-				let html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
-					+ `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
-
-				for (let tx of head.transactions) {
-					const senderAddr = await tx.senderAddr();
-					const value = Policy.satoshisToCoins(tx.value).toFixed(4);
-					const fee = Policy.satoshisToCoins(tx.fee).toFixed(4);
-					html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
-				}
-				el.innerHTML = html;
-
-				if (this._blockHistory.childNodes.length > 24) {
-					this._blockHistory.removeChild(this._blockHistory.firstChild);
-				}
-				this._blockHistory.appendChild(el);
-			}
-
-			_toggleMining() {
-			    if (!$.consensus.established) {
-			        console.warn('Not starting miner - consensus not established');
-			        return;
-				}
-
-				if (!$.miner.working) {
-					$.miner.startWork();
-				} else {
-					$.miner.stopWork();
-				}
-			}
-
-			_networkChanged() {
-				this._netPeerCount.innerText = $.network.peerCount;
-				this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
-				this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
-				this._netBytesReceived.innerText = this._humanBytes($.network.bytesReceived);
-				this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
-			}
-
-			_humanBytes(bytes) {
-			    let i = 0;
-			    let units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-				while (bytes > 1024) {
-					bytes /= 1024;
-					i++;
-				}
-			    return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
-			};
-
-			_minerChanged() {
-				this._mnrWorking.innerText = $.miner.working;
-				this._mnrHashrate.innerText = $.miner.hashrate;
-				this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
-					new Date(this._lastBlockMinedTs) : '-';
-
-                if ($.miner.working) {
-                    this._mnrStartBtn.innerText = 'Stop Mining';
-                } else {
-                    this._mnrStartBtn.innerText = 'Start Mining';
-                }
+            if (!recipientAddr) {
+                elRecipientAddr.className = 'error';
+                return;
+            }
+            try {
+                new Address(recipientAddr);
+            } catch (e) {
+                elRecipientAddr.className = 'error';
+                return;
             }
 
-			_blockMined() {
-				this._lastBlockMinedTs = Date.now();
-				this._minerChanged();
-			}
+            if (isNaN(value) || value <= 0) {
+                elValue.className = 'error';
+                return;
+            }
 
-			_balanceChanged(balance) {
-				if (!balance) balance = Balance.INITIAL;
-				this._wltBalance.innerText = Policy.satoshisToCoins(balance.value).toFixed(4);
-				this._wltNonce.innerText = balance.nonce;
-			}
+            if (isNaN(fee) || fee < 0) {
+                elFee.className = 'error';
+                return;
+            }
 
-			async _mempoolChanged() {
-				// XXX inefficient
-				const txs = await $.mempool.getTransactions();
-				this._mplTransactionCount.innerText = txs.length;
+            $.accounts.getBalance($.wallet.address).then(function(balance) {
+                value = Nimiq.Policy.coinsToSatoshis(value);
+                fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-				while (this._mplTransactions.firstChild) {
-					this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-				}
+                if (balance.value < value + fee) {
+                    elValue.className = 'error';
+                    return;
+                }
 
-				for (let tx of txs) {
-					const el = document.createElement('div');
-					const senderAddr = await tx.senderAddr();
-					const value = Policy.satoshisToCoins(tx.value).toFixed(4);
-					const fee = Policy.satoshisToCoins(tx.fee).toFixed(4);
-					el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-					this._mplTransactions.appendChild(el);
-				}
-			}
-		}
+                $.wallet.createTransaction(new Nimiq.Address(recipientAddr), value, fee, balance.nonce).then(function(tx) {
+                    $.mempool.pushTransaction(tx);
+                });
+            });
 
-		const overlay = document.querySelector('#overlay');
+            e.preventDefault();
+            return false;
+        }
 
-		Core.init( $ => {
-			window.$ = $;
-			$.network.connect();
+        _headChanged(head) {
+            this._bcTotalWork.innerText = $.blockchain.totalWork;
+            this._bcHeight.innerText = $.blockchain.height;
+            $.blockchain.accountsHash().then(function(accountsHash) {
+                this._bcAccountsHash.innerText = accountsHash;
+            }.bind(this));
 
-			overlay.style.display = 'none';
-			const ui = new MinerUI($);
-		}, () => {
-			overlay.style.display = 'block';
-		});
+            this._hdHash.innerText = $.blockchain.headHash;
+            this._hdPrevHash.innerText = $.blockchain.head.prevHash;
+            this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
+            this._hdDifficulty.innerText = $.blockchain.head.difficulty;
+            this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
+            this._hdNonce.innerText = $.blockchain.head.nonce;
 
-	</script>
+            var el = document.createElement('div');
+            var date = new Date(head.timestamp * 1000);
+            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+                + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
+
+            for (var tx of head.transactions) {
+                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
+            }
+            el.innerHTML = html;
+
+            if (this._blockHistory.childNodes.length > 24) {
+                this._blockHistory.removeChild(this._blockHistory.firstChild);
+            }
+            this._blockHistory.appendChild(el);
+        }
+
+        _toggleMining() {
+            if (!$.consensus.established) {
+                console.warn('Not starting miner - consensus not established');
+                return;
+            }
+
+            if (!$.miner.working) {
+                $.miner.startWork();
+            } else {
+                $.miner.stopWork();
+            }
+        }
+
+        _networkChanged() {
+            this._netPeerCount.innerText = $.network.peerCount;
+            this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
+            this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
+            this._netBytesReceived.innerText = this._humanBytes($.network.bytesReceived);
+            this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
+        }
+
+        _humanBytes(bytes) {
+            var i = 0;
+            var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            while (bytes > 1024) {
+                bytes /= 1024;
+                i++;
+            }
+            return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
+        };
+
+        _minerChanged() {
+            this._mnrWorking.innerText = $.miner.working;
+            this._mnrHashrate.innerText = $.miner.hashrate;
+            this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
+                new Date(this._lastBlockMinedTs) : '-';
+            if ($.miner.working) {
+                this._mnrStartBtn.innerText = 'Stop Mining';
+            } else {
+                this._mnrStartBtn.innerText = 'Start Mining';
+            }
+        }
+
+        _blockMined() {
+            this._lastBlockMinedTs = Date.now();
+            this._minerChanged();
+        }
+
+        _balanceChanged(balance) {
+            if (!balance) balance = Nimiq.Balance.INITIAL;
+            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(4);
+            this._wltNonce.innerText = balance.nonce;
+        }
+
+        _mempoolChanged() {
+            // XXX inefficient
+            var txs = $.mempool.getTransactions();
+            this._mplTransactionCount.innerText = txs.length;
+
+            while (this._mplTransactions.firstChild) {
+                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+            }
+
+            for (var tx of txs) {
+                var el = document.createElement('div');
+                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                this._mplTransactions.appendChild(el);
+            }
+        }
+    }
+
+    // Safari quirks: don't use the same var var name in global scope as id of html element
+    var overlay_ = document.querySelector('#overlay');
+
+    Nimiq.init(function($) {
+        window.$ = $;
+        $.network.connect();
+
+        overlay_.style.display = 'none';
+        window.ui = new MinerUI($);
+    }, function(code) {
+        switch (code) {
+            case Nimiq.ERR_WAIT:
+                overlay_.style.display = 'block';
+                break;
+            case Nimiq.ERR_UNSUPPORTED:
+                alert('Browser not supported');
+                break;
+            default:
+                alert('Nimiq initialization error');
+                break;
+        }
+    });
+</script>
 </body>
 </html>

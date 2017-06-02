@@ -1,13 +1,14 @@
 describe('BlockBody', () => {
-    const signature = new Signature(Dummy.signature1);
+    const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
-    const transaction1 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888, 42, 0, signature);
-    const transaction2 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888, 42, 0, signature);
-    const transaction3 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888, 42, 0, signature);
-    const transaction4 = new Transaction(new PublicKey(Dummy.publicKey1), new Address(Dummy.address1), 8888, 42, 0, signature);
+    const transaction1 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+    const transaction2 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+    const transaction3 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+    const transaction4 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
 
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
+    // Note: This test is now useless as hash() returns a Hash object which verifies its size
     it('has a 32 byte bodyHash', (done) => {
         const blockBody1 = new BlockBody(minerAddress, [
             transaction1, transaction2, transaction3, transaction4,
@@ -16,7 +17,7 @@ describe('BlockBody', () => {
 
         async function test() {
             const bodyHash = await blockBody1.hash();
-            expect(bodyHash.byteLength).toBe(32);
+            expect(bodyHash.serialize().byteLength).toBe(32);
             done();
         }
 

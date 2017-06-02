@@ -1,6 +1,6 @@
 describe('InvVector', () => {
     const type = 42;
-    const hash = new Hash(Dummy.hash1);
+    const hash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
 
     it('is 36 bytes long', () => {
 

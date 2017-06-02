@@ -42,7 +42,7 @@ class VolatileAccountsTreeStore {
     }
 
     async key(node) {
-        return BufferUtils.toBase64(await node.hash());
+        return (await node.hash()).toBase64();
     }
 
     get(key) {
@@ -55,7 +55,7 @@ class VolatileAccountsTreeStore {
         return key;
     }
 
-    async delete(node) {
+    async remove(node) {
         const key = await this.key(node);
         delete this._store[key];
     }

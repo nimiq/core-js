@@ -7,8 +7,7 @@ class AccountsTreeNode {
         return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, children);
     }
 
-
-    constructor(type, prefix, arg) {
+    constructor(prefix = new Uint8Array(), balance, children) {
         this._type = type;
         this.prefix = prefix;
         if (type === AccountsTreeNode.BRANCH) {
@@ -107,8 +106,19 @@ class AccountsTreeNode {
         return this._children && this._children.some(child => !!child);
     }
 
+    hasSingleChild() {
+        return this._children && this._children.reduce((count, val) => count + !!val, 0) === 1;
+    }
+
+    getFirstChild() {
+        if (!this._children) {
+            return undefined;
+        }
+        return this._children.find(child => !!child);
+    }
+
     hash() {
-        return Crypto.sha256(this.serialize());
+        return Hash.light(this.serialize());
     }
 }
 AccountsTreeNode.BRANCH = 0x00;

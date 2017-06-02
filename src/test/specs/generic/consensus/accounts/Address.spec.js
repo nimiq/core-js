@@ -1,31 +1,31 @@
 describe('Address', () => {
 
     it('is 20 bytes long', () => {
-        const address = new Address(Dummy.address1);
+        const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
         expect(address.serializedSize).toEqual(20);
         expect(() => {
-            const sign = new Address(new ArrayBuffer(16));
+            const sign = new Address(new Uint8Array(16));
         }).toThrow('Primitive: Invalid length');
 
         expect(() => {
             const sign = new Address('test');
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow('Primitive: Invalid type');
 
         expect(() => {
-            const sign = new Address(new ArrayBuffer(33));
+            const sign = new Address(new Uint8Array(33));
         }).toThrow('Primitive: Invalid length');
     });
 
     it('is serializable and unserializable', () => {
-        const address1 = new Address(Dummy.address1);
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
         const address2 = Address.unserialize(address1.serialize());
 
         expect(address2.toBase64()).toBe(Dummy.address1,'because of invariance.');
     });
 
     it('has an equals method', () => {
-        const address1 = new Address(Dummy.address1);
-        const address2 = new Address(Dummy.address2);
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+        const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         expect(address1.equals(address1))
             .toBe(true,'because address1 == address1');

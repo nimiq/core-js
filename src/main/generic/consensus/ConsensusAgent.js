@@ -134,6 +134,12 @@ class ConsensusAgent extends Observable {
     }
 
     _requestBlocks() {
+        // XXX Only one getblocks request at a time.
+        if (this._timers.timeoutExists('getblocks')) {
+            Log.e(ConsensusAgent, `Duplicate _requestBlocks()`);
+            return;
+        }
+
         // Request blocks starting from our hardest chain head going back to
         // the genesis block. Space out blocks more when getting closer to the
         // genesis block.
@@ -196,7 +202,7 @@ class ConsensusAgent extends Observable {
 
         Log.v(ConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
-        if (unknownObjects.length) {
+        if (unknownObjects.length > 0) {
             // Store unknown vectors in objectsToRequest array.
             for (const obj of unknownObjects) {
                 this._objectsToRequest.push(obj);
@@ -213,6 +219,9 @@ class ConsensusAgent extends Observable {
             else {
                 this._timers.setTimeout('inv', () => this._requestData(), ConsensusAgent.REQUEST_THROTTLE);
             }
+        } else {
+            // XXX The peer is weird. Give him another chance.
+            this._noMoreData();
         }
     }
 
@@ -318,7 +327,7 @@ class ConsensusAgent extends Observable {
         if (!this._objectsInFlight) return;
 
         // Remove the vector from the objectsInFlight.
-        this._objectsInFlight.delete(vector);
+        this._objectsInFlight.remove(vector);
 
         // Reset the request timeout if we expect more objects to come.
         if (!this._objectsInFlight.isEmpty()) {

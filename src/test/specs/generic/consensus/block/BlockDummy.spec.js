@@ -5,24 +5,24 @@ if (typeof Dummy === 'undefined') {
 Dummy.block1 = (() => {
 
     function dummyTransaction(index) {
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, sign);
     }
 
     const transactions = [1, 2, 3].map(dummyTransaction);
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress, transactions);
     Dummy.block1 = body;
 
 
-    const prevHash = new Hash(Dummy.hash1);
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
@@ -36,12 +36,12 @@ Dummy.block1 = (() => {
 Dummy.block2 = (async () => {
 
     function dummyTransaction(index){
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey,recipientAddr,value,fee,nonce,sign);
     }
 
@@ -51,12 +51,12 @@ Dummy.block2 = (async () => {
         transactions.push(transaction);
     }
 
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
@@ -68,22 +68,22 @@ Dummy.block2 = (async () => {
 Dummy.block3 = (async () => {
 
     function dummyTransaction(index){
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey,recipientAddr,value,fee,nonce,sign);
     }
 
     const transactions = [1,1].map(dummyTransaction);
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
@@ -95,22 +95,22 @@ Dummy.block3 = (async () => {
 Dummy.block4 = (async () => {
 
     function dummyTransaction(index){
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey,recipientAddr,value,fee,nonce,sign);
     }
 
     const transactions = [1,2,3].map(dummyTransaction);
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX + 100000;
     const nonce = 1;
@@ -121,21 +121,21 @@ Dummy.block4 = (async () => {
 
 Dummy.block5 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 1;
-    const sign = new Signature(Dummy['signature5']);
+    const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy['signature5']));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
     const bodyHash = await body.hash();
-    const accountsHash = new Hash(Dummy.hash3);
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(2);
     const timestamp = 1;
     const nonce = 43998;
@@ -147,22 +147,22 @@ Dummy.block5 = (async () => {
 Dummy.block6 = (async () => {
 
     function dummyTransaction(index){
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey,recipientAddr,value,fee,nonce,sign);
     }
 
     const transactions = [1,2,3].map(dummyTransaction);
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 191973;
@@ -173,21 +173,21 @@ Dummy.block6 = (async () => {
 
 Dummy.block7 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 2;
-    const sign = new Signature(Dummy['signature1']);
+    const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy['signature1']));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
     const bodyHash = await body.hash();
-    const accountsHash = new Hash(Dummy.hash3);
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 111932;
@@ -198,22 +198,22 @@ Dummy.block7 = (async () => {
 
 Dummy.block8 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 1;
-    const sign = new Signature(Dummy['signature5']);
+    const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy['signature5']));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
     const prevHash = await Block.GENESIS.hash();
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('FIh/SfMyXIz1ByNUBl33hWPKq3GItPhIoZhk07ItzOY=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('FIh/SfMyXIz1ByNUBl33hWPKq3GItPhIoZhk07ItzOY='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
@@ -224,22 +224,22 @@ Dummy.block8 = (async () => {
 
 Dummy.block9 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 1;
-    const sign = new Signature(Dummy['signature5']);
+    const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy['signature5']));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA=');
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA='));
 
     const bodyHash = await body.hash();
-    const accountsHash = new Hash(Dummy.hash3);
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 0;
     const nonce = 43403;
@@ -250,21 +250,21 @@ Dummy.block9 = (async () => {
 
 Dummy.block10 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 2;
-    const sign = new Signature('bEOUL/8lswUPqy2QTyhdJmnGk3gDJZpKz5lhnE1sKcDdX6vhG04A2qDvwGJbJXzfd0GtL+9Vd6JdwFZMABHuWQ==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('bEOUL/8lswUPqy2QTyhdJmnGk3gDJZpKz5lhnE1sKcDdX6vhG04A2qDvwGJbJXzfd0GtL+9Vd6JdwFZMABHuWQ=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA='); // Block 8
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA=')); // Block 8
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('ZFLBx3Lr7qAY1KnGOraKNGz7BTnHwrXD1DuLvi3w5sY='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 41229;
@@ -275,21 +275,21 @@ Dummy.block10 = (async () => {
 
 Dummy.block10_2 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address1']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address1']));
     const value = 54740991;
     const fee = 1;
     const transactionNonce = 2;
-    const sign = new Signature('bEOUL/8lswUPqy2QTyhdJmnGk3gDJZpKz5lhnE1sKcDdX6vhG04A2qDvwGJbJXzfd0GtL+9Vd6JdwFZMABHuWQ==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('bEOUL/8lswUPqy2QTyhdJmnGk3gDJZpKz5lhnE1sKcDdX6vhG04A2qDvwGJbJXzfd0GtL+9Vd6JdwFZMABHuWQ=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA='); // Block 8
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAAfCrA9MPlPz5cfR/CSpxzRymtii6hDnYGeewpRnrA=')); // Block 8
     const bodyHash = await body.hash();
-    const accountsHash = new Hash(Dummy.hash3);
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 47334;
@@ -307,21 +307,21 @@ Dummy.block10_2 = (async () => {
 
 Dummy.block11 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address2']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address2']));
     const value = 5491;
     const fee = 1;
     const transactionNonce = 3;
-    const sign = new Signature('76SQLAiME3yzmePCN/FUbpaHov0kWPz1lIhyYTGIXuC2+nYvp/M+s99nKgMIYy4e/0AoQAe9Ya84hMR4w7dT/Q==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('76SQLAiME3yzmePCN/FUbpaHov0kWPz1lIhyYTGIXuC2+nYvp/M+s99nKgMIYy4e/0AoQAe9Ya84hMR4w7dT/Q=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAAEg/ITvgDI5QOBxuCFYj0ngLxCWu0jjGzeJzp96Wc='); // Block 10
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAAEg/ITvgDI5QOBxuCFYj0ngLxCWu0jjGzeJzp96Wc=')); // Block 10
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('2oI6jBc1Hpm3k/xF9xh/srwAXuBz5MJbBzb0Fqamb00=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('2oI6jBc1Hpm3k/xF9xh/srwAXuBz5MJbBzb0Fqamb00='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 128344;
@@ -332,21 +332,21 @@ Dummy.block11 = (async () => {
 
 Dummy.block12 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address2']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address2']));
     const value = 3243342;
     const fee = 1;
     const transactionNonce = 4;
-    const sign = new Signature('rrC0HtSWEs4EAjC92zmr8znqcBEqqIDoxNvT6+KRE2nOe9qwMoRCnvgI2bkc4D1VS+vJGOfUdGIhJU4gpT0p+g==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('rrC0HtSWEs4EAjC92zmr8znqcBEqqIDoxNvT6+KRE2nOe9qwMoRCnvgI2bkc4D1VS+vJGOfUdGIhJU4gpT0p+g=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAC4teO1LuWkU+dG2PdR/KU+tc0oohQsL7s4g8uofQ8='); // Block 11
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAC4teO1LuWkU+dG2PdR/KU+tc0oohQsL7s4g8uofQ8=')); // Block 11
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('XlgVHCUFob+LDuWcN8Kg5i+lRLc+wVvOK9aYCgkOlPY=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('XlgVHCUFob+LDuWcN8Kg5i+lRLc+wVvOK9aYCgkOlPY='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 75;
     const nonce = 7157;
@@ -357,22 +357,22 @@ Dummy.block12 = (async () => {
 
 Dummy.block13 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address3']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address3']));
     const value = 9080246;
     const fee = 34;
     const transactionNonce = 5;
-    const sign = new Signature('Jrw5h2j7BwitMk7Z7pHgjzib4BQQooy6cyQYMg0bIJpemrK/9nETARUkJ4jOrEdGAnysINkKsX3VJSbCpUdTIA==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('Jrw5h2j7BwitMk7Z7pHgjzib4BQQooy6cyQYMg0bIJpemrK/9nETARUkJ4jOrEdGAnysINkKsX3VJSbCpUdTIA=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AACNpoANPy//hinQdtX42iZhZXjeXPBhJq6aoEv/HlE='); // Block 12
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AACNpoANPy//hinQdtX42iZhZXjeXPBhJq6aoEv/HlE=')); // Block 12
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('Ig72lEHq+dznaktutYF0hODvITRMXUsy8y0p0G2SrxE=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('Ig72lEHq+dznaktutYF0hODvITRMXUsy8y0p0G2SrxE='));
     const difficulty = BlockUtils.difficultyToCompact(2);
     const timestamp = 80;
     const nonce = 70236;
@@ -383,21 +383,21 @@ Dummy.block13 = (async () => {
 
 Dummy.block11_3 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address3']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address3']));
     const value = 32890;
     const fee = 1;
     const transactionNonce = 3;
-    const sign = new Signature('MeOftR8sB+sWesTFRURqbHVISEkBGzTJCalHnIO7gcXzq4v0GHzPEooUpaDIMyFv/Jki3/RR5c/SnT+LOBr27w==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('MeOftR8sB+sWesTFRURqbHVISEkBGzTJCalHnIO7gcXzq4v0GHzPEooUpaDIMyFv/Jki3/RR5c/SnT+LOBr27w=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAAEg/ITvgDI5QOBxuCFYj0ngLxCWu0jjGzeJzp96Wc='); // Block 10
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAAEg/ITvgDI5QOBxuCFYj0ngLxCWu0jjGzeJzp96Wc=')); // Block 10
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('2oI6jBc1Hpm3k/xF9xh/srwAXuBz5MJbBzb0Fqamb00=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('2oI6jBc1Hpm3k/xF9xh/srwAXuBz5MJbBzb0Fqamb00='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 62142;
@@ -408,21 +408,21 @@ Dummy.block11_3 = (async () => {
 
 Dummy.block12_3 = (async () => {
 
-    const senderPubKey = new PublicKey(Dummy['publicKey5']);
-    const recipientAddr = new Address(Dummy['address2']);
+    const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy['publicKey5']));
+    const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy['address2']));
     const value = 87239;
     const fee = 32;
     const transactionNonce = 4;
-    const sign = new Signature('CRkVzgaLHavRrbxdE6604kvYj7C4Ac7LsmWC1iDO11WxMRyEWQ5XVpGcpOusWhCi+6sT1oV7aDpKhZqaytfTkg==');
+    const sign = Signature.unserialize(BufferUtils.fromBase64('CRkVzgaLHavRrbxdE6604kvYj7C4Ac7LsmWC1iDO11WxMRyEWQ5XVpGcpOusWhCi+6sT1oV7aDpKhZqaytfTkg=='));
     const transaction = new Transaction(senderPubKey, recipientAddr, value, fee, transactionNonce, sign);
 
     const transactions = [transaction];
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress,transactions);
 
-    const prevHash = new Hash('AAA1EJUHjPB9Z2ZqwWetaTsrL78WQB+f9l+0YtopDLI='); // Block 11_2
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64('AAA1EJUHjPB9Z2ZqwWetaTsrL78WQB+f9l+0YtopDLI=')); // Block 11_2
     const bodyHash = await body.hash();
-    const accountsHash = new Hash('bb5RFlGu0GvvgizW7uJ/oGbABhs6iLrhdzN5enRRBGo=');
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64('bb5RFlGu0GvvgizW7uJ/oGbABhs6iLrhdzN5enRRBGo='));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 38545;
@@ -465,24 +465,24 @@ Dummy.accountsHash = '1bX0xXTjWUUV/Ax1CNWaRq0/pO94FCF1bUwnG+VT88Q=';
 Dummy.accountsBlock = (() => {
 
     function dummyTransaction(index) {
-        const senderPubKey = new PublicKey(Dummy[`publicKey${index}`]);
-        const recipientAddr = new Address(Dummy[`address${index}`]);
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${index}`]));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy[`address${index}`]));
         const value = 1;
         const fee = 1;
         const nonce = 1;
-        const sign = new Signature(Dummy[`signature${index}`]);
+        const sign = Signature.unserialize(BufferUtils.fromBase64(Dummy[`signature${index}`]));
         return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, sign);
     }
 
     const transactions = [1, 2, 3].map(dummyTransaction);
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const body = new BlockBody(minerAddress, transactions);
     Dummy.accountsBlock = body;
 
 
-    const prevHash = new Hash(Dummy.hash1);
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.accountsHash);
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.accountsHash));
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;

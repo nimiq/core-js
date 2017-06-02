@@ -14,6 +14,8 @@
     "babel-cli": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.5.1",
+    "babel-preset-es2016": "^6.24.1",
+    "babel-preset-es2017": "^6.24.1",
     "browserify": "^14.4.0",
     "eslint": "^3.19.0",
     "gulp": "^3.9.1",
@@ -27,8 +29,10 @@
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^2.6.0",
     "gulp-streamify": "^1.0.2",
+    "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.8",
     "gulp-watch": "^4.3.11",
+    "jasmine": "^2.6.0",
     "jasmine-core": "*",
     "jasmine2-custom-message": "^0.8.2",
     "jscs": "^3.0.7",
@@ -37,6 +41,7 @@
     "karma-cli": "*",
     "karma-firefox-launcher": "^1.0.1",
     "karma-jasmine": "*",
+    "karma-safari-launcher": "^1.0.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
@@ -48,6 +53,8 @@
   "homepage": "https://github.com/styppo/novicash#readme",
   "dependencies": {
     "babel-runtime": "^6.23.0",
-    "chalk": "^1.1.3"
+    "chalk": "^1.1.3",
+    "elliptic": "^6.4.0",
+    "fast-sha256": "^1.0.0"
   }
 }

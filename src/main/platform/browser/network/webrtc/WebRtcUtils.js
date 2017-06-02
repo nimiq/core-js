@@ -15,3 +15,4 @@ class WebRtcUtils {
         return NetAddress.fromIpAddress(parts[4], parts[5]);
     }
 }
+Class.register(WebRtcUtils);

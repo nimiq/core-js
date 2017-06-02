@@ -4,7 +4,7 @@ class ObjectDB extends TypedDB {
     }
 
     async key(obj) {
-        if (obj.hash) return BufferUtils.toBase64(await obj.hash());
+        if (obj.hash) return (await obj.hash()).toBase64();
         if (obj.hashCode) return obj.hashCode();
         throw 'ObjectDB requires objects with a .hash() or .hashCode() method';
     }
@@ -19,9 +19,9 @@ class ObjectDB extends TypedDB {
         return key;
     }
 
-    async delete(obj) {
+    async remove(obj) {
         const key = await this.key(obj);
-        await TypedDB.prototype.delete.call(this, key);
+        await TypedDB.prototype.remove.call(this, key);
         return key;
     }
 
@@ -35,10 +35,10 @@ class ObjectDB extends TypedDB {
             await tx.putObject(key, obj);
             return key;
         };
-        const superDelete = tx.delete.bind(tx);
-        tx.delete = async function(obj) {
+        const superRemove = tx.remove.bind(tx);
+        tx.remove = async function(obj) {
             const key = await that.key(obj);
-            await superDelete(key);
+            await superRemove(key);
             return key;
         };
 

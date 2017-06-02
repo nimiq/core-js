@@ -47,3 +47,4 @@ class WebSocketConnector extends Observable {
     }
 }
 WebSocketConnector.CONNECT_TIMEOUT = 1000 * 5; // 5 seconds
+Class.register(WebSocketConnector);

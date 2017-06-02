@@ -1,35 +1,16 @@
-class Primitive extends Uint8Array {
-    constructor(arg, length) {
-        if (arg === null) {
-            super(length);
-        } else if (typeof arg === 'string') {
-            const buffer = BufferUtils.fromBase64(arg);
-            Primitive._enforceLength(buffer, length);
-            super(buffer);
-        } else if (arg instanceof ArrayBuffer) {
-            Primitive._enforceLength(arg, length);
-            super(arg);
-        } else if (arg instanceof Uint8Array) {
-            Primitive._enforceLength(arg, length);
-            super(arg.buffer, arg.byteOffset, arg.byteLength);
-        } else {
-            throw `Primitive: Invalid argument ${arg}`;
-        }
-    }
-
-    static _enforceLength(buffer, length) {
-        if (length !== undefined && buffer.byteLength !== length) {
-            throw 'Primitive: Invalid length';
-        }
+class Primitive {
+    constructor(arg, type, length) {
+        if (type && !(arg instanceof type)) throw 'Primitive: Invalid type';
+        if (length && arg.length && arg.length !== length) throw 'Primitive: Invalid length';
+        this._obj = arg;
     }
 
     equals(o) {
-        return o instanceof Primitive
-            && BufferUtils.equals(this, o);
+        return o instanceof Primitive && BufferUtils.equals(this.serialize(), o.serialize());
     }
 
-    subarray(begin, end) {
-        return ArrayUtils.subarray(this, begin, end);
+    serialize() {
+        throw 'Primitive: serialize() not implemented';
     }
 
     toString() {
@@ -37,11 +18,11 @@ class Primitive extends Uint8Array {
     }
 
     toBase64() {
-        return BufferUtils.toBase64(this);
+        return BufferUtils.toBase64(this.serialize());
     }
 
     toHex() {
-        return BufferUtils.toHex(this);
+        return BufferUtils.toHex(this.serialize());
     }
 }
 Class.register(Primitive);

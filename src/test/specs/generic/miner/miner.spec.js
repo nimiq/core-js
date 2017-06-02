@@ -1,9 +1,9 @@
 describe('Miner', () => {
-    const minerAddress = new Address(Dummy.address1);
+    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
-    const prevHash = new Hash(Dummy.hash1);
-    const bodyHash = new Hash(Dummy.hash2);
-    const accountsHash = new Hash(Dummy.hash3);
+    const prevHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
+    const bodyHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash2));
+    const accountsHash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash3));
     const difficulty = BlockUtils.difficultyToCompact(3);
     const timestamp = 88888888;
     const nonce = 0;

@@ -9,6 +9,15 @@ class NetworkConfig {
             NetworkConfig._myHost, NetworkConfig._myPort);
     }
 
+    // Used for filtering peer addresses by protocols.
+    static myProtocolMask() {
+        return Protocol.WS;
+    }
+
+    static canConnect(protocol) {
+        return protocol === Protocol.WS;
+    }
+
     static configurePeerAddress(host, port) {
         NetworkConfig._myHost = host;
         NetworkConfig._myPort = port;

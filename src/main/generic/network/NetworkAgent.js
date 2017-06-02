@@ -49,6 +49,11 @@ class NetworkAgent extends Observable {
                 return false;
             }
 
+            // Exclude DumbPeerAddresses.
+            if (addr.protocol === Protocol.DUMB) {
+                return false;
+            }
+
             const knownAddress = this._knownAddresses.get(addr);
             return !addr.isSeed() // Never relay seed addresses.
                 && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
@@ -78,7 +83,7 @@ class NetworkAgent extends Observable {
                 return;
             }
 
-            setTimeout(this._handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
+            setTimeout(this.handshake.bind(this), NetworkAgent.VERSION_RETRY_DELAY);
             return;
         }
 
@@ -176,13 +181,10 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getaddr(Services.myServiceMask());
+        this._channel.getaddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
 
-        // XXX Do we need this timeout?
-        this._timers.setTimeout('getaddr', () => {
-            this._timers.clearTimeout('getaddr');
-            Log.w(NetworkAgent, `Peer ${this._channel.peerAddress} did not send any addresses when asked`);
-        }, NetworkAgent.GETADDR_TIMEOUT);
+        // We don't use a timeout here. The peer will not respond with an addr message if
+        // it doesn't have any new addresses.
     }
 
     async _onAddr(msg) {
@@ -197,11 +199,6 @@ class NetworkAgent extends Observable {
             this._channel.ban('addr message too large');
             return;
         }
-
-        Log.d(NetworkAgent, `${msg.addresses.length} addresses received from ${this._channel.peerAddress}`);
-
-        // Clear the getaddr timeout.
-        this._timers.clearTimeout('getaddr');
 
         // Remember that the peer has sent us these addresses.
         for (let addr of msg.addresses) {
@@ -222,7 +219,7 @@ class NetworkAgent extends Observable {
         }
 
         // Find addresses that match the given serviceMask.
-        const addresses = this._addresses.findByServices(msg.serviceMask);
+        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask);
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
@@ -236,6 +233,7 @@ class NetworkAgent extends Observable {
         });
 
         // Send the addresses back to the peer.
+        // If we don't have any new addresses, don't send the message at all.
         if (filteredAddresses.length) {
             this._channel.addr(filteredAddresses);
         }
@@ -305,7 +303,6 @@ class NetworkAgent extends Observable {
 }
 NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
 NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
-NetworkAgent.GETADDR_TIMEOUT = 1000 * 5; // 5 seconds
 NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
 NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
 NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 5; // 5 minutes
