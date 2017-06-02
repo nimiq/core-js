@@ -58,6 +58,7 @@ class VolatileAccountsTreeStore {
     async remove(node) {
         const key = await this.key(node);
         delete this._store[key];
+        return key;
     }
 
     transaction() {

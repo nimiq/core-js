@@ -1,26 +1,4 @@
 class Core {
-    // Singleton
-    static get() {
-        if (!Core._instance) throw 'Core.get() failed - not initialized yet. Call Core.init() first.';
-        return Core._instance;
-    }
-
-    static init(fnSuccess, fnError) {
-        // Don't initialize core twice.
-        if (Core._instance) {
-            Log.w('Core.init() called more than once.');
-
-            fnSuccess(Core._instance);
-            return;
-        }
-
-        // Wait until there is only a single browser window open for this origin.
-        WindowDetector.get().waitForSingleWindow(async function() {
-            Core._instance = await new Core();
-            fnSuccess(Core._instance);
-        }, fnError);
-    }
-
     constructor() {
         return this._init();
     }
@@ -47,5 +25,4 @@ class Core {
         return this;
     }
 }
-Core._instance = null;
 Class.register(Core);

@@ -38,6 +38,10 @@ class AccountsTree extends Observable {
     async _put(address, balance, transaction) {
         transaction = transaction || this._store;
 
+        if (!(await this.get(address, transaction)) && Balance.INITIAL.equals(balance)) {
+            return;
+        }
+
         // Fetch the root node. This should never fail.
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
@@ -129,10 +133,27 @@ class AccountsTree extends Observable {
 
             node.removeChild(prefix);
 
-            // If the node has children left, update it and all keys on the
+            // If the node has only a single child, merge it with the next node.
+            if (node.hasSingleChild() && nodeKey !== rootKey) {
+                const childKey = node.getFirstChild();
+                const childNode = await transaction.get(childKey); // eslint-disable-line no-await-in-loop
+
+                // Remove the current child node.
+                await transaction.remove(childNode); // eslint-disable-line no-await-in-loop
+
+                // Merge prefixes.
+                // Do NOT use simple concat here, since it would use our prefixes buffers.
+                // The childNode's prefix buffer, however, contains its full address.
+                // That is since TypedArray.subarray only creates a VIEW on the TypedArray's buffer.
+                childNode.prefix = BufferUtils.concatTypedArrays(node.prefix, childNode.prefix);
+
+                nodeKey = await transaction.put(childNode); // eslint-disable-line no-await-in-loop
+                return this._updateKeys(transaction, childNode.prefix, nodeKey, rootPath.slice(0, i));
+            }
+            // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
-            if (node.hasChildren() || nodeKey === rootKey) {
+            else if (node.hasChildren() || nodeKey === rootKey) {
                 nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
                 return this._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
             }
@@ -315,6 +336,17 @@ class AccountsTreeNode {
 
     hasChildren() {
         return this.children && this.children.some(child => !!child);
+    }
+
+    hasSingleChild() {
+        return this.children && this.children.reduce((count, val) => count + !!val, 0) === 1;
+    }
+
+    getFirstChild() {
+        if (!this.children) {
+            return undefined;
+        }
+        return this.children.find(child => !!child);
     }
 
     hash() {

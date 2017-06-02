@@ -34,13 +34,6 @@ class BufferUtils {
         return c;
     }
 
-    static concat(a, b)  {
-        return BufferUtils.concatTypedArrays(
-            new Uint8Array(a.buffer || a),
-            new Uint8Array(b.buffer || b)
-        );
-    }
-
     static equals(a, b) {
         if (a.length !== b.length) return false;
         const viewA = new Uint8Array(a);

@@ -36,3 +36,4 @@ class NetworkConfig {
         NetworkConfig._mySignalId = signalId;
     }
 }
+Class.register(NetworkConfig);

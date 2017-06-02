@@ -127,6 +127,7 @@ class WebRtcConnector extends Observable {
     }
 }
 WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
+Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
     constructor(config, signalChannel, signalId) {
@@ -197,6 +198,7 @@ class PeerConnector extends Observable {
         return this._nonce;
     }
 }
+Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
     constructor(config, peerAddress, signalChannel) {
@@ -232,6 +234,7 @@ class OutboundPeerConnector extends PeerConnector {
         return this._peerAddress;
     }
 }
+Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
     constructor(config, signalChannel, signalId, offer) {
@@ -258,3 +261,4 @@ class InboundPeerConnector extends PeerConnector {
         this.fire('connection', conn);
     }
 }
+Class.register(InboundPeerConnector);

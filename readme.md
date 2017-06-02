@@ -24,7 +24,7 @@ npm install
 `gulp eslint` runs the ESLint javascript linter.
 
 ### Build
-`gulp build` concatenates all sources into `/nimiq-{web,node}.js`
+`gulp build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ### Run Browser client
 Open `clients/browser/index.html` in your browser.
@@ -36,7 +36,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 ```
 
 ### Build your own Browser client
-Just include ```<script src="dist/web.js"></script>``` in your project.
+Just include `<script src="dist/nimiq.js"></script>` in your project.
 
 ### API Docs 
 The [API Documentation is here](dist/api-documentation.md).
