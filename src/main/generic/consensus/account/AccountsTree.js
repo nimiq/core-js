@@ -38,6 +38,10 @@ class AccountsTree extends Observable {
     async _put(address, balance, transaction) {
         transaction = transaction || this._store;
 
+        if (!(await this.get(address, transaction)) && Balance.INITIAL.equals(balance)) {
+            return;
+        }
+
         // Fetch the root node. This should never fail.
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
@@ -132,9 +136,17 @@ class AccountsTree extends Observable {
             // If the node has only a single child, merge it with the next node.
             if (node.hasSingleChild() && nodeKey !== rootKey) {
                 const childKey = node.getFirstChild();
-                const childNode = await transaction.get(childKey);
+                const childNode = await transaction.get(childKey); // eslint-disable-line no-await-in-loop
+
+                // Remove the current child node.
+                await transaction.remove(childNode); // eslint-disable-line no-await-in-loop
+
                 // Merge prefixes.
-                childNode.prefix = BufferUtils.concat(node.prefix, childNode.prefix);
+                // Do NOT use simple concat here, since it would use our prefixes buffers.
+                // The childNode's prefix buffer, however, contains its full address.
+                // That is since TypedArray.subarray only creates a VIEW on the TypedArray's buffer.
+                childNode.prefix = BufferUtils.concatTypedArrays(node.prefix, childNode.prefix);
+
                 nodeKey = await transaction.put(childNode); // eslint-disable-line no-await-in-loop
                 return this._updateKeys(transaction, childNode.prefix, nodeKey, rootPath.slice(0, i));
             }
