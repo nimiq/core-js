@@ -4,11 +4,11 @@ class Network extends Observable {
     }
 
     static get PEER_COUNT_PER_IP_WS_MAX() {
-        return PlatformUtils.isBrowser() ? 2 : 15;
+        return PlatformUtils.isBrowser() ? 1 : 25;
     }
 
     static get PEER_COUNT_PER_IP_RTC_MAX() {
-        return 3;
+        return 2;
     }
 
     constructor(blockchain) {
@@ -410,9 +410,9 @@ class Network extends Observable {
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
     }
 }
-Network.PEER_COUNT_DESIRED = 12;
-Network.PEER_COUNT_RELAY = 4;
-Network.CONNECTING_COUNT_MAX = 3;
+Network.PEER_COUNT_DESIRED = 6;
+Network.PEER_COUNT_RELAY = 3;
+Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
 
