@@ -2,7 +2,7 @@
 // TODO V2: Copy 'serialized' to detach all outer references
 class Transaction {
     constructor(senderPubKey, recipientAddr, value, fee, nonce, signature, version = Transaction.CURRENT_VERSION) {
-        if (!NumberUtils.isUint16(version)) throw 'Invalid version number.';
+        if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
@@ -59,7 +59,7 @@ class Transaction {
     }
 
     get serializedContentSize() {
-        return /*version*/ 2 
+        return /*version*/ 2
             + this._senderPubKey.serializedSize
             + this._recipientAddr.serializedSize
             + /*value*/ 8

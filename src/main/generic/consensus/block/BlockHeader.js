@@ -1,6 +1,6 @@
 class BlockHeader {
     constructor(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version = BlockHeader.CURRENT_VERSION) {
-        if (!NumberUtils.isUint16(version)) throw 'Invalid version number.';
+        if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
