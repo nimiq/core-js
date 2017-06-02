@@ -8,7 +8,7 @@ class PrivateKey extends Primitive {
     }
 
     static unserialize(buf) {
-        return new PublicKey(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize)));
+        return new PrivateKey(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize)));
     }
 
     serialize(buf) {

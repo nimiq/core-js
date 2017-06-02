@@ -70,12 +70,12 @@ class CryptoLib {
         };
 
         poly.sign = async function (config, privateKey, data) {
-            const msgHash = await poly.digest('SHA-256', data);
+            const msgHash = await poly.digest(config.hash, data);
             return fromDER(privateKey.pair.sign(msgHash).toDER());
         };
 
         poly.verify = async function (config, publicKey, signature, data) {
-            const msgHash = await poly.digest('SHA-256', data);
+            const msgHash = await poly.digest(config.hash, data);
             return publicKey.pair.verify(msgHash, toDER(signature));
         };
 
@@ -95,14 +95,15 @@ class CryptoLib {
             if (key.type === 'public' && type === 'raw') {
                 return key.pair.getPublic().encode();
             } else if (key.type === 'private' && type === 'jwk') {
+                let pub = key.pair.getPublic().encode();
                 return {
                     crv: 'P-256',
                     d: toUri64(key.pair.getPrivate().toArrayLike(Uint8Array)),
                     ext: true,
                     key_ops: ['sign'],
                     kty: 'EC',
-                    x: toUri64(key.pair.getPublic().x.toArrayLike(Uint8Array)),
-                    y: toUri64(key.pair.getPublic().y.toArrayLike(Uint8Array)),
+                    x: toUri64(pub.slice(1, 33)),
+                    y: toUri64(pub.slice(33)),
                 };
             } else {
                 throw 'Invalid key or unsupported type.';
