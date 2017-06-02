@@ -11,8 +11,19 @@ class WebRtcConfig {
             const certificate = await WebRtcCertificate.get();
             WebRtcConfig._config = {
                 iceServers: [
-                    { urls: 'stun:stun.services.mozilla.com' },
-                    { urls: 'stun:stun.l.google.com:19302' }
+                    { urls: [
+                        'stun:stun.l.google.com:19302',
+                        'stun:stun1.l.google.com:19302',
+                        'stun:stun2.l.google.com:19302',
+                        'stun:stun3.l.google.com:19302',
+                        'stun:stun4.l.google.com:19302'
+                    ]},
+                    { urls: 'stun:stun.nimiq-network.com:19302' },
+                    { urls: 'stun:stun.stunprotocol.org' },
+                    { urls: [
+                        'stun:stun.gmx.de',
+                        'stun:stun.gmx.net'
+                    ]}
                 ],
                 certificates : [certificate]
             };
