@@ -18,7 +18,13 @@ class WebRtcConfig {
                         'stun:stun3.l.google.com:19302',
                         'stun:stun4.l.google.com:19302'
                     ]},
-                    { urls: 'stun:stun.nimiq-network.com:19302' },
+                    { urls: [
+                        'stun:stun.nimiq-network.com:19302',
+                        'stun:stun1.nimiq-network.com:19302',
+                        'stun:stun2.nimiq-network.com:19302',
+                        'stun:stun3.nimiq-network.com:19302',
+                        'stun:stun4.nimiq-network.com:19302'
+                    ]},
                     { urls: 'stun:stun.stunprotocol.org' },
                     { urls: [
                         'stun:stun.gmx.de',
