@@ -25,11 +25,7 @@ class WebRtcConfig {
                         'stun:stun3.nimiq-network.com:19302',
                         'stun:stun4.nimiq-network.com:19302'
                     ]},
-                    { urls: 'stun:stun.stunprotocol.org' },
-                    { urls: [
-                        'stun:stun.gmx.de',
-                        'stun:stun.gmx.net'
-                    ]}
+                    { urls: 'stun:stun.stunprotocol.org' }
                 ],
                 certificates : [certificate]
             };
