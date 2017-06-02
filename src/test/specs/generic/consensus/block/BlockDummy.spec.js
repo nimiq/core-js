@@ -461,7 +461,7 @@ Dummy.block12_3 = (async () => {
 
 
 Dummy.header2 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCSHKYzC8x+6cxgeoqnm7xDc4h7ZXpi9rJxOFQTqFvSG5EfqcM8IhyvbSvrTQysB2WOsfRZfa1dc1y70dJj0RZqQHwD//z/wAAAAAAAAQPfkEAAAAAA=';
-Dummy.accountsHash = '1bX0xXTjWUUV/Ax1CNWaRq0/pO94FCF1bUwnG+VT88Q=';
+Dummy.accountsHash = '0phe6k6vEXxH+7N2KPMGQD68xvReSG8rdy+aE20aFZo=';
 Dummy.accountsBlock = (() => {
 
     function dummyTransaction(index) {

@@ -85,10 +85,10 @@ describe('Crypto', () => {
             const Ux = deHex('60FED4BA255A9D31C961EB74C6356D68C049B8923B61FA6CE669622E60F29FB6');
             const Uy = deHex('7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299');
 
-            const pub = Crypto.publicKeyUnserialize(new SerialBuffer([4].concat(Ux).concat(Uy)));
+            const pub = Crypto.publicKeyUnserialize(new SerialBuffer(Ux.concat(Uy)));
             const priv = Crypto.privateKeyUnserialize(new SerialBuffer(x.concat(Ux).concat(Uy)));
             const pair = Crypto.keyPairDerive(priv);
-            expect(BufferUtils.equals(Crypto.publicKeySerialize(Crypto.keyPairPublic(pair)), new SerialBuffer([4].concat(Ux).concat(Uy)))).toBe(true, 'derived public key equals original');
+            expect(BufferUtils.equals(Crypto.publicKeySerialize(Crypto.keyPairPublic(pair)), new SerialBuffer(Ux.concat(Uy)))).toBe(true, 'derived public key equals original');
 
             async function test(message, k, r, s) {
                 const msg = new SerialBuffer(message);
