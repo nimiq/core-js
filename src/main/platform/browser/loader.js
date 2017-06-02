@@ -1,7 +1,7 @@
 class Nimiq {
     // Singleton
     static get() {
-        if (!Nimiq._core) throw 'Nimiq.get() failed - not initialized yet. Call Core.init() first.';
+        if (!Nimiq._core) throw 'Nimiq.get() failed - not initialized yet. Call Nimiq.init() first.';
         return Nimiq._core;
     }
 
@@ -45,7 +45,7 @@ class Nimiq {
         return window.crypto && window.crypto.subtle;
     }
 
-    static init(ready, wait, path = './') {
+    static init(ready, wait, path) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -65,6 +65,15 @@ class Nimiq {
             console.warn('Client lacks native support for crypto routines');
         }
 
+        if (!path) {
+            if (Nimiq._currentScript && Nimiq._currentScript.src.indexOf('/') !== -1) {
+                path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
+            } else {
+                // Fallback
+                path = './';
+            }
+        }
+
         // Wait until there is only a single browser window open for this origin.
         WindowDetector.get().waitForSingleWindow(async function () {
             if (!Nimiq._loaded) {
@@ -81,6 +90,12 @@ class Nimiq {
             ready(Nimiq._core);
         }, wait);
     }
+}
+Nimiq._currentScript = document.currentScript;
+if (!Nimiq._currentScript) {
+    // Heuristic
+    let scripts = document.getElementsByTagName('script');
+    Nimiq._currentScript = scripts[scripts.length - 1];
 }
 Nimiq._core = null;
 Nimiq._onload = null;

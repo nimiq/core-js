@@ -150,7 +150,7 @@ gulp.task('build-web-babel', function () {
             .pipe(source('babel.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
+        gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
             .pipe(sourcemaps.init())
             .pipe(concat('web.js'))
             .pipe(babel(babel_config)))
@@ -171,7 +171,7 @@ gulp.task('build-web-crypto', function () {
             .pipe(source('crypto.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
+        gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
             .pipe(sourcemaps.init())
             .pipe(concat('web.js')))
         .pipe(sourcemaps.init())
@@ -181,7 +181,7 @@ gulp.task('build-web-crypto', function () {
 });
 
 gulp.task('build-web', function () {
-    return gulp.src(['./src/loader/prefix.js'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js']))
+    return gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
         .pipe(sourcemaps.init())
         .pipe(concat('web.js'))
         .pipe(sourcemaps.write('.'))
