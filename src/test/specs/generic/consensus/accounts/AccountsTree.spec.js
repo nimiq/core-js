@@ -121,42 +121,42 @@ describe('AccountsTree', () => {
             const tree = await AccountsTree.createVolatile();
 
             // order1
-            await tree.put(address1, balance);
-            await tree.put(address2, balance);
-            await tree.put(address3, balance);
+            await tree.put(address1, new Account(balance));
+            await tree.put(address2, new Account(balance));
+            await tree.put(address3, new Account(balance));
             const state1 = await tree.root();
 
 
             // "reset"
-            await tree.put(address1, balanceReset);
-            await tree.put(address3, balanceReset);
-            await tree.put(address2, balanceReset);
+            await tree.put(address1, new Account(balanceReset));
+            await tree.put(address3, new Account(balanceReset));
+            await tree.put(address2, new Account(balanceReset));
             // order2
-            await tree.put(address1, balance);
-            await tree.put(address3, balance);
-            await tree.put(address2, balance);
+            await tree.put(address1, new Account(balance));
+            await tree.put(address3, new Account(balance));
+            await tree.put(address2, new Account(balance));
             const state2 = await tree.root();
 
 
             // "reset"
-            await tree.put(address1, balanceReset);
-            await tree.put(address3, balanceReset);
-            await tree.put(address2, balanceReset);
+            await tree.put(address1, new Account(balanceReset));
+            await tree.put(address3, new Account(balanceReset));
+            await tree.put(address2, new Account(balanceReset));
             // order3
-            await tree.put(address2, balance);
-            await tree.put(address1, balance);
-            await tree.put(address3, balance);
+            await tree.put(address2, new Account(balance));
+            await tree.put(address1, new Account(balance));
+            await tree.put(address3, new Account(balance));
             const state3 = await tree.root();
 
 
             // "reset"
-            await tree.put(address1, balanceReset);
-            await tree.put(address3, balanceReset);
-            await tree.put(address2, balanceReset);
+            await tree.put(address1, new Account(balanceReset));
+            await tree.put(address3, new Account(balanceReset));
+            await tree.put(address2, new Account(balanceReset));
             // order4
-            await tree.put(address2, balance);
-            await tree.put(address3, balance);
-            await tree.put(address1, balance);
+            await tree.put(address2, new Account(balance));
+            await tree.put(address3, new Account(balance));
+            await tree.put(address1, new Account(balance));
             const state4 = await tree.root();
 
             expect(state2.toBase64()).toBe(state1.toBase64());
@@ -186,8 +186,8 @@ describe('AccountsTree', () => {
 
             // order1
             await accounts.commitBlock(Block.GENESIS);
-            await accounts._tree.put(address1, balance1);
-            await accounts._tree.put(address2, balance2);
+            await accounts._tree.put(address1, new Account(balance1));
+            await accounts._tree.put(address2, new Account(balance2));
             const state1 = await accounts._tree.root();
 
 
@@ -196,8 +196,8 @@ describe('AccountsTree', () => {
 
             // order2
             await accounts.commitBlock(Block.GENESIS);
-            await accounts._tree.put(address2, balance2);
-            await accounts._tree.put(address1, balance1);
+            await accounts._tree.put(address2, new Account(balance2));
+            await accounts._tree.put(address1, new Account(balance1));
             const state2 = await accounts._tree.root();
 
 
