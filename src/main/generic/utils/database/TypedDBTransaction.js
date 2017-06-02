@@ -29,7 +29,7 @@ class TypedDBTransaction {
             }
 
             for (const key in this._deletions) {
-                tx.delete(key);
+                tx.remove(key);
             }
 
             tx.commit();
@@ -39,7 +39,7 @@ class TypedDBTransaction {
     async getObject(key) {
         if (this._deletions[key]) return undefined;
         if (this._objects[key] !== undefined) return this._objects[key];
-        return await this._db.getObject(key);
+        return this._db.getObject(key);
     }
 
     putObject(key, value) {
@@ -50,7 +50,7 @@ class TypedDBTransaction {
     async getString(key) {
         if (this._deletions[key]) return undefined;
         if (this._strings[key] !== undefined) return this._strings[key];
-        return await this._db.getString(key);
+        return this._db.getString(key);
     }
 
     putString(key, value) {
@@ -58,7 +58,7 @@ class TypedDBTransaction {
         delete this._deletions[key];
     }
 
-    delete(key) {
+    remove(key) {
         this._deletions[key] = true;
         delete this._objects[key];
         delete this._strings[key];

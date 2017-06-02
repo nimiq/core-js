@@ -254,7 +254,7 @@ class Network extends Observable {
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
         // Delete agent.
-        this._agents.delete(channel.id);
+        this._agents.remove(channel.id);
 
         // Decrement connection count per IP.
         let numConnections = this._connectionCounts.get(channel.netAddress) || 1;
@@ -432,7 +432,7 @@ class SignalStore {
         if (this.contains(senderId, recipientId, nonce)) {
             const signal = new ForwardedSignal(senderId, recipientId, nonce);
             this._store.put(signal, Date.now());
-            this._queue.delete(signal);
+            this._queue.remove(signal);
             this._queue.enqueue(signal);
             return;
         }
@@ -440,7 +440,7 @@ class SignalStore {
         // Delete oldest if needed.
         if (this.length >= this._maxSize) {
             const oldest = this._queue.dequeue();
-            this._store.delete(oldest);
+            this._store.remove(oldest);
         }
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         this._queue.enqueue(signal);
@@ -463,7 +463,7 @@ class SignalStore {
             // Because of the ordering, we know that everything after that is invalid too.
             const toDelete = this._queue.dequeueUntil(signal);
             for (const dSignal of toDelete) {
-                this._store.delete(dSignal);
+                this._store.remove(dSignal);
             }
         }
         return valid;

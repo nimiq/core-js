@@ -346,7 +346,7 @@ class PeerAddresses extends Observable {
         }
 
         // Delete all addresses that were signalable over the disconnected peer.
-        this._deleteBySignalChannel(channel);
+        this._removeBySignalChannel(channel);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
@@ -360,7 +360,7 @@ class PeerAddresses extends Observable {
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
         if (closedByRemote || peerAddress.protocol === Protocol.DUMB) {
-            this._delete(peerAddress);
+            this._remove(peerAddress);
         }
     }
 
@@ -378,7 +378,7 @@ class PeerAddresses extends Observable {
         peerAddressState.failedAttempts++;
 
         if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
-            this._delete(peerAddress);
+            this._remove(peerAddress);
         }
     }
 
@@ -396,7 +396,7 @@ class PeerAddresses extends Observable {
 
         peerAddressState.deleteBestRoute();
         if (!peerAddressState.hasRoute()) {
-            this._delete(peerAddressState.peerAddress);
+            this._remove(peerAddressState.peerAddress);
         }
     }
 
@@ -438,7 +438,7 @@ class PeerAddresses extends Observable {
             && !peerAddressState.peerAddress.isSeed();
     }
 
-    _delete(peerAddress) {
+    _remove(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -452,7 +452,7 @@ class PeerAddresses extends Observable {
 
         // Delete from signalId index.
         if (peerAddress.protocol === Protocol.RTC) {
-            this._signalIds.delete(peerAddress.signalId);
+            this._signalIds.remove(peerAddress.signalId);
         }
 
         // Don't delete bans.
@@ -461,17 +461,17 @@ class PeerAddresses extends Observable {
         }
 
         // Delete the address.
-        this._store.delete(peerAddress);
+        this._store.remove(peerAddress);
     }
 
     // Delete all RTC-only routes that are signalable over the given peer.
-    _deleteBySignalChannel(channel) {
+    _removeBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
             if (peerAddressState.peerAddress.protocol === Protocol.RTC) {
                 peerAddressState.deleteRoute(channel);
                 if (!peerAddressState.hasRoute()) {
-                    this._delete(peerAddressState.peerAddress);
+                    this._remove(peerAddressState.peerAddress);
                 }
             }
         }
@@ -507,7 +507,7 @@ class PeerAddresses extends Observable {
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this._exceedsAge(addr)) {
                         Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
-                        this._delete(addr);
+                        this._remove(addr);
                     }
                     break;
 
@@ -521,7 +521,7 @@ class PeerAddresses extends Observable {
                             unbannedAddresses.push(addr);
                         } else {
                             // Delete expires bans.
-                            this._store.delete(addr);
+                            this._store.remove(addr);
                         }
                     }
                     break;
@@ -664,7 +664,7 @@ class PeerAddressState {
     }
 
     deleteRoute(signalChannel) {
-        this._routes.delete(signalChannel); // maps to same hashCode
+        this._routes.remove(signalChannel); // maps to same hashCode
         if (this._bestRoute && this._bestRoute.signalChannel.equals(signalChannel)) {
             this._updateBestRoute();
         }

@@ -48,7 +48,7 @@ class TypedDB {
         });
     }
 
-    delete(key) {
+    remove(key) {
         return new Promise((resolve, error) => {
             this._db.del(key, err => resolve());
         });
@@ -80,7 +80,7 @@ class NativeDBTransaction extends Observable {
         this._batch.put(key, value, {valueEncoding: 'ascii'});
     }
 
-    delete(key) {
+    remove(key) {
         this._batch.del(key);
     }
 

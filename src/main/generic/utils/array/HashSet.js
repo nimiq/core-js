@@ -16,7 +16,7 @@ class HashSet {
         return this._map[this._fnHash(value)];
     }
 
-    delete(value) {
+    remove(value) {
         delete this._map[this._fnHash(value)];
     }
 
