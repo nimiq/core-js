@@ -100,7 +100,7 @@ class Crypto {
     }
 
     static get publicKeySize() {
-        return 65;
+        return 64;
     }
 
     static get publicKeyType() {
@@ -108,7 +108,11 @@ class Crypto {
     }
 
     static publicKeySerialize(obj) {
-        return obj.raw;
+        if (obj.raw.length === 64) {
+            return obj.raw;
+        }  else {
+            return obj.raw.slice(1);
+        }
     }
 
     static publicKeyUnserialize(arr) {
@@ -117,7 +121,15 @@ class Crypto {
 
     static async _publicKeyNative(obj) {
         if (!obj._native) {
-            obj._native = await Crypto.lib.importKey('raw', obj.raw, Crypto._keyConfig, true, ['verify']);
+            let arr;
+            if (obj.raw.length === 64) {
+                arr = new Uint8Array(65);
+                arr[0] = 4;
+                arr.set(obj.raw, 1);
+            } else {
+                arr = obj.raw.length;
+            }
+            obj._native = await Crypto.lib.importKey('raw', arr, Crypto._keyConfig, true, ['verify']);
         }
         return obj._native;
     }
@@ -189,7 +201,7 @@ class Crypto {
             },
             publicKey: {
                 _native: key.publicKey,
-                raw: new Uint8Array(await Crypto.lib.exportKey('raw', key.publicKey))
+                raw: new Uint8Array(await Crypto.lib.exportKey('raw', key.publicKey)).subarray(1)
             }
         };
     }
@@ -197,7 +209,7 @@ class Crypto {
     static keyPairDerive(privateKey) {
         return {
             secretKey: privateKey,
-            publicKey: Crypto.publicKeyUnserialize(new Uint8Array([4].concat(Array.prototype.slice.call(Crypto.privateKeySerialize(privateKey), 32))))
+            publicKey: Crypto.publicKeyUnserialize(new Uint8Array(Array.prototype.slice.call(Crypto.privateKeySerialize(privateKey), 32)))
         };
     }
 
