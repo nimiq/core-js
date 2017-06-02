@@ -83,7 +83,7 @@ class PeerAddresses extends Observable {
                 return (this.peerCount < 6 ? 3 : 1) * score;
 
             case PeerAddressState.FAILED:
-                return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
+                return (1 - (peerAddressState.failedAttempts / peerAddressState.maxFailedAttempts)) * score;
 
             default:
                 return -1;
@@ -220,6 +220,11 @@ class PeerAddresses extends Observable {
             // Ignore address if it exceeds max distance.
             if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
                 Log.d(PeerAddresses, `Ignoring address ${peerAddress} - max distance exceeded`);
+                // Drop any route to this peer over the current channel. This may prevent loops.
+                const peerAddressState = this._store.get(peerAddress);
+                if (peerAddressState) {
+                    peerAddressState.deleteRoute(channel);
+                }
                 return false;
             }
         }
@@ -374,7 +379,7 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
 
-        if (peerAddressState.failedAttempts >= PeerAddresses.MAX_FAILED_ATTEMPTS) {
+        if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
             this._delete(peerAddress);
         }
     }
@@ -579,7 +584,8 @@ PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
 PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60; // 1 minute
 PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
 PeerAddresses.MAX_DISTANCE = 4;
-PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
+PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
+PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
@@ -601,6 +607,17 @@ class PeerAddressState {
         this._routes = new HashSet();
 
         this._failedAttempts = 0;
+    }
+
+    get maxFailedAttempts() {
+        switch (this.peerAddress.protocol) {
+            case Protocol.RTC:
+                return PeerAddresses.MAX_FAILED_ATTEMPTS_RTC;
+            case Protocol.WS:
+                return PeerAddresses.MAX_FAILED_ATTEMPTS_WS;
+            default:
+                return 0;
+        }
     }
 
     get failedAttempts() {
@@ -722,7 +739,7 @@ class SignalRoute {
     }
 
     get score() {
-        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS));
+        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS_RTC));
     }
 
     equals(o) {
