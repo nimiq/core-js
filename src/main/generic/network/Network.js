@@ -411,13 +411,13 @@ class Network extends Observable {
     }
 }
 Network.PEER_COUNT_DESIRED = 6;
-Network.PEER_COUNT_RELAY = 3;
+Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
 
 class SignalStore {
-    constructor(maxSize=1000 /* maximum number of entries */) {
+    constructor(maxSize = 1000 /*maximum number of entries*/) {
         this._maxSize = maxSize;
         this._queue = new Queue();
         this._store = new HashMap();
