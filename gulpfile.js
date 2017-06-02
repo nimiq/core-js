@@ -116,7 +116,12 @@ const sources = {
 };
 
 const babel_config = {
-    plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
+    plugins: [
+        'transform-runtime',
+        'transform-es2015-modules-commonjs',
+        'transform-es2015-block-scoping',
+        'transform-es2015-arrow-functions'
+    ],
     presets: ['es2016', 'es2017']
 };
 

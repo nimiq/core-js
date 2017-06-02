@@ -169,20 +169,41 @@
 <script type="text/javascript">
     class MinerUI {
         constructor($) {
-            $.blockchain.on('head-changed', head => this._headChanged(head));
+            $.blockchain.on('head-changed', function(head) {
+                this._headChanged(head);
+            }.bind(this));
 
-            $.network.on('peers-changed', () => this._networkChanged());
+            $.network.on('peers-changed', function() {
+                this._networkChanged();
+            }.bind(this));
 
-            $.accounts.on($.wallet.address, (balance) => this._balanceChanged(balance));
+            $.accounts.on($.wallet.address, function(balance) {
+                this._balanceChanged(balance);
+            }.bind(this));
 
-            $.mempool.on('*', () => this._mempoolChanged());
+            $.mempool.on('*', function() {
+                this._mempoolChanged();
+            }.bind(this));
 
-            $.miner.on('start', () => this._minerChanged());
-            $.miner.on('stop', () => this._minerChanged());
-            $.miner.on('hashrate-changed', () => this._minerChanged());
-            $.miner.on('block-mined', () => this._blockMined());
+            $.miner.on('start', function() {
+                this._minerChanged()
+            }.bind(this));
 
-            $.consensus.on('lost', () => $.miner.stopWork());// Blockchain
+            $.miner.on('stop', function() {
+                this._minerChanged()
+            }.bind(this));
+            $.miner.on('hashrate-changed', function() {
+                this._minerChanged()
+            }.bind(this));
+            $.miner.on('block-mined', function() {
+                this._blockMined()
+            }.bind(this));
+
+            $.consensus.on('lost', function() {
+                $.miner.stopWork()
+            }.bind(this));
+
+            // Blockchain
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             this._bcHeight = document.querySelector('#bcHeight');
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
@@ -202,7 +223,7 @@
             this._netBytesReceived = document.querySelector('#netBytesReceived');
             this._netBytesSent = document.querySelector('#netBytesSent');
 
-            setInterval(() => this._networkChanged(), 2500);
+            setInterval(this._networkChanged.bind(this), 2500);
 
             // Wallet
             this._wltAddress = document.querySelector('#wltAddress');
@@ -210,10 +231,14 @@
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toBase64();
-            $.accounts.getBalance($.wallet.address).then(balance => this._balanceChanged(balance));
+            $.accounts.getBalance($.wallet.address).then(function(balance) {
+                this._balanceChanged(balance)
+            }.bind(this));
 
-            const txSubmitBtn = document.querySelector('#txSubmitBtn');
-            txSubmitBtn.onclick = (e) => this._submitTransaction(e);
+            var txSubmitBtn = document.querySelector('#txSubmitBtn');
+            txSubmitBtn.onclick = function(e) {
+                this._submitTransaction(e);
+            }.bind(this);
 
             // Mempool
             this._mplTransactionCount = document.querySelector('#mplTransactionCount');
@@ -225,7 +250,7 @@
             this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
-            this._mnrStartBtn.onclick = () => this._toggleMining();
+            this._mnrStartBtn.onclick = this._toggleMining().bind(this);
 
             // Block history
             this._blockHistory = document.querySelector('#blockHistory');
@@ -238,21 +263,23 @@
 
             // Check for miner auto start.
             if (window.location.hash && window.location.hash === '#miner') {
-                $.consensus.on('established', () => $.miner.startWork());
+                $.consensus.on('established', function() {
+                    $.miner.startWork();
+                }.bind(this));
             }
         }
 
         _submitTransaction(e) {
-            const elRecipientAddr = document.querySelector('#txRecipientAddr');
-            const elValue = document.querySelector('#txValue');
-            const elFee = document.querySelector('#txFee');
+            var elRecipientAddr = document.querySelector('#txRecipientAddr');
+            var elValue = document.querySelector('#txValue');
+            var elFee = document.querySelector('#txFee');
             elRecipientAddr.className = null;
             elValue.className = null;
             elFee.className = null;
 
-            const recipientAddr = elRecipientAddr.value;
-            let value = parseFloat(elValue.value);
-            let fee = parseFloat(elFee.value);
+            var recipientAddr = elRecipientAddr.value;
+            var value = parseFloat(elValue.value);
+            var fee = parseFloat(elFee.value);
 
             if (!recipientAddr) {
                 elRecipientAddr.className = 'error';
@@ -275,7 +302,7 @@
                 return;
             }
 
-            $.accounts.getBalance($.wallet.address).then(balance => {
+            $.accounts.getBalance($.wallet.address).then(function(balance) {
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
@@ -284,7 +311,7 @@
                     return;
                 }
 
-                $.wallet.createTransaction(new Nimiq.Address(recipientAddr), value, fee, balance.nonce).then(tx => {
+                $.wallet.createTransaction(new Nimiq.Address(recipientAddr), value, fee, balance.nonce).then(function(tx) {
                     $.mempool.pushTransaction(tx);
                 });
             });
@@ -293,10 +320,12 @@
             return false;
         }
 
-        async _headChanged(head) {
+        _headChanged(head) {
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
-            this._bcAccountsHash.innerText = await $.blockchain.accountsHash();
+            $.blockchain.accountsHash().then(function(accountsHash) {
+                this._bcAccountsHash.innerText = accountsHash;
+            });
 
             this._hdHash.innerText = $.blockchain.headHash;
             this._hdPrevHash.innerText = $.blockchain.head.prevHash;
@@ -305,15 +334,15 @@
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
 
-            const el = document.createElement('div');
-            const date = new Date(head.timestamp * 1000);
-            let html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+            var el = document.createElement('div');
+            var date = new Date(head.timestamp * 1000);
+            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
                 + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
 
-            for (let tx of head.transactions) {
-                const senderAddr = await tx.senderAddr();
-                const value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                const fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+            for (var tx of head.transactions) {
+                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                 html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
             }
             el.innerHTML = html;
@@ -332,11 +361,8 @@
 
             if (!$.miner.working) {
                 $.miner.startWork();
-
             } else {
-
                 $.miner.stopWork();
-
             }
         }
 
@@ -349,8 +375,8 @@
         }
 
         _humanBytes(bytes) {
-            let i = 0;
-            let units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            var i = 0;
+            var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
             while (bytes > 1024) {
                 bytes /= 1024;
                 i++;
@@ -381,36 +407,37 @@
             this._wltNonce.innerText = balance.nonce;
         }
 
-        async _mempoolChanged() {
+        _mempoolChanged() {
             // XXX inefficient
-            const txs = await $.mempool.getTransactions();
-            this._mplTransactionCount.innerText = txs.length;
+            $.mempool.getTransactions().then(function(txs) {
+                this._mplTransactionCount.innerText = txs.length;
 
-            while (this._mplTransactions.firstChild) {
-                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-            }
+                while (this._mplTransactions.firstChild) {
+                    this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+                }
 
-            for (let tx of txs) {
-                const el = document.createElement('div');
-                const senderAddr = await tx.senderAddr();
-                const value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                const fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-                this._mplTransactions.appendChild(el);
-            }
+                for (var tx of txs) {
+                    var el = document.createElement('div');
+                    var senderAddr = 'TODO'; //await tx.senderAddr();
+                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                    el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    this._mplTransactions.appendChild(el);
+                }
+            }.bind(this));
         }
     }
 
-    // Safari quirks: don't use the same const var name in global scope as id of html element
-    const overlay_ = document.querySelector('#overlay');
+    // Safari quirks: don't use the same var var name in global scope as id of html element
+    var overlay_ = document.querySelector('#overlay');
 
-    Nimiq.init($ => {
+    Nimiq.init(function($) {
         window.$ = $;
         $.network.connect();
 
         overlay_.style.display = 'none';
-        const ui = new MinerUI($);
-    }, () => {
+        window.ui = new MinerUI($);
+    }, function() {
         overlay_.style.display = 'block';
     });
 </script>
