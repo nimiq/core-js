@@ -56,7 +56,7 @@ class BlockBody {
         return Promise.all([
             BlockBody._computeRoot(left),
             BlockBody._computeRoot(right)
-        ]).then(hashes => Hash.light(BufferUtils.concat(hashes[0].serialize(), hashes[1].serialize())));
+        ]).then(hashes => Hash.light(BufferUtils.concatTypedArrays(hashes[0].serialize(), hashes[1].serialize())));
     }
 
     equals(o) {
