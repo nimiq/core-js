@@ -225,7 +225,13 @@ class Blockchain extends Observable {
         return true;
     }
 
-    async _isValidExtension(chain, block) {
+    async _isValidExtension(chain, block) {        
+        // Check that the height is one higher than previous
+        if (chain.height !== block.height - 1) {
+            Log.w(Blockchain, 'Rejecting block - not next in height');
+            return false;
+        }
+        
         // Check that the difficulty matches.
         const nextCompactTarget = await this.getNextCompactTarget(chain);
         if (nextCompactTarget !== block.nBits) {

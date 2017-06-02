@@ -129,6 +129,7 @@ gulp.task('build-web-babel', function () {
     return merge(
         browserify([], {
             require: [
+                'babel-runtime/core-js/array/from',
                 'babel-runtime/core-js/object/values',
                 'babel-runtime/core-js/object/freeze',
                 'babel-runtime/core-js/object/keys',

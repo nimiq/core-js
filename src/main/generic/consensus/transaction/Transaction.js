@@ -1,7 +1,8 @@
 // TODO V2: Transactions may contain a payment reference such that the chain can prove existence of data
 // TODO V2: Copy 'serialized' to detach all outer references
 class Transaction {
-    constructor(senderPubKey, recipientAddr, value, fee, nonce, signature) {
+    constructor(senderPubKey, recipientAddr, value, fee, nonce, signature, version = Transaction.CURRENT_VERSION) {
+        if (!NumberUtils.isUint16(version)) throw 'Invalid version number.';
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
         if (!NumberUtils.isUint64(value) || value == 0) throw 'Malformed value';
@@ -13,6 +14,7 @@ class Transaction {
         // Note that the signature is NOT verified here.
         // Callers must explicitly invoke verifySignature() to check it.
 
+        this._version = version;
         this._senderPubKey = senderPubKey;
         this._recipientAddr = recipientAddr;
         this._value = value;
@@ -22,13 +24,15 @@ class Transaction {
     }
 
     static unserialize(buf) {
+        const version = buf.readUint16();
+        if (!Transaction.SUPPORTED_VERSIONS.includes(version)) throw 'Transaction version unsupported';
         const senderPubKey = PublicKey.unserialize(buf);
         const recipientAddr = Address.unserialize(buf);
         const value = buf.readUint64();
         const fee = buf.readUint64();
         const nonce = buf.readUint32();
         const signature = Signature.unserialize(buf);
-        return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
+        return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature, version);
     }
 
     serialize(buf) {
@@ -45,6 +49,7 @@ class Transaction {
 
     serializeContent(buf) {
         buf = buf || new SerialBuffer(this.serializedContentSize);
+        buf.writeUint16(this._version);
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
@@ -54,7 +59,8 @@ class Transaction {
     }
 
     get serializedContentSize() {
-        return this._senderPubKey.serializedSize
+        return /*version*/ 2 
+            + this._senderPubKey.serializedSize
             + this._recipientAddr.serializedSize
             + /*value*/ 8
             + /*fee*/ 8
@@ -126,5 +132,7 @@ class Transaction {
         this._signature = sig;
     }
 }
+Transaction.CURRENT_VERSION = 1;
+Transaction.SUPPORTED_VERSIONS = [1];
 
 Class.register(Transaction);

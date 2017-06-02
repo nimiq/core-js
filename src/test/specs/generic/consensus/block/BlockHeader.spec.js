@@ -6,91 +6,93 @@ describe('BlockHeader', () => {
     const timestamp = 1;
     const nonce = 1;
 
-    it('is 116 bytes long', () => {
-        /*
-         32 bytes prevHash
-         32 bytes bodyHash
-         32 bytes accountsHash
-         4 bytes difficulty
-         4 bytes timestamp
-         8 bytes nonce
-         ----------------------------
-         112 bytes
-         */
-        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    it('is 118 bytes long', () => {
+
+        //   2 bytes version
+        //  32 bytes prevHash
+        //  32 bytes bodyHash
+        //  32 bytes accountsHash
+        //   4 bytes difficulty
+        //   4 bytes height
+        //   4 bytes timestamp
+        //   8 bytes nonce
+        // ----------------------------
+        // 118 bytes
+
+        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 1, timestamp, nonce);
 
         const serialized = blockHeader1.serialize();
 
-        expect(serialized.byteLength).toBe(112);
+        expect(serialized.byteLength).toBe(118);
     });
 
 
     it('must have a well defined prevHash (32 bytes)', () => {
         expect(() => {
-            const test1 = new BlockHeader(undefined, bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test1 = new BlockHeader(undefined, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test2 = new BlockHeader(null, bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test2 = new BlockHeader(null, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test3 = new BlockHeader(true, bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test3 = new BlockHeader(true, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test4 = new BlockHeader(new Address(new Uint8Array(20)), bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test4 = new BlockHeader(new Address(new Uint8Array(20)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test5 = new BlockHeader(new Signature(new Uint8Array(Crypto.signatureSize)), bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(new Signature(new Uint8Array(Crypto.signatureSize)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test5 = new BlockHeader(new ArrayBuffer(32), bodyHash, accountsHash, difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(new ArrayBuffer(32), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
     });
 
     it('must have a well defined bodyHash (32 bytes)', () => {
         expect(() => {
-            const test1 = new BlockHeader(prevHash, undefined, accountsHash, difficulty, timestamp, nonce);
+            const test1 = new BlockHeader(prevHash, undefined, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test2 = new BlockHeader(prevHash, null, accountsHash, difficulty, timestamp, nonce);
+            const test2 = new BlockHeader(prevHash, null, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test3 = new BlockHeader(prevHash, true, accountsHash, difficulty, timestamp, nonce);
+            const test3 = new BlockHeader(prevHash, true, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test4 = new BlockHeader(prevHash, new Address(new Uint8Array(20)), accountsHash, difficulty, timestamp, nonce);
+            const test4 = new BlockHeader(prevHash, new Address(new Uint8Array(20)), accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, new Signature(new Uint8Array(Crypto.signatureSize)), accountsHash, difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, new Signature(new Uint8Array(Crypto.signatureSize)), accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, new Uint8Array(32), accountsHash, difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, new Uint8Array(32), accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
     });
 
     it('must have a well defined accountsHash (32 bytes)', () => {
         expect(() => {
-            const test1 = new BlockHeader(prevHash, bodyHash, undefined, difficulty, timestamp, nonce);
+            const test1 = new BlockHeader(prevHash, bodyHash, undefined, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test2 = new BlockHeader(prevHash, bodyHash, null, difficulty, timestamp, nonce);
+            const test2 = new BlockHeader(prevHash, bodyHash, null, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test3 = new BlockHeader(prevHash, bodyHash, true, difficulty, timestamp, nonce);
+            const test3 = new BlockHeader(prevHash, bodyHash, true, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test4 = new BlockHeader(prevHash, bodyHash, new Address(new Uint8Array(20)), difficulty, timestamp, nonce);
+            const test4 = new BlockHeader(prevHash, bodyHash, new Address(new Uint8Array(20)), difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, bodyHash, new Signature(new Uint8Array(Crypto.signatureSize)), difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, bodyHash, new Signature(new Uint8Array(Crypto.signatureSize)), difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, bodyHash, new Uint8Array(32), difficulty, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, bodyHash, new Uint8Array(32), difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
     });
 
     it('must have a well defined nonce (8 bytes)', () => {
         const nonce1 = NumberUtils.UINT64_MAX;
-        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce1);
+        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce1);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const nonce2 = blockHeader2.nonce;
 
@@ -100,7 +102,7 @@ describe('BlockHeader', () => {
     it('must have a well defined difficulty (4 bytes)', () => {
         const difficulty1 = NumberUtils.UINT32_MAX;
         const compact1 = BlockUtils.difficultyToCompact(difficulty1);
-        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, compact1, timestamp, nonce);
+        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, compact1, 2, timestamp, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const compact2 = blockHeader2.nBits;
 
@@ -109,7 +111,7 @@ describe('BlockHeader', () => {
 
     it('must have a well defined timestamp (4 bytes)', () => {
         const timestamp1 = NumberUtils.UINT32_MAX;
-        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp1, nonce);
+        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 2, timestamp1, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const timestamp2 = blockHeader2.timestamp;
 
@@ -117,7 +119,7 @@ describe('BlockHeader', () => {
     });
 
     it('is serializable and unserializable', () => {
-        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+        const blockHeader1 = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
 
         expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);
@@ -128,7 +130,7 @@ describe('BlockHeader', () => {
     });
 
     it('can falsify an invalid proof-of-work', (done) => {
-        const blockHeader = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+        const blockHeader = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         blockHeader.verifyProofOfWork()
             .then((isValid) => {
                 expect(isValid).toBe(false);

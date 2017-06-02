@@ -157,9 +157,10 @@ describe('PeerChannel', () => {
     });
 });
 class SpyConnection extends Observable {
-    constructor(send) {
+    constructor(send, ban) {
         super();
         this.send = send || (() => {});
+        this.ban = ban || (() => { throw 'Spy was banned unexpectedly.';});
         this.onmessage = ( (msg) => {
             this.fire('message', msg);
         } );

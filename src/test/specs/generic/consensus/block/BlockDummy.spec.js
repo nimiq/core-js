@@ -26,7 +26,7 @@ Dummy.block1 = (() => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 3, timestamp, nonce);
 
     Dummy.header1 = header;
 
@@ -60,7 +60,7 @@ Dummy.block2 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -87,7 +87,7 @@ Dummy.block3 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -114,7 +114,7 @@ Dummy.block4 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX + 100000;
     const nonce = 1;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -139,7 +139,7 @@ Dummy.block5 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(2);
     const timestamp = 1;
     const nonce = 43998;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -166,7 +166,7 @@ Dummy.block6 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 191973;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -191,7 +191,7 @@ Dummy.block7 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 111932;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -217,7 +217,7 @@ Dummy.block8 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 2, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -243,7 +243,7 @@ Dummy.block9 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 0;
     const nonce = 43403;
-    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty, 3, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -268,7 +268,7 @@ Dummy.block10 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 41229;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 3, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -293,7 +293,7 @@ Dummy.block10_2 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 47334;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 3, timestamp, nonce);
 
     //let i = 0;
     //do {
@@ -325,7 +325,7 @@ Dummy.block11 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 128344;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 11, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -350,7 +350,7 @@ Dummy.block12 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 75;
     const nonce = 7157;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 12, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -376,7 +376,7 @@ Dummy.block13 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(2);
     const timestamp = 80;
     const nonce = 70236;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 13, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -401,7 +401,7 @@ Dummy.block11_3 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 62142;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 11, timestamp, nonce);
 
     return new Block(header,body);
 })();
@@ -426,7 +426,7 @@ Dummy.block12_3 = (async () => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 38545;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 12, timestamp, nonce);
 
     //let i = 0;
     //do {
@@ -486,7 +486,7 @@ Dummy.accountsBlock = (() => {
     const difficulty = BlockUtils.difficultyToCompact(1);
     const timestamp = 1;
     const nonce = 1;
-    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, timestamp, nonce);
+    const header = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 3, timestamp, nonce);
 
     Dummy.header3 = header;
 
