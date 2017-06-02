@@ -80,10 +80,14 @@ class Accounts extends Observable {
         }
 
         const newValue = operator(balance.value, value);
-        if (newValue < 0) throw 'Balance Error!';
+        if (newValue < 0) {
+            throw 'Balance Error!';
+        }
 
         const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
-        if (newNonce < 0) throw 'Nonce Error!';
+        if (newNonce < 0) {
+            throw 'Nonce Error!';
+        }
 
         const newBalance = new Balance(newValue, newNonce);
         await treeTx.put(address, newBalance);

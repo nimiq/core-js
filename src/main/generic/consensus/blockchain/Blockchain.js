@@ -141,22 +141,7 @@ class Blockchain extends Observable {
         }
 
         // Otherwise, check if the new chain is harder than our current main chain:
-        // - Pick chain with higher total work.
-        // - If identical, pick chain with higher timestamp.
-        // - If identical as well, pick chain with lower PoW hash.
-        let isHarderChain = false;
-        if (newChain.totalWork > this.totalWork) {
-            isHarderChain = true;
-        } else if (newChain.totalWork === this.totalWork) {
-            if (newChain.head.timestamp > this.head.timestamp) {
-                isHarderChain = true;
-            } else if (newChain.head.timestamp === this.head.timestamp
-                    && parseInt(hash.toHex(), 16) < parseInt(this.headHash.toHex(), 16)) {
-                isHarderChain = true;
-            }
-        }
-
-        if (isHarderChain) {
+        if (this._isHarderChain(newChain, hash)) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(newChain, hash);
 
@@ -171,6 +156,24 @@ class Blockchain extends Observable {
         Log.v(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
 
         return Blockchain.PUSH_OK;
+    }
+
+    _isHarderChain(newChain, headHash) {
+        // - Pick chain with higher total work.
+        // - If identical, pick chain with higher timestamp.
+        // - If identical as well, pick chain with lower PoW hash.
+        let isHarderChain = false;
+        if (newChain.totalWork > this.totalWork) {
+            isHarderChain = true;
+        } else if (newChain.totalWork === this.totalWork) {
+            if (newChain.head.timestamp > this.head.timestamp) {
+                isHarderChain = true;
+            } else if (newChain.head.timestamp === this.head.timestamp
+                && parseInt(headHash.toHex(), 16) < parseInt(this.headHash.toHex(), 16)) {
+                isHarderChain = true;
+            }
+        }
+        return isHarderChain;
     }
 
     async _verifyBlock(block) {
@@ -265,12 +268,17 @@ class Blockchain extends Observable {
     }
 
     async _revert() {
+        const curAccountsHash = await this._accounts.hash();
+        Log.d(Blockchain, `Reverting head block ${this.headHash}, current accountsHash ${curAccountsHash}, head accountsHash ${this.head.accountsHash}`);
+
         // Revert the head block of the main chain.
         await this._accounts.revertBlock(this.head);
 
         // XXX Sanity check: Assert that the accountsHash now matches the
         // accountsHash of the current head.
         const accountsHash = await this._accounts.hash();
+        Log.d(Blockchain, `AccountsHash after revert: ${accountsHash}`);
+
         if (!accountsHash.equals(this.head.accountsHash)) {
             throw 'Failed to revert main chain - inconsistent state';
         }

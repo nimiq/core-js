@@ -1,6 +1,6 @@
 class LogNative {
     constructor() {
-        this._global_level = Log.DEBUG;
+        this._global_level = Log.TRACE;
         this._tag_levels = {};
         if (window.localStorage) {
             try {

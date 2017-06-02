@@ -164,8 +164,6 @@ class PeerAddresses extends Observable {
 
             // Never return addresses that are too old.
             if (this._exceedsAge(address)) {
-                // XXX Debug
-                Log.d(PeerAddresses, `Not returning old address ${peerAddressState}`);
                 continue;
             }
 
