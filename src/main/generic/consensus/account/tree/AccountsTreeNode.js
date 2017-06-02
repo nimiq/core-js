@@ -7,7 +7,7 @@ class AccountsTreeNode {
         return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, children);
     }
 
-    constructor(prefix = new Uint8Array(), balance, children) {
+    constructor(type, prefix = new Uint8Array(), arg) {
         this._type = type;
         this.prefix = prefix;
         if (type === AccountsTreeNode.BRANCH) {
@@ -17,17 +17,9 @@ class AccountsTreeNode {
         }
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, AccountsTreeNode);
-        Account.cast(o._account);
-        return o;
-    }
-
     static unserialize(buf) {
         const type = buf.readUint8();
-        const prefixLength = buf.readUint8();
-        const prefix = buf.read(prefixLength);
+        const prefix = buf.readVarLengthString();
 
         if (type === AccountsTreeNode.TERMINAL) {
             // Terminal node
@@ -51,8 +43,7 @@ class AccountsTreeNode {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._type);
-        buf.writeUint8(this.prefix.byteLength);
-        buf.write(this.prefix);
+        buf.writeVarLengthString(this.prefix);
 
         if (this._type === AccountsTreeNode.TERMINAL) {
             // Terminal node
@@ -84,22 +75,24 @@ class AccountsTreeNode {
         }
 
         return /*type*/ 1
-            + /*prefixLength*/ 1
-            + this.prefix.byteLength
+            + /*extra byte varLengthString prefix*/ 1
+            + this.prefix.length
             + payloadSize;
     }
 
     getChild(prefix) {
-        return this._children && this._children[prefix[0]];
+        return this._children && this._children[this._getChildIndex(prefix)];
     }
 
     putChild(prefix, child) {
         this._children = this._children || [];
-        this._children[prefix[0]] = child;
+        this._children[this._getChildIndex(prefix)] = child;
     }
 
     removeChild(prefix) {
-        if (this._children) delete this._children[prefix[0]];
+        if (this._children) {
+            delete this._children[this._getChildIndex(prefix)];
+        }
     }
 
     hasChildren() {
@@ -117,8 +110,20 @@ class AccountsTreeNode {
         return this._children.find(child => !!child);
     }
 
+    get account() {
+        return this._account;
+    }
+
+    set account(account) {
+        this._account = account;
+    }
+
     hash() {
         return Hash.light(this.serialize());
+    }
+
+    _getChildIndex(prefix) {
+        return parseInt(prefix[0], 16);
     }
 }
 AccountsTreeNode.BRANCH = 0x00;

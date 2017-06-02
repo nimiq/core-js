@@ -21,7 +21,7 @@ class AccountsTree extends Observable {
     async _initRoot() {
         let rootKey = await this._store.getRootKey();
         if (!rootKey) {
-            const rootNode = AccountsTreeNode.branchNode(/*prefix*/ new Uint8Array(0), /*children*/ []);
+            const rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*children*/ []);
             rootKey = await this._store.put(rootNode);
             await this._store.setRootKey(rootKey);
         }
@@ -44,28 +44,29 @@ class AccountsTree extends Observable {
         const rootNode = await transaction.get(rootKey);
 
         // Insert account into the tree at address.
-        await this._insert(transaction, rootNode, address, account, []);
+        const prefix = address.toHex();
+        await this._insert(transaction, rootNode, prefix, account, []);
 
         // Tell listeners that the account at address has changed.
         this.fire(address, account, address);
     }
 
-    async _insert(transaction, node, address, account, rootPath) {
+    async _insert(transaction, node, prefix, account, rootPath) {
         // Find common prefix between node and new address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
+        const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
 
         // Cut common prefix off the new address.
-        address = address.subarray(commonPrefix.length);
+        prefix = prefix.substr(commonPrefix.length);
 
         // If the node prefix does not fully match the new address, split the node.
         if (commonPrefix.length !== node.prefix.length) {
             // Cut the common prefix off the existing node.
             await transaction.remove(node);
-            node.prefix = node.prefix.slice(commonPrefix.length);
+            node.prefix = node.prefix.substr(commonPrefix.length);
             const nodeKey = await transaction.put(node);
 
             // Insert the new account node.
-            const newChild = AccountsTreeNode.terminalNode(address, account);
+            const newChild = AccountsTreeNode.terminalNode(prefix, account);
             const newChildKey = await transaction.put(newChild);
 
             // Insert the new parent node.
@@ -79,7 +80,7 @@ class AccountsTree extends Observable {
 
         // If the remaining address is empty, we have found an (existing) node
         // with the given address. Update the account.
-        if (!address.length) {
+        if (!prefix.length) {
             // Delete the existing node.
             await transaction.remove(node);
 
@@ -101,15 +102,15 @@ class AccountsTree extends Observable {
 
         // If the node prefix matches and there are address bytes left, descend into
         // the matching child node if one exists.
-        const childKey = node.getChild(address);
+        const childKey = node.getChild(prefix);
         if (childKey) {
             const childNode = await transaction.get(childKey);
             rootPath.push(node);
-            return this._insert(transaction, childNode, address, account, rootPath);
+            return this._insert(transaction, childNode, prefix, account, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
-        const newChild = AccountsTreeNode.terminalNode(address, account);
+        const newChild = AccountsTreeNode.terminalNode(prefix, account);
         const newChildKey = await transaction.put(newChild);
 
         await transaction.remove(node);
@@ -172,28 +173,29 @@ class AccountsTree extends Observable {
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
 
-        return this._retrieve(transaction, rootNode, address);
+        const prefix = address.toHex();
+        return this._retrieve(transaction, rootNode, prefix);
     }
 
-    async _retrieve(transaction, node, address) {
+    async _retrieve(transaction, node, prefix) {
         // Find common prefix between node and requested address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, address);
+        const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
 
         // If the prefix does not fully match, the requested address is not part
         // of this node.
         if (commonPrefix.length !== node.prefix.length) return false;
 
         // Cut common prefix off the new address.
-        address = address.subarray(commonPrefix.length);
+        prefix = prefix.substr(commonPrefix.length);
 
         // If the remaining address is empty, we have found the requested node.
-        if (!address.length) return node.account;
+        if (!prefix.length) return node.account;
 
         // Descend into the matching child node if one exists.
-        const childKey = node.getChild(address);
+        const childKey = node.getChild(prefix);
         if (childKey) {
             const childNode = await transaction.get(childKey);
-            return this._retrieve(transaction, childNode, address);
+            return this._retrieve(transaction, childNode, prefix);
         }
 
         // No matching child exists, the requested address is not part of this node.
@@ -218,14 +220,12 @@ class AccountsTree extends Observable {
         };
     }
 
-    static _commonPrefix(arr1, arr2) {
-        const commonPrefix = new Uint8Array(arr1.length);
+    static _commonPrefix(prefix1, prefix2) {
         let i = 0;
-        for (; i < arr1.length; ++i) {
-            if (arr1[i] !== arr2[i]) break;
-            commonPrefix[i] = arr1[i];
+        for (; i < prefix1.length; ++i) {
+            if (prefix1[i] !== prefix2[i]) break;
         }
-        return commonPrefix.slice(0, i);
+        return prefix1.substr(0, i);
     }
 
     async root() {
