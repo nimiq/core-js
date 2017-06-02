@@ -344,10 +344,12 @@ class Network extends Observable {
         }
 
         // Discard signals that have reached their TTL.
-        if (msg.ttl <= 0 && msg.flags === 0) {
+        if (msg.ttl <= 0) {
             Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             // Send signal containing TTL_EXCEEDED flag back in reverse direction.
-            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
+            if (msg.flags === 0) {
+                channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
+            }
             return;
         }
 
