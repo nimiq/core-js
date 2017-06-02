@@ -25,18 +25,18 @@ class WindowDetector {
                 this._pong(e.newValue);
             }
         });
-        window.addEventListener('unload', e => {
+        window.addEventListener('unload', () => {
             this._bye();
         });
     }
 
     isSingleWindow() {
-        return new Promise( (resolve, reject) => {
+        return new Promise((resolve) => {
             const nonce = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
             const timeout = setTimeout( () => {
                 window.removeEventListener('storage', listener);
                 resolve(true);
-            }, 100);
+            }, 500);
 
             const listener = e => {
                 if (e.key === WindowDetector.KEY_PONG && e.newValue == nonce) {

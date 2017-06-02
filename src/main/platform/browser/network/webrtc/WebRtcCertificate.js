@@ -22,3 +22,4 @@ class WebRtcCertificate {
     }
 }
 WebRtcCertificate._certificate = null;
+Class.register(WebRtcCertificate);

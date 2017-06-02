@@ -51,3 +51,4 @@ class LogNative {
         }
     }
 }
+Class.register(LogNative);

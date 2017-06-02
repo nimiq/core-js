@@ -34,7 +34,7 @@ console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ',
 NetworkConfig.configurePeerAddress(host, port);
 NetworkConfig.configureSSL(key, cert);
 
-Core.init($ => {
+(new Core()).then($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
     if (!passive) {
