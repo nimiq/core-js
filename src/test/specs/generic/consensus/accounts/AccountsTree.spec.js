@@ -1,5 +1,4 @@
 describe('AccountsTree', () => {
-
     it('has a 32 bytes root hash', (done) => {
         const balance1 = new Balance(80000, 8);
         const balance2 = new Balance(8000000, 8);
@@ -104,6 +103,67 @@ describe('AccountsTree', () => {
     });
 
     it('root hash is invariant to insertion order', (done) => {
+        const balance = new Balance(8, 8);
+        const balanceReset = new Balance(0, 0);
+
+        const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+        const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
+        const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
+
+        async function test() {
+            const tree = await AccountsTree.createVolatile();
+
+            // order1
+            await tree.put(address1, balance);
+            await tree.put(address2, balance);
+            await tree.put(address3, balance);
+            const state1 = await tree.root();
+
+
+            // "reset"
+            await tree.put(address1, balanceReset);
+            await tree.put(address3, balanceReset);
+            await tree.put(address2, balanceReset);
+            // order2
+            await tree.put(address1, balance);
+            await tree.put(address3, balance);
+            await tree.put(address2, balance);
+            const state2 = await tree.root();
+
+
+            // "reset"
+            await tree.put(address1, balanceReset);
+            await tree.put(address3, balanceReset);
+            await tree.put(address2, balanceReset);
+            // order3
+            await tree.put(address2, balance);
+            await tree.put(address1, balance);
+            await tree.put(address3, balance);
+            const state3 = await tree.root();
+
+
+            // "reset"
+            await tree.put(address1, balanceReset);
+            await tree.put(address3, balanceReset);
+            await tree.put(address2, balanceReset);
+            // order4
+            await tree.put(address2, balance);
+            await tree.put(address3, balance);
+            await tree.put(address1, balance);
+            const state4 = await tree.root();
+
+            expect(state2.toBase64()).toBe(state1.toBase64());
+            expect(state3.toBase64()).toBe(state1.toBase64());
+            expect(state4.toBase64()).toBe(state1.toBase64());
+
+            done();
+        }
+
+        test();
+    });
+
+
+    it('root hash is invariant to insertion order (test 2)', (done) => {
         const value1 = 8;
         const nonce1 = 8;
         const balance1 = new Balance(value1, nonce1);
@@ -114,56 +174,27 @@ describe('AccountsTree', () => {
         const balance2 = new Balance(value2, nonce2);
         const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
-        const value3 = 88888888;
-        const nonce3 = 88888888;
-        const balance3 = new Balance(value3, nonce3);
-        const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
-
         async function test() {
-            const tree = await AccountsTree.createVolatile();
+            let accounts = await Accounts.createVolatile();
 
             // order1
-            await tree.put(address1, balance1);
-            await tree.put(address2, balance1);
-            await tree.put(address3, balance1);
-            const state1 = await tree.root();
+            await accounts.commitBlock(Block.GENESIS);
+            await accounts._tree.put(address1, balance1);
+            await accounts._tree.put(address2, balance2);
+            const state1 = await accounts._tree.root();
 
 
             // "reset"
-            await tree.put(address1, balance2);
-            await tree.put(address3, balance2);
-            await tree.put(address2, balance2);
+            accounts = await Accounts.createVolatile();
+
             // order2
-            await tree.put(address1, balance1);
-            await tree.put(address3, balance1);
-            await tree.put(address2, balance1);
-            const state2 = await tree.root();
+            await accounts.commitBlock(Block.GENESIS);
+            await accounts._tree.put(address2, balance2);
+            await accounts._tree.put(address1, balance1);
+            const state2 = await accounts._tree.root();
 
-
-            // "reset"
-            await tree.put(address1, balance2);
-            await tree.put(address3, balance2);
-            await tree.put(address2, balance2);
-            // order3
-            await tree.put(address2, balance1);
-            await tree.put(address1, balance1);
-            await tree.put(address3, balance1);
-            const state3 = await tree.root();
-
-
-            // "reset"
-            await tree.put(address1, balance2);
-            await tree.put(address3, balance2);
-            await tree.put(address2, balance2);
-            // order4
-            await tree.put(address2, balance1);
-            await tree.put(address3, balance1);
-            await tree.put(address1, balance1);
-            const state4 = await tree.root();
 
             expect(state2.toBase64()).toBe(state1.toBase64());
-            expect(state3.toBase64()).toBe(state1.toBase64());
-            expect(state4.toBase64()).toBe(state1.toBase64());
 
             done();
         }
@@ -239,6 +270,33 @@ describe('AccountsTree', () => {
 
             await tree.put(address2, balance2);
             await tree.put(address2, new Balance(0, 0));
+
+            const root2 = await tree.root();
+            expect(root2.toBase64()).toEqual(root1.toBase64());
+
+            done();
+        }
+
+        test();
+    });
+
+    it('can merge nodes while pruning', (done) => {
+        // Balance { value:0, nonce:0 } may not be stored explicitly
+
+        async function test() {
+            const tree = await AccountsTree.createVolatile();
+
+            const address1 = new Address(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+            const address2 = new Address(new Uint8Array([1, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+            const address3 = new Address(new Uint8Array([1, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+
+            await tree.put(address1, new Balance(50, 0));
+            const root1 = await tree.root();
+
+            await tree.put(address2, new Balance(50, 0));
+            await tree.put(address3, new Balance(50, 0));
+            await tree.put(address2, new Balance(0, 0));
+            await tree.put(address3, new Balance(0, 0));
 
             const root2 = await tree.root();
             expect(root2.toBase64()).toEqual(root1.toBase64());

@@ -22,7 +22,7 @@ describe('BufferUtils', () => {
         const buffer1 = BufferUtils.fromAscii('test1');
         const buffer2 = BufferUtils.fromAscii('test2');
 
-        const concatedBuffer = BufferUtils.concat(buffer1, buffer2);
+        const concatedBuffer = BufferUtils.concatTypedArrays(buffer1, buffer2);
         const buffer3 = concatedBuffer.slice(0, buffer1.byteLength);
         const buffer4 = concatedBuffer.slice(buffer1.byteLength);
 
