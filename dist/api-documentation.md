@@ -4,25 +4,41 @@
 
 ### Basic initialization
 ```
-Core.init($ => {
-	// $ is the instance
+Nimiq.init($ => {
+	// $ is the Core instance
 });
 ```
 
 ### Initialization with error callback
-Currently, the error callback will only be called if an instance of core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
+- `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
+- `Nimiq.ERR_UNSUPPORTED`: This browser is not supported.
+- `Nimiq.ERR_UNKNOWN`: An unknown error occured while loading.
+
 ```
-Core.init($ => {
-	// $ is the instance
-}, () => alert('Another nimiq instance is already running'));
+Nimiq.init($ => {
+    // $ is the instance
+}, code => {
+    switch (code) {
+        case Nimiq.ERR_WAIT:
+            alert('Another Nimiq instance is already running');
+            break;
+        case Nimiq.ERR_UNSUPPORTED:
+            alert('Browser not supported');
+            break;
+        default:
+            alert('Nimiq initialization error');
+            break;
+    }
+});
 ```
 
 ### Get an existing core instance
 ```
-Core.get().then($ => {
-	// $ is the instance
+Nimiq.get().then($ => {
+    // $ is the instance
 });
 ```
+
 
 ## Network
 Available via `$.network`.
@@ -73,7 +89,7 @@ No public methods.
 - `lost`
 
 ### Examples
-Listen for `consensusEstablished` event:
+Listen for `established` event:
 ```
 $.consensus.on('established', () => console.log('consensus established!'))
 ```
@@ -99,14 +115,14 @@ No public properties.
 Query an account's balance:
 ```
 $.accounts.getBalance(<<address>>).then(balance => {
-	console.log(balance.value)
-	console.log(balance.nonce)
+    console.log(balance.value)
+    console.log(balance.nonce)
 })
 ```
 Listen for an account balance change:
 ```
 $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
-	console.log(balance)
+    console.log(balance)
 })
 ```
 
@@ -149,7 +165,6 @@ $.blockchain.on('head-changed', () => {
 
 
 
-
 ## Mempool
 Available via `$.mempool`.
 
@@ -164,9 +179,6 @@ No public properties.
 ### Events
 - `transaction-added`
 - `transactions-ready`
-
-### Examples
-<TODO>
 
 
 
@@ -187,7 +199,7 @@ No events.
 Create a transaction:
 ```
 $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction => {
-	console.log(transaction)
+    console.log(transaction)
 })
 ```
 
@@ -219,9 +231,3 @@ $.consensus.on('lost', () => $.miner.stopWork());
 - `stop`
 - `block-mined`
 - `hashrate-changed`
-
-### Examples
-Start mining
-```
-$.miner.startWork();
-```

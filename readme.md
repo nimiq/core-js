@@ -36,7 +36,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 ```
 
 ### Build your own Browser client
-Just include ```<script src="dist/web.js"></script>``` in your project.
+Just include `<script src="dist/nimiq.js"></script>` in your project.
 
 ### API Docs 
 The [API Documentation is here](dist/api-documentation.md).
