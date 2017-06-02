@@ -8,18 +8,18 @@ describe('Transaction', () => {
 
     it('is 136 bytes long', () => {
 
-        //  65 bytes senderPubKey
+        //  64 bytes senderPubKey
         //  20 bytes recipientAddress
         //   8 bytes value
         //   8 bytes fee
         //   4 bytes nonce
         //  64 bytes signature
         // ----------------------------
-        // 169 bytes
+        // 168 bytes
 
         const transaction1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
         const serialized = transaction1.serialize();
-        expect(serialized.byteLength).toBe(169);
+        expect(serialized.byteLength).toBe(168);
     });
 
     it('must have a well defined signature (64 bytes)', () => {

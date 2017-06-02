@@ -4,11 +4,11 @@ Dummy.hash1 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ='; // "hello"
 Dummy.hash2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V6YvaycThUE6hb0huQ='; // "hello2"
 Dummy.hash3 = 'R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA='; // "hello3"
 
-Dummy.publicKey1 = 'BI8wpNk41BMNGjOW3t4VBccrf3Wsn5uA0a1+Nos587EFFzdKKQgDTwEVJhEPYqihOA/605GNxH09X3xGIrKwP68=';
-Dummy.publicKey2 = 'BHM/60qPtA1UfFO+pJgy1ATkRUEOT7h0bdAU+mZYoqtDJGFAC2PZlggzxkm7pYuLzkQHc+wC405fHV1W5jDX6QA=';
-Dummy.publicKey3 = 'BHKblaL8o+wwiO2vEe8MnP7MGcpfkuSGIXWQXJ2SVaESgq6KR61qP+HREu4nrKNo5WbXjswHbOHXXVqQvx/hJSE=';
-Dummy.publicKey4 = 'BN6UN00jbveCq4kqFgjGaKwBOzdRIWLDk2MVngpGbfX/MfxVL6teoEaiu03tdl66oI9oQ+QyWUqLpMZcIpmuVtE=';
-Dummy.publicKey5 = 'BJ34jQS0bYB+iJiBLYbMVLGshp72BglwBrraHGHk1kWHAp7eHW9Hq5qiDwN6pY/QoJqAEjI/V7RcRJvPF8aDbM4=';
+Dummy.publicKey1 = 'jzCk2TjUEw0aM5be3hUFxyt/dayfm4DRrX42iznzsQUXN0opCANPARUmEQ9iqKE4D/rTkY3EfT1ffEYisrA/rw==';
+Dummy.publicKey2 = 'cz/rSo+0DVR8U76kmDLUBORFQQ5PuHRt0BT6Zliiq0MkYUALY9mWCDPGSbuli4vORAdz7ALjTl8dXVbmMNfpAA==';
+Dummy.publicKey3 = 'cpuVovyj7DCI7a8R7wyc/swZyl+S5IYhdZBcnZJVoRKCropHrWo/4dES7ieso2jlZteOzAds4dddWpC/H+ElIQ==';
+Dummy.publicKey4 = '3pQ3TSNu94KriSoWCMZorAE7N1EhYsOTYxWeCkZt9f8x/FUvq16gRqK7Te12Xrqgj2hD5DJZSoukxlwima5W0Q==';
+Dummy.publicKey5 = 'nfiNBLRtgH6ImIEthsxUsayGnvYGCXAGutocYeTWRYcCnt4db0ermqIPA3qlj9CgmoASMj9XtFxEm88XxoNszg==';
 
 Dummy.address1 = 'kekkD0FSI5gu3DRVMmMHEOlKf1I='; // "hello1"
 Dummy.address2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V4='; // "hello2"
