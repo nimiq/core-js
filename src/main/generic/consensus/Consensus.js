@@ -1,8 +1,4 @@
 class Consensus extends Observable {
-    static get SYNC_THROTTLE() {
-        return 1000; // ms
-    }
-
     constructor(blockchain, mempool, network) {
         super();
         this._blockchain = blockchain;
@@ -56,14 +52,21 @@ class Consensus extends Observable {
             return;
         }
 
-        // Find the peer with the hardest chain that isn't sync'd yet.
+        // Find the peers with the hardest chain that aren't sync'd yet.
         let bestTotalWork = -1;
-        let bestAgent = null;
+        let bestAgents = [];
         for (const agent of this._agents.values()) {
-            if (!agent.synced && agent.peer.totalWork >= bestTotalWork) {
+            if (!agent.synced && agent.peer.totalWork > bestTotalWork) {
                 bestTotalWork = agent.peer.totalWork;
-                bestAgent = agent;
+                bestAgents = [agent];
+            } else if (!agent.synced && agent.peer.totalWork === bestTotalWork) {
+                bestAgents.push(agent);
             }
+        }
+        // Choose a random peer from those.
+        let bestAgent = null;
+        if (bestAgents.length > 0) {
+            bestAgent = bestAgents[Math.floor(Math.random() * bestAgents.length)];
         }
 
         if (!bestAgent) {
@@ -114,4 +117,5 @@ class Consensus extends Observable {
 
     // TODO confidence level?
 }
+Consensus.SYNC_THROTTLE = 1500; // 1.5 seconds
 Class.register(Consensus);
