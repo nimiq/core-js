@@ -1,8 +1,7 @@
 class NetAddress {
     static fromIpAddress(ip, port) {
-        ip = NetAddress.validatedIpAddress(ip);
-        if (!ip) throw 'Malformed IP address';
-        return new NetAddress(ip, port);
+        const saneIp = NetAddress.sanitizeIpAddress(ip);
+        return new NetAddress(saneIp, port);
     }
 
     static fromHostname(host, port) {
@@ -11,12 +10,17 @@ class NetAddress {
         return new NetAddress(host, port);
     }
 
-    static validatedIpAddress(ip) {
-        ip = NetAddress._normalizeIpAddress(ip);
-        if (NetAddress.IP_BLACKLIST.indexOf(ip) < 0) {
-            return ip;
+    static sanitizeIpAddress(ip) {
+        const saneIp = NetAddress._normalizeIpAddress(ip);
+        if (NetAddress.IP_BLACKLIST.indexOf(saneIp) >= 0) {
+            throw 'Malformed IP address';
         }
-        return null;
+        // TODO reject IPv6 broadcast addresses
+        return saneIp;
+    }
+
+    static isIpAddress(ip) {
+        return NetAddress.isIPv4Address(ip) || NetAddress.isIPv6Address(ip);
     }
 
     static isIPv4Address(ip) {
@@ -31,6 +35,7 @@ class NetAddress {
         if (parts.length > 8 || parts.length < 3) {
             return false;
         }
+
         let innerEmpty = false;
         for (let i = 0; i < parts.length; ++i) {
             // Check whether each part is valid.
@@ -45,78 +50,91 @@ class NetAddress {
                 innerEmpty = true;
             }
         }
+
         // If the first part is empty, the second has to be empty as well (e.g., ::1).
         if (parts[0].length === 0) {
             return parts[1].length === 0;
         }
+
         // If the last part is empty, the second last has to be empty as well (e.g., 1::).
         if (parts[parts.length - 1].length === 0) {
             return parts[parts.length - 2].length === 0;
         }
+
         // If the length is less than 8, there has to be an empty part.
         if (parts.length < 8) {
             return innerEmpty;
         }
+
         return true;
     }
 
     static _normalizeIpAddress(ip) {
         if (NetAddress.isIPv4Address(ip)) {
+            // Re-create IP address to strip possible leading zeros.
             const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
             return `${parseInt(match[1])}.${parseInt(match[2])}.${parseInt(match[3])}.${parseInt(match[4])}`;
         }
 
         if (NetAddress.isIPv6Address(ip)) {
+            // Shorten IPv6 address according to RFC 5952.
+
             // Only use lower-case letters.
             ip = ip.toLowerCase();
+
             // Split into parts.
             const parts = ip.split(':');
-            let longestZeroSequenceStart = -1;
-            let longestZeroSequenceLength = 0;
-            let currentZeroSequenceStart = -1;
-            let currentZeroSequenceLength = 1;
+            let maxZeroSeqStart = -1;
+            let maxZeroSeqLength = 0;
+            let curZeroSeqStart = -1;
+            let curZeroSeqLength = 1;
             for (let i = 0; i < parts.length; ++i) {
                 // Remove leading zeros from each part, but keep at least one number.
                 parts[i] = parts[i].replace(/^0+([a-f0-9])/, '$1');
+
                 // We look for the longest, leftmost consecutive sequence of zero parts.
                 if (parts[i] === '0') {
                     // Freshly started sequence.
-                    if (currentZeroSequenceStart < 0) {
-                        currentZeroSequenceStart = i;
+                    if (curZeroSeqStart < 0) {
+                        curZeroSeqStart = i;
                     } else {
                         // Known sequence, so increment length.
-                        currentZeroSequenceLength++;
+                        curZeroSeqLength++;
                     }
                 } else {
                     // A sequence just ended, check if it is of better length.
-                    if (currentZeroSequenceStart >= 0 && currentZeroSequenceLength > longestZeroSequenceLength) {
-                        longestZeroSequenceStart = currentZeroSequenceStart;
-                        longestZeroSequenceLength = currentZeroSequenceLength;
-                        currentZeroSequenceStart = -1;
-                        currentZeroSequenceLength = 1;
+                    if (curZeroSeqStart >= 0 && curZeroSeqLength > maxZeroSeqLength) {
+                        maxZeroSeqStart = curZeroSeqStart;
+                        maxZeroSeqLength = curZeroSeqLength;
+                        curZeroSeqStart = -1;
+                        curZeroSeqLength = 1;
                     }
                 }
             }
-            if (currentZeroSequenceStart >= 0 && currentZeroSequenceLength > longestZeroSequenceLength) {
-                longestZeroSequenceStart = currentZeroSequenceStart;
-                longestZeroSequenceLength = currentZeroSequenceLength;
+
+            if (curZeroSeqStart >= 0 && curZeroSeqLength > maxZeroSeqLength) {
+                maxZeroSeqStart = curZeroSeqStart;
+                maxZeroSeqLength = curZeroSeqLength;
             }
+
             // Remove consecutive zeros.
-            if (longestZeroSequenceStart >= 0 && longestZeroSequenceLength > 1) {
-                if (longestZeroSequenceLength === parts.length) {
+            if (maxZeroSeqStart >= 0 && maxZeroSeqLength > 1) {
+                if (maxZeroSeqLength === parts.length) {
                     return '::';
-                } else if (longestZeroSequenceStart === 0 || longestZeroSequenceStart + longestZeroSequenceLength === parts.length) {
-                    parts.splice(longestZeroSequenceStart, longestZeroSequenceLength, ':');
+                } else if (maxZeroSeqStart === 0 || maxZeroSeqStart + maxZeroSeqLength === parts.length) {
+                    parts.splice(maxZeroSeqStart, maxZeroSeqLength, ':');
                 } else {
-                    parts.splice(longestZeroSequenceStart, longestZeroSequenceLength, '');
+                    parts.splice(maxZeroSeqStart, maxZeroSeqLength, '');
                 }
             }
             return parts.join(':');
         }
-        return null;
+
+        throw 'Malformed IP address';
     }
 
     constructor(host, port) {
+        if (!NumberUtils.isUint16(port) || port === 0) throw 'Malformed port';
         this._host = host;
         this._port = port;
     }
@@ -144,7 +162,10 @@ class NetAddress {
     }
 }
 NetAddress.IP_BLACKLIST = [
+    '0.0.0.0',
     '127.0.0.1',
+    '255.255.255.255',
+    '::',
     '::1'
 ];
 Class.register(NetAddress);
