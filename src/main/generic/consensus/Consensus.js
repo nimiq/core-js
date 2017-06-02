@@ -43,7 +43,7 @@ class Consensus extends Observable {
     }
 
     _onPeerLeft(peer) {
-        this._agents.delete(peer.id);
+        this._agents.remove(peer.id);
     }
 
     _syncBlockchain() {

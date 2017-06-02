@@ -28,9 +28,9 @@ class TypedDB extends BaseTypedDB {
         return super.putString(key, value);
     }
 
-    delete(key) {
+    remove(key) {
         delete this._cache[key];
-        return super.delete(key);
+        return super.remove(key);
     }
 
     updateCache(values) {

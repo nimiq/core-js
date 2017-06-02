@@ -45,7 +45,7 @@ class VolatileBlockchainStore {
         return key;
     }
 
-    async delete(value) {
+    async remove(value) {
         const key = await this.key(value);
         delete this._store[key];
     }
