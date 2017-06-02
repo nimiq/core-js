@@ -24,7 +24,7 @@ npm install
 `gulp eslint` runs the ESLint javascript linter.
 
 ### Build
-`gulp build` concatenates all sources into `/nimiq-{web,node}.js`
+`gulp build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ### Run Browser client
 Open `clients/browser/index.html` in your browser.

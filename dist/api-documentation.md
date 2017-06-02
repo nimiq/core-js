@@ -5,7 +5,7 @@
 ### Basic initialization
 ```
 Nimiq.init($ => {
-	// $ is the Core instance
+    // $ is the Core instance
 });
 ```
 
