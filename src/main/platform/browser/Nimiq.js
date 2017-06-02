@@ -25,7 +25,7 @@ class Nimiq {
 
     static _hasNativeClassSupport() {
         try {
-            eval('"use strict"; class A{};'); // eslint-disable-line no-eval
+            eval('"use strict"; class A{}'); // eslint-disable-line no-eval
             return true;
         } catch (err) {
             return false;
@@ -45,7 +45,16 @@ class Nimiq {
         return window.crypto && window.crypto.subtle;
     }
 
-    static init(ready, wait, path) {
+    static _hasProperScoping() {
+        try {
+            eval('"use strict"; class a{ a() { const a = 0; } }'); // eslint-disable-line no-eval
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    static init(ready, error, path) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -55,8 +64,10 @@ class Nimiq {
 
         let script = 'web.js';
 
-        if (!Nimiq._hasNativeClassSupport()) {
-            throw 'Browser unsupported.';
+        if (!Nimiq._hasNativeClassSupport() || !Nimiq._hasProperScoping()) {
+            console.error('Unsupported browser');
+            error(Nimiq.ERR_UNSUPPORTED);
+            return;
         } else if (!Nimiq._hasAsyncAwaitSupport()) {
             script = 'web-babel.js';
             console.warn('Client lacks native support for async');
@@ -83,12 +94,15 @@ class Nimiq {
                     };
                     Nimiq._loadScript(path + script, Nimiq._onload);
                 });
-                if (!Nimiq._loaded) throw 'Nimiq not loaded even after doing it.';
+                if (!Nimiq._loaded) {
+                    error(Nimiq.ERR_UNKNOWN);
+                    return;
+                }
                 console.log('Nimiq engine loaded.');
             }
             Nimiq._core = await new Nimiq.Core();
             ready(Nimiq._core);
-        }, wait);
+        }, () => error(Nimiq.ERR_WAIT));
     }
 }
 Nimiq._currentScript = document.currentScript;
@@ -97,6 +111,9 @@ if (!Nimiq._currentScript) {
     let scripts = document.getElementsByTagName('script');
     Nimiq._currentScript = scripts[scripts.length - 1];
 }
+Nimiq.ERR_WAIT = -1;
+Nimiq.ERR_UNSUPPORTED = -2;
+Nimiq.ERR_UNKNOWN = -3;
 Nimiq._core = null;
 Nimiq._onload = null;
 Nimiq._loaded = false;

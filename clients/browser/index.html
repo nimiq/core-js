@@ -250,7 +250,7 @@
             this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
-            this._mnrStartBtn.onclick = this._toggleMining().bind(this);
+            this._mnrStartBtn.onclick = this._toggleMining.bind(this);
 
             // Block history
             this._blockHistory = document.querySelector('#blockHistory');
@@ -325,7 +325,7 @@
             this._bcHeight.innerText = $.blockchain.height;
             $.blockchain.accountsHash().then(function(accountsHash) {
                 this._bcAccountsHash.innerText = accountsHash;
-            });
+            }.bind(this));
 
             this._hdHash.innerText = $.blockchain.headHash;
             this._hdPrevHash.innerText = $.blockchain.head.prevHash;
@@ -409,22 +409,21 @@
 
         _mempoolChanged() {
             // XXX inefficient
-            $.mempool.getTransactions().then(function(txs) {
-                this._mplTransactionCount.innerText = txs.length;
+            var txs = $.mempool.getTransactions();
+            this._mplTransactionCount.innerText = txs.length;
 
-                while (this._mplTransactions.firstChild) {
-                    this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-                }
+            while (this._mplTransactions.firstChild) {
+                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+            }
 
-                for (var tx of txs) {
-                    var el = document.createElement('div');
-                    var senderAddr = 'TODO'; //await tx.senderAddr();
-                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-                    this._mplTransactions.appendChild(el);
-                }
-            }.bind(this));
+            for (var tx of txs) {
+                var el = document.createElement('div');
+                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                this._mplTransactions.appendChild(el);
+            }
         }
     }
 
@@ -437,8 +436,18 @@
 
         overlay_.style.display = 'none';
         window.ui = new MinerUI($);
-    }, function() {
-        overlay_.style.display = 'block';
+    }, function(code) {
+        switch (code) {
+            case Nimiq.ERR_WAIT:
+                overlay_.style.display = 'block';
+                break;
+            case Nimiq.ERR_UNSUPPORTED:
+                alert('Browser not supported.');
+                break;
+            default:
+                alert('Nimiq initialization error');
+                break;
+        }
     });
 </script>
 </body>

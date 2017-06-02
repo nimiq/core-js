@@ -116,12 +116,7 @@ const sources = {
 };
 
 const babel_config = {
-    plugins: [
-        'transform-runtime',
-        'transform-es2015-modules-commonjs',
-        'transform-es2015-block-scoping',
-        'transform-es2015-arrow-functions'
-    ],
+    plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
     presets: ['es2016', 'es2017']
 };
 
@@ -210,7 +205,7 @@ gulp.task('build-loader', function () {
             .pipe(buffer())
             .pipe(sourcemaps.init())
             .pipe(uglify()),
-        gulp.src(['./src/main/platform/browser/utils/WindowDetector.js', './src/main/platform/browser/loader.js'])
+        gulp.src(['./src/main/platform/browser/utils/WindowDetector.js', './src/main/platform/browser/Nimiq.js'])
             .pipe(sourcemaps.init())
             .pipe(babel(babel_loader)))
         .pipe(concat('nimiq.js'))
