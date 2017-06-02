@@ -127,7 +127,7 @@ class Crypto {
                 arr[0] = 4;
                 arr.set(obj.raw, 1);
             } else {
-                arr = obj.raw.length;
+                arr = obj.raw;
             }
             obj._native = await Crypto.lib.importKey('raw', arr, Crypto._keyConfig, true, ['verify']);
         }
