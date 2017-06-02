@@ -52,7 +52,7 @@ class IndexedArray {
         return value;
     }
 
-    delete(value) {
+    remove(value) {
         const index = this._index[value];
         if (index !== undefined) {
             delete this._array[this._index[value]];

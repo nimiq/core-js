@@ -28,9 +28,9 @@ class PeerAddresses extends Observable {
         // Pick a random start index.
         const index = Math.floor(Math.random() * (numAddresses + 1));
 
-        // Score up to 500 addresses starting from the start index and pick the
+        // Score up to 1000 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 500);
+        const minCandidates = Math.min(numAddresses, 1000);
         const candidates = new HashMap();
         for (let i = 0; i < numAddresses; i++) {
             const idx = (index + i) % numAddresses;
@@ -77,13 +77,11 @@ class PeerAddresses extends Observable {
                 return -1;
 
             case PeerAddressState.NEW:
-                return (this.peerCount > 6 ? 1.5 : 1) * score;
-
             case PeerAddressState.TRIED:
-                return (this.peerCount < 6 ? 3 : 1) * score;
+                return score;
 
             case PeerAddressState.FAILED:
-                return (1 - (peerAddressState.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS)) * score;
+                return (1 - (peerAddressState.failedAttempts / peerAddressState.maxFailedAttempts)) * score;
 
             default:
                 return -1;
@@ -93,8 +91,8 @@ class PeerAddresses extends Observable {
     _scoreProtocol(peerAddress) {
         let score = 1;
 
-        // Prefer WebSocket addresses if we have less than three WebSocket connections.
-        if (this._peerCountWs < 3) {
+        // We want at least two websocket connection
+        if (this._peerCountWs < 2) {
             score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
         } else {
             score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
@@ -182,7 +180,7 @@ class PeerAddresses extends Observable {
         const peerAddresses = arg.length !== undefined ? arg : [arg];
         const newAddresses = [];
 
-        for (let addr of peerAddresses) {
+        for (const addr of peerAddresses) {
             if (this._add(channel, addr)) {
                 newAddresses.push(addr);
             }
@@ -220,6 +218,11 @@ class PeerAddresses extends Observable {
             // Ignore address if it exceeds max distance.
             if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
                 Log.d(PeerAddresses, `Ignoring address ${peerAddress} - max distance exceeded`);
+                // Drop any route to this peer over the current channel. This may prevent loops.
+                const peerAddressState = this._store.get(peerAddress);
+                if (peerAddressState) {
+                    peerAddressState.deleteRoute(channel);
+                }
                 return false;
             }
         }
@@ -343,7 +346,7 @@ class PeerAddresses extends Observable {
         }
 
         // Delete all addresses that were signalable over the disconnected peer.
-        this._deleteBySignalChannel(channel);
+        this._removeBySignalChannel(channel);
 
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
@@ -357,7 +360,7 @@ class PeerAddresses extends Observable {
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
         if (closedByRemote || peerAddress.protocol === Protocol.DUMB) {
-            this._delete(peerAddress);
+            this._remove(peerAddress);
         }
     }
 
@@ -374,8 +377,8 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
 
-        if (peerAddressState.failedAttempts >= PeerAddresses.MAX_FAILED_ATTEMPTS) {
-            this._delete(peerAddress);
+        if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
+            this._remove(peerAddress);
         }
     }
 
@@ -393,7 +396,7 @@ class PeerAddresses extends Observable {
 
         peerAddressState.deleteBestRoute();
         if (!peerAddressState.hasRoute()) {
-            this._delete(peerAddressState.peerAddress);
+            this._remove(peerAddressState.peerAddress);
         }
     }
 
@@ -435,7 +438,7 @@ class PeerAddresses extends Observable {
             && !peerAddressState.peerAddress.isSeed();
     }
 
-    _delete(peerAddress) {
+    _remove(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -449,7 +452,7 @@ class PeerAddresses extends Observable {
 
         // Delete from signalId index.
         if (peerAddress.protocol === Protocol.RTC) {
-            this._signalIds.delete(peerAddress.signalId);
+            this._signalIds.remove(peerAddress.signalId);
         }
 
         // Don't delete bans.
@@ -458,17 +461,17 @@ class PeerAddresses extends Observable {
         }
 
         // Delete the address.
-        this._store.delete(peerAddress);
+        this._store.remove(peerAddress);
     }
 
     // Delete all RTC-only routes that are signalable over the given peer.
-    _deleteBySignalChannel(channel) {
+    _removeBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
             if (peerAddressState.peerAddress.protocol === Protocol.RTC) {
                 peerAddressState.deleteRoute(channel);
                 if (!peerAddressState.hasRoute()) {
-                    this._delete(peerAddressState.peerAddress);
+                    this._remove(peerAddressState.peerAddress);
                 }
             }
         }
@@ -504,7 +507,7 @@ class PeerAddresses extends Observable {
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this._exceedsAge(addr)) {
                         Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
-                        this._delete(addr);
+                        this._remove(addr);
                     }
                     break;
 
@@ -518,7 +521,7 @@ class PeerAddresses extends Observable {
                             unbannedAddresses.push(addr);
                         } else {
                             // Delete expires bans.
-                            this._store.delete(addr);
+                            this._store.remove(addr);
                         }
                     }
                     break;
@@ -576,10 +579,11 @@ class PeerAddresses extends Observable {
     }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60; // 1 minute
-PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
+PeerAddresses.MAX_AGE_WEBRTC = 1000 * 45; // 45 seconds
+PeerAddresses.MAX_AGE_DUMB = 1000 * 45; // 45 seconds
 PeerAddresses.MAX_DISTANCE = 4;
-PeerAddresses.MAX_FAILED_ATTEMPTS = 3;
+PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
+PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
@@ -601,6 +605,17 @@ class PeerAddressState {
         this._routes = new HashSet();
 
         this._failedAttempts = 0;
+    }
+
+    get maxFailedAttempts() {
+        switch (this.peerAddress.protocol) {
+            case Protocol.RTC:
+                return PeerAddresses.MAX_FAILED_ATTEMPTS_RTC;
+            case Protocol.WS:
+                return PeerAddresses.MAX_FAILED_ATTEMPTS_WS;
+            default:
+                return 0;
+        }
     }
 
     get failedAttempts() {
@@ -649,7 +664,7 @@ class PeerAddressState {
     }
 
     deleteRoute(signalChannel) {
-        this._routes.delete(signalChannel); // maps to same hashCode
+        this._routes.remove(signalChannel); // maps to same hashCode
         if (this._bestRoute && this._bestRoute.signalChannel.equals(signalChannel)) {
             this._updateBestRoute();
         }
@@ -722,7 +737,7 @@ class SignalRoute {
     }
 
     get score() {
-        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS));
+        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS_RTC));
     }
 
     equals(o) {

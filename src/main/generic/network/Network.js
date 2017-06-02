@@ -4,11 +4,11 @@ class Network extends Observable {
     }
 
     static get PEER_COUNT_PER_IP_WS_MAX() {
-        return PlatformUtils.isBrowser() ? 2 : 15;
+        return PlatformUtils.isBrowser() ? 1 : 25;
     }
 
     static get PEER_COUNT_PER_IP_RTC_MAX() {
-        return 3;
+        return 2;
     }
 
     constructor(blockchain) {
@@ -254,7 +254,7 @@ class Network extends Observable {
     // This peer channel was closed.
     _onClose(peer, channel, closedByRemote) {
         // Delete agent.
-        this._agents.delete(channel.id);
+        this._agents.remove(channel.id);
 
         // Decrement connection count per IP.
         let numConnections = this._connectionCounts.get(channel.netAddress) || 1;
@@ -410,14 +410,14 @@ class Network extends Observable {
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
     }
 }
-Network.PEER_COUNT_DESIRED = 12;
+Network.PEER_COUNT_DESIRED = 6;
 Network.PEER_COUNT_RELAY = 4;
-Network.CONNECTING_COUNT_MAX = 3;
+Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
 Class.register(Network);
 
 class SignalStore {
-    constructor(maxSize=1000 /* maximum number of entries */) {
+    constructor(maxSize = 1000 /*maximum number of entries*/) {
         this._maxSize = maxSize;
         this._queue = new Queue();
         this._store = new HashMap();
@@ -432,7 +432,7 @@ class SignalStore {
         if (this.contains(senderId, recipientId, nonce)) {
             const signal = new ForwardedSignal(senderId, recipientId, nonce);
             this._store.put(signal, Date.now());
-            this._queue.delete(signal);
+            this._queue.remove(signal);
             this._queue.enqueue(signal);
             return;
         }
@@ -440,7 +440,7 @@ class SignalStore {
         // Delete oldest if needed.
         if (this.length >= this._maxSize) {
             const oldest = this._queue.dequeue();
-            this._store.delete(oldest);
+            this._store.remove(oldest);
         }
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         this._queue.enqueue(signal);
@@ -463,7 +463,7 @@ class SignalStore {
             // Because of the ordering, we know that everything after that is invalid too.
             const toDelete = this._queue.dequeueUntil(signal);
             for (const dSignal of toDelete) {
-                this._store.delete(dSignal);
+                this._store.remove(dSignal);
             }
         }
         return valid;

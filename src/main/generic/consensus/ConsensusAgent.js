@@ -327,7 +327,7 @@ class ConsensusAgent extends Observable {
         if (!this._objectsInFlight) return;
 
         // Remove the vector from the objectsInFlight.
-        this._objectsInFlight.delete(vector);
+        this._objectsInFlight.remove(vector);
 
         // Reset the request timeout if we expect more objects to come.
         if (!this._objectsInFlight.isEmpty()) {

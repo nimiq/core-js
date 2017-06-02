@@ -25,9 +25,9 @@ class WebRtcConnector extends Observable {
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors[signalId] = connector;
 
-        this._timers.setTimeout('connect_' + signalId, () => {
+        this._timers.setTimeout(`connect_${signalId}`, () => {
             delete this._connectors[signalId];
-            this._timers.clearTimeout('connect_' + signalId);
+            this._timers.clearTimeout(`connect_${signalId}`);
             this.fire('error', peerAddress, 'timeout');
         }, WebRtcConnector.CONNECT_TIMEOUT);
 
@@ -47,7 +47,7 @@ class WebRtcConnector extends Observable {
             if (this.isValidSignal(msg)) {
                 // if OutboundPeerConnector, clear timeout early
                 if (this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
-                    this._timers.clearTimeout('connect_' + msg.senderId);
+                    this._timers.clearTimeout(`connect_${msg.senderId}`);
                     const reason1 = ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 ? 'unroutable' : '');
                     const reason2 = ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0 ? 'ttl_exceeded' : '');
                     const reason = reason1 + (reason1.length > 0 && reason2.length > 0 ? ' & ' : '') + reason2;
@@ -72,7 +72,7 @@ class WebRtcConnector extends Observable {
             return;
         }
 
-        if (payload.type == 'offer') {
+        if (payload.type === 'offer') {
             // Check if we have received an offer on an ongoing connection.
             // This can happen if two peers initiate connections to one another
             // simultaneously. Resolve this by having the peer with the higher
@@ -87,7 +87,7 @@ class WebRtcConnector extends Observable {
                     // We are going to accept the offer. Clear the connect timeout
                     // from our previous Outbound connection attempt to this peer.
                     Log.d(WebRtcConnector, `Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
-                    this._timers.clearTimeout('connect_' + msg.senderId);
+                    this._timers.clearTimeout(`connect_${msg.senderId}`);
                 }
             }
 
@@ -96,8 +96,8 @@ class WebRtcConnector extends Observable {
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors[msg.senderId] = connector;
 
-            this._timers.setTimeout('connect_' + msg.senderId, () => {
-                this._timers.clearTimeout('connect_' + msg.senderId);
+            this._timers.setTimeout(`connect_${msg.senderId}`, () => {
+                this._timers.clearTimeout(`connect_${msg.senderId}`);
                 delete this._connectors[msg.senderId];
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
@@ -112,7 +112,7 @@ class WebRtcConnector extends Observable {
 
     _onConnection(conn, signalId) {
         // Clear the connect timeout.
-        this._timers.clearTimeout('connect_' + signalId);
+        this._timers.clearTimeout(`connect_${signalId}`);
 
         // Clean up when this connection closes.
         conn.on('close', () => this._onClose(signalId));
@@ -123,7 +123,7 @@ class WebRtcConnector extends Observable {
 
     _onClose(signalId) {
         delete this._connectors[signalId];
-        this._timers.clearTimeout('connect_' + signalId);
+        this._timers.clearTimeout(`connect_${signalId}`);
     }
 }
 WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
@@ -155,7 +155,7 @@ class PeerConnector extends Observable {
 
             this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal))
                 .then(() => {
-                    if (signal.type == 'offer') {
+                    if (signal.type === 'offer') {
                         this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
                     }
                 })
@@ -179,7 +179,7 @@ class PeerConnector extends Observable {
     }
 
     _onIceCandidate(event) {
-        if (event.candidate != null) {
+        if (event.candidate !== null) {
             this._signal(event.candidate);
         }
     }

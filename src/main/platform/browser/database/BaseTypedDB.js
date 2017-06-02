@@ -79,11 +79,11 @@ class BaseTypedDB {
         return this._put(key, value);
     }
 
-    delete(key) {
+    remove(key) {
         return BaseTypedDB.db.then(db => new Promise((resolve, error) => {
             const deleteTx = db.transaction([this._tableName], 'readwrite')
                 .objectStore(this._tableName)
-                .delete(key);
+                .remove(key);
             deleteTx.onsuccess = event => resolve(event.target.result);
             deleteTx.onerror = error;
         }));
@@ -113,8 +113,8 @@ class NativeDBTransaction extends Observable {
         this._store.put(value, key);
     }
 
-    delete(key) {
-        this._store.delete(key);
+    remove(key) {
+        this._store.remove(key);
     }
 
     commit() {
