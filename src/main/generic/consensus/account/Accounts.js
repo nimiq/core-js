@@ -78,7 +78,7 @@ class Accounts extends Observable {
     }
 
     async _updateBalance(treeTx, address, value, operator) {
-        const balance = this.getBalance(address);
+        const balance = await this.getBalance(address);
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) {

@@ -303,13 +303,13 @@ describe('AccountsTree', () => {
             const address2 = new Address(new Uint8Array([1, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
             const address3 = new Address(new Uint8Array([1, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 
-            await tree.put(address1, new Balance(50, 0));
+            await tree.put(address1, new Account(new Balance(50, 0)));
             const root1 = await tree.root();
 
-            await tree.put(address2, new Balance(50, 0));
-            await tree.put(address3, new Balance(50, 0));
-            await tree.put(address2, new Balance(0, 0));
-            await tree.put(address3, new Balance(0, 0));
+            await tree.put(address2, new Account(new Balance(50, 0)));
+            await tree.put(address3, new Account(new Balance(50, 0)));
+            await tree.put(address2, new Account(new Balance(0, 0)));
+            await tree.put(address3, new Account(new Balance(0, 0)));
 
             const root2 = await tree.root();
             expect(root2.toBase64()).toEqual(root1.toBase64());

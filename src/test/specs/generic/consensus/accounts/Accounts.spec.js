@@ -20,7 +20,7 @@ describe('Accounts', () => {
         // prepare everything and serialize accountstree
         async function test() {
             const accounts = await Accounts.createVolatile();
-            const accountState = new Balance(10, 0);
+            const accountState = new Account(new Balance(10, 0));
 
             for (let i = 3; i > 0; i--) {
                 const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${i}`]));
