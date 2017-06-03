@@ -109,17 +109,14 @@ class Blockchain extends Observable {
             return Blockchain.PUSH_ERR_ORPHAN_BLOCK;
         }
 
-        // XXX FIXME TODO CHECK THIS
-        if (!knownChain) {
-            // Check all intrinsic block invariants.
-            if (!(await this._verifyBlock(block))) {
-                return Blockchain.PUSH_ERR_INVALID_BLOCK;
-            }
+        // Check all intrinsic block invariants.
+        if (!(await this._verifyBlock(block))) {
+            return Blockchain.PUSH_ERR_INVALID_BLOCK;
+        }
 
-            // Check that the block is a valid extension of its previous block.
-            if (!(await this._isValidExtension(prevChain, block))) {
-                return Blockchain.PUSH_ERR_INVALID_BLOCK;
-            }
+        // Check that the block is a valid extension of its previous block.
+        if (!(await this._isValidExtension(prevChain, block))) {
+            return Blockchain.PUSH_ERR_INVALID_BLOCK;
         }
 
         // Block looks good, compute the new total work & height.
