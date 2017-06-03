@@ -25,7 +25,6 @@
     "gulp-eslint": "^3.0.1",
     "gulp-jasmine-livereload-task": "^0.11.0",
     "gulp-jscs": "^4.0.0",
-    "gulp-merge": "^0.1.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^2.6.0",
     "gulp-streamify": "^1.0.2",
@@ -42,6 +41,7 @@
     "karma-firefox-launcher": "^1.0.1",
     "karma-jasmine": "*",
     "karma-safari-launcher": "^1.0.0",
+    "merge2": "^1.0.3",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
