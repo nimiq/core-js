@@ -26,7 +26,7 @@ class PeerAddresses extends Observable {
         const numAddresses = addresses.length;
 
         // Pick a random start index.
-        const index = Math.floor(Math.random() * (numAddresses + 1));
+        const index = Math.floor(Math.random() * numAddresses);
 
         // Score up to 1000 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
