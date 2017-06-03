@@ -1,6 +1,6 @@
 # Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core) 
 
-**[Nimiq](https://nimiq.com/)** is the first browser-based Blockchain.
+**[Nimiq](https://nimiq.com/)** is the first Browser-based Blockchain.
 
 ## Quickstart 
 
@@ -43,7 +43,7 @@ Open `clients/browser/index.html` in your browser.
 
 ### Run NodeJs client
 
-To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
+To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
 
 ```bash
 cd clients/nodejs/
