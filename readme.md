@@ -1,6 +1,6 @@
 # Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core) 
 
-**[Nimiq](https://nimiq.com/)** World's First Browser-based Blockchain Ecosystem
+**[Nimiq](https://nimiq.com/)** is the first browser-based Blockchain.
 
 ## Quickstart 
 
