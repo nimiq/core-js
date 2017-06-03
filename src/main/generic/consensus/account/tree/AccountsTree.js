@@ -9,6 +9,11 @@ class AccountsTree extends Observable {
         return new AccountsTree(store);
     }
 
+    static createTemporary(backend) {
+        const store = AccountsTreeStore.createTemporary(backend._store);
+        return new AccountsTree(store);
+    }
+
     constructor(treeStore) {
         super();
         this._store = treeStore;
@@ -221,7 +226,9 @@ class AccountsTree extends Observable {
     }
 
     async transaction() {
-        const tx = await this._store.transaction();
+        // FIXME Firefox apparently has problems with transactions!
+        // const tx = await this._store.transaction();
+        const tx = await AccountsTreeStore.createTemporary(this._store, true);
         const that = this;
         return {
             get: function (address) {
@@ -234,6 +241,10 @@ class AccountsTree extends Observable {
 
             commit: function () {
                 return tx.commit();
+            },
+
+            root: async function () {
+                return Hash.fromBase64(await tx.getRootKey());
             }
         };
     }

@@ -7,6 +7,10 @@ class AccountsTreeStore {
         return new VolatileAccountsTreeStore();
         //return new PersistentAccountsTreeStore();
     }
+
+    static createTemporary(backend, transaction = false) {
+        return new TemporaryAccountsTreeStore(backend, transaction);
+    }
 }
 Class.register(AccountsTreeStore);
 
@@ -25,10 +29,10 @@ class PersistentAccountsTreeStore extends ObjectDB {
 
     async transaction() {
         const tx = await ObjectDB.prototype.transaction.call(this);
-        tx.getRootKey = function(rootKey) {
+        tx.getRootKey = function (rootKey) {
             return tx.getString('root');
         };
-        tx.setRootKey = function(rootKey) {
+        tx.setRootKey = function (rootKey) {
             return tx.putString('root', rootKey);
         };
         return tx;
@@ -62,12 +66,75 @@ class VolatileAccountsTreeStore {
     }
 
     transaction() {
-        const tx = this;
-        tx.commit = () => true;
-        return tx;
+        return new TemporaryAccountsTreeStore(this, true);
     }
 
     getRootKey() {
+        return this._rootKey;
+    }
+
+    setRootKey(rootKey) {
+        this._rootKey = rootKey;
+    }
+}
+
+class TemporaryAccountsTreeStore {
+    constructor(backend, transaction = false) {
+        this._backend = backend;
+        this._store = {};
+        this._removed = {};
+        this._transaction = transaction;
+    }
+
+    async key(node) {
+        return (await node.hash()).toBase64();
+    }
+
+    async get(key) {
+        if (this._store[key] === undefined) {
+            const node = await this._backend.get(key);
+            if (!node) return this._store[key] = null;
+            return this._store[key] = AccountsTreeNode.unserialize(node.serialize());
+        }
+        return this._store[key];
+    }
+
+    async put(node) {
+        const key = await this.key(node);
+        this._store[key] = node;
+        return key;
+    }
+
+    async remove(node) {
+        const key = await this.key(node);
+        this._removed[key] = node;
+        this._store[key] = null;
+        return key;
+    }
+
+    async commit() {
+        if (!this._transaction) return;
+        for (let key of Object.keys(this._store)) {
+            if (this._store[key] === null) {
+                await this._backend.remove(this._removed[key]);
+            } else {
+                await this._backend.put(this._store[key]);
+            }
+        }
+        await this._backend.setRootKey(this._rootKey);
+        this._rootKey = null;
+        this._removed = {};
+        this._store = {};
+    }
+
+    transaction() {
+        return new TemporaryAccountsTreeStore(this, true);
+    }
+
+    async getRootKey() {
+        if (this._rootKey === undefined) {
+            this._rootKey = (await this._backend.getRootKey()) || null;
+        }
         return this._rootKey;
     }
 

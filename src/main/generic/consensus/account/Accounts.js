@@ -9,6 +9,11 @@ class Accounts extends Observable {
         return new Accounts(tree);
     }
 
+    static async createTemporary(backend) {
+        const tree = await AccountsTree.createTemporary(backend._tree);
+        return new Accounts(tree);
+    }
+
     constructor(accountsTree) {
         super();
         this._tree = accountsTree;
@@ -20,20 +25,17 @@ class Accounts extends Observable {
     async commitBlock(block) {
         const hash = await this.hash();
         if (!block.accountsHash.equals(hash)) throw 'AccountsHash mismatch';
-
         // TODO we should validate if the block is going to be applied correctly.
 
-        // FIXME Firefox apparently has problems with transactions!
-        const treeTx = this._tree; //await this._tree.transaction();
+        const treeTx = await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a + b);
-        //return treeTx.commit();
+        return treeTx.commit();
     }
 
     async revertBlock(block) {
-        // FIXME Firefox apparently has problems with transactions!
-        const treeTx = this._tree; //await this._tree.transaction();
+        const treeTx = await this._tree.transaction();
         await this._execute(treeTx, block, (a, b) => a - b);
-        //return treeTx.commit();
+        return treeTx.commit();
     }
 
     // We only support basic accounts at this time.
@@ -52,8 +54,8 @@ class Accounts extends Observable {
     }
 
     async _rewardMiner(treeTx, body, op) {
-          // Sum up transaction fees.
-        const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
+        // Sum up transaction fees.
+        const txFees = body.transactions.reduce((sum, tx) => sum + tx.fee, 0);
         await this._updateBalance(treeTx, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
