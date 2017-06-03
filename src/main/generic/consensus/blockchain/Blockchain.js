@@ -227,7 +227,7 @@ class Blockchain extends Observable {
 
     async _isValidExtension(chain, block) {
         // Check that the height is one higher than previous
-        if (chain.height !== block.height - 1) {
+        if (chain.height !== block.header.height - 1) {
             Log.w(Blockchain, 'Rejecting block - not next in height');
             return false;
         }
