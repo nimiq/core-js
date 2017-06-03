@@ -1,37 +1,36 @@
-
 describe('Accounts', () => {
 
     it('cannot commit a wrong block', (done) => {
-        const block = Dummy.block1;
-        Accounts.createVolatile().then( accounts =>
-            accounts.commitBlock(block)
-                .then( () => {
-                    expect(true).toBe(false);
-                    done();
-                })
-                .catch( (e) => {
-                    expect(e).toBe('AccountsHash mismatch');
-                    done();
-                })
-        );
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const block = await testBlockchain.createBlock();
+            const accounts = await Accounts.createVolatile();
+            let error_thrown = false;
+            try {
+                await accounts.commitBlock(block);
+            } catch (e) {
+                expect(e).toBe('AccountsHash mismatch');
+                error_thrown = true;
+            }
+            expect(error_thrown).toBe(true);
+        })().then(done, done.fail);
     });
 
     it('can apply and revert a block', (done) => {
         // prepare everything and serialize accountstree
         async function test() {
-            const accounts = await Accounts.createVolatile();
-            const accountState = new Balance(10, 0);
-
-            for (let i = 3; i > 0; i--) {
-                const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy[`publicKey${i}`]));
-                const addr = await senderPubKey.toAddress(); // eslint-disable-line no-await-in-loop
-                await accounts._tree.put(addr, accountState); // eslint-disable-line no-await-in-loop
-            }
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const accounts = testBlockchain._accounts;
 
             const accountsHash1 = await accounts.hash();
-            await accounts.commitBlock(Dummy.accountsBlock);
-            await accounts.revertBlock(Dummy.accountsBlock);
-            const accountsHash2 = await accounts.hash();
+            const block = await testBlockchain.createBlock();
+            await accounts.commitBlock(block);
+
+            let accountsHash2 = await accounts.hash();
+            expect(accountsHash1.equals(accountsHash2)).toEqual(false);
+
+            await accounts.revertBlock(block);
+            accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
             done();
         }
@@ -56,5 +55,16 @@ describe('Accounts', () => {
             done();
         }
         test();
+    });
+
+    it('can handle larger chains', (done) => {
+        async function test() {
+            console.log('START LONG TEST');
+            const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
+
+            console.log('END LONG TEST');
+            done();
+        }
+        expect(test).not.toThrow();
     });
 });
