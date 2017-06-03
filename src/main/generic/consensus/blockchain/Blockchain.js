@@ -97,7 +97,7 @@ class Blockchain extends Observable {
         // Check if we already know this block. If so, ignore it.
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
-        if (knownChain) {
+        if (knownChain && !this._isHarderChain(knownChain, hash)) {
             Log.v(Blockchain, `Ignoring known block ${hash.toBase64()}`);
             return Blockchain.PUSH_ERR_KNOWN_BLOCK;
         }
@@ -109,14 +109,17 @@ class Blockchain extends Observable {
             return Blockchain.PUSH_ERR_ORPHAN_BLOCK;
         }
 
-        // Check all intrinsic block invariants.
-        if (!(await this._verifyBlock(block))) {
-            return Blockchain.PUSH_ERR_INVALID_BLOCK;
-        }
+        // XXX FIXME TODO CHECK THIS
+        if (!knownChain) {
+            // Check all intrinsic block invariants.
+            if (!(await this._verifyBlock(block))) {
+                return Blockchain.PUSH_ERR_INVALID_BLOCK;
+            }
 
-        // Check that the block is a valid extension of its previous block.
-        if (!(await this._isValidExtension(prevChain, block))) {
-            return Blockchain.PUSH_ERR_INVALID_BLOCK;
+            // Check that the block is a valid extension of its previous block.
+            if (!(await this._isValidExtension(prevChain, block))) {
+                return Blockchain.PUSH_ERR_INVALID_BLOCK;
+            }
         }
 
         // Block looks good, compute the new total work & height.
@@ -124,8 +127,11 @@ class Blockchain extends Observable {
         const height = prevChain.height + 1;
 
         // Store the new block.
-        const newChain = new Chain(block, totalWork, height);
-        await this._store.put(newChain);
+        let newChain = knownChain;
+        if (!knownChain) {
+            newChain = new Chain(block, totalWork, height);
+            await this._store.put(newChain);
+        }
 
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
