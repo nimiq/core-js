@@ -1,0 +1,13 @@
+clients/
+database/
+dist/node.js.map
+dist/web*
+dist/nimiq.js
+gulpfile.js
+jasmine.json
+karma.conf.js
+package-lock.json
+spec/
+src/
+index.js.map
+.*

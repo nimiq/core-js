@@ -29,10 +29,19 @@ const sources = {
             './src/main/platform/browser/network/websocket/WebSocketConnector.js',
             './src/main/platform/browser/WorkerBuilder.js'
         ],
-        node: []
+        node: [
+            './src/main/platform/nodejs/utils/LogNative.js',
+            './src/main/generic/utils/Log.js',
+            './src/main/generic/utils/Observable.js',
+            './src/main/platform/nodejs/database/TypedDB.js',
+            './src/main/platform/nodejs/crypto/CryptoLib.js',
+            './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
+            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
+            './src/main/platform/nodejs/network/NetworkConfig.js',
+            './src/main/platform/nodejs/utils/WindowDetector.js'
+        ]
     },
     generic: [
-        './src/main/generic/utils/Observable.js',
         './src/main/generic/utils/Services.js',
         './src/main/generic/utils/Synchronizer.js',
         './src/main/generic/utils/Timers.js',
@@ -215,7 +224,7 @@ gulp.task('build-loader', function () {
 });
 
 gulp.task('build-node', function () {
-    return gulp.src(sources.platform.node.concat(sources.generic))
+    return gulp.src(['./src/main/platform/nodejs/index.prefix.js'].concat(sources.platform.node).concat(sources.generic).concat(['./src/main/platform/nodejs/index.suffix.js']))
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
         .pipe(sourcemaps.write('.'))
