@@ -3,3 +3,4 @@ class Class {
         if (typeof exports !== 'undefined') exports[cls.name] = cls;
     }
 }
+Class.register(Class);

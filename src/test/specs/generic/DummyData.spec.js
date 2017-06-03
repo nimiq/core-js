@@ -26,3 +26,22 @@ Dummy.validTransaction = 'BHRjt7rp/Rt0BfsHyEDpJcCdpLS9811yp76Yy1An/NJ0voiRWw2sOt
 if (typeof global !== 'undefined') {
     global.Dummy = Dummy;
 }
+
+/* Testing Genesis Block */
+Block.GENESIS = new Block(
+    new BlockHeader(
+        new Hash(null),
+        new Hash(BufferUtils.fromBase64('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE=')),
+        new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
+        BlockUtils.difficultyToCompact(1),
+        1,
+        0,
+        0),
+    new BlockBody(new Address(BufferUtils.fromBase64('ySpv9NQBK2YgycXIfMH8Mr+JfaM=')), [])
+);
+// Store hash for synchronous access
+Block.GENESIS.hash().then(hash => {
+    Block.GENESIS.HASH = hash;
+    Object.freeze(Block.GENESIS);
+});
+
