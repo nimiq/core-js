@@ -7,8 +7,8 @@ class Block {
     }
 
     static unserialize(buf) {
-        var header = BlockHeader.unserialize(buf);
-        var body = BlockBody.unserialize(buf);
+        const header = BlockHeader.unserialize(buf);
+        const body = BlockBody.unserialize(buf);
         return new Block(header, body);
     }
 
@@ -88,6 +88,7 @@ Block.GENESIS = new Block(
         new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
         new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
         BlockUtils.difficultyToCompact(1),
+        1,
         0,
         0),
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
