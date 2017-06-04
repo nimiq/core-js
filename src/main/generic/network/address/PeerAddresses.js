@@ -26,7 +26,7 @@ class PeerAddresses extends Observable {
         const numAddresses = addresses.length;
 
         // Pick a random start index.
-        const index = Math.floor(Math.random() * (numAddresses + 1));
+        const index = Math.floor(Math.random() * numAddresses);
 
         // Score up to 1000 addresses starting from the start index and pick the
         // one with the highest score. Never pick addresses with score < 0.
@@ -589,7 +589,11 @@ PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
     new WsPeerAddress(0, 0, 'alpacash.com', 8080),
     new WsPeerAddress(0, 0, 'nimiq1.styp-rekowsky.de', 8080),
-    new WsPeerAddress(0, 0, 'nimiq2.styp-rekowsky.de', 8080)
+    new WsPeerAddress(0, 0, 'nimiq2.styp-rekowsky.de', 8080),
+    new WsPeerAddress(0, 0, 'seed1.nimiq-network.com', 8080),
+    new WsPeerAddress(0, 0, 'seed2.nimiq-network.com', 8080),
+    new WsPeerAddress(0, 0, 'seed3.nimiq-network.com', 8080),
+    new WsPeerAddress(0, 0, 'seed4.nimiq-network.com', 8080)
 ];
 Class.register(PeerAddresses);
 

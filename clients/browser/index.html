@@ -285,8 +285,9 @@
                 elRecipientAddr.className = 'error';
                 return;
             }
+            var address;
             try {
-                new Address(recipientAddr);
+                address = new Nimiq.Address(Nimiq.BufferUtils.fromBase64(recipientAddr));
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -311,7 +312,7 @@
                     return;
                 }
 
-                $.wallet.createTransaction(new Nimiq.Address(recipientAddr), value, fee, balance.nonce).then(function(tx) {
+                $.wallet.createTransaction(address, value, fee, balance.nonce).then(function(tx) {
                     $.mempool.pushTransaction(tx);
                 });
             });

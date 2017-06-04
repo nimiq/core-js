@@ -7,8 +7,8 @@ class Block {
     }
 
     static unserialize(buf) {
-        var header = BlockHeader.unserialize(buf);
-        var body = BlockBody.unserialize(buf);
+        const header = BlockHeader.unserialize(buf);
+        const body = BlockBody.unserialize(buf);
         return new Block(header, body);
     }
 
@@ -56,6 +56,10 @@ class Block {
         return this._header.difficulty;
     }
 
+    get height() {
+        return this._header.height;
+    }
+
     get timestamp() {
         return this._header.timestamp;
     }
@@ -88,6 +92,7 @@ Block.GENESIS = new Block(
         new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
         new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
         BlockUtils.difficultyToCompact(1),
+        1,
         0,
         0),
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
@@ -96,6 +101,6 @@ Block.GENESIS = new Block(
 Block.GENESIS.HASH = Hash.fromBase64('oHBViWWDBq8N0gSooW6NrUTKSRbXbhJ0B7IABShyRyA=');
 Block.GENESIS.hash().then(hash => {
     Block.GENESIS.HASH = hash;
-    Object.freeze(Block.GENESIS);
+    //Object.freeze(Block.GENESIS);
 });
 Class.register(Block);

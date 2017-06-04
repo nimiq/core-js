@@ -5,7 +5,7 @@ const buffer = require('vinyl-buffer');
 const concat = require('gulp-concat');
 const connect = require('gulp-connect');
 const jasmine = require('gulp-jasmine-livereload-task');
-const merge = require('gulp-merge');
+const merge = require('merge2');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const uglify = require('gulp-uglify');
@@ -131,6 +131,7 @@ gulp.task('build-web-babel', function () {
     return merge(
         browserify([], {
             require: [
+                'babel-runtime/core-js/array/from',
                 'babel-runtime/core-js/object/values',
                 'babel-runtime/core-js/object/freeze',
                 'babel-runtime/core-js/object/keys',

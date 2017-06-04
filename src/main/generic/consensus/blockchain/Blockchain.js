@@ -86,8 +86,8 @@ class Blockchain extends Observable {
     }
 
     pushBlock(block) {
-        return new Promise( (resolve, error) => {
-            this._synchronizer.push( () => {
+        return new Promise((resolve, error) => {
+            this._synchronizer.push(() => {
                 return this._pushBlock(block);
             }, resolve, error);
         });
@@ -97,7 +97,7 @@ class Blockchain extends Observable {
         // Check if we already know this block. If so, ignore it.
         const hash = await block.hash();
         const knownChain = await this._store.get(hash.toBase64());
-        if (knownChain) {
+        if (knownChain && !this._isHarderChain(knownChain, hash)) {
             Log.v(Blockchain, `Ignoring known block ${hash.toBase64()}`);
             return Blockchain.PUSH_ERR_KNOWN_BLOCK;
         }
@@ -124,8 +124,11 @@ class Blockchain extends Observable {
         const height = prevChain.height + 1;
 
         // Store the new block.
-        const newChain = new Chain(block, totalWork, height);
-        await this._store.put(newChain);
+        let newChain = knownChain;
+        if (!knownChain) {
+            newChain = new Chain(block, totalWork, height);
+            await this._store.put(newChain);
+        }
 
         // Check if the new block extends our current main chain.
         if (block.prevHash.equals(this._headHash)) {
@@ -226,6 +229,12 @@ class Blockchain extends Observable {
     }
 
     async _isValidExtension(chain, block) {
+        // Check that the height is one higher than previous
+        if (chain.height !== block.header.height - 1) {
+            Log.w(Blockchain, 'Rejecting block - not next in height');
+            return false;
+        }
+
         // Check that the difficulty matches.
         const nextCompactTarget = await this.getNextCompactTarget(chain);
         if (nextCompactTarget !== block.nBits) {
@@ -326,7 +335,7 @@ class Blockchain extends Observable {
         // the fork chain until we reach the new head.
         for (const chain of forkChain) {
             // XXX optimize!
-            const hash = await chain.hash();
+            const hash = await chain.hash(); // eslint-disable-line no-await-in-loop
             await this._extend(chain, hash); // eslint-disable-line no-await-in-loop
         }
     }

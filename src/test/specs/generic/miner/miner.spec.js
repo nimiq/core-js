@@ -7,7 +7,7 @@ describe('Miner', () => {
     const difficulty = BlockUtils.difficultyToCompact(3);
     const timestamp = 88888888;
     const nonce = 0;
-    const currHeader = new BlockHeader(prevHash,bodyHash,accountsHash,difficulty,timestamp,nonce);
+    const currHeader = new BlockHeader(prevHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
 
     // it('can mine a next BlockHeader', (done) => {
 
@@ -36,14 +36,14 @@ describe('Miner', () => {
 
 });
 
-class BlockchainSpy extends Observable{
-    constructor(pushBlock, accountsHash){
+class BlockchainSpy extends Observable {
+    constructor(pushBlock, accountsHash) {
         super();
         this.pushBlock = pushBlock;
         this._hash = accountsHash;
     }
 
-    getAccountsHash(){
+    getAccountsHash() {
         return this._hash;
     }
 }
