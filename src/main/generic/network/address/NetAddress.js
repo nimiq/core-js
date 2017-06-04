@@ -1,37 +1,38 @@
 class NetAddress {
-    static fromIpAddress(ip, port) {
-        if (!NetAddress.isValidIpAddress(ip)) throw 'Malformed IP address';
-        return new NetAddress(NetAddress._normalizeIpAddress(ip), port);
+    static fromIP(ip) {
+        const saneIp = NetUtils.sanitizeIP(ip);
+        return new NetAddress(saneIp);
     }
 
-    static fromHostname(host, port) {
-        // TODO reject malformed hosts (ports)
-        // TODO do dns resolution, reject invalid hostnames
-        return new NetAddress(host, port);
+    constructor(ip) {
+        this._ip = ip;
     }
 
-    static isValidIpAddress(ip) {
-        // Taken from http://stackoverflow.com/questions/23483855/javascript-regex-to-validate-ipv4-and-ipv6-address-no-hostnames.
-        // TODO XXX Does it really work? seems like 'test' is a valid value?!
-        return  /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/.test(ip);
+    static unserialize(buf) {
+        const ip = buf.readVarLengthString();
+
+        // Allow empty NetAddresses.
+        if (!ip) {
+            return NetAddress.UNSPECIFIED;
+        }
+
+        return NetAddress.fromIP(ip);
     }
 
-    static _normalizeIpAddress(ip) {
-        // TODO Check if this is a IPv4 address.
-        // TODO map ipv4 to ipv6
-        // TODO reduce ipv6 to minimal form
-        return ip;
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.writeVarLengthString(this._ip);
+        return buf;
     }
 
-    constructor(host, port) {
-        this._host = host;
-        this._port = port;
+    get serializedSize() {
+        return /*extraByte VarLengthString ip*/ 1
+            + /*ip*/ this._ip.length;
     }
 
     equals(o) {
         return o instanceof NetAddress
-            && this._host === o.host
-            && this._port === o.port;
+            && this._ip === o.ip;
     }
 
     hashCode() {
@@ -39,15 +40,21 @@ class NetAddress {
     }
 
     toString() {
-        return `${this._host}:${this._port}`;
+        return `${this._ip}`;
     }
 
-    get host() {
-        return this._host;
+    get ip() {
+        return this._ip;
     }
 
-    get port() {
-        return this._port;
+    isPseudo() {
+        return !this._ip || NetAddress.UNKNOWN.equals(this);
+    }
+
+    isPrivate() {
+        return this.isPseudo() || NetUtils.isPrivateIP(this._ip);
     }
 }
+NetAddress.UNSPECIFIED = new NetAddress('');
+NetAddress.UNKNOWN = new NetAddress('<unknown>');
 Class.register(NetAddress);

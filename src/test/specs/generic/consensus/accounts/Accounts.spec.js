@@ -1,6 +1,5 @@
 
 describe('Accounts', () => {
-
     it('cannot commit a wrong block', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
@@ -34,6 +33,7 @@ describe('Accounts', () => {
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
             done();
         }
+
         test();
     });
 
@@ -54,10 +54,11 @@ describe('Accounts', () => {
             expect(Balance.INITIAL.equals(balanceState2)).toBe(true);
             done();
         }
+
         test();
     });
 
-    it('can handle larger chains', (done) => {
+    xit('can handle larger chains', (done) => {
         async function test() {
             console.log('START LONG TEST');
             const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
@@ -65,6 +66,7 @@ describe('Accounts', () => {
             console.log('END LONG TEST');
             done();
         }
+
         expect(test).not.toThrow();
     });
 });

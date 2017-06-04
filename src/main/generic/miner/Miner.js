@@ -17,6 +17,18 @@ class Miner extends Observable {
         // The current hashrate of this miner.
         this._hashrate = 0;
 
+        // The last hash counts used in the moving average.
+        this._lastHashCounts = [];
+
+        // The total hashCount used in the current moving average.
+        this._totalHashCount = 0;
+
+        // The time elapsed for the last measurements used in the moving average.
+        this._lastElapsed = [];
+
+        // The total time elapsed used in the current moving average.
+        this._totalElapsed = 0;
+
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
         // when the eviction process finishes. Restart work on the next block
@@ -34,8 +46,12 @@ class Miner extends Observable {
 
         // Initialize hashrate computation.
         this._hashCount = 0;
+        this._lastElapsed = [];
+        this._lastHashCounts = [];
+        this._totalHashCount = 0;
+        this._totalElapsed = 0;
         this._lastHashrate = Date.now();
-        this._hashrateWorker = setInterval(() => this._updateHashrate(), 5000);
+        this._hashrateWorker = setInterval(() => this._updateHashrate(), 1000);
 
         // Tell listeners that we've started working.
         this.fire('start', this);
@@ -137,6 +153,10 @@ class Miner extends Observable {
         clearInterval(this._hashrateWorker);
         this._hashrateWorker = null;
         this._hashrate = 0;
+        this._lastElapsed = [];
+        this._lastHashCounts = [];
+        this._totalHashCount = 0;
+        this._totalElapsed = 0;
 
         // Tell listeners that we've stopped working.
         this.fire('stop', this);
@@ -146,10 +166,25 @@ class Miner extends Observable {
 
     _updateHashrate() {
         const elapsed = (Date.now() - this._lastHashrate) / 1000;
-        this._hashrate = Math.round(this._hashCount / elapsed);
-
+        const hashCount = this._hashCount;
+        // Enable next measurement.
         this._hashCount = 0;
         this._lastHashrate = Date.now();
+
+        // Update stored information on moving average.
+        this._lastElapsed.push(elapsed);
+        this._lastHashCounts.push(hashCount);
+        this._totalElapsed += elapsed;
+        this._totalHashCount += hashCount;
+
+        if (this._lastElapsed.length > Miner.MOVING_AVERAGE_MAX_SIZE) {
+            const oldestElapsed = this._lastElapsed.shift();
+            const oldestHashCount = this._lastHashCounts.shift();
+            this._totalElapsed -= oldestElapsed;
+            this._totalHashCount -= oldestHashCount;
+        }
+
+        this._hashrate = Math.round(this._totalHashCount / this._totalElapsed);
 
         // Tell listeners about our new hashrate.
         this.fire('hashrate-changed', this._hashrate, this);
@@ -167,4 +202,5 @@ class Miner extends Observable {
         return this._hashrate;
     }
 }
+Miner.MOVING_AVERAGE_MAX_SIZE = 10;
 Class.register(Miner);

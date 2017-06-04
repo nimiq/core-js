@@ -78,6 +78,7 @@ require('../../generic/network/PeerChannel.js');
 require('../../generic/network/Peer.js');
 require('../../generic/network/NetworkAgent.js');
 require('../../generic/network/Network.js');
+require('../../generic/network/NetUtils.js');
 require('../../generic/miner/Miner.js');
 require('../../generic/wallet/WalletStore.js');
 require('../../generic/wallet/Wallet.js');
