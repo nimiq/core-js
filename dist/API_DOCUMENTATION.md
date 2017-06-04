@@ -58,8 +58,8 @@ No public methods.
 No events.
 
 
-## Nimiq.Network
 <a name="network"></a>
+## Nimiq.Network
 The network will not connect automatically, call `$.network.connect()` to do so.
 
 ### Properties
@@ -92,8 +92,8 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 ```
 
 
-## Nimiq.Consensus
 <a name="consensus"></a>
+## Nimiq.Consensus
 
 ### Properties
 - `established`
@@ -113,9 +113,8 @@ $.consensus.on('established', () => console.log('consensus established!'))
 ```
 
 
-
-## Nimiq.Accounts
 <a name="accounts"></a>
+## Nimiq.Accounts
 
 ### Properties
 No public properties.
@@ -145,8 +144,8 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 ```
 
 
-## Nimiq.Blockchain
 <a name="blockchain"></a>
+## Nimiq.Blockchain
 
 ### Properties
 - `head`
@@ -181,8 +180,8 @@ $.blockchain.on('head-changed', () => {
 ```
 
 
-## Nimiq.Mempool
 <a name="mempool"></a>
+## Nimiq.Mempool
 
 ### Properties
 No public properties.
@@ -197,9 +196,8 @@ No public properties.
 - `transactions-ready`
 
 
-
-## Nimiq.Wallet
 <a name="wallet"></a>
+## Nimiq.Wallet
 
 ### Properties
 - `address`
@@ -220,8 +218,8 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 ```
 
 
-## Nimiq.Miner
 <a name="miner"></a>
+## Nimiq.Miner
 Mining should not start before consensus is established and stop when consensus is lost. The Miner does not explicitely enforce this, but callers should ensure this behavior.
 
 ```
