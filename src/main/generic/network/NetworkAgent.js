@@ -137,7 +137,16 @@ class NetworkAgent extends Observable {
                 return;
             }
         }
-        this._channel.peerAddress = msg.peerAddress;
+
+        // The client might not send its netAddress. Set it from our address database if we have it.
+        const peerAddress = msg.peerAddress;
+        if (!peerAddress.netAddress) {
+            const storedAddress = this._addresses.get(peerAddress);
+            if (storedAddress && storedAddress.netAddress) {
+                peerAddress.netAddress = storedAddress.netAddress;
+            }
+        }
+        this._channel.peerAddress = peerAddress;
 
         // Create peer object.
         this._peer = new Peer(
@@ -148,7 +157,7 @@ class NetworkAgent extends Observable {
         );
 
         // Remember that the peer has sent us this address.
-        this._knownAddresses.add(msg.peerAddress);
+        this._knownAddresses.add(peerAddress);
 
         this._versionReceived = true;
 

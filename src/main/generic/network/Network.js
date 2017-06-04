@@ -29,7 +29,7 @@ class Network extends Observable {
         this._agents = new HashMap();
 
         // Map from netAddress.host -> number of connections to this host.
-        this._connectionCounts = new HashMap(netAddress => netAddress.host);
+        this._connectionCounts = new HashMap();
 
         // Total bytes sent/received on past connections.
         this._bytesSent = 0;
@@ -179,7 +179,7 @@ class Network extends Observable {
 
         // Connection accepted.
         const connType = conn.inbound ? 'inbound' : 'outbound';
-        Log.d(Network, `Connection established (${connType}) #${conn.id} ${conn.netAddress} (${numConnections})`);
+        Log.d(Network, `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
 
         // Create peer channel.
         const channel = new PeerChannel(conn);
@@ -228,7 +228,7 @@ class Network extends Observable {
         }
         // Otherwise, we don't know the netAddress of this peer. Use a pseudo netAddress.
         else {
-            // TODO pseudo address
+            peer.channel.netAddress = NetAddress.UNKNOWN;
         }
 
         // Close connection if we are already connected to this peer.
@@ -277,7 +277,7 @@ class Network extends Observable {
         this._agents.remove(channel.id);
 
         // Decrement connection count per IP if we already know the peer's netAddress.
-        if (channel.netAddress /* TODO && not pseudo address */) {
+        if (channel.netAddress && !channel.netAddress.isPseudo()) {
             this._decrementConnectionCount(channel.netAddress);
         }
 
@@ -305,7 +305,7 @@ class Network extends Observable {
                     + `transferred=${kbTransferred} kB)`);
             } else {
                 // Treat connections closed pre-handshake as failed attempts.
-                Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake`);
+                Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
                 this._addresses.unreachable(channel.peerAddress);
             }
         }

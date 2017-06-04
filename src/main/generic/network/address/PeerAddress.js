@@ -28,7 +28,14 @@ class PeerAddress {
         buf.writeUint8(this._protocol);
         buf.writeUint32(this._services);
         buf.writeUint64(this._timestamp);
-        this._netAddress.serialize(buf);
+
+        // Never serialize private netAddresses.
+        if (this._netAddress.isPrivate()) {
+            NetAddress.UNSPECIFIED.serialize(buf);
+        } else {
+            this._netAddress.serialize(buf);
+        }
+
         return buf;
     }
 
@@ -68,7 +75,7 @@ class PeerAddress {
     }
 
     get netAddress() {
-        return NetAddress.UNSPECIFIED.equals(this._netAddress) ? null : this._netAddress;
+        return this._netAddress.isPseudo() ? null : this._netAddress;
     }
 
     set netAddress(value) {

@@ -16,46 +16,46 @@ describe('NetAddress', () => {
 
     it('rejects invalid IPv4 addresses', () => {
         expect(() => {
-            NetAddress.fromIpAddress(invalid1v4);
+            NetAddress.fromIP(invalid1v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid2v4);
+            NetAddress.fromIP(invalid2v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid3v4);
+            NetAddress.fromIP(invalid3v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid4v4);
+            NetAddress.fromIP(invalid4v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid5v4);
+            NetAddress.fromIP(invalid5v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid6v4);
+            NetAddress.fromIP(invalid6v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid7v4);
+            NetAddress.fromIP(invalid7v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid8v4);
+            NetAddress.fromIP(invalid8v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid9v4);
+            NetAddress.fromIP(invalid9v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid10v4);
+            NetAddress.fromIP(invalid10v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid11v4);
+            NetAddress.fromIP(invalid11v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid12v4);
+            NetAddress.fromIP(invalid12v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid13v4);
+            NetAddress.fromIP(invalid13v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid14v4);
+            NetAddress.fromIP(invalid14v4);
         }).toThrow('Malformed IP address');
     });
 
@@ -72,28 +72,28 @@ describe('NetAddress', () => {
 
     it('rejects invalid IPv6 addresses', () => {
         expect(() => {
-            NetAddress.fromIpAddress(invalid1v6);
+            NetAddress.fromIP(invalid1v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid2v6);
+            NetAddress.fromIP(invalid2v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid3v6);
+            NetAddress.fromIP(invalid3v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid4v6);
+            NetAddress.fromIP(invalid4v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid5v6);
+            NetAddress.fromIP(invalid5v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid6v6);
+            NetAddress.fromIP(invalid6v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid7v6);
+            NetAddress.fromIP(invalid7v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid8v6);
+            NetAddress.fromIP(invalid8v6);
         }).toThrow('Malformed IP address');
     });
 
@@ -102,7 +102,7 @@ describe('NetAddress', () => {
     const short1v4 = '8.8.8.8';
 
     it('canonicalizes IPv4 addresses', () => {
-        expect(NetAddress.fromIpAddress(long1v4).host).toEqual(short1v4);
+        expect(NetAddress.fromIP(long1v4).ip).toEqual(short1v4);
     });
 
 
@@ -128,16 +128,16 @@ describe('NetAddress', () => {
     const short10v6 = '::4:1.2.3.4';
 
     it('canonicalizes IPv6 addresses', () => {
-        expect(NetAddress.fromIpAddress(long1v6).host).toEqual(short1v6);
-        expect(NetAddress.fromIpAddress(long2v6).host).toEqual(short2v6);
-        expect(NetAddress.fromIpAddress(long3v6).host).toEqual(short3v6);
-        expect(NetAddress.fromIpAddress(long4v6).host).toEqual(short4v6);
-        expect(NetAddress.fromIpAddress(long5v6).host).toEqual(short5v6);
-        expect(NetAddress.fromIpAddress(long6v6).host).toEqual(short6v6);
-        expect(NetAddress.fromIpAddress(long7v6).host).toEqual(short7v6);
-        expect(NetAddress.fromIpAddress(long8v6).host).toEqual(short8v6);
-        expect(NetAddress.fromIpAddress(long9v6).host).toEqual(short9v6);
-        expect(NetAddress.fromIpAddress(long10v6).host).toEqual(short10v6);
+        expect(NetAddress.fromIP(long1v6).ip).toEqual(short1v6);
+        expect(NetAddress.fromIP(long2v6).ip).toEqual(short2v6);
+        expect(NetAddress.fromIP(long3v6).ip).toEqual(short3v6);
+        expect(NetAddress.fromIP(long4v6).ip).toEqual(short4v6);
+        expect(NetAddress.fromIP(long5v6).ip).toEqual(short5v6);
+        expect(NetAddress.fromIP(long6v6).ip).toEqual(short6v6);
+        expect(NetAddress.fromIP(long7v6).ip).toEqual(short7v6);
+        expect(NetAddress.fromIP(long8v6).ip).toEqual(short8v6);
+        expect(NetAddress.fromIP(long9v6).ip).toEqual(short9v6);
+        expect(NetAddress.fromIP(long10v6).ip).toEqual(short10v6);
     });
 
 
@@ -145,36 +145,36 @@ describe('NetAddress', () => {
     const lowercase1v6 = '2001:db8::1';
 
     it('lowercases IPv6 addresses', () => {
-        expect(NetAddress.fromIpAddress(uppercase1v6).host).toEqual(lowercase1v6);
+        expect(NetAddress.fromIP(uppercase1v6).ip).toEqual(lowercase1v6);
     });
 
     it('can identify IPv4 subnets', () => {
-        expect(NetAddress.IPv4inSubnet('192.168.2.1', '192.168.0.0/16')).toEqual(true);
-        expect(NetAddress.IPv4inSubnet('172.16.0.0', '172.16.0.0/12')).toEqual(true);
-        expect(NetAddress.IPv4inSubnet('172.32.0.0', '172.16.0.0/12')).toEqual(false);
-        expect(NetAddress.IPv4inSubnet('172.31.0.0', '172.16.0.0/12')).toEqual(true);
-        expect(NetAddress.IPv4inSubnet('172.31.255.255', '172.16.0.0/12')).toEqual(true);
-        expect(NetAddress.IPv4inSubnet('172.15.255.255', '172.16.0.0/12')).toEqual(false);
+        expect(NetUtils.isIPv4inSubnet('192.168.2.1', '192.168.0.0/16')).toEqual(true);
+        expect(NetUtils.isIPv4inSubnet('172.16.0.0', '172.16.0.0/12')).toEqual(true);
+        expect(NetUtils.isIPv4inSubnet('172.32.0.0', '172.16.0.0/12')).toEqual(false);
+        expect(NetUtils.isIPv4inSubnet('172.31.0.0', '172.16.0.0/12')).toEqual(true);
+        expect(NetUtils.isIPv4inSubnet('172.31.255.255', '172.16.0.0/12')).toEqual(true);
+        expect(NetUtils.isIPv4inSubnet('172.15.255.255', '172.16.0.0/12')).toEqual(false);
     });
 
     it('can identify private IP addresses', () => {
-        expect(NetAddress.isPrivateIP('192.168.2.1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('::123:192.168.2.1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('100.168.2.1')).toEqual(false);
-        expect(NetAddress.isPrivateIP('172.16.0.0')).toEqual(true);
-        expect(NetAddress.isPrivateIP('172.32.0.0')).toEqual(false);
-        expect(NetAddress.isPrivateIP('172.31.0.0')).toEqual(true);
-        expect(NetAddress.isPrivateIP('172.31.255.255')).toEqual(true);
-        expect(NetAddress.isPrivateIP('172.15.255.255')).toEqual(false);
-        expect(NetAddress.isPrivateIP('100.64.0.0')).toEqual(true);
-        expect(NetAddress.isPrivateIP('169.254.0.0')).toEqual(true);
+        expect(NetUtils.isPrivateIP('192.168.2.1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('::123:192.168.2.1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('100.168.2.1')).toEqual(false);
+        expect(NetUtils.isPrivateIP('172.16.0.0')).toEqual(true);
+        expect(NetUtils.isPrivateIP('172.32.0.0')).toEqual(false);
+        expect(NetUtils.isPrivateIP('172.31.0.0')).toEqual(true);
+        expect(NetUtils.isPrivateIP('172.31.255.255')).toEqual(true);
+        expect(NetUtils.isPrivateIP('172.15.255.255')).toEqual(false);
+        expect(NetUtils.isPrivateIP('100.64.0.0')).toEqual(true);
+        expect(NetUtils.isPrivateIP('169.254.0.0')).toEqual(true);
 
-        expect(NetAddress.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('fe80:3456:789a:1::1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('fbff:3456:789a:1::1')).toEqual(false);
-        expect(NetAddress.isPrivateIP('fd00:3456:789a:1::1')).toEqual(true);
-        expect(NetAddress.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
-        expect(NetAddress.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
+        expect(NetUtils.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('fe80:3456:789a:1::1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('fbff:3456:789a:1::1')).toEqual(false);
+        expect(NetUtils.isPrivateIP('fd00:3456:789a:1::1')).toEqual(true);
+        expect(NetUtils.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
+        expect(NetUtils.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
     });
 });

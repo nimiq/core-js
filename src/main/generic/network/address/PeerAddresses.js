@@ -115,6 +115,10 @@ class PeerAddresses extends Observable {
         return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
     }
 
+    get(peerAddress) {
+        return this._store.get(peerAddress);
+    }
+
     getChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
         if (peerAddressState && peerAddressState.bestRoute) {
@@ -240,6 +244,11 @@ class PeerAddresses extends Observable {
             // Never update the timestamp of seed peers.
             if (knownAddress.isSeed()) {
                 peerAddress.timestamp = 0;
+            }
+
+            // Never erase NetAddresses.
+            if (knownAddress.netAddress && !peerAddress.netAddress) {
+                peerAddress.netAddress = knownAddress.netAddress;
             }
 
             // Ignore address if it is a websocket address and we already know this address with a more recent timestamp.
