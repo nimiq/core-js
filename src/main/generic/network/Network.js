@@ -209,13 +209,15 @@ class Network extends Observable {
         if (peer.channel.netAddress) {
             // TODO What to do if it doesn't match the currently advertised one?
             if (peer.peerAddress.netAddress && !peer.peerAddress.netAddress.equals(peer.channel.netAddress)) {
-                console.warn(`Got different netAddress ${peer.channel.netAddress} for peer ${peer.peerAddress} `
+                Log.w(Network, `Got different netAddress ${peer.channel.netAddress} for peer ${peer.peerAddress} `
                     + `- advertised was ${peer.peerAddress.netAddress}`);
             }
 
-            // TODO Only do this if we know the public IP of the peer. WebRTC connectors might return local IP addresses
-            // for peers on the same LAN.
-            peer.peerAddress.netAddress = peer.channel.netAddress;
+            // Only set the advertised netAddress if we have the public IP of the peer.
+            // WebRTC connectors might return local IP addresses for peers on the same LAN.
+            if (!peer.channel.netAddress.isPrivate()) {
+                peer.peerAddress.netAddress = peer.channel.netAddress;
+            }
         }
         // Otherwise, use the netAddress advertised for this peer if available.
         else if (peer.channel.peerAddress.netAddress) {
