@@ -17,46 +17,46 @@ describe('NetAddress', () => {
     it('rejects invalid IPv4 addresses', () => {
         expect(() => {
             NetAddress.fromIP(invalid1v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid1v4}`);
         expect(() => {
             NetAddress.fromIP(invalid2v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid2v4}`);
         expect(() => {
             NetAddress.fromIP(invalid3v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid3v4}`);
         expect(() => {
             NetAddress.fromIP(invalid4v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid4v4}`);
         expect(() => {
             NetAddress.fromIP(invalid5v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid5v4}`);
         expect(() => {
             NetAddress.fromIP(invalid6v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid6v4}`);
         expect(() => {
             NetAddress.fromIP(invalid7v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid7v4}`);
         expect(() => {
             NetAddress.fromIP(invalid8v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid8v4}`);
         expect(() => {
             NetAddress.fromIP(invalid9v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid9v4}`);
         expect(() => {
             NetAddress.fromIP(invalid10v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid10v4}`);
         expect(() => {
             NetAddress.fromIP(invalid11v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid11v4}`);
         expect(() => {
             NetAddress.fromIP(invalid12v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid12v4}`);
         expect(() => {
             NetAddress.fromIP(invalid13v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid13v4}`);
         expect(() => {
             NetAddress.fromIP(invalid14v4);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid14v4}`);
     });
 
 
@@ -73,28 +73,28 @@ describe('NetAddress', () => {
     it('rejects invalid IPv6 addresses', () => {
         expect(() => {
             NetAddress.fromIP(invalid1v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid1v6}`);
         expect(() => {
             NetAddress.fromIP(invalid2v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid2v6}`);
         expect(() => {
             NetAddress.fromIP(invalid3v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid3v6}`);
         expect(() => {
             NetAddress.fromIP(invalid4v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid4v6}`);
         expect(() => {
             NetAddress.fromIP(invalid5v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid5v6}`);
         expect(() => {
             NetAddress.fromIP(invalid6v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid6v6}`);
         expect(() => {
             NetAddress.fromIP(invalid7v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid7v6}`);
         expect(() => {
             NetAddress.fromIP(invalid8v6);
-        }).toThrow('Malformed IP address');
+        }).toThrow(`Malformed IP address ${invalid8v6}`);
     });
 
 

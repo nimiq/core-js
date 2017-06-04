@@ -113,7 +113,7 @@ class NetUtils {
     static sanitizeIP(ip) {
         const saneIp = NetUtils._normalizeIP(ip);
         if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
-            throw `Malformed IP address ${saneIp} - blacklisted`;
+            throw `Malformed IP address ${ip}`;
         }
         // TODO reject IPv6 broadcast addresses
         return saneIp;
