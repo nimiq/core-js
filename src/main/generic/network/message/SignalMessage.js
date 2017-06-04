@@ -77,11 +77,11 @@ class SignalMessage extends Message {
     }
 
     isUnroutable() {
-        return (msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0;
+        return (this._flags & SignalMessage.Flags.UNROUTABLE) !== 0;
     }
 
     isTtlExceeded() {
-        return (msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0;
+        return (this._flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0;
     }
 }
 SignalMessage.Flags = {};
