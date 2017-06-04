@@ -42,7 +42,7 @@ class WebSocketConnector extends Observable {
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
-            const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress);
+            const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
             const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
             this.fire('connection', conn);
         };
@@ -72,7 +72,7 @@ class WebSocketConnector extends Observable {
     }
 
     _onConnection(ws) {
-        const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress);
+        const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
         const conn = new PeerConnection(ws, Protocol.WS, netAddress);
         this.fire('connection', conn);
     }
