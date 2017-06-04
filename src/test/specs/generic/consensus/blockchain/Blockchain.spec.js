@@ -1,11 +1,19 @@
 describe('Blockchain', () => {
+    let originalTimeout;
+    beforeEach(function () {
+        originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 100000;
+    });
+    afterEach(function () {
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+    });
+
     let testBlockchain;
 
     beforeEach(function (done) {
         (async function () {
             // create testing blockchain with only genesis and dummy users
             testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
-            jasmine.DEFAULT_TIMEOUT_INTERVAL *= 3;
         })().then(done, done.fail);
     });
 
@@ -335,11 +343,11 @@ describe('Blockchain', () => {
             expect(await testBlockchain.accountsHash()).toEqual(await testBlockchain._accounts.hash());
 
             // Asynchronously test the busy getter
-            testBlockchain._synchronizer.on('work-start', function() {
+            testBlockchain._synchronizer.on('work-start', function () {
                 expect(testBlockchain.busy).toBe(true);
             });
 
-            testBlockchain._synchronizer.on('work-end', function() {
+            testBlockchain._synchronizer.on('work-end', function () {
                 expect(testBlockchain.busy).toBe(false);
             });
         })().then(done, done.fail);
