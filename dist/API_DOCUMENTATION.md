@@ -1,11 +1,12 @@
 # Nimiq Core API documentation
+All Nimiq Core classes reside in the `Nimiq.` namespace.
 
-## Core
+## Nimiq
 
 ### Basic initialization
 ```
 Nimiq.init($ => {
-    // $ is the Core instance
+    // $ is the Nimiq.Core instance
 });
 ```
 
@@ -16,7 +17,7 @@ Nimiq.init($ => {
 
 ```
 Nimiq.init($ => {
-    // $ is the instance
+    // $ is the Nimiq.Core instance
 }, code => {
     switch (code) {
         case Nimiq.ERR_WAIT:
@@ -32,16 +33,33 @@ Nimiq.init($ => {
 });
 ```
 
-### Get an existing core instance
+### Get an existing instance
 ```
 Nimiq.get().then($ => {
-    // $ is the instance
+    // $ is the Nimiq.Core instance
 });
 ```
 
+## Nimiq.Core
 
-## Network
-Available via `$.network`.
+### Properties
+- `network`: [Nimiq.Network](#network)
+- `consensus`: [Nimiq.Consensus](#consensus)
+- `accounts`: [Nimiq.Accounts](#accounts)
+- `blockchain`: [Nimiq.Blockchain](#blockchain)
+- `mempool`: [Nimiq.Mempool](#mempool)
+- `wallet`: [Nimiq.Wallet](#wallet)
+- `miner`: [Nimiq.Miner](#miner)
+
+### Methods
+No public methods.
+
+### Events
+No events.
+
+
+## Nimiq.Network
+<a name="network"></a>
 The network will not connect automatically, call `$.network.connect()` to do so.
 
 ### Properties
@@ -74,8 +92,8 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 ```
 
 
-## Consensus
-Available via `$.consensus`.
+## Nimiq.Consensus
+<a name="consensus"></a>
 
 ### Properties
 - `established`
@@ -96,8 +114,8 @@ $.consensus.on('established', () => console.log('consensus established!'))
 
 
 
-## Accounts
-Available via `$.accounts`.
+## Nimiq.Accounts
+<a name="accounts"></a>
 
 ### Properties
 No public properties.
@@ -127,9 +145,8 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 ```
 
 
-
-## Blockchain
-Available via `$.blockchain`.
+## Nimiq.Blockchain
+<a name="blockchain"></a>
 
 ### Properties
 - `head`
@@ -164,9 +181,8 @@ $.blockchain.on('head-changed', () => {
 ```
 
 
-
-## Mempool
-Available via `$.mempool`.
+## Nimiq.Mempool
+<a name="mempool"></a>
 
 ### Properties
 No public properties.
@@ -182,8 +198,8 @@ No public properties.
 
 
 
-## Wallet
-Available via `$.wallet`.
+## Nimiq.Wallet
+<a name="wallet"></a>
 
 ### Properties
 - `address`
@@ -204,9 +220,8 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 ```
 
 
-## Miner
-Available via `$.miner`.
-
+## Nimiq.Miner
+<a name="miner"></a>
 Mining should not start before consensus is established and stop when consensus is lost. The Miner does not explicitely enforce this, but callers should ensure this behavior.
 
 ```
