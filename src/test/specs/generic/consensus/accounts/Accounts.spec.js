@@ -1,4 +1,12 @@
 describe('Accounts', () => {
+    let originalTimeout;
+    beforeEach(function () {
+        originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
+    });
+    afterEach(function () {
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+    });
 
     it('cannot commit a wrong block', (done) => {
         (async function () {
@@ -34,6 +42,7 @@ describe('Accounts', () => {
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
             done();
         }
+
         test();
     });
 
@@ -54,6 +63,7 @@ describe('Accounts', () => {
             expect(Balance.INITIAL.equals(accountState3)).toBe(true);
             done();
         }
+
         test();
     });
 
@@ -65,6 +75,7 @@ describe('Accounts', () => {
             console.log('END LONG TEST');
             done();
         }
+
         expect(test).not.toThrow();
     });
 });
