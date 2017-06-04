@@ -19,6 +19,55 @@ class NetAddress {
         return saneIp;
     }
 
+    static isPrivateIP(ip) {
+        if (NetAddress.isIPv4Address(ip)) {
+            for (const subnet of NetAddress.IPv4_PRIVATE_NETWORK) {
+                if (NetAddress.IPv4inSubnet(ip, subnet)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (NetAddress.isIPv6Address(ip)) {
+            const parts = ip.toLowerCase().split(':');
+            const isEmbeddedIPv4 = NetAddress.isIPv4Address(parts[parts.length - 1]);
+            if (isEmbeddedIPv4) {
+                return NetAddress.isPrivateIP(parts[parts.length - 1]);
+            }
+
+            // Private subnet is fc00::/7.
+            // So, we only check the first 7 bits of the address to be equal fc00 = 64512.
+            // The mask shifts by 16-7=9 bits (one part - mask size).
+            if ((parseInt(parts[0], 16) & (-1<<9)) === 64512) {
+                return true;
+            }
+
+            // Link-local addresses are fe80::/10.
+            // That translates to fe80 = 65152.
+            // Shifting has to be carried out by 16-10=6 bits.
+            if ((parseInt(parts[0], 16) & (-1<<6)) === 65152) {
+                return true;
+            }
+
+            // Does not seem to be a private IP.
+            return false;
+        }
+
+        throw 'Malformed IP address';
+    }
+
+    static _IPv4toLong(ip) {
+        const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+        return (parseInt(match[1])<<24) + (parseInt(match[2])<<16) + (parseInt(match[3])<<8) + (parseInt(match[4]));
+    }
+
+    static IPv4inSubnet(ip, subnet) {
+        let [subIp, mask] = subnet.split('/');
+        mask = -1<<(32-parseInt(mask));
+        return (NetAddress._IPv4toLong(ip) & mask) === NetAddress._IPv4toLong(subIp);
+    }
+
     static isIpAddress(ip) {
         return NetAddress.isIPv4Address(ip) || NetAddress.isIPv6Address(ip);
     }
@@ -216,5 +265,15 @@ NetAddress.IP_BLACKLIST = [
     '255.255.255.255',
     '::',
     '::1'
+];
+NetAddress.IPv4_PRIVATE_NETWORK = [
+    '10.0.0.0/8',
+    '172.16.0.0/12',
+    '192.168.0.0/16',
+    '100.64.0.0/10', // link-local
+
+    // Actually, the following one is only an approximation,
+    // the first and the last /24 subnets in the range should be excluded.
+    '169.254.0.0/16'
 ];
 Class.register(NetAddress);

@@ -162,4 +162,34 @@ describe('NetAddress', () => {
     it('lowercases IPv6 addresses', () => {
         expect(NetAddress.fromIpAddress(uppercase1v6, 443).host).toEqual(lowercase1v6);
     });
+
+    it('can identify IPv4 subnets', () => {
+        expect(NetAddress.IPv4inSubnet('192.168.2.1', '192.168.0.0/16')).toEqual(true);
+        expect(NetAddress.IPv4inSubnet('172.16.0.0', '172.16.0.0/12')).toEqual(true);
+        expect(NetAddress.IPv4inSubnet('172.32.0.0', '172.16.0.0/12')).toEqual(false);
+        expect(NetAddress.IPv4inSubnet('172.31.0.0', '172.16.0.0/12')).toEqual(true);
+        expect(NetAddress.IPv4inSubnet('172.31.255.255', '172.16.0.0/12')).toEqual(true);
+        expect(NetAddress.IPv4inSubnet('172.15.255.255', '172.16.0.0/12')).toEqual(false);
+    });
+
+    it('can identify private IP addresses', () => {
+        expect(NetAddress.isPrivateIP('192.168.2.1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('::123:192.168.2.1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('100.168.2.1')).toEqual(false);
+        expect(NetAddress.isPrivateIP('172.16.0.0')).toEqual(true);
+        expect(NetAddress.isPrivateIP('172.32.0.0')).toEqual(false);
+        expect(NetAddress.isPrivateIP('172.31.0.0')).toEqual(true);
+        expect(NetAddress.isPrivateIP('172.31.255.255')).toEqual(true);
+        expect(NetAddress.isPrivateIP('172.15.255.255')).toEqual(false);
+        expect(NetAddress.isPrivateIP('100.64.0.0')).toEqual(true);
+        expect(NetAddress.isPrivateIP('169.254.0.0')).toEqual(true);
+
+        expect(NetAddress.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('fd12:3456:789a:1::1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('fe80:3456:789a:1::1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('fbff:3456:789a:1::1')).toEqual(false);
+        expect(NetAddress.isPrivateIP('fd00:3456:789a:1::1')).toEqual(true);
+        expect(NetAddress.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
+        expect(NetAddress.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
+    });
 });
