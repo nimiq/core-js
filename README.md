@@ -39,7 +39,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 Just include `<script src="dist/nimiq.js"></script>` in your project.
 
 ### API 
-Visit the [API Documentation](dist/api-documentation.md).
+Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 
 
 ## Core Developers
@@ -71,7 +71,7 @@ Executing `gulp build` concatenates all sources into `dist/{web,web-babel,web-cr
 
 ## Contribute
 
-If you'd like to contribute to development Nimiq, please follow our [Code of Conduct](/.github/CONDUCT.md) and [Contributing Guidelines](/.github/CONTRIBUTING.md).
+If you'd like to contribute to development Nimiq please follow our [Code of Conduct](/.github/CONDUCT.md) and [Contributing Guidelines](/.github/CONTRIBUTING.md).
 
 ## License
 
