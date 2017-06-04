@@ -19,6 +19,54 @@ class NetAddress {
         return saneIp;
     }
 
+    static isPrivateIP(ip) {
+        if (NetAddress.isIPv4Address(ip)) {
+            for (const subnet of NetAddress.IPv4_PRIVATE_NETWORK) {
+                if (NetAddress.IPv4inSubnet(ip, subnet)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (NetAddress.isIPv6Address(ip)) {
+            const parts = ip.toLowerCase().split(':');
+            const isEmbeddedIPv4 = NetAddress.isIPv4Address(parts[parts.length - 1]);
+            if (isEmbeddedIPv4) {
+                return NetAddress.isPrivateIP(parts[parts.length - 1]);
+            }
+
+            // Private subnet is fc00::/7.
+            // So, we only check the first 7 bits of the address to be equal fc00.
+            // The mask shifts by 16-7=9 bits (one part - mask size).
+            if ((parseInt(parts[0], 16) & (-1<<9)) === 0xfc00) {
+                return true;
+            }
+
+            // Link-local addresses are fe80::/10.
+            // Shifting has to be carried out by 16-10=6 bits.
+            if ((parseInt(parts[0], 16) & (-1<<6)) === 0xfe80) {
+                return true;
+            }
+
+            // Does not seem to be a private IP.
+            return false;
+        }
+
+        throw 'Malformed IP address';
+    }
+
+    static _IPv4toLong(ip) {
+        const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+        return (parseInt(match[1])<<24) + (parseInt(match[2])<<16) + (parseInt(match[3])<<8) + (parseInt(match[4]));
+    }
+
+    static IPv4inSubnet(ip, subnet) {
+        let [subIp, mask] = subnet.split('/');
+        mask = -1<<(32-parseInt(mask));
+        return (NetAddress._IPv4toLong(ip) & mask) === NetAddress._IPv4toLong(subIp);
+    }
+
     static isIpAddress(ip) {
         return NetAddress.isIPv4Address(ip) || NetAddress.isIPv6Address(ip);
     }
@@ -36,10 +84,17 @@ class NetAddress {
             return false;
         }
 
+        const isEmbeddedIPv4 = NetAddress.isIPv4Address(parts[parts.length - 1]);
+
         let innerEmpty = false;
         for (let i = 0; i < parts.length; ++i) {
             // Check whether each part is valid.
-            if (!/^[a-f0-9]{0,4}$/.test(parts[i])) {
+            // Note: the last part may be a IPv4 address!
+            // They can be embedded in the last part. Remember that they take 32bit.
+            if (!(/^[a-f0-9]{0,4}$/.test(parts[i])
+                || (i === parts.length - 1
+                    && isEmbeddedIPv4
+                    && parts.length < 8))) {
                 return false;
             }
             // Inside the parts, there has to be at most one empty part.
@@ -48,6 +103,16 @@ class NetAddress {
                     return false; // at least two empty parts
                 }
                 innerEmpty = true;
+            }
+        }
+
+        // In the special case of embedded IPv4 addresses, everything but the last 48 bit must be 0.
+        if (isEmbeddedIPv4) {
+            // Exclude the last two parts.
+            for (let i=0; i<parts.length-2; ++i) {
+                if (!/^0{0,4}$/.test(parts[i])) {
+                    return false;
+                }
             }
         }
 
@@ -61,7 +126,12 @@ class NetAddress {
             return parts[parts.length - 2].length === 0;
         }
 
-        // If the length is less than 8, there has to be an empty part.
+        // If the length is less than 7 and an IPv4 address is embedded, there has to be an empty part.
+        if (isEmbeddedIPv4 && parts.length < 7) {
+            return innerEmpty;
+        }
+
+        // Otherwise if the length is less than 8, there has to be an empty part.
         if (parts.length < 8) {
             return innerEmpty;
         }
@@ -83,7 +153,33 @@ class NetAddress {
             ip = ip.toLowerCase();
 
             // Split into parts.
-            const parts = ip.split(':');
+            let parts = ip.split(':');
+
+            // Normalize last part individually, if it is an IPv4 address.
+            if (NetAddress.isIPv4Address(parts[parts.length - 1])) {
+                parts[parts.length - 1] = NetAddress._normalizeIpAddress(parts[parts.length - 1]);
+            }
+
+            // If it is already shortened at one point, blow it up again.
+            // It may be the case, that the current shortening is not as described in the RFC.
+            const emptyIndex = parts.indexOf('');
+            if (emptyIndex >= 0) {
+                parts[emptyIndex] = '0';
+                // Also check parts before and after emptyIndex and fill them up if necessary.
+                if (emptyIndex > 0 && parts[emptyIndex-1] === '') {
+                    parts[emptyIndex-1] = '0';
+                }
+                if (emptyIndex < parts.length - 1 && parts[emptyIndex+1] === '') {
+                    parts[emptyIndex+1] = '0';
+                }
+
+                // Add 0s until we have a normal IPv6 length.
+                const necessaryAddition = 8-parts.length;
+                for (let i=0; i<necessaryAddition; ++i) {
+                    parts.splice(emptyIndex, 0, '0');
+                }
+            }
+
             let maxZeroSeqStart = -1;
             let maxZeroSeqLength = 0;
             let curZeroSeqStart = -1;
@@ -127,6 +223,7 @@ class NetAddress {
                     parts.splice(maxZeroSeqStart, maxZeroSeqLength, '');
                 }
             }
+
             return parts.join(':');
         }
 
@@ -186,6 +283,16 @@ NetAddress.IP_BLACKLIST = [
     '255.255.255.255',
     '::',
     '::1'
+];
+NetAddress.IPv4_PRIVATE_NETWORK = [
+    '10.0.0.0/8',
+    '172.16.0.0/12',
+    '192.168.0.0/16',
+    '100.64.0.0/10', // link-local
+
+    // Actually, the following one is only an approximation,
+    // the first and the last /24 subnets in the range should be excluded.
+    '169.254.0.0/16'
 ];
 NetAddress.UNSPECIFIED = new NetAddress('');
 Class.register(NetAddress);
