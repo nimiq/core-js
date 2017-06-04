@@ -39,7 +39,8 @@ class NetAddress {
         let innerEmpty = false;
         for (let i = 0; i < parts.length; ++i) {
             // Check whether each part is valid.
-            if (!/^[a-f0-9]{0,4}$/.test(parts[i])) {
+            // Note: the last part may be a IPv4 address!
+            if (!/^[a-f0-9]{0,4}$/.test(parts[i]) && (i !== parts.length - 1 || !NetAddress.isIPv4Address(parts[i]))) {
                 return false;
             }
             // Inside the parts, there has to be at most one empty part.
@@ -126,6 +127,11 @@ class NetAddress {
                 } else {
                     parts.splice(maxZeroSeqStart, maxZeroSeqLength, '');
                 }
+            }
+
+            // Normalize last part individually, if it is an IPv4 address.
+            if (NetAddress.isIPv4Address(parts[parts.length - 1])) {
+                parts[parts.length - 1] = NetAddress._normalizeIpAddress(parts[parts.length - 1]);
             }
             return parts.join(':');
         }
