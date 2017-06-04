@@ -36,11 +36,17 @@ class NetAddress {
             return false;
         }
 
+        const isEmbeddedIPv4 = NetAddress.isIPv4Address(parts[parts.length - 1]);
+
         let innerEmpty = false;
         for (let i = 0; i < parts.length; ++i) {
             // Check whether each part is valid.
             // Note: the last part may be a IPv4 address!
-            if (!/^[a-f0-9]{0,4}$/.test(parts[i]) && (i !== parts.length - 1 || !NetAddress.isIPv4Address(parts[i]))) {
+            // They can be embedded in the last part. Remember that they take 32bit.
+            if (!(/^[a-f0-9]{0,4}$/.test(parts[i])
+                || (i === parts.length - 1
+                    && isEmbeddedIPv4
+                    && parts.length < 8))) {
                 return false;
             }
             // Inside the parts, there has to be at most one empty part.
@@ -49,6 +55,16 @@ class NetAddress {
                     return false; // at least two empty parts
                 }
                 innerEmpty = true;
+            }
+        }
+
+        // In the special case of embedded IPv4 addresses, everything but the last 48 bit must be 0.
+        if (isEmbeddedIPv4) {
+            // Exclude the last two parts.
+            for (let i=0; i<parts.length-2; ++i) {
+                if (!/^0{0,4}$/.test(parts[i])) {
+                    return false;
+                }
             }
         }
 
@@ -62,7 +78,12 @@ class NetAddress {
             return parts[parts.length - 2].length === 0;
         }
 
-        // If the length is less than 8, there has to be an empty part.
+        // If the length is less than 7 and an IPv4 address is embedded, there has to be an empty part.
+        if (isEmbeddedIPv4 && parts.length < 7) {
+            return innerEmpty;
+        }
+
+        // Otherwise if the length is less than 8, there has to be an empty part.
         if (parts.length < 8) {
             return innerEmpty;
         }
@@ -84,7 +105,33 @@ class NetAddress {
             ip = ip.toLowerCase();
 
             // Split into parts.
-            const parts = ip.split(':');
+            let parts = ip.split(':');
+
+            // Normalize last part individually, if it is an IPv4 address.
+            if (NetAddress.isIPv4Address(parts[parts.length - 1])) {
+                parts[parts.length - 1] = NetAddress._normalizeIpAddress(parts[parts.length - 1]);
+            }
+
+            // If it is already shortened at one point, blow it up again.
+            // It may be the case, that the current shortening is not as described in the RFC.
+            const emptyIndex = parts.indexOf('');
+            if (emptyIndex >= 0) {
+                parts[emptyIndex] = '0';
+                // Also check parts before and after emptyIndex and fill them up if necessary.
+                if (emptyIndex > 0 && parts[emptyIndex-1] === '') {
+                    parts[emptyIndex-1] = '0';
+                }
+                if (emptyIndex < parts.length - 1 && parts[emptyIndex+1] === '') {
+                    parts[emptyIndex+1] = '0';
+                }
+
+                // Add 0s until we have a normal IPv6 length.
+                const necessaryAddition = 8-parts.length;
+                for (let i=0; i<necessaryAddition; ++i) {
+                    parts.splice(emptyIndex, 0, '0');
+                }
+            }
+
             let maxZeroSeqStart = -1;
             let maxZeroSeqLength = 0;
             let curZeroSeqStart = -1;
@@ -129,10 +176,6 @@ class NetAddress {
                 }
             }
 
-            // Normalize last part individually, if it is an IPv4 address.
-            if (NetAddress.isIPv4Address(parts[parts.length - 1])) {
-                parts[parts.length - 1] = NetAddress._normalizeIpAddress(parts[parts.length - 1]);
-            }
             return parts.join(':');
         }
 
