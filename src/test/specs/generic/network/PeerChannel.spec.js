@@ -3,7 +3,7 @@ describe('PeerChannel', () => {
     const hash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
     const vec1 = new InvVector(type, hash);
     const count = 1;
-    const addr = new WsPeerAddress(Services.WEBSOCKET, Date.now(), 'node1.nimiq.com', 8443);
+    const addr = new WsPeerAddress(Services.DEFAULT, Date.now(), NetAddress.UNSPECIFIED, 'node1.nimiq.com', 8443);
 
     it('can send a VersionMessage', (done) => {
         (async function () {

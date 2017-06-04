@@ -135,13 +135,16 @@ class PeerChannel extends Observable {
         return this._conn.peerAddress;
     }
 
-    // Set when the VERSION message is received on an inbound WebSocket connection.
     set peerAddress(value) {
         this._conn.peerAddress = value;
     }
 
     get netAddress() {
         return this._conn.netAddress;
+    }
+
+    set netAddress(value) {
+        this._conn.netAddress = value;
     }
 
     get closed() {

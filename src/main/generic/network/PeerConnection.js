@@ -153,13 +153,16 @@ class PeerConnection extends Observable {
         return this._peerAddress;
     }
 
-    // Set when the VERSION message is received on an inbound connection.
     set peerAddress(value) {
         this._peerAddress = value;
     }
 
     get netAddress() {
         return this._netAddress;
+    }
+
+    set netAddress(value) {
+        this._netAddress = value;
     }
 
     get bytesSent() {
@@ -172,6 +175,10 @@ class PeerConnection extends Observable {
 
     get inbound() {
         return this._inbound;
+    }
+
+    get outbound() {
+        return !this._inbound;
     }
 
     get closed() {

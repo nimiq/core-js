@@ -2,7 +2,7 @@ class NetworkConfig {
     static myPeerAddress() {
         if (!PlatformUtils.supportsWebRTC()) {
             return new DumbPeerAddress(
-                Services.myServices(), Date.now(),
+                Services.myServices(), Date.now(), NetAddress.UNSPECIFIED,
                 /*id*/ NumberUtils.randomUint64());
         }
 
@@ -11,7 +11,7 @@ class NetworkConfig {
         }
 
         return new RtcPeerAddress(
-            Services.myServices(), Date.now(),
+            Services.myServices(), Date.now(), NetAddress.UNSPECIFIED,
             NetworkConfig._mySignalId, /*distance*/ 0);
     }
 
