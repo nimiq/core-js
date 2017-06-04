@@ -76,12 +76,14 @@ class CryptoLib {
         };
 
         poly.sign = async function (config, privateKey, data) {
-            const msgHash = await poly.digest(config.hash, data);
+            const digest = await poly.digest(config.hash, data);
+            const msgHash = new Uint8Array(digest);
             return fromDER(privateKey.pair.sign(msgHash).toDER());
         };
 
         poly.verify = async function (config, publicKey, signature, data) {
-            const msgHash = await poly.digest(config.hash, data);
+            const digest = await poly.digest(config.hash, data);
+            const msgHash = new Uint8Array(digest);
             return publicKey.pair.verify(msgHash, toDER(signature));
         };
 
