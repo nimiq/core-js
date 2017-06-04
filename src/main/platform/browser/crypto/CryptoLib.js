@@ -9,7 +9,9 @@ class CryptoLib {
     }
 
     static _init_poly() {
-        const poly = {};
+        const poly = {
+            isSlow: true
+        };
 
         // We can use Webkit's SHA-256
         let wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
@@ -38,36 +40,38 @@ class CryptoLib {
         };
 
         const fromDER = function (der) {
-            let res;
-            let ss = 37;
-            if (der[3] === 33) {
-                ss++;
-                res = Array.prototype.slice.call(der, 5, 37);
-            } else {
-                res = Array.prototype.slice.call(der, 4, 36);
+            let res = [];
+            let start = 4;
+            for (let i = 0; i < 2; ++i) {
+                let len = der[start - 1];
+                for (let j = 0; j < Math.max(32 - len, 0); ++j) res.push(0);
+                if (len === 33) {
+                    res = res.concat(Array.prototype.slice.call(der, start + 1, start + len));
+                } else {
+                    res = res.concat(Array.prototype.slice.call(der, start, start + len));
+                }
+                start = start + len + 2;
             }
-            if (der[ss] === 33) {
-                res = res.concat(Array.prototype.slice.call(der, ss + 2, ss + 34));
-            } else {
-                res = res.concat(Array.prototype.slice.call(der, ss + 1, ss + 33));
-            }
+
             return new Uint8Array(res);
         };
 
         const toDER = function (arr) {
-            let res = [0x30, 0x44];
-            if (arr[0] & 0x80) {
-                res = res.concat([0x02, 0x21, 0]).concat(Array.prototype.slice.call(arr, 0, 32));
-                res[1]++;
-            } else {
-                res = res.concat([0x02, 0x20]).concat(Array.prototype.slice.call(arr, 0, 32));
+            let res = [48, 0];
+            for (let i = 0; i < 2; ++i) {
+                res.push(2);
+                if ((arr[0] & 0x80) === 0x80) {
+                    res.push(33);
+                    res.push(0);
+                    res = res.concat(Array.prototype.slice.call(arr, (i * 32), (i * 32) + 32));
+                } else {
+                    let len = 32;
+                    while (res[((i + 1) * 32) - len] === 0 && (res[((i + 1) * 32) - len + 1] & 0x80) === 0x80) len--;
+                    res.push(len);
+                    res = res.concat(Array.prototype.slice.call(arr, ((i + 1) * 32) - len, (i * 32) + 32));
+                }
             }
-            if (arr[32] & 0x80) {
-                res = res.concat([0x02, 0x21, 0]).concat(Array.prototype.slice.call(arr, 32));
-                res[1]++;
-            } else {
-                res = res.concat([0x02, 0x20]).concat(Array.prototype.slice.call(arr, 32));
-            }
+            res[1] = res.length - 2;
             return res;
         };
 
