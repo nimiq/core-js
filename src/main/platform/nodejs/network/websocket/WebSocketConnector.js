@@ -73,7 +73,7 @@ class WebSocketConnector extends Observable {
 
     _onConnection(ws) {
         const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
-        const conn = new PeerConnection(ws, Protocol.WS, netAddress);
+        const conn = new PeerConnection(ws, Protocol.WS, netAddress, /*peerAddress*/ null);
         this.fire('connection', conn);
     }
 }

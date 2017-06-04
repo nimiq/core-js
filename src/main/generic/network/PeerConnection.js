@@ -10,7 +10,7 @@ class PeerConnection extends Observable {
         this._bytesSent = 0;
         this._bytesReceived = 0;
 
-        this._inbound = peerAddress === null;
+        this._inbound = !peerAddress;
         this._closedByUs = false;
         this._closed = false;
 
