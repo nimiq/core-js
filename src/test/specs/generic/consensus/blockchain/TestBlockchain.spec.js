@@ -97,9 +97,19 @@ class TestBlockchain extends Blockchain {
         }
 
         prevHash = prevHash || this.headHash;
-        accountsHash = accountsHash || await this._accounts.hash();
         miner = miner || this.users[(blockIndex) % numUsers];     // user[0] created genesis, hence we start with user[1]
         const body = new BlockBody(miner.address, transactions);
+
+        if (!accountsHash) {
+            try {
+                const tmpAccounts = await this.createTemporaryAccounts();
+                await tmpAccounts.commitBlockBody(body);
+                accountsHash = await tmpAccounts.hash();
+            } catch (e) {
+                // The block is invalid, fill with broken accountsHash
+                accountsHash = new Hash(null);
+            }
+        }
 
         bodyHash = bodyHash || await body.hash();
         difficulty = difficulty || await this.getNextCompactTarget();

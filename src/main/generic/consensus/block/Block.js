@@ -90,7 +90,7 @@ Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
         new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
-        new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
+        new Hash(BufferUtils.fromBase64('9mh9WtiaYA6m0MCFirsbDTYtx+hWZ8/GC5eZjbRSewI=')), // empty: cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=
         BlockUtils.difficultyToCompact(1),
         1,
         0,

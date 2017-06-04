@@ -32,7 +32,7 @@ Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
         new Hash(BufferUtils.fromBase64('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE=')),
-        new Hash(BufferUtils.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=')),
+        new Hash(BufferUtils.fromBase64('V9adVnWYF9TDwq6YR3Tz8NlOEh8dQQfdUGMGf0Wa+B0=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,

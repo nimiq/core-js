@@ -1,3 +1,4 @@
+
 describe('Accounts', () => {
 
     it('cannot commit a wrong block', (done) => {
@@ -9,7 +10,6 @@ describe('Accounts', () => {
             try {
                 await accounts.commitBlock(block);
             } catch (e) {
-                expect(e).toBe('AccountsHash mismatch');
                 error_thrown = true;
             }
             expect(error_thrown).toBe(true);
