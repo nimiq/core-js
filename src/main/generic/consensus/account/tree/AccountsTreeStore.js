@@ -121,7 +121,9 @@ class TemporaryAccountsTreeStore {
                 await this._backend.put(this._store[key]);
             }
         }
-        await this._backend.setRootKey(this._rootKey);
+        if (this._rootKey !== undefined) {
+            await this._backend.setRootKey(this._rootKey);
+        }
         this._rootKey = null;
         this._removed = {};
         this._store = {};

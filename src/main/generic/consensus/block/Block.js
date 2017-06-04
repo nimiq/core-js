@@ -90,7 +90,7 @@ Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
         new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
-        new Hash(BufferUtils.fromBase64('9mh9WtiaYA6m0MCFirsbDTYtx+hWZ8/GC5eZjbRSewI=')), // empty: cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=
+        new Hash(BufferUtils.fromBase64('3OXA29ZLjMiwzb52dseSuRH4Reha9lAh4qfPLm6SF28=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
@@ -98,7 +98,7 @@ Block.GENESIS = new Block(
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('oHBViWWDBq8N0gSooW6NrUTKSRbXbhJ0B7IABShyRyA=');
+Block.GENESIS.HASH = Hash.fromBase64('10cmak8iaZGdVNSBvfd8tAUSCBvHN4aPXma9dO4934U=');
 Block.GENESIS.hash().then(hash => {
     Block.GENESIS.HASH = hash;
     //Object.freeze(Block.GENESIS);
