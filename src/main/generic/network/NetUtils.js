@@ -33,7 +33,7 @@ class NetUtils {
             return false;
         }
 
-        throw 'Malformed IP address';
+        throw `Malformed IP address ${ip}`;
     }
 
     static isIPv4inSubnet(ip, subnet) {
@@ -113,7 +113,7 @@ class NetUtils {
     static sanitizeIP(ip) {
         const saneIp = NetUtils._normalizeIP(ip);
         if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
-            throw 'Malformed IP address';
+            throw `Malformed IP address ${saneIp} - blacklisted`;
         }
         // TODO reject IPv6 broadcast addresses
         return saneIp;
@@ -208,7 +208,7 @@ class NetUtils {
             return parts.join(':');
         }
 
-        throw 'Malformed IP address';
+        throw `Malformed IP address ${ip}`;
     }
 
     static _IPv4toLong(ip) {
