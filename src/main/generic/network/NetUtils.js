@@ -124,7 +124,7 @@ class NetUtils {
             // Re-create IPv4 address to strip possible leading zeros.
             // Embed into IPv6 format.
             const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-            return `::ffff:${parseInt(match[1])}.${parseInt(match[2])}.${parseInt(match[3])}.${parseInt(match[4])}`;
+            return `${parseInt(match[1])}.${parseInt(match[2])}.${parseInt(match[3])}.${parseInt(match[4])}`;
         }
 
         if (NetUtils.isIPv6Address(ip)) {

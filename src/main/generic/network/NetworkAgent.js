@@ -210,7 +210,7 @@ class NetworkAgent extends Observable {
         }
 
         // Remember that the peer has sent us these addresses.
-        for (let addr of msg.addresses) {
+        for (const addr of msg.addresses) {
             this._knownAddresses.add(addr);
         }
 
