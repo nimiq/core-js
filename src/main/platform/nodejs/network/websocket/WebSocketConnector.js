@@ -22,11 +22,11 @@ class WebSocketConnector extends Observable {
         }).listen(port);
 
         this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', ws => this._onConnection(ws, /*peerAddress*/ null));
+        this._wss.on('connection', ws => this._onConnection(ws));
 
         this._timers = new Timers();
 
-        Log.d(WebSocketConnector, 'WebSocketConnector listening on port ' + port);
+        Log.d(WebSocketConnector, `WebSocketConnector listening on port ${port}`);
     }
 
     connect(peerAddress) {
@@ -34,15 +34,15 @@ class WebSocketConnector extends Observable {
 
         const timeoutKey = 'connect_' + peerAddress;
         if (this._timers.timeoutExists(timeoutKey)) {
-            Log.w(WebSocketConnector, 'Already connecting to ' + peerAddress);
+            Log.w(WebSocketConnector, `Already connecting to ${peerAddress}`);
             return false;
         }
 
-        const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
+        const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
-            const netAddress = NetAddress.fromHostname(peerAddress.host, peerAddress.port);
+            const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress);
             const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
             this.fire('connection', conn);
         };
@@ -71,9 +71,9 @@ class WebSocketConnector extends Observable {
         return true;
     }
 
-    _onConnection(ws, peerAddress) {
-        const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress, ws._socket.remotePort);
-        const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
+    _onConnection(ws) {
+        const netAddress = NetAddress.fromIpAddress(ws._socket.remoteAddress);
+        const conn = new PeerConnection(ws, Protocol.WS, netAddress);
         this.fire('connection', conn);
     }
 }

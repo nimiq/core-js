@@ -1,13 +1,13 @@
 class NetAddress {
-    static fromIpAddress(ip, port) {
+    static fromIpAddress(ip) {
         const saneIp = NetAddress.sanitizeIpAddress(ip);
-        return new NetAddress(saneIp, port);
+        return new NetAddress(saneIp);
     }
 
-    static fromHostname(host, port) {
+    static fromHostname(host) {
         // TODO reject malformed hosts (ports)
         // TODO do dns resolution, reject invalid hostnames
-        return new NetAddress(host, port);
+        return new NetAddress(host);
     }
 
     static sanitizeIpAddress(ip) {
@@ -133,16 +133,39 @@ class NetAddress {
         throw 'Malformed IP address';
     }
 
-    constructor(host, port) {
-        if (!NumberUtils.isUint16(port) || port === 0) throw 'Malformed port';
+    constructor(host) {
         this._host = host;
-        this._port = port;
+    }
+
+    static unserialize(buf) {
+        const host = buf.readVarLengthString();
+
+        // Don't fail on empty NetAddresses.
+        if (!host || !host.length) {
+            return NetAddress.UNSPECIFIED;
+        }
+
+        // NetAddresses sent on the wire must be valid IPs.
+        // TODO actually validate the IP as soon as we accept all valid IPs.
+        //if (!NetAddress.isIpAddress(host)) throw 'Malformed IP address';
+
+        return new NetAddress(host);
+    }
+
+    serialize(buf) {
+        buf = buf || new SerialBuffer(this.serializedSize);
+        buf.writeVarLengthString(this._host);
+        return buf;
+    }
+
+    get serializedSize() {
+        return /*extraByte VarLengthString host*/ 1
+            + /*host*/ this._host.length;
     }
 
     equals(o) {
         return o instanceof NetAddress
-            && this._host === o.host
-            && this._port === o.port;
+            && this._host === o.host;
     }
 
     hashCode() {
@@ -150,15 +173,11 @@ class NetAddress {
     }
 
     toString() {
-        return `${this._host}:${this._port}`;
+        return `${this._host}`;
     }
 
     get host() {
         return this._host;
-    }
-
-    get port() {
-        return this._port;
     }
 }
 NetAddress.IP_BLACKLIST = [
@@ -168,4 +187,5 @@ NetAddress.IP_BLACKLIST = [
     '::',
     '::1'
 ];
+NetAddress.UNSPECIFIED = new NetAddress('');
 Class.register(NetAddress);

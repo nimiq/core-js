@@ -15,43 +15,43 @@ describe('NetAddress', () => {
 
     it('rejects invalid IPv4 addresses', () => {
         expect(() => {
-            NetAddress.fromIpAddress(invalid1v4, 443);
+            NetAddress.fromIpAddress(invalid1v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid2v4, 443);
+            NetAddress.fromIpAddress(invalid2v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid3v4, 443);
+            NetAddress.fromIpAddress(invalid3v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid4v4, 443);
+            NetAddress.fromIpAddress(invalid4v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid5v4, 443);
+            NetAddress.fromIpAddress(invalid5v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid6v4, 443);
+            NetAddress.fromIpAddress(invalid6v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid7v4, 443);
+            NetAddress.fromIpAddress(invalid7v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid8v4, 443);
+            NetAddress.fromIpAddress(invalid8v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid9v4, 443);
+            NetAddress.fromIpAddress(invalid9v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid10v4, 443);
+            NetAddress.fromIpAddress(invalid10v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid11v4, 443);
+            NetAddress.fromIpAddress(invalid11v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid12v4, 443);
+            NetAddress.fromIpAddress(invalid12v4);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid13v4, 443);
+            NetAddress.fromIpAddress(invalid13v4);
         }).toThrow('Malformed IP address');
     });
 
@@ -64,32 +64,17 @@ describe('NetAddress', () => {
 
     it('rejects invalid IPv6 addresses', () => {
         expect(() => {
-            NetAddress.fromIpAddress(invalid1v6, 443);
+            NetAddress.fromIpAddress(invalid1v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid2v6, 443);
+            NetAddress.fromIpAddress(invalid2v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid3v6, 443);
+            NetAddress.fromIpAddress(invalid3v6);
         }).toThrow('Malformed IP address');
         expect(() => {
-            NetAddress.fromIpAddress(invalid4v6, 443);
+            NetAddress.fromIpAddress(invalid4v6);
         }).toThrow('Malformed IP address');
-    });
-
-
-    const valid1v4 = '8.8.8.8';
-
-    it('rejects invalid ports', () => {
-        expect(() => {
-            NetAddress.fromIpAddress(valid1v4, 80000);
-        }).toThrow('Malformed port');
-        expect(() => {
-            NetAddress.fromIpAddress(valid1v4, -1);
-        }).toThrow('Malformed port');
-        expect(() => {
-            NetAddress.fromIpAddress(valid1v4, 0);
-        }).toThrow('Malformed port');
     });
 
 
@@ -97,7 +82,7 @@ describe('NetAddress', () => {
     const short1v4 = '8.8.8.8';
 
     it('canonicalizes IPv4 addresses', () => {
-        expect(NetAddress.fromIpAddress(long1v4, 443).host).toEqual(short1v4);
+        expect(NetAddress.fromIpAddress(long1v4).host).toEqual(short1v4);
     });
 
 
@@ -111,10 +96,10 @@ describe('NetAddress', () => {
     const short4v6 = '2001:db8::1';
 
     it('canonicalizes IPv6 addresses', () => {
-        expect(NetAddress.fromIpAddress(long1v6, 443).host).toEqual(short1v6);
-        expect(NetAddress.fromIpAddress(long2v6, 443).host).toEqual(short2v6);
-        expect(NetAddress.fromIpAddress(long3v6, 443).host).toEqual(short3v6);
-        expect(NetAddress.fromIpAddress(long4v6, 443).host).toEqual(short4v6);
+        expect(NetAddress.fromIpAddress(long1v6).host).toEqual(short1v6);
+        expect(NetAddress.fromIpAddress(long2v6).host).toEqual(short2v6);
+        expect(NetAddress.fromIpAddress(long3v6).host).toEqual(short3v6);
+        expect(NetAddress.fromIpAddress(long4v6).host).toEqual(short4v6);
     });
 
 
@@ -122,6 +107,6 @@ describe('NetAddress', () => {
     const lowercase1v6 = '2001:db8::1';
 
     it('lowercases IPv6 addresses', () => {
-        expect(NetAddress.fromIpAddress(uppercase1v6, 443).host).toEqual(lowercase1v6);
+        expect(NetAddress.fromIpAddress(uppercase1v6).host).toEqual(lowercase1v6);
     });
 });

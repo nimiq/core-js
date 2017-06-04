@@ -7,18 +7,18 @@ class WebSocketConnector extends Observable {
     connect(peerAddress) {
         if (peerAddress.protocol !== Protocol.WS) throw 'Malformed peerAddress';
 
-        const timeoutKey = 'connect_' + peerAddress;
+        const timeoutKey = `connect_${peerAddress}`;
         if (this._timers.timeoutExists(timeoutKey)) {
-            Log.w(WebSocketConnector, 'Already connecting to ' + peerAddress);
+            Log.w(WebSocketConnector, `Already connecting to ${peerAddress}`);
             return false;
         }
 
-        const ws = new WebSocket('wss://' + peerAddress.host + ':' + peerAddress.port);
+        const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
-            const netAddress = NetAddress.fromHostname(peerAddress.host, peerAddress.port);
-            const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
+            // There is no way to determine the remote IP ... thanks for nothing, WebSocket API.
+            const conn = new PeerConnection(ws, Protocol.WS, /*netAddress*/ null, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {

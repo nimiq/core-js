@@ -1,8 +1,9 @@
 class PeerAddress {
-    constructor(protocol, services, timestamp) {
+    constructor(protocol, services, timestamp, netAddress) {
         this._protocol = protocol;
         this._services = services;
         this._timestamp = timestamp;
+        this._netAddress = netAddress || NetAddress.UNSPECIFIED;
     }
 
     static unserialize(buf) {
@@ -25,12 +26,17 @@ class PeerAddress {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._protocol);
-        // services, timestamp written by subclasses
+        buf.writeUint32(this._services);
+        buf.writeUint64(this._timestamp);
+        this._netAddress.serialize(buf);
         return buf;
     }
 
     get serializedSize() {
-        return /*protocol*/ 1;
+        return /*protocol*/ 1
+            + /*services*/ 4
+            + /*timestamp*/ 8
+            + this._netAddress.serializedSize;
     }
 
     equals(o) {
@@ -38,6 +44,7 @@ class PeerAddress {
             && this._protocol === o.protocol;
             /* services is ignored */
             /* timestamp is ignored */
+            /* netAddress is ignored */
     }
 
     get protocol() {
@@ -57,8 +64,15 @@ class PeerAddress {
         if (this.isSeed()) {
             return;
         }
-
         this._timestamp = value;
+    }
+
+    get netAddress() {
+        return NetAddress.UNSPECIFIED.equals(this._netAddress) ? null : this._netAddress;
+    }
+
+    set netAddress(value) {
+        this._netAddress = value || NetAddress.UNSPECIFIED;
     }
 
     isSeed() {
@@ -68,9 +82,14 @@ class PeerAddress {
 Class.register(PeerAddress);
 
 class WsPeerAddress extends PeerAddress {
-    constructor(services, timestamp, host, port) {
-        super(Protocol.WS, services, timestamp);
+    static seed(host, port) {
+        return new WsPeerAddress(Services.DEFAULT, /*timestamp*/ 0, NetAddress.UNSPECIFIED, host, port);
+    }
 
+    constructor(services, timestamp, netAddress, host, port) {
+        super(Protocol.WS, services, timestamp, netAddress);
+        if (!host) throw 'Malformed host';
+        if (!NumberUtils.isUint16(port)) throw 'Malformed port';
         this._host = host;
         this._port = port;
     }
@@ -78,16 +97,15 @@ class WsPeerAddress extends PeerAddress {
     static unserialize(buf) {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
+        const netAddress = NetAddress.unserialize(buf);
         const host = buf.readVarLengthString();
         const port = buf.readUint16();
-        return new WsPeerAddress(services, timestamp, host, port);
+        return new WsPeerAddress(services, timestamp, netAddress, host, port);
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint32(this._services);
-        buf.writeUint64(this._timestamp);
         buf.writeVarLengthString(this._host);
         buf.writeUint16(this._port);
         return buf;
@@ -95,8 +113,6 @@ class WsPeerAddress extends PeerAddress {
 
     get serializedSize() {
         return super.serializedSize
-            + /*services*/ 4
-            + /*timestamp*/ 8
             + /*extra byte VarLengthString host*/ 1
             + this._host.length
             + /*port*/ 2;
@@ -128,10 +144,10 @@ class WsPeerAddress extends PeerAddress {
 Class.register(WsPeerAddress);
 
 class RtcPeerAddress extends PeerAddress {
-    constructor(services, timestamp, signalId, distance) {
-        super(Protocol.RTC, services, timestamp);
+    constructor(services, timestamp, netAddress, signalId, distance) {
+        super(Protocol.RTC, services, timestamp, netAddress);
         if (!RtcPeerAddress.isSignalId(signalId)) throw 'Malformed signalId';
-
+        if (!NumberUtils.isUint8(distance)) throw 'Malformed distance';
         this._signalId = signalId;
         this._distance = distance;
     }
@@ -143,16 +159,15 @@ class RtcPeerAddress extends PeerAddress {
     static unserialize(buf) {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
+        const netAddress = NetAddress.unserialize(buf);
         const signalId = buf.readString(32);
         const distance = buf.readUint8();
-        return new RtcPeerAddress(services, timestamp, signalId, distance);
+        return new RtcPeerAddress(services, timestamp, netAddress, signalId, distance);
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint32(this._services);
-        buf.writeUint64(this._timestamp);
         buf.writeString(this._signalId, 32);
         buf.writeUint8(this._distance);
         return buf;
@@ -160,8 +175,6 @@ class RtcPeerAddress extends PeerAddress {
 
     get serializedSize() {
         return super.serializedSize
-            + /*services*/ 4
-            + /*timestamp*/ 8
             + /*signalId*/ 32
             + /*distance*/ 1;
     }
@@ -196,32 +209,28 @@ class RtcPeerAddress extends PeerAddress {
 Class.register(RtcPeerAddress);
 
 class DumbPeerAddress extends PeerAddress {
-    constructor(services, timestamp, id) {
-        super(Protocol.DUMB, services, timestamp);
-
+    constructor(services, timestamp, netAddress, id) {
+        super(Protocol.DUMB, services, timestamp, netAddress);
         this._id = id;
     }
 
     static unserialize(buf) {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
+        const netAddress = NetAddress.unserialize(buf);
         const id = buf.readUint64();
-        return new DumbPeerAddress(services, timestamp, id);
+        return new DumbPeerAddress(services, timestamp, netAddress, id);
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint32(this._services);
-        buf.writeUint64(this._timestamp);
         buf.writeUint64(this._id);
         return buf;
     }
 
     get serializedSize() {
         return super.serializedSize
-            + /*services*/ 4
-            + /*timestamp*/ 8
             + /*id*/ 8;
     }
 

@@ -12,7 +12,7 @@ class WebRtcUtils {
         if (parts.length < 6) {
             return null;
         }
-        return NetAddress.fromIpAddress(parts[4], parts[5]);
+        return NetAddress.fromIpAddress(parts[4]);
     }
 }
 Class.register(WebRtcUtils);

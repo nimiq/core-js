@@ -152,18 +152,23 @@ class Network extends Observable {
     }
 
     _onConnection(conn) {
-        if (!conn.inbound) {
-            // Decrement connectingCount if we have initiated this connection.
-            if (this._addresses.isConnecting(conn.peerAddress)) {
-                this._connectingCount--;
-            }
-            // Reject connection if we are already connected to this peer address.
-            // This can happen if the peer connects (inbound) while we are
-            // initiating a (outbound) connection to it.
-            else if (this._addresses.isConnected(conn.peerAddress)) {
-                conn.close('duplicate connection (pre handshake)');
-                return;
-            }
+        // Decrement connectingCount if we have initiated this connection.
+        if (conn.outbound && this._addresses.isConnecting(conn.peerAddress)) {
+            this._connectingCount--;
+        }
+
+        // If the connector was able to determine the peer's netAddress,
+        // enforce the max connections per IP limit here.
+        if (conn.netAddress && !this._incrementConnectionCount(conn)) {
+            return;
+        }
+
+        // Reject connection if we are already connected to this peer address.
+        // This can happen if the peer connects (inbound) while we are
+        // initiating a (outbound) connection to it.
+        if (conn.outbound && this._addresses.isConnected(conn.peerAddress)) {
+            conn.close('duplicate connection (outbound, pre handshake)');
+            return;
         }
 
         // Reject peer if we have reached max peer count.
@@ -171,17 +176,6 @@ class Network extends Observable {
             conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return;
         }
-
-        // Track & limit concurrent connections to the same IP address.
-        const maxConnections = conn.protocol === Protocol.WS ?
-            Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
-        let numConnections = this._connectionCounts.get(conn.netAddress) || 0;
-        numConnections++;
-        if (numConnections > maxConnections) {
-            conn.close(`connection limit per ip (${maxConnections}) reached`);
-            return;
-        }
-        this._connectionCounts.put(conn.netAddress, numConnections);
 
         // Connection accepted.
         const connType = conn.inbound ? 'inbound' : 'outbound';
@@ -211,6 +205,32 @@ class Network extends Observable {
 
     // Handshake with this peer was successful.
     _onHandshake(peer, agent) {
+        // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
+        if (peer.channel.netAddress) {
+            // TODO What to do if it doesn't match the currently advertised one?
+            if (peer.peerAddress.netAddress && !peer.peerAddress.netAddress.equals(peer.channel.netAddress)) {
+                console.warn(`Got different netAddress ${peer.channel.netAddress} for peer ${peer.peerAddress} `
+                    + `- advertised was ${peer.peerAddress.netAddress}`);
+            }
+
+            // TODO Only do this if we know the public IP of the peer. WebRTC connectors might return local IP addresses
+            // for peers on the same LAN.
+            peer.peerAddress.netAddress = peer.channel.netAddress;
+        }
+        // Otherwise, use the netAddress advertised for this peer if available.
+        else if (peer.channel.peerAddress.netAddress) {
+            peer.channel.netAddress = peer.channel.peerAddress.netAddress;
+
+            // Enforce the max connection limit per IP here.
+            if (!this._incrementConnectionCount(peer.channel.connection)) {
+                return;
+            }
+        }
+        // Otherwise, we don't know the netAddress of this peer. Use a pseudo netAddress.
+        else {
+            // TODO pseudo address
+        }
+
         // Close connection if we are already connected to this peer.
         if (this._addresses.isConnected(peer.peerAddress)) {
             agent.channel.close('duplicate connection (post handshake)');
@@ -256,10 +276,10 @@ class Network extends Observable {
         // Delete agent.
         this._agents.remove(channel.id);
 
-        // Decrement connection count per IP.
-        let numConnections = this._connectionCounts.get(channel.netAddress) || 1;
-        numConnections = Math.max(numConnections - 1, 0);
-        this._connectionCounts.put(channel.netAddress, numConnections);
+        // Decrement connection count per IP if we already know the peer's netAddress.
+        if (channel.netAddress /* TODO && not pseudo address */) {
+            this._decrementConnectionCount(channel.netAddress);
+        }
 
         // Update total bytes sent/received.
         this._bytesSent += channel.connection.bytesSent;
@@ -305,6 +325,27 @@ class Network extends Observable {
         }
     }
 
+    _incrementConnectionCount(conn) {
+        let numConnections = this._connectionCounts.get(conn.netAddress) || 0;
+        numConnections++;
+        this._connectionCounts.put(conn.netAddress, numConnections);
+
+        // Enforce max connections per IP limit.
+        const maxConnections = conn.protocol === Protocol.WS ?
+            Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
+        if (numConnections > maxConnections) {
+            conn.close(`connection limit per ip (${maxConnections}) reached`);
+            return false;
+        }
+        return true;
+    }
+
+    _decrementConnectionCount(netAddress) {
+        let numConnections = this._connectionCounts.get(netAddress) || 1;
+        numConnections = Math.max(numConnections - 1, 0);
+        this._connectionCounts.put(netAddress, numConnections);
+    }
+
 
     /* Signaling */
 
@@ -324,19 +365,17 @@ class Network extends Observable {
             return;
         }
 
-        // If message contains unroutable event, update routes.
-        // We also need to test whether we forwarded the original message in reverse direction.
-        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 && this._forwards.signalForwarded(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, /* nonce */ msg.nonce)) {
+        // If the signal has the unroutable flag set and we previously forwarded a matching signal,
+        // mark the route as unusable.
+        if (msg.isUnroutable() && this._forwards.signalForwarded(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, /*nonce*/ msg.nonce)) {
             this._addresses.unroutable(channel, msg.senderId);
         }
 
-        // If the signal is intented for us, pass it on to our WebRTC connector.
+        // If the signal is intended for us, pass it on to our WebRTC connector.
         if (msg.recipientId === mySignalId) {
             // If we sent out a signal that did not reach the recipient because of TTL
             // or it was unroutable, delete this route.
-            if (this._rtcConnector.isValidSignal(msg)
-                 && ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0
-                    || (msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0)) {
+            if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
                 this._addresses.unroutable(channel, msg.senderId);
             }
             this._rtcConnector.onSignal(channel, msg);
@@ -348,24 +387,23 @@ class Network extends Observable {
             Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             // Send signal containing TTL_EXCEEDED flag back in reverse direction.
             if (msg.flags === 0) {
-                channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
+                channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
             }
             return;
         }
 
-        // Otherwise, try to forward the signal to the intented recipient.
+        // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
         if (!signalChannel && msg.flags === 0) {
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            // Send signal containing UNROUTABLE flag back in reverse direction.
-            channel.signal(/* senderId */ msg.recipientId, /* recipientId */ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
+            channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
             return;
         }
 
         // Discard signal if our shortest route to the target is via the sending peer.
-        // XXX Can this happen?
+        // XXX Why does this happen?
         if (signalChannel.peerAddress.equals(channel.peerAddress)) {
             Log.e(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             return;
@@ -373,6 +411,7 @@ class Network extends Observable {
 
         // Decrement ttl and forward signal.
         signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+
         // We store forwarded messages if there are no special flags set.
         if (msg.flags === 0) {
             this._forwards.add(msg.senderId, msg.recipientId, msg.nonce);
