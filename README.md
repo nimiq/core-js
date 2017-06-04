@@ -10,6 +10,8 @@
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
+### Installation for Web Developers
+Follow the Quickstart guide.
 
 ### Run Client
 
