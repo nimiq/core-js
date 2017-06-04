@@ -4,6 +4,7 @@ All Nimiq Core classes reside in the `Nimiq.` namespace.
 ## Nimiq
 
 ### Basic initialization
+
 ```
 Nimiq.init($ => {
     // $ is the Nimiq.Core instance
@@ -11,7 +12,7 @@ Nimiq.init($ => {
 ```
 
 ### Initialization with error callback
-- `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
+- `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be invoked.
 - `Nimiq.ERR_UNSUPPORTED`: This browser is not supported.
 - `Nimiq.ERR_UNKNOWN`: An unknown error occured while loading.
 
