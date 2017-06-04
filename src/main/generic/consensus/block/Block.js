@@ -56,6 +56,10 @@ class Block {
         return this._header.difficulty;
     }
 
+    get height() {
+        return this._header.height;
+    }
+
     get timestamp() {
         return this._header.timestamp;
     }

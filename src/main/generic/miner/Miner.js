@@ -122,7 +122,8 @@ class Miner extends Observable {
     }
 
     _getNextTimestamp() {
-        return Math.floor(Date.now() / 1000);
+        const now = Math.floor(Date.now() / 1000);
+        return Math.max(now, this._blockchain.head.timestamp + 1);
     }
 
     stopWork() {
