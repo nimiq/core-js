@@ -91,9 +91,13 @@ class TemporaryAccountsTreeStore {
     }
 
     async get(key) {
+        // First try to find the key in our local store.
         if (this._store[key] === undefined) {
+            // If it is not in there, get it from our backend.
             const node = await this._backend.get(key);
+            // Assignment is intended! Return null and cache it.
             if (!node) return this._store[key] = null;
+            // Assignment is intended! Cache value.
             return this._store[key] = AccountsTreeNode.unserialize(node.serialize());
         }
         return this._store[key];
@@ -114,11 +118,13 @@ class TemporaryAccountsTreeStore {
 
     async commit() {
         if (!this._transaction) return;
+        // Update backend with all our changes.
+        // We also update cached values to ensure a consistent state with our view.
         for (let key of Object.keys(this._store)) {
             if (this._store[key] === null) {
-                await this._backend.remove(this._removed[key]);
+                await this._backend.remove(this._removed[key]); // eslint-disable-line no-await-in-loop
             } else {
-                await this._backend.put(this._store[key]);
+                await this._backend.put(this._store[key]); // eslint-disable-line no-await-in-loop
             }
         }
         if (this._rootKey !== undefined) {
