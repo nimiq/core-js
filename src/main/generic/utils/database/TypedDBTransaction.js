@@ -8,6 +8,7 @@ class TypedDBTransaction {
 
     commit() {
         return this._db.nativeTransaction().then( tx => new Promise( (resolve, reject) => {
+            tx.open();
             tx.on('complete', () => {
                 if (this._db.updateCache && this._db.flushCache) {
                     this._db.updateCache(this._objects);
