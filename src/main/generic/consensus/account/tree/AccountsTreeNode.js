@@ -7,7 +7,7 @@ class AccountsTreeNode {
         return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, children);
     }
 
-    constructor(type, prefix = new Uint8Array(), arg) {
+    constructor(type, prefix = '', arg) {
         this._type = type;
         this.prefix = prefix;
         if (type === AccountsTreeNode.BRANCH) {
