@@ -18,7 +18,7 @@ describe('BufferUtils', () => {
     });
 
 
-    it('can concat two Buffers', () => {
+    it('can concat two buffers', () => {
         const buffer1 = BufferUtils.fromAscii('test1');
         const buffer2 = BufferUtils.fromAscii('test2');
 
@@ -28,5 +28,16 @@ describe('BufferUtils', () => {
 
         expect(BufferUtils.equals(buffer1, buffer3)).toEqual(true);
         expect(BufferUtils.equals(buffer2, buffer4)).toEqual(true);
+    });
+
+    it('can build a buffer from hex', () => {
+        const buffer1 = BufferUtils.fromHex('abcdef');
+        const buffer2 = BufferUtils.fromHex('123456');
+
+        const correctBuffer1 = new Uint8Array([171, 205, 239]);
+        const correctBuffer2 = new Uint8Array([18, 52, 86]);
+
+        expect(BufferUtils.equals(buffer1, correctBuffer1)).toEqual(true);
+        expect(BufferUtils.equals(buffer2, correctBuffer2)).toEqual(true);
     });
 });

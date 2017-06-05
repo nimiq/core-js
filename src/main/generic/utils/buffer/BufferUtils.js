@@ -27,6 +27,11 @@ class BufferUtils {
         return Array.prototype.map.call(buffer, x => ('00' + x.toString(16)).slice(-2)).join('');
     }
 
+    static fromHex(hex) {
+        if (hex.length % 2 !== 0) return null;
+        return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g), byte => parseInt(byte, 16)));
+    }
+
     static concatTypedArrays(a, b) {
         const c = new (a.constructor)(a.length + b.length);
         c.set(a, 0);

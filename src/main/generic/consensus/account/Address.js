@@ -1,5 +1,4 @@
 class Address extends Primitive {
-
     static get SERIALIZED_SIZE() {
         return 20;
     }
@@ -29,6 +28,14 @@ class Address extends Primitive {
     equals(o) {
         return o instanceof Address
             && super.equals(o);
+    }
+
+    static fromBase64(base64) {
+        return new Address(BufferUtils.fromBase64(base64));
+    }
+
+    static fromHex(hex) {
+        return new Address(BufferUtils.fromHex(hex));
     }
 }
 Class.register(Address);
