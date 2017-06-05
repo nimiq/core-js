@@ -1,6 +1,6 @@
 class BlockUtils {
     static compactToTarget(compact) {
-        return (compact & 0xffffff) * (2 ** (8 * ((compact >> 24) - 3)));
+        return (compact & 0xffffff) * Math.pow(2, (8 * ((compact >> 24) - 3)));
     }
 
     static targetToCompact(target) {
