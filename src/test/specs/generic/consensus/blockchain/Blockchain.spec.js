@@ -140,58 +140,33 @@ describe('Blockchain', () => {
 
             // all timestamps are explicitly set to trigger an increase in difficulty after the last block
 
-            // Push the first block and check that it went through successfully
-            const firstBlock = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
-            const hash1 = await firstBlock.hash();
-            let status = await testBlockchain.pushBlock(firstBlock);
-            expect(status).toBe(Blockchain.PUSH_OK);
-            expect(Log.d).not.toHaveBeenCalled();
+            for (let i = 0; i < Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 2; ++i) {
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(Blockchain.PUSH_OK);
+                expect(Log.d).not.toHaveBeenCalled();
 
-            // Get that same block and check that they're the same
-            let resultBlock = await testBlockchain.getBlock(hash1);
-            expect(resultBlock).toBe(firstBlock);
-
-            // Push some more blocks
-            let block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
-            status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK);
-            expect(Log.d).not.toHaveBeenCalled();
-
-            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
-            status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK);
-            expect(Log.d).not.toHaveBeenCalled();
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+            }
 
             // Check the compact target before reaching Policy.DIFFICULTY_ADJUSTMENT_BLOCKS
             // it should still be the initial difficulty 1
             let nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget).toBe(BlockUtils.difficultyToCompact(1));
-
-            // Push another block
-            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 75);
-            const hash2 = await block.hash();
-            status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK);
-            expect(Log.d).not.toHaveBeenCalled();
-
-            // Check that we can get the block we just pushed
-            resultBlock = await testBlockchain.getBlock(hash2);
-            expect(resultBlock).toBe(block);
-
-            // Check that we can get the first block too
-            resultBlock = await testBlockchain.getBlock(hash1);
-            expect(resultBlock).toBe(firstBlock);
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
 
             // Push one last block (this one should reach Policy.DIFFICULTY_ADJUSTMENT_BLOCKS)
-            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 80);
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME / 2);
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(Blockchain.PUSH_OK);
             expect(Log.d).not.toHaveBeenCalled();
 
             // Check that the difficulty was increased to 2,
             // since the timestamps in the blocks were crafted to double the difficulty
             nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget).toBe(BlockUtils.difficultyToCompact(2));
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(2).toString(16));
         })().then(done, done.fail);
     });
 
