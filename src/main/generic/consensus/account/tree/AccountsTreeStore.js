@@ -5,7 +5,6 @@ class AccountsTreeStore {
 
     static createVolatile() {
         return new VolatileAccountsTreeStore();
-        //return new PersistentAccountsTreeStore();
     }
 
     static createTemporary(backend, transaction = false) {
@@ -95,9 +94,15 @@ class TemporaryAccountsTreeStore {
         if (this._store[key] === undefined) {
             // If it is not in there, get it from our backend.
             const node = await this._backend.get(key);
-            // Assignment is intended! Return null and cache it.
-            if (!node) return this._store[key] = null;
+            // Undefined values in the backend are cached by null.
+            // However to be consistent with the other implementations,
+            // we return undefined.
+            if (!node) {
+                this._store[key] = null;
+                return undefined;
+            }
             // Assignment is intended! Cache value.
+            // unserialize(serialize) copies node.
             return this._store[key] = AccountsTreeNode.unserialize(node.serialize());
         }
         return this._store[key];
@@ -143,7 +148,7 @@ class TemporaryAccountsTreeStore {
         if (this._rootKey === undefined) {
             this._rootKey = (await this._backend.getRootKey()) || null;
         }
-        return this._rootKey;
+        return this._rootKey === null ? undefined : this._rootKey;
     }
 
     setRootKey(rootKey) {

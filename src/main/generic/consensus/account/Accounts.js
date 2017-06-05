@@ -40,7 +40,7 @@ class Accounts extends Observable {
     }
 
     async revertBlock(block) {
-        return this.revertBlock(block.body);
+        return this.revertBlockBody(block.body);
     }
 
     async revertBlockBody(body) {
