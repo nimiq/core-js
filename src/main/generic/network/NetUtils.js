@@ -136,9 +136,9 @@ class NetUtils {
             // Split into parts.
             const parts = ip.split(':');
 
-            // Normalize last part individually, if it is an IPv4 address.
+            // Return normalized IPv4 address if embedded.
             if (NetUtils.isIPv4Address(parts[parts.length - 1])) {
-                parts[parts.length - 1] = NetUtils._normalizeIP(parts[parts.length - 1]);
+                return NetUtils._normalizeIP(parts[parts.length - 1]);
             }
 
             // If it is already shortened at one point, blow it up again.

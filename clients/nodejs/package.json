@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "nimiq": "git+ssh://git@github.com/nimiq-network/core.git"
   }
 }
