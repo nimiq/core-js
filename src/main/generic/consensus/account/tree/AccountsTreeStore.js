@@ -125,16 +125,24 @@ class TemporaryAccountsTreeStore {
         if (!this._transaction) return;
         // Update backend with all our changes.
         // We also update cached values to ensure a consistent state with our view.
+        let tx = this._backend;
+        if (tx.transaction) {
+            let txx = await tx.transaction();
+            if (!(txx instanceof TemporaryAccountsTreeStore)) {
+                tx = txx;
+            }
+        }
         for (let key of Object.keys(this._store)) {
             if (this._store[key] === null) {
-                await this._backend.remove(this._removed[key]); // eslint-disable-line no-await-in-loop
+                await tx.remove(this._removed[key]); // eslint-disable-line no-await-in-loop
             } else {
-                await this._backend.put(this._store[key]); // eslint-disable-line no-await-in-loop
+                await tx.put(this._store[key]); // eslint-disable-line no-await-in-loop
             }
         }
         if (this._rootKey !== undefined) {
-            await this._backend.setRootKey(this._rootKey);
+            await tx.setRootKey(this._rootKey);
         }
+        if (tx.commit) await tx.commit();
         this._rootKey = null;
         this._removed = {};
         this._store = {};

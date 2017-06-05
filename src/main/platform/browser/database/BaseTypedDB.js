@@ -76,7 +76,7 @@ class BaseTypedDB {
     }
 
     putObject(key, value) {
-        if (this._type && !value.serialize) throw 'TypedDB required objects with .serialize()';
+        if (this._type && !value.serialize) throw 'TypedDB requires objects with .serialize()';
         return this._put(key, this._type ? value.serialize() : value);
     }
 
@@ -99,30 +99,47 @@ class BaseTypedDB {
     }
 
     nativeTransaction() {
-        return BaseTypedDB.db.then(db => new NativeDBTransaction(db, this._tableName));
+        return BaseTypedDB.db.then(db => new NativeDBTransaction(db, this._tableName, this._type));
     }
 }
 Class.register(BaseTypedDB);
 
 class NativeDBTransaction extends Observable {
-    constructor(db, tableName) {
+    constructor(db, tableName, type) {
         super();
-        this._tx = db.transaction([tableName], 'readwrite');
-        this._store = this._tx.objectStore(tableName);
+        this._db = db;
+        this._tableName = tableName;
+        this._type = type;
+    }
 
-        this._tx.oncomplete = () => this.fire('complete');
-        this._tx.onerror = e => this.fire('error', e);
+    open() {
+        this._tx = this._db.transaction([this._tableName], 'readwrite');
+        this._store = this._tx.objectStore(this._tableName);
+        this._finished = false;
+
+        this._tx.oncomplete = () => {
+            this.fire('complete');
+            this._finished = true;
+        };
+        this._tx.onerror = e => {
+            this.fire('error', e);
+            this._finished = true;
+        };
     }
 
     putObject(key, value) {
-        this._store.put(value, key);
+        if (this._finished) throw 'Transaction is already finished!';
+        if (this._type && !value.serialize) throw 'TypedDB requires objects with .serialize()';
+        return this._store.put(this._type ? value.serialize() : value, key);
     }
 
     putString(key, value) {
+        if (this._finished) throw 'Transaction is already finished!';
         this._store.put(value, key);
     }
 
     remove(key) {
+        if (this._finished) throw 'Transaction is already finished!';
         this._store.delete(key);
     }
 
