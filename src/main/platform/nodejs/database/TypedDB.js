@@ -70,6 +70,10 @@ class NativeDBTransaction extends Observable {
         this._batch = db.batch();
     }
 
+    open() {
+        // Empty method needed for compatibility.
+    }
+
     putObject(key, value) {
         if (!value.serialize) throw 'NodeJS TypedDB required objects with .serialize()';
         const buf = value.serialize();
