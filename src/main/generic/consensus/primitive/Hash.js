@@ -40,6 +40,10 @@ class Hash extends Primitive {
         return new Hash(BufferUtils.fromBase64(base64));
     }
 
+    static fromHex(hex) {
+        return new Hash(BufferUtils.fromHex(hex));
+    }
+
     static isHash(o) {
         return o instanceof Hash;
     }
