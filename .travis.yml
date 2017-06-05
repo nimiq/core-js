@@ -21,12 +21,14 @@ matrix:
       osx_image: xcode8.3
 
 node_js:
-- node
+- node # latest stable node release
+
+cache: yarn # cache yarn
+
 before_install:
 - if [ "$TO_TEST" = "chrome" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
 - if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then export DISPLAY=:99.0; fi
 - if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then sh -e /etc/init.d/xvfb start; fi
-- if [ "$TO_TEST" = "node" ]; then npm --prefix src/main/platform/nodejs install src/main/platform/nodejs; fi
 before_script:
 - node_modules/.bin/gulp build
 script:
