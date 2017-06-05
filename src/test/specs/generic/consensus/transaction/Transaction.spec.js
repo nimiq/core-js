@@ -6,9 +6,10 @@ describe('Transaction', () => {
     const nonce = 1;
     const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
-    it('is 170 bytes long', () => {
+    it('is 171 bytes long', () => {
 
         //   2 bytes version
+        //   1 byte  type
         //  64 bytes senderPubKey
         //  20 bytes recipientAddress
         //   8 bytes value
@@ -20,7 +21,7 @@ describe('Transaction', () => {
 
         const transaction1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
         const serialized = transaction1.serialize();
-        expect(serialized.byteLength).toBe(170);
+        expect(serialized.byteLength).toBe(171);
     });
 
     it('must have a well defined signature (64 bytes)', () => {

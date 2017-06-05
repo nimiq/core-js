@@ -48,7 +48,7 @@ class Blockchain extends Observable {
         // Automatically commit the chain head if the accountsHash matches.
         // Needed to bootstrap the empty accounts tree.
         const accountsHash = await this.accountsHash();
-        if (accountsHash.equals(this.head.accountsHash)) {
+        if (accountsHash.equals(Accounts.EMPTY_TREE_HASH)) {
             await this._accounts.commitBlock(this._mainChain.head);
         } else {
             // Assume that the accounts tree is in the correct state.
@@ -91,6 +91,10 @@ class Blockchain extends Observable {
                 return this._pushBlock(block);
             }, resolve, error);
         });
+    }
+
+    createTemporaryAccounts() {
+        return Accounts.createTemporary(this._accounts);
     }
 
     async _pushBlock(block) {
@@ -254,18 +258,14 @@ class Blockchain extends Observable {
 
     async _extend(newChain, headHash) {
         // Validate that the block matches the current account state.
-        // XXX This is also enforced by Accounts.commitBlock()
-        const accountsHash = await this.accountsHash();
-        if (!accountsHash.equals(newChain.head.accountsHash)) {
+        try {
+            await this._accounts.commitBlock(newChain.head);
+        } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an
             // invalid block. TODO error handling
-            Log.d(Blockchain, `Rejecting block, AccountsHash mismatch: current=${accountsHash}, block=${newChain.head.accountsHash}`);
-
+            Log.w(Blockchain, `Rejecting block, AccountsHash mismatch: bodyHash=${newChain.head.bodyHash}, accountsHash=${newChain.head.accountsHash}`);
             return false;
         }
-
-        // AccountsHash matches, commit the block.
-        await this._accounts.commitBlock(newChain.head);
 
         // Update main chain.
         this._mainChain = newChain;
@@ -277,31 +277,37 @@ class Blockchain extends Observable {
     }
 
     async _revert() {
-        const curAccountsHash = await this._accounts.hash();
-        Log.d(Blockchain, `Reverting head block ${this.headHash}, current accountsHash ${curAccountsHash}, head accountsHash ${this.head.accountsHash}`);
-
-        // Revert the head block of the main chain.
-        await this._accounts.revertBlock(this.head);
-
-        // XXX Sanity check: Assert that the accountsHash now matches the
-        // accountsHash of the current head.
-        const accountsHash = await this._accounts.hash();
-        Log.d(Blockchain, `AccountsHash after revert: ${accountsHash}`);
-
-        if (!accountsHash.equals(this.head.accountsHash)) {
-            throw 'Failed to revert main chain - inconsistent state';
-        }
-
         // Load the predecessor chain.
         const prevHash = this.head.prevHash;
         const prevChain = await this._store.get(prevHash.toBase64());
         if (!prevChain) throw `Failed to find predecessor block ${prevHash.toBase64()} while reverting`;
+
+        // Test first
+        const tmpAccounts = await this.createTemporaryAccounts();
+        await tmpAccounts.revertBlock(this.head);
+        const tmpHash = await tmpAccounts.hash();
+        Log.d(Blockchain, `AccountsHash after revert: ${tmpHash}`);
+        if (!tmpHash.equals(prevChain.head.accountsHash)) {
+            throw 'Failed to revert main chain - inconsistent state';
+        }
+
+        // Revert the head block of the main chain.
+        await this._accounts.revertBlock(this.head);
 
         // Update main chain.
         this._mainChain = prevChain;
         this._mainPath.pop();
         this._headHash = prevHash;
         await this._store.setMainChain(this._mainChain);
+
+        // XXX Sanity check: Assert that the accountsHash now matches the
+        // accountsHash of the current head.
+        const accountsHash = await this.accountsHash();
+        Log.d(Blockchain, `AccountsHash after revert: ${accountsHash}`);
+
+        if (!accountsHash.equals(this.head.accountsHash)) {
+            throw 'Failed to revert main chain - inconsistent state';
+        }
     }
 
     async _rebranch(newChain, headHash) {
