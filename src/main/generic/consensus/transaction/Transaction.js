@@ -24,7 +24,7 @@ class Transaction {
     }
 
     static unserialize(buf) {
-        // We currently only support one account type: Basic.
+        // We currently only support one transaction type: Basic.
         const version = buf.readUint16();
         if (!Transaction.SUPPORTED_VERSIONS.includes(version)) throw 'Transaction version unsupported';
         const type = buf.readUint8();

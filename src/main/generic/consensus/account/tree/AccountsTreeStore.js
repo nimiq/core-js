@@ -105,7 +105,7 @@ class TemporaryAccountsTreeStore {
             // unserialize(serialize) copies node.
             return this._store[key] = AccountsTreeNode.unserialize(node.serialize());
         }
-        return this._store[key];
+        return this._store[key] === null ? undefined : this._store[key];
     }
 
     async put(node) {
