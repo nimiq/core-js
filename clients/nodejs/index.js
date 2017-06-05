@@ -1,4 +1,4 @@
-const Nimiq = require('nimiq');
+const Nimiq = require('../../dist/node.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
