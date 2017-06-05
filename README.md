@@ -5,7 +5,7 @@
 ## Quickstart 
 
 1. Clone this repository `git clone git@github.com:nimiq-network/core.git`.
-2. Run `npm install`
+2. Run `npm install` or `yarn`
 3. Run `./node_modules/.bin/gulp build`
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
@@ -43,7 +43,8 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 
 
 ## Core Developers
-### Installation for Core Developers
+Developers are free to choose between npm and yarn for managing the dependencies.
+### Installation for Core Developers (using npm)
 - NodeJs latest version (> 7.9.0)
 - gulp: `npm install gulp -g`
 - jasmine test framework: `npm install jasmine -g`
@@ -56,6 +57,22 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 	cd clients/nodejs/
 	npm install
 	```
+
+### Installation for Core Developers (using yarn)
+- NodeJs latest version (> 7.9.0)
+- Dependencies: `yarn`
+- NodeJs dependencies:
+
+	```bash
+	cd src/main/platform/nodejs/
+	yarn
+	cd clients/nodejs/
+	yarn
+	```
+
+If you decided on using yarn for managing the dependencies,
+you have to use `node_modules/.bin/gulp` instead of `gulp`
+and `node_modules/.bin/jasmine` instead of `jasmine` in the following.
 
 ### Test and Build
 
