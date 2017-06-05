@@ -119,13 +119,13 @@ describe('NetAddress', () => {
     const long6v6 = '1:0:0:4:5::8';
     const short6v6 = '1::4:5:0:0:8';
     const long7v6 = `::08.008.8.000008`;
-    const short7v6 = `::8.8.8.8`;
+    const short7v6 = `8.8.8.8`;
     const long8v6 = '1:0:0:4:5::8';
     const short8v6 = '1::4:5:0:0:8';
     const long9v6 = '0:0:0::0:1.2.3.4';
-    const short9v6 = '::1.2.3.4';
+    const short9v6 = '1.2.3.4';
     const long10v6 = '0:0:0::4:1.2.3.4';
-    const short10v6 = '::4:1.2.3.4';
+    const short10v6 = '1.2.3.4';
 
     it('canonicalizes IPv6 addresses', () => {
         expect(NetAddress.fromIP(long1v6).ip).toEqual(short1v6);
