@@ -17,9 +17,3 @@ process.on('uncaughtException', (err) => {
 
     console.error(`Uncaught exception: ${err.message || err}`);
 });
-
-global.atob = require('atob');
-global.btoa = require('btoa');
-require('./classes.js');
-
-module.exports = Core;

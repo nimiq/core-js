@@ -1,4 +1,4 @@
-const Core = require('../../src/main/platform/nodejs/index.js');
+const Nimiq = require('nimiq');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
@@ -15,7 +15,7 @@ const key = argv.key;
 const cert = argv.cert;
 
 if (argv['log']) {
-    Log.instance.level = argv['log'] === true ? Log.VERBOSE : argv['log'];
+    Nimiq.Log.instance.level = argv['log'] === true ? Log.VERBOSE : argv['log'];
 }
 if (argv['log-tag']) {
     if (!Array.isArray(argv['log-tag'])) {
@@ -23,7 +23,7 @@ if (argv['log-tag']) {
     }
     argv['log-tag'].forEach((lt) => {
         let s = lt.split(':');
-        Log.instance.setLoggable(s[0], s.length == 1 ? 2 : s[1]);
+        Nimiq.Log.instance.setLoggable(s[0], s.length == 1 ? 2 : s[1]);
     });
 }
 
@@ -34,7 +34,7 @@ console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ',
 NetworkConfig.configurePeerAddress(host, port);
 NetworkConfig.configureSSL(key, cert);
 
-(new Core()).then($ => {
+(new Nimiq.Core()).then($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
     if (!passive) {
