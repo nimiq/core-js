@@ -24,7 +24,7 @@ class Policy {
     }
 
     static coinsToSatoshis(coins) {
-        return coins * Policy.SATOSHIS_PER_COIN;
+        return Math.round(coins * Policy.SATOSHIS_PER_COIN);
     }
 
     static satoshisToCoins(satoshis) {
