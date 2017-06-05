@@ -1,11 +1,18 @@
 describe('Blockchain', () => {
     let testBlockchain;
+    let originalTimeout;
 
     beforeEach(function (done) {
+        originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
         (async function () {
             // create testing blockchain with only genesis and dummy users
             testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
         })().then(done, done.fail);
+    });
+
+    afterEach(function() {
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     });
 
     xit('will verify block transaction limit', (done) => {
