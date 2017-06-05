@@ -24,8 +24,11 @@ class Transaction {
     }
 
     static unserialize(buf) {
+        // We currently only support one account type: Basic.
         const version = buf.readUint16();
         if (!Transaction.SUPPORTED_VERSIONS.includes(version)) throw 'Transaction version unsupported';
+        const type = buf.readUint8();
+        if (type !== Transaction.Type.BASIC) throw 'Malformed transaction type';
         const senderPubKey = PublicKey.unserialize(buf);
         const recipientAddr = Address.unserialize(buf);
         const value = buf.readUint64();
@@ -50,6 +53,7 @@ class Transaction {
     serializeContent(buf) {
         buf = buf || new SerialBuffer(this.serializedContentSize);
         buf.writeUint16(this._version);
+        buf.writeUint8(Transaction.Type.BASIC);
         this._senderPubKey.serialize(buf);
         this._recipientAddr.serialize(buf);
         buf.writeUint64(this._value);
@@ -60,6 +64,7 @@ class Transaction {
 
     get serializedContentSize() {
         return /*version*/ 2
+            + /*type*/ 1
             + this._senderPubKey.serializedSize
             + this._recipientAddr.serializedSize
             + /*value*/ 8
@@ -134,5 +139,7 @@ class Transaction {
 }
 Transaction.CURRENT_VERSION = 1;
 Transaction.SUPPORTED_VERSIONS = [1];
+Transaction.Type = {};
+Transaction.Type.BASIC = 0;
 
 Class.register(Transaction);
