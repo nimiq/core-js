@@ -1,22 +1,24 @@
 # Nimiq Core API documentation
+All Nimiq Core classes reside in the `Nimiq.` namespace.
 
-## Core
+## Nimiq
 
 ### Basic initialization
+
 ```
 Nimiq.init($ => {
-    // $ is the Core instance
+    // $ is the Nimiq.Core instance
 });
 ```
 
 ### Initialization with error callback
-- `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be called.
+- `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be invoked.
 - `Nimiq.ERR_UNSUPPORTED`: This browser is not supported.
 - `Nimiq.ERR_UNKNOWN`: An unknown error occured while loading.
 
 ```
 Nimiq.init($ => {
-    // $ is the instance
+    // $ is the Nimiq.Core instance
 }, code => {
     switch (code) {
         case Nimiq.ERR_WAIT:
@@ -32,16 +34,33 @@ Nimiq.init($ => {
 });
 ```
 
-### Get an existing core instance
+### Get an existing instance
 ```
 Nimiq.get().then($ => {
-    // $ is the instance
+    // $ is the Nimiq.Core instance
 });
 ```
 
+## Nimiq.Core
 
-## Network
-Available via `$.network`.
+### Properties
+- `network`: [Nimiq.Network](#network)
+- `consensus`: [Nimiq.Consensus](#consensus)
+- `accounts`: [Nimiq.Accounts](#accounts)
+- `blockchain`: [Nimiq.Blockchain](#blockchain)
+- `mempool`: [Nimiq.Mempool](#mempool)
+- `wallet`: [Nimiq.Wallet](#wallet)
+- `miner`: [Nimiq.Miner](#miner)
+
+### Methods
+No public methods.
+
+### Events
+No events.
+
+
+<a name="network"></a>
+## Nimiq.Network
 The network will not connect automatically, call `$.network.connect()` to do so.
 
 ### Properties
@@ -74,8 +93,8 @@ $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
 ```
 
 
-## Consensus
-Available via `$.consensus`.
+<a name="consensus"></a>
+## Nimiq.Consensus
 
 ### Properties
 - `established`
@@ -95,9 +114,8 @@ $.consensus.on('established', () => console.log('consensus established!'))
 ```
 
 
-
-## Accounts
-Available via `$.accounts`.
+<a name="accounts"></a>
+## Nimiq.Accounts
 
 ### Properties
 No public properties.
@@ -127,9 +145,8 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 ```
 
 
-
-## Blockchain
-Available via `$.blockchain`.
+<a name="blockchain"></a>
+## Nimiq.Blockchain
 
 ### Properties
 - `head`
@@ -164,9 +181,8 @@ $.blockchain.on('head-changed', () => {
 ```
 
 
-
-## Mempool
-Available via `$.mempool`.
+<a name="mempool"></a>
+## Nimiq.Mempool
 
 ### Properties
 No public properties.
@@ -181,9 +197,8 @@ No public properties.
 - `transactions-ready`
 
 
-
-## Wallet
-Available via `$.wallet`.
+<a name="wallet"></a>
+## Nimiq.Wallet
 
 ### Properties
 - `address`
@@ -204,9 +219,8 @@ $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction =>
 ```
 
 
-## Miner
-Available via `$.miner`.
-
+<a name="miner"></a>
+## Nimiq.Miner
 Mining should not start before consensus is established and stop when consensus is lost. The Miner does not explicitely enforce this, but callers should ensure this behavior.
 
 ```

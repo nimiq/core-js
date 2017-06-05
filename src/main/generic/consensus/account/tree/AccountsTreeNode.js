@@ -84,15 +84,16 @@ class AccountsTreeNode {
         return this._children && this._children[this._getChildIndex(prefix)];
     }
 
-    putChild(prefix, child) {
-        this._children = this._children || [];
-        this._children[this._getChildIndex(prefix)] = child;
+    withChild(prefix, child) {
+        let children = this._children.slice() || [];
+        children[this._getChildIndex(prefix)] = child;
+        return AccountsTreeNode.branchNode(this.prefix, children);
     }
 
-    removeChild(prefix) {
-        if (this._children) {
-            delete this._children[this._getChildIndex(prefix)];
-        }
+    withoutChild(prefix) {
+        let children = this._children.slice() || [];
+        delete children[this._getChildIndex(prefix)];
+        return AccountsTreeNode.branchNode(this.prefix, children);
     }
 
     hasChildren() {
@@ -114,8 +115,8 @@ class AccountsTreeNode {
         return this._account;
     }
 
-    set account(account) {
-        this._account = account;
+    withAccount(account) {
+        return AccountsTreeNode.terminalNode(this.prefix, account);
     }
 
     hash() {

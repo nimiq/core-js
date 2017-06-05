@@ -1,7 +1,7 @@
 class TestBlockchain extends Blockchain {
     static get MAX_NUM_TRANSACTIONS() {
         return Math.floor(              // round off
-            (Policy.BLOCK_SIZE_MAX  -   // block size limit
+            (Policy.BLOCK_SIZE_MAX -   // block size limit
             116 -                       // header size
             20) /                       // miner address size
             165);                       // transaction size
@@ -40,6 +40,7 @@ class TestBlockchain extends Blockchain {
             signature = await Signature.create(senderPrivKey, transaction.serializeContent());
         }
         transaction.signature = signature;
+
         return transaction;
     }
 
@@ -60,7 +61,7 @@ class TestBlockchain extends Blockchain {
             numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS;
         }
 
-         /* Note on transactions and balances:
+        /* Note on transactions and balances:
          We fill up the balances of users in increasing order, therefore the size of the chain determines how many
          users already have a non-zero balance. Hence, for block x, all users up to user[x] have a non-zero balance.
          At the same time, there must not be more than one transaction from the same sender.
@@ -97,9 +98,19 @@ class TestBlockchain extends Blockchain {
         }
 
         prevHash = prevHash || this.headHash;
-        accountsHash = accountsHash || await this._accounts.hash();
         miner = miner || this.users[(blockIndex) % numUsers];     // user[0] created genesis, hence we start with user[1]
         const body = new BlockBody(miner.address, transactions);
+
+        if (!accountsHash) {
+            try {
+                const tmpAccounts = await this.createTemporaryAccounts();
+                await tmpAccounts.commitBlockBody(body);
+                accountsHash = await tmpAccounts.hash();
+            } catch (e) {
+                // The block is invalid, fill with broken accountsHash
+                accountsHash = new Hash(null);
+            }
+        }
 
         bodyHash = bodyHash || await body.hash();
         difficulty = difficulty || await this.getNextCompactTarget();

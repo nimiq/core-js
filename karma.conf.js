@@ -15,7 +15,7 @@ module.exports = function (config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'dist/web.js',
+            'dist/web-crypto.js',
             'src/test/specs/**/Dummy.spec.js',
             'src/test/specs/**/*.spec.js'
         ],
@@ -71,7 +71,10 @@ module.exports = function (config) {
                 base: 'Chrome',
                 flags: ['--no-sandbox']
             }
-        }
+        },
+
+        // Crypto is slow in Safari
+        browserNoActivityTimeout: 60000
     };
 
     if (process.env.TRAVIS) {

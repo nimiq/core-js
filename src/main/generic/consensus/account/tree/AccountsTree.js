@@ -9,6 +9,11 @@ class AccountsTree extends Observable {
         return new AccountsTree(store);
     }
 
+    static createTemporary(backend) {
+        const store = AccountsTreeStore.createTemporary(backend._store);
+        return new AccountsTree(store);
+    }
+
     constructor(treeStore) {
         super();
         this._store = treeStore;
@@ -74,9 +79,9 @@ class AccountsTree extends Observable {
             const newChildKey = await transaction.put(newChild);
 
             // Insert the new parent node.
-            const newParent = AccountsTreeNode.branchNode(commonPrefix, []);
-            newParent.putChild(node.prefix, nodeKey);
-            newParent.putChild(newChild.prefix, newChildKey);
+            const newParent = AccountsTreeNode.branchNode(commonPrefix, [])
+                .withChild(node.prefix, nodeKey)
+                .withChild(newChild.prefix, newChildKey);
             const newParentKey = await transaction.put(newParent);
 
             return this._updateKeys(transaction, newParent.prefix, newParentKey, rootPath);
@@ -98,7 +103,7 @@ class AccountsTree extends Observable {
             }
 
             // Update the account.
-            node.account = account;
+            node = node.withAccount(account);
             const nodeKey = await transaction.put(node);
 
             return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
@@ -118,7 +123,7 @@ class AccountsTree extends Observable {
         const newChildKey = await transaction.put(newChild);
 
         await transaction.remove(node);
-        node.putChild(newChild.prefix, newChildKey);
+        node = node.withChild(newChild.prefix, newChildKey);
         const nodeKey = await transaction.put(node);
 
         return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
@@ -131,10 +136,10 @@ class AccountsTree extends Observable {
         // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
-            const node = rootPath[i];
+            let node = rootPath[i];
             let nodeKey = await transaction.remove(node); // eslint-disable-line no-await-in-loop
 
-            node.removeChild(prefix);
+            node = node.withoutChild(prefix);
 
             // If the node has only a single child, merge it with the next node.
             if (node.hasSingleChild() && nodeKey !== rootKey) {
@@ -171,10 +176,10 @@ class AccountsTree extends Observable {
         // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
-            const node = rootPath[i];
+            let node = rootPath[i];
             await transaction.remove(node); // eslint-disable-line no-await-in-loop
 
-            node.putChild(prefix, nodeKey);
+            node = node.withChild(prefix, nodeKey);
 
             nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
             prefix = node.prefix;
@@ -221,7 +226,9 @@ class AccountsTree extends Observable {
     }
 
     async transaction() {
-        const tx = await this._store.transaction();
+        // FIXME Firefox apparently has problems with transactions!
+        // const tx = await this._store.transaction();
+        const tx = await AccountsTreeStore.createTemporary(this._store, true);
         const that = this;
         return {
             get: function (address) {
@@ -234,6 +241,10 @@ class AccountsTree extends Observable {
 
             commit: function () {
                 return tx.commit();
+            },
+
+            root: async function () {
+                return Hash.fromBase64(await tx.getRootKey());
             }
         };
     }

@@ -117,6 +117,23 @@ describe('Crypto', () => {
         })();
     });
 
+    it('can verify custom signature set', (done) => {
+        (async function () {
+            const testData = [
+                [
+                    'AKUtQ703A1Ib720Te5zceQWmNrDCLO5DED+Jyokz3V7YJ3bcOM5JQjMKIiB6iXFdCkt3SexZ1d608ZjPVAS3CA==',
+                    'dhehnNDmZnPFv+QkbNQNBtGPrO0CvuKAYUE2ByfIx6+dHI9v0rRgEQqhpKjSrxqIusaJvCT5sTnbL0FIyH3p1g==',
+                    'AAF2F6Gc0OZmc8W/5CRs1A0G0Y+s7QK+4oBhQTYHJ8jHr50cj2/StGARCqGkqNKvGoi6xom8JPmxOdsvQUjIfenWztto/gO1+//6q+jM1LHWoTl4BL1Br1HZegAAAEGfUdl4AAAAAAAAAg=='
+                ]
+            ];
+
+            for (const entry of testData) {
+                expect(await Crypto.signatureVerify(Crypto.publicKeyUnserialize(BufferUtils.fromBase64(entry[1])), BufferUtils.fromBase64(entry[2]), Crypto.signatureUnserialize(BufferUtils.fromBase64(entry[0])))).toBeTruthy();
+            }
+            done();
+        })();
+    });
+
     it('can sign and verify data', (done) => {
         // http://www.ietf.org/rfc/rfc6090.txt
         (async function () {

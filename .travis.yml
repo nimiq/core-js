@@ -16,10 +16,9 @@ matrix:
       env: TO_TEST=node
     - os: linux
       env: TO_TEST=lint
-# Disable for now, seems broken
-#    - os: osx
-#      env: TO_TEST=safari
-#      osx_image: xcode8.3
+    - os: osx
+      env: TO_TEST=safari
+      osx_image: xcode8.3
 
 node_js:
 - node

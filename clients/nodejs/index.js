@@ -15,7 +15,7 @@ const key = argv.key;
 const cert = argv.cert;
 
 if (argv['log']) {
-    Log.instance().level = argv['log'] === true ? Log.VERBOSE : argv['log'];
+    Log.instance.level = argv['log'] === true ? Log.VERBOSE : argv['log'];
 }
 if (argv['log-tag']) {
     if (!Array.isArray(argv['log-tag'])) {
@@ -23,7 +23,7 @@ if (argv['log-tag']) {
     }
     argv['log-tag'].forEach((lt) => {
         let s = lt.split(':');
-        Log.instance().setLoggable(s[0], s.length == 1 ? 2 : s[1]);
+        Log.instance.setLoggable(s[0], s.length == 1 ? 2 : s[1]);
     });
 }
 

@@ -115,6 +115,10 @@ class PeerAddresses extends Observable {
         return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
     }
 
+    get(peerAddress) {
+        return this._store.get(peerAddress);
+    }
+
     getChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
         if (peerAddressState && peerAddressState.bestRoute) {
@@ -242,6 +246,11 @@ class PeerAddresses extends Observable {
                 peerAddress.timestamp = 0;
             }
 
+            // Never erase NetAddresses.
+            if (knownAddress.netAddress && !peerAddress.netAddress) {
+                peerAddress.netAddress = knownAddress.netAddress;
+            }
+
             // Ignore address if it is a websocket address and we already know this address with a more recent timestamp.
             if (peerAddress.protocol === Protocol.WS && knownAddress.timestamp >= peerAddress.timestamp) {
                 return false;
@@ -261,8 +270,12 @@ class PeerAddresses extends Observable {
             peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
         }
 
-        // Don't allow address updates if we are currenly connected to this address.
+        // If we are currently connected, allow only updates to the netAddress and only if we don't know it yet.
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            if (!peerAddressState.peerAddress.netAddress && peerAddress.netAddress) {
+                peerAddressState.peerAddress.netAddress = peerAddress.netAddress;
+            }
+
             return false;
         }
 
@@ -587,13 +600,13 @@ PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    new WsPeerAddress(0, 0, 'alpacash.com', 8080),
-    new WsPeerAddress(0, 0, 'nimiq1.styp-rekowsky.de', 8080),
-    new WsPeerAddress(0, 0, 'nimiq2.styp-rekowsky.de', 8080),
-    new WsPeerAddress(0, 0, 'seed1.nimiq-network.com', 8080),
-    new WsPeerAddress(0, 0, 'seed2.nimiq-network.com', 8080),
-    new WsPeerAddress(0, 0, 'seed3.nimiq-network.com', 8080),
-    new WsPeerAddress(0, 0, 'seed4.nimiq-network.com', 8080)
+    WsPeerAddress.seed('alpacash.com', 8080),
+    WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
+    WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
+    WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed4.nimiq-network.com', 8080)
 ];
 Class.register(PeerAddresses);
 

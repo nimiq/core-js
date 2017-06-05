@@ -39,21 +39,16 @@ class WebRtcConnector extends Observable {
     }
 
     onSignal(channel, msg) {
-        // Check if we received an unroutable response from one of the signaling peers.
-        if ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0
-            || (msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0) {
-            // handle error cases
-            // check for relevant connector
-            if (this.isValidSignal(msg)) {
-                // if OutboundPeerConnector, clear timeout early
-                if (this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
-                    this._timers.clearTimeout(`connect_${msg.senderId}`);
-                    const reason1 = ((msg.flags & SignalMessage.Flags.UNROUTABLE) !== 0 ? 'unroutable' : '');
-                    const reason2 = ((msg.flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0 ? 'ttl_exceeded' : '');
-                    const reason = reason1 + (reason1.length > 0 && reason2.length > 0 ? ' & ' : '') + reason2;
-                    this.fire('error', this._connectors[msg.senderId].peerAddress, `flags ${reason}`);
-                    delete this._connectors[msg.senderId];
-                }
+        // Check if we received an unroutable/ttl exceeded response from one of the signaling peers.
+        if (msg.isUnroutable() || msg.isTtlExceeded()) {
+            // Clear the timeout early if we initiated the connection.
+            if (this.isValidSignal(msg) && this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
+                delete this._connectors[msg.senderId];
+                this._timers.clearTimeout(`connect_${msg.senderId}`);
+
+                // XXX Reason needs to be adapted when more flags are added.
+                const reason =  msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
+                this.fire('error', this._connectors[msg.senderId].peerAddress, reason);
             }
 
             return;
@@ -107,6 +102,7 @@ class WebRtcConnector extends Observable {
         else if (this._connectors[msg.senderId]) {
             this._connectors[msg.senderId].onSignal(payload);
         }
+
         // If none of the above conditions is met, the signal is invalid and we discard it.
     }
 
@@ -130,10 +126,12 @@ WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
-    constructor(config, signalChannel, signalId) {
+    constructor(config, signalChannel, signalId, peerAddress) {
         super();
         this._signalChannel = signalChannel;
         this._signalId = signalId;
+        this._peerAddress = peerAddress; // null for inbound connections
+
         this._nonce = NumberUtils.randomUint32();
 
         this._rtcConnection = new RTCPeerConnection(config);
@@ -190,6 +188,28 @@ class PeerConnector extends Observable {
         }, this._errorLog);
     }
 
+    _onDataChannel(event) {
+        const channel = event.channel || event.target;
+
+        // There is no API to get the remote IP address. As a crude heuristic, we parse the IP address
+        // from the last ICE candidate seen before the connection was established.
+        // TODO Can we improve this?
+        let netAddress = null;
+        if (this._lastIceCandidate) {
+            try {
+                netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
+            } catch(e) {
+                Log.w(PeerConnector, `Failed to parse IP from ICE candidate: ${this._lastIceCandidate}`);
+            }
+        } else {
+            // XXX Why does this happen?
+            Log.w(PeerConnector, 'No ICE candidate seen for inbound connection');
+        }
+
+        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
+        this.fire('connection', conn);
+    }
+
     _errorLog(error) {
         Log.e(PeerConnector, error);
     }
@@ -197,68 +217,32 @@ class PeerConnector extends Observable {
     get nonce() {
         return this._nonce;
     }
+
+    get peerAddress() {
+        return this._peerAddress;
+    }
 }
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
     constructor(config, peerAddress, signalChannel) {
-        super(config, signalChannel, peerAddress.signalId);
+        super(config, signalChannel, peerAddress.signalId, peerAddress);
         this._peerAddress = peerAddress;
 
         // Create offer.
         const channel = this._rtcConnection.createDataChannel('data-channel');
         channel.binaryType = 'arraybuffer';
-        channel.onopen = e => this._onP2PChannel(e);
+        channel.onopen = e => this._onDataChannel(e);
         this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
-    }
-
-    _onP2PChannel(event) {
-        const channel = event.channel || event.target;
-
-        // FIXME it is not really robust to assume that the last iceCandidate seen is
-        // actually the address that we connected to.
-        let netAddress;
-        if (this._lastIceCandidate) {
-            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
-        } else {
-            // XXX Can/Why does this happen?
-            Log.w(OutboundPeerConnector, 'No ICE candidate seen for inbound connection, using pseudo netaddress');
-            netAddress = new NetAddress(this._signalId, 1);
-        }
-
-        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
-        this.fire('connection', conn);
-    }
-
-    get peerAddress() {
-        return this._peerAddress;
     }
 }
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
     constructor(config, signalChannel, signalId, offer) {
-        super(config, signalChannel, signalId);
-        this._rtcConnection.ondatachannel = e => this._onP2PChannel(e);
+        super(config, signalChannel, signalId, null);
+        this._rtcConnection.ondatachannel = e => this._onDataChannel(e);
         this.onSignal(offer);
-    }
-
-    _onP2PChannel(event) {
-        const channel = event.channel || event.target;
-
-        // FIXME it is not really robust to assume that the last iceCandidate seen is
-        // actually the address that we connected to.
-        let netAddress;
-        if (this._lastIceCandidate) {
-            netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
-        } else {
-            // XXX Can/Why does this happen?
-            Log.w(InboundPeerConnector, 'No ICE candidate seen for inbound connection, using pseudo netaddress');
-            netAddress = new NetAddress(this._signalId, 1);
-        }
-
-        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, /*peerAddress*/ null);
-        this.fire('connection', conn);
     }
 }
 Class.register(InboundPeerConnector);
