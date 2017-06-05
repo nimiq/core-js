@@ -40,9 +40,7 @@ class Accounts extends Observable {
     }
 
     async revertBlock(block) {
-        const treeTx = await this._tree.transaction();
-        await this._execute(treeTx, block.body, (a, b) => a - b);
-        return treeTx.commit();
+        return this.revertBlock(block.body);
     }
 
     async revertBlockBody(body) {
@@ -114,5 +112,5 @@ class Accounts extends Observable {
         return this._tree.root();
     }
 }
-Accounts.EMPTY_HASH = Hash.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=');
+Accounts.EMPTY_TREE_HASH = Hash.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=');
 Class.register(Accounts);

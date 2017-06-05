@@ -4,13 +4,6 @@ class Account {
         this._balance = balance;
     }
 
-    static cast(o) {
-        if (!o) return o;
-        ObjectUtils.cast(o, Account);
-        Balance.cast(o._balance);
-        return o;
-    }
-
     static unserialize(buf) {
         // We currently only support one account type: Basic.
         const type = buf.readUint8();

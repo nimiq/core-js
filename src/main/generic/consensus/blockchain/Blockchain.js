@@ -48,7 +48,7 @@ class Blockchain extends Observable {
         // Automatically commit the chain head if the accountsHash matches.
         // Needed to bootstrap the empty accounts tree.
         const accountsHash = await this.accountsHash();
-        if (accountsHash.equals(Accounts.EMPTY_HASH)) {
+        if (accountsHash.equals(Accounts.EMPTY_TREE_HASH)) {
             await this._accounts.commitBlock(this._mainChain.head);
         } else {
             // Assume that the accounts tree is in the correct state.
