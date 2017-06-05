@@ -1,8 +1,19 @@
 class ArrayUtils {
+    /**
+     * @template T
+     * @param {Array.<T>} arr
+     * @return {T}
+     */
     static randomElement(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     }
 
+    /**
+     * @param {Uint8Array} uintarr
+     * @param {number} begin
+     * @param {number} end
+     * @return {Uint8Array}
+     */
     static subarray(uintarr, begin, end) {
         function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
 

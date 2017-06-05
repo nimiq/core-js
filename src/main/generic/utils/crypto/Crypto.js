@@ -135,7 +135,8 @@ class Crypto {
     }
 
     static async publicKeyDerive(privateKey) {
-        return Crypto.keyPairPublic(await Crypto.keyPairDerive(privateKey));
+        const derived = await Crypto.keyPairDerive(privateKey);
+        return Crypto.keyPairPublic(derived);
     }
 
     static get privateKeySize() {
@@ -185,7 +186,8 @@ class Crypto {
     }
 
     static async privateKeyGenerate() {
-        return Crypto.keyPairPrivate(await Crypto.keyPairGenerate());
+        const generate = await Crypto.keyPairGenerate();
+        return Crypto.keyPairPrivate(generate);
     }
 
     static get keyPairType() {
@@ -193,15 +195,17 @@ class Crypto {
     }
 
     static async keyPairGenerate() {
-        let key = await Crypto.lib.generateKey(Crypto._keyConfig, true, ['sign', 'verify']);
+        const key = await Crypto.lib.generateKey(Crypto._keyConfig, true, ['sign', 'verify']);
+        const exportedJwk = await Crypto.lib.exportKey('jwk', key.privateKey);
+        const exportedRaw = await Crypto.lib.exportKey('raw', key.publicKey);
         return {
             secretKey: {
                 _native: key.privateKey,
-                jwk: await Crypto.lib.exportKey('jwk', key.privateKey)
+                jwk: exportedJwk
             },
             publicKey: {
                 _native: key.publicKey,
-                raw: new Uint8Array(await Crypto.lib.exportKey('raw', key.publicKey)).subarray(1)
+                raw: new Uint8Array(exportedRaw).subarray(1)
             }
         };
     }
@@ -222,11 +226,13 @@ class Crypto {
     }
 
     static async signatureCreate(privateKey, data) {
-        return new Uint8Array(await Crypto.lib.sign(Crypto._signConfig, await Crypto._privateKeyNative(privateKey), data));
+        const priv = await Crypto._privateKeyNative(privateKey);
+        return new Uint8Array(await Crypto.lib.sign(Crypto._signConfig, priv, data));
     }
 
     static async signatureVerify(publicKey, data, signature) {
-        return Crypto.lib.verify(Crypto._signConfig, await Crypto._publicKeyNative(publicKey), signature, data);
+        const pub = await Crypto._publicKeyNative(publicKey);
+        return Crypto.lib.verify(Crypto._signConfig, pub, signature, data);
     }
 
     static signatureSerialize(obj) {

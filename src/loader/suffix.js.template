@@ -1,4 +1,4 @@
     exports._loaded = true;
-    if (typeof Nimiq._onload === 'function') Nimiq._onload();
+    if (typeof exports._onload === 'function') exports._onload();
     return exports;
 })(Nimiq);

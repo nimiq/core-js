@@ -16,11 +16,16 @@ class LogNative {
         this._tag_levels[tag] = level;
     }
 
+    /**
+     * @param {Log.Level} level
+     * @param {string} tag
+     * @param {Array} args
+     */
     msg(level, tag, args) {
         if (!this.isLoggable(tag, level)) return;
         if (tag && tag.name) tag = tag.name;
         if (tag) args.unshift(tag + ':');
-        let prefix = `[${Log._level_tag(level)} ${new Date().toTimeString().substr(0, 8)}] `;
+        let prefix = `[${Log.Level.toStringTag(level)} ${new Date().toTimeString().substr(0, 8)}] `;
         const chalk = this._chalk;
         if (level >= Log.ERROR) {
             console.log(prefix + chalk.red(args.join(' ')));

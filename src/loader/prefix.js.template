@@ -1,3 +1,5 @@
-Nimiq = typeof Nimiq !== 'undefined' ? Nimiq : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {};
+if (typeof Nimiq === 'undefined') {
+    var Nimiq = typeof window !== 'undefined' ? window : {};
+}
 (function (exports) {
     exports = typeof exports !== 'undefined' ? exports : {};

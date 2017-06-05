@@ -1,15 +1,27 @@
 class PingMessage extends Message {
+    /**
+     * @param {number} nonce
+     */
     constructor(nonce) {
         super(Message.Type.PING);
+        /** @type {number} */
         this._nonce = nonce;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {PingMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const nonce = buf.readUint32();
         return new PingMessage(nonce);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -18,11 +30,13 @@ class PingMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return super.serializedSize
             + /*nonce*/ 4;
     }
 
+    /** @type {number} */
     get nonce() {
         return this._nonce;
     }

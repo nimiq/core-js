@@ -1,32 +1,74 @@
 class Miner extends Observable {
+    /**
+     * @param {Blockchain} blockchain
+     * @param {Mempool} mempool
+     * @param {Address} minerAddress
+     *
+     * @listens Mempool#transaction-added
+     * @listens Mempool#transaction-ready
+     */
     constructor(blockchain, mempool, minerAddress) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
+        /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {Address} */
         this._address = minerAddress;
 
-        // Number of hashes computed since the last hashrate update.
+        /**
+         * Number of hashes computed since the last hashrate update.
+         * @type {number}
+         * @private
+         */
         this._hashCount = 0;
 
-        // Timestamp of the last hashrate update.
+        /**
+         * Timestamp of the last hashrate update.
+         * @type {number}
+         * @private
+         */
         this._lastHashrate = 0;
 
-        // Hashrate computation interval handle.
+        /**
+         * Hashrate computation interval handle.
+         * @private
+         */
         this._hashrateWorker = null;
 
-        // The current hashrate of this miner.
+        /**
+         * The current hashrate of this miner.
+         * @type {number}
+         * @private
+         */
         this._hashrate = 0;
 
-        // The last hash counts used in the moving average.
+        /**
+         * The last hash counts used in the moving average.
+         * @type {Array.<number>}
+         * @private
+         */
         this._lastHashCounts = [];
 
-        // The total hashCount used in the current moving average.
+        /**
+         * The total hashCount used in the current moving average.
+         * @type {number}
+         * @private
+         */
         this._totalHashCount = 0;
 
-        // The time elapsed for the last measurements used in the moving average.
+        /**
+         * The time elapsed for the last measurements used in the moving average.
+         * @type {Array.<number>}
+         * @private
+         */
         this._lastElapsed = [];
 
-        // The total time elapsed used in the current moving average.
+        /**
+         * The total time elapsed used in the current moving average.
+         * @type {number}
+         * @private
+         */
         this._totalElapsed = 0;
 
         // Listen to changes in the mempool which evicts invalid transactions
@@ -113,12 +155,21 @@ class Miner extends Observable {
         }
     }
 
+    /**
+     * @return {Promise.<Block>}
+     * @private
+     */
     async _getNextBlock() {
         const body = await this._getNextBody();
         const header = await this._getNextHeader(body);
         return new Block(header, body);
     }
 
+    /**
+     * @param {BlockBody} body
+     * @return {Promise.<BlockHeader>}
+     * @private
+     */
     async _getNextHeader(body) {
         const prevHash = await this._blockchain.headHash;
         const accounts = await this._blockchain.createTemporaryAccounts();
@@ -132,6 +183,10 @@ class Miner extends Observable {
         return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
     }
 
+    /**
+     * @return {Promise.<BlockBody>}
+     * @private
+     */
     async _getNextBody() {
         // Get transactions from mempool (default is maxCount=5000).
         // TODO Completely fill up the block with transactions until the size limit is reached.
@@ -139,11 +194,18 @@ class Miner extends Observable {
         return new BlockBody(this._address, transactions);
     }
 
+    /**
+     * @return {number}
+     * @private
+     */
     _getNextTimestamp() {
         const now = Math.floor(Date.now() / 1000);
         return Math.max(now, this._blockchain.head.timestamp + 1);
     }
 
+    /**
+     * @fires Miner#stop
+     */
     stopWork() {
         // TODO unregister from blockchain head-changed events.
         if (!this.working) {
@@ -164,6 +226,10 @@ class Miner extends Observable {
         Log.i(Miner, 'Stopped work');
     }
 
+    /**
+     * @fires Miner#hashrate-changed
+     * @private
+     */
     _updateHashrate() {
         const elapsed = (Date.now() - this._lastHashrate) / 1000;
         const hashCount = this._hashCount;
@@ -190,14 +256,17 @@ class Miner extends Observable {
         this.fire('hashrate-changed', this._hashrate, this);
     }
 
+    /** @type {Address} */
     get address() {
         return this._address;
     }
 
+    /** @type {boolean} */
     get working() {
         return !!this._hashrateWorker;
     }
 
+    /** @type {number} */
     get hashrate() {
         return this._hashrate;
     }

@@ -15,13 +15,13 @@ describe('BlockBody', () => {
             transaction1, transaction2, transaction3, transaction4,
             transaction1, transaction2, transaction3, transaction4]);
 
-        async function test() {
+        async function asyncTest() {
             const bodyHash = await blockBody1.hash();
             expect(bodyHash.serialize().byteLength).toBe(32);
             done();
         }
 
-        test();
+        asyncTest();
     });
 
     it('is serializable and unserializable', () => {

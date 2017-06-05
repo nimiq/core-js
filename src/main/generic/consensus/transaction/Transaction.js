@@ -1,6 +1,15 @@
 // TODO V2: Transactions may contain a payment reference such that the chain can prove existence of data
 // TODO V2: Copy 'serialized' to detach all outer references
 class Transaction {
+    /**
+     * @param {PublicKey} senderPubKey
+     * @param {Address} recipientAddr
+     * @param {number} value
+     * @param {number} fee
+     * @param {number} nonce
+     * @param {Signature} [signature]
+     * @param {number} version
+     */
     constructor(senderPubKey, recipientAddr, value, fee, nonce, signature, version = Transaction.CURRENT_VERSION) {
         if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
@@ -14,15 +23,26 @@ class Transaction {
         // Note that the signature is NOT verified here.
         // Callers must explicitly invoke verifySignature() to check it.
 
+        /** @type {number} */
         this._version = version;
+        /** @type {PublicKey} */
         this._senderPubKey = senderPubKey;
+        /** @type {Address} */
         this._recipientAddr = recipientAddr;
+        /** @type {number} */
         this._value = value;
+        /** @type {number} */
         this._fee = fee;
+        /** @type {number} */
         this._nonce = nonce;
+        /** @type {Signature} */
         this._signature = signature;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {Transaction}
+     */
     static unserialize(buf) {
         // We currently only support one transaction type: Basic.
         const version = buf.readUint16();
@@ -38,6 +58,10 @@ class Transaction {
         return new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature, version);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this.serializeContent(buf);
@@ -45,11 +69,16 @@ class Transaction {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return this.serializedContentSize
             + this._signature.serializedSize;
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serializeContent(buf) {
         buf = buf || new SerialBuffer(this.serializedContentSize);
         buf.writeUint16(this._version);
@@ -62,6 +91,7 @@ class Transaction {
         return buf;
     }
 
+    /** @type {number} */
     get serializedContentSize() {
         return /*version*/ 2
             + /*type*/ 1
@@ -72,10 +102,16 @@ class Transaction {
             + /*nonce*/ 4;
     }
 
+    /**
+     * @return {Promise.<boolean>}
+     */
     async verifySignature() {
         return this._signature.verify(this._senderPubKey, this.serializeContent());
     }
 
+    /**
+     * @return {Promise.<Hash>}
+     */
     hash() {
         // Exclude the signature, we don't want transactions to be malleable.
         // TODO Think about this! This means that the signatures will not be
@@ -83,6 +119,10 @@ class Transaction {
         return Hash.light(this.serializeContent());
     }
 
+    /**
+     * @param {Transaction} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof Transaction
             && this._senderPubKey.equals(o.senderPubKey)
@@ -93,6 +133,9 @@ class Transaction {
             && this._signature.equals(o.signature);
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return `Transaction{`
             + `senderPubKey=${this._senderPubKey.toBase64()}, `
@@ -104,35 +147,45 @@ class Transaction {
             + `}`;
     }
 
+    /** @type {PublicKey} */
     get senderPubKey() {
         return this._senderPubKey;
     }
 
+    /**
+     * @return {Promise.<Address>}
+     */
     getSenderAddr() {
         return this._senderPubKey.toAddress();
     }
 
+    /** @type {Address} */
     get recipientAddr() {
         return this._recipientAddr;
     }
 
+    /** @type {number} */
     get value() {
         return this._value;
     }
 
+    /** @type {number} */
     get fee() {
         return this._fee;
     }
 
+    /** @type {number} */
     get nonce() {
         return this._nonce;
     }
 
+    /** @type {Signature} */
     get signature() {
         return this._signature;
     }
 
     // Signature is set by the Wallet after signing a transaction.
+    /** @type {Signature} */
     set signature(sig) {
         this._signature = sig;
     }

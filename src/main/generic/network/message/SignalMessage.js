@@ -1,5 +1,13 @@
 class SignalMessage extends Message {
-    constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array()) {
+    /**
+     * @param {string} senderId
+     * @param {string} recipientId
+     * @param {number} nonce
+     * @param {number} ttl
+     * @param {SignalMessage.Flags|number} flags
+     * @param {Uint8Array} payload
+     */
+    constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array(0)) {
         super(Message.Type.SIGNAL);
         if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId';
         if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId';
@@ -15,6 +23,10 @@ class SignalMessage extends Message {
         this._payload = payload;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {SignalMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const senderId = buf.readString(32);
@@ -27,6 +39,10 @@ class SignalMessage extends Message {
         return new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -41,6 +57,7 @@ class SignalMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return super.serializedSize
             + /*senderId*/ 32
@@ -52,39 +69,55 @@ class SignalMessage extends Message {
             + this._payload.byteLength;
     }
 
+    /** @type {string} */
     get senderId() {
         return this._senderId;
     }
 
+    /** @type {string} */
     get recipientId() {
         return this._recipientId;
     }
 
+    /** @type {number} */
     get nonce() {
         return this._nonce;
     }
 
+    /** @type {number} */
     get ttl() {
         return this._ttl;
     }
 
+    /** @type {SignalMessage.Flags|number} */
     get flags() {
         return this._flags;
     }
 
+    /** @type {Uint8Array} */
     get payload() {
         return this._payload;
     }
 
+    /**
+     * @returns {boolean}
+     */
     isUnroutable() {
         return (this._flags & SignalMessage.Flags.UNROUTABLE) !== 0;
     }
 
+    /**
+     * @returns {boolean}
+     */
     isTtlExceeded() {
         return (this._flags & SignalMessage.Flags.TTL_EXCEEDED) !== 0;
     }
 }
-SignalMessage.Flags = {};
-SignalMessage.Flags.UNROUTABLE = 0x1;
-SignalMessage.Flags.TTL_EXCEEDED = 0x2;
+/**
+ * @enum {number}
+ */
+SignalMessage.Flags = {
+    UNROUTABLE: 0x1,
+    TTL_EXCEEDED: 0x2
+};
 Class.register(SignalMessage);

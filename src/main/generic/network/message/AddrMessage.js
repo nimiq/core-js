@@ -1,4 +1,7 @@
 class AddrMessage extends Message {
+    /**
+     * @param {Array.<PeerAddress>} addresses
+     */
     constructor(addresses) {
         super(Message.Type.ADDR);
         if (!addresses || !NumberUtils.isUint16(addresses.length)
@@ -6,6 +9,10 @@ class AddrMessage extends Message {
         this._addresses = addresses;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {AddrMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
@@ -16,6 +23,10 @@ class AddrMessage extends Message {
         return new AddrMessage(addresses);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -27,6 +38,7 @@ class AddrMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2;
@@ -36,6 +48,7 @@ class AddrMessage extends Message {
         return size;
     }
 
+    /** @type {Array.<PeerAddress>} */
     get addresses() {
         return this._addresses;
     }

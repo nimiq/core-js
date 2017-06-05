@@ -6,7 +6,8 @@ class IndexedArray {
         this._index = {};
         this._buildIndex();
 
-        return new Proxy(this._array, this);
+        if (!('Proxy' in window)) throw 'Proxy (ES6) not available.';
+        return new window.Proxy(this._array, this);
     }
 
     _buildIndex() {

@@ -1,12 +1,24 @@
 class Consensus extends Observable {
+    /**
+     * 
+     * @param {Blockchain} blockchain
+     * @param {Mempool} mempool
+     * @param {Network} network
+     */
     constructor(blockchain, mempool, network) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
+        /** @type {Mempool} */
         this._mempool = mempool;
 
+        /** @type {HashMap.<Peer,ConsensusAgent>} */
         this._agents = new HashMap();
+        /** @type {Timers} */
         this._timers = new Timers();
+        /** @type {boolean} */
         this._syncing = false;
+        /** @type {boolean} */
         this._established = false;
 
         network.on('peer-joined', peer => this._onPeerJoined(peer));
@@ -33,6 +45,10 @@ class Consensus extends Observable {
         });
     }
 
+    /**
+     * @param {Peer} peer
+     * @private
+     */
     _onPeerJoined(peer) {
         // Create a ConsensusAgent for each peer that connects.
         const agent = new ConsensusAgent(this._blockchain, this._mempool, peer);
@@ -42,10 +58,17 @@ class Consensus extends Observable {
         this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), Consensus.SYNC_THROTTLE);
     }
 
+    /**
+     * @param {Peer} peer
+     * @private
+     */
     _onPeerLeft(peer) {
         this._agents.remove(peer.id);
     }
 
+    /**
+     * @private
+     */
     _syncBlockchain() {
         // Wait for ongoing sync to finish.
         if (this._syncing) {
@@ -106,16 +129,24 @@ class Consensus extends Observable {
         bestAgent.syncBlockchain();
     }
 
+    /**
+     * @private
+     */
     _onPeerSynced() {
         this._syncing = false;
         this._syncBlockchain();
     }
 
+    /** @type {boolean} */
     get established() {
         return this._established;
+    }
+    
+    /** @type {number} */
+    static get SYNC_THROTTLE() {
+        return 1500;
     }
 
     // TODO confidence level?
 }
-Consensus.SYNC_THROTTLE = 1500; // 1.5 seconds
 Class.register(Consensus);

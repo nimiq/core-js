@@ -1,13 +1,21 @@
 class Mempool extends Observable {
+    /**
+     * @param {Blockchain} blockchain
+     * @param {Accounts} accounts
+     */
     constructor(blockchain, accounts) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
+        /** @type {Accounts} */
         this._accounts = accounts;
 
         // Our pool of transactions.
+        /** @type {object} */
         this._transactions = {};
 
         // All public keys of transaction senders currently in the pool.
+        /** @type {object} */
         this._senderPubKeys = {};
 
         // Listen for changes in the blockchain head to evict transactions that
@@ -15,6 +23,11 @@ class Mempool extends Observable {
         blockchain.on('head-changed', () => this._evictTransactions());
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @fires Mempool#transaction-added
+     * @return {Promise.<boolean>}
+     */
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
@@ -46,11 +59,19 @@ class Mempool extends Observable {
     }
 
     // Currently not asynchronous, but might be in the future.
+    /**
+     * @param {string} hash
+     * @return {Transaction}
+     */
     getTransaction(hash) {
         return this._transactions[hash];
     }
 
     // Currently not asynchronous, but might be in the future.
+    /**
+     * @param {number} maxCount
+     * @return {Array.<Transaction>}
+     */
     getTransactions(maxCount = 5000) {
         // TODO Add logic here to pick the "best" transactions.
         const transactions = [];
@@ -61,6 +82,11 @@ class Mempool extends Observable {
         return transactions;
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @return {Promise.<boolean>}
+     * @private
+     */
     async _verifyTransaction(transaction) {
         // Verify transaction signature.
         if (!(await transaction.verifySignature())) {
@@ -69,7 +95,8 @@ class Mempool extends Observable {
         }
 
         // Do not allow transactions where sender and recipient coincide.
-        if (transaction.recipientAddr.equals(await transaction.getSenderAddr())) {
+        const senderAddr = await transaction.getSenderAddr();
+        if (transaction.recipientAddr.equals(senderAddr)) {
             Log.w(Mempool, 'Rejecting transaction - sender and recipient coincide');
             return false;
         }
@@ -78,7 +105,13 @@ class Mempool extends Observable {
         return this._verifyTransactionBalance(transaction);
     }
 
-    async _verifyTransactionBalance(transaction, quiet) {
+    /**
+     * @param {Transaction} transaction
+     * @param {boolean} quiet
+     * @return {Promise.<boolean>}
+     * @private
+     */
+    async _verifyTransactionBalance(transaction, quiet = false) {
         // Verify balance and nonce:
         // - sender account balance must be greater or equal the transaction value + fee.
         // - sender account nonce must match the transaction nonce.
@@ -98,6 +131,11 @@ class Mempool extends Observable {
         return true;
     }
 
+    /**
+     * @fires Mempool#transaction-ready
+     * @return {Promise}
+     * @private
+     */
     async _evictTransactions() {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
@@ -111,6 +149,9 @@ class Mempool extends Observable {
         }
 
         // Tell listeners that the pool has updated after a blockchain head change.
+        /**
+         * @event Mempool#transaction-ready
+         */
         this.fire('transactions-ready');
     }
 }

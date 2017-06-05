@@ -1,12 +1,22 @@
 class BlockBody {
 
+    /**
+     * @param {Address} minerAddr
+     * @param {Array.<Transaction>} transactions
+     */
     constructor(minerAddr, transactions) {
         if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
         if (!transactions || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
+        /** @type {Address} */
         this._minerAddr = minerAddr;
+        /** @type {Array.<Transaction>} */
         this._transactions = transactions;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {BlockBody}
+     */
     static unserialize(buf) {
         const minerAddr = Address.unserialize(buf);
         const numTransactions = buf.readUint16();
@@ -17,6 +27,10 @@ class BlockBody {
         return new BlockBody(minerAddr, transactions);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._minerAddr.serialize(buf);
@@ -27,6 +41,9 @@ class BlockBody {
         return buf;
     }
 
+    /**
+     * @type {number}
+     */
     get serializedSize() {
         let size = this._minerAddr.serializedSize
             + /*transactionsLength*/ 2;
@@ -36,6 +53,9 @@ class BlockBody {
         return size;
     }
 
+    /**
+     * @return {Promise.<Hash>}
+     */
     hash() {
         return BlockBody._computeRoot([this._minerAddr, ...this._transactions]);
     }
@@ -65,14 +85,17 @@ class BlockBody {
             && this._transactions.every((tx, i) => tx.equals(o.transactions[i]));
     }
 
+    /** @type {Address} */
     get minerAddr() {
         return this._minerAddr;
     }
 
+    /** @type {Array.<Transaction>} */
     get transactions() {
         return this._transactions;
     }
 
+    /** @type {number} */
     get transactionCount() {
         return this._transactions.length;
     }

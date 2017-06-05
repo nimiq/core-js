@@ -1,33 +1,48 @@
 class ConsensusAgent extends Observable {
+    /**
+     * @param {Blockchain} blockchain
+     * @param {Mempool} mempool
+     * @param {Peer} peer
+     */
     constructor(blockchain, mempool, peer) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
+        /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {Peer} */
         this._peer = peer;
 
         // Flag indicating that we are currently syncing our blockchain with the peer's.
+        /** @type {boolean} */
         this._syncing = false;
 
         // Flag indicating that have synced our blockchain with the peer's.
+        /** @type {boolean} */
         this._synced = false;
 
         // The height of our blockchain when we last attempted to sync the chain.
+        /** @type {number} */
         this._lastChainHeight = 0;
 
         // The number of failed blockchain sync attempts.
+        /** @type {number} */
         this._failedSyncs = 0;
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
+        /** @type {HashSet.<InvVector>} */
         this._knownObjects = new HashSet();
 
         // InvVectors we want to request via getdata are collected here and
         // periodically requested.
+        /** @type {IndexedArray} */
         this._objectsToRequest = new IndexedArray([], true);
 
         // Objects that are currently being requested from the peer.
         this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
+        /** @type {Timers} */
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
@@ -49,7 +64,11 @@ class ConsensusAgent extends Observable {
     }
 
     /* Public API */
-
+    /**
+     * 
+     * @param {Block} block
+     * @return {Promise}
+     */
     async relayBlock(block) {
         // Don't relay if no consensus established yet.
         if (!this._synced) {
@@ -72,6 +91,10 @@ class ConsensusAgent extends Observable {
         this._knownObjects.add(vector);
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @return {Promise}
+     */
     async relayTransaction(transaction) {
         // TODO Don't relay if no consensus established yet ???
 
@@ -169,6 +192,11 @@ class ConsensusAgent extends Observable {
         }, ConsensusAgent.REQUEST_TIMEOUT);
     }
 
+    /**
+     * @param {InvMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onInv(msg) {
         // Clear the getblocks timeout.
         this._timers.clearTimeout('getblocks');
@@ -266,6 +294,11 @@ class ConsensusAgent extends Observable {
         }
     }
 
+    /**
+     * @param {BlockMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onBlock(msg) {
         const hash = await msg.block.hash();
 
@@ -290,6 +323,11 @@ class ConsensusAgent extends Observable {
         }
     }
 
+    /**
+     * @param {TxMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
         Log.i(ConsensusAgent, `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
@@ -311,6 +349,10 @@ class ConsensusAgent extends Observable {
         // TODO what to do if the peer keeps sending invalid transactions?
     }
 
+    /**
+     * @param {NotFoundMessage} msg
+     * @private
+     */
     _onNotFound(msg) {
         Log.d(ConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
@@ -325,6 +367,10 @@ class ConsensusAgent extends Observable {
         }
     }
 
+    /**
+     * @param {InvVector} vector
+     * @private
+     */
     _onObjectReceived(vector) {
         if (!this._objectsInFlight) return;
 
@@ -341,7 +387,11 @@ class ConsensusAgent extends Observable {
 
 
     /* Request endpoints */
-
+    /**
+     * @param {GetDataMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onGetData(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
@@ -387,6 +437,11 @@ class ConsensusAgent extends Observable {
         }
     }
 
+    /**
+     * @param {GetBlocksMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onGetBlocks(msg) {
         Log.v(ConsensusAgent, `[GETBLOCKS] ${msg.hashes.length} block locators received from ${this._peer.peerAddress}`);
 
@@ -449,6 +504,11 @@ class ConsensusAgent extends Observable {
         this._peer.channel.inv(vectors);
     }
 
+    /**
+     * @param {MempoolMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onMempool(msg) {
         // Query mempool for transactions
         const transactions = await this._mempool.getTransactions();
@@ -466,25 +526,42 @@ class ConsensusAgent extends Observable {
         this.fire('close', this);
     }
 
+    /** @type {Peer} */
     get peer() {
         return this._peer;
     }
 
+    /** @type {boolean} */
     get synced() {
         return this._synced;
     }
 }
-// Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
+/**
+ * Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
+ * @type {number}
+ */
 ConsensusAgent.REQUEST_THRESHOLD = 50;
-// Time to wait after the last received inv message before sending getdata.
-ConsensusAgent.REQUEST_THROTTLE = 500; // ms
-// Maximum time to wait after sending out getdata or receiving the last object for this request.
-ConsensusAgent.REQUEST_TIMEOUT = 5000; // ms
-// Maximum number of blockchain sync retries before closing the connection.
-// XXX If the peer is on a long fork, it will count as a failed sync attempt
-// if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
-// blocks.
+/**
+ * Time (ms) to wait after the last received inv message before sending getdata.
+ * @type {number}
+ */
+ConsensusAgent.REQUEST_THROTTLE = 500;
+/**
+ * Maximum time (ms) to wait after sending out getdata or receiving the last object for this request.
+ * @type {number}
+ */
+ConsensusAgent.REQUEST_TIMEOUT = 5000; 
+/**
+ * Maximum number of blockchain sync retries before closing the connection.
+ * XXX If the peer is on a long fork, it will count as a failed sync attempt
+ * if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
+ * blocks.
+ * @type {number}
+ */
 ConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
-// Maximum number of inventory vectors to sent in the response for onGetBlocks.
+/**
+ * Maximum number of inventory vectors to sent in the response for onGetBlocks.
+ * @type {number}
+ */
 ConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
 Class.register(ConsensusAgent);
