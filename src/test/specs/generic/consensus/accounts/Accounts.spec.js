@@ -1,3 +1,4 @@
+
 describe('Accounts', () => {
     it('cannot commit a wrong block', (done) => {
         (async function () {
@@ -8,7 +9,6 @@ describe('Accounts', () => {
             try {
                 await accounts.commitBlock(block);
             } catch (e) {
-                expect(e).toBe('AccountsHash mismatch');
                 error_thrown = true;
             }
             expect(error_thrown).toBe(true);
@@ -40,18 +40,18 @@ describe('Accounts', () => {
     it('put and get an account', (done) => {
         const balance = 42;
         const nonce = 192049;
-        const accountState1 = new Balance(balance, nonce);
+        const accountState1 = new Account(new Balance(balance, nonce));
         const accountAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         async function test() {
-            account = await Accounts.createVolatile();
+            const account = await Accounts.createVolatile();
             await account._tree.put(accountAddress, accountState1);
-            const accountState2 = await account.getBalance(accountAddress);
-            expect(accountState2.nonce).toBe(accountState1.nonce);
+            const balanceState1 = await account.getBalance(accountAddress);
+            expect(balanceState1.nonce).toBe(accountState1.balance.nonce);
 
             // Verify that getBalance() returns Balance.INITIAL when called with an unknown address
-            const accountState3 = await account.getBalance(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)));
-            expect(Balance.INITIAL.equals(accountState3)).toBe(true);
+            const balanceState2 = await account.getBalance(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)));
+            expect(Balance.INITIAL.equals(balanceState2)).toBe(true);
             done();
         }
 

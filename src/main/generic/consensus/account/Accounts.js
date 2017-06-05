@@ -9,6 +9,11 @@ class Accounts extends Observable {
         return new Accounts(tree);
     }
 
+    static async createTemporary(backend) {
+        const tree = await AccountsTree.createTemporary(backend._tree);
+        return new Accounts(tree);
+    }
+
     constructor(accountsTree) {
         super();
         this._tree = accountsTree;
@@ -18,36 +23,50 @@ class Accounts extends Observable {
     }
 
     async commitBlock(block) {
-        const hash = await this.hash();
-        if (!block.accountsHash.equals(hash)) throw 'AccountsHash mismatch';
-
         // TODO we should validate if the block is going to be applied correctly.
 
-        // FIXME Firefox apparently has problems with transactions!
-        const treeTx = this._tree; //await this._tree.transaction();
-        await this._execute(treeTx, block, (a, b) => a + b);
-        //return treeTx.commit();
+        const treeTx = await this._tree.transaction();
+        await this._execute(treeTx, block.body, (a, b) => a + b);
+
+        const hash = await treeTx.root();
+        if (!block.accountsHash.equals(hash)) throw 'AccountsHash mismatch';
+        return treeTx.commit();
+    }
+
+    async commitBlockBody(body) {
+        const treeTx = await this._tree.transaction();
+        await this._execute(treeTx, body, (a, b) => a + b);
+        return treeTx.commit();
     }
 
     async revertBlock(block) {
-        // FIXME Firefox apparently has problems with transactions!
-        const treeTx = this._tree; //await this._tree.transaction();
-        await this._execute(treeTx, block, (a, b) => a - b);
-        //return treeTx.commit();
+        return this.revertBlockBody(block.body);
     }
 
-    async getBalance(address) {
-        return await this._tree.get(address) || Balance.INITIAL;
+    async revertBlockBody(body) {
+        const treeTx = await this._tree.transaction();
+        await this._execute(treeTx, body, (a, b) => a - b);
+        return treeTx.commit();
     }
 
-    async _execute(treeTx, block, operator) {
-        await this._executeTransactions(treeTx, block.body, operator);
-        await this._rewardMiner(treeTx, block.body, operator);
+    // We only support basic accounts at this time.
+    async getBalance(address, treeTx = this._tree) {
+        const account = await treeTx.get(address);
+        if (account) {
+            return account.balance;
+        } else {
+            return Account.INITIAL.balance;
+        }
+    }
+
+    async _execute(treeTx, body, operator) {
+        await this._executeTransactions(treeTx, body, operator);
+        await this._rewardMiner(treeTx, body, operator);
     }
 
     async _rewardMiner(treeTx, body, op) {
-          // Sum up transaction fees.
-        const txFees = body.transactions.reduce( (sum, tx) => sum + tx.fee, 0);
+        // Sum up transaction fees.
+        const txFees = body.transactions.reduce((sum, tx) => sum + tx.fee, 0);
         await this._updateBalance(treeTx, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
@@ -72,12 +91,7 @@ class Accounts extends Observable {
     }
 
     async _updateBalance(treeTx, address, value, operator) {
-        // XXX If we don't find a balance, we assume the account is empty for now.
-        // TODO retrieve the account balance by asking the network.
-        let balance = await treeTx.get(address);
-        if (!balance) {
-            balance = new Balance();
-        }
+        const balance = await this.getBalance(address, treeTx);
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) {
@@ -90,11 +104,13 @@ class Accounts extends Observable {
         }
 
         const newBalance = new Balance(newValue, newNonce);
-        await treeTx.put(address, newBalance);
+        const newAccount = new Account(newBalance);
+        await treeTx.put(address, newAccount);
     }
 
     hash() {
         return this._tree.root();
     }
 }
+Accounts.EMPTY_TREE_HASH = Hash.fromBase64('cJ6AyISHokEeHuTfufIqhhSS0gxHZRUMDHlKvXD4FHw=');
 Class.register(Accounts);
