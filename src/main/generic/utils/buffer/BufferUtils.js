@@ -19,8 +19,12 @@ class BufferUtils {
         return new SerialBuffer(Uint8Array.from(atob(base64), c => c.charCodeAt(0)));
     }
 
-    static toBase64Clean(buffer) {
-        return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+    static toBase64Url(buffer) {
+        return BufferUtils.toBase64(buffer).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '.');
+    }
+
+    static fromBase64Url(base64) {
+        return new SerialBuffer(Uint8Array.from(atob(base64.replace(/_/g, '/').replace('/\-/g', '+').replace('/\./g', '=')), c => c.charCodeAt(0)));
     }
 
     static toHex(buffer) {
