@@ -68,6 +68,12 @@ class Mempool extends Observable {
             return false;
         }
 
+        // Do not allow transactions where sender and recipient coincide.
+        if (transaction.recipientAddr.equals(await transaction.getSenderAddr())) {
+            Log.w(Mempool, 'Rejecting transaction - sender and recipient coincide');
+            return false;
+        }
+
         // Verify transaction balance.
         return this._verifyTransactionBalance(transaction);
     }
@@ -76,7 +82,7 @@ class Mempool extends Observable {
         // Verify balance and nonce:
         // - sender account balance must be greater or equal the transaction value + fee.
         // - sender account nonce must match the transaction nonce.
-        const senderAddr = await transaction.senderAddr();
+        const senderAddr = await transaction.getSenderAddr();
         const senderBalance = await this._accounts.getBalance(senderAddr);
         if (senderBalance.value < (transaction.value + transaction.fee)) {
             if (!quiet) Log.w(Mempool, 'Rejected transaction - insufficient funds', transaction);

@@ -108,7 +108,7 @@ class Transaction {
         return this._senderPubKey;
     }
 
-    senderAddr() {
+    getSenderAddr() {
         return this._senderPubKey.toAddress();
     }
 
