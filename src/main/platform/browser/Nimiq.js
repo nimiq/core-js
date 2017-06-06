@@ -45,6 +45,10 @@ class Nimiq {
         return window.crypto && window.crypto.subtle;
     }
 
+    static _hasProperWebRTCOrNone() {
+        return !RTCPeerConnection || RTCPeerConnection.generateCertificate;
+    }
+
     static _hasProperScoping() {
         try {
             eval('"use strict"; class a{ a() { const a = 0; } }'); // eslint-disable-line no-eval
@@ -68,7 +72,7 @@ class Nimiq {
             console.error('Unsupported browser');
             error(Nimiq.ERR_UNSUPPORTED);
             return;
-        } else if (!Nimiq._hasAsyncAwaitSupport()) {
+        } else if (!Nimiq._hasAsyncAwaitSupport() || !Nimiq._hasProperWebRTCOrNone()) {
             script = 'web-babel.js';
             console.warn('Client lacks native support for async');
         } else if (!Nimiq._hasProperCryptoApi()) {
