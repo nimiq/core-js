@@ -46,7 +46,8 @@ class Nimiq {
     }
 
     static _hasProperWebRTCOrNone() {
-        return !RTCPeerConnection || RTCPeerConnection.generateCertificate;
+        window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+        return !window.RTCPeerConnection || window.RTCPeerConnection.generateCertificate;
     }
 
     static _hasProperScoping() {
