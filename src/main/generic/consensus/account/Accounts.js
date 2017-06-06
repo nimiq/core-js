@@ -82,7 +82,7 @@ class Accounts extends Observable {
     }
 
     async _updateSender(treeTx, tx, op) {
-        const addr = await tx.senderAddr();
+        const addr = await tx.getSenderAddr();
         await this._updateBalance(treeTx, addr, -tx.value - tx.fee, op);
     }
 

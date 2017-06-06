@@ -131,7 +131,7 @@ class TestBlockchain extends Blockchain {
         return block;
     }
 
-    static async createVolatileTest(numBlocks, numUsers = 1) {
+    static async createVolatileTest(numBlocks, numUsers = 2) {
         const accounts = await Accounts.createVolatile();
         const store = BlockchainStore.createVolatile();
         const users = await TestBlockchain.generateUsers(numUsers);

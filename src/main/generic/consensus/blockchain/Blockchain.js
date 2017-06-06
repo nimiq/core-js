@@ -197,6 +197,10 @@ class Blockchain extends Observable {
                 Log.w(Blockchain, 'Rejected block - more than one transaction per sender');
                 return false;
             }
+            if (tx.recipientAddr.equals(await tx.getSenderAddr())) {  // eslint-disable-line no-await-in-loop
+                Log.w(Blockchain, 'Rejected block - sender and recipient coincide');
+                return false;
+            }
             senderPubKeys[tx.senderPubKey] = true;
         }
 

@@ -341,7 +341,7 @@
                 + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
 
             for (var tx of head.transactions) {
-                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var senderAddr = 'TODO'; //await tx.getSenderAddr();
                 var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                 var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                 html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
@@ -419,7 +419,7 @@
 
             for (var tx of txs) {
                 var el = document.createElement('div');
-                var senderAddr = 'TODO'; //await tx.senderAddr();
+                var senderAddr = 'TODO'; //await tx.getSenderAddr();
                 var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                 var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                 el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
