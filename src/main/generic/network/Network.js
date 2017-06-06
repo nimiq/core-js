@@ -21,6 +21,8 @@ class Network extends Observable {
         // Flag indicating whether we should actively connect to other peers
         // if our peer count is below PEER_COUNT_DESIRED.
         this._autoConnect = false;
+        // Save the old state when going offline, to restore it when going online again.
+        this._savedAutoConnect = false;
 
         // Number of ongoing outbound connection attempts.
         this._connectingCount = 0;
@@ -53,6 +55,12 @@ class Network extends Observable {
             this._checkPeerCount();
         });
 
+        // If in browser, add event listener for online/offline detection.
+        if (typeof window !== 'undefined') {
+            window.addEventListener('online', _ => this._onOnline());
+            window.addEventListener('offline', _ => this._onOffline());
+        }
+
         this._forwards = new SignalStore();
 
         return this;
@@ -71,6 +79,29 @@ class Network extends Observable {
         // Close all active connections.
         for (const agent of this._agents.values()) {
             agent.channel.close('manual network disconnect');
+        }
+    }
+
+    isOnline() {
+        // If in doubt, return true.
+        return (typeof window === 'undefined' || window.navigator.onLine === undefined) || window.navigator.onLine;
+    }
+
+    _onOnline() {
+        this._autoConnect = this._savedAutoConnect;
+
+        if (this._autoConnect) {
+            this._checkPeerCount();
+        }
+    }
+
+    _onOffline() {
+        this._savedAutoConnect = this._autoConnect;
+        this._autoConnect = false;
+
+        // Close all active connections.
+        for (const agent of this._agents.values()) {
+            agent.channel.close('network disconnect');
         }
     }
 
@@ -108,7 +139,7 @@ class Network extends Observable {
     }
 
     _checkPeerCount() {
-        if (this._autoConnect
+        if (this._autoConnect // && this.isOnline() Do we need this? Not really if _onOnline/_onOffline is working.
             && this.peerCount + this._connectingCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
