@@ -396,11 +396,13 @@ class Network extends Observable {
 
         // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
-        if (!signalChannel && msg.flags === 0) {
+        if (!signalChannel) {
+            Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
-            Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
-            channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
+            if (msg.flags === 0) {
+                channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.UNROUTABLE);
+            }
             return;
         }
 
