@@ -2,6 +2,9 @@
 
 **[Nimiq](https://nimiq.com/)** is the first Browser-based Blockchain.
 
+## Library Demo
+Check out our betanet [Browser Miner](https://nimiq.com/betanet)
+
 ## Quickstart 
 
 1. Clone this repository `git clone git@github.com:nimiq-network/core.git`.
