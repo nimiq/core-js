@@ -177,6 +177,19 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
+    it('cannot push blocks with transactions to oneself', (done) => {
+        (async function () {
+            const first = await TestBlockchain.createVolatileTest(0);
+
+            // Try to push a block with a transaction where sender and recipient coincide
+            const user = first.users[0];
+            const transaction = await TestBlockchain.createTransaction(user.publicKey, user.address, 1, 1, 1, user.privateKey);
+            let block = await first.createBlock([transaction], undefined, undefined, undefined, undefined, undefined, 1, 1);
+            let status = await first.pushBlock(block);
+            expect(status).toBe(Blockchain.PUSH_ERR_INVALID_BLOCK, 'try pushing invalid block');
+        })().then(done, done.fail);
+    });
+
     it('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
