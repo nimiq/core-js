@@ -43,12 +43,14 @@ class WebRtcConnector extends Observable {
         if (msg.isUnroutable() || msg.isTtlExceeded()) {
             // Clear the timeout early if we initiated the connection.
             if (this.isValidSignal(msg) && this._connectors[msg.senderId] instanceof OutboundPeerConnector) {
+                const peerAddress = this._connectors[msg.senderId].peerAddress;
+
                 delete this._connectors[msg.senderId];
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
 
                 // XXX Reason needs to be adapted when more flags are added.
                 const reason =  msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
-                this.fire('error', this._connectors[msg.senderId].peerAddress, reason);
+                this.fire('error', peerAddress, reason);
             }
 
             return;
