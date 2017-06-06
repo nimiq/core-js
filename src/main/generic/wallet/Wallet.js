@@ -39,7 +39,11 @@ class Wallet {
     }
 
     get publicKey() {
-        return this._keyPair._publicKey;
+        return this._keyPair.publicKey;
+    }
+
+    get keyPair() {
+        return this._keyPair;
     }
 }
 Class.register(Wallet);
