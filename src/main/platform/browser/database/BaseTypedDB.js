@@ -3,7 +3,7 @@ class BaseTypedDB {
         if (BaseTypedDB._db) return Promise.resolve(BaseTypedDB._db);
 
         const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.OIndexedDB || window.msIndexedDB;
-        const dbVersion = 3;
+        const dbVersion = 4;
         const request = indexedDB.open('nimiq', dbVersion);
 
         return new Promise((resolve, error) => {
