@@ -56,7 +56,7 @@ class Network extends Observable {
         });
 
         // If in browser, add event listener for online/offline detection.
-        if (typeof window !== 'undefined') {
+        if (PlatformUtils.isBrowser()) {
             window.addEventListener('online', _ => this._onOnline());
             window.addEventListener('offline', _ => this._onOffline());
         }
@@ -68,23 +68,25 @@ class Network extends Observable {
 
     connect() {
         this._autoConnect = true;
+        this._savedAutoConnect = true;
 
         // Start connecting to peers.
         this._checkPeerCount();
     }
 
-    disconnect() {
+    disconnect(reason) {
         this._autoConnect = false;
+        this._savedAutoConnect = false;
 
         // Close all active connections.
         for (const agent of this._agents.values()) {
-            agent.channel.close('manual network disconnect');
+            agent.channel.close(reason || 'manual network disconnect');
         }
     }
 
     isOnline() {
         // If in doubt, return true.
-        return (typeof window === 'undefined' || window.navigator.onLine === undefined) || window.navigator.onLine;
+        return (!PlatformUtils.isBrowser() || window.navigator.onLine === undefined) || window.navigator.onLine;
     }
 
     _onOnline() {
@@ -97,12 +99,7 @@ class Network extends Observable {
 
     _onOffline() {
         this._savedAutoConnect = this._autoConnect;
-        this._autoConnect = false;
-
-        // Close all active connections.
-        for (const agent of this._agents.values()) {
-            agent.channel.close('network disconnect');
-        }
+        this.disconnect('network disconnect');
     }
 
     // XXX For testing
