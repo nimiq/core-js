@@ -7,7 +7,11 @@ matrix:
     - os: linux
       env: TO_TEST=chrome
       addons:
-        chrome: stable
+        apt:
+          sources:
+           - google-chrome
+          packages:
+           - google-chrome-stable
     - os: linux
       env: TO_TEST=firefox
       addons:
