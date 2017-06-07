@@ -227,7 +227,8 @@ class Network extends Observable {
 
         // Call _checkPeerCount() here in case the peer doesn't send us any (new)
         // addresses to keep on connecting.
-        this._checkPeerCount();
+        // Add a delay before calling it to allow RTC peer addresses to be sent to us.
+        setTimeout(() => this._checkPeerCount(), Network.ADDRESS_UPDATE_DELAY);
     }
 
 
@@ -485,6 +486,7 @@ Network.PEER_COUNT_DESIRED = 6;
 Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
+Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
 Class.register(Network);
 
 class SignalStore {
