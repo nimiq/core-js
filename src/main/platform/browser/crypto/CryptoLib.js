@@ -84,7 +84,7 @@ class CryptoLib {
         poly.verify = async function (config, publicKey, signature, data) {
             const digest = await poly.digest(config.hash, data);
             const msgHash = new Uint8Array(digest);
-            return publicKey.pair.verify(msgHash, toDER(signature));
+            return publicKey.pair.verify(msgHash, {r: signature.slice(0,32), s: signature.slice(32,64)});
         };
 
         const toUri64 = function (arr) {
