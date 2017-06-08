@@ -7,7 +7,10 @@
   "private": true,
   "scripts": {
     "prepare": "gulp build-node",
-    "build": "./node_modules/.bin/gulp build"
+    "build": "gulp build",
+    "test": "jasmine && gulp test",
+    "test-node": "jasmine",
+    "test-browser": "gulp test"
   },
   "author": {
     "name": "The Nimiq Core Development Team",
