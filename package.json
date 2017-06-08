@@ -10,7 +10,8 @@
     "build": "gulp build",
     "test": "jasmine && gulp test",
     "test-node": "jasmine",
-    "test-browser": "gulp test"
+    "test-browser": "gulp test",
+    "lint": "gulp eslint"
   },
   "author": {
     "name": "The Nimiq Core Development Team",

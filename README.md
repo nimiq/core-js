@@ -79,10 +79,10 @@ Developers are free to choose between npm and yarn for managing the dependencies
 - `yarn test-node` or `npm run test-node` runs the testsuite in NodeJS only.
 
 #### Run ESLint
-`gulp eslint` runs the ESLint javascript linter.
+`yarn lint` runs the ESLint javascript linter.
 
 #### Build
-Executing `gulp build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
+Executing `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ## Contribute
 
