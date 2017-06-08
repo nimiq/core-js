@@ -49,8 +49,6 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 Developers are free to choose between npm and yarn for managing the dependencies.
 ### Installation for Core Developers (using npm)
 - NodeJs latest version (> 7.9.0)
-- gulp: `npm install gulp -g`
-- jasmine test framework: `npm install jasmine -g`
 - Dependencies: `npm install`
 - NodeJs dependencies:
 
@@ -73,15 +71,12 @@ Developers are free to choose between npm and yarn for managing the dependencies
 	yarn
 	```
 
-If you decided on using yarn for managing the dependencies,
-you have to use `node_modules/.bin/gulp` instead of `gulp`
-and `node_modules/.bin/jasmine` instead of `jasmine` in the following.
-
 ### Test and Build
 
 #### Run Testsuite
-- `gulp test` runs the testsuite in your browser.
-- `jasmine` runs the testsuite in NodeJs.
+- `yarn test` or `npm test` runs browser and NodeJS tests.
+- `yarn test-browser` or `npm run test-browser` runs the testsuite in your browser only.
+- `yarn test-node` or `npm run test-node` runs the testsuite in NodeJS only.
 
 #### Run ESLint
 `gulp eslint` runs the ESLint javascript linter.
