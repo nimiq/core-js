@@ -6,7 +6,8 @@
   "main": "dist/node.js",
   "private": true,
   "scripts": {
-    "prepare": "gulp build-node"
+    "prepare": "gulp build-node",
+    "build": "./node_modules/.bin/gulp build"
   },
   "author": {
     "name": "The Nimiq Core Development Team",

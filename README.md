@@ -1,11 +1,11 @@
-# Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core) 
+# Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core)
 
 **[Nimiq](https://nimiq.com/)** is the first Browser-based Blockchain.
 
 ## Library Demo
 Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
-## Quickstart 
+## Quickstart
 
 1. Clone this repository `git clone https://github.com/nimiq-network/core`.
 2. Run `npm install` or `yarn`
@@ -30,18 +30,18 @@ cd clients/nodejs/
 node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate>
 ```
 
-| Argument        | Description           | 
-| ------------- |:-------------:| 
-| **_host_** | Hostname of the NodeJs client. | 
+| Argument        | Description           |
+| ------------- |:-------------:|
+| **_host_** | Hostname of the NodeJs client. |
 | **_port_** | Port used to communicate with the peers. |  
-| **_key_** | Private key for the client      | 
-| **_cert_** | SSL certificate of your Domain.       | 
+| **_key_** | Private key for the client      |
+| **_cert_** | SSL certificate of your Domain.       |
 
 
 ### Build your own Browser client
 Just include `<script src="dist/nimiq.js"></script>` in your project.
 
-### API 
+### API
 Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 
 
