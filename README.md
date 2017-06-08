@@ -48,7 +48,7 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 ## Core Developers
 Developers are free to choose between npm and yarn for managing the dependencies.
 ### Installation for Core Developers (using npm)
-- NodeJs latest version (> 7.9.0)
+- NodeJs latest version (>= 8.1.0)
 - gulp: `npm install gulp -g`
 - jasmine test framework: `npm install jasmine -g`
 - Dependencies: `npm install`
@@ -62,7 +62,7 @@ Developers are free to choose between npm and yarn for managing the dependencies
 	```
 
 ### Installation for Core Developers (using yarn)
-- NodeJs latest version (> 7.9.0)
+- NodeJs latest version (>= 8.1.0)
 - Dependencies: `yarn`
 - NodeJs dependencies:
 
