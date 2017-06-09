@@ -74,15 +74,15 @@ Developers are free to choose between npm and yarn for managing the dependencies
 ### Test and Build
 
 #### Run Testsuite
-- `yarn test` or `npm test` runs browser and NodeJS tests.
-- `yarn test-browser` or `npm run test-browser` runs the testsuite in your browser only.
-- `yarn test-node` or `npm run test-node` runs the testsuite in NodeJS only.
+- `npm test` or `yarn test` runs browser and NodeJS tests.
+- `npm run test-browser` or `yarn test-browser` runs the testsuite in your browser only.
+- `npm run test-node` or `yarn test-node` runs the testsuite in NodeJS only.
 
 #### Run ESLint
-`yarn lint` or `npm run lint` runs the ESLint javascript linter.
+`npm run lint` or `yarn lint` runs the ESLint javascript linter.
 
 #### Build
-Executing `yarn build` or `npm build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
+Executing `npm build` or `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ## Contribute
 
