@@ -24,7 +24,7 @@ class BufferUtils {
     }
 
     static fromBase64Url(base64) {
-        return new SerialBuffer(Uint8Array.from(atob(base64.replace(/_/g, '/').replace('/\-/g', '+').replace('/\./g', '=')), c => c.charCodeAt(0)));
+        return new SerialBuffer(Uint8Array.from(atob(base64.replace(/_/g, '/').replace(/-/g, '+').replace(/\./g, '=')), c => c.charCodeAt(0)));
     }
 
     static toHex(buffer) {
