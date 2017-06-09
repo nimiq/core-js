@@ -9,7 +9,7 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
 1. Clone this repository `git clone https://github.com/nimiq-network/core`.
 2. Run `npm install` or `yarn`
-3. Run `./node_modules/.bin/gulp build`
+3. Run `npm build` or `yarn build`
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
