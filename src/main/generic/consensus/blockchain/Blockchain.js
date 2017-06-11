@@ -4,9 +4,9 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts);
     }
 
-    static createVolatile(accounts) {
+    static createVolatile(accounts, allowCheckpoint=false) {
         const store = BlockchainStore.createVolatile();
-        return new Blockchain(store, accounts);
+        return new Blockchain(store, accounts, allowCheckpoint);
     }
 
     constructor(store, accounts, allowCheckpoint=true) {
