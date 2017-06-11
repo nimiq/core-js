@@ -9,7 +9,7 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts);
     }
 
-    constructor(store, accounts) {
+    constructor(store, accounts, allowCheckpoint=true) {
         super();
         this._store = store;
         this._accounts = accounts;
@@ -26,10 +26,10 @@ class Blockchain extends Observable {
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
 
-        return this._init();
+        return this._init(allowCheckpoint);
     }
 
-    async _init() {
+    async _init(allowCheckpoint) {
         // Load the main chain from storage.
         this._mainChain = await this._store.getMainChain();
 
@@ -39,14 +39,14 @@ class Blockchain extends Observable {
             await this._store.put(this._mainChain);
             await this._store.setMainChain(this._mainChain);
             // Allow to load checkpoint if it exists and can be applied.
-            if (Block.CHECKPOINT && (await this.loadCheckpoint())) {
+            if (allowCheckpoint && Block.CHECKPOINT && (await this.loadCheckpoint())) {
                 this._mainChain = new Chain(Block.CHECKPOINT, Block.CHECKPOINT.TOTAL_WORK, Block.CHECKPOINT.height);
                 await this._store.put(this._mainChain);
                 await this._store.setMainChain(this._mainChain);
             }
         } else {
             // Fast-forward to CHECKPOINT if necessary.
-            if (Block.CHECKPOINT && this._mainChain.height < Block.CHECKPOINT.height && (await this.loadCheckpoint())) {
+            if (allowCheckpoint && Block.CHECKPOINT && this._mainChain.height < Block.CHECKPOINT.height && (await this.loadCheckpoint())) {
                 this._mainChain = new Chain(Block.CHECKPOINT, Block.CHECKPOINT.TOTAL_WORK, Block.CHECKPOINT.height);
                 await this._store.put(this._mainChain);
                 await this._store.setMainChain(this._mainChain);
