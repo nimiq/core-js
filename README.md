@@ -14,7 +14,12 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
 ## Web Developers
 ### Installation for Web Developers
-Follow the Quickstart guide.
+Follow the Quickstart guide or use our CDN:
+
+```
+<script src="https://cdn.nimiq.com/core/nimiq.js"></script>
+```
+
 
 ### Run Client
 
