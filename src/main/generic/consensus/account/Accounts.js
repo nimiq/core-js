@@ -22,6 +22,23 @@ class Accounts extends Observable {
         this.bubble(this._tree, '*');
     }
 
+    async populate(nodes) {
+        // Using .transaction(); here is the wrong way, since it does not offer the put/get methods we expect.
+        // Moreover, since we first call populate on a Temporary Accounts object, we do not need to fear anything.
+        const treeTx = this._tree._store;
+        await this._tree.populate(nodes, treeTx);
+        if (await this._tree.verify(treeTx)) {
+            this.fire('populated');
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    clear() {
+        return this._tree.clear();
+    }
+
     async commitBlock(block) {
         // TODO we should validate if the block is going to be applied correctly.
 
@@ -106,6 +123,10 @@ class Accounts extends Observable {
         const newBalance = new Balance(newValue, newNonce);
         const newAccount = new Account(newBalance);
         await treeTx.put(address, newAccount);
+    }
+
+    export() {
+        return this._tree.export();
     }
 
     hash() {
