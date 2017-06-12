@@ -123,5 +123,5 @@ Block.CHECKPOINT.hash().then(hash => {
     Block.CHECKPOINT.HASH = hash;
     //Object.freeze(Block.GENESIS);
 });
-//Block.CHECKPOINT.TOTAL_WORK = 17711565.212913718;
+Block.CHECKPOINT.TOTAL_WORK = 17711565.212913718;
 Class.register(Block);
