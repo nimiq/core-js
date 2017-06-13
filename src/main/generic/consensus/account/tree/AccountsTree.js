@@ -271,6 +271,7 @@ class AccountsTree extends Observable {
 
     async _clear(nodeKey) {
         const node = await this._store.get(nodeKey);
+        if (!node) return;
         await this._store.remove(node);
 
         if (node.hasChildren()) {
