@@ -225,6 +225,81 @@ class AccountsTree extends Observable {
         return false;
     }
 
+    async populate(nodes, transaction) {
+        transaction = transaction || this._store;
+
+        const rootNode = nodes[0];
+        const rootKey = (await rootNode.hash()).toBase64();
+
+        for (const node of nodes) {
+            await transaction.put(node);
+        }
+
+        await transaction.setRootKey(rootKey);
+    }
+
+    async verify(transaction) {
+        transaction = transaction || this._store;
+
+        // Fetch the root node. This should never fail.
+        const rootKey = await transaction.getRootKey();
+        const rootNode = await transaction.get(rootKey);
+
+        return this._verify(rootNode, transaction);
+    }
+
+    async _verify(node, transaction) {
+        if (!node) return true;
+        transaction = transaction || this._store;
+
+        if (node.hasChildren()) {
+            for (let i = 0; i < 16; i++) {
+                const subhash = node.getChild(i.toString(16));
+                if (!subhash) continue;
+                const subnode = await transaction.get(subhash);
+                if (subnode && !this._verify(subnode, transaction)) return false;
+                if (subnode && subnode.prefix !== node.prefix + i.toString(16)) return false;
+            }
+        }
+        return true;
+    }
+
+    async clear() {
+        const rootKey = await this._store.getRootKey();
+        return this._clear(rootKey);
+    }
+
+    async _clear(nodeKey) {
+        const node = await this._store.get(nodeKey);
+        await this._store.remove(node);
+
+        if (node.hasChildren()) {
+            for (const childNodeKey of node.getChildren()) {
+                await this._clear(childNodeKey);
+            }
+        }
+    }
+
+    async export() {
+        const rootKey = await this._store.getRootKey();
+
+        const nodes = [];
+        await this._export(rootKey, nodes);
+        return nodes;
+    }
+
+    async _export(nodeKey, arr) {
+        const node = await this._store.get(nodeKey);
+
+        arr.push(BufferUtils.toBase64(node.serialize()));
+
+        if (node.hasChildren()) {
+            for (const childNodeKey of node.getChildren()) {
+                await this._export(childNodeKey, arr);
+            }
+        }
+    }
+
     async transaction() {
         // FIXME Firefox apparently has problems with transactions!
         // const tx = await this._store.transaction();
