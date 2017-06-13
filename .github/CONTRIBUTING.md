@@ -18,9 +18,9 @@ that we would be interested.
 *  Tests, Documentation, Miscellaneous
     -  If you think the test coverage could be improved, the documentation could be clearer, you've got an alternative
        implementation of something that may have more advantages, or any other change we would be glad hear about
-       it.
-       -  If it's a trivial change, go ahead and create a Pull Request with the changes you have in mind
-       -  If not, open a GitHub issue to discuss the idea first.
+       it.  
+       + If it's a trivial change, go ahead and create a Pull Request with the changes you have in mind.
+       + If not, open a GitHub issue to discuss the idea first.
 
 ## Requirements
 
