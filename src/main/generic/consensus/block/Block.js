@@ -122,5 +122,5 @@ Block.CHECKPOINT.hash().then(hash => {
     //Object.freeze(Block.GENESIS);
 });
 Block.CHECKPOINT.TOTAL_WORK = 22921810.269859694;
-Block.OLD_CHECKPOINTS = new IndexedArray([BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho=')]);
+Block.OLD_CHECKPOINTS = new IndexedArray([new Hash(BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho='))]);
 Class.register(Block);
