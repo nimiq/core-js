@@ -179,9 +179,9 @@ class TestBlockchain extends Blockchain {
 
     static generateUser(privateKey, publicKey, address) {
         return {
-            privateKey,
-            publicKey,
-            address
+            'privateKey': privateKey,
+            'publicKey': publicKey,
+            'address': address
         };
     }
 }
