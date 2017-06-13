@@ -145,7 +145,7 @@ class ConsensusAgent extends Observable {
         // genesis block.
         const hashes = [];
         let step = 1;
-        for (let i = this._blockchain.height - 1; i > 0; i -= step) {
+        for (let i = this._blockchain.path.length - 1; i >= 0; i -= step) {
             // Push top 10 hashes first, then back off exponentially.
             if (hashes.length >= 10) {
                 step *= 2;
@@ -154,7 +154,9 @@ class ConsensusAgent extends Observable {
         }
 
         // Push the genesis block hash.
-        hashes.push(Block.GENESIS.HASH);
+        if (hashes.length === 0 || !hashes[hashes.length-1].equals(Block.GENESIS.HASH)) {
+            hashes.push(Block.GENESIS.HASH);
+        }
 
         // Request blocks from peer.
         this._peer.channel.getblocks(hashes);
@@ -426,7 +428,9 @@ class ConsensusAgent extends Observable {
             // XXX Assert that the full path back to genesis is available in
             // blockchain.path. When the chain grows very long, it makes no
             // sense to keep the full path in memory.
-            if (this._blockchain.path.length !== this._blockchain.height) {
+            // We relax this assumption for clients that have a checkpoint loaded.
+            if (this._blockchain.path.length !== this._blockchain.height
+                    && !(this._blockchain.path.length > 0 && this._blockchain.checkPointLoaded && this._blockchain.path[0].equals(Block.CHECKPOINT.HASH))) {
                 throw 'Blockchain.path.length != Blockchain.height';
             }
 

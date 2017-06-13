@@ -4,12 +4,12 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts);
     }
 
-    static createVolatile(accounts) {
+    static createVolatile(accounts, allowCheckpoint=false) {
         const store = BlockchainStore.createVolatile();
-        return new Blockchain(store, accounts);
+        return new Blockchain(store, accounts, allowCheckpoint);
     }
 
-    constructor(store, accounts) {
+    constructor(store, accounts, allowCheckpoint=true) {
         super();
         this._store = store;
         this._accounts = accounts;
@@ -18,16 +18,18 @@ class Blockchain extends Observable {
         this._mainPath = null;
         this._headHash = null;
 
+        this._checkpointLoaded = false;
+
         // Blocks arriving fast over the network will create a backlog of blocks
         // in the synchronizer queue. Tell listeners when the blockchain is
         // ready to accept blocks again.
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
 
-        return this._init();
+        return this._init(allowCheckpoint);
     }
 
-    async _init() {
+    async _init(allowCheckpoint) {
         // Load the main chain from storage.
         this._mainChain = await this._store.getMainChain();
 
@@ -36,6 +38,19 @@ class Blockchain extends Observable {
             this._mainChain = new Chain(Block.GENESIS);
             await this._store.put(this._mainChain);
             await this._store.setMainChain(this._mainChain);
+            // Allow to load checkpoint if it exists and can be applied.
+            if (allowCheckpoint && Block.CHECKPOINT && (await this.loadCheckpoint())) {
+                this._mainChain = new Chain(Block.CHECKPOINT, Block.CHECKPOINT.TOTAL_WORK, Block.CHECKPOINT.height);
+                await this._store.put(this._mainChain);
+                await this._store.setMainChain(this._mainChain);
+            }
+        } else {
+            // Fast-forward to CHECKPOINT if necessary.
+            if (allowCheckpoint && Block.CHECKPOINT && this._mainChain.height < Block.CHECKPOINT.height && (await this.loadCheckpoint())) {
+                this._mainChain = new Chain(Block.CHECKPOINT, Block.CHECKPOINT.TOTAL_WORK, Block.CHECKPOINT.height);
+                await this._store.put(this._mainChain);
+                await this._store.setMainChain(this._mainChain);
+            }
         }
 
         // Cache the hash of the head of the current main chain.
@@ -45,17 +60,60 @@ class Blockchain extends Observable {
         // XXX optimize this!
         this._mainPath = await this._fetchPath(this.head);
 
+        // Always set checkpointLoaded to true, if our first block in the path is the checkpoint.
+        if (this._mainPath.length > 0 && Block.CHECKPOINT && this._mainPath[0].equals(Block.CHECKPOINT.HASH)) {
+            this._checkpointLoaded = true;
+        }
+
         // Automatically commit the chain head if the accountsHash matches.
         // Needed to bootstrap the empty accounts tree.
         const accountsHash = await this.accountsHash();
         if (accountsHash.equals(Accounts.EMPTY_TREE_HASH)) {
             await this._accounts.commitBlock(this._mainChain.head);
-        } else {
-            // Assume that the accounts tree is in the correct state.
-            // TODO validate this?
+        } else if (!accountsHash.equals(this._mainChain.head.accountsHash)) {
+            // TODO what to do if the accounts hashes mismatch?
+            throw 'AccountsHash mismatch';
         }
 
         return this;
+    }
+
+    async loadCheckpoint() {
+        const accounts = await Accounts.createVolatile();
+
+        // Load accountsTree at checkpoint.
+        if (!AccountsTree.CHECKPOINT_NODES) {
+            return false;
+        }
+        const nodes = AccountsTree.CHECKPOINT_NODES;
+        // Read nodes.
+        for (let i = 0; i < nodes.length; ++i) {
+            nodes[i] = AccountsTreeNode.unserialize(BufferUtils.fromBase64(nodes[i]));
+        }
+
+        if (nodes.length === 0) {
+            Log.d(Blockchain, 'Loading checkpoint failed, no nodes in AccountsTree.');
+            return false;
+        }
+
+        // Check accountsHash.
+        if (!(await nodes[0].hash()).equals(await Block.CHECKPOINT.accountsHash)) {
+            Log.d(Blockchain, 'Loading checkpoint failed, accountsHash mismatch.');
+            return false;
+        }
+
+        // Try populating the tree.
+        if (!(await accounts.populate(nodes))) {
+            Log.d(Blockchain, 'Loading checkpoint failed, tree could not be populated.');
+            return false;
+
+        }
+
+        await this._accounts.clear();
+        await this._accounts.populate(nodes);
+
+        this._checkpointLoaded = true;
+        return true;
     }
 
     // Retrieves up to maxBlocks predecessors of the given block.
@@ -65,12 +123,13 @@ class Blockchain extends Observable {
         let hash = await block.hash();
         const path = [hash];
 
-        if (Block.GENESIS.HASH.equals(hash)) {
+        if (Block.GENESIS.HASH.equals(hash) || (this._checkpointLoaded && Block.CHECKPOINT.HASH.equals(hash))) {
             return new IndexedArray(path);
         }
 
         do {
             const prevChain = await this._store.get(block.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
+            if (!prevChain && Block.CHECKPOINT.HASH.equals(hash)) break;
             if (!prevChain) throw `Failed to find predecessor block ${block.prevHash.toBase64()}`;
 
             // TODO unshift() is inefficient. We should build the array with push()
@@ -364,7 +423,7 @@ class Blockchain extends Observable {
             // blocks via this._mainChain, otherwise fetch the path.
             let startHash;
             if (chain === this._mainChain) {
-                const startHeight = Math.max(chain.height - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS, 0);
+                const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS, 0);
                 startHash = this._mainPath[startHeight];
             } else {
                 const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1);
@@ -424,8 +483,53 @@ class Blockchain extends Observable {
         return this._synchronizer.working;
     }
 
+    get checkpointLoaded() {
+        return this._checkpointLoaded;
+    }
+
     accountsHash() {
         return this._accounts.hash();
+    }
+
+    async exportMainPath(height) {
+        height = height || this.head.height;
+        const blocks = {};
+        const path = [];
+
+        for (let i = 0; i < this._mainPath.length; ++i) {
+            const blockHash = this._mainPath[i];
+            const block = await this.getBlock(blockHash);
+            if (block.height > height) break;
+            path.push(blockHash.toBase64());
+            blocks[blockHash] = BufferUtils.toBase64(block.serialize());
+        }
+
+        return {
+            'path': path,
+            'blocks': blocks
+        };
+    }
+
+    async exportAccounts(height) {
+        height = height || this.head.height;
+        const accounts = await Accounts.createTemporary(this._accounts);
+
+        let currentBlock = this.head;
+        // Do not revert the block with the desired height!
+        while (currentBlock.height > height) {
+            await accounts.revertBlock(currentBlock);
+            currentBlock = await this.getBlock(currentBlock.prevHash);
+        }
+
+        if (!currentBlock.accountsHash.equals(await accounts.hash())) {
+            throw 'AccountsHash mismatch while exporting';
+        }
+
+        if (!accounts._tree.verify()) {
+            throw 'AccountsTree verification failed';
+        }
+
+        return accounts.export();
     }
 }
 Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX = 1000 * 60 * 15; // 15 minutes
