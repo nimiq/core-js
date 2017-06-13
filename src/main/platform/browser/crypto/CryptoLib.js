@@ -17,7 +17,7 @@ class CryptoLib {
         // We can use Webkit's SHA-256
         let wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
         if (wk) {
-            poly.digest = (alg, arr) => wk.digest(alg, arr).then(resolve);
+            poly.digest = (alg, arr) => wk.digest(alg, arr);
         } else {
             const sha256 = require('fast-sha256');
             poly.digest = async (alg, arr) => {
