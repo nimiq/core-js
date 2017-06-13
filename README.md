@@ -9,7 +9,7 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
 1. Clone this repository `git clone https://github.com/nimiq-network/core`.
 2. Run `npm install` or `yarn`
-3. Run `npm build` or `yarn build`
+3. Run `npm run build` or `yarn build`
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
@@ -87,7 +87,7 @@ Developers are free to choose between npm and yarn for managing the dependencies
 `npm run lint` or `yarn lint` runs the ESLint javascript linter.
 
 #### Build
-Executing `npm build` or `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
+Executing `npm run build` or `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ## Contribute
 
