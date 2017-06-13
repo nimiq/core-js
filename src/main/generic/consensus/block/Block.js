@@ -107,21 +107,19 @@ Block.GENESIS.hash().then(hash => {
 /* Checkpoint Block */
 Block.CHECKPOINT = new Block(
     new BlockHeader(
-        new Hash(BufferUtils.fromBase64('AAAAAtSCUsJPWRSU3bBdWO05QKWjfyww5LhdAg01QC4=')),
-        new Hash(BufferUtils.fromBase64('DTYnX+Vf1ps/vA9PWBy0raEcQOCqjUy4N5H/0AcP54w=')),
-        new Hash(BufferUtils.fromBase64('lVAOIc4MdxuXM472DoF2hPbolmYIcOxUNXE2zwvs5XE=')),
-        488323620,
-        5801,
-        1497166215,
-        1554547,
-        1),
-    new BlockBody(new Address(BufferUtils.fromBase64('mOoPdUsZHV0hcd7js9SFKPZH/wI=')), [
-        Transaction.unserialize(BufferUtils.fromBase64('AAEAtKYJ6YL6xGiv6b5DvFVbp7QYAKa+QG1bRdftz6aqqce6kbU79DdvzMq8GJs8yFtLBcCGSr51U7L1QrmSFOLcysLQnv5fnlAOfKNKOjyTTSTiUFOgQfKgXyAAAAAAAAAAAAAAAAAAAAQ8OQFTMQWD4pp7SSBoVICMLUv82mqYG47w7/IBMwqz9D9NH0aG+QNqMHE9tZHkFbTCtQQUpZ861AKQdy4eG2ul'))
-    ])
+        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAABD7dVTREaW7UibYrKh5tVFCSW6W44dOOFn+9px4=')),
+        /*bodyHash*/ new Hash(BufferUtils.fromBase64('Xakr97VzxhIM++W1XiJ6gRSmbXBkFCTx0Pm1oJibygg=')),
+        /*accountsHash*/ new Hash(BufferUtils.fromBase64('WOenClAOj8S2+PDbIzMegrp7I0OtQG3DY5COP9oxXmk=')),
+        /*nBits*/ 489908967,
+        /*height*/ 8001,
+        /*timestamp*/ 1497328121,
+        /*nonce*/ 1117197,
+        /*version*/ 1),
+    new BlockBody(new Address(BufferUtils.fromBase64('s6rdOHQJA6oFaJAB6V8yIDk+Rrw=')), [])
 );
 Block.CHECKPOINT.hash().then(hash => {
     Block.CHECKPOINT.HASH = hash;
     //Object.freeze(Block.GENESIS);
 });
-Block.CHECKPOINT.TOTAL_WORK = 17711565.212913718;
+Block.CHECKPOINT.TOTAL_WORK = 22921810.269859694;
 Class.register(Block);
