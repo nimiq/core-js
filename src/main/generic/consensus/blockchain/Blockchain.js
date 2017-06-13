@@ -60,8 +60,8 @@ class Blockchain extends Observable {
         // XXX optimize this!
         this._mainPath = await this._fetchPath(this.head);
 
-        // Always set checkpointLoaded to true, if our first block in the path is the checkpoint.
-        if (this._mainPath.length > 0 && Block.CHECKPOINT && this._mainPath[0].equals(Block.CHECKPOINT.HASH)) {
+        // Always set checkpointLoaded to true, if our first block in the path is not the genesis block.
+        if (this._mainPath.length > 0 && !this._mainPath[0].equals(Block.GENESIS.HASH)) {
             this._checkpointLoaded = true;
         }
 
