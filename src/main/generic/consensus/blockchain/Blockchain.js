@@ -129,7 +129,6 @@ class Blockchain extends Observable {
 
         do {
             const prevChain = await this._store.get(block.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
-            if (!prevChain && Block.CHECKPOINT.HASH.equals(hash)) break;
             if (!prevChain) throw `Failed to find predecessor block ${block.prevHash.toBase64()}`;
 
             // TODO unshift() is inefficient. We should build the array with push()
@@ -139,7 +138,7 @@ class Blockchain extends Observable {
             // Advance to the predecessor block.
             hash = block.prevHash;
             block = prevChain.head;
-        } while (--maxBlocks > 0 && !Block.GENESIS.HASH.equals(hash));
+        } while (--maxBlocks > 0 && !Block.GENESIS.HASH.equals(hash) && (!this._checkpointLoaded || !Block.CHECKPOINT.HASH.equals(hash)));
 
         return new IndexedArray(path);
     }
