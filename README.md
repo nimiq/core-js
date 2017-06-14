@@ -1,6 +1,8 @@
 # Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core) 
 
-**[Nimiq](https://nimiq.com/)** is the first Browser-based Blockchain.
+**[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
+
+For a high-level introduction checkout the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
 
 ## Library Demo
 Check out our betanet [Browser Miner](https://nimiq.com/betanet)
