@@ -107,20 +107,25 @@ Block.GENESIS.hash().then(hash => {
 /* Checkpoint Block */
 Block.CHECKPOINT = new Block(
     new BlockHeader(
-        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAABD7dVTREaW7UibYrKh5tVFCSW6W44dOOFn+9px4=')),
-        /*bodyHash*/ new Hash(BufferUtils.fromBase64('Xakr97VzxhIM++W1XiJ6gRSmbXBkFCTx0Pm1oJibygg=')),
-        /*accountsHash*/ new Hash(BufferUtils.fromBase64('WOenClAOj8S2+PDbIzMegrp7I0OtQG3DY5COP9oxXmk=')),
-        /*nBits*/ 489908967,
-        /*height*/ 8001,
-        /*timestamp*/ 1497328121,
-        /*nonce*/ 1117197,
+        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAACdbTMlTcKYbSq3ATfpsmSy6IS8nw/bwvucUky7I=')),
+        /*bodyHash*/ new Hash(BufferUtils.fromBase64('/kaYKm3eQHvfbRVYF7c9EcUFSvOfxOUKUkfMcqcsEhI=')),
+        /*accountsHash*/ new Hash(BufferUtils.fromBase64('NyuaRopqGXAIbbBzGiEw0gnYeZANn0HrYRe0ymmZvXY=')),
+        /*nBits*/ 489647025,
+        /*height*/ 9201,
+        /*timestamp*/ 1497416512,
+        /*nonce*/ 401970,
         /*version*/ 1),
-    new BlockBody(new Address(BufferUtils.fromBase64('s6rdOHQJA6oFaJAB6V8yIDk+Rrw=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('DmcMtPHsPK8Aukd29hbmYll6OGE=')), [
+        Transaction.unserialize(BufferUtils.fromBase64("AAEA0fEP7tRKarlWyIFU5+Ai2VCUXEhnbqWZgzFZom1o1cfW2KlC0w3xWXCwZUhgZ6Ed3iYhxGUpJV34mEMZGu3cuMLQnv5fnlAOfKNKOjyTTSTiUFOgQfKgXyAAAAAAAAAAAAAAAAAAAA1rer6nvFcD+Yzw/E3MBiENC19ib+l+wIKp2BRGyGtnP5QwacrnrK6StLtTSf91KqL0pkmc7mt55Yfeh5RJ7iKW"))
+    ])
 );
 Block.CHECKPOINT.hash().then(hash => {
     Block.CHECKPOINT.HASH = hash;
     //Object.freeze(Block.GENESIS);
 });
-Block.CHECKPOINT.TOTAL_WORK = 22921810.269859694;
-Block.OLD_CHECKPOINTS = new IndexedArray([new Hash(BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho='))]);
+Block.CHECKPOINT.TOTAL_WORK = 25588486.12992787;
+Block.OLD_CHECKPOINTS = new IndexedArray([
+    new Hash(BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho=')),
+    new Hash(BufferUtils.fromBase64('AAAAJHtA0SSxZb+sk2T9Qtzz4bWZdfz8pqbf5PNjywI='))
+]);
 Class.register(Block);
