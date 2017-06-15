@@ -15,6 +15,9 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
+### Most simple Web Application on top of the Nimiq Blockchain
+A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://github.com/RobinLinus/nimiq-demo).
+
 ### Installation for Web Developers
 Follow the Quickstart guide or use our CDN:
 
