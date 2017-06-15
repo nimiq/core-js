@@ -16,7 +16,7 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
 ## Web Developers
 ### Most simple Web Application on top of the Nimiq Blockchain
-A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://github.com/RobinLinus/nimiq-demo).
+A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://robinlinus.github.io/nimiq-demo/).
 
 ### Installation for Web Developers
 Follow the Quickstart guide or use our CDN:
