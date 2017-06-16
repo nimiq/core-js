@@ -11,7 +11,7 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 
 1. Clone this repository `git clone https://github.com/nimiq-network/core`.
 2. Run `npm install` or `yarn`
-3. Run `./node_modules/.bin/gulp build`
+3. Run `npm run build` or `yarn build`
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
@@ -60,8 +60,6 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 Developers are free to choose between npm and yarn for managing the dependencies.
 ### Installation for Core Developers (using npm)
 - NodeJs latest version (> 7.9.0)
-- gulp: `npm install gulp -g`
-- jasmine test framework: `npm install jasmine -g`
 - Dependencies: `npm install`
 - NodeJs dependencies:
 
@@ -84,21 +82,18 @@ Developers are free to choose between npm and yarn for managing the dependencies
 	yarn
 	```
 
-If you decided on using yarn for managing the dependencies,
-you have to use `node_modules/.bin/gulp` instead of `gulp`
-and `node_modules/.bin/jasmine` instead of `jasmine` in the following.
-
 ### Test and Build
 
 #### Run Testsuite
-- `gulp test` runs the testsuite in your browser.
-- `jasmine` runs the testsuite in NodeJs.
+- `npm test` or `yarn test` runs browser and NodeJS tests.
+- `npm run test-browser` or `yarn test-browser` runs the testsuite in your browser only.
+- `npm run test-node` or `yarn test-node` runs the testsuite in NodeJS only.
 
 #### Run ESLint
-`gulp eslint` runs the ESLint javascript linter.
+`npm run lint` or `yarn lint` runs the ESLint javascript linter.
 
 #### Build
-Executing `gulp build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
+Executing `npm run build` or `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ## Contribute
 
