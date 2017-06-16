@@ -37,17 +37,17 @@ class LogNative {
         if (tag) args.unshift(tag + ':');
         args.unshift(`[${Log._level_tag(level)} ${new Date().toTimeString().substr(0, 8)}]`);
         if (console.error && level >= Log.ERROR) {
-            console.error.apply(null, args);
+            console.error.apply(console, args);
         } else if (console.warn && level >= Log.WARNING) {
-            console.warn.apply(null, args);
+            console.warn.apply(console, args);
         } else if (console.info && level >= Log.INFO) {
-            console.info.apply(null, args);
+            console.info.apply(console, args);
         } else if (console.debug && level >= Log.DEBUG) {
-            console.debug.apply(null, args);
+            console.debug.apply(console, args);
         } else if (console.trace && level <= Log.TRACE) {
-            console.trace.apply(null, args);
+            console.trace.apply(console, args);
         } else {
-            console.log.apply(null, args);
+            console.log.apply(console, args);
         }
     }
 }
