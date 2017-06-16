@@ -1,6 +1,8 @@
 # Nimiq Blockchain [![Build Status](https://travis-ci.com/nimiq-network/core.svg?token=euFrib9MJMN33MCBswws&branch=master)](https://travis-ci.com/nimiq-network/core)
 
-**[Nimiq](https://nimiq.com/)** is the first Browser-based Blockchain.
+**[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
+
+For a high-level introduction checkout the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
 
 ## Library Demo
 Check out our betanet [Browser Miner](https://nimiq.com/betanet)
@@ -13,6 +15,9 @@ Check out our betanet [Browser Miner](https://nimiq.com/betanet)
 4. Open `clients/browser/index.html` in your browser to access the Browser Client.
 
 ## Web Developers
+### Most simple Web Application on top of the Nimiq Blockchain
+A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://robinlinus.github.io/nimiq-demo/).
+
 ### Installation for Web Developers
 Follow the Quickstart guide or use our CDN:
 

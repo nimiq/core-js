@@ -10,25 +10,19 @@ class CryptoLib {
 
     static _init_poly() {
         const poly = {
-            isSlow: true
+            _nimiq_isSlowCurves: true,
+            _nimiq_callDigestDelayedWhenMining: true
         };
 
         // We can use Webkit's SHA-256
         let wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
         if (wk) {
-            poly.digest = (alg, arr) => new Promise((resolve, reject) => window.setTimeout(() => {
-                wk.digest(alg, arr).then(resolve);
-            }));
+            poly.digest = (alg, arr) => wk.digest(alg, arr);
         } else {
             const sha256 = require('fast-sha256');
-            poly.digest = function (alg, arr) {
+            poly.digest = async (alg, arr) => {
                 if (alg !== 'SHA-256') throw 'Unsupported algorithm.';
-                return new Promise((res) => {
-                    // Performs badly, but better than a dead UI
-                    setTimeout(() => {
-                        res(new sha256.Hash().update(arr).digest());
-                    });
-                });
+                return new sha256.Hash().update(arr).digest();
             };
         }
 
@@ -84,7 +78,7 @@ class CryptoLib {
         poly.verify = async function (config, publicKey, signature, data) {
             const digest = await poly.digest(config.hash, data);
             const msgHash = new Uint8Array(digest);
-            return publicKey.pair.verify(msgHash, {r: signature.slice(0,32), s: signature.slice(32,64)});
+            return publicKey.pair.verify(msgHash, {r: signature.slice(0, 32), s: signature.slice(32, 64)});
         };
 
         const toUri64 = function (arr) {
