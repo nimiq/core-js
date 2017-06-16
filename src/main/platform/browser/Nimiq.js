@@ -7,15 +7,15 @@ class Nimiq {
 
     static _loadScript(url, resolve) {
         // Adding the script tag to the head as suggested before
-        let head = document.getElementsByTagName('head')[0];
-        let script = document.createElement('script');
+        const head = document.getElementsByTagName('head')[0];
+        const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
 
         // Then bind the event to the callback function.
         // There are several events for cross browser compatibility.
         // These events might occur before processing, so delay them a bit.
-        let ret = () => window.setTimeout(resolve, 1000);
+        const ret = () => window.setTimeout(resolve, 1000);
         script.onreadystatechange = ret;
         script.onload = ret;
 
@@ -81,12 +81,13 @@ class Nimiq {
             console.warn('Client lacks native support for crypto routines');
         }
 
+        let path;
         if (!options.path) {
             if (Nimiq._currentScript && Nimiq._currentScript.src.indexOf('/') !== -1) {
-                var path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
+                path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
             } else {
                 // Fallback
-                var path = './';
+                path = './';
             }
         }
 
@@ -113,7 +114,7 @@ class Nimiq {
 Nimiq._currentScript = document.currentScript;
 if (!Nimiq._currentScript) {
     // Heuristic
-    let scripts = document.getElementsByTagName('script');
+    const scripts = document.getElementsByTagName('script');
     Nimiq._currentScript = scripts[scripts.length - 1];
 }
 Nimiq.ERR_WAIT = -1;

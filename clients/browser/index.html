@@ -29,11 +29,10 @@
         <button onclick="loadWallet()">Load wallet seed</button>
     </div>
     <div class="info-block">
-        <button onclick="createWallet()">Create new wallet</button>
+        <button onclick="recoverWallet()">Recover browser wallet</button>
     </div>
     <div class="info-block">
-      <button onclick="dumpWallet()">Dump wallet seed</button>
-      <span id="walletSeedDump"></span>
+      <button onclick="dumpWallet()">Copy wallet seed</button>
     </div>
     <div class="left">
         <div class="info">
@@ -443,7 +442,20 @@
     var overlay_ = document.querySelector('#overlay');
 
     function dumpWallet() {
-      alert($.wallet.dump());
+      if (typeof $ === "undefined") {
+        return;
+      }
+
+      var mainContent = document.getElementById('content');
+      var input = document.createElement("INPUT");
+
+      input.setAttribute("type", "text");
+      mainContent.appendChild(input);
+      input.value = $.wallet.dump();
+      input.select()
+      document.execCommand("copy");
+      mainContent.removeChild(input);
+      alert("Wallet seed copied to clipboard.");
     }
 
     function loadWallet() {
@@ -476,7 +488,7 @@
 
     }
 
-    function createWallet() {
+    function recoverWallet() {
       Nimiq.init(function($) {
           window.$ = $;
           $.network.connect();

@@ -17,9 +17,9 @@ class Core {
 
         // Wallet
         if (walletSeed === undefined) {
-          this.wallet = await Wallet.getPersistent();
+            this.wallet = await Wallet.getPersistent();
         } else {
-          this.wallet = await Wallet.load(walletSeed)
+            this.wallet = await Wallet.load(walletSeed);
         }
 
         // Miner

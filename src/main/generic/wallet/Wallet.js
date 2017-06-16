@@ -15,7 +15,7 @@ class Wallet {
     }
 
     static load(hexBuf) {
-      return new Wallet(KeyPair.fromHex(hexBuf));
+        return new Wallet(KeyPair.fromHex(hexBuf));
     }
 
     constructor(keyPair) {
@@ -51,7 +51,7 @@ class Wallet {
     }
 
     dump() {
-      return this._keyPair.toHex();
+        return this._keyPair.toHex();
     }
 }
 Class.register(Wallet);

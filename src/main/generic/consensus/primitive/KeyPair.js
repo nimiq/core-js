@@ -16,7 +16,7 @@ class KeyPair extends Primitive {
     }
 
     static fromHex(hexBuf) {
-      return this.unserialize(BufferUtils.fromHex(hexBuf));
+        return this.unserialize(BufferUtils.fromHex(hexBuf));
     }
 
     serialize(buf) {
@@ -37,10 +37,6 @@ class KeyPair extends Primitive {
 
     equals(o) {
         return o instanceof KeyPair && super.equals(o);
-    }
-
-    toHex() {
-      return BufferUtils.toHex(this.serialize());
     }
 }
 

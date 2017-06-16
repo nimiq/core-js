@@ -23,12 +23,12 @@ if (argv['log-tag']) {
         argv['log-tag'] = [argv['log-tag']];
     }
     argv['log-tag'].forEach((lt) => {
-        let s = lt.split(':');
+        const s = lt.split(':');
         Nimiq.Log.instance.setLoggable(s[0], s.length == 1 ? 2 : s[1]);
     });
 }
 
-console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ', miner=' + !!miner + ', passive=' + !!passive + ')');
+console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!miner}, passive=${!!passive})`);
 
 // XXX Configure Core.
 // TODO Create config/options object and pass to Core.get()/init().
@@ -36,11 +36,11 @@ Nimiq.NetworkConfig.configurePeerAddress(host, port);
 Nimiq.NetworkConfig.configureSSL(key, cert);
 
 const options = {
-  walletSeed
+    walletSeed
 };
 
 (new Nimiq.Core(options)).then($ => {
-    console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
+    console.log(`Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
     if (!passive) {
         $.network.connect();
