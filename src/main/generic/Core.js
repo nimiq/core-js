@@ -1,9 +1,9 @@
 class Core {
-    constructor() {
-        return this._init();
+    constructor(options) {
+        return this._init(options);
     }
 
-    async _init() {
+    async _init({ walletSeed }) {
         // Model
         this.accounts = await Accounts.getPersistent();
         this.blockchain = await Blockchain.getPersistent(this.accounts);
@@ -16,7 +16,11 @@ class Core {
         this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
 
         // Wallet
-        this.wallet = await Wallet.getPersistent();
+        if (walletSeed === undefined) {
+          this.wallet = await Wallet.getPersistent();
+        } else {
+          this.wallet = await Wallet.load(walletSeed)
+        }
 
         // Miner
         this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);

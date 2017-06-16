@@ -59,7 +59,7 @@ class Nimiq {
         }
     }
 
-    static init(ready, error, path) {
+    static init(ready, error, options = {}) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -81,12 +81,12 @@ class Nimiq {
             console.warn('Client lacks native support for crypto routines');
         }
 
-        if (!path) {
+        if (!options.path) {
             if (Nimiq._currentScript && Nimiq._currentScript.src.indexOf('/') !== -1) {
-                path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
+                var path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
             } else {
                 // Fallback
-                path = './';
+                var path = './';
             }
         }
 
@@ -105,7 +105,7 @@ class Nimiq {
                 }
                 console.log('Nimiq engine loaded.');
             }
-            Nimiq._core = await new Nimiq.Core();
+            Nimiq._core = await new Nimiq.Core(options);
             ready(Nimiq._core);
         }, () => error(Nimiq.ERR_WAIT));
     }

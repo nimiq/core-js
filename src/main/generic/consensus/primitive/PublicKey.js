@@ -28,5 +28,9 @@ class PublicKey extends Primitive {
     async toAddress() {
         return new Address((await Hash.light(this.serialize())).subarray(0, 20));
     }
+
+    toHex() {
+      return BufferUtils.toHex(this.serialize());
+    }
 }
 Class.register(PublicKey);

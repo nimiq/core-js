@@ -14,6 +14,10 @@ class Wallet {
         return new Wallet(await KeyPair.generate());
     }
 
+    static load(hexBuf) {
+      return new Wallet(KeyPair.fromHex(hexBuf));
+    }
+
     constructor(keyPair) {
         this._keyPair = keyPair;
         return this._init();
@@ -44,6 +48,10 @@ class Wallet {
 
     get keyPair() {
         return this._keyPair;
+    }
+
+    dump() {
+      return this._keyPair.toHex();
     }
 }
 Class.register(Wallet);
