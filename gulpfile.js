@@ -164,8 +164,6 @@ gulp.task('build-web-babel', function () {
             .pipe(source('babel.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(['node_modules/webrtc-adapter/out/adapter.js'])
-            .pipe(uglify()),
         gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
             .pipe(sourcemaps.init())
             .pipe(concat('web.js'))

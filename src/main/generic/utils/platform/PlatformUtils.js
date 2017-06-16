@@ -4,7 +4,8 @@ class PlatformUtils {
     }
 
     static supportsWebRTC() {
-        return PlatformUtils.isBrowser() && !!(window.RTCPeerConnection || window.webkitRTCPeerConnection);
+        let RTCPeerConnection = (window.RTCPeerConnection || window.webkitRTCPeerConnection);
+        return PlatformUtils.isBrowser() && !!RTCPeerConnection && !!RTCPeerConnection.generateCertificate;
     }
 }
 Class.register(PlatformUtils);

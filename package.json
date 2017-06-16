@@ -73,7 +73,6 @@
     "karma-safari-launcher": "^1.0.0",
     "merge2": "^1.0.3",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0",
-    "webrtc-adapter": "^4.0.0"
+    "vinyl-source-stream": "^1.1.0"
   }
 }
