@@ -1,9 +1,15 @@
 class Core {
-    constructor() {
-        return this._init();
+    constructor(options) {
+        const defaultOptions = {
+            walletSeed: null
+        };
+
+        options = Object.assign({}, defaultOptions, options);
+
+        return this._init(options);
     }
 
-    async _init() {
+    async _init(options) {
         // Model
         this.accounts = await Accounts.getPersistent();
         this.blockchain = await Blockchain.getPersistent(this.accounts);
@@ -16,7 +22,12 @@ class Core {
         this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
 
         // Wallet
-        this.wallet = await Wallet.getPersistent();
+        if(!options.walletSeed) {
+            this.wallet = await Wallet.getPersistent();
+        }
+        else {
+            this.wallet = await Wallet.load(options.walletSeed);
+        }
 
         // Miner
         this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);

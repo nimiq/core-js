@@ -92,6 +92,10 @@ header .subtitle {
     display: inline-block;
 }
 
+.info-block.copy-wallet-seed {
+    display: none;
+}
+
 .info-title {
     font-size: 16px;
     padding: 6px 8px;
@@ -113,6 +117,17 @@ header .subtitle {
     vertical-align: middle;
 }
 
+.get-seed-hint {
+    color: #999;
+}
+.get-seed-hint code {
+    border: 1px dotted;
+    border-radius: 4px;
+    padding: 1px 2px;
+    background: #EEC;
+    color: #888;
+}
+
 input {
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -124,7 +139,6 @@ button {
     border: 1px solid #FFC107;
     border-radius: 3px;
     padding: 5px 10px;
-    display: block;
     text-align: center;
     background: #FFC107;
     color: white;

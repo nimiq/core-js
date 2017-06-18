@@ -2,7 +2,7 @@ const Nimiq = require('../../dist/node.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--miner] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
+    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--walletseed=<walletseed>] [--miner] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
     process.exit();
 }
 
@@ -13,6 +13,7 @@ const minerSpeed = argv['miner-speed'] || 75;
 const passive = argv.passive;
 const key = argv.key;
 const cert = argv.cert;
+const walletSeed = argv.walletseed || null;
 
 if (argv['log']) {
     Nimiq.Log.instance.level = argv['log'] === true ? Log.VERBOSE : argv['log'];
@@ -34,7 +35,11 @@ console.log('Nimiq NodeJS Client starting (host=' + host + ', port=' + port + ',
 Nimiq.NetworkConfig.configurePeerAddress(host, port);
 Nimiq.NetworkConfig.configureSSL(key, cert);
 
-(new Nimiq.Core()).then($ => {
+const options = {
+    walletSeed
+};
+
+(new Nimiq.Core(options)).then($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
     if (!passive) {

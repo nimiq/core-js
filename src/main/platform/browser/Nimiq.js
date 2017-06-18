@@ -59,7 +59,7 @@ class Nimiq {
         }
     }
 
-    static init(ready, error, path) {
+    static init(options, ready, error, path) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -105,7 +105,7 @@ class Nimiq {
                 }
                 console.log('Nimiq engine loaded.');
             }
-            Nimiq._core = await new Nimiq.Core();
+            Nimiq._core = await new Nimiq.Core(options);
             ready(Nimiq._core);
         }, () => error(Nimiq.ERR_WAIT));
     }
