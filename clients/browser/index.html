@@ -476,6 +476,9 @@
                 case Nimiq.ERR_UNSUPPORTED:
                     alert('Browser not supported');
                     break;
+                case Nimiq.ERR_SEEDINVALID:
+                    alert('Invalid wallet seed');
+                    break;
                 default:
                     alert('Nimiq initialization error');
                     break;
