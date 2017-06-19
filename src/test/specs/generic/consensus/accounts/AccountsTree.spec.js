@@ -22,12 +22,27 @@ describe('AccountsTree', () => {
         treeBuilder('temporary volatile', async function () {
             return AccountsTree.createTemporary(await AccountsTree.createVolatile());
         })
+
         // TODO: Due to issue #161, the persistent accounts tree currently cannot be used for testing.
         // treeBuilder('persistent', AccountsTree.getPersistent)
         // treeBuilder('temporary persistent', async function () {
         //     return AccountsTree.createTemporary(await AccountsTree.getPersistent());
         // })
     ];
+
+    /**
+     * Helper method to create an address object from a sequence of nibbles.
+     * @param {int[]} nibbles array of 40 nibbles (= 20 bytes)
+     * @returns {Address} the resulting address
+     */
+    function raw2address(nibbles) {
+        let address = '';
+        for (let i = 0; i < nibbles.length; i++) {
+            const rawNibble = nibbles[i];
+            address += rawNibble.toString(16);
+        }
+        return Address.fromHex(address);
+    }
 
     // for each test, create a specialized version that runs on exactly the provided account tree type.
     treeBuilders.forEach((treeBuilder) => {
@@ -62,6 +77,41 @@ describe('AccountsTree', () => {
                 expect(account2.balance.value).toEqual(value);
                 expect(account2.balance.nonce).toEqual(nonce);
             })().then(done, done.fail);
+        });
+
+        it('can update a Balance', (done) => {
+            const nonce = 1;
+            let value = 10;
+            let account = new Account(new Balance(value, nonce));
+            const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+
+            (async function () {
+                const tree = await treeBuilder.builder();
+                await tree.put(address, account);
+
+                let result = await tree.get(address);
+
+                expect(result).not.toBeUndefined();
+                expect(result.balance).not.toBeUndefined();
+                expect(result.balance.value).toEqual(value);
+                expect(result.balance.nonce).toEqual(nonce);
+
+                value = 50;
+                account = new Account(new Balance(value, nonce));
+                await tree.put(address, account);
+
+                result = await tree.get(address);
+
+                expect(result).not.toBeUndefined();
+                expect(result.balance).not.toBeUndefined();
+                expect(result.balance.value).toEqual(value);
+                expect(result.balance.nonce).toEqual(nonce);
+
+
+
+            })().then(done, done.fail);
+
+
         });
 
         it(`can put and get multiple Balances (${  treeBuilder.type  })`, (done) => {
@@ -340,6 +390,169 @@ describe('AccountsTree', () => {
 
                 const value3 = balance3.value;
                 expect(value3).toBe(value2);
+            })().then(done, done.fail);
+        });
+
+        it(`can handle deep trees (${  treeBuilder.type  })`, (done) => {
+            (async function () {
+
+                /* generate a tree that is very deep without requiring too many nodes (small width).
+                 idea: construct addresses so that we have a long path of branch nodes where kv node shortcuts are avoided
+
+                 scheme:
+                 a1: 00000000...
+                 a2: 01111111...
+                 a3: 01222222...
+                 01234567... will be the path with no shortcuts.
+                 After F(15), the maximal value a nibble can take, we wrap around.
+
+                 Since addresses have 20 bytes, we have 40 nibbles, hence need 40 addresses for one complete chain
+                 without shortcuts (enforce a branch node for all nibbles).
+                 */
+                const tree = await treeBuilder.builder();
+                let current = new Array(40).fill(0);
+                await tree.put(raw2address(current), new Account(new Balance(1, 0)));
+
+                for (let i = 1; i < 40; i++) {
+                    const nibble = i % 16;
+
+                    // get the first i entries from the previous sequence
+                    const prefix = current.slice(0, i);
+                    // fill the rest with the new value
+                    const diverging = new Array(40 - i).fill(nibble);
+                    // now combine and set current
+                    current = prefix.concat(diverging);
+
+                    await tree.put(raw2address(current), new Account(new Balance(1, 0)));
+                }
+
+                // the tree should have 80 nodes now: 1 root, 1 for the first address and for each new address 2
+                // additional nodes are added
+                const nodes = await tree.export();
+                expect(nodes.length).toBe(80);
+
+
+                // check two balances
+                const address1 = raw2address(new Array(40).fill(0));
+                const address2 = raw2address([0, 1, 2, 3].concat(new Array(36).fill(4)));
+                const account1 = await tree.get(address1);
+                const account2 = await tree.get(address2);
+
+                expect(account1).toBeDefined();
+                expect(account2).toBeDefined();
+                expect(account1.balance).not.toBeUndefined();
+                expect(account2.balance).not.toBeUndefined();
+                expect(account1.balance.value).toBe(1);
+                expect(account2.balance.value).toBe(1);
+                expect(account1.balance.nonce).toBe(0);
+                expect(account2.balance.nonce).toBe(0);
+
+            })().then(done, done.fail);
+        });
+
+        it(`can handle wide trees (${  treeBuilder.type  })`, (done) => {
+            /* Generate a wide tree: create branch nodes with 16 entries on 2 subsequent levels by generating addresses
+             * with all possible values for the first two nibbles.
+             * Results in 273 branch nodes: 1 root + 16 branch (1. level) + 256 (2. level)
+             */
+            (async function () {
+                const tree = await treeBuilder.builder();
+
+                // insert 16 * 16 = 256 addresses into the tree to fill up the first two levels
+                for (let i = 0; i < 16; i++) {
+                    for (let j = 0; j < 16; j++) {
+                        const address = raw2address([i, j].concat(new Array(38).fill(0)));
+                        await tree.put(address, new Account(new Balance(1, 0)));
+                    }
+                }
+
+                // check that the tree looks like expected
+                const nodes = await tree.export();
+                expect(nodes.length).toBe(273);
+
+                // check two balances
+                const address1 = raw2address(new Array(40).fill(0));
+                const address2 = raw2address([15].concat(new Array(39).fill(0)));
+                const account1 = await tree.get(address1);
+                const account2 = await tree.get(address2);
+
+                expect(account1).toBeDefined();
+                expect(account2).toBeDefined();
+                expect(account1.balance).not.toBeUndefined();
+                expect(account2.balance).not.toBeUndefined();
+                expect(account1.balance.value).toBe(1);
+                expect(account2.balance.value).toBe(1);
+                expect(account1.balance.nonce).toBe(0);
+                expect(account2.balance.nonce).toBe(0);
+
+            })().then(done, done.fail);
+
+        });
+
+        /* Unfortunately, there is no import function at the time of this writing
+         * (cf. issue #172: https://github.com/nimiq-network/core/issues/172).
+         * Hence, without making assumptions about the implementation of the export function, we can only check
+         * if it outputs the correct amount of nodes.
+        */
+        it(`exports the correct number of nodes (${  treeBuilder.type  })`, (done) => {
+            (async function () {
+                const tree = await treeBuilder.builder();
+
+                // check empty tree
+                let nodes = await tree.export();
+                expect(nodes.length).toBe(1);
+
+                // now add nodes and check the number of exported nodes
+
+                const value1 = 1;
+                const nonce1 = 1;
+                const account1 = new Account(new Balance(value1, nonce1));
+                const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+                await tree.put(address1, account1);
+
+                nodes = await tree.export();
+                expect(nodes.length).toBe(2);
+
+                const value2 = 2;
+                const nonce2 = 2;
+                const account2 = new Account(new Balance(value2, nonce2));
+                const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
+                await tree.put(address2, account2);
+
+                nodes = await tree.export();
+                expect(nodes.length).toBe(3);
+
+                const value3 = 3;
+                const nonce3 = 3;
+                const account3 = new Account(new Balance(value3, nonce3));
+                const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
+                await tree.put(address3, account3);
+
+                nodes = await tree.export();
+                expect(nodes.length).toBe(4);
+
+            })().then(done, done.fail);
+        });
+
+        it(`is invariant to exports (${  treeBuilder.type  })`, (done) => {
+            (async function () {
+                const tree = await treeBuilder.builder();
+                let oldHash = await tree.hash;
+                tree.export();
+                let newHash = tree.hash;
+                expect(oldHash).toEqual(newHash);
+
+                const value = 1;
+                const nonce = 1;
+                const account = new Account(new Balance(value, nonce));
+                const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+                await tree.put(address, account);
+
+                oldHash = await tree.hash;
+                tree.export();
+                newHash = await tree.hash;
+                expect(oldHash).toEqual(newHash);
+
             })().then(done, done.fail);
         });
     });
