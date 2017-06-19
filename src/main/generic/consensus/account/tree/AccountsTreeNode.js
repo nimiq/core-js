@@ -9,7 +9,7 @@ class AccountsTreeNode {
 
     constructor(type, prefix = '', arg) {
         this._type = type;
-        this.prefix = prefix;
+        this._prefix = prefix;
         if (type === AccountsTreeNode.BRANCH) {
             this._children = arg;
         } else {
@@ -43,7 +43,7 @@ class AccountsTreeNode {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._type);
-        buf.writeVarLengthString(this.prefix);
+        buf.writeVarLengthString(this._prefix);
 
         if (this._type === AccountsTreeNode.TERMINAL) {
             // Terminal node
@@ -76,7 +76,7 @@ class AccountsTreeNode {
 
         return /*type*/ 1
             + /*extra byte varLengthString prefix*/ 1
-            + this.prefix.length
+            + this._prefix.length
             + payloadSize;
     }
 
@@ -87,13 +87,13 @@ class AccountsTreeNode {
     withChild(prefix, child) {
         let children = this._children.slice() || [];
         children[this._getChildIndex(prefix)] = child;
-        return AccountsTreeNode.branchNode(this.prefix, children);
+        return AccountsTreeNode.branchNode(this._prefix, children);
     }
 
     withoutChild(prefix) {
         let children = this._children.slice() || [];
         delete children[this._getChildIndex(prefix)];
-        return AccountsTreeNode.branchNode(this.prefix, children);
+        return AccountsTreeNode.branchNode(this._prefix, children);
     }
 
     hasChildren() {
@@ -122,12 +122,24 @@ class AccountsTreeNode {
         return this._account;
     }
 
-    withAccount(account) {
-        return AccountsTreeNode.terminalNode(this.prefix, account);
+    get prefix() {
+        return this._prefix;
     }
 
-    hash() {
-        return Hash.light(this.serialize());
+    set prefix(value) {
+        this._prefix = value;
+        this._hash = undefined;
+    }
+
+    withAccount(account) {
+        return AccountsTreeNode.terminalNode(this._prefix, account);
+    }
+
+    async hash() {
+        if (!this._hash) {
+            this._hash = await Hash.light(this.serialize());
+        }
+        return this._hash;
     }
 
     _getChildIndex(prefix) {
