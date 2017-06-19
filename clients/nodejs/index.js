@@ -39,15 +39,26 @@ const options = {
     walletSeed
 };
 
-(new Nimiq.Core(options)).then($ => {
-    console.log(`Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
+try {
+    (new Nimiq.Core(options)).then($ => {
+        console.log(`Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
-    if (!passive) {
-        $.network.connect();
-    }
+        if (!passive) {
+            $.network.connect();
+        }
 
-    if (miner) {
-        $.consensus.on('established', () => $.miner.startWork());
-        $.consensus.on('lost', () => $.miner.stopWork());
+        if (miner) {
+            $.consensus.on('established', () => $.miner.startWork());
+            $.consensus.on('lost', () => $.miner.stopWork());
+        }
+    });
+} catch (e) {
+    switch (e) {
+        case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
+          console.log("Invalid wallet seed");
+          break;
+        default:
+          console.log('Nimiq initialization error');
+          break;
     }
-});
+}

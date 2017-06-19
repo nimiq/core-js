@@ -15,6 +15,7 @@ Nimiq.init($ => {
 - `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be invoked.
 - `Nimiq.ERR_UNSUPPORTED`: This browser is not supported.
 - `Nimiq.ERR_UNKNOWN`: An unknown error occured while loading.
+- `Nimiq.Wallet.ERR_INVALID_WALLET_SEED` : An invalid wallet seed has been provided.
 
 ```js
 Nimiq.init($ => {
@@ -26,6 +27,9 @@ Nimiq.init($ => {
             break;
         case Nimiq.ERR_UNSUPPORTED:
             alert('Browser not supported');
+            break;
+        case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
+            alert("Invalid wallet seed");
             break;
         default:
             alert('Nimiq initialization error');

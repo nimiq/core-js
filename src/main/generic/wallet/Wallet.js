@@ -15,6 +15,11 @@ class Wallet {
     }
 
     static load(hexBuf) {
+        const hexMatch = hexBuf.match(/[0-9A-Fa-f]*/);
+        if (hexBuf.length / 2 !== Crypto.privateKeySize || hexMatch[0] !== hexBuf) {
+            throw Wallet.ERR_INVALID_WALLET_SEED;
+        }
+
         return new Wallet(KeyPair.fromHex(hexBuf));
     }
 
@@ -54,4 +59,7 @@ class Wallet {
         return this._keyPair.toHex();
     }
 }
+
+Wallet.ERR_INVALID_WALLET_SEED = -100;
+
 Class.register(Wallet);

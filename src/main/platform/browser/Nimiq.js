@@ -106,8 +106,13 @@ class Nimiq {
                 }
                 console.log('Nimiq engine loaded.');
             }
-            Nimiq._core = await new Nimiq.Core(options);
-            ready(Nimiq._core);
+
+            try {
+                Nimiq._core = await new Nimiq.Core(options);
+                ready(Nimiq._core);
+            } catch (e) {
+                error(e);
+            }
         }, () => error(Nimiq.ERR_WAIT));
     }
 }
