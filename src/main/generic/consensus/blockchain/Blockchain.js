@@ -60,8 +60,8 @@ class Blockchain extends Observable {
         // XXX optimize this!
         this._mainPath = await this._fetchPath(this.head);
 
-        // Always set checkpointLoaded to true, if our first block in the path is the checkpoint.
-        if (this._mainPath.length > 0 && Block.CHECKPOINT && this._mainPath[0].equals(Block.CHECKPOINT.HASH)) {
+        // Always set checkpointLoaded to true, if our first block in the path is a checkpoint.
+        if (this._mainPath.length > 0 && (this._mainPath[0].equals(Block.CHECKPOINT.HASH) || Block.OLD_CHECKPOINTS.indexOf(this._mainPath[0]))) {
             this._checkpointLoaded = true;
         }
 
@@ -130,6 +130,7 @@ class Blockchain extends Observable {
         do {
             const prevChain = await this._store.get(block.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
             if (!prevChain && Block.CHECKPOINT.HASH.equals(hash)) break;
+            if (!prevChain && Block.OLD_CHECKPOINTS.indexOf(hash) >= 0) break; // we also need to stop if we encountered an old checkpoint
             if (!prevChain) throw `Failed to find predecessor block ${block.prevHash.toBase64()}`;
 
             // TODO unshift() is inefficient. We should build the array with push()

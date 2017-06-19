@@ -6,7 +6,12 @@
   "main": "dist/node.js",
   "private": true,
   "scripts": {
-    "prepare": "gulp build-node"
+    "prepare": "gulp build-node",
+    "build": "gulp build",
+    "test": "jasmine && gulp test",
+    "test-node": "jasmine",
+    "test-browser": "gulp test",
+    "lint": "gulp eslint"
   },
   "author": {
     "name": "The Nimiq Core Development Team",
