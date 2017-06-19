@@ -46,16 +46,16 @@
             <div class="info-title">Transaction</div>
             <form>
                 <div class="input-group">
-                    <label for="recipientAddr">Recipient</label>
-                    <input id="txRecipientAddr" name="recipientAddr" maxlength="28" size="32">
+                    <label for="txRecipientAddr">Recipient</label>
+                    <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
                 </div>
                 <div class="input-group">
-                    <label for="value">Value</label>
+                    <label for="txValue">Value</label>
                     <input id="txValue" name="value" type="number">
                 </div>
                 <div class="input-group">
-                    <label for="fee">Fee</label>
-                    <input id="txFee" name="fee" type="number">
+                    <label for="txFee">Fee</label>
+                    <input id="txFee" name="fee" type="number" step="0.01">
                 </div>
                 <div class="input-group">
                     <button type="button" id="txSubmitBtn">Send</button>
@@ -230,7 +230,7 @@
             this._wltBalance = document.querySelector('#wltBalance');
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address.toBase64();
+            this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance)
             }.bind(this));
@@ -287,7 +287,7 @@
             }
             var address;
             try {
-                address = new Nimiq.Address(Nimiq.BufferUtils.fromBase64(recipientAddr));
+                address = new Nimiq.Address(Nimiq.BufferUtils.fromHex(recipientAddr));
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -404,7 +404,7 @@
 
         _balanceChanged(balance) {
             if (!balance) balance = Nimiq.Balance.INITIAL;
-            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(4);
+            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
             this._wltNonce.innerText = balance.nonce;
         }
 
@@ -428,7 +428,7 @@
         }
     }
 
-    // Safari quirks: don't use the same var var name in global scope as id of html element
+    // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
 
     Nimiq.init(function($) {
