@@ -23,11 +23,11 @@ class Accounts extends Observable {
     }
 
     async populate(nodes) {
-        // Using .transaction(); here is the wrong way, since it does not offer the put/get methods we expect.
-        // Moreover, since we first call populate on a Temporary Accounts object, we do not need to fear anything.
-        const treeTx = this._tree._store;
+        // To make sure we have a single transaction, we use a Temporary Tree during populate and commit that.
+        const treeTx = await AccountsTreeStore.createTemporary(this._tree._store, true);
         await this._tree.populate(nodes, treeTx);
         if (await this._tree.verify(treeTx)) {
+            await treeTx.commit();
             this.fire('populated');
             return true;
         } else {
