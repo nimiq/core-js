@@ -101,6 +101,10 @@ header .subtitle {
     border-top-right-radius: 3px;
 }
 
+.info-block .icon-nimiq {
+    font-size: 12px;
+}
+
 .input-group {
     padding: 6px 8px;
     overflow: hidden;

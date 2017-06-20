@@ -417,7 +417,7 @@
 
         _balanceChanged(balance) {
             if (!balance) balance = Nimiq.Balance.INITIAL;
-            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
+            this._wltBalance.innerHTML = '<span class="icon-nimiq"></span> ' + Nimiq.Policy.satoshisToCoins(balance.value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
             this._wltNonce.innerText = balance.nonce;
         }
 
