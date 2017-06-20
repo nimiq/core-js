@@ -137,6 +137,12 @@ button:hover {
     background: white;
     color: #FFC107;
 }
+button:disabled {
+    background: #FFC107;
+    color: white;
+    opacity: 0.4;
+    cursor: auto;
+}
 input.error {
     border: 1px solid #f44336;
 }

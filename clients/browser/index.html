@@ -58,7 +58,7 @@
                     <input id="txFee" name="fee" type="number" step="0.01">
                 </div>
                 <div class="input-group">
-                    <button type="button" id="txSubmitBtn">Send</button>
+                    <button type="button" id="txSubmitBtn" disabled>Send</button>
                 </div>
             </form>
         </div>
@@ -79,7 +79,7 @@
                 <span id="mnrLastBlockTs"></span>
             </div>
             <div class="info-block">
-                <button id="mnrStartBtn">Start Mining</button>
+                <button id="mnrStartBtn" disabled>Start Mining</button>
             </div>
         </div>
     </div>
@@ -199,8 +199,15 @@
                 this._blockMined()
             }.bind(this));
 
+            $.consensus.on('established', function() {
+                document.getElementById('txSubmitBtn').removeAttribute('disabled');
+                document.getElementById('mnrStartBtn').removeAttribute('disabled');
+            }.bind(this));
+
             $.consensus.on('lost', function() {
-                $.miner.stopWork()
+                $.miner.stopWork();
+                document.getElementById('txSubmitBtn').setAttribute('disabled');
+                document.getElementById('mnrStartBtn').setAttribute('disabled');
             }.bind(this));
 
             // Blockchain
