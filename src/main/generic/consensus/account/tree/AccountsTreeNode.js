@@ -10,22 +10,33 @@ class AccountsTreeNode {
     constructor(type, prefix = '', arg) {
         this._type = type;
         this._prefix = prefix;
-        if (type === AccountsTreeNode.BRANCH) {
+        if (this.isBranch()) {
             this._children = arg;
-        } else {
+        } else if (this.isTerminal()){
             this._account = arg;
+        } else {
+            throw `Invalid AccountsTreeNode type: ${type}`;
         }
     }
+
+    static isTerminalType(type) {
+        return type === AccountsTreeNode.TERMINAL;
+    }
+
+    static isBranchType(type) {
+        return type === AccountsTreeNode.BRANCH;
+    }
+
 
     static unserialize(buf) {
         const type = buf.readUint8();
         const prefix = buf.readVarLengthString();
 
-        if (type === AccountsTreeNode.TERMINAL) {
+        if (AccountsTreeNode.isTerminalType(type)) {
             // Terminal node
             const account = Account.unserialize(buf);
             return AccountsTreeNode.terminalNode(prefix, account);
-        } else if (type === AccountsTreeNode.BRANCH) {
+        } else if (AccountsTreeNode.isBranchType(type)) {
             // Branch node
             const children = [];
             const childCount = buf.readUint8();
@@ -45,7 +56,7 @@ class AccountsTreeNode {
         buf.writeUint8(this._type);
         buf.writeVarLengthString(this._prefix);
 
-        if (this._type === AccountsTreeNode.TERMINAL) {
+        if (this.isTerminal()) {
             // Terminal node
             this._account.serialize(buf);
         } else {
@@ -64,7 +75,7 @@ class AccountsTreeNode {
 
     get serializedSize() {
         let payloadSize;
-        if (this._type === AccountsTreeNode.TERMINAL) {
+        if (this.isTerminal()) {
             payloadSize = this._account.serializedSize;
         } else {
             // The children array contains undefined values for non existing children.
@@ -140,6 +151,14 @@ class AccountsTreeNode {
             this._hash = await Hash.light(this.serialize());
         }
         return this._hash;
+    }
+
+    isTerminal() {
+        return AccountsTreeNode.isTerminalType(this._type);
+    }
+
+    isBranch() {
+        return AccountsTreeNode.isBranchType(this._type);
     }
 
     _getChildIndex(prefix) {
