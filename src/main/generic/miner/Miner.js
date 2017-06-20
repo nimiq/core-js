@@ -6,13 +6,10 @@ class Miner extends Observable {
         this._address = minerAddress;
 
         // Number of hashes computed since the last hashrate update.
-        this._hashCount = 0;
+        this._hashCount = [];
 
         // Timestamp of the last hashrate update.
         this._lastHashrate = 0;
-
-        // Hashrate computation interval handle.
-        this._hashrateWorker = null;
 
         // The current hashrate of this miner.
         this._hashrate = 0;
@@ -29,6 +26,9 @@ class Miner extends Observable {
         // The total time elapsed used in the current moving average.
         this._totalElapsed = 0;
 
+        // The mining workers
+        this._workers = [];
+
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
         // when the eviction process finishes. Restart work on the next block
@@ -39,22 +39,67 @@ class Miner extends Observable {
         this._mempool.on('transaction-added', () => this._startWork());
     }
 
-    startWork() {
+    startWork(numberOfWorkers) {
         if (this.working) {
             return;
         }
 
+        numberOfWorkers = numberOfWorkers || 1;
+
         // Initialize hashrate computation.
-        this._hashCount = 0;
+        this._hashCount = new Array(numberOfWorkers).fill(0);
         this._lastElapsed = [];
         this._lastHashCounts = [];
         this._totalHashCount = 0;
         this._totalElapsed = 0;
         this._lastHashrate = Date.now();
-        this._hashrateWorker = setInterval(() => this._updateHashrate(), 1000);
 
         // Tell listeners that we've started working.
         this.fire('start', this);
+
+        // Create worker
+        for(let i = 0; i < numberOfWorkers; i++) {
+            if(!this._workers[i]) {
+                let worker = new Worker('../../dist/web-worker.js');
+                worker.onmessage = e => {
+                    const data = e.data;
+                    switch(data.event) {
+                        case 'hash-count': {
+                            const prevValue = this._hashCount[data.id];
+
+                            this._hashCount[data.id] = data.hashCount;
+
+                            // Calculate hasrate
+                            // - when all workers reported their hashCount and the array is full
+                            // - when the calculation did not run since the last report of this worker
+                            if(this._hashCount.indexOf(0) === -1 || prevValue !== 0) {
+                                this._updateHashrate();
+                            }
+
+                            break;
+                        }
+                        case 'block-mined': {
+                            // Tell listeners that we've mined a block.
+                            const block = Block.unserialize(BufferUtils.fromBase64(data.block));
+
+                            this.fire('block-mined', block, this);
+
+                            // Push block into blockchain.
+                            this._blockchain.pushBlock(block);
+
+                            break;
+                        }
+                        case 'miner-stopped':
+                            this._workers[data.id].terminate();
+                            this._workers[data.id] = null;
+                            break;
+                    }
+                };
+
+                worker.postMessage({cmd: 'init-worker', id: i, hop: numberOfWorkers});
+                this._workers[i] = worker;
+            }
+        }
 
         // Kick off the mining process.
         this._startWork();
@@ -70,10 +115,20 @@ class Miner extends Observable {
         const block = await this._getNextBlock();
         const buffer = block.header.serialize();
 
-        Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
+        Log.i(Miner, `Starting work with ${this._workers.length} ${this._workers.length > 1 ? 'workers' : 'worker'} on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
         // Start hashing.
-        this._mine(block, buffer);
+        // this._mine(block, buffer);
+        const message = {
+            cmd: 'start-mining',
+            headHash: BufferUtils.toBase64(this._blockchain.headHash.serialize()),
+            block: BufferUtils.toBase64(block.serialize()),
+            buffer: BufferUtils.toBase64(buffer)
+        };
+
+        this._workers.forEach(function(worker) {
+            worker.postMessage(message);
+        });
     }
 
 
@@ -150,13 +205,17 @@ class Miner extends Observable {
             return;
         }
 
-        clearInterval(this._hashrateWorker);
-        this._hashrateWorker = null;
         this._hashrate = 0;
         this._lastElapsed = [];
         this._lastHashCounts = [];
         this._totalHashCount = 0;
         this._totalElapsed = 0;
+
+        this._workers = this._workers.map(worker => {
+            // worker.postMessage({cmd: 'stop-mining'});
+            worker.terminate();
+            return null;
+        });
 
         // Tell listeners that we've stopped working.
         this.fire('stop', this);
@@ -166,9 +225,10 @@ class Miner extends Observable {
 
     _updateHashrate() {
         const elapsed = (Date.now() - this._lastHashrate) / 1000;
-        const hashCount = this._hashCount;
+        const hashCount = this._hashCount.reduce((acc, val) => { return acc + val; }, 0);
+
         // Enable next measurement.
-        this._hashCount = 0;
+        this._hashCount.fill(0);
         this._lastHashrate = Date.now();
 
         // Update stored information on moving average.
@@ -195,7 +255,9 @@ class Miner extends Observable {
     }
 
     get working() {
-        return !!this._hashrateWorker;
+        return !!this._workers.find(e => {
+            return !!e;
+        });
     }
 
     get hashrate() {
