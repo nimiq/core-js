@@ -131,43 +131,6 @@ class Miner extends Observable {
         });
     }
 
-
-    async _mine(block, buffer) {
-        // Abort mining if the blockchain head changed.
-        if (!this._blockchain.headHash.equals(block.prevHash)) {
-            return;
-        }
-
-        // Abort mining if the user stopped the miner.
-        if (!this.working) {
-            return;
-        }
-
-        // Reset the write position of the buffer before re-using it.
-        buffer.writePos = 0;
-
-        // Compute hash and check if it meets the proof of work condition.
-        const isPoW = await block.header.verifyProofOfWork(buffer);
-
-        // Keep track of how many hashes we have computed.
-        this._hashCount++;
-
-        // Check if we have found a block.
-        if (isPoW) {
-            // Tell listeners that we've mined a block.
-            this.fire('block-mined', block, this);
-
-            // Push block into blockchain.
-            this._blockchain.pushBlock(block);
-        } else {
-            // Increment nonce.
-            block.header.nonce++;
-
-            // Continue mining.
-            this._mine(block, buffer);
-        }
-    }
-
     async _getNextBlock() {
         const body = await this._getNextBody();
         const header = await this._getNextHeader(body);
