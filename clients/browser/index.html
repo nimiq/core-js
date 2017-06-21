@@ -79,7 +79,7 @@
                 <span id="mnrLastBlockTs"></span>
             </div>
             <div class="info-block">
-                <button id="mnrStartBtn">Start Mining</button>
+                <button id="mnrStartBtn">Start Mining</button> <span id="numberOfMinersInput">with <input type="number" id="numberOfMiners" min="1" max="8" value="1"> workers</span>
             </div>
         </div>
     </div>
@@ -273,7 +273,7 @@
             // Check for miner auto start.
             if (window.location.hash && window.location.hash === '#miner') {
                 $.consensus.on('established', function() {
-                    $.miner.startWork();
+                    this._startWork();
                 }.bind(this));
             }
         }
@@ -363,6 +363,12 @@
             this._blockHistory.appendChild(el);
         }
 
+        _startWork() {
+            var numberOfMiners = parseInt(document.getElementById('numberOfMiners').value) || 1;
+            $.miner.startWork(numberOfMiners);
+            document.getElementById("numberOfMinersInput").style.display = "none";
+        }
+
         _toggleMining() {
             if (!$.consensus.established) {
                 console.warn('Not starting miner - consensus not established');
@@ -370,7 +376,7 @@
             }
 
             if (!$.miner.working) {
-                $.miner.startWork();
+                this._startWork();
             } else {
                 $.miner.stopWork();
             }
@@ -403,6 +409,7 @@
                 this._mnrStartBtn.innerText = 'Stop Mining';
             } else {
                 this._mnrStartBtn.innerText = 'Start Mining';
+                document.getElementById("numberOfMinersInput").style.display = "inline";
             }
         }
 
@@ -461,6 +468,7 @@
         }
     });
 
+    document.getElementById("numberOfMiners").value = navigator.hardwareConcurrency || 1;
     document.getElementById('blockchain-title').classList.add('initializing');
 </script>
 </body>

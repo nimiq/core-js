@@ -75,7 +75,7 @@ class Consensus extends Observable {
 
             if (this._agents.length > 0) {
                 // Report consensus-established if we have at least one connected peer.
-                Log.d(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                Log.v(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
                 Log.d(Consensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
 
                 this._established = true;

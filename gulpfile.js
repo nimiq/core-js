@@ -29,6 +29,16 @@ const sources = {
             './src/main/platform/browser/network/websocket/WebSocketConnector.js',
             './src/main/platform/browser/WorkerBuilder.js'
         ],
+        webworker: [
+            './src/main/platform/browser/Class.js',
+            './src/main/platform/browser/utils/LogNative.js',
+            './src/main/generic/utils/Log.js',
+            './src/main/generic/utils/Observable.js',
+            './src/main/platform/browser/database/BaseTypedDB.js',
+            './src/main/platform/browser/database/TypedDB.js',
+            './src/main/platform/browser/crypto/CryptoLib.js',
+            './src/main/platform/browser/WorkerBuilder.js'
+        ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
@@ -205,6 +215,18 @@ gulp.task('build-web', function () {
         .pipe(connect.reload());
 });
 
+gulp.task('build-web-worker', function () {
+    gulp.src(['./src/main/generic/miner/worker.js'])
+        .pipe(concat('web-worker.js'))
+        .pipe(gulp.dest('dist'));
+
+    return gulp.src(sources.platform.webworker.concat(sources.generic))
+        .pipe(sourcemaps.init())
+        .pipe(concat('web-worker-deps.js'))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
 gulp.task('build-loader', function () {
     return merge(
         browserify([], {
@@ -289,6 +311,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node']);
+gulp.task('build', ['build-web', 'build-web-worker', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node']);
 
 gulp.task('default', ['build', 'serve']);
