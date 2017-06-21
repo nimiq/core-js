@@ -526,7 +526,7 @@ class Blockchain extends Observable {
             throw 'AccountsHash mismatch while exporting';
         }
 
-        if (!accounts._tree.verify()) {
+        if (!(await accounts._tree.verify())) {
             throw 'AccountsTree verification failed';
         }
 
