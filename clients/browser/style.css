@@ -52,9 +52,9 @@ header .name {
 }
 
 header .icon-nimiq::before {
-	color: #FFC107;
-	margin-right: 10px;
-	font-size: 54px;
+    color: #FFC107;
+    margin-right: 10px;
+    font-size: 54px;
 }
 header .subtitle {
     font-size: 15px;
@@ -103,7 +103,7 @@ header .subtitle {
 
 .info-block .icon-nimiq::before {
     font-size: 12px;
-	margin-right: 2px;
+    margin-right: 2px;
 }
 
 .input-group {
