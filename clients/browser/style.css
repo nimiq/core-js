@@ -17,7 +17,7 @@ body {
     font-style: normal;
 }
 
-[class^="icon-"], [class*=" icon-"] {
+[class^="icon-"]::before, [class*=" icon-"]::before {
     /* use !important to prevent issues with browser extensions that change fonts */
     font-family: 'font-icons' !important;
     speak: none;
@@ -32,7 +32,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-nimiq:before {
+.icon-nimiq::before {
     content: "\e900";
 }
 
@@ -51,7 +51,7 @@ header .name {
 	font-family: sans-serif;
 }
 
-header .name span {
+header .icon-nimiq::before {
 	color: #FFC107;
 	margin-right: 10px;
 	font-size: 54px;
@@ -101,8 +101,9 @@ header .subtitle {
     border-top-right-radius: 3px;
 }
 
-.info-block .icon-nimiq {
+.info-block .icon-nimiq::before {
     font-size: 12px;
+	margin-right: 2px;
 }
 
 .input-group {
