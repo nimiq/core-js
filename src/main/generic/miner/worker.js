@@ -1,3 +1,5 @@
+"use strict";
+
 importScripts('web-worker-deps.js');
 
 var id,
@@ -54,7 +56,10 @@ onmessage = function(e) {
             hop = data.hop;
 
             break;
-        case 'start-mining':
+        case 'start-mining': {
+            // Make sure the worker has been initialized
+            if(typeof id === "undefined") break;
+
             working  = true;
             headHash = Hash.unserialize(BufferUtils.fromBase64(data.headHash));
 
@@ -65,9 +70,16 @@ onmessage = function(e) {
                 }, 1000);
             }
 
-            _mine(Block.unserialize(BufferUtils.fromBase64(data.block)), BufferUtils.fromBase64(data.buffer));
+            let block = Block.unserialize(BufferUtils.fromBase64(data.block));
+            let buffer = BufferUtils.fromBase64(data.buffer);
+
+            // Let every worker start at a different nonce by increasing the starting nonce per worker
+            block.header.nonce += id;
+
+            _mine(block, buffer);
 
             break;
+        }
         case 'stop-mining':
             working   = false;
             hashCount = 0;
