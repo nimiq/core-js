@@ -86,7 +86,7 @@
 
     <div class="right">
         <div class="info">
-            <div class="info-title">Blockchain</div>
+            <div class="info-title not-connected" id="blockchain-title">Blockchain</div>
 
             <div class="info-block">
                 <strong>Total work</strong>
@@ -199,8 +199,17 @@
                 this._blockMined()
             }.bind(this));
 
+            $.consensus.on('syncing', function() {
+                document.getElementById('blockchain-title').classList.add('syncing');
+            }.bind(this));
+
+            $.consensus.on('established', function() {
+                document.getElementById('blockchain-title').classList.add('consensus-established');
+            }.bind(this));
+
             $.consensus.on('lost', function() {
-                $.miner.stopWork()
+                $.miner.stopWork();
+                document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
             }.bind(this));
 
             // Blockchain
@@ -445,6 +454,7 @@
         overlay_.style.display = 'none';
         window.ui = new MinerUI($);
     }, function(code) {
+        document.getElementById('blockchain-title').classList.remove('initializing');
         switch (code) {
             case Nimiq.ERR_WAIT:
                 overlay_.style.display = 'block';
@@ -459,6 +469,7 @@
     });
 
     document.getElementById("numberOfMiners").value = navigator.hardwareConcurrency || 1;
+    document.getElementById('blockchain-title').classList.add('initializing');
 </script>
 </body>
 </html>
