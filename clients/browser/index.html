@@ -206,8 +206,8 @@
 
             $.consensus.on('lost', function() {
                 $.miner.stopWork();
-                document.getElementById('txSubmitBtn').setAttribute('disabled');
-                document.getElementById('mnrStartBtn').setAttribute('disabled');
+                document.getElementById('txSubmitBtn').setAttribute('disabled', '');
+                document.getElementById('mnrStartBtn').setAttribute('disabled', '');
             }.bind(this));
 
             // Blockchain
