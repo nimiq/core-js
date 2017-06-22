@@ -156,25 +156,33 @@ class TestBlockchain extends Blockchain {
         // genesis block will send the first miner reward to it
         const keys = KeyPair.unserialize(BufferUtils.fromBase64(('Lc7h0L4wncJ3DiNapeGlwURfpbGvyPbuBEpJemzzQW1ng6LQ+/C8AXXbc87dX/VNBrrgAGD1Rc+nXDM7QNFPggYlb56BE4czyOwmIFYPoMmiTRFmz4p/WKhl7hMSBo6N')));
         const address = await keys.publicKey.toAddress();
-        users.push({
-            'privateKey': keys.privateKey,
-            'publicKey': keys.publicKey,
-            'address': address
-        });
+        users.push(TestBlockchain.generateUser(
+          keys.privateKey,
+          keys.publicKey,
+          address
+        ));
 
         for (let i = 1; i < num; i++) {
             const keys = await KeyPair.generate(); //eslint-disable-line no-await-in-loop
             const address = await keys.publicKey.toAddress(); //eslint-disable-line no-await-in-loop
 
-            users.push({
-                'privateKey': keys.privateKey,
-                'publicKey': keys.publicKey,
-                'address': address
-            });
+            users.push(TestBlockchain.generateUser(
+              keys.privateKey,
+              keys.publicKey,
+              address
+            ));
             // console.info('Created user ' + i);
 
         }
         return users;
+    }
+
+    static generateUser(privateKey, publicKey, address) {
+        return {
+            'privateKey': privateKey,
+            'publicKey': publicKey,
+            'address': address
+        };
     }
 }
 Class.register(TestBlockchain);
