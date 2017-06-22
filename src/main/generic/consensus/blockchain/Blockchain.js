@@ -72,7 +72,7 @@ class Blockchain extends Observable {
             await this._accounts.commitBlock(this._mainChain.head);
         } else if (!accountsHash.equals(this._mainChain.head.accountsHash)) {
             // TODO what to do if the accounts hashes mismatch?
-            throw 'AccountsHash mismatch';
+            throw 'AccountsHash mismatch in blockchain initialization';
         }
 
         return this;
