@@ -19,4 +19,4 @@ RUN wget ${RELEASE} && tar -xvzf ./master.tar.gz
 RUN cd /core-master && npm install && npm run build
 
 EXPOSE ${PORT}
-ENTRYPOINT node /core-master/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT}
+ENTRYPOINT node /core-master/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT} --miner
