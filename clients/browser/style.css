@@ -92,6 +92,21 @@ header .subtitle {
     display: inline-block;
 }
 
+.info-block.copy-wallet-seed {
+    display: none;
+}
+
+.get-seed-hint {
+    color: #999;
+}
+.get-seed-hint code {
+    border: 1px dotted;
+    border-radius: 4px;
+    padding: 1px 2px;
+    background: #EEC;
+    color: #888;
+}
+
 .info-title {
     font-size: 16px;
     padding: 6px 8px;
