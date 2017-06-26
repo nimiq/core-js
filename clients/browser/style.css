@@ -137,12 +137,71 @@ button:hover {
     background: white;
     color: #FFC107;
 }
+button:disabled {
+    background: #FFC107;
+    color: white;
+    opacity: 0.4;
+    cursor: auto;
+}
 input.error {
     border: 1px solid #f44336;
 }
 
 hash {
     font-size: 12px;
+}
+
+/* The order of these consensus classes is important to enable overwriting */
+.not-connected {
+    background: crimson;
+}
+.not-connected::after {
+    content: "Not connected";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+.initializing {
+    background: orange;
+}
+.initializing::after {
+    content: "Initializing...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+.syncing {
+    background: orange;
+}
+.syncing::after {
+    content: "Syncronizing...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+.consensus-established {
+    background: forestgreen;
+}
+.consensus-established::after {
+    content: "Consensus established";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+#blockchain-title {
+    transition: background ease 0.5s;
 }
 
 #blockHistory {

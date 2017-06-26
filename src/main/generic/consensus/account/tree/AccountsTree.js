@@ -244,7 +244,6 @@ class AccountsTree extends Observable {
         // Fetch the root node. This should never fail.
         const rootKey = await transaction.getRootKey();
         const rootNode = await transaction.get(rootKey);
-
         return this._verify(rootNode, transaction);
     }
 
@@ -252,13 +251,37 @@ class AccountsTree extends Observable {
         if (!node) return true;
         transaction = transaction || this._store;
 
+        // well-formed node type
+        if (!node.isBranch() && !node.isTerminal()) {
+            Log.e(`Unrecognized node type ${node._type}`);
+            return false;
+        }
+
         if (node.hasChildren()) {
             for (let i = 0; i < 16; i++) {
-                const subhash = node.getChild(i.toString(16));
+                const nibble = i.toString(16);
+                const subhash = node.getChild(nibble);
                 if (!subhash) continue;
                 const subnode = await transaction.get(subhash);
-                if (subnode && !this._verify(subnode, transaction)) return false;
-                if (subnode && subnode.prefix !== node.prefix + i.toString(16)) return false;
+
+                // no dangling references
+                if (!subnode) {
+                    Log.e(`No subnode for hash ${subhash}`);
+                    return false;
+                }
+
+                // no verification fails in the subnode
+                if (!(await this._verify(subnode, transaction))) {
+                    Log.e(`Verification of child ${i} failed`);
+                    return false;
+                }
+
+                // position in children list is correct
+                if (!subnode.prefix[0] === nibble) {
+                    Log.e(`First nibble of child node does not match its position in the parent branch node: 
+                    ${subnode.prefix[0]} vs ${nibble}`);
+                    return false;
+                }
             }
         }
         return true;

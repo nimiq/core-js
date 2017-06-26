@@ -320,4 +320,41 @@ describe('AccountsTree', () => {
         test();
     });
 
+    it('can verify the consistency of its state', (done) => {
+        (async function () {
+            const tree = await AccountsTree.createVolatile();
+
+            // empty tree should verify
+            expect(await tree.verify()).toBe(true);
+
+            // add a few entries and check again
+
+            // address 1 and 2 are picked to enforce the creation of a branch node on first level (after root) and 2
+            // terminal nodes in the second level.
+            const address1 = new Address(BufferUtils.fromHex(new Array(40).fill(0).join('')));
+            const account1 = new Account(new Balance(12, 9));
+            await tree.put(address1, account1);
+            expect(await tree.verify()).toBe(true);
+
+            const address2 = new Address(BufferUtils.fromHex([0,0,0,0,1].concat(new Array(35).fill(0)).join('')));
+            const account2 = new Account(new Balance(642, 31));
+            await tree.put(address2, account2);
+            expect(await tree.verify()).toBe(true);
+
+            const address3 = new Address(BufferUtils.fromBase64(Dummy.address3));
+            let account3 = new Account(new Balance(374, 937));
+            await tree.put(address3, account3);
+            expect(await tree.verify()).toBe(true);
+
+            // now update an entry
+            account3 = new Account(new Balance(77, 122));
+            await tree.put(address3, account3);
+            expect(await tree.verify()).toBe(true);
+
+            // and check after cleaning
+            await tree.clear();
+            expect(await tree.verify()).toBe(true);
+
+        })().then(done, done.fail);
+    });
 });
