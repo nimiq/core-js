@@ -28,6 +28,15 @@
         <div class="info">
             <div class="info-title">Wallet</div>
 
+            <div class="info-block init-wallet">
+                <button onclick="startNimiq()"><big><strong>Create/recover wallet</strong></big></button> <small>from</small>
+                <input id="walletSeed" type="text" placeholder="optional wallet seed"></input>
+                <br><small class="get-seed-hint">Get your wallet seed from another site with <code>$.wallet.keyPair.privateKey.toHex()</code>.</small>
+            </div>
+            <div class="info-block copy-wallet-seed">
+              <button onclick="copyWalletSeed()">Copy wallet seed</button>
+            </div>
+
             <div class="info-block">
                 <strong>Address</strong>
                 <span id="wltAddress"></span>
@@ -46,8 +55,8 @@
             <div class="info-title">Transaction</div>
             <form>
                 <div class="input-group">
-                    <label for="txRecipientAddr">Recipient</label>
-                    <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
+                  <label for="txRecipientAddr">Recipient</label>
+                  <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
                 </div>
                 <div class="input-group">
                     <label for="txValue">Value</label>
@@ -244,6 +253,7 @@
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
+
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance)
             }.bind(this));
@@ -444,28 +454,62 @@
     // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
 
-    Nimiq.init(function($) {
-        window.$ = $;
-        $.network.connect();
-
-        overlay_.style.display = 'none';
-        window.ui = new MinerUI($);
-    }, function(code) {
-        document.getElementById('blockchain-title').classList.remove('initializing');
-        switch (code) {
-            case Nimiq.ERR_WAIT:
-                overlay_.style.display = 'block';
-                break;
-            case Nimiq.ERR_UNSUPPORTED:
-                alert('Browser not supported');
-                break;
-            default:
-                alert('Nimiq initialization error');
-                break;
+    function copyWalletSeed() {
+        if (typeof $ === "undefined") {
+            return;
         }
-    });
 
-    document.getElementById('blockchain-title').classList.add('initializing');
+        var mainContent = document.getElementById('content');
+        var input = document.createElement("INPUT");
+
+        input.setAttribute("type", "text");
+        mainContent.appendChild(input);
+        input.value = $.wallet.dump();
+        input.select()
+        document.execCommand("copy");
+        mainContent.removeChild(input);
+        alert("Wallet seed copied to clipboard.");
+    }
+
+    function startNimiq() {
+        document.getElementById('blockchain-title').classList.add('initializing');
+        document.querySelector('#wltAddress').innerHTML = "<i>loading...</i>";
+
+        var walletSeed = document.getElementById('walletSeed').value.trim();
+        var options = (walletSeed !== "") ? { walletSeed: walletSeed } : {};
+
+        Nimiq.init(function($) {
+            window.$ = $;
+            $.network.connect();
+
+            overlay_.style.display = 'none';
+            window.ui = new MinerUI($);
+
+            document.querySelector(".info-block.init-wallet").style.display = "none";
+            document.querySelector(".info-block.copy-wallet-seed").style.display = "block";
+        }, function(code) {
+            document.getElementById('blockchain-title').classList.remove('initializing');
+            document.querySelector('#wltAddress').innerText = "";
+
+            switch (code) {
+                case Nimiq.ERR_WAIT:
+                    overlay_.style.display = 'block';
+                    break;
+                case Nimiq.ERR_UNSUPPORTED:
+                    alert('Browser not supported');
+                    break;
+                case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
+                    alert("Invalid wallet seed");
+                    break;
+                default:
+                    alert('Nimiq initialization error');
+                    break;
+            }
+        },
+        options
+      );
+
+    }
 </script>
 </body>
 </html>

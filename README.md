@@ -46,6 +46,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 | **_port_** | Port used to communicate with the peers. |  
 | **_key_** | Private key for the client      |
 | **_cert_** | SSL certificate of your Domain.       |
+| **_wallet-seed_** | Your wallet seed (optionnal)       |
 
 
 ### Build your own Browser client
