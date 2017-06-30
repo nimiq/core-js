@@ -1,9 +1,20 @@
+html {
+   min-height:100vh;
+}
 body {
-    background: #efefef;
-    font-family: 'Roboto', sans-serif;
+    background: #FFF;
+    background-image: url(img/map.svg);
+    background-color: #042146;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
+    background-size: contain;
+    font-family: 'Source Sans Pro', sans-serif;
+    letter-spacing:0.3px;
     color: #333;
     margin: auto;
     max-width: 1200px;
+    min-height: 100%;
 }
 
 @font-face {
@@ -37,7 +48,7 @@ body {
 }
 
 header {
-    width: 250px;
+    width: 100%;
     max-width: 100%;
     margin: auto;
     margin-bottom: 25px;
@@ -45,8 +56,9 @@ header {
 }
 
 header .name {
+      color:#FFF;
 	line-height: 85px;
-	font-size: 70px;
+	font-size: 62px;
 	font-weight: lighter;
 	font-family: sans-serif;
 }
@@ -54,12 +66,84 @@ header .name {
 header .name span {
 	color: #FFC107;
 	margin-right: 10px;
-	font-size: 54px;
+	font-size: 42px;
 }
 header .subtitle {
+    color:#FFF;
     font-size: 15px;
     letter-spacing: 2px;
 }
+header a.headerlink {
+    float:right;
+    margin-right:15px;
+    margin-top:48px;
+    color:#FFF;
+    text-decoration:none;
+}
+
+
+input {
+    border-radius: 3px;
+    padding: 10px 10px;
+    line-height: 1;
+    background-color: #FFF;
+    border: 1px solid #EEE;
+    font-size:14px;
+}
+button {
+    border: 0;
+    border-radius: 3px;
+    display: block;
+    text-align: center;
+    background: #FFC107;
+    color: white;
+    font-size: 12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    line-height: 1;
+    padding:12px 50px;
+    box-sizing: border-box;
+    outline: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #2dad2d;
+    color: #FFF;
+}
+button:disabled {
+
+    pointer-events:none;
+    opacity: 0.4;
+    cursor: auto;
+}
+button.greenbutton {
+    background-color:#2dad2d;
+    opacity:0.8;
+    transition:all 0.2s;
+}
+button.greenbutton:hover {
+    opacity:1;
+}
+input.error {
+    border: 1px solid #f44336;
+}
+
+hash {
+    font-size: 12px;
+}
+
+.f-left {
+    float:left;
+}
+.f-right {
+    float:right;
+}
+.clr-both {
+    clear:both;
+}
+
+
 
 /* Main UI */
 
@@ -75,15 +159,27 @@ header .subtitle {
 
 .info {
     margin: 0 10px 15px 10px;
-    background: #fff;
-    border-radius: 3px;
     font-size: 15px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    overflow: hidden;
 }
 
+.info hr {
+    padding: 0;
+    margin: 0;
+    border: 3px solid rgba(255,255,255,0.89);
+}
+.info hr.morespace {
+    border: 6px solid rgba(255,255,255,0.89);
+}
 .info-block {
-    padding: 6px 8px;
+    padding: 6px 10px;
     overflow: hidden;
     text-overflow: ellipsis;
+    background-color: rgba(255,255,255,0.89);
+    color: #000;
+    letter-spacing: 0.3px;
 }
 .info-block:empty {
     padding: 0;
@@ -92,95 +188,62 @@ header .subtitle {
     display: inline-block;
 }
 
-.info-block.copy-wallet-seed {
-    display: none;
-}
-
-.get-seed-hint {
-    color: #999;
-}
-.get-seed-hint code {
-    border: 1px dotted;
-    border-radius: 4px;
-    padding: 1px 2px;
-    background: #EEC;
-    color: #888;
-}
-
 .info-title {
-    font-size: 16px;
-    padding: 6px 8px;
-    background: #5C6BC0;
-    color: white;
+    font-size:14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 7px 10px;
+    background: rgba(255,255,255,0.42);
+    color: #FFF;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
 }
 
 .input-group {
-    padding: 6px 8px;
+    padding: 3px 8px;
     overflow: hidden;
     text-overflow: ellipsis;
+    background-color: rgba(255,255,255,0.89);
+    color: #000;
 }
 .input-group label {
     width: 75px;
     display: inline-block;
     font-weight: bold;
-    vertical-align: middle;
+    vertical-align: bottom;
+    padding-bottom: 8px;
+}
+.input-group-button {
+    padding:0;
+}
+.input-group.input-group-button button {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding:14px 0;
+    width:100%;
 }
 
-input {
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 2px 5px;
-    line-height: 18px;
-}
-button {
-    border: 0;
-    border: 1px solid #FFC107;
-    border-radius: 3px;
-    padding: 5px 10px;
-    display: block;
-    text-align: center;
-    background: #FFC107;
-    color: white;
-    box-sizing: border-box;
-    font-size: 12px;
-    line-height: 12px;
-    cursor: pointer;
-}
-button:hover {
-    background: white;
-    color: #FFC107;
-}
-button:disabled {
-    background: #FFC107;
-    color: white;
-    opacity: 0.4;
-    cursor: auto;
-}
-input.error {
-    border: 1px solid #f44336;
-}
 
-hash {
-    font-size: 12px;
-}
 
 /* The order of these consensus classes is important to enable overwriting */
 .not-connected {
     background: crimson;
+    opacity:0.6;
 }
 .not-connected::after {
     content: "Not connected";
     position: absolute;
-    top: 7px;
+    top: 8px;
     right: 20px;
     font-style: italic;
-    font-size: 14px;
+    font-size: 12px;
     opacity: 0.6;
+    font-weight: 400;
 }
 .initializing {
-    background: orange;
+    background: #FFC107;
+    opacity:0.8;
 }
 .initializing::after {
     content: "Initializing...";
@@ -193,6 +256,7 @@ hash {
 }
 .syncing {
     background: orange;
+    opacity:0.8;
 }
 .syncing::after {
     content: "Syncronizing...";
@@ -204,7 +268,8 @@ hash {
     opacity: 0.6;
 }
 .consensus-established {
-    background: forestgreen;
+    background: #2dad2d;
+    opacity:1.0;
 }
 .consensus-established::after {
     content: "Consensus established";
@@ -215,6 +280,46 @@ hash {
     font-size: 14px;
     opacity: 0.6;
 }
+
+#newWallet {
+
+    padding:20px 0px;
+    text-align:center;
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 18px;
+}
+#newWallet button {
+    display:inline-block;
+    margin-top:10px;
+}
+#loadWalletFromSeed {
+    padding:5px 0px;
+}
+#walletSeed {
+    width:200px;
+}
+.wallet-address,
+.wallet-balance,
+.wallet-nonce {
+    /*display:none;*/
+}
+.copy-wallet-seed {
+    display:none;
+}
+.get-seed-hint {
+    display:block;
+    padding:15px 0px;
+}
+#mnrWorking {
+    font-weight:600;
+}
+#mnrWorking.mining {
+    color:#2dad2d;
+}
+#mnrWorking.notmining {
+    color:#777;
+}
+
 #blockchain-title {
     transition: background ease 0.5s;
 }
