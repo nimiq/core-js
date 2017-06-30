@@ -219,7 +219,7 @@
     //
     //
     //
-    // var nim_openRequest = indexedDB.open('nimiq', {version: 4, storage: "temporary"} );
+    // var nim_openRequest = indexedDB.open('nimiq'); //indexedDB.open('nimiq', {version: 4, storage: "temporary"} );
     // nim_openRequest.onsuccess = function(event) {
     //     var nim_db = event.target.result;
     //     try {
@@ -382,7 +382,6 @@
 
             if (isNaN(value) || value <= 0) {
                 elValue.className = 'error';
-                alert(value);
                 return;
             }
 
