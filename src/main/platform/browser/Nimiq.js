@@ -59,7 +59,7 @@ class Nimiq {
         }
     }
 
-    static init(ready, error, path) {
+    static init(options, ready, error, path) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -105,8 +105,18 @@ class Nimiq {
                 }
                 console.log('Nimiq engine loaded.');
             }
-            Nimiq._core = await new Nimiq.Core();
-            ready(Nimiq._core);
+            try {
+                Nimiq._core = await new Nimiq.Core(options);
+                ready(Nimiq._core);
+            }
+            catch(exception) {
+                if(exception.name === "InvalidCharacterError") {
+                    console.error("Invalid wallet seed");
+                    error(Nimiq.ERR_SEEDINVALID);
+                } else {
+                    error(Nimiq.ERR_UNKNOWN);
+                }
+            }
         }, () => error(Nimiq.ERR_WAIT));
     }
 }
@@ -119,6 +129,7 @@ if (!Nimiq._currentScript) {
 Nimiq.ERR_WAIT = -1;
 Nimiq.ERR_UNSUPPORTED = -2;
 Nimiq.ERR_UNKNOWN = -3;
+Nimiq.ERR_SEEDINVALID = -4;
 Nimiq._core = null;
 Nimiq._onload = null;
 Nimiq._loaded = false;

@@ -15,6 +15,10 @@ class KeyPair extends Primitive {
         return new KeyPair(Crypto.keyPairDerive(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize))));
     }
 
+    static fromHex(hexBuffer) {
+        return this.unserialize(BufferUtils.fromHex(hexBuffer));
+    }
+
     serialize(buf) {
         return this.privateKey.serialize(buf);
     }

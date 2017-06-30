@@ -14,6 +14,10 @@ class Wallet {
         return new Wallet(await KeyPair.generate());
     }
 
+    static load(hexBuffer) {
+        return new Wallet(KeyPair.fromHex(hexBuffer));
+    }
+
     constructor(keyPair) {
         this._keyPair = keyPair;
         return this._init();
@@ -32,6 +36,10 @@ class Wallet {
     async _signTransaction(transaction) {
         transaction.signature = await Signature.create(this._keyPair.privateKey, transaction.serializeContent());
         return transaction;
+    }
+
+    dump() {
+        return this._keyPair.toHex();
     }
 
     get address() {
