@@ -9,7 +9,7 @@
 </head>
 <body>
 <header>
-    <span class="name"><span class="icon-nimiq"></span>nimiq</span>
+    <span class="name icon-nimiq">nimiq</span>
     <span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
 </header>
 
@@ -245,7 +245,8 @@
 
             this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
             $.accounts.getBalance($.wallet.address).then(function(balance) {
-                this._balanceChanged(balance)
+                this._balanceChanged(balance);
+                document.querySelector('#wltBalance').classList.add('icon-nimiq');
             }.bind(this));
 
             var txSubmitBtn = document.querySelector('#txSubmitBtn');
