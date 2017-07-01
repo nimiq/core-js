@@ -56,7 +56,7 @@ describe('Blockchain', () => {
             const receiverAddr1 = testBlockchain._users[1].address;
             const receiverAddr2 = testBlockchain._users[2].address;
             // user[0] -> user[1] & user[0] -> user[2]
-            transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, senderPrivKey), await TestBlockchain.createTransaction(senderPubKey, receiverAddr2, 1, 1, 0, undefined, senderPrivKey),
+            let transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, senderPrivKey), await TestBlockchain.createTransaction(senderPubKey, receiverAddr2, 1, 1, 0, undefined, senderPrivKey),
             ];
             block = await testBlockchain.createBlock(transactions);
             status = await testBlockchain.pushBlock(block);
