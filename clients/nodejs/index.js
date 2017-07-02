@@ -42,6 +42,10 @@ Nimiq.NetworkConfig.configureSSL(key, cert);
 (new Nimiq.Core()).then($ => {
     console.log('Blockchain: height=' + $.blockchain.height + ', totalWork=' + $.blockchain.totalWork + ', headHash=' + $.blockchain.headHash.toBase64());
 
+    $.blockchain.on('head-changed', function(head) {
+        console.log('Now at block: ' + head.height);
+    });
+
     if (!passive) {
         $.network.connect();
     }
