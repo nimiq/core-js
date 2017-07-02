@@ -48,12 +48,15 @@ Nimiq.NetworkConfig.configureSSL(key, cert);
 
     if (miner) {
         $.consensus.on('established', () => {
-            console.log('Blockchain consensus established');
-            $.accounts.getBalance($.wallet.address).then(_balanceChanged);
             $.miner.startWork();
         });
         $.consensus.on('lost', () => $.miner.stopWork());
     }
+
+    $.consensus.on('established', () => {
+        console.log('Blockchain consensus established');
+        $.accounts.getBalance($.wallet.address).then(_balanceChanged);
+    });
 
     $.miner.on('block-mined', block => {
         console.log('Block mined: ' + block.header);
