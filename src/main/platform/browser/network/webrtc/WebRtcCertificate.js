@@ -17,12 +17,13 @@ class WebRtcCertificate {
         const db = new TypedDB('certificate');
         let cert = await db.getObject('certKey');
         if (!cert) {
-            cert = await WebRtcCertificate._create();
+            cert = await WebRtcCertificate._create(db);
         }
         return cert;
     }
 
-    static async _create() {
+    static async _create(db) {
+        db = db || new TypedDB('certificate');
         const cert = await RTCPeerConnection.generateCertificate({
             name: 'ECDSA',
             namedCurve: 'P-256'
