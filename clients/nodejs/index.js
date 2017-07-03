@@ -30,6 +30,11 @@ if (argv['log-tag']) {
 
 console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!miner}, passive=${!!passive})`);
 
+function _balanceChanged(balance) {
+    if (!balance) balance = Nimiq.Balance.INITIAL;
+    console.log('Balance: ' + Nimiq.Policy.satoshisToCoins(balance.value));
+}
+
 // XXX Configure Core.
 // TODO Create config/options object and pass to Core.get()/init().
 Nimiq.NetworkConfig.configurePeerAddress(host, port);
@@ -43,6 +48,10 @@ try {
     (new Nimiq.Core(options)).then($ => {
         console.log(`Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
+        $.blockchain.on('head-changed', (head) => {
+            console.log(`Now at block: ${head.height}`);
+        });
+
         if (!passive) {
             $.network.connect();
         }
@@ -51,14 +60,26 @@ try {
             $.consensus.on('established', () => $.miner.startWork());
             $.consensus.on('lost', () => $.miner.stopWork());
         }
+
+        $.consensus.on('established', () => {
+            console.log('Blockchain consensus established');
+            $.accounts.getBalance($.wallet.address).then(_balanceChanged);
+        });
+
+        $.miner.on('block-mined', (block) => {
+            console.log(`Block mined: ${block.header}`);
+        });
+
+        $.accounts.on($.wallet.address, (account) => _balanceChanged(account._balance));
+
     });
-} catch (e) {
-    switch (e) {
+} catch (code) {
+    switch (code) {
         case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
-          console.log('Invalid wallet seed');
-          break;
+            console.log('Invalid wallet seed');
+            break;
         default:
-          console.log('Nimiq initialization error');
-          break;
+            console.log('Nimiq initialization error');
+            break;
     }
 }

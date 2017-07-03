@@ -66,6 +66,12 @@ header .name span {
   font-size: 42px;
 }
 
+header .icon-nimiq::before {
+  color: #FFC107;
+  margin-right: 10px;
+  font-size: 54px;
+}
+
 header .subtitle {
   color: #FFF;
   font-size: 15px;
@@ -207,6 +213,11 @@ hash {
   color: #FFF;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
+}
+
+.info-block .icon-nimiq::before {
+    font-size: 12px;
+    margin-right: 2px;
 }
 
 .input-group {
