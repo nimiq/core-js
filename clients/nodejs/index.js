@@ -36,7 +36,7 @@ Nimiq.NetworkConfig.configurePeerAddress(host, port);
 Nimiq.NetworkConfig.configureSSL(key, cert);
 
 const options = {
-    walletSeed
+    'walletSeed': walletSeed
 };
 
 try {
@@ -55,7 +55,7 @@ try {
 } catch (e) {
     switch (e) {
         case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
-          console.log("Invalid wallet seed");
+          console.log('Invalid wallet seed');
           break;
         default:
           console.log('Nimiq initialization error');

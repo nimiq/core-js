@@ -16,10 +16,10 @@ class Core {
         this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
 
         // Wallet
-        if (walletSeed === undefined) {
-            this.wallet = await Wallet.getPersistent();
-        } else {
+        if (walletSeed) {
             this.wallet = await Wallet.load(walletSeed);
+        } else {
+            this.wallet = await Wallet.getPersistent();
         }
 
         // Miner
