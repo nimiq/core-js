@@ -164,6 +164,27 @@ class AccountsTreeNode {
     _getChildIndex(prefix) {
         return parseInt(prefix[0], 16);
     }
+
+    equals(o) {
+        if (!(o instanceof AccountsTreeNode)) return false;
+        if (!Object.is(this.prefix, o.prefix)) return false;
+        if (this.isTerminal()) {
+            return o.isTerminal() && o._account.equals(this._account);
+        } else {
+            if (!o.isBranch()) return false;
+            for (let i = 0; i < this._children.length; ++i) {
+                // hashes of child nodes
+                const ourChild = this._children[i];
+                const otherChild = o._children[i];
+                if (ourChild) {
+                    if (!otherChild || !Object.is(ourChild, otherChild)) return false;
+                } else {
+                    if (otherChild) return false;
+                }
+            }
+        }
+        return true;
+    }
 }
 AccountsTreeNode.BRANCH = 0x00;
 AccountsTreeNode.TERMINAL = 0xff;
