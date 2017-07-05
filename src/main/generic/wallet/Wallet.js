@@ -14,6 +14,15 @@ class Wallet {
         return new Wallet(await KeyPair.generate());
     }
 
+    static load(hexBuf) {
+        const hexMatch = hexBuf.match(/[0-9A-Fa-f]*/);
+        if (hexBuf.length / 2 !== Crypto.privateKeySize || hexMatch[0] !== hexBuf) {
+            throw Wallet.ERR_INVALID_WALLET_SEED;
+        }
+
+        return new Wallet(KeyPair.fromHex(hexBuf));
+    }
+
     constructor(keyPair) {
         this._keyPair = keyPair;
         return this._init();
@@ -45,5 +54,12 @@ class Wallet {
     get keyPair() {
         return this._keyPair;
     }
+
+    dump() {
+        return this._keyPair.toHex();
+    }
 }
+
+Wallet.ERR_INVALID_WALLET_SEED = -100;
+
 Class.register(Wallet);

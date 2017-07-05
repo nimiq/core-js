@@ -4,13 +4,19 @@
     <meta charset="utf-8"/>
     <title>Nimiq Blockchain Cockpit &ndash; Alpha</title>
 
-    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
 <header>
     <span class="name icon-nimiq">nimiq</span>
     <span class="subtitle">Blockchain Cockpit &mdash; Alpha</span>
+    <a class="headerlink" href="https://github.com/nimiq-network" target="_blank">GitHub</a>
+    <a class="headerlink" href="https://nimiq.com/" target="_blank">Website</a>
+    <a class="headerlink" href="https://nimiq.watch/" target="_blank">Explorer</a>
 </header>
 
 <script src="../../dist/nimiq.js"></script>
@@ -27,44 +33,73 @@
     <div class="left">
         <div class="info">
             <div class="info-title">Wallet</div>
+            <hr/>
 
-            <div class="info-block">
+            <div class="info-block init-wallet">
+
+                <div id="newWallet" >
+                    Nimiq Testnet stores your wallet in your browser<br/>
+                    Load an existing browser wallet or create a new wallet:
+                    <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
+                </div>
+                <div id="loadWalletFromSeed">
+                    <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
+                    <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
+
+                    <div class="clr-both"></div>
+                    <small class="get-seed-hint">
+                        A wallet seed is a private key that governs access to a Nimiq address<br/>
+                        You can export your wallet seed once a wallet has been created<br/>
+                     </small>
+                 </div>
+
+            </div>
+            <div class="info-block copy-wallet-seed">
+              <button onclick="copyWalletSeed()">Copy wallet seed</button>
+            </div>
+
+            <div class="info-block wallet-address">
                 <strong>Address</strong>
                 <span id="wltAddress"></span>
             </div>
-            <div class="info-block">
+            <div class="info-block wallet-balance">
                 <strong>Balance</strong>
                 <span id="wltBalance"></span>
             </div>
-            <div class="info-block">
+            <div class="info-block wallet-nonce">
                 <strong>Nonce</strong>
                 <span id="wltNonce"></span>
             </div>
+            <hr/>
         </div>
 
         <div class="info">
             <div class="info-title">Transaction</div>
+            <hr class="morespace"/>
             <form>
                 <div class="input-group">
-                    <label for="txRecipientAddr">Recipient</label>
-                    <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
+                  <label for="txRecipientAddr">Recipient</label>
+                  <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
                 </div>
                 <div class="input-group">
                     <label for="txValue">Value</label>
-                    <input id="txValue" name="value" type="number">
+                    <input id="txValue" name="value" type="number" step="any">
                 </div>
                 <div class="input-group">
                     <label for="txFee">Fee</label>
                     <input id="txFee" name="fee" type="number" step="0.01">
                 </div>
+                <hr class="morespace"/>
                 <div class="input-group">
                     <button type="button" id="txSubmitBtn" disabled>Send</button>
                 </div>
+                <hr/>
             </form>
         </div>
 
         <div class="info">
             <div class="info-title">Miner</div>
+            <hr/>
 
             <div class="info-block">
                 <strong>Working</strong>
@@ -78,15 +113,17 @@
                 <strong>Last block mined at</strong>
                 <span id="mnrLastBlockTs"></span>
             </div>
-            <div class="info-block">
+            <div class="input-group">
                 <button id="mnrStartBtn" disabled>Start Mining</button>
             </div>
+            <hr/>
         </div>
     </div>
 
     <div class="right">
         <div class="info">
             <div class="info-title not-connected" id="blockchain-title">Blockchain</div>
+            <hr/>
 
             <div class="info-block">
                 <strong>Total work</strong>
@@ -100,10 +137,12 @@
                 <strong>Accounts Hash</strong>
                 <hash id="bcAccountsHash"></hash>
             </div>
+            <hr/>
         </div>
 
         <div class="info">
             <div class="info-title">Head Block</div>
+            <hr/>
 
             <div class="info-block">
                 <strong>Hash</strong>
@@ -129,10 +168,12 @@
                 <strong>Nonce</strong>
                 <span id="hdNonce"></span>
             </div>
+            <hr/>
         </div>
 
         <div class="info">
             <div class="info-title">Network</div>
+            <hr/>
 
             <div class="info-block">
                 <strong>Peers</strong>
@@ -148,26 +189,60 @@
                 <strong>Sent</strong>
                 <span id="netBytesSent"></span>
             </div>
+            <hr/>
         </div>
     </div>
 
     <div class="info" style="clear: left;">
         <div class="info-title">Mempool</div>
+        <hr/>
+
         <div class="info-block">
             <strong>Transaction Count</strong>
             <span id="mplTransactionCount"></span>
         </div>
         <div class="info-block" id="mplTransactions"></div>
+        <hr/>
     </div>
 
     <div class="info">
         <div class="info-title">Block History</div>
+        <hr/>
+
         <div class="info-block" id="blockHistory"></div>
+        <hr/>
     </div>
 </div>
 
 <script type="text/javascript">
+
+    // initial check for existing wallet in browser
+    // this wont work in chrome https://stackoverflow.com/questions/23753014/check-existence-of-indexeddb-database
+    //
+    //
+    //
+    // var nim_openRequest = indexedDB.open('nimiq'); //indexedDB.open('nimiq', {version: 4, storage: "temporary"} );
+    // nim_openRequest.onsuccess = function(event) {
+    //     var nim_db = event.target.result;
+    //     try {
+    //         var nim_request = nim_db.transaction("wallet").objectStore("wallet").get("keys");
+    //     }
+    //     catch (e) {
+    //        document.getElementById('newWallet').style.display = 'block';
+    //        //var nim_remove_nonexistant_db = indexedDB.deleteDatabase('nimiq');
+    //        console.log('blank (hopefully!) indexedDB deleted');
+    //        return;
+    //     }
+    //     nim_request.onsuccess = function(event) {
+    //         var browser_has_keys = event.target.result; console.log(browser_has_keys);
+    //         if( browser_has_keys == null ) {   document.getElementById('newWallet').style.display = 'block';   }
+    //         else {   document.getElementById('loadWalletFromDB').style.display = 'block';   }
+    //     }
+    // }
+
+
     class MinerUI {
+
         constructor($) {
             $.blockchain.on('head-changed', function(head) {
                 this._headChanged(head);
@@ -244,6 +319,7 @@
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
+
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
                 document.querySelector('#wltBalance').classList.add('icon-nimiq');
@@ -445,28 +521,62 @@
     // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
 
-    Nimiq.init(function($) {
-        window.$ = $;
-        $.network.connect();
-
-        overlay_.style.display = 'none';
-        window.ui = new MinerUI($);
-    }, function(code) {
-        document.getElementById('blockchain-title').classList.remove('initializing');
-        switch (code) {
-            case Nimiq.ERR_WAIT:
-                overlay_.style.display = 'block';
-                break;
-            case Nimiq.ERR_UNSUPPORTED:
-                alert('Browser not supported');
-                break;
-            default:
-                alert('Nimiq initialization error');
-                break;
+    function copyWalletSeed() {
+        if (typeof $ === 'undefined') {
+            return;
         }
-    });
 
-    document.getElementById('blockchain-title').classList.add('initializing');
+        var mainContent = document.getElementById('content');
+        var input = document.createElement('INPUT');
+
+        input.setAttribute('type', 'text');
+        mainContent.appendChild(input);
+        input.value = $.wallet.dump();
+        input.select();
+        document.execCommand('copy');
+        mainContent.removeChild(input);
+        alert('Wallet seed copied to clipboard');
+    }
+
+    function startNimiq() {
+        document.getElementById('blockchain-title').classList.add('initializing');
+        document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
+
+        var walletSeed = document.getElementById('walletSeed').value.trim();
+        var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
+
+        Nimiq.init(function($) {
+            window.$ = $;
+            $.network.connect();
+
+            overlay_.style.display = 'none';
+            window.ui = new MinerUI($);
+
+            document.querySelector('.info-block.init-wallet').style.display = 'none';
+            document.querySelector('.info-block.copy-wallet-seed').style.display = 'block';
+        }, function(code) {
+            document.getElementById('blockchain-title').classList.remove('initializing');
+            document.querySelector('#wltAddress').innerText = '';
+
+            switch (code) {
+                case Nimiq.ERR_WAIT:
+                    overlay_.style.display = 'block';
+                    break;
+                case Nimiq.ERR_UNSUPPORTED:
+                    alert('Browser not supported');
+                    break;
+                case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
+                    alert('Invalid wallet seed');
+                    break;
+                default:
+                    alert('Nimiq initialization error');
+                    break;
+            }
+        },
+        options
+      );
+
+    }
 </script>
 </body>
 </html>
