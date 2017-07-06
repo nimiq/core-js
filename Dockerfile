@@ -1,22 +1,30 @@
 FROM node:8.1
+# Build Use existing host SSL keys for domain node.nimiq.io
+# docker build --build-arg DOMAIN=node.nimiq.io --build-arg BRANCH=master --build-arg WALLET_SEED="..." --build-arg KEY="/etc/letsencrypt/live/nimiq.io/privkey.pem" --build-arg CRT="/etc/letsencrypt/live/nimiq.io/cert.pem" --build-arg PORT="8080" -t nimiq .
+#RUN
+# docker run -p 8080:8080 -v /etc/letsencrypt/:/etc/letsencrypt/ --name "nimiq" nimiq
+ARG DOMAIN
+ARG BRANCH
+ARG WALLET_SEED
+ARG KEY
+ARG CRT
+ARG PORT="8080"
 # Usage:
-# Use existing host SSL keys
-# docker run -d -p 8080:8080 -v /etc/letsencrypt/:/etc/letsencrypt/ --name "nimiq" nimiq
-# Mount volume or data until dynamic private key can be used
-# docker run -d -p 8080:8080 -v /etc/letsencrypt/:/etc/letsencrypt/ -v /data/:/core/nimiq/core/dist/database --name "nimiq" nimiq
 
 
-ENV RELEASE="https://github.com/nimiq-network/core/archive/master.tar.gz"
-ENV DOMAIN="node.nimiq.io"
-ENV KEY="/etc/letsencrypt/live/nimiq.io/privkey.pem"
-ENV CRT="/etc/letsencrypt/live/nimiq.io/cert.pem"
-ENV PORT="8080"
+ENV BRANCH="${BRANCH}"
+ENV RELEASE="https://github.com/nimiq-network/core/archive/${BRANCH}.tar.gz"
+ENV DOMAIN="${DOMAIN}"
+ENV WALLT_SEED="${WALLET_SEED}"
+ENV KEY="${KEY}"
+ENV CRT="${CRT}"
+ENV PORT="${PORT}"
 
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y python build-essential
 
-RUN wget ${RELEASE} && tar -xvzf ./master.tar.gz
-RUN cd /core-master && npm install && npm run build
+RUN wget ${RELEASE} && tar -xvzf ./${BRANCH}.tar.gz
+RUN cd /core-${BRANCH} && npm install && npm run build
 
 EXPOSE ${PORT}
-ENTRYPOINT node /core-master/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT} --miner
+ENTRYPOINT node /core-${BRANCH}/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT} --wallet-seed=${WALLET_SEED} --miner
