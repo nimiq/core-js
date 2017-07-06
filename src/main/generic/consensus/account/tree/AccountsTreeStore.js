@@ -1,6 +1,6 @@
 class AccountsTreeStore {
     static getPersistent() {
-        return new PersistentAccountsTreeStore();
+        return PersistentAccountsTreeStore.get();
     }
 
     static createVolatile() {
@@ -13,17 +13,21 @@ class AccountsTreeStore {
 }
 Class.register(AccountsTreeStore);
 
-
-let _instance = null;
-
+/**
+ * Singleton implementation of persistent accounts tree store to avoid locking issues with
+ * the underlying database.
+ */
 class PersistentAccountsTreeStore extends ObjectDB {
 
-    constructor() {
-        if (_instance) {
-            return _instance;
+    static get() {
+        if (!PersistentAccountsTreeStore._instance) {
+            PersistentAccountsTreeStore._instance = new PersistentAccountsTreeStore();
         }
-        _instance = super('accounts', AccountsTreeNode);
-        return _instance;
+        return PersistentAccountsTreeStore._instance;
+    }
+
+    constructor() {
+        super('accounts', AccountsTreeNode);
     }
 
     async getRootKey() {
@@ -45,6 +49,7 @@ class PersistentAccountsTreeStore extends ObjectDB {
         return tx;
     }
 }
+PersistentAccountsTreeStore._instance = null;
 
 class VolatileAccountsTreeStore {
     constructor() {
