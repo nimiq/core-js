@@ -140,6 +140,8 @@ input.error {
 
 hash {
   font-size: 12px;
+  font-family: monospace;
+  text-transform: uppercase;
 }
 
 .f-left {
@@ -333,6 +335,11 @@ hash {
 
 .wallet-address, .wallet-balance, .wallet-nonce {
   /*display:none;*/
+}
+
+.wallet-address span {
+  font-family: monospace;
+  text-transform: uppercase;
 }
 
 .copy-wallet-seed {

@@ -318,7 +318,7 @@
             this._wltBalance = document.querySelector('#wltBalance');
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
+            this._wltAddress.innerText = $.wallet.address;
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
@@ -411,7 +411,7 @@
             return false;
         }
 
-        _headChanged(head) {
+        async _headChanged(head) {
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
             $.blockchain.accountsHash().then(function(accountsHash) {
@@ -427,11 +427,11 @@
 
             var el = document.createElement('div');
             var date = new Date(head.timestamp * 1000);
-            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
+            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash}</hash>, `
                 + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
 
             for (var tx of head.transactions) {
-                var senderAddr = 'TODO'; //await tx.getSenderAddr();
+                var senderAddr = await tx.getSenderAddr();
                 var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                 var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                 html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
@@ -498,7 +498,7 @@
             this._wltNonce.innerText = balance.nonce;
         }
 
-        _mempoolChanged() {
+        async _mempoolChanged() {
             // XXX inefficient
             var txs = $.mempool.getTransactions();
             this._mplTransactionCount.innerText = txs.length;
@@ -509,7 +509,7 @@
 
             for (var tx of txs) {
                 var el = document.createElement('div');
-                var senderAddr = 'TODO'; //await tx.getSenderAddr();
+                var senderAddr = await tx.getSenderAddr();
                 var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                 var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                 el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
