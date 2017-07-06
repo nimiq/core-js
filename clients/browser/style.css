@@ -26,7 +26,7 @@ body {
   font-style: normal;
 }
 
-[class^="icon-"], [class*=" icon-"] {
+[class^="icon-"]::before, [class*=" icon-"]::before {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: 'font-icons' !important;
   speak: none;
@@ -40,7 +40,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-nimiq:before {
+.icon-nimiq::before {
   content: "\e900";
 }
 
