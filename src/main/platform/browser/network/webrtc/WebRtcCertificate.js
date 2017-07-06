@@ -5,6 +5,11 @@ class WebRtcCertificate {
         if (!WebRtcCertificate._certificate) {
             WebRtcCertificate._certificate = await WebRtcCertificate._getOrCreate();
         }
+        // TODO: solve more cleverly
+        // If certificate is expired, renew.
+        if (WebRtcCertificate._certificate.expires <= Date.now()) {
+            WebRtcCertificate._certificate = await WebRtcCertificate._create();
+        }
         return WebRtcCertificate._certificate;
     }
 
@@ -12,12 +17,18 @@ class WebRtcCertificate {
         const db = new TypedDB('certificate');
         let cert = await db.getObject('certKey');
         if (!cert) {
-            cert = await RTCPeerConnection.generateCertificate({
-                name: 'ECDSA',
-                namedCurve: 'P-256'
-            });
-            await db.putObject('certKey', cert);
+            cert = await WebRtcCertificate._create(db);
         }
+        return cert;
+    }
+
+    static async _create(db) {
+        db = db || new TypedDB('certificate');
+        const cert = await RTCPeerConnection.generateCertificate({
+            name: 'ECDSA',
+            namedCurve: 'P-256'
+        });
+        await db.putObject('certKey', cert);
         return cert;
     }
 }

@@ -7,15 +7,15 @@ class Nimiq {
 
     static _loadScript(url, resolve) {
         // Adding the script tag to the head as suggested before
-        let head = document.getElementsByTagName('head')[0];
-        let script = document.createElement('script');
+        const head = document.getElementsByTagName('head')[0];
+        const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
 
         // Then bind the event to the callback function.
         // There are several events for cross browser compatibility.
         // These events might occur before processing, so delay them a bit.
-        let ret = () => window.setTimeout(resolve, 1000);
+        const ret = () => window.setTimeout(resolve, 1000);
         script.onreadystatechange = ret;
         script.onload = ret;
 
@@ -59,7 +59,7 @@ class Nimiq {
         }
     }
 
-    static init(ready, error, path) {
+    static init(ready, error, options = {}) {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
@@ -81,7 +81,8 @@ class Nimiq {
             console.warn('Client lacks native support for crypto routines');
         }
 
-        if (!path) {
+        let path;
+        if (!options.path) {
             if (Nimiq._currentScript && Nimiq._currentScript.src.indexOf('/') !== -1) {
                 path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
             } else {
@@ -105,15 +106,20 @@ class Nimiq {
                 }
                 console.log('Nimiq engine loaded.');
             }
-            Nimiq._core = await new Nimiq.Core();
-            ready(Nimiq._core);
+
+            try {
+                Nimiq._core = await new Nimiq.Core(options);
+                ready(Nimiq._core);
+            } catch (e) {
+                error(e);
+            }
         }, () => error(Nimiq.ERR_WAIT));
     }
 }
 Nimiq._currentScript = document.currentScript;
 if (!Nimiq._currentScript) {
     // Heuristic
-    let scripts = document.getElementsByTagName('script');
+    const scripts = document.getElementsByTagName('script');
     Nimiq._currentScript = scripts[scripts.length - 1];
 }
 Nimiq.ERR_WAIT = -1;
