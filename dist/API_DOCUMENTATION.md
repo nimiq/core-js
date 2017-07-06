@@ -5,7 +5,7 @@ All Nimiq Core classes reside in the `Nimiq.` namespace.
 
 ### Basic initialization
 
-```
+```js
 Nimiq.init($ => {
     // $ is the Nimiq.Core instance
 });
@@ -15,8 +15,9 @@ Nimiq.init($ => {
 - `Nimiq.ERR_WAIT`: An instance of Nimiq Core is already running in another window of the same origin. When all other windows are closed, the success callback will be invoked.
 - `Nimiq.ERR_UNSUPPORTED`: This browser is not supported.
 - `Nimiq.ERR_UNKNOWN`: An unknown error occured while loading.
+- `Nimiq.Wallet.ERR_INVALID_WALLET_SEED` : An invalid wallet seed has been provided.
 
-```
+```js
 Nimiq.init($ => {
     // $ is the Nimiq.Core instance
 }, code => {
@@ -27,6 +28,9 @@ Nimiq.init($ => {
         case Nimiq.ERR_UNSUPPORTED:
             alert('Browser not supported');
             break;
+        case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
+            alert("Invalid wallet seed");
+            break;
         default:
             alert('Nimiq initialization error');
             break;
@@ -34,8 +38,29 @@ Nimiq.init($ => {
 });
 ```
 
-### Get an existing instance
+### Initialization with options
+You can pass some options to initialization.  
+
+| Option        | Description           |
+| ------------- |:-------------:|
+| **_walletSeed_** | Wallet seed (See [Nimiq.Wallet](#wallet)) |
+
+```js
+const options = {
+  walletSeed: "d6a651dcc13dab2e9d05d..."
+}
+
+Nimiq.init($ => {
+    // $ is the Nimiq.Core instance
+}, code => {
+  // Handle errors
+},
+  options
+);
 ```
+
+### Get an existing instance
+```js
 Nimiq.get().then($ => {
     // $ is the Nimiq.Core instance
 });
@@ -81,12 +106,12 @@ The network will not connect automatically, call `$.network.connect()` to do so.
 
 ### Examples
 Connect to the network:
-```
+```js
 $.network.connect()
 ```
 
 Listen for peer connections:
-```
+```js
 $.network.on('peers-changed', () => console.log('Peers changed'));
 $.network.on('peer-joined', peer => console.log(`Peer ${peer} joined`));
 $.network.on('peer-left', peer => console.log(`Peer ${peer} left`));
@@ -109,7 +134,7 @@ No public methods.
 
 ### Examples
 Listen for `established` event:
-```
+```js
 $.consensus.on('established', () => console.log('consensus established!'))
 ```
 
@@ -131,14 +156,14 @@ No public properties.
 
 ### Examples
 Query an account's balance:
-```
+```js
 $.accounts.getBalance(<<address>>).then(balance => {
     console.log(balance.value)
     console.log(balance.nonce)
 })
 ```
 Listen for an account balance change:
-```
+```js
 $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
     console.log(balance)
 })
@@ -168,7 +193,7 @@ $.accounts.on('a09rjiARiVYh2zJS0/1pYKZg4/A=').then(balance => {
 
 ### Examples
 Show the blockchain sync progress
-```
+```js
 let targetHeight = 0;
 $.consensus.on('syncing', _targetHeight => {
     targetHeight = _targetHeight;
@@ -206,24 +231,30 @@ No public properties.
 
 ### Methods
 - `createTransaction(recipientAddr, value, fee, nonce)`
+- `dump()`
 
 ### Events
 No events.
 
 ### Examples
 Create a transaction:
-```
+```js
 $.wallet.createTransaction(recipientAddr, value, fee, nonce).then(transaction => {
     console.log(transaction)
 })
 ```
 
+Dump and restore wallet:  
+```js
+var walletSeed = $.wallet.dump();
+var restoredWallet = await Wallet.load(walletSeed);
+```
 
 <a name="miner"></a>
 ## Nimiq.Miner
 Mining should not start before consensus is established and stop when consensus is lost. The Miner does not explicitely enforce this, but callers should ensure this behavior.
 
-```
+```js
 // Start mining automatically once consensus is (re-)established.
 $.consensus.on('established', () => $.miner.startWork());
 
