@@ -107,21 +107,21 @@ Block.GENESIS.hash().then(hash => {
 /* Checkpoint Block */
 Block.CHECKPOINT = new Block(
     new BlockHeader(
-        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAABM5d6UtPmAg7pABjFRHunsmdgLFlvSKri/pdcZY=')),
-        /*bodyHash*/ new Hash(BufferUtils.fromBase64('c9VivixnQrM7Bxv1sMbqb9slijQLYWvaZ7aMlPD0o7g=')),
-        /*accountsHash*/ new Hash(BufferUtils.fromBase64('QvPKgCmhMLeATRgSJRthjE2jwzZBiSVes8M5iyJXR54=')),
-        /*nBits*/ 487258092,
-        /*height*/ 35401,
-        /*timestamp*/ 1499388070,
-        /*nonce*/ 99857,
+        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAAANtgW2RwBtpKziHJvoADrE7GDQgJWvToFouZtpY=')),
+        /*bodyHash*/ new Hash(BufferUtils.fromBase64('rC2uYWju65XWhEKVPU4pKkzieQcXixI/ccN3KKTIBGo=')),
+        /*accountsHash*/ new Hash(BufferUtils.fromBase64('TPT9sXQ93vIY/7ujzQVkn+VzVLsiWjjRlRZx3PLunGs=')),
+        /*nBits*/ 487511651,
+        /*height*/ 37001,
+        /*timestamp*/ 1499511339,
+        /*nonce*/ 38777,
         /*version*/ 1),
-    new BlockBody(new Address(BufferUtils.fromBase64('CZURIqeqpU5dv/Mx3BD3KsA9Xjs=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('GuYhZiRrjSNUgovlgHXmqCrTLfk=')), [])
 );
 Block.CHECKPOINT.hash().then(hash => {
     Block.CHECKPOINT.HASH = hash;
     //Object.freeze(Block.GENESIS);
 });
-Block.CHECKPOINT.TOTAL_WORK = 126947914.62919635;
+Block.CHECKPOINT.TOTAL_WORK = 135549716.80005628;
 Block.OLD_CHECKPOINTS = new IndexedArray([
     new Hash(BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho=')),
     new Hash(BufferUtils.fromBase64('AAAAJHtA0SSxZb+sk2T9Qtzz4bWZdfz8pqbf5PNjywI=')),
@@ -147,6 +147,7 @@ Block.OLD_CHECKPOINTS = new IndexedArray([
     new Hash(BufferUtils.fromBase64('AAAADrTB/DfobRJSPRwG4XKArX0Na3J03OvVJWhunJI=')),
     new Hash(BufferUtils.fromBase64('AAAABomr61e4IFqwoAh8s8yUXbYNedG/WLW7aHDZzco=')),
     new Hash(BufferUtils.fromBase64('AAAAB8zYJ87usp2Av9+q0TN786BOhri3PS0M8aEvwIQ=')),
-    new Hash(BufferUtils.fromBase64('AAAAAngMt24MYmSe2tfgfj1NV4Fv10BZXDPcDTZHuQM='))
+    new Hash(BufferUtils.fromBase64('AAAAAngMt24MYmSe2tfgfj1NV4Fv10BZXDPcDTZHuQM=')),
+    new Hash(BufferUtils.fromBase64('AAAAA2trckpN5D7NlSQGJEDmx/1uQR3lRSlXmsKY2wE='))
 ]);
 Class.register(Block);
