@@ -1,10 +1,4 @@
 FROM node:8.1
-# Build Use existing host SSL keys for domain node.nimiq.io, ensure that you replace all these with your own configuration requirements
-# docker build --build-arg DOMAIN=node.nimiq.io --build-arg BRANCH=master --build-arg WALLET_SEED="..." --build-arg KEY="/etc/letsencrypt/live/nimiq.io/privkey.pem" --build-arg CRT="/etc/letsencrypt/live/nimiq.io/cert.pem" --build-arg PORT="8080" -t nimiq .
-#RUN
-# docker run -d -p 8080:8080 -v /etc/letsencrypt/:/etc/letsencrypt/ --name "nimiq" nimiq
-#Check status
-# docker logs -f <instance_id>
 
 # Arguments which are to be defined at build time
 ARG DOMAIN
