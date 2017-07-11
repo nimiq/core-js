@@ -7,36 +7,21 @@ class BlockUtils {
         if (!Number.isFinite(target) || Number.isNaN(target)) throw 'Invalid Target';
 
         // Divide to get first byte
-        let tmp = target;
-        let size = 1;
-        while (tmp >= 256) {
-            size++;
-            tmp /= 256;
-        }
-
-        let i = 0;
+        let size = Math.max(Math.ceil(Math.log2(target) / 8), 1);
+        const firstByte = target / Math.pow(2, (size - 1) * 8);
 
         // If the first (most significant) byte is greater than 127 (0x7f),
         // prepend a zero byte.
-        if (tmp >= 0x80) {
+        if (firstByte >= 0x80) {
             size++;
-            i++;
         }
 
         // The first byte of the 'compact' format is the number of bytes,
         // including the prepended zero if it's present.
-        let compact = size << 24;
-
         // The following three bytes are the first three bytes of the above
         // representation. If less than three bytes are present, then one or
         // more of the last bytes of the compact representation will be zero.
-        const numBytes = Math.min(size, 3);
-        for (; i < numBytes; ++i) {
-            compact |= (Math.floor(tmp) % 256) << ((2 - i) * 8);
-            tmp *= 256;
-        }
-
-        return compact;
+        return (size << 24) + ((target / Math.pow(2, (size - 3) * 8)) & 0xffffff);
     }
 
     static compactToDifficulty(compact) {
