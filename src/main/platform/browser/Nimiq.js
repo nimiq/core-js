@@ -136,12 +136,12 @@ class Nimiq {
         // Don't initialize core twice.
         if (Nimiq._core) {
             console.warn('Nimiq.init() called more than once.');
-            ready(Nimiq._core);
+            if (ready) ready(Nimiq._core);
             return;
         }
 
         if (!Nimiq._hasNativePromise() || !Nimiq._hasNativeGoodies()) {
-            error(Nimiq.ERR_UNSUPPORTED);
+            if (error) error(Nimiq.ERR_UNSUPPORTED);
             return;
         }
 
@@ -154,7 +154,7 @@ class Nimiq {
                 if (ready) ready(Nimiq._core);
             } catch (e) {
                 if (Number.isInteger(e)) {
-                    error(e);
+                    if (error) error(e);
                 } else {
                     console.error('Error while initializing the core', e);
                     if (error) error(Nimiq.ERR_UNKNOWN);
