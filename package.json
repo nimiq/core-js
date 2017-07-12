@@ -8,6 +8,7 @@
   "scripts": {
     "prepare": "gulp build-node",
     "build": "gulp build",
+    "esdoc": "esdoc",
     "test": "jasmine && gulp test",
     "test-node": "jasmine",
     "test-browser": "gulp test",
@@ -47,6 +48,9 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-runtime": "^6.23.0",
     "browserify": "^14.4.0",
+    "esdoc": "^0.5.2",
+    "esdoc-es7-plugin": "^0.0.3",
+    "esdoc-plugin-transform-html": "^0.1.0",
     "eslint": "^3.19.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",

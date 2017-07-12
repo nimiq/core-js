@@ -10,6 +10,7 @@
 /dist/nimiq*
 /dist/web*
 /dist/node*
+/dist/doc/
 .idea
 *.iml
 /database
