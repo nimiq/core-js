@@ -164,7 +164,7 @@ hash {
 
 @media screen and (max-width: 760px) {
     .left, .right {
-    width: 100%;
+        width: 100%;
     }
 }
 
