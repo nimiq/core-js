@@ -338,8 +338,8 @@ hash {
 }
 
 .wallet-address span {
-  font-family: monospace;
-  text-transform: uppercase;
+    font-family: monospace;
+    text-transform: uppercase;
 }
 
 .copy-wallet-seed {
