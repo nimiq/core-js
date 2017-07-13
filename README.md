@@ -5,7 +5,7 @@
 For a high-level introduction checkout the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
 
 ## Library Demo
-Check out our betanet [Browser Miner](https://nimiq.com/betanet)
+Check out our betanet [Browser Miner](https://nimiq.com/betanet).
 
 ## Quickstart
 
@@ -101,4 +101,4 @@ If you'd like to contribute to development Nimiq please follow our [Code of Cond
 
 ## License
 
-This project is under the [Apache License 2.0](./LICENSE)
+This project is under the [Apache License 2.0](./LICENSE).
