@@ -101,4 +101,4 @@ If you'd like to contribute to development Nimiq please follow our [Code of Cond
 
 ## License
 
-This project is under the [Apache License 2.0](./LICENSE).
+This project is under the [Apache License 2.0](./LICENSE.md).
