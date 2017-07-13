@@ -164,7 +164,7 @@ hash {
 
 @media screen and (max-width: 760px) {
     .left, .right {
-        width: 100%;
+    width: 100%;
     }
 }
 
@@ -216,8 +216,8 @@ hash {
 }
 
 .info-block .icon-nimiq::before {
-        font-size: 12px;
-        margin-right: 2px;
+    font-size: 12px;
+    margin-right: 2px;
 }
 
 .input-group {
