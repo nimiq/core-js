@@ -411,7 +411,7 @@
             return false;
         }
 
-        async _headChanged(head) {
+        _headChanged(head) {
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
             $.blockchain.accountsHash().then(function(accountsHash) {
@@ -430,18 +430,26 @@
             var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash}</hash>, `
                 + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
 
-            for (var tx of head.transactions) {
-                var senderAddr = await tx.getSenderAddr();
-                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                html += `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
-            }
-            el.innerHTML = html;
+            var txPromises = [];
 
-            if (this._blockHistory.childNodes.length > 24) {
-                this._blockHistory.removeChild(this._blockHistory.firstChild);
+            for (var tx of head.transactions) {
+                txPromises.push(new Promise(function(resolve, reject) {
+                    tx.getSenderAddr().then(function(senderAddr) {
+                        var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                        var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                        resolve(`<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`);
+                    });
+                }));
             }
-            this._blockHistory.appendChild(el);
+
+            Promise.all(txPromises).then(function(results) {
+                el.innerHTML = html + results.join('');
+
+                if (this._blockHistory.childNodes.length > 24) {
+                    this._blockHistory.removeChild(this._blockHistory.firstChild);
+                }
+                this._blockHistory.appendChild(el);
+            }.bind(this));
         }
 
         _toggleMining() {
@@ -498,7 +506,7 @@
             this._wltNonce.innerText = balance.nonce;
         }
 
-        async _mempoolChanged() {
+        _mempoolChanged() {
             // XXX inefficient
             var txs = $.mempool.getTransactions();
             this._mplTransactionCount.innerText = txs.length;
@@ -508,12 +516,13 @@
             }
 
             for (var tx of txs) {
-                var el = document.createElement('div');
-                var senderAddr = await tx.getSenderAddr();
-                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-                this._mplTransactions.appendChild(el);
+                tx.getSenderAddr().then(function(senderAddr) {
+                    var el = document.createElement('div');
+                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                    el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    this._mplTransactions.appendChild(el);
+                }.bind(this));
             }
         }
     }
