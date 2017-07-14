@@ -30,6 +30,10 @@ class Address extends Primitive {
             && super.equals(o);
     }
 
+    toString() {
+        return this.toHex();
+    }
+
     static fromBase64(base64) {
         return new Address(BufferUtils.fromBase64(base64));
     }
