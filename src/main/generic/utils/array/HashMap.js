@@ -3,7 +3,7 @@
  */
 class HashMap {
     constructor(fnHash) {
-        /** @type {Map.<K,V>} */
+        /** @type {Map.<string,V>} */
         this._map = new Map();
         /** @type {function(object): string} */
         this._fnHash = fnHash || HashMap._hash;
