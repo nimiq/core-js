@@ -1,4 +1,8 @@
 class NetUtils {
+    /**
+     * @param {string} ip
+     * @return {boolean}
+     */
     static isPrivateIP(ip) {
         if (NetUtils.isIPv4Address(ip)) {
             for (const subnet of NetUtils.IPv4_PRIVATE_NETWORK) {
@@ -36,18 +40,31 @@ class NetUtils {
         throw `Malformed IP address ${ip}`;
     }
 
+    /**
+     * @param {string} ip
+     * @param {string} subnet
+     * @return {boolean}
+     */
     static isIPv4inSubnet(ip, subnet) {
         let [subIp, mask] = subnet.split('/');
         mask = -1<<(32-parseInt(mask));
         return (NetUtils._IPv4toLong(ip) & mask) === NetUtils._IPv4toLong(subIp);
     }
 
+    /**
+     * @param {string} ip
+     * @return {boolean}
+     */
     static isIPv4Address(ip) {
         const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
         return !!match && parseInt(match[1]) <= 255 && parseInt(match[2]) <= 255
             && parseInt(match[3]) <= 255 && parseInt(match[4]) <= 255;
     }
 
+    /**
+     * @param {string} ip
+     * @return {boolean}
+     */
     static isIPv6Address(ip) {
         const parts = ip.toLowerCase().split(':');
         // An IPv6 address consists of at most 8 parts and at least 3.
@@ -110,6 +127,10 @@ class NetUtils {
         return true;
     }
 
+    /**
+     * @param {string} ip
+     * @return {string}
+     */
     static sanitizeIP(ip) {
         const saneIp = NetUtils._normalizeIP(ip);
         if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
@@ -119,6 +140,10 @@ class NetUtils {
         return saneIp;
     }
 
+    /**
+     * @param {string} ip
+     * @return {string}
+     */
     static _normalizeIP(ip) {
         if (NetUtils.isIPv4Address(ip)) {
             // Re-create IPv4 address to strip possible leading zeros.
@@ -211,6 +236,10 @@ class NetUtils {
         throw `Malformed IP address ${ip}`;
     }
 
+    /**
+     * @param {string} ip
+     * @return {number}
+     */
     static _IPv4toLong(ip) {
         const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
         return (parseInt(match[1])<<24) + (parseInt(match[2])<<16) + (parseInt(match[3])<<8) + (parseInt(match[4]));

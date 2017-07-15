@@ -1,20 +1,36 @@
+// TODO: DO NOT try to use different native channel objects from one entity, use abstraction layer!
 class PeerConnection extends Observable {
+    /**
+     * @param {object} nativeChannel
+     * @param {number} protocol
+     * @param {NetAddress} netAddress
+     * @param {PeerAddress} peerAddress
+     */
     constructor(nativeChannel, protocol, netAddress, peerAddress) {
         super();
         this._channel = nativeChannel;
 
+        /** @type {number} */
         this._protocol = protocol;
+        /** @type {NetAddress} */
         this._netAddress = netAddress;
+        /** @type {PeerAddress} */
         this._peerAddress = peerAddress;
 
+        /** @type {number} */
         this._bytesSent = 0;
+        /** @type {number} */
         this._bytesReceived = 0;
 
+        /** @type {boolean} */
         this._inbound = !peerAddress;
+        /** @type {boolean} */
         this._closedByUs = false;
+        /** @type {boolean} */
         this._closed = false;
 
         // Unique id for this connection.
+        /** @type {number} */
         this._id = PeerConnection._instanceCount++;
 
         if (this._channel.on) {
@@ -70,21 +86,37 @@ class PeerConnection extends Observable {
         this._channel.close();
     }
 
+    /**
+     * @return {boolean}
+     * @private
+     */
     _isChannelOpen() {
         return this._channel.readyState === WebSocket.OPEN
             || this._channel.readyState === 'open';
     }
 
+    /**
+     * @return {boolean}
+     * @private
+     */
     _isChannelClosing() {
         return this._channel.readyState === WebSocket.CLOSING
             || this._channel.readyState === 'closing';
     }
 
+    /**
+     * @return {boolean}
+     * @private
+     */
     _isChannelClosed() {
         return this._channel.readyState === WebSocket.CLOSED
             || this._channel.readyState === 'closed';
     }
 
+    /**
+     * @param {Uint8Array} msg
+     * @return {boolean}
+     */
     send(msg) {
         const logAddress = this._peerAddress || this._netAddress;
         if (this._closed) {
@@ -116,18 +148,28 @@ class PeerConnection extends Observable {
         }
     }
 
+    /**
+     * @param {string} [reason]
+     */
     close(reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
         Log.d(PeerConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
     }
 
+    /**
+     * @param {string} [reason]
+     */
     ban(reason) {
         Log.w(PeerConnection, `Banning peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
         this.fire('ban', reason, this);
     }
 
+    /**
+     * @param {PeerConnection} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof PeerConnection
             && this._id === o.id;
@@ -137,50 +179,64 @@ class PeerConnection extends Observable {
         return this._id;
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return `PeerConnection{id=${this._id}, protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
     }
 
+    /** @type {number} */
     get id() {
         return this._id;
     }
 
+    /** @type {number} */
     get protocol() {
         return this._protocol;
     }
 
+    /** @type {PeerAddress} */
     get peerAddress() {
         return this._peerAddress;
     }
 
+    /** @type {PeerAddress} */
     set peerAddress(value) {
         this._peerAddress = value;
     }
 
+    /** @type {NetAddress} */
     get netAddress() {
         return this._netAddress;
     }
 
+    /** @type {NetAddress} */
     set netAddress(value) {
         this._netAddress = value;
     }
 
+    /** @type {number} */
     get bytesSent() {
         return this._bytesSent;
     }
 
+    /** @type {number} */
     get bytesReceived() {
         return this._bytesReceived;
     }
 
+    /** @type {boolean} */
     get inbound() {
         return this._inbound;
     }
 
+    /** @type {boolean} */
     get outbound() {
         return !this._inbound;
     }
 
+    /** @type {boolean} */
     get closed() {
         return this._closed;
     }

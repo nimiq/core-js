@@ -1,83 +1,219 @@
+/**
+ * @interface
+ */
+class IAccountsTreeStore {
+    /**
+     * @abstract
+     * @param {string} key
+     * @returns {Promise.<AccountsTreeNode>}
+     */
+    async get(key) {} // eslint-disable-line no-unused-vars
+
+    /**
+     * @abstract
+     * @param {AccountsTreeNode} node
+     * @returns {Promise}
+     */
+    async put(node) {} // eslint-disable-line no-unused-vars
+
+    /**
+     * @abstract
+     * @param {AccountsTreeNode} node
+     * @returns {Promise}
+     */
+    async remove(node) {} // eslint-disable-line no-unused-vars
+
+    /**
+     * @abstract
+     * @returns {Promise.<string>}
+     */
+    async getRootKey() {} // eslint-disable-line no-unused-vars
+
+    /**
+     * @abstract
+     * @param {string} rootKey
+     * @returns {Promise}
+     */
+    async setRootKey(rootKey) {} // eslint-disable-line no-unused-vars
+}
+
+/**
+ * @interface
+ * @implements {IAccountsTreeStore}
+ */
 class AccountsTreeStore {
+    /**
+     * @returns {AccountsTreeStore}
+     */
     static getPersistent() {
         return new PersistentAccountsTreeStore();
     }
 
+    /**
+     * @returns {AccountsTreeStore}
+     */
     static createVolatile() {
         return new VolatileAccountsTreeStore();
     }
 
-    static createTemporary(backend, transaction = false) {
-        return new TemporaryAccountsTreeStore(backend, transaction);
+    /**
+     * @param {AccountsTreeStore} backend AccountsTreeStore to use as a base for copy-on-write
+     * @returns {AccountsTreeStore}
+     */
+    static createTemporary(backend) {
+        return new TemporaryAccountsTreeStore(backend, false);
     }
+
+    /**
+     * @param {AccountsTreeStore} backend AccountsTreeStore to use as a base for copy-on-write
+     * @returns {AccountsTreeStoreTransaction}
+     */
+    static createTemporaryTransaction(backend) {
+        return new TemporaryAccountsTreeStore(backend, true);
+    }
+
+    /**
+     * @abstract
+     * @returns {Promise.<AccountsTreeStoreTransaction>}
+     */
+    async transaction() {}
 }
 Class.register(AccountsTreeStore);
 
+/**
+ * @interface
+ * @implements {IAccountsTreeStore}
+ */
+class AccountsTreeStoreTransaction {
+    /**
+     * @returns {Promise}
+     */
+    async commit() {}
+}
+
+/**
+ * @implements {AccountsTreeStore}
+ */
 class PersistentAccountsTreeStore extends ObjectDB {
     constructor() {
         super('accounts', AccountsTreeNode);
     }
 
+    /**
+     * @override
+     * @returns {Promise.<string>}
+     */
     async getRootKey() {
         return await ObjectDB.prototype.getString.call(this, 'root');
     }
 
+    /**
+     * @override
+     * @param {string} rootKey
+     * @returns {Promise}
+     */
     async setRootKey(rootKey) {
         return await ObjectDB.prototype.putString.call(this, 'root', rootKey);
     }
 
+    /**
+     * @override
+     * @returns {Promise.<AccountsTreeStoreTransaction>}
+     */
     async transaction() {
         const tx = await ObjectDB.prototype.transaction.call(this);
-        tx.getRootKey = function (rootKey) {
+        tx.getRootKey = function () {
             return tx.getString('root');
         };
         tx.setRootKey = function (rootKey) {
             return tx.putString('root', rootKey);
         };
-        return tx;
+        return /** @type {AccountsTreeStoreTransaction} */ tx;
     }
 }
 
+/**
+ * @implements {AccountsTreeStore}
+ */
 class VolatileAccountsTreeStore {
     constructor() {
         this._store = {};
+        /** @type {string} */
         this._rootKey = undefined;
     }
 
+    /**
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async key(node) {
         return (await node.hash()).toBase64();
     }
 
+    /**
+     * @override
+     * @param {string} key
+     * @returns {AccountsTreeNode}
+     */
     get(key) {
         return this._store[key];
     }
 
+    /**
+     * @override
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async put(node) {
         const key = await this.key(node);
         this._store[key] = node;
         return key;
     }
 
+    /**
+     * @override
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async remove(node) {
         const key = await this.key(node);
         delete this._store[key];
         return key;
     }
 
-    transaction() {
+    /**
+     * @override
+     * @returns {Promise.<AccountsTreeStoreTransaction>}
+     */
+    async transaction() {
         return new TemporaryAccountsTreeStore(this, true);
     }
 
-    getRootKey() {
+    /**
+     * @returns {Promise.<string>}
+     */
+    async getRootKey() {
         return this._rootKey;
     }
 
-    setRootKey(rootKey) {
+    /**
+     * @param {string} rootKey
+     */
+    async setRootKey(rootKey) {
         this._rootKey = rootKey;
     }
 }
 
+/**
+ * @implements {AccountsTreeStore}
+ * @implements {AccountsTreeStoreTransaction}
+ */
 class TemporaryAccountsTreeStore {
+    /**
+     * 
+     * @param {IAccountsTreeStore} backend
+     * @param {boolean} transaction
+     */
     constructor(backend, transaction = false) {
         this._backend = backend;
         this._store = {};
@@ -85,10 +221,19 @@ class TemporaryAccountsTreeStore {
         this._transaction = transaction;
     }
 
+    /**
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async key(node) {
         return (await node.hash()).toBase64();
     }
 
+    /**
+     * @override
+     * @param {string} key
+     * @returns {Promise.<AccountsTreeNode>}
+     */
     async get(key) {
         // First try to find the key in our local store.
         if (this._store[key] === undefined) {
@@ -108,12 +253,22 @@ class TemporaryAccountsTreeStore {
         return this._store[key] === null ? undefined : this._store[key];
     }
 
+    /**
+     * @override
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async put(node) {
         const key = await this.key(node);
         this._store[key] = node;
         return key;
     }
 
+    /**
+     * @override
+     * @param {AccountsTreeNode} node
+     * @returns {Promise.<string>}
+     */
     async remove(node) {
         const key = await this.key(node);
         this._removed[key] = node;
@@ -121,6 +276,10 @@ class TemporaryAccountsTreeStore {
         return key;
     }
 
+    /**
+     * @override
+     * @returns {Promise}
+     */
     async commit() {
         if (!this._transaction) return;
         // Update backend with all our changes.
@@ -148,10 +307,18 @@ class TemporaryAccountsTreeStore {
         this._store = {};
     }
 
-    transaction() {
+    /**
+     * @override
+     * @returns {Promise.<AccountsTreeStoreTransaction>}
+     */
+    async transaction() {
         return new TemporaryAccountsTreeStore(this, true);
     }
 
+    /**
+     * @override
+     * @returns {Promise.<string>}
+     */
     async getRootKey() {
         if (this._rootKey === undefined) {
             this._rootKey = (await this._backend.getRootKey()) || null;
@@ -159,6 +326,10 @@ class TemporaryAccountsTreeStore {
         return this._rootKey === null ? undefined : this._rootKey;
     }
 
+    /**
+     * @override
+     * @param {string} rootKey
+     */
     setRootKey(rootKey) {
         this._rootKey = rootKey;
     }

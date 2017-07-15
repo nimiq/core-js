@@ -20,15 +20,22 @@ class Balance {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return /*value*/ 8
             + /*nonce*/ 4;
     }
 
+    /**
+     * @type {number}
+     */
     get value() {
         return this._value;
     }
 
+    /**
+     * @type {number}
+     */
     get nonce() {
         return this._nonce;
     }

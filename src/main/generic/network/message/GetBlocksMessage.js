@@ -1,12 +1,22 @@
 class GetBlocksMessage extends Message {
+    /**
+     * @param {Array.<Hash>} hashes
+     * @param {Hash} hashStop
+     */
     constructor(hashes, hashStop) {
         super(Message.Type.GETBLOCKS);
         if (!hashes || !NumberUtils.isUint16(hashes.length)
             || hashes.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
+        /** @type {Array.<Hash>} */
         this._hashes = hashes;
+        /** @type {Hash} */
         this._hashStop = hashStop;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {GetBlocksMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
@@ -18,6 +28,10 @@ class GetBlocksMessage extends Message {
         return new GetBlocksMessage(hashes, hashStop);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -30,6 +44,7 @@ class GetBlocksMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2
@@ -40,10 +55,12 @@ class GetBlocksMessage extends Message {
         return size;
     }
 
+    /** @type {Array.<Hash>} */
     get hashes() {
         return this._hashes;
     }
 
+    /** @type {Hash} */
     get hashStop() {
         return this._hashStop;
     }

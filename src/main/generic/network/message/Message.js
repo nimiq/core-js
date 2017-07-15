@@ -1,9 +1,18 @@
 class Message {
+    /**
+     * Create a new Message instance. This is usually not called directly but by subclasses.
+     * @param {Message.Type} type Message type
+     */
     constructor(type) {
         if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
+        /** @type {Message.Type} */
         this._type = type;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Message.Type}
+     */
     static peekType(buf) {
         // Store current read position.
         const pos = buf.readPos;
@@ -12,7 +21,7 @@ class Message {
         buf.readPos = 4;
 
         // Read the type string.
-        const type = buf.readPaddedString(12);
+        const type = Message.Type.readPaddedString(buf);
 
         // Reset the read position to original.
         buf.readPos = pos;
@@ -20,6 +29,11 @@ class Message {
         return type;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @param {number} value
+     * @private
+     */
     static _writeChecksum(buf, value) {
         // Store current write position.
         const pos = buf.writePos;
@@ -35,6 +49,10 @@ class Message {
         buf.writePos = pos;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Message}
+     */
     static unserialize(buf) {
         // XXX Direct buffer manipulation currently requires this.
         if (buf.readPos !== 0) {
@@ -42,7 +60,7 @@ class Message {
         }
 
         const magic = buf.readUint32();
-        const type = buf.readPaddedString(12);
+        const type = Message.Type.readPaddedString(buf);
         buf.readUint32(); // length is ignored
         const checksum = buf.readUint32();
 
@@ -57,11 +75,19 @@ class Message {
         return new Message(type);
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @private
+     */
     _setChecksum(buf) {
         const checksum = CRC32.compute(buf);
         Message._writeChecksum(buf, checksum);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         // XXX Direct buffer manipulation currently requires this.
@@ -77,6 +103,7 @@ class Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return /*magic*/ 4
             + /*type*/ 12
@@ -84,11 +111,16 @@ class Message {
             + /*checksum*/ 4;
     }
 
+    /** @type {Message.Type} */
     get type() {
         return this._type;
     }
 }
 Message.MAGIC = 0x42042042;
+/**
+ * Enum for message types.
+ * @enum {string}
+ */
 Message.Type = {
     VERSION: 'version',
     INV: 'inv',
@@ -113,6 +145,23 @@ Message.Type = {
 
     // Nimiq
     GETBALANCES: 'getbalances',
-    BALANCES: 'balances'
+    BALANCES: 'balances',
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Message.Type}
+     */
+    readPaddedString: function (buf) {
+        return /** @type {Message.Type} */ (buf.readPaddedString(12));
+    },
+
+    /**
+     * @deprecated use {@link Message.Type.readPaddedString()}
+     * @param {SerialBuffer} buf
+     * @returns {Message.Type}
+     */
+    readVarString: function (buf) {
+        return /** @type {Message.Type} */ (buf.readVarLengthString());
+    }
 };
 Class.register(Message);

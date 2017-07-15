@@ -1,4 +1,7 @@
 class CryptoLib {
+    /**
+     * @return {SubtleCrypto|*}
+     */
     static get instance() {
         let native = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
         if (native) return native;
@@ -9,6 +12,8 @@ class CryptoLib {
     }
 
     static _init_poly() {
+        if (!('require' in window)) throw 'Crypto polyfill not available.';
+        
         const poly = {
             _nimiq_isSlowCurves: true,
             _nimiq_callDigestDelayedWhenMining: true
@@ -19,14 +24,14 @@ class CryptoLib {
         if (wk) {
             poly.digest = (alg, arr) => wk.digest(alg, arr);
         } else {
-            const sha256 = require('fast-sha256');
+            const sha256 = window.require('fast-sha256');
             poly.digest = async (alg, arr) => {
                 if (alg !== 'SHA-256') throw 'Unsupported algorithm.';
                 return new sha256.Hash().update(arr).digest();
             };
         }
 
-        const ec = require('elliptic').ec('p256');
+        const ec = window.require('elliptic').ec('p256');
 
         poly.generateKey = function (config, exportable, usage) {
             const keyPair = ec.genKeyPair();

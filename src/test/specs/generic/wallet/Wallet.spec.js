@@ -5,18 +5,18 @@ describe('Wallet', () => {
     const nonce = 8;
 
     it('can create a signed transaction', (done) => {
-        const test = async () => {
+        const asyncTest = async () => {
             const wallet = await Wallet.createVolatile();
             const transaction = await wallet.createTransaction(recipient, value, fee, nonce);
             const isValid = await transaction.verifySignature();
             expect(isValid).toBe(true);
             done();
         };
-        test();
+        asyncTest();
     });
 
     it('can reject invalid wallet seed', (done) => {
-        const test = async () => {
+        const asyncTest = async () => {
             expect(() => {
                 Wallet.load("");
             }).toThrow(Wallet.ERR_INVALID_WALLET_SEED);
@@ -31,6 +31,6 @@ describe('Wallet', () => {
 
             done();
         };
-        test();
+        asyncTest();
     });
 });

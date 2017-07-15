@@ -5,6 +5,13 @@ class Synchronizer extends Observable {
         this._working = false;
     }
 
+    /**
+     * Push function to the Synchronizer for later, synchronous execution
+     * @param {function():T} fn Function to be invoked later by this Synchronizer
+     * @param {Function} resolve Function to be invoked after fn succeeded
+     * @param {Function} error Function to be invoked after fn failed
+     * @template T
+     */
     push(fn, resolve, error) {
         this._queue.push({fn: fn, resolve: resolve, error: error});
         if (!this._working) {
@@ -30,6 +37,7 @@ class Synchronizer extends Observable {
         this.fire('work-end', this);
     }
 
+    /** @type {boolean} */
     get working() {
         return this._working;
     }

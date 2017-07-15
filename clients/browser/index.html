@@ -292,30 +292,47 @@
             }.bind(this));
 
             // Blockchain
+            /** @type {HTMLElement} */
             this._bcTotalWork = document.querySelector('#bcTotalWork');
+            /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
             // Head block
+            /** @type {HTMLElement} */
             this._hdHash = document.querySelector('#hdHash');
+            /** @type {HTMLElement} */
             this._hdPrevHash = document.querySelector('#hdPrevHash');
+            /** @type {HTMLElement} */
             this._hdAccountsHash = document.querySelector('#hdAccountsHash');
+            /** @type {HTMLElement} */
             this._hdDifficulty = document.querySelector('#hdDifficulty');
+            /** @type {HTMLElement} */
             this._hdTimestamp = document.querySelector('#hdTimestamp');
+            /** @type {HTMLElement} */
             this._hdNonce = document.querySelector('#hdNonce');
 
             // Network
+            /** @type {HTMLElement} */
             this._netPeerCount = document.querySelector('#netPeerCount');
+            /** @type {HTMLElement} */
             this._netPeerCountWs = document.querySelector('#netPeerCountWs');
+            /** @type {HTMLElement} */
             this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
+            /** @type {HTMLElement} */
             this._netBytesReceived = document.querySelector('#netBytesReceived');
+            /** @type {HTMLElement} */
             this._netBytesSent = document.querySelector('#netBytesSent');
 
             setInterval(this._networkChanged.bind(this), 2500);
 
             // Wallet
+            /** @type {HTMLElement} */
             this._wltAddress = document.querySelector('#wltAddress');
+            /** @type {HTMLElement} */
             this._wltBalance = document.querySelector('#wltBalance');
+            /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
@@ -331,18 +348,25 @@
             }.bind(this);
 
             // Mempool
+            /** @type {HTMLElement} */
             this._mplTransactionCount = document.querySelector('#mplTransactionCount');
+            /** @type {HTMLElement} */
             this._mplTransactions = document.querySelector('#mplTransactions');
 
             // Miner
+            /** @type {HTMLElement} */
             this._mnrWorking = document.querySelector('#mnrWorking');
+            /** @type {HTMLElement} */
             this._mnrHashrate = document.querySelector('#mnrHashrate');
+            /** @type {HTMLElement} */
             this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
+            /** @type {HTMLElement} */
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
 
             // Block history
+            /** @type {HTMLElement} */
             this._blockHistory = document.querySelector('#blockHistory');
 
             // Init values.
@@ -360,8 +384,11 @@
         }
 
         _submitTransaction(e) {
+            /** @var {HTMLInputElement} */
             var elRecipientAddr = document.querySelector('#txRecipientAddr');
+            /** @var {HTMLInputElement} */
             var elValue = document.querySelector('#txValue');
+            /** @var {HTMLInputElement} */
             var elFee = document.querySelector('#txFee');
             elRecipientAddr.className = null;
             elValue.className = null;

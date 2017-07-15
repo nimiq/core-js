@@ -1,5 +1,35 @@
 /**
- * Base entry point to the Nimiq library.
+ * Entry class and dynamic loader for the Nimiq library in Browsers.
+ *
+ * When using NodeJS, you don't need this class. Just require the `nimiq` library.
+ *
+ * @example <caption>Browser usage</caption>
+ * <script type="text/javascript" src="https://cdn.nimiq.com/core/nimiq.js></script>
+ * <script type="text/javascript">
+ *     Nimiq.init(function(core) {
+ *         console.log(core.wallet.address);
+ *     }, function(errorCode) {
+ *         console.log("Error initializing core.");
+ *     }, options)
+ * </script>
+ *
+ * @example <caption>Browser usage (experimental)</caption>
+ * <script type="text/javascript" src="https://cdn.nimiq.com/core/nimiq.js></script>
+ * <script type="text/javascript">
+ *     async function init() {
+ *         await Nimiq.load();
+ *         const core = await new Nimiq.Core(options);
+ *         console.log(core.wallet.address);
+ *     }
+ *     init();
+ * </script>
+ *
+ * @example <caption>NodeJS usage</caption>
+ * const Nimiq = require('nimiq');
+ * const core = await new Nimiq.Core(options);
+ * console.log(core.wallet.address);
+ *
+ * @namespace
  */
 class Nimiq {
     /**
@@ -31,7 +61,7 @@ class Nimiq {
 
     /**
      * Load the Nimiq library.
-     * @param {string|undefined} path Path that contains the required files to load the library.
+     * @param {?string} path Path that contains the required files to load the library.
      * @returns {Promise} Promise that resolves once the library was loaded.
      */
     static load(path) {
@@ -127,10 +157,10 @@ class Nimiq {
     }
 
     /**
-     * Load the Nimiq library, initialize and provide a {@link Core} instance.
-     * @param {function(Core)} ready Function that is invoked once the Core was initialized.
-     * @param {function(number)} error Function that is invoked if the call failed.
-     * @param {object} options Options for the {@link Core} constructor.
+     * Initialize the Nimiq client library and provide a {@link Core} object
+     * @param {function(core: Core)} ready Function to be called once the Core object is available.
+     * @param {function(errorCode: number)} error Function to be called when the initialization fails.
+     * @param {?object} options Options for the {@link Core}-constructor.
      */
     static init(ready, error, options = {}) {
         // Don't initialize core twice.
