@@ -1,5 +1,6 @@
 if (typeof Nimiq === 'undefined') {
     var Nimiq = typeof window !== 'undefined' ? window : {};
 }
+var Proxy; // ensure Proxy exists
 (function (exports) {
     exports = typeof exports !== 'undefined' ? exports : {};
