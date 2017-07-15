@@ -1,4 +1,8 @@
 class Block {
+    /**
+     * @param {BlockHeader} header
+     * @param {BlockBody} body
+     */
     constructor(header, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
         if (!(body instanceof BlockBody)) throw 'Malformed body';
@@ -8,12 +12,20 @@ class Block {
         this._body = body;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Block}
+     */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
         const body = BlockBody.unserialize(buf);
         return new Block(header, body);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._header.serialize(buf);
@@ -21,6 +33,7 @@ class Block {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return this._header.serializedSize
             + this._body.serializedSize;

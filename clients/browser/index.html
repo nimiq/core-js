@@ -292,47 +292,47 @@
             }.bind(this));
 
             // Blockchain
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._bcTotalWork = document.querySelector('#bcTotalWork');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
             // Head block
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdHash = document.querySelector('#hdHash');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdPrevHash = document.querySelector('#hdPrevHash');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdAccountsHash = document.querySelector('#hdAccountsHash');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdDifficulty = document.querySelector('#hdDifficulty');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdTimestamp = document.querySelector('#hdTimestamp');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._hdNonce = document.querySelector('#hdNonce');
 
             // Network
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._netPeerCount = document.querySelector('#netPeerCount');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._netPeerCountWs = document.querySelector('#netPeerCountWs');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._netPeerCountRtc = document.querySelector('#netPeerCountRtc');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._netBytesReceived = document.querySelector('#netBytesReceived');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._netBytesSent = document.querySelector('#netBytesSent');
 
             setInterval(this._networkChanged.bind(this), 2500);
 
             // Wallet
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._wltAddress = document.querySelector('#wltAddress');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._wltBalance = document.querySelector('#wltBalance');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toHex().toUpperCase();
@@ -348,25 +348,25 @@
             }.bind(this);
 
             // Mempool
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mplTransactionCount = document.querySelector('#mplTransactionCount');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mplTransactions = document.querySelector('#mplTransactions');
 
             // Miner
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mnrWorking = document.querySelector('#mnrWorking');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mnrHashrate = document.querySelector('#mnrHashrate');
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
 
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
 
             // Block history
-            /** @member {HTMLElement} */
+            /** @type {HTMLElement} */
             this._blockHistory = document.querySelector('#blockHistory');
 
             // Init values.

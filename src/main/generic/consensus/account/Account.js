@@ -1,7 +1,7 @@
 class Account {
     constructor(balance) {
         if (!balance || !(balance instanceof Balance)) throw 'Malformed balance';
-        /** @member {Balance} */
+        /** @type {Balance} */
         this._balance = balance;
     }
 
