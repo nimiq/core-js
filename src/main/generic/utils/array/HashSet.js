@@ -29,7 +29,7 @@ class HashSet {
     }
 
     values() {
-        return this._map.values();
+        return Array.from(this._map.values());
     }
 
     get length() {

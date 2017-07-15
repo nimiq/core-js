@@ -3,7 +3,7 @@ class IndexedArray {
         this._array = array || new Array();
         this._ignoreDuplicates = ignoreDuplicates;
 
-        this._index = new Map();
+        this._index = new HashMap();
         this._buildIndex();
 
         return new Proxy(this._array, this);
@@ -11,7 +11,7 @@ class IndexedArray {
 
     _buildIndex() {
         for (let i = 0; i < this._array.length; ++i) {
-            this._index.set(this._array[i], i);
+            this._index.put(this._array[i], i);
         }
     }
 
@@ -36,19 +36,19 @@ class IndexedArray {
     // TODO index access set, e.g. arr[5] = 42
 
     push(value) {
-        if (this._index.has(value)) {
+        if (this._index.contains(value)) {
             if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
             return this._index.get(value);
         }
 
         const length = this._array.push(value);
-        this._index.set(value, length - 1);
+        this._index.put(value, length - 1);
         return length;
     }
 
     pop() {
         const value = this._array.pop();
-        this._index.delete(value);
+        this._index.remove(value);
         return value;
     }
 
@@ -56,7 +56,7 @@ class IndexedArray {
         const index = this._index.get(value);
         if (index !== undefined) {
             delete this._array[this._index.get(value)];
-            this._index.delete(value);
+            this._index.remove(value);
             return index;
         }
         return -1;
@@ -67,7 +67,7 @@ class IndexedArray {
     }
 
     isEmpty() {
-        return this._index.size === 0;
+        return this._index.length === 0;
     }
 
     slice(start, end) {

@@ -29,11 +29,11 @@ class HashMap {
     }
 
     keys() {
-        return this._map.keys();
+        return Array.from(this._map.keys());
     }
 
     values() {
-        return this._map.values();
+        return Array.from(this._map.values());
     }
 
     get length() {
