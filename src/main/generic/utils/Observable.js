@@ -15,13 +15,24 @@ class Observable {
     /**
      * @param {string} type
      * @param {Function} callback
+     * @return {number}
      */
     on(type, callback) {
         if (!this._listeners.has(type)) {
             this._listeners.set(type, [callback]);
+            return 0;
         } else {
-            this._listeners.get(type).push(callback);
+            return this._listeners.get(type).push(callback) - 1;
         }
+    }
+
+    /**
+     * @param {string} type
+     * @param {number} id
+     */
+    off(type, id) {
+        if (!this._listeners.has(type) || !this._listeners.get(type)[id]) return;
+        delete this._listeners.get(type)[id];
     }
 
     /**
@@ -32,6 +43,7 @@ class Observable {
         // Notify listeners for this event type.
         if (this._listeners.has(type)) {
             for (const listener of this._listeners.get(type)) {
+                if (!listener) continue;
                 listener.apply(null, args);
             }
         }
@@ -39,6 +51,7 @@ class Observable {
         // Notify wildcard listeners. Pass event type as first argument
         if (this._listeners.has(Observable.WILDCARD)) {
             for (const listener of this._listeners.get(Observable.WILDCARD)) {
+                if (!listener) continue;
                 listener.apply(null, arguments);
             }
         }
