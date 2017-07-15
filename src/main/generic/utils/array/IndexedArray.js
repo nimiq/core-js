@@ -3,7 +3,7 @@ class IndexedArray {
         this._array = array || new Array();
         this._ignoreDuplicates = ignoreDuplicates;
 
-        this._index = {};
+        this._index = new Map();
         this._buildIndex();
 
         return new Proxy(this._array, this);
@@ -11,7 +11,7 @@ class IndexedArray {
 
     _buildIndex() {
         for (let i = 0; i < this._array.length; ++i) {
-            this._index[this._array[i]] = i;
+            this._index.set(this._array[i], i);
         }
     }
 
@@ -36,38 +36,38 @@ class IndexedArray {
     // TODO index access set, e.g. arr[5] = 42
 
     push(value) {
-        if (this._index[value] !== undefined) {
+        if (this._index.has(value)) {
             if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
-            return this._index[value];
+            return this._index.get(value);
         }
 
         const length = this._array.push(value);
-        this._index[value] = length - 1;
+        this._index.set(value, length - 1);
         return length;
     }
 
     pop() {
         const value = this._array.pop();
-        delete this._index[value];
+        this._index.delete(value);
         return value;
     }
 
     remove(value) {
-        const index = this._index[value];
+        const index = this._index.get(value);
         if (index !== undefined) {
-            delete this._array[this._index[value]];
-            delete this._index[value];
+            delete this._array[this._index.get(value)];
+            this._index.delete(value);
             return index;
         }
         return -1;
     }
 
     indexOf(value) {
-        return this._index[value] >= 0 ? this._index[value] : -1;
+        return this._index.get(value) >= 0 ? this._index.get(value) : -1;
     }
 
     isEmpty() {
-        return Object.keys(this._index).length == 0;
+        return this._index.size === 0;
     }
 
     slice(start, end) {

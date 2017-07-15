@@ -1,6 +1,6 @@
 class HashMap {
     constructor(fnHash) {
-        this._map = {};
+        this._map = new Map();
         this._fnHash = fnHash || HashMap._hash;
     }
 
@@ -9,36 +9,35 @@ class HashMap {
     }
 
     get(key) {
-        return this._map[this._fnHash(key)];
+        return this._map.get(this._fnHash(key));
     }
 
     put(key, value) {
-        this._map[this._fnHash(key)] = value;
+        this._map.set(this._fnHash(key), value);
     }
 
     remove(key) {
-        delete this._map[this._fnHash(key)];
+        this._map.delete(this._fnHash(key));
     }
 
     clear() {
-        this._map = {};
+        this._map.clear();
     }
 
     contains(key) {
-        return this.get(key) !== undefined;
+        return this._map.has(key);
     }
 
     keys() {
-        return Object.keys(this._map);
+        return this._map.keys();
     }
 
     values() {
-        return Object.values(this._map);
+        return this._map.values();
     }
 
     get length() {
-        // XXX inefficient
-        return Object.keys(this._map).length;
+        return this._map.size;
     }
 }
 Class.register(HashMap);
