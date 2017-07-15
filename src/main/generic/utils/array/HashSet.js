@@ -1,6 +1,6 @@
 class HashSet {
     constructor(fnHash) {
-        this._map = {};
+        this._map = new Map();
         this._fnHash = fnHash || HashSet._hash;
     }
 
@@ -9,32 +9,31 @@ class HashSet {
     }
 
     add(value) {
-        this._map[this._fnHash(value)] = value;
+        this._map.set(this._fnHash(value), value);
     }
 
     get(value) {
-        return this._map[this._fnHash(value)];
+        return this._map.get(this._fnHash(value));
     }
 
     remove(value) {
-        delete this._map[this._fnHash(value)];
+        this._map.delete(this._fnHash(value));
     }
 
     clear() {
-        this._map = {};
+        this._map.clear();
     }
 
     contains(value) {
-        return this._map[this._fnHash(value)] !== undefined;
+        return this._map.has(this._fnHash(value));
     }
 
     values() {
-        return Object.values(this._map);
+        return Array.from(this._map.values());
     }
 
     get length() {
-        // XXX inefficient
-        return Object.keys(this._map).length;
+        return this._map.size;
     }
 }
 Class.register(HashSet);
