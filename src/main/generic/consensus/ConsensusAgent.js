@@ -46,13 +46,16 @@ class ConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv',          msg => this._onInv(msg));
-        peer.channel.on('getdata',      msg => this._onGetData(msg));
-        peer.channel.on('notfound',     msg => this._onNotFound(msg));
-        peer.channel.on('block',        msg => this._onBlock(msg));
-        peer.channel.on('tx',           msg => this._onTx(msg));
-        peer.channel.on('getblocks',    msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool',      msg => this._onMempool(msg));
+        peer.channel.on('inv',                  msg => this._onInv(msg));
+        peer.channel.on('getdata',              msg => this._onGetData(msg));
+        peer.channel.on('notfound',             msg => this._onNotFound(msg));
+        peer.channel.on('block',                msg => this._onBlock(msg));
+        peer.channel.on('tx',                   msg => this._onTx(msg));
+        peer.channel.on('getblocks',            msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool',              msg => this._onMempool(msg));
+        peer.channel.on('getinterlinkchain',    msg => this._onGetInterlinkChain(msg));
+        peer.channel.on('getaccountsproof',     msg => this._onGetAccountsProof(msg));
+        peer.channel.on('getheaders',           msg => this._onGetHeaders(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -502,6 +505,30 @@ class ConsensusAgent extends Observable {
 
         // Send the vectors back to the requesting peer.
         this._peer.channel.inv(vectors);
+    }
+
+    /**
+     * @param {GetInterlinkChainMessage} msg
+     * @private
+     */
+    _onGetInterlinkChain(msg) {
+        this._peer.channel.interlinkchain(null);
+    }
+
+    /**
+     * @param {GetHeadersMessage} msg
+     * @private
+     */
+    _onGetHeaders(msg) {
+        this._peer.channel.headers(null);
+    }
+
+    /**
+     * @param {GetAccountsProofMessage} msg
+     * @private
+     */
+    _onGetAccountsProof(msg) {
+        this._peer.channel.accountsproof(msg.blockHash, null);
     }
 
     /**
