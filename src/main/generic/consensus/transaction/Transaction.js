@@ -96,7 +96,7 @@ class Transaction {
     toString() {
         return `Transaction{`
             + `senderPubKey=${this._senderPubKey.toBase64()}, `
-            + `recipientAddr=${this._recipientAddr.toBase64()}, `
+            + `recipientAddr=${this._recipientAddr}, `
             + `value=${this._value}, `
             + `fee=${this._fee}, `
             + `nonce=${this._nonce}, `
