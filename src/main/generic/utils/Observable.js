@@ -42,16 +42,16 @@ class Observable {
     fire(type, ...args) {
         // Notify listeners for this event type.
         if (this._listeners.has(type)) {
-            for (const listener of this._listeners.get(type)) {
-                if (!listener) continue;
+            for (const i in this._listeners.get(type)) {
+                const listener = this._listeners[type][i];
                 listener.apply(null, args);
             }
         }
 
         // Notify wildcard listeners. Pass event type as first argument
         if (this._listeners.has(Observable.WILDCARD)) {
-            for (const listener of this._listeners.get(Observable.WILDCARD)) {
-                if (!listener) continue;
+            for (const i in this._listeners.get(Observable.WILDCARD)) {
+                const listener = this._listeners[type][i];
                 listener.apply(null, arguments);
             }
         }
