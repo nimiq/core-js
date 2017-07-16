@@ -433,12 +433,10 @@
             var txPromises = [];
 
             for (var tx of head.transactions) {
-                txPromises.push(new Promise(function(resolve, reject) {
-                    tx.getSenderAddr().then(function(senderAddr) {
-                        var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                        var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                        resolve(`<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`);
-                    });
+                txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
+                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                    return `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
             }
 
