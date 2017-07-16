@@ -125,9 +125,15 @@ class Blockchain extends Observable {
         return true;
     }
 
-    // Retrieves up to maxBlocks predecessors of the given block.
-    // Returns an array of max (maxBlocks + 1) block hashes with the given hash
-    // as the last element.
+    /**
+     * Retrieves up to maxBlocks predecessors of the given block.
+     * Returns an array of max (maxBlocks + 1) block hashes with the given hash
+     * as the last element.
+     * @param {Block} block
+     * @param {number} maxBlocks
+     * @return {Promise.<IndexedArray>}
+     * @private
+     */
     async _fetchPath(block, maxBlocks = 1000000) {
         let hash = await block.hash();
         const path = [hash];
@@ -521,19 +527,63 @@ class Blockchain extends Observable {
     /**
      * @param {Block} head
      * @param {number} m
-     * @returns {Promise.<InterlinkChain>}
+     * @returns {InterlinkChain}
      */
     async constructInterlinkChain(head, m) {
+        head = head || this._mainChain.head;
+        const maxTarget = head.interlink.length - 1;
 
+        // If we have at least a interlink depth > 0,
+        // we try finding the maximal chain with length >= m.
+        if (maxTarget > 0) {
+            let proof = this.constructInChain(head, maxTarget);
+            // Check if length >= m and, if not, reiterate.
+            let i = maxTarget;
+            while (proof.length < m && i > 0) {
+                --i;
+                proof = this.constructInChain(head, i);
+            }
+
+            // If depth > 0 return the proof, otherwise return whole chain as proof.
+            if (i > 0) {
+                proof.prepend(Block.GENESIS);
+                return proof;
+            }
+        }
+
+        const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
+        while (!Block.GENESIS.equals(head)) {
+            head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
+            interlinkChain.prepend(head);
+        }
+        return new InterlinkChain(headers, interlinks);
     }
 
     /**
      * @param {Block} head
      * @param {number} i
-     * @returns {Promise.<InterlinkChain>}
+     * @returns {InterlinkChain}
      */
     async constructInChain(head, i) {
+        const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
 
+        // i_prime contains the updated index for the next interlink vector
+        // Since we base our interlink chain on the original head's target T, we have to recalculate i'
+        // as i' = i + log2(T'/T), where T' is the current heads target T'.
+        // TODO check whether we want to use log2 here
+        // TODO discretize target
+        const target = head.target;
+        let i_prime = i;
+        while (i_prime < head.interlink.length) {
+            head = await this.getBlock(head.interlink.hashes[i_prime]); // eslint-disable-line no-await-in-loop
+
+            interlinkChain.prepend(head);
+
+            const target_prime = head.target;
+            i_prime = Math.ceil(i + Math.log2(target_prime / target));
+        }
+
+        return interlinkChain;
     }
 
     /** @type {Block} */

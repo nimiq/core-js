@@ -3,7 +3,7 @@ class InterlinkChain {
      * @param {Array.<BlockHeader>} headers
      * @param {Array.<BlockInterlink>} interlinks
      */
-    constructor(headers, interlinks) {
+    constructor(headers = [], interlinks = []) {
         if (!headers || !NumberUtils.isUint16(headers.length)
             || headers.some(it => !(it instanceof BlockHeader))) throw 'Malformed headers';
         if (!interlinks || !NumberUtils.isUint16(interlinks.length)
@@ -44,6 +44,17 @@ class InterlinkChain {
         return buf;
     }
 
+    /**
+     * Allows to prepend a block to the interlink chain.
+     * @param {Block} block
+     */
+    prepend(block) {
+        // TODO unshift() is inefficient. We should build the array with push()
+        // instead and iterate over it in reverse order.
+        this._headers.unshift(block.header);
+        this._interlinks.unshift(block.interlink);
+    }
+
     /** @type {number} */
     get serializedSize() {
         let size = /*count*/ 2;
@@ -52,6 +63,11 @@ class InterlinkChain {
             size += this._interlinks[i].serializedSize;
         }
         return size;
+    }
+
+    /** @type {number} */
+    get length() {
+        return this._headers.length;
     }
 }
 Class.register(InterlinkChain);
