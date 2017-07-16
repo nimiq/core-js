@@ -51,7 +51,7 @@ class Observable {
         // Notify wildcard listeners. Pass event type as first argument
         if (this._listeners.has(Observable.WILDCARD)) {
             for (const i in this._listeners.get(Observable.WILDCARD)) {
-                const listener = this._listeners[type][i];
+                const listener = this._listeners[Observable.WILDCARD][i];
                 listener.apply(null, arguments);
             }
         }
