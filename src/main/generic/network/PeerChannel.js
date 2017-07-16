@@ -109,10 +109,11 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Transaction} transaction
+     * @param {?AccountsProof} [accountsProof]
      * @return {boolean}
      */
-    tx(transaction) {
-        return this._send(new TxMessage(transaction));
+    tx(transaction, accountsProof) {
+        return this._send(new TxMessage(transaction, accountsProof));
     }
 
     /**
@@ -186,6 +187,59 @@ class PeerChannel extends Observable {
      */
     signal(senderId, recipientId, nonce, ttl, flags, payload) {
         return this._send(new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @return {boolean}
+     */
+    getaccountsproof(blockHash, addresses) {
+        return this._send(new GetAccountsProofMessage(blockHash, addresses));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {AccountsProof} accountsProof
+     * @return {boolean}
+     */
+    accountsproof(blockHash, accountsProof) {
+        return this._send(new AccountsProofMessage(blockHash, accountsProof));
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @param {number} k
+     * @return {boolean}
+     */
+    getheaders(hashes, k) {
+        return this._send(new GetHeadersMessage(hashes, k));
+    }
+
+    /**
+     * @param {Array.<BlockHeader>} headers
+     * @param {BlockInterlink} blockInterlink
+     * @return {boolean}
+     */
+    headers(headers, blockInterlink) {
+        return this._send(new HeadersMessage(headers, blockInterlink));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {number} m
+     * @return {boolean}
+     */
+    getinterlinkchain(blockHash, m) {
+        return this._send(new GetInterlinkChainMessage(blockHash, m));
+    }
+
+    /**
+     * @param {InterlinkChain} interlinkChain
+     * @return {boolean}
+     */
+    interlinkchain(interlinkChain) {
+        return this._send(new InterlinkChainMessage(interlinkChain));
     }
 
     /**

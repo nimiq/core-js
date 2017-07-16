@@ -145,7 +145,11 @@ Message.Type = {
 
     // Nimiq
     GETBALANCES: 'getbalances',
+    GETINTERLINKCHAIN: 'getinterlinkchain',
+    GETACCOUNTSPROOF: 'getaccountsproof',
     BALANCES: 'balances',
+    INTERLINKCHAIN: 'interlinkchain',
+    ACCOUNTSPROOF: 'accountsproof',
 
     /**
      * @param {SerialBuffer} buf
