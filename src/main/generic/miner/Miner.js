@@ -161,16 +161,18 @@ class Miner extends Observable {
      */
     async _getNextBlock() {
         const body = await this._getNextBody();
-        const header = await this._getNextHeader(body);
-        return new Block(header, body);
+        const interlink = await this._blockchain.getNextInterlink();
+        const header = await this._getNextHeader(body, interlink);
+        return new Block(header, interlink, body);
     }
 
     /**
      * @param {BlockBody} body
+     * @param {BlockInterlink} interlink
      * @return {Promise.<BlockHeader>}
      * @private
      */
-    async _getNextHeader(body) {
+    async _getNextHeader(body, interlink) {
         const prevHash = await this._blockchain.headHash;
         const accounts = await this._blockchain.createTemporaryAccounts();
         await accounts.commitBlockBody(body);
@@ -180,7 +182,8 @@ class Miner extends Observable {
         const timestamp = this._getNextTimestamp();
         const nBits = await this._blockchain.getNextCompactTarget();
         const nonce = Math.round(Math.random() * 100000);
-        return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
+        const interlinkHash = await interlink.hash();
+        return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
     }
 
     /**
