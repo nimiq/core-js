@@ -42,15 +42,25 @@ class Policy {
     static get BLOCK_TARGET_MAX() {
         return BlockUtils.compactToTarget(0x1f00ffff); // 16 zero bits, bitcoin uses 32 (0x1d00ffff)
     }
-    
+
     /**
      * Number of blocks we take into account to calculate next difficulty.
-     * @returns {number}
-     * @constructor
+     * @type {number}
+     * @constant
      */
     static get DIFFICULTY_BLOCK_WINDOW() {
         return 100; // Blocks
     }
+
+    /**
+     * Limits the rate at which the difficulty is adjusted min/max
+     * @type {number}
+     * @constant
+     */
+    static get MAX_ADJUSTMENT_FACTOR() {
+        return 2;
+    }
+
 
     /**
      * Convert Nimiq decimal to Number of Satoshis.
