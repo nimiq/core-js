@@ -170,8 +170,7 @@ class Blockchain extends Observable {
     }
 
     /**
-     * 
-     * @param block
+     * @param {Block} block
      * @return {Promise.<number>}
      * @private
      */
@@ -523,34 +522,42 @@ class Blockchain extends Observable {
         return new BlockInterlink(hashes);
     }
 
+    /** @type {Block} */
     get head() {
         return this._mainChain.head;
     }
 
+    /** @type {number} */
     get totalWork() {
         return this._mainChain.totalWork;
     }
 
+    /** @type {number} */
     get height() {
         return this._mainChain.height;
     }
 
+    /** @type {Hash} */
     get headHash() {
         return this._headHash;
     }
 
+    /** @type {Array.<Hash>} */
     get path() {
         return this._mainPath;
     }
 
+    /** @type {boolean} */
     get busy() {
         return this._synchronizer.working;
     }
 
+    /** @type {boolean} */
     get checkpointLoaded() {
         return this._checkpointLoaded;
     }
 
+    /** @type {Hash} */
     accountsHash() {
         return this._accounts.hash();
     }
@@ -605,12 +612,21 @@ Blockchain.PUSH_ERR_ORPHAN_BLOCK = -2;
 Class.register(Blockchain);
 
 class Chain {
+    /**
+     * @param {Block} head
+     * @param {number} totalWork
+     * @param {number} height
+     */
     constructor(head, totalWork, height = 1) {
         this._head = head;
         this._totalWork = totalWork ? totalWork : head.difficulty;
         this._height = height;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Chain}
+     */
     static unserialize(buf) {
         const head = Block.unserialize(buf);
         const totalWork = buf.readFloat64();
@@ -618,6 +634,11 @@ class Chain {
         return new Chain(head, totalWork, height);
     }
 
+    /**
+     *
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._head.serialize(buf);
@@ -626,24 +647,29 @@ class Chain {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return this._head.serializedSize
             + /*totalWork*/ 8
             + /*height*/ 4;
     }
 
+    /** @type {Block} */
     get head() {
         return this._head;
     }
 
+    /** @type {number} */
     get totalWork() {
         return this._totalWork;
     }
 
+    /** @type {number} */
     get height() {
         return this._height;
     }
 
+    /** @type {Hash} */
     hash() {
         return this._head.hash();
     }
