@@ -175,8 +175,4 @@ Block.GENESIS = new Block(
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('AACIm7qoV7ybhlwQMvJrqjzSt5RJtq5++xi8jg91jfU=');
-Block.GENESIS.hash().then(hash => {
-    Block.GENESIS.HASH = hash;
-    //Object.freeze(Block.GENESIS);
-});
+Block.GENESIS.HASH = Hash.fromBase64('5eKwilmaRc8xCO79IXIFLPuuNOvfQ04BLMNenkhYfs0=');
