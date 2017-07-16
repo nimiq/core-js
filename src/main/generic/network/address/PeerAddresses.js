@@ -705,14 +705,7 @@ PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    WsPeerAddress.seed('alpacash.com', 8080),
-    WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
-    WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
-    WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
-    WsPeerAddress.seed('emily.nimiq-network.com', 443)
+    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
 ];
 Class.register(PeerAddresses);
 
