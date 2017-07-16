@@ -74,7 +74,6 @@ const sources = {
         './src/main/generic/consensus/account/tree/AccountsTreeNode.js',
         './src/main/generic/consensus/account/tree/AccountsTreeStore.js',
         './src/main/generic/consensus/account/tree/AccountsTree.js',
-        './src/main/generic/consensus/account/tree/AccountsTreeCheckpoint.js',
         './src/main/generic/consensus/account/Accounts.js',
         './src/main/generic/consensus/block/BlockHeader.js',
         './src/main/generic/consensus/block/BlockInterlink.js',

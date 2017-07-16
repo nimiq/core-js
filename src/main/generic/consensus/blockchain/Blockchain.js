@@ -4,7 +4,7 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts);
     }
 
-    static createVolatile(accounts, allowCheckpoint=false) {
+    static createVolatile(accounts, allowCheckpoint = false) {
         const store = BlockchainStore.createVolatile();
         return new Blockchain(store, accounts, allowCheckpoint);
     }
@@ -16,7 +16,7 @@ class Blockchain extends Observable {
      * @return {Promise}
      * @private
      */
-    constructor(store, accounts, allowCheckpoint=true) {
+    constructor(store, accounts, allowCheckpoint = false) {
         super();
         this._store = store;
         this._accounts = accounts;
@@ -68,7 +68,7 @@ class Blockchain extends Observable {
         this._mainPath = await this._fetchPath(this.head);
 
         // Always set checkpointLoaded to true, if our first block in the path is a checkpoint.
-        if (this._mainPath.length > 0 && (this._mainPath[0].equals(Block.CHECKPOINT.HASH) || Block.OLD_CHECKPOINTS.indexOf(this._mainPath[0]))) {
+        if (Block.CHECKPOINT && this._mainPath.length > 0 && (this._mainPath[0].equals(Block.CHECKPOINT.HASH) || Block.OLD_CHECKPOINTS.indexOf(this._mainPath[0]))) {
             this._checkpointLoaded = true;
         }
 
@@ -89,11 +89,13 @@ class Blockchain extends Observable {
         const accounts = await Accounts.createVolatile();
 
         // Load accountsTree at checkpoint.
+        // XXX Checkpoints are disabled, this will always fail.
         if (!AccountsTree.CHECKPOINT_NODES) {
             return false;
         }
-        const nodes = AccountsTree.CHECKPOINT_NODES;
+
         // Read nodes.
+        const nodes = AccountsTree.CHECKPOINT_NODES;
         for (let i = 0; i < nodes.length; ++i) {
             nodes[i] = AccountsTreeNode.unserialize(BufferUtils.fromBase64(nodes[i]));
         }
