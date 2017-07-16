@@ -23,7 +23,7 @@ class PrivateKey extends Primitive {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @return {SerialBuffer}
      */
     serialize(buf) {

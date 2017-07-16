@@ -23,7 +23,7 @@ class Primitive {
 
     /**
      * @abstract
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      */
     serialize(buf) {}
 

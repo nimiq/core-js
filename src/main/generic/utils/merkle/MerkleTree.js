@@ -16,6 +16,9 @@ class MerkleTree {
      */
     static _computeRoot(values, fnHash) {
         const len = values.length;
+        if (len === 0) {
+            return Hash.light(new Uint8Array(0));
+        }
         if (len === 1) {
             return fnHash(values[0]);
         }
