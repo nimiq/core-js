@@ -1,6 +1,7 @@
 class BlockHeader {
     /**
      * @param {Hash} prevHash
+     * @param {Hash} interlinkHash
      * @param {Hash} bodyHash
      * @param {Hash} accountsHash
      * @param {number} nBits
@@ -9,9 +10,10 @@ class BlockHeader {
      * @param {number} nonce
      * @param {number} version
      */
-    constructor(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version = BlockHeader.CURRENT_VERSION) {
+    constructor(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version = BlockHeader.CURRENT_VERSION) {
         if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
+        if (!Hash.isHash(interlinkHash)) throw 'Malformed interlinkHash';
         if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
         if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
         if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
@@ -23,6 +25,8 @@ class BlockHeader {
         this._version = version;
         /** @type {Hash} */
         this._prevHash = prevHash;
+        /** @type {Hash} */
+        this._interlinkHash = interlinkHash;
         /** @type {Hash} */
         this._bodyHash = bodyHash;
         /** @type {Hash} */
@@ -41,19 +45,21 @@ class BlockHeader {
         const version = buf.readUint16();
         if (!BlockHeader.SUPPORTED_VERSIONS.includes(version)) throw 'Block version unsupported';
         const prevHash = Hash.unserialize(buf);
+        const interlinkHash = Hash.unserialize(buf);
         const bodyHash = Hash.unserialize(buf);
         const accountsHash = Hash.unserialize(buf);
         const nBits = buf.readUint32();
         const height = buf.readUint32();
         const timestamp = buf.readUint32();
         const nonce = buf.readUint64();
-        return new BlockHeader(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version);
+        return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version);
     }
 
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint16(this._version);
         this._prevHash.serialize(buf);
+        this._interlinkHash.serialize(buf);
         this._bodyHash.serialize(buf);
         this._accountsHash.serialize(buf);
         buf.writeUint32(this._nBits);
@@ -67,6 +73,7 @@ class BlockHeader {
     get serializedSize() {
         return /*version*/ 2
             + this._prevHash.serializedSize
+            + this._interlinkHash.serializedSize
             + this._bodyHash.serializedSize
             + this._accountsHash.serializedSize
             + /*nBits*/ 4
@@ -76,7 +83,7 @@ class BlockHeader {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @return {Promise.<boolean>}
      */
     async verifyProofOfWork(buf) {
@@ -102,6 +109,10 @@ class BlockHeader {
         return this._pow;
     }
 
+    /**
+     * @param {BlockHeader|*} o
+     * @returns {boolean}
+     */
     equals(o) {
         return o instanceof BlockHeader
             && this._prevHash.equals(o.prevHash)
@@ -113,6 +124,9 @@ class BlockHeader {
             && this._nonce === o.nonce;
     }
 
+    /**
+     * @returns {string}
+     */
     toString() {
         return `BlockHeader{`
             + `prevHash=${this._prevHash}, `
@@ -128,6 +142,11 @@ class BlockHeader {
     /** @type {Hash} */
     get prevHash() {
         return this._prevHash;
+    }
+
+    /** @type {Hash} */
+    get interlinkHash() {
+        return this._interlinkHash;
     }
 
     /** @type {Hash} */
