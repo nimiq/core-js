@@ -147,7 +147,7 @@ describe('Blockchain', () => {
 
             // all timestamps are explicitly set to trigger an increase in difficulty after the last block
 
-            for (let i = 0; i < Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 2; ++i) {
+            for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 2; ++i) {
                 const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
                 const hash = await block.hash();
                 const status = await testBlockchain.pushBlock(block);
@@ -165,7 +165,7 @@ describe('Blockchain', () => {
             expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
 
             // Push one last block (this one should reach Policy.DIFFICULTY_ADJUSTMENT_BLOCKS)
-            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME / 2);
+            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME / 2);
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(Blockchain.PUSH_OK);
             expect(Log.d).not.toHaveBeenCalled();

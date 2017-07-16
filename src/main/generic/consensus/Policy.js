@@ -44,13 +44,23 @@ class Policy {
     }
 
     /**
-     * Number of blocks to keep the difficulty stable.
+     * Number of blocks we take into account to calculate next difficulty.
      * @type {number}
      * @constant
      */
-    static get DIFFICULTY_ADJUSTMENT_BLOCKS() {
-        return 10; // Blocks
+    static get DIFFICULTY_BLOCK_WINDOW() {
+        return 100; // Blocks
     }
+
+    /**
+     * Limits the rate at which the difficulty is adjusted min/max
+     * @type {number}
+     * @constant
+     */
+    static get DIFFICULTY_MAX_ADJUSTMENT_FACTOR() {
+        return 2;
+    }
+
 
     /**
      * Convert Nimiq decimal to Number of Satoshis.

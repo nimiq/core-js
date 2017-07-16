@@ -440,48 +440,42 @@ class Blockchain extends Observable {
      * @returns {Promise.<number>}
      */
     async getNextCompactTarget(chain) {
+        // The difficulty is adjusted every block.
         chain = chain || this._mainChain;
 
-        // The difficulty is adjusted every DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-        if (chain.height % Policy.DIFFICULTY_ADJUSTMENT_BLOCKS === 0) {
-            // If the given chain is the main chain, get the last DIFFICULTY_ADJUSTMENT_BLOCKS
-            // blocks via this._mainChain, otherwise fetch the path.
-            let startHash;
-            if (chain === this._mainChain) {
-                const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_ADJUSTMENT_BLOCKS, 0);
-                startHash = this._mainPath[startHeight];
-            } else {
-                const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_ADJUSTMENT_BLOCKS - 1);
-                startHash = path[0];
-            }
-
-            // Compute the actual time it took to mine the last DIFFICULTY_ADJUSTMENT_BLOCKS blocks.
-            const startChain = await this._store.get(startHash.toBase64());
-            const actualTime = chain.head.timestamp - startChain.head.timestamp;
-
-            // Compute the target adjustment factor.
-            const expectedTime = Policy.DIFFICULTY_ADJUSTMENT_BLOCKS * Policy.BLOCK_TIME;
-            let adjustment = actualTime / expectedTime;
-
-            // Clamp the adjustment factor to [0.25, 4].
-            adjustment = Math.max(adjustment, 0.25);
-            adjustment = Math.min(adjustment, 4);
-
-            // Compute the next target.
-            const currentTarget = chain.head.target;
-            let nextTarget = currentTarget * adjustment;
-
-            // Make sure the target is below or equal the maximum allowed target (difficulty 1).
-            // Also enforce a minimum target of 1.
-            nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
-            nextTarget = Math.max(nextTarget, 1);
-
-            return BlockUtils.targetToCompact(nextTarget);
+        // If the given chain is the main chain, get the last DIFFICULTY_BLOCK_WINDOW
+        // blocks via this._mainChain, otherwise fetch the path.
+        let startHash;
+        if (chain === this._mainChain) {
+            const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW, 0);
+            startHash = this._mainPath[startHeight];
+        } else {
+            const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_BLOCK_WINDOW - 1);
+            startHash = path[0];
         }
 
-        // If the difficulty is not adjusted at this height, the next difficulty
-        // is the current difficulty.
-        return chain.head.nBits;
+        // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
+        const startChain = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
+        const actualTime = chain.head.timestamp - startChain.head.timestamp;
+
+        // Compute the target adjustment factor.
+        const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
+        let adjustment = actualTime / expectedTime;
+
+        // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
+        adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+        adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+
+        // Compute the next target.
+        const currentTarget = chain.head.target;
+        let nextTarget = currentTarget * adjustment;
+
+        // Make sure the target is below or equal the maximum allowed target (difficulty 1).
+        // Also enforce a minimum target of 1.
+        nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+        nextTarget = Math.max(nextTarget, 1);
+
+        return BlockUtils.targetToCompact(nextTarget);
     }
 
     /**
