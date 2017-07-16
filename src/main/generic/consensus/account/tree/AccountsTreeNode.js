@@ -263,6 +263,13 @@ class AccountsTreeNode {
         }
         return true;
     }
+
+    /**
+     * @return {AccountsTreeNode}
+     */
+    clone() {
+        return AccountsTreeNode.unserialize(this.serialize());
+    }
 }
 AccountsTreeNode.BRANCH = 0x00;
 AccountsTreeNode.TERMINAL = 0xff;

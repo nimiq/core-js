@@ -247,8 +247,7 @@ class TemporaryAccountsTreeStore {
                 return undefined;
             }
             // Assignment is intended! Cache value.
-            // unserialize(serialize) copies node.
-            return this._store[key] = AccountsTreeNode.unserialize(node.serialize());
+            return this._store[key] = node.clone();
         }
         return this._store[key] === null ? undefined : this._store[key];
     }
