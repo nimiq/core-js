@@ -1,13 +1,17 @@
 class Block {
     /**
      * @param {BlockHeader} header
+     * @param {BlockInterlink} interlink
      * @param {BlockBody} body
      */
-    constructor(header, body) {
+    constructor(header, interlink, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
+        if (!(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
         if (!(body instanceof BlockBody)) throw 'Malformed body';
         /** @type {BlockHeader} */
         this._header = header;
+        /** @type {BlockInterlink} */
+        this._interlink = interlink;
         /** @type {BlockBody} */
         this._body = body;
     }
@@ -18,17 +22,19 @@ class Block {
      */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
+        const interlink = BlockInterlink.unserialize(buf);
         const body = BlockBody.unserialize(buf);
-        return new Block(header, body);
+        return new Block(header, interlink, body);
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._header.serialize(buf);
+        this._interlink.serialize(buf);
         this._body.serialize(buf);
         return buf;
     }
@@ -36,6 +42,7 @@ class Block {
     /** @type {number} */
     get serializedSize() {
         return this._header.serializedSize
+            + this._interlink.serializedSize
             + this._body.serializedSize;
     }
 

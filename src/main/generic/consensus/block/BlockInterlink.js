@@ -1,4 +1,4 @@
-class InterlinkVector {
+class BlockInterlink {
     /**
      * @param {Array.<Hash>} blockHashes
      */
@@ -9,7 +9,7 @@ class InterlinkVector {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {InterlinkVector}
+     * @returns {BlockInterlink}
      */
     static unserialize(buf) {
         const count = buf.readUint8();
@@ -17,7 +17,7 @@ class InterlinkVector {
         for (let i = 0; i < count; i++) {
             hashes.push(Hash.unserialize(buf));
         }
-        return new InterlinkVector(hashes);
+        return new BlockInterlink(hashes);
     }
 
     /**
