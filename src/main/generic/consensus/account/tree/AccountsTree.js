@@ -1,21 +1,82 @@
+class AccountsTreeTransaction {
+    /**
+     * @param {AccountsTree} that
+     * @param {AccountsTreeStoreTransaction} tx
+     */
+    constructor(that, tx) {
+        /** @type {AccountsTree} */
+        this._that = that;
+        /** @type {AccountsTreeStoreTransaction|IAccountsTreeStore} */
+        this._tx = tx;
+    }
+    
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Account>}
+     */
+    async get(address) {
+        return this._that.get(address, this._tx);
+    }
+
+    /**
+     * @param {Address} address
+     * @param {Account} account
+     * @returns {Promise}
+     */
+    async put(address, account) {
+        return this._that.put(address, account, this._tx);
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    async commit() {
+        return this._tx.commit();
+    }
+
+    /**
+     * @returns {Promise.<Hash>}
+     */
+    async root() {
+        const root = await this._tx.getRootKey();
+        return Hash.fromBase64(root);
+    }
+}
+
 class AccountsTree extends Observable {
+    /**
+     * @returns {AccountsTree}
+     */
     static getPersistent() {
         const store = AccountsTreeStore.getPersistent();
         return new AccountsTree(store);
     }
 
+    /**
+     * @returns {AccountsTree}
+     */
     static createVolatile() {
         const store = AccountsTreeStore.createVolatile();
         return new AccountsTree(store);
     }
 
+    /**
+     * @param {AccountsTree} backend
+     * @returns {AccountsTree}
+     */
     static createTemporary(backend) {
         const store = AccountsTreeStore.createTemporary(backend._store);
         return new AccountsTree(store);
     }
 
+    /**
+     * @private
+     * @param {AccountsTreeStore} treeStore
+     * @returns {Promise<AccountsTree>}
+     */
     constructor(treeStore) {
         super();
+        /** @type {AccountsTreeStore} */
         this._store = treeStore;
         this._synchronizer = new Synchronizer();
 
@@ -23,6 +84,10 @@ class AccountsTree extends Observable {
         return this._initRoot();
     }
 
+    /**
+     * @returns {Promise.<AccountsTree>}
+     * @private
+     */
     async _initRoot() {
         let rootKey = await this._store.getRootKey();
         if (!rootKey) {
@@ -33,6 +98,12 @@ class AccountsTree extends Observable {
         return this;
     }
 
+    /**
+     * @param {Address} address
+     * @param {Account} account
+     * @param {IAccountsTreeStore} transaction
+     * @returns {Promise}
+     */
     put(address, account, transaction) {
         return new Promise((resolve, error) => {
             this._synchronizer.push(() => {
@@ -41,6 +112,14 @@ class AccountsTree extends Observable {
         });
     }
 
+    /**
+     * 
+     * @param {Address} address
+     * @param {Account} account
+     * @param {IAccountsTreeStore} transaction
+     * @returns {Promise}
+     * @private
+     */
     async _put(address, account, transaction) {
         transaction = transaction || this._store;
 
@@ -60,6 +139,16 @@ class AccountsTree extends Observable {
         this.fire(address, account, address);
     }
 
+    /**
+     * 
+     * @param {IAccountsTreeStore} transaction
+     * @param {AccountsTreeNode} node
+     * @param {string} prefix
+     * @param {Account} account
+     * @param {Array.<AccountsTreeNode>} rootPath
+     * @returns {Promise}
+     * @private
+     */
     async _insert(transaction, node, prefix, account, rootPath) {
         // Find common prefix between node and new address.
         const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
@@ -129,6 +218,14 @@ class AccountsTree extends Observable {
         return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
     }
 
+    /**
+     * 
+     * @param {IAccountsTreeStore} transaction
+     * @param {string} prefix
+     * @param {Array.<AccountsTreeNode>} rootPath
+     * @returns {Promise}
+     * @private
+     */
     async _prune(transaction, prefix, rootPath) {
         const rootKey = await transaction.getRootKey();
 
@@ -171,6 +268,15 @@ class AccountsTree extends Observable {
         return undefined;
     }
 
+    /**
+     * 
+     * @param {IAccountsTreeStore} transaction
+     * @param {string} prefix
+     * @param {string} nodeKey
+     * @param {Array.<AccountsTreeNode>} rootPath
+     * @returns {Promise}
+     * @private
+     */
     async _updateKeys(transaction, prefix, nodeKey, rootPath) {
         // Walk along the rootPath towards the root node starting with the
         // immediate predecessor of the node specified by 'prefix'.
@@ -189,6 +295,11 @@ class AccountsTree extends Observable {
         return nodeKey;
     }
 
+    /**
+     * @param {Address} address
+     * @param {?IAccountsTreeStore} [transaction]
+     * @returns {Promise.<Account>}
+     */
     async get(address, transaction) {
         transaction = transaction || this._store;
 
@@ -200,6 +311,14 @@ class AccountsTree extends Observable {
         return this._retrieve(transaction, rootNode, prefix);
     }
 
+    /**
+     * 
+     * @param {IAccountsTreeStore} transaction
+     * @param {AccountsTreeNode} node
+     * @param {string} prefix
+     * @returns {Promise.<(Account|boolean)>}
+     * @private
+     */
     async _retrieve(transaction, node, prefix) {
         // Find common prefix between node and requested address.
         const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
@@ -225,6 +344,11 @@ class AccountsTree extends Observable {
         return false;
     }
 
+    /**
+     * @param {Array.<AccountsTreeNode>} nodes
+     * @param {IAccountsTreeStore} transaction
+     * @returns {Promise}
+     */
     async populate(nodes, transaction) {
         transaction = transaction || this._store;
 
@@ -238,6 +362,10 @@ class AccountsTree extends Observable {
         await transaction.setRootKey(rootKey);
     }
 
+    /**
+     * @param {?IAccountsTreeStore} [transaction]
+     * @returns {Promise.<boolean>}
+     */
     async verify(transaction) {
         transaction = transaction || this._store;
 
@@ -247,6 +375,13 @@ class AccountsTree extends Observable {
         return this._verify(rootNode, transaction);
     }
 
+    /**
+     * 
+     * @param {AccountsTreeNode} node
+     * @param {IAccountsTreeStore} transaction
+     * @returns {Promise.<boolean>}
+     * @private
+     */
     async _verify(node, transaction) {
         if (!node) return true;
         transaction = transaction || this._store;
@@ -287,11 +422,20 @@ class AccountsTree extends Observable {
         return true;
     }
 
+    /**
+     * @returns {Promise}
+     */
     async clear() {
         const rootKey = await this._store.getRootKey();
         return this._clear(rootKey);
     }
 
+    /**
+     * 
+     * @param {string} nodeKey
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _clear(nodeKey) {
         const node = await this._store.get(nodeKey);
         if (!node) return;
@@ -312,6 +456,13 @@ class AccountsTree extends Observable {
         return nodes;
     }
 
+    /**
+     * 
+     * @param {string} nodeKey
+     * @param {Array.<string>} arr
+     * @returns {Promise}
+     * @private
+     */
     async _export(nodeKey, arr) {
         const node = await this._store.get(nodeKey);
 
@@ -324,30 +475,22 @@ class AccountsTree extends Observable {
         }
     }
 
+    /**
+     * @returns {Promise.<AccountsTreeTransaction>}
+     */
     async transaction() {
         // FIXME Firefox apparently has problems with transactions!
         // const tx = await this._store.transaction();
-        const tx = await AccountsTreeStore.createTemporary(this._store, true);
-        const that = this;
-        return {
-            get: function (address) {
-                return that.get(address, tx);
-            },
-
-            put: function (address, account) {
-                return that.put(address, account, tx);
-            },
-
-            commit: function () {
-                return tx.commit();
-            },
-
-            root: async function () {
-                return Hash.fromBase64(await tx.getRootKey());
-            }
-        };
+        const tx = await AccountsTreeStore.createTemporaryTransaction(this._store);
+        return new AccountsTreeTransaction(this, tx);
     }
 
+    /**
+     * @param {string} prefix1
+     * @param {string} prefix2
+     * @returns {string}
+     * @private
+     */
     static _commonPrefix(prefix1, prefix2) {
         let i = 0;
         for (; i < prefix1.length; ++i) {
@@ -356,6 +499,9 @@ class AccountsTree extends Observable {
         return prefix1.substr(0, i);
     }
 
+    /**
+     * @returns {Promise.<Hash>}
+     */
     async root() {
         const rootKey = await this._store.getRootKey();
         return Hash.fromBase64(rootKey);

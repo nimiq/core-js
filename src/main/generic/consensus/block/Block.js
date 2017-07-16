@@ -1,17 +1,31 @@
 class Block {
+    /**
+     * @param {BlockHeader} header
+     * @param {BlockBody} body
+     */
     constructor(header, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
         if (!(body instanceof BlockBody)) throw 'Malformed body';
+        /** @type {BlockHeader} */
         this._header = header;
+        /** @type {BlockBody} */
         this._body = body;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Block}
+     */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
         const body = BlockBody.unserialize(buf);
         return new Block(header, body);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._header.serialize(buf);
@@ -19,67 +33,113 @@ class Block {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return this._header.serializedSize
             + this._body.serializedSize;
     }
 
+    /**
+     * @type {BlockHeader}
+     */
     get header() {
         return this._header;
     }
 
+    /**
+     * @type {BlockBody}
+     */
     get body() {
         return this._body;
     }
 
+    /**
+     * @type {Hash}
+     */
     get prevHash() {
         return this._header.prevHash;
     }
 
+    /**
+     * @type {Hash}
+     */
     get bodyHash() {
         return this._header.bodyHash;
     }
 
+    /**
+     * @type {Hash}
+     */
     get accountsHash() {
         return this._header.accountsHash;
     }
 
+    /**
+     * @type {number}
+     */
     get nBits() {
         return this._header.nBits;
     }
 
+    /**
+     * @type {number}
+     */
     get target() {
         return this._header.target;
     }
 
+    /**
+     * @type {number}
+     */
     get difficulty() {
         return this._header.difficulty;
     }
 
+    /**
+     * @type {number}
+     */
     get height() {
         return this._header.height;
     }
-
+    
+    /**
+     * @type {number}
+     */
     get timestamp() {
         return this._header.timestamp;
     }
 
+    /**
+     * @type {number}
+     */
     get nonce() {
         return this._header.nonce;
     }
 
+    /**
+     * @type {Address}
+     */
     get minerAddr() {
         return this._body.minerAddr;
     }
 
+    /**
+     * @type {Array.<Transaction>}
+     */
     get transactions() {
         return this._body.transactions;
     }
 
+    /**
+     * @type {number}
+     */
     get transactionCount() {
         return this._body.transactionCount;
     }
 
+    /**
+     * @returns {Promise.<Hash>}
+     */
     hash() {
         return this._header.hash();
     }

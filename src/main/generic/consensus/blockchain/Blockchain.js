@@ -9,6 +9,13 @@ class Blockchain extends Observable {
         return new Blockchain(store, accounts, allowCheckpoint);
     }
 
+    /**
+     * @param {BlockchainStore} store
+     * @param {Accounts} accounts
+     * @param {boolean} allowCheckpoint
+     * @return {Promise}
+     * @private
+     */
     constructor(store, accounts, allowCheckpoint=true) {
         super();
         this._store = store;
@@ -145,6 +152,11 @@ class Blockchain extends Observable {
         return new IndexedArray(path);
     }
 
+    /**
+     * Pushs a block into the Blockchain asynchronously. Will correctly handle forks and side-chains and apply transactions if necessary.
+     * @param {Block} block The block to be pushed to the chain.
+     * @return {Promise} Promise for this operation.
+     */
     pushBlock(block) {
         return new Promise((resolve, error) => {
             this._synchronizer.push(() => {
@@ -157,6 +169,12 @@ class Blockchain extends Observable {
         return Accounts.createTemporary(this._accounts);
     }
 
+    /**
+     * 
+     * @param block
+     * @return {Promise.<number>}
+     * @private
+     */
     async _pushBlock(block) {
         // Check if we already know this block. If so, ignore it.
         const hash = await block.hash();
@@ -257,7 +275,8 @@ class Blockchain extends Observable {
                 Log.w(Blockchain, 'Rejected block - more than one transaction per sender');
                 return false;
             }
-            if (tx.recipientAddr.equals(await tx.getSenderAddr())) {  // eslint-disable-line no-await-in-loop
+            const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
+            if (tx.recipientAddr.equals(txSenderAddr)) {
                 Log.w(Blockchain, 'Rejected block - sender and recipient coincide');
                 return false;
             }
@@ -522,7 +541,8 @@ class Blockchain extends Observable {
             currentBlock = await this.getBlock(currentBlock.prevHash);
         }
 
-        if (!currentBlock.accountsHash.equals(await accounts.hash())) {
+        const accountsHash = await accounts.hash();
+        if (!currentBlock.accountsHash.equals(accountsHash)) {
             throw 'AccountsHash mismatch while exporting';
         }
 

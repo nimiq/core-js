@@ -1,4 +1,8 @@
 class PeerChannel extends Observable {
+    /**
+     * @listens PeerConnection#message
+     * @param {PeerConnection} connection
+     */
     constructor(connection) {
         super();
         this._conn = connection;
@@ -8,6 +12,10 @@ class PeerChannel extends Observable {
         this.bubble(this._conn, 'close', 'error', 'ban');
     }
 
+    /**
+     * @param {Uint8Array} rawMsg
+     * @private
+     */
     _onMessage(rawMsg) {
         let msg;
         try {
@@ -34,78 +42,156 @@ class PeerChannel extends Observable {
         }
     }
 
+    /**
+     * @param {Message} msg
+     * @return {boolean}
+     * @private
+     */
     _send(msg) {
         return this._conn.send(msg.serialize());
     }
 
+    /**
+     * @param {string} [reason]
+     */
     close(reason) {
         this._conn.close(reason);
     }
 
+    /**
+     * @param {string} [reason]
+     */
     ban(reason) {
         this._conn.ban(reason);
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @param {number} startHeight
+     * @param {number} totalWork
+     * @return {boolean}
+     */
     version(peerAddress, startHeight, totalWork) {
         return this._send(new VersionMessage(Version.CODE, peerAddress, Block.GENESIS.HASH, startHeight, totalWork));
     }
 
-    verack() {
-        return this._send(new VerAckMessage());
-    }
-
+    /**
+     * @param {Array.<InvVector>} vectors
+     * @return {boolean}
+     */
     inv(vectors) {
         return this._send(new InvMessage(vectors));
     }
 
+    /**
+     * @param {Array.<InvVector>} vectors
+     * @return {boolean}
+     */
     notfound(vectors) {
         return this._send(new NotFoundMessage(vectors));
     }
 
+    /**
+     * @param {Array.<InvVector>} vectors
+     * @return {boolean}
+     */
     getdata(vectors) {
         return this._send(new GetDataMessage(vectors));
     }
 
+    /**
+     * @param {Block} block
+     * @return {boolean}
+     */
     block(block) {
         return this._send(new BlockMessage(block));
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @return {boolean}
+     */
     tx(transaction) {
         return this._send(new TxMessage(transaction));
     }
 
+    /**
+     * @param {Array.<Hash>} hashes
+     * @param {Hash} hashStop
+     * @return {boolean}
+     */
     getblocks(hashes, hashStop = new Hash(null)) {
         return this._send(new GetBlocksMessage(hashes, hashStop));
     }
 
+    /**
+     * @return {boolean}
+     */
     mempool() {
         return this._send(new MempoolMessage());
     }
 
+    /**
+     * @param {Message.Type} messageType
+     * @param {RejectMessage.Code} code
+     * @param {string} reason
+     * @param {Uint8Array} extraData
+     * @return {boolean}
+     */
     reject(messageType, code, reason, extraData) {
         return this._send(new RejectMessage(messageType, code, reason, extraData));
     }
 
+    /**
+     * @param {Array.<PeerAddress>} addresses
+     * @return {boolean}
+     */
     addr(addresses) {
         return this._send(new AddrMessage(addresses));
     }
 
+    /**
+     * @param {number} protocolMask
+     * @param {number} serviceMask
+     * @return {boolean}
+     */
     getaddr(protocolMask, serviceMask) {
         return this._send(new GetAddrMessage(protocolMask, serviceMask));
     }
 
+    /**
+     * @param {number} nonce
+     * @return {boolean}
+     */
     ping(nonce) {
         return this._send(new PingMessage(nonce));
     }
 
+    /**
+     * @param {number} nonce
+     * @return {boolean}
+     */
     pong(nonce) {
         return this._send(new PongMessage(nonce));
     }
 
+    /**
+     * @param {string} senderId
+     * @param {string} recipientId
+     * @param {number} nonce
+     * @param {number} ttl
+     * @param {SignalMessage.Flags|number} flags
+     * @param {Uint8Array} [payload]
+     * @return {boolean}
+     */
     signal(senderId, recipientId, nonce, ttl, flags, payload) {
         return this._send(new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload));
     }
 
+    /**
+     * @param {PeerChannel} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof PeerChannel
             && this._conn.equals(o.connection);
@@ -115,38 +201,49 @@ class PeerChannel extends Observable {
         return this._conn.hashCode();
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return 'PeerChannel{conn=' + this._conn + '}';
     }
 
+    /** @type {PeerConnection} */
     get connection() {
         return this._conn;
     }
 
+    /** @type {number} */
     get id() {
         return this._conn.id;
     }
 
+    /** @type {number} */
     get protocol() {
         return this._conn.protocol;
     }
 
+    /** @type {PeerAddress} */
     get peerAddress() {
         return this._conn.peerAddress;
     }
 
+    /** @type {PeerAddress} */
     set peerAddress(value) {
         this._conn.peerAddress = value;
     }
 
+    /** @type {NetAddress} */
     get netAddress() {
         return this._conn.netAddress;
     }
 
+    /** @type {NetAddress} */
     set netAddress(value) {
         this._conn.netAddress = value;
     }
 
+    /** @type {boolean} */
     get closed() {
         return this._conn.closed;
     }

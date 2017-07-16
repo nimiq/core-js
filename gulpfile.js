@@ -261,13 +261,6 @@ gulp.task('sectest-babel', ['watch'], function () {
     }));
 });
 
-gulp.task('jscs', function () {
-    const jscs = require('gulp-jscs');
-    return gulp.src(sources.all)
-        .pipe(jscs())
-        .pipe(jscs.reporter());
-});
-
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)

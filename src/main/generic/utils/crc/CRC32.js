@@ -13,6 +13,10 @@ class CRC32 {
         return table;
     }
 
+    /**
+     * @param {Uint8Array} buf
+     * @returns {number}
+     */
     static compute(buf) {
         if (!CRC32._table) CRC32._table = CRC32._createTable();
         if (!CRC32._hex_chars) CRC32._hex_chars = '0123456789abcdef'.split('');
