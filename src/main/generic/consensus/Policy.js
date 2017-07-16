@@ -42,14 +42,14 @@ class Policy {
     static get BLOCK_TARGET_MAX() {
         return BlockUtils.compactToTarget(0x1f00ffff); // 16 zero bits, bitcoin uses 32 (0x1d00ffff)
     }
-
+    
     /**
-     * Number of blocks to keep the difficulty stable.
-     * @type {number}
-     * @constant
+     * Number of blocks we take into account to calculate next difficulty.
+     * @returns {number}
+     * @constructor
      */
-    static get DIFFICULTY_ADJUSTMENT_BLOCKS() {
-        return 10; // Blocks
+    static get DIFFICULTY_BLOCK_WINDOW() {
+        return 100; // Blocks
     }
 
     /**
