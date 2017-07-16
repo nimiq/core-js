@@ -54,6 +54,13 @@ class Block {
     }
 
     /**
+     * @type {BlockInterlink}
+     */
+    get interlink() {
+        return this._interlink;
+    }
+
+    /**
      * @type {BlockBody}
      */
     get body() {

@@ -34,7 +34,7 @@ class BlockInterlink {
     }
 
     /**
-     * @returns {number}
+     * @type {number}
      */
     get serializedSize() {
         let size = /*count*/ 1;
@@ -50,4 +50,19 @@ class BlockInterlink {
     hash() {
         return MerkleTree.computeRoot(this._hashes);
     }
+
+    /**
+     * @type {Array.<Hash>}
+     */
+    get hashes() {
+        return this._hashes;
+    }
+
+    /**
+     * @type {number}
+     */
+    get length() {
+        return this._hashes.length;
+    }
 }
+Class.register(BlockInterlink);

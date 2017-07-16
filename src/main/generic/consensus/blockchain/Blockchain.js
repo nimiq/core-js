@@ -434,6 +434,10 @@ class Blockchain extends Observable {
         return chain ? chain.head : null;
     }
 
+    /**
+     * @param {Chain} [chain]
+     * @returns {Promise.<number>}
+     */
     async getNextCompactTarget(chain) {
         chain = chain || this._mainChain;
 
@@ -477,6 +481,46 @@ class Blockchain extends Observable {
         // If the difficulty is not adjusted at this height, the next difficulty
         // is the current difficulty.
         return chain.head.nBits;
+    }
+
+    /**
+     * @param {Chain} [chain]
+     * @returns {Promise.<BlockInterlink>}
+     */
+    async getNextInterlink(chain) {
+        chain = chain || this._mainChain;
+
+        // This is the 'interlink-update' algorithm from the PoPoW Paper.
+        // Compute how much harder the current block hash is than the current target.
+        const hash = await chain.head.hash();
+        const target = chain.head.target;
+        let i = 1, depth = 0;
+        while (BlockUtils.isProofOfWork(hash, target / 2**i)) {
+            depth = i;
+            i++;
+        }
+
+        // If the current block hash is not hard enough, the interlink doesn't change.
+        if (depth === 0) {
+            return chain.head.interlink;
+        }
+
+        // The interlink changes, start constructing a new one.
+        /** @type {Array.<Hash>} */
+        const hashes = [Block.GENESIS.HASH];
+
+        // Push the current block hash up to depth times onto the interlink.
+        for (let i = 0; i < depth; i++) {
+            hashes.push(hash);
+        }
+
+        // If the current interlink is longer, push the remaining hashes from the current interlink.
+        const interlink = chain.head.interlink;
+        for (let i = depth + 1; i < interlink.length; i++) {
+            hashes.push(interlink.hashes[i]);
+        }
+
+        return new BlockInterlink(hashes);
     }
 
     get head() {

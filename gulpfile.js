@@ -77,6 +77,7 @@ const sources = {
         './src/main/generic/consensus/account/tree/AccountsTreeCheckpoint.js',
         './src/main/generic/consensus/account/Accounts.js',
         './src/main/generic/consensus/block/BlockHeader.js',
+        './src/main/generic/consensus/block/BlockInterlink.js',
         './src/main/generic/consensus/block/BlockBody.js',
         './src/main/generic/consensus/block/BlockUtils.js',
         './src/main/generic/consensus/transaction/Transaction.js',
