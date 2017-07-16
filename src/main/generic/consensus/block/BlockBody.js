@@ -1,5 +1,4 @@
 class BlockBody {
-
     /**
      * @param {Address} minerAddr
      * @param {Array.<Transaction>} transactions
@@ -47,7 +46,7 @@ class BlockBody {
     get serializedSize() {
         let size = this._minerAddr.serializedSize
             + /*transactionsLength*/ 2;
-        for (let tx of this._transactions) {
+        for (const tx of this._transactions) {
             size += tx.serializedSize;
         }
         return size;
@@ -57,26 +56,9 @@ class BlockBody {
      * @return {Promise.<Hash>}
      */
     hash() {
-        return BlockBody._computeRoot([this._minerAddr, ...this._transactions]);
-    }
-
-    static _computeRoot(values) {
-        // values may contain:
-        // - transactions (Transaction)
-        // - miner address (Uint8Array)
-        const len = values.length;
-        if (len == 1) {
-            const value = values[0];
-            return value.hash ? /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
-        }
-
-        const mid = Math.round(len / 2);
-        const left = values.slice(0, mid);
-        const right = values.slice(mid);
-        return Promise.all([
-            BlockBody._computeRoot(left),
-            BlockBody._computeRoot(right)
-        ]).then(hashes => Hash.light(BufferUtils.concatTypedArrays(hashes[0].serialize(), hashes[1].serialize())));
+        const fnHash = value => value.hash ?
+            /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
+        return MerkleTree.computeRoot([this._minerAddr, ...this._transactions], fnHash);
     }
 
     equals(o) {

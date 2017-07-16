@@ -58,6 +58,7 @@ const sources = {
         './src/main/generic/utils/database/ObjectDB.js',
         './src/main/generic/utils/database/TypedDBTransaction.js',
         './src/main/generic/utils/number/NumberUtils.js',
+        './src/main/generic/utils/merkle/MerkleTree.js',
         './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/generic/utils/string/StringUtils.js',
         './src/main/generic/consensus/Policy.js',

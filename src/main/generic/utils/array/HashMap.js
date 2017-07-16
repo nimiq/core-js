@@ -2,11 +2,11 @@
  * @template K,V
  */
 class HashMap {
-    constructor(fnHash) {
+    constructor(fnHash = HashMap._hash) {
         /** @type {Map.<string,V>} */
         this._map = new Map();
         /** @type {function(object): string} */
-        this._fnHash = fnHash || HashMap._hash;
+        this._fnHash = fnHash;
     }
 
     /**
