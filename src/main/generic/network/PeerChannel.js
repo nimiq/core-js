@@ -217,12 +217,11 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Array.<BlockHeader>} headers
-     * @param {BlockInterlink} blockInterlink
+     * @param {HeaderChain} headerChain
      * @return {boolean}
      */
-    headers(headers, blockInterlink) {
-        return this._send(new HeadersMessage(headers, blockInterlink));
+    headers(headerChain) {
+        return this._send(new HeadersMessage(headerChain));
     }
 
     /**
