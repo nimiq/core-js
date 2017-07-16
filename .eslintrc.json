@@ -57,6 +57,12 @@
         "no-useless-concat": "warn",
         "no-var": "warn",
         "require-await": "warn",
-        "valid-jsdoc": "warn"
+        "valid-jsdoc": [
+            "warn",
+            {
+                "requireParamDescription": false,
+                "requireReturnDescription": false
+            }
+        ]
     }
 }
