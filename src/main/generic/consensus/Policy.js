@@ -57,7 +57,7 @@ class Policy {
      * @type {number}
      * @constant
      */
-    static get MAX_ADJUSTMENT_FACTOR() {
+    static get DIFFICULTY_MAX_ADJUSTMENT_FACTOR() {
         return 2;
     }
 

@@ -435,7 +435,7 @@ class Blockchain extends Observable {
     }
 
     async getNextCompactTarget(chain) {
-        // The difficulty is adjusted every blocks.
+        // The difficulty is adjusted every block.
         chain = chain || this._mainChain;
 
         // If the given chain is the main chain, get the last DIFFICULTY_BLOCK_WINDOW
@@ -457,9 +457,9 @@ class Blockchain extends Observable {
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
         let adjustment = actualTime / expectedTime;
 
-        // Clamp the adjustment factor to [1/MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
-        adjustment = Math.max(adjustment, 1/Policy.MAX_ADJUSTMENT_FACTOR);
-        adjustment = Math.min(adjustment, Policy.MAX_ADJUSTMENT_FACTOR);
+        // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
+        adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+        adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
 
         // Compute the next target.
         const currentTarget = chain.head.target;
