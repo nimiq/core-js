@@ -550,14 +550,14 @@ class Blockchain extends Observable {
                 interlinkChain = this._getInnerChain(head, depth);
             }
 
-            // If the interlink chain is long enough, return it, otherwise return the whole header chain.
+            // If the interlink chain is long enough, return it.
             if (interlinkChain.length >= m) {
                 interlinkChain.prepend(Block.GENESIS);
                 return interlinkChain;
             }
         }
 
-        // The interlink at head is empty or just contains the genesis block.
+        // An interlink chain with the desired length m could not be constructed.
         // Return the whole header chain.
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
         while (!Block.GENESIS.equals(head)) {
