@@ -7,6 +7,10 @@ class MessageFactory {
         return clazz.unserialize(buf);
     }
 }
+/**
+ * @dict 
+ * @type {object}
+ */
 MessageFactory.CLASSES = {};
 MessageFactory.CLASSES[Message.Type.VERSION] = VersionMessage;
 MessageFactory.CLASSES[Message.Type.INV] = InvMessage;

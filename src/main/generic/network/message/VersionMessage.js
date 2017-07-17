@@ -1,4 +1,11 @@
 class VersionMessage extends Message {
+    /**
+     * @param {number} version
+     * @param {PeerAddress} peerAddress
+     * @param {Hash} genesisHash
+     * @param {number} startHeight
+     * @param {number} totalWork
+     */
     constructor(version, peerAddress, genesisHash, startHeight, totalWork) {
         super(Message.Type.VERSION);
         if (!NumberUtils.isUint32(version)) throw 'Malformed version';
@@ -7,13 +14,22 @@ class VersionMessage extends Message {
         if (!NumberUtils.isUint32(startHeight)) throw 'Malformed startHeight';
         // TODO Validate that totalWork is a valid double.
 
+        /** @type {number} */
         this._version = version;
+        /** @type {PeerAddress} */
         this._peerAddress = peerAddress;
+        /** @type {Hash} */
         this._genesisHash = genesisHash;
+        /** @type {number} */
         this._startHeight = startHeight;
+        /** @type {number} */
         this._totalWork = totalWork;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {VersionMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const version = buf.readUint32();
@@ -24,6 +40,10 @@ class VersionMessage extends Message {
         return new VersionMessage(version, peerAddress, genesisHash, startHeight, totalWork);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -36,6 +56,7 @@ class VersionMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return super.serializedSize
             + /*version*/ 4
@@ -45,22 +66,27 @@ class VersionMessage extends Message {
             + /*totalWork*/ 8;
     }
 
+    /** @type {number} */
     get version() {
         return this._version;
     }
 
+    /** @type {PeerAddress} */
     get peerAddress() {
         return this._peerAddress;
     }
 
+    /** @type {Hash} */
     get genesisHash() {
         return this._genesisHash;
     }
 
+    /** @type {number} */
     get startHeight() {
         return this._startHeight;
     }
 
+    /** @type {number} */
     get totalWork() {
         return this._totalWork;
     }

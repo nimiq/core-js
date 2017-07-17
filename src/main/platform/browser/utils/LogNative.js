@@ -35,7 +35,7 @@ class LogNative {
         if (tag && tag.name) tag = tag.name;
         if (!this.isLoggable(tag, level)) return;
         if (tag) args.unshift(tag + ':');
-        args.unshift(`[${Log._level_tag(level)} ${new Date().toTimeString().substr(0, 8)}]`);
+        args.unshift(`[${Log.Level.toStringTag(level)} ${new Date().toTimeString().substr(0, 8)}]`);
         if (console.error && level >= Log.ERROR) {
             console.error.apply(console, args);
         } else if (console.warn && level >= Log.WARNING) {

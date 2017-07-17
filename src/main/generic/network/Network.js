@@ -1,52 +1,106 @@
 class Network extends Observable {
+    /**
+     * @type {number}
+     * @constant
+     */
     static get PEER_COUNT_MAX() {
         return PlatformUtils.isBrowser() ? 15 : 50000;
     }
 
+    /**
+     * @type {number}
+     * @constant
+     */
     static get PEER_COUNT_PER_IP_WS_MAX() {
         return PlatformUtils.isBrowser() ? 1 : 25;
     }
 
+    /**
+     * @type {number}
+     * @constant
+     */
     static get PEER_COUNT_PER_IP_RTC_MAX() {
         return 2;
     }
 
+    /**
+     * @param {Blockchain} blockchain
+     * @return {Promise.<Network>}
+     */
     constructor(blockchain) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
         return this._init();
     }
 
+    /**
+     * @listens PeerAddresses#added
+     * @listens WebSocketConnector#connection
+     * @listens WebSocketConnector#error
+     * @listens WebRtcConnector#connection
+     * @listens WebRtcConnector#error
+     * @return {Promise.<Network>}
+     * @private
+     */
     async _init() {
-        // Flag indicating whether we should actively connect to other peers
-        // if our peer count is below PEER_COUNT_DESIRED.
+        /**
+         * Flag indicating whether we should actively connect to other peers
+         * if our peer count is below PEER_COUNT_DESIRED.
+         * @type {boolean}
+         * @private
+         */
         this._autoConnect = false;
-        // Save the old state when going offline, to restore it when going online again.
+        /**
+         * Save the old state when going offline, to restore it when going online again.
+         * @type {boolean}
+         * @private
+         */
         this._savedAutoConnect = false;
 
-        // Number of ongoing outbound connection attempts.
+        /**
+         * Number of ongoing outbound connection attempts.
+         * @type {number}
+         * @private
+         */
         this._connectingCount = 0;
 
-        // Map of agents indexed by connection ids.
+        /**
+         * Map of agents indexed by connection ids.
+         * @type {HashMap.<number,NetworkAgent>}
+         * @private
+         */
         this._agents = new HashMap();
 
-        // Map from netAddress.host -> number of connections to this host.
+        /**
+         * Map from netAddress.host -> number of connections to this host.
+         * @type {HashMap.<string,number>}
+         * @private
+         */
         this._connectionCounts = new HashMap();
 
         // Total bytes sent/received on past connections.
+        /** @type {number} */
         this._bytesSent = 0;
+        /** @type {number} */
         this._bytesReceived = 0;
 
+        /** @type {WebSocketConnector} */
         this._wsConnector = new WebSocketConnector();
         this._wsConnector.on('connection', conn => this._onConnection(conn));
         this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
 
+        /** @type {WebRtcConnector} */
         this._rtcConnector = await new WebRtcConnector();
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
-        // Helper objects to manage PeerAddresses.
-        // Must be initialized AFTER the WebSocket/WebRtcConnector.
+        /**
+         * Helper objects to manage PeerAddresses.
+         * Must be initialized AFTER the WebSocket/WebRtcConnector.
+         * @type {PeerAddresses}
+         * @private
+         */
         this._addresses = new PeerAddresses();
 
         // Relay new addresses to peers.
@@ -61,6 +115,7 @@ class Network extends Observable {
             window.addEventListener('offline', _ => this._onOffline());
         }
 
+        /** @type {SignalStore} */
         this._forwards = new SignalStore();
 
         return this;
@@ -74,6 +129,9 @@ class Network extends Observable {
         this._checkPeerCount();
     }
 
+    /**
+     * @param {string|*} reason
+     */
     disconnect(reason) {
         this._autoConnect = false;
         this._savedAutoConnect = false;
@@ -84,9 +142,12 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @return {boolean}
+     */
     isOnline() {
         // If in doubt, return true.
-        return (!PlatformUtils.isBrowser() || window.navigator.onLine === undefined) || window.navigator.onLine;
+        return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
     }
 
     _onOnline() {
@@ -114,6 +175,10 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @param {Array.<PeerAddress>} addresses
+     * @private
+     */
     _relayAddresses(addresses) {
         // Pick PEER_COUNT_RELAY random peers and relay addresses to them if:
         // - number of addresses <= 10
@@ -153,6 +218,10 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @private
+     */
     _connect(peerAddress) {
         switch (peerAddress.protocol) {
             case Protocol.WS:
@@ -179,6 +248,14 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @listens PeerChannel#signal
+     * @listens PeerChannel#ban
+     * @listens NetworkAgent#handshake
+     * @listens NetworkAgent#close
+     * @param {PeerConnection} conn
+     * @private
+     */
     _onConnection(conn) {
         // Decrement connectingCount if we have initiated this connection.
         if (conn.outbound && this._addresses.isConnecting(conn.peerAddress)) {
@@ -232,7 +309,14 @@ class Network extends Observable {
     }
 
 
-    // Handshake with this peer was successful.
+    /**
+     * Handshake with this peer was successful.
+     * @fires Network#peer-joined
+     * @fires Network#peers-changed
+     * @param {Peer} peer
+     * @param {NetworkAgent} agent
+     * @private
+     */
     _onHandshake(peer, agent) {
         // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
         if (peer.channel.netAddress) {
@@ -289,7 +373,12 @@ class Network extends Observable {
         Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight}, totalWork=${peer.totalWork})`);
     }
 
-    // Connection to this peer address failed.
+    /**
+     * Connection to this peer address failed.
+     * @param {PeerAddress} peerAddress
+     * @param {string|*} [reason]
+     * @private
+     */
     _onError(peerAddress, reason) {
         Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
@@ -302,7 +391,15 @@ class Network extends Observable {
         this._checkPeerCount();
     }
 
-    // This peer channel was closed.
+    /**
+     * This peer channel was closed.
+     * @fires Network#peer-left
+     * @fires Network#peers-changed
+     * @param {Peer} peer
+     * @param {PeerChannel} channel
+     * @param {boolean} closedByRemote
+     * @private
+     */
     _onClose(peer, channel, closedByRemote) {
         // Delete agent.
         this._agents.remove(channel.id);
@@ -344,7 +441,12 @@ class Network extends Observable {
         this._checkPeerCount();
     }
 
-    // This peer channel was banned.
+    /**
+     * This peer channel was banned.
+     * @param {PeerChannel} channel
+     * @param {string|*} [reason]
+     * @private
+     */
     _onBan(channel, reason) {
         // TODO If this is an inbound connection, the peerAddres might not be set yet.
         // Ban the netAddress in this case.
@@ -356,6 +458,11 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @param {PeerConnection} conn
+     * @return {boolean}
+     * @private
+     */
     _incrementConnectionCount(conn) {
         let numConnections = this._connectionCounts.get(conn.netAddress) || 0;
         numConnections++;
@@ -371,6 +478,10 @@ class Network extends Observable {
         return true;
     }
 
+    /**
+     * @param {NetAddress} netAddress
+     * @private
+     */
     _decrementConnectionCount(netAddress) {
         let numConnections = this._connectionCounts.get(netAddress) || 1;
         numConnections = Math.max(numConnections - 1, 0);
@@ -380,6 +491,11 @@ class Network extends Observable {
 
     /* Signaling */
 
+    /**
+     * @param {PeerChannel} channel
+     * @param {SignalMessage} msg
+     * @private
+     */
     _onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
@@ -456,27 +572,33 @@ class Network extends Observable {
             + `(via ${signalChannel.peerAddress})`);
     }
 
+    /** @type {number} */
     get peerCount() {
         return this._addresses.peerCount;
     }
 
+    /** @type {number} */
     get peerCountWebSocket() {
         return this._addresses.peerCountWs;
     }
 
+    /** @type {number} */
     get peerCountWebRtc() {
         return this._addresses.peerCountRtc;
     }
 
+    /** @type {number} */
     get peerCountDumb() {
         return this._addresses.peerCountDumb;
     }
 
+    /** @type {number} */
     get bytesSent() {
         return this._bytesSent
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
     }
 
+    /** @type {number} */
     get bytesReceived() {
         return this._bytesReceived
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
@@ -490,16 +612,28 @@ Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
 Class.register(Network);
 
 class SignalStore {
-    constructor(maxSize = 1000 /*maximum number of entries*/) {
+    /**
+     * @param {number} maxSize maximum number of entries
+     */
+    constructor(maxSize = 1000) {
+        /** @type {number} */
         this._maxSize = maxSize;
+        /** @type {Queue.<ForwardedSignal>} */
         this._queue = new Queue();
+        /** @type {HashMap.<ForwardedSignal, number>} */
         this._store = new HashMap();
     }
 
+    /** @type {number} */
     get length() {
         return this._queue.length;
     }
 
+    /**
+     * @param {number} senderId
+     * @param {number} recipientId
+     * @param {number} nonce
+     */
     add(senderId, recipientId, nonce) {
         // If we already forwarded such a message, just update timestamp.
         if (this.contains(senderId, recipientId, nonce)) {
@@ -520,11 +654,23 @@ class SignalStore {
         this._store.put(signal, Date.now());
     }
 
+    /**
+     * @param {number} senderId
+     * @param {number} recipientId
+     * @param {number} nonce
+     * @return {boolean}
+     */
     contains(senderId, recipientId, nonce) {
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         return this._store.contains(signal);
     }
 
+    /**
+     * @param {number} senderId
+     * @param {number} recipientId
+     * @param {number} nonce
+     * @return {boolean}
+     */
     signalForwarded(senderId, recipientId, nonce) {
         const signal = new ForwardedSignal(senderId, recipientId, nonce);
         const lastSeen = this._store.get(signal);
@@ -546,12 +692,24 @@ SignalStore.SIGNAL_MAX_AGE = 10 /* seconds */;
 Class.register(SignalStore);
 
 class ForwardedSignal {
+    /**
+     * @param {number} senderId
+     * @param {number} recipientId
+     * @param {number} nonce
+     */
     constructor(senderId, recipientId, nonce) {
+        /** @type {number} */
         this._senderId = senderId;
+        /** @type {number} */
         this._recipientId = recipientId;
+        /** @type {number} */
         this._nonce = nonce;
     }
 
+    /**
+     * @param {ForwardedSignal} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof ForwardedSignal
             && this._senderId === o._senderId
@@ -563,6 +721,9 @@ class ForwardedSignal {
         return this.toString();
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return `ForwardedSignal{senderId=${this._senderId}, recipientId=${this._recipientId}, nonce=${this._nonce}}`;
     }

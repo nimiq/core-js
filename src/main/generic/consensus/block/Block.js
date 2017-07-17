@@ -1,17 +1,31 @@
 class Block {
+    /**
+     * @param {BlockHeader} header
+     * @param {BlockBody} body
+     */
     constructor(header, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
         if (!(body instanceof BlockBody)) throw 'Malformed body';
+        /** @type {BlockHeader} */
         this._header = header;
+        /** @type {BlockBody} */
         this._body = body;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Block}
+     */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
         const body = BlockBody.unserialize(buf);
         return new Block(header, body);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._header.serialize(buf);
@@ -19,67 +33,113 @@ class Block {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return this._header.serializedSize
             + this._body.serializedSize;
     }
 
+    /**
+     * @type {BlockHeader}
+     */
     get header() {
         return this._header;
     }
 
+    /**
+     * @type {BlockBody}
+     */
     get body() {
         return this._body;
     }
 
+    /**
+     * @type {Hash}
+     */
     get prevHash() {
         return this._header.prevHash;
     }
 
+    /**
+     * @type {Hash}
+     */
     get bodyHash() {
         return this._header.bodyHash;
     }
 
+    /**
+     * @type {Hash}
+     */
     get accountsHash() {
         return this._header.accountsHash;
     }
 
+    /**
+     * @type {number}
+     */
     get nBits() {
         return this._header.nBits;
     }
 
+    /**
+     * @type {number}
+     */
     get target() {
         return this._header.target;
     }
 
+    /**
+     * @type {number}
+     */
     get difficulty() {
         return this._header.difficulty;
     }
 
+    /**
+     * @type {number}
+     */
     get height() {
         return this._header.height;
     }
-
+    
+    /**
+     * @type {number}
+     */
     get timestamp() {
         return this._header.timestamp;
     }
 
+    /**
+     * @type {number}
+     */
     get nonce() {
         return this._header.nonce;
     }
 
+    /**
+     * @type {Address}
+     */
     get minerAddr() {
         return this._body.minerAddr;
     }
 
+    /**
+     * @type {Array.<Transaction>}
+     */
     get transactions() {
         return this._body.transactions;
     }
 
+    /**
+     * @type {number}
+     */
     get transactionCount() {
         return this._body.transactionCount;
     }
 
+    /**
+     * @returns {Promise.<Hash>}
+     */
     hash() {
         return this._header.hash();
     }
@@ -107,21 +167,21 @@ Block.GENESIS.hash().then(hash => {
 /* Checkpoint Block */
 Block.CHECKPOINT = new Block(
     new BlockHeader(
-        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAACz2rriqjNrVtbVYobuolnTJhXufF5lBEB61wj5U=')),
-        /*bodyHash*/ new Hash(BufferUtils.fromBase64('G7duveFXsC66EpcV7VZwErD1sV95guXYs2GwgDTaIt8=')),
-        /*accountsHash*/ new Hash(BufferUtils.fromBase64('w2CknFXZXXRdc6mTBooHZDz5xWmNerxR+EbEByI8qeQ=')),
-        /*nBits*/ 488403102,
-        /*height*/ 40001,
-        /*timestamp*/ 1499739175,
-        /*nonce*/ 770530,
+        /*prevHash*/ new Hash(BufferUtils.fromBase64('AAAACR1ZBB6dLwUgpjtfQhtlCgLuguChryDpfg3owQw=')),
+        /*bodyHash*/ new Hash(BufferUtils.fromBase64('42ZYUsOggTBQC2wmHuRhIBwHq134SvOu+yNcW4Wxk80=')),
+        /*accountsHash*/ new Hash(BufferUtils.fromBase64('cw5Io6xrV+c/Sn6of64x7xvuO6UhXM6AGLTT7p1Z+os=')),
+        /*nBits*/ 487809829,
+        /*height*/ 44001,
+        /*timestamp*/ 1500040572,
+        /*nonce*/ 574240,
         /*version*/ 1),
-    new BlockBody(new Address(BufferUtils.fromBase64('suf58sgNYkNZY7jzXflOkbRWatQ=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('2byRdubhSfj+ScKznuTP0t1ocNA=')), [])
 );
 Block.CHECKPOINT.hash().then(hash => {
     Block.CHECKPOINT.HASH = hash;
     //Object.freeze(Block.GENESIS);
 });
-Block.CHECKPOINT.TOTAL_WORK = 151460655.62473667;
+Block.CHECKPOINT.TOTAL_WORK = 169434379.24322975;
 Block.OLD_CHECKPOINTS = new IndexedArray([
     new Hash(BufferUtils.fromBase64('AAAACxKJIIfQb99dTIuiRyY6VkRlzBfbyknKo/515Ho=')),
     new Hash(BufferUtils.fromBase64('AAAAJHtA0SSxZb+sk2T9Qtzz4bWZdfz8pqbf5PNjywI=')),
@@ -151,6 +211,8 @@ Block.OLD_CHECKPOINTS = new IndexedArray([
     new Hash(BufferUtils.fromBase64('AAAAA2trckpN5D7NlSQGJEDmx/1uQR3lRSlXmsKY2wE=')),
     new Hash(BufferUtils.fromBase64('AAAACmdt5K8AjlabxT0SOqNgCaA3b+B43q0MF7ppN7Q=')),
     new Hash(BufferUtils.fromBase64('AAAADEVHAPy+L7Mvy9YfiIYoWnLNd+uWUnVitoX0/tA=')),
-    new Hash(BufferUtils.fromBase64('AAAABYQ5353h3Lv7juIk1FrjU1q0wZoZVnq7Ocuw8IA='))
+    new Hash(BufferUtils.fromBase64('AAAABYQ5353h3Lv7juIk1FrjU1q0wZoZVnq7Ocuw8IA=')),
+    new Hash(BufferUtils.fromBase64('AAAAFVMaIN3bMR/bqcr/G8AXExIbg41bd/iZaLTyhWY=')),
+    new Hash(BufferUtils.fromBase64('AAAAAqBBrvzSgRg8shTLLUXYw6W/8Je0H276xGYJ5wU='))
 ]);
 Class.register(Block);

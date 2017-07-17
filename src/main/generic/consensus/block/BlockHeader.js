@@ -1,4 +1,14 @@
 class BlockHeader {
+    /**
+     * @param {Hash} prevHash
+     * @param {Hash} bodyHash
+     * @param {Hash} accountsHash
+     * @param {number} nBits
+     * @param {number} height
+     * @param {number} timestamp
+     * @param {number} nonce
+     * @param {number} version
+     */
     constructor(prevHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version = BlockHeader.CURRENT_VERSION) {
         if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
@@ -9,13 +19,21 @@ class BlockHeader {
         if (!NumberUtils.isUint32(timestamp)) throw 'Malformed timestamp';
         if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
 
+        /** @type {number} */
         this._version = version;
+        /** @type {Hash} */
         this._prevHash = prevHash;
+        /** @type {Hash} */
         this._bodyHash = bodyHash;
+        /** @type {Hash} */
         this._accountsHash = accountsHash;
+        /** @type {number} */
         this._nBits = nBits;
+        /** @type {number} */
         this._height = height;
+        /** @type {number} */
         this._timestamp = timestamp;
+        /** @type {number} */
         this._nonce = nonce;
     }
 
@@ -45,6 +63,7 @@ class BlockHeader {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return /*version*/ 2
             + this._prevHash.serializedSize
@@ -56,16 +75,28 @@ class BlockHeader {
             + /*nonce*/ 8;
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {Promise.<boolean>}
+     */
     async verifyProofOfWork(buf) {
         const pow = await this.pow(buf);
         return BlockUtils.isProofOfWork(pow, this.target);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {Promise.<Hash>}
+     */
     async hash(buf) {
         this._hash = this._hash || await Hash.light(this.serialize(buf));
         return this._hash;
     }
-
+    
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {Promise.<Hash>}
+     */
     async pow(buf) {
         this._pow = this._pow || await Hash.hard(this.serialize(buf));
         return this._pow;
@@ -94,44 +125,54 @@ class BlockHeader {
             + `}`;
     }
 
+    /** @type {Hash} */
     get prevHash() {
         return this._prevHash;
     }
 
+    /** @type {Hash} */
     get bodyHash() {
         return this._bodyHash;
     }
 
+    /** @type {Hash} */
     get accountsHash() {
         return this._accountsHash;
     }
 
+    /** @type {number} */
     get nBits() {
         return this._nBits;
     }
 
+    /** @type {number} */
     get target() {
         return BlockUtils.compactToTarget(this._nBits);
     }
 
+    /** @type {number} */
     get difficulty() {
         return BlockUtils.compactToDifficulty(this._nBits);
     }
 
+    /** @type {number} */
     get height() {
         return this._height;
     }
 
+    /** @type {number} */
     get timestamp() {
         return this._timestamp;
     }
 
+    /** @type {number} */
     get nonce() {
         return this._nonce;
     }
 
     // XXX The miner changes the nonce of an existing BlockHeader during the
     // mining process.
+    /** @type {number} */
     set nonce(n) {
         this._nonce = n;
         this._hash = null;

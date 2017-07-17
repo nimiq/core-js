@@ -3,15 +3,26 @@ class PeerAddresses extends Observable {
     constructor() {
         super();
 
-        // Set of PeerAddressStates of all peerAddresses we know.
+        /**
+         * Set of PeerAddressStates of all peerAddresses we know.
+         * @type {HashSet.<PeerAddressState>}
+         * @private
+         */
         this._store = new HashSet();
 
-        // Map from signalIds to RTC peerAddresses.
+        /**
+         * Map from signalIds to RTC peerAddresses.
+         * @type {HashMap.<number,PeerAddressState>}
+         * @private
+         */
         this._signalIds = new HashMap();
 
         // Number of WebSocket/WebRTC peers.
+        /** @type {number} */
         this._peerCountWs = 0;
+        /** @type {number} */
         this._peerCountRtc = 0;
+        /** @type {number} */
         this._peerCountDumb = 0;
 
         // Init seed peers.
@@ -21,6 +32,9 @@ class PeerAddresses extends Observable {
         setInterval(() => this._housekeeping(), PeerAddresses.HOUSEKEEPING_INTERVAL);
     }
 
+    /**
+     * @return {?PeerAddress}
+     */
     pickAddress() {
         const addresses = this._store.values();
         const numAddresses = addresses.length;
@@ -54,6 +68,11 @@ class PeerAddresses extends Observable {
         return winner.peerAddress;
     }
 
+    /**
+     * @param {PeerAddressState} peerAddressState
+     * @return {number}
+     * @private
+     */
     _scoreAddress(peerAddressState) {
         const peerAddress = peerAddressState.peerAddress;
 
@@ -88,6 +107,11 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {number}
+     * @private
+     */
     _scoreProtocol(peerAddress) {
         let score = 1;
 
@@ -111,14 +135,23 @@ class PeerAddresses extends Observable {
         return score;
     }
 
+    /** @type {number} */
     get peerCount() {
         return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {PeerAddressState}
+     */
     get(peerAddress) {
         return this._store.get(peerAddress);
     }
 
+    /**
+     * @param {number} signalId
+     * @return {PeerChannel}
+     */
     getChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
         if (peerAddressState && peerAddressState.bestRoute) {
@@ -127,7 +160,13 @@ class PeerAddresses extends Observable {
         return null;
     }
 
-    // TODO improve this by returning the best addresses first.
+    /**
+     * @todo improve this by returning the best addresses first.
+     * @param {number} protocolMask
+     * @param {number} serviceMask
+     * @param {number} maxAddresses
+     * @return {Array.<PeerAddress>}
+     */
     query(protocolMask, serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
         const now = Date.now();
@@ -180,8 +219,12 @@ class PeerAddresses extends Observable {
         return addresses;
     }
 
+    /**
+     * @param {PeerChannel} channel
+     * @param {PeerAddress|Array.<PeerAddress>} arg
+     */
     add(channel, arg) {
-        const peerAddresses = arg.length !== undefined ? arg : [arg];
+        const peerAddresses = Array.isArray(arg) ? arg : [arg];
         const newAddresses = [];
 
         for (const addr of peerAddresses) {
@@ -196,6 +239,12 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @param {PeerChannel} channel
+     * @param {PeerAddress|RtcPeerAddress} peerAddress
+     * @return {boolean}
+     * @private
+     */
     _add(channel, peerAddress) {
         // Ignore our own address.
         if (NetworkConfig.myPeerAddress().equals(peerAddress)) {
@@ -285,7 +334,10 @@ class PeerAddresses extends Observable {
         return true;
     }
 
-    // Called when a connection to this peerAddress is being established.
+    /**
+     * Called when a connection to this peerAddress is being established.
+     * @param {PeerAddress} peerAddress
+     */
     connecting(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -301,12 +353,17 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.CONNECTING;
     }
 
-    // Called when a connection to this peerAddress has been established.
-    // The connection might have been initiated by the other peer, so address
-    // may not be known previously.
-    // If it is already known, it has been updated by a previous version message.
+    /**
+     * Called when a connection to this peerAddress has been established.
+     * The connection might have been initiated by the other peer, so address
+     * may not be known previously.
+     * If it is already known, it has been updated by a previous version message.
+     * @param {PeerChannel} channel
+     * @param {PeerAddress|RtcPeerAddress} peerAddress
+     */
     connected(channel, peerAddress) {
         let peerAddressState = this._store.get(peerAddress);
+        
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
 
@@ -346,7 +403,11 @@ class PeerAddresses extends Observable {
         }
     }
 
-    // Called when a connection to this peerAddress is closed.
+    /**
+     * Called when a connection to this peerAddress is closed.
+     * @param {PeerChannel} channel
+     * @param {boolean} closedByRemote
+     */
     disconnected(channel, closedByRemote) {
         const peerAddress = channel.peerAddress;
         const peerAddressState = this._store.get(peerAddress);
@@ -377,7 +438,10 @@ class PeerAddresses extends Observable {
         }
     }
 
-    // Called when a connection attempt to this peerAddress has failed.
+    /**
+     * Called when a connection attempt to this peerAddress has failed.
+     * @param {PeerAddress} peerAddress
+     */
     unreachable(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -395,7 +459,11 @@ class PeerAddresses extends Observable {
         }
     }
 
-    // Called when a message has been returned as unroutable.
+    /**
+     * Called when a message has been returned as unroutable.
+     * @param {PeerChannel} channel
+     * @param {PeerAddress} peerAddress
+     */
     unroutable(channel, peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -413,6 +481,10 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @param {number} duration in minutes
+     */
     ban(peerAddress, duration = 10 /*minutes*/) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -430,16 +502,28 @@ class PeerAddresses extends Observable {
         peerAddressState.deleteAllRoutes();
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     */
     isConnecting(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         return peerAddressState && peerAddressState.state === PeerAddressState.CONNECTING;
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     */
     isConnected(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         return peerAddressState && peerAddressState.state === PeerAddressState.CONNECTED;
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     */
     isBanned(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         return peerAddressState
@@ -451,6 +535,10 @@ class PeerAddresses extends Observable {
             && !peerAddressState.peerAddress.isSeed();
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @private
+     */
     _remove(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
@@ -477,7 +565,11 @@ class PeerAddresses extends Observable {
         this._store.remove(peerAddress);
     }
 
-    // Delete all RTC-only routes that are signalable over the given peer.
+    /**
+     * Delete all RTC-only routes that are signalable over the given peer.
+     * @param {PeerChannel} channel
+     * @private
+     */
     _removeBySignalChannel(channel) {
         // XXX inefficient linear scan
         for (const peerAddressState of this._store.values()) {
@@ -490,6 +582,11 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @param {number} delta
+     * @private
+     */
     _updateConnectedPeerCount(peerAddress, delta) {
         switch (peerAddress.protocol) {
             case Protocol.WS:
@@ -559,6 +656,11 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     * @private
+     */
     _exceedsAge(peerAddress) {
         // Seed addresses are never too old.
         if (peerAddress.isSeed()) {
@@ -579,14 +681,17 @@ class PeerAddresses extends Observable {
         return false;
     }
 
+    /** @type {number} */
     get peerCountWs() {
         return this._peerCountWs;
     }
 
+    /** @type {number} */
     get peerCountRtc() {
         return this._peerCountRtc;
     }
 
+    /** @type {number} */
     get peerCountDumb() {
         return this._peerCountDumb;
     }
@@ -600,31 +705,32 @@ PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    WsPeerAddress.seed('alpacash.com', 8080),
-    WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
-    WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
-    WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
-    WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
-    WsPeerAddress.seed('emily.nimiq-network.com', 443)
+    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
 ];
 Class.register(PeerAddresses);
 
 class PeerAddressState {
     constructor(peerAddress) {
+        /** @type {PeerAddress} */
         this.peerAddress = peerAddress;
 
+        /** @type {number} */
         this.state = PeerAddressState.NEW;
+        /** @type {number} */
         this.lastConnected = -1;
+        /** @type {number} */
         this.bannedUntil = -1;
 
+        /** @type {SignalRoute} */
         this._bestRoute = null;
+        /** @type {HashSet.<SignalRoute>} */
         this._routes = new HashSet();
 
+        /** @type {number} */
         this._failedAttempts = 0;
     }
 
+    /** @type {number} */
     get maxFailedAttempts() {
         switch (this.peerAddress.protocol) {
             case Protocol.RTC:
@@ -636,6 +742,7 @@ class PeerAddressState {
         }
     }
 
+    /** @type {number} */
     get failedAttempts() {
         if (this._bestRoute) {
             return this._bestRoute.failedAttempts;
@@ -644,6 +751,7 @@ class PeerAddressState {
         }
     }
 
+    /** @type {number} */
     set failedAttempts(value) {
         if (this._bestRoute) {
             this._bestRoute.failedAttempts = value;
@@ -653,10 +761,16 @@ class PeerAddressState {
         }
     }
 
+    /** @type {SignalRoute} */
     get bestRoute() {
         return this._bestRoute;
     }
 
+    /**
+     * @param {PeerChannel} signalChannel
+     * @param {number} distance
+     * @param {number} timestamp
+     */
     addRoute(signalChannel, distance, timestamp) {
         const oldRoute = this._routes.get(signalChannel);
         const newRoute = new SignalRoute(signalChannel, distance, timestamp);
@@ -681,6 +795,9 @@ class PeerAddressState {
         }
     }
 
+    /**
+     * @param {PeerChannel} signalChannel
+     */
     deleteRoute(signalChannel) {
         this._routes.remove(signalChannel); // maps to same hashCode
         if (this._bestRoute && this._bestRoute.signalChannel.equals(signalChannel)) {
@@ -693,6 +810,9 @@ class PeerAddressState {
         this._routes = new HashSet();
     }
 
+    /**
+     * @return {boolean}
+     */
     hasRoute() {
         return this._routes.length > 0;
     }
@@ -715,6 +835,10 @@ class PeerAddressState {
         }
     }
 
+    /**
+     * @param {PeerAddressState} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof PeerAddressState
             && this.peerAddress.equals(o.peerAddress);
@@ -724,6 +848,9 @@ class PeerAddressState {
         return this.peerAddress.hashCode();
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return `PeerAddressState{peerAddress=${this.peerAddress}, state=${this.state}, `
             + `lastConnected=${this.lastConnected}, failedAttempts=${this.failedAttempts}, `
@@ -739,6 +866,11 @@ PeerAddressState.BANNED = 6;
 Class.register(PeerAddressState);
 
 class SignalRoute {
+    /**
+     * @param {PeerChannel} signalChannel
+     * @param {number} distance
+     * @param {number} timestamp
+     */
     constructor(signalChannel, distance, timestamp) {
         this.failedAttempts = 0;
         this.timestamp = timestamp;
@@ -746,18 +878,25 @@ class SignalRoute {
         this._distance = distance;
     }
 
+    /** @type {PeerChannel} */
     get signalChannel() {
         return this._signalChannel;
     }
 
+    /** @type {number} */
     get distance() {
         return this._distance;
     }
 
+    /** @type {number} */
     get score() {
         return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS_RTC));
     }
 
+    /**
+     * @param {SignalRoute} o
+     * @return {boolean}
+     */
     equals(o) {
         return o instanceof SignalRoute
             && this._signalChannel.equals(o._signalChannel);
@@ -767,6 +906,9 @@ class SignalRoute {
         return this._signalChannel.hashCode();
     }
 
+    /**
+     * @return {string}
+     */
     toString() {
         return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this.timestamp}, failedAttempts=${this.failedAttempts}}`;
     }

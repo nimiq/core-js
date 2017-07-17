@@ -1,42 +1,67 @@
 class Observable {
+    /**
+     * @returns {string}
+     * @constant
+     */
     static get WILDCARD() {
         return '*';
     }
 
     constructor() {
-        this._listeners = {};
+        /** @type {Map.<string, Array.<Function>>} */
+        this._listeners = new Map();
     }
 
+    /**
+     * @param {string} type
+     * @param {Function} callback
+     * @return {number}
+     */
     on(type, callback) {
-        this._listeners[type] = this._listeners[type] || [];
-        this._listeners[type].push(callback);
+        if (!this._listeners.has(type)) {
+            this._listeners.set(type, [callback]);
+            return 0;
+        } else {
+            return this._listeners.get(type).push(callback) - 1;
+        }
     }
 
-    fire() {
-        if (!arguments.length) throw 'Observable.fire() needs type argument';
+    /**
+     * @param {string} type
+     * @param {number} id
+     */
+    off(type, id) {
+        if (!this._listeners.has(type) || !this._listeners.get(type)[id]) return;
+        delete this._listeners.get(type)[id];
+    }
 
+    /**
+     * @param {string} type
+     * @param {...*} args
+     */
+    fire(type, ...args) {
         // Notify listeners for this event type.
-        const type = arguments[0];
-        if (this._listeners[type]) {
-            const args = Array.prototype.slice.call(arguments, 1);
-            for (const listener of this._listeners[type]) {
+        if (this._listeners.has(type)) {
+            for (const i in this._listeners.get(type)) {
+                const listener = this._listeners.get(type)[i];
                 listener.apply(null, args);
             }
         }
 
         // Notify wildcard listeners. Pass event type as first argument
-        if (this._listeners[Observable.WILDCARD]) {
-            for (const listener of this._listeners[Observable.WILDCARD]) {
+        if (this._listeners.has(Observable.WILDCARD)) {
+            for (const i in this._listeners.get(Observable.WILDCARD)) {
+                const listener = this._listeners.get(Observable.WILDCARD)[i];
                 listener.apply(null, arguments);
             }
         }
     }
 
-    bubble() {
-        if (arguments.length < 2) throw 'Observable.bubble() needs observable and at least 1 type argument';
-
-        const observable = arguments[0];
-        const types = Array.prototype.slice.call(arguments, 1);
+    /**
+     * @param {Observable} observable
+     * @param {...string} types
+     */
+    bubble(observable, ...types) {
         for (const type of types) {
             let callback;
             if (type == Observable.WILDCARD) {

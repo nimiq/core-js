@@ -1,31 +1,69 @@
 class NetworkAgent extends Observable {
+    /**
+     * @param {Blockchain} blockchain
+     * @param {PeerAddresses} addresses
+     * @param {PeerChannel} channel
+     * 
+     * @listens PeerChannel#version
+     * @listens PeerChannel#addr
+     * @listens PeerChannel#getaddr
+     * @listens PeerChannel#ping
+     * @listens PeerChannel#pong
+     * @listens PeerChannel#close
+     */
     constructor(blockchain, addresses, channel) {
         super();
+        /** @type {Blockchain} */
         this._blockchain = blockchain;
+        /** @type {PeerAddresses} */
         this._addresses = addresses;
+        /** @type {PeerChannel} */
         this._channel = channel;
 
-        // The peer object we create after the handshake completes.
+        /**
+         * The peer object we create after the handshake completes.
+         * @type {Peer}
+         * @private
+         */
         this._peer = null;
 
-        // All peerAddresses that we think the remote peer knows.
+        /**
+         * All peerAddresses that we think the remote peer knows.
+         * @type {HashSet.<PeerAddress>}
+         * @private
+         */
         this._knownAddresses = new HashSet();
 
-        // Helper object to keep track of timeouts & intervals.
+        /**
+         * Helper object to keep track of timeouts & intervals.
+         * @type {Timers}
+         * @private
+         */
         this._timers = new Timers();
 
-        // True if we have received the peer's version message.
+        /**
+         * True if we have received the peer's version message.
+         * @type {boolean}
+         * @private
+         */
         this._versionReceived = false;
 
-        // True if we have successfully sent our version message.
+        /**
+         * True if we have successfully sent our version message.
+         * @type {boolean}
+         * @private
+         */
         this._versionSent = false;
 
-        // Number of times we have tried to send out the version message.
+        /**
+         * Number of times we have tried to send out the version message.
+         * @type {number}
+         * @private
+         */
         this._versionAttempts = 0;
 
         // Listen to network/control messages from the peer.
         channel.on('version',   msg => this._onVersion(msg));
-        channel.on('verack',    msg => this._onVerAck(msg));
         channel.on('addr',      msg => this._onAddr(msg));
         channel.on('getaddr',   msg => this._onGetAddr(msg));
         channel.on('ping',      msg => this._onPing(msg));
@@ -35,6 +73,9 @@ class NetworkAgent extends Observable {
         channel.on('close', closedByRemote => this._onClose(closedByRemote));
     }
 
+    /**
+     * @param {Array.<PeerAddress|RtcPeerAddress>} addresses
+     */
     relayAddresses(addresses) {
         // Don't relay if the handshake hasn't finished yet.
         if (!this._versionReceived || !this._versionSent) {
@@ -44,6 +85,7 @@ class NetworkAgent extends Observable {
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
+            
             // Exclude RTC addresses that are already at MAX_DISTANCE.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
@@ -103,6 +145,10 @@ class NetworkAgent extends Observable {
         }
     }
 
+    /**
+     * @param {VersionMessage} msg
+     * @private
+     */
     _onVersion(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -196,6 +242,11 @@ class NetworkAgent extends Observable {
         // it doesn't have any new addresses.
     }
 
+    /**
+     * @param {AddrMessage} msg
+     * @return {Promise}
+     * @private
+     */
     async _onAddr(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -221,6 +272,10 @@ class NetworkAgent extends Observable {
         this.fire('addr', msg.addresses, this);
     }
 
+    /**
+     * @param {GetAddrMessage} msg
+     * @private
+     */
     _onGetAddr(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -269,6 +324,10 @@ class NetworkAgent extends Observable {
         }, NetworkAgent.PING_TIMEOUT);
     }
 
+    /**
+     * @param {PingMessage} msg
+     * @private
+     */
     _onPing(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -279,11 +338,19 @@ class NetworkAgent extends Observable {
         this._channel.pong(msg.nonce);
     }
 
+    /**
+     * @param {PongMessage} msg
+     * @private
+     */
     _onPong(msg) {
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout(`ping_${msg.nonce}`);
     }
 
+    /**
+     * @param {boolean} closedByRemote
+     * @private
+     */
     _onClose(closedByRemote) {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
@@ -292,6 +359,11 @@ class NetworkAgent extends Observable {
         this.fire('close', this._peer, this._channel, closedByRemote, this);
     }
 
+    /**
+     * @param {Message} msg
+     * @return {boolean}
+     * @private
+     */
     _canAcceptMessage(msg) {
         // The first message must be the version message.
         if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
@@ -302,10 +374,12 @@ class NetworkAgent extends Observable {
         return true;
     }
 
+    /** @type {PeerChannel} */
     get channel() {
         return this._channel;
     }
 
+    /** @type {Peer} */
     get peer() {
         return this._peer;
     }

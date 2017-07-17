@@ -1,27 +1,49 @@
 class InvVector {
+    /**
+     * @param {Block} block
+     * @returns {Promise.<InvVector>}
+     */
     static async fromBlock(block) {
         const hash = await block.hash();
         return new InvVector(InvVector.Type.BLOCK, hash);
     }
 
+    /**
+     * @param {Transaction} tx
+     * @returns {Promise.<InvVector>}
+     */
     static async fromTransaction(tx) {
         const hash = await tx.hash();
         return new InvVector(InvVector.Type.TRANSACTION, hash);
     }
 
+    /**
+     * @param {InvVector.Type} type
+     * @param {Hash} hash
+     */
     constructor(type, hash) {
         // TODO validate type
         if (!Hash.isHash(hash)) throw 'Malformed hash';
+        /** @type {InvVector.Type} */
         this._type = type;
+        /** @type {Hash} */
         this._hash = hash;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {InvVector}
+     */
     static unserialize(buf) {
-        const type = buf.readUint32();
+        const type = InvVector.Type.unserialize(buf);
         const hash = Hash.unserialize(buf);
         return new InvVector(type, hash);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint32(this._type);
@@ -29,6 +51,10 @@ class InvVector {
         return buf;
     }
 
+    /**
+     * @param {InvVector} o
+     * @returns {boolean}
+     */
     equals(o) {
         return o instanceof InvVector
             && this._type === o.type
@@ -39,39 +65,65 @@ class InvVector {
         return `${this._type}|${this._hash}`;
     }
 
+    /**
+     * @returns {string}
+     */
     toString() {
         return `InvVector{type=${this._type}, hash=${this._hash}}`;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return /*invType*/ 4
             + this._hash.serializedSize;
     }
 
+    /** @type {InvVector.Type} */
     get type() {
         return this._type;
     }
 
+    /** @type {Hash} */
     get hash() {
         return this._hash;
     }
 }
+/**
+ * @enum {number}
+ */
 InvVector.Type = {
     ERROR: 0,
     TRANSACTION: 1,
-    BLOCK: 2
+    BLOCK: 2,
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {InvVector.Type}
+     */
+    unserialize: function (buf) {
+        return /** @type {InvVector.Type} */ (buf.readUint32());
+    }
 };
 Class.register(InvVector);
 
 class BaseInventoryMessage extends Message {
+    /**
+     * @param {Message.Type} type
+     * @param {Array.<InvVector>} vectors
+     */
     constructor(type, vectors) {
         super(type);
         if (!vectors || !NumberUtils.isUint16(vectors.length)
             || vectors.some(it => !(it instanceof InvVector))
             || vectors.length > BaseInventoryMessage.LENGTH_MAX) throw 'Malformed vectors';
+        /** @type {Array.<InvVector>} */
         this._vectors = vectors;
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -83,6 +135,7 @@ class BaseInventoryMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2;
@@ -92,6 +145,7 @@ class BaseInventoryMessage extends Message {
         return size;
     }
 
+    /** @type {Array.<InvVector>} */
     get vectors() {
         return this._vectors;
     }
@@ -100,10 +154,17 @@ BaseInventoryMessage.LENGTH_MAX = 1000;
 Class.register(BaseInventoryMessage);
 
 class InvMessage extends BaseInventoryMessage {
+    /**
+     * @param {Array.<InvVector>} vectors
+     */
     constructor(vectors) {
         super(Message.Type.INV, vectors);
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {InvMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
@@ -117,10 +178,17 @@ class InvMessage extends BaseInventoryMessage {
 Class.register(InvMessage);
 
 class GetDataMessage extends BaseInventoryMessage {
+    /**
+     * @param {Array.<InvVector>} vectors
+     */
     constructor(vectors) {
         super(Message.Type.GETDATA, vectors);
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {GetDataMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
@@ -135,10 +203,17 @@ class GetDataMessage extends BaseInventoryMessage {
 Class.register(GetDataMessage);
 
 class NotFoundMessage extends BaseInventoryMessage {
+    /**
+     * @param {Array.<InvVector>} vectors
+     */
     constructor(vectors) {
         super(Message.Type.NOTFOUND, vectors);
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {NotFoundMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();

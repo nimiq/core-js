@@ -134,7 +134,9 @@ const babel_config = {
 };
 
 const babel_loader = {
-    plugins: ['transform-runtime'],
+    plugins: [['transform-runtime', {
+        'polyfill': false
+    }]],
     presets: ['env']
 };
 
@@ -207,10 +209,8 @@ gulp.task('build-loader', function () {
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/core-js/number/max-safe-integer',
                 'babel-runtime/regenerator',
                 'babel-runtime/helpers/asyncToGenerator',
-                'babel-runtime/core-js/promise',
                 'babel-runtime/helpers/classCallCheck',
                 'babel-runtime/helpers/createClass'
             ]
@@ -257,13 +257,6 @@ gulp.task('sectest-babel', ['watch'], function () {
     gulp.run(jasmine({
         files: ['dist/web-babel.js'].concat(sources.sectest)
     }));
-});
-
-gulp.task('jscs', function () {
-    const jscs = require('gulp-jscs');
-    return gulp.src(sources.all)
-        .pipe(jscs())
-        .pipe(jscs.reporter());
 });
 
 gulp.task('eslint', function () {

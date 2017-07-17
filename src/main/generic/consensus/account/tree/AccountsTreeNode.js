@@ -1,12 +1,27 @@
 class AccountsTreeNode {
+    /**
+     * @param {string} prefix
+     * @param {Account} account
+     * @returns {AccountsTreeNode}
+     */
     static terminalNode(prefix, account) {
         return new AccountsTreeNode(AccountsTreeNode.TERMINAL, prefix, account);
     }
 
+    /**
+     * @param {string} prefix
+     * @param {Array.<string>} children
+     * @returns {AccountsTreeNode}
+     */
     static branchNode(prefix, children) {
         return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, children);
     }
 
+    /**
+     * @param type
+     * @param {string} prefix
+     * @param {Account|Array.<string>} arg
+     */
     constructor(type, prefix = '', arg) {
         this._type = type;
         this._prefix = prefix;
@@ -19,15 +34,27 @@ class AccountsTreeNode {
         }
     }
 
+    /**
+     * @param type
+     * @returns {boolean}
+     */
     static isTerminalType(type) {
         return type === AccountsTreeNode.TERMINAL;
     }
 
+    /**
+     * @param type
+     * @returns {boolean}
+     */
     static isBranchType(type) {
         return type === AccountsTreeNode.BRANCH;
     }
 
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {AccountsTreeNode}
+     */
     static unserialize(buf) {
         const type = buf.readUint8();
         const prefix = buf.readVarLengthString();
@@ -73,6 +100,7 @@ class AccountsTreeNode {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         let payloadSize;
         if (this.isTerminal()) {
@@ -91,30 +119,52 @@ class AccountsTreeNode {
             + payloadSize;
     }
 
+    /**
+     * @param {string} prefix
+     * @returns {string}
+     */
     getChild(prefix) {
         return this._children && this._children[this._getChildIndex(prefix)];
     }
 
+    /**
+     * @param {string} prefix
+     * @param {string} child
+     * @returns {AccountsTreeNode}
+     */
     withChild(prefix, child) {
         let children = this._children.slice() || [];
         children[this._getChildIndex(prefix)] = child;
         return AccountsTreeNode.branchNode(this._prefix, children);
     }
 
+    /**
+     * @param {string} prefix
+     * @returns {AccountsTreeNode}
+     */
     withoutChild(prefix) {
         let children = this._children.slice() || [];
         delete children[this._getChildIndex(prefix)];
         return AccountsTreeNode.branchNode(this._prefix, children);
     }
 
+    /**
+     * @returns {boolean}
+     */
     hasChildren() {
         return this._children && this._children.some(child => !!child);
     }
 
+    /**
+     * @returns {boolean}
+     */
     hasSingleChild() {
         return this._children && this._children.reduce((count, val) => count + !!val, 0) === 1;
     }
 
+    /**
+     * @returns {?string}
+     */
     getFirstChild() {
         if (!this._children) {
             return undefined;
@@ -122,6 +172,9 @@ class AccountsTreeNode {
         return this._children.find(child => !!child);
     }
 
+    /**
+     * @returns {?Array.<string>}
+     */
     getChildren() {
         if (!this._children) {
             return undefined;
@@ -129,23 +182,33 @@ class AccountsTreeNode {
         return this._children.filter(child => !!child);
     }
 
+    /** @type {Account} */
     get account() {
         return this._account;
     }
 
+    /** @type {string} */
     get prefix() {
         return this._prefix;
     }
 
+    /** @type {string} */
     set prefix(value) {
         this._prefix = value;
         this._hash = undefined;
     }
 
+    /**
+     * @param {Account} account
+     * @returns {AccountsTreeNode}
+     */
     withAccount(account) {
         return AccountsTreeNode.terminalNode(this._prefix, account);
     }
 
+    /**
+     * @returns {Promise.<string>}
+     */
     async hash() {
         if (!this._hash) {
             this._hash = await Hash.light(this.serialize());
@@ -153,18 +216,33 @@ class AccountsTreeNode {
         return this._hash;
     }
 
+    /**
+     * @returns {boolean}
+     */
     isTerminal() {
         return AccountsTreeNode.isTerminalType(this._type);
     }
 
+    /**
+     * @returns {boolean}
+     */
     isBranch() {
         return AccountsTreeNode.isBranchType(this._type);
     }
 
+    /**
+     * @param {string} prefix
+     * @returns {number}
+     * @private
+     */
     _getChildIndex(prefix) {
         return parseInt(prefix[0], 16);
     }
 
+    /**
+     * @param {AccountsTreeNode} o
+     * @returns {boolean}
+     */
     equals(o) {
         if (!(o instanceof AccountsTreeNode)) return false;
         if (!Object.is(this.prefix, o.prefix)) return false;

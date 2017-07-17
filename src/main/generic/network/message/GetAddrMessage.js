@@ -1,4 +1,8 @@
 class GetAddrMessage extends Message {
+    /**
+     * @param {number} protocolMask
+     * @param {number} serviceMask
+     */
     constructor(protocolMask, serviceMask) {
         super(Message.Type.GETADDR);
         if (!NumberUtils.isUint8(protocolMask)) throw 'Malformed protocolMask';
@@ -7,6 +11,10 @@ class GetAddrMessage extends Message {
         this._serviceMask = serviceMask;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @return {GetAddrMessage}
+     */
     static unserialize(buf) {
         Message.unserialize(buf);
         const protocolMask = buf.readUint8();
@@ -14,6 +22,10 @@ class GetAddrMessage extends Message {
         return new GetAddrMessage(protocolMask, serviceMask);
     }
 
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
@@ -23,16 +35,19 @@ class GetAddrMessage extends Message {
         return buf;
     }
 
+    /** @type {number} */
     get serializedSize() {
         return super.serializedSize
             + /*protocolMask*/ 1
             + /*serviceMask*/ 4;
     }
 
+    /** @type {number} */
     get protocolMask() {
         return this._protocolMask;
     }
 
+    /** @type {number} */
     get serviceMask() {
         return this._serviceMask;
     }
