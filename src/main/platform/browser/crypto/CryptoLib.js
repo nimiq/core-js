@@ -3,8 +3,6 @@ class CryptoLib {
      * @return {SubtleCrypto|*}
      */
     static get instance() {
-        let native = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
-        if (native) return native;
         if (!CryptoLib._poly_instance) {
             CryptoLib._poly_instance = CryptoLib._init_poly();
         }
@@ -20,16 +18,69 @@ class CryptoLib {
         };
 
         // We can use Webkit's SHA-256
+        let subtle = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
         let wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
-        if (wk) {
+        if (poly.digest) {
+            // Keep original
+        } else if (subtle) {
+            poly.digest = subtle.digest.bind(subtle);
+        } else if (wk) {
+            poly._nimiq_callDigestDelayedWhenMining = true;
             poly.digest = (alg, arr) => wk.digest(alg, arr);
         } else {
+            poly._nimiq_callDigestDelayedWhenMining = true;
             const sha256 = window.require('fast-sha256');
             poly.digest = async (alg, arr) => {
                 if (alg !== 'SHA-256') throw 'Unsupported algorithm.';
                 return new sha256.Hash().update(arr).digest();
             };
         }
+
+        if (subtle) {
+            poly.sign = subtle.sign.bind(subtle);
+            poly.verify = subtle.verify.bind(subtle);
+            poly.exportKey = subtle.exportKey.bind(subtle);
+            poly.generateKey = async (config, exportable, usage) => {
+                try {
+                    const res = await subtle.generateKey(config, exportable, usage);
+                    // Shortcut
+                    poly.generateKey = subtle.generateKey.bind(subtle);
+                    poly.importKey = subtle.importKey.bind(subtle);
+                    return res;
+                } catch (e) {
+                    CryptoLib._use_elliptic(poly);
+                    return poly.generateKey(config, exportable, usage);
+                }
+            };
+            poly.importKey = async (type, key, config, exportable, usage) => {
+                try {
+                    const res = await subtle.importKey(type, key, config, exportable, usage);
+                    // Shortcut
+                    poly.generateKey = subtle.generateKey.bind(subtle);
+                    poly.importKey = subtle.importKey.bind(subtle);
+                    return res;
+                } catch (e) {
+                    try {
+                        await subtle.generateKey(config, exportable, usage);
+                        // Shortcut
+                        poly.generateKey = subtle.generateKey.bind(subtle);
+                        poly.importKey = subtle.importKey.bind(subtle);
+                    } catch (e) {
+                        CryptoLib._use_elliptic(poly);
+                        return poly.importKey(type, key, config, exportable, usage);
+                    }
+                    throw e;
+                }
+            };
+        } else {
+            CryptoLib._use_elliptic(poly);
+        }
+
+        return poly;
+    }
+
+    static _use_elliptic(poly) {
+        poly._nimiq_isSlowCurves = true;
 
         const ec = window.require('elliptic').ec('p256');
 

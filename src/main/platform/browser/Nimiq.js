@@ -77,7 +77,7 @@ class Nimiq {
                 } else if (!Nimiq._hasAsyncAwaitSupport()) {
                     script = 'web-babel.js';
                     console.warn('Client lacks native support for async');
-                } else if (!Nimiq._hasProperCryptoApi() || !Nimiq._hasProperWebRTCOrNone()) {
+                } else if (!Nimiq._hasProperCryptoApi() || !(await Nimiq._hasSupportForP256())) {
                     script = 'web-crypto.js';
                     console.warn('Client lacks native support for crypto routines');
                 }
@@ -125,9 +125,13 @@ class Nimiq {
         return window.crypto && window.crypto.subtle;
     }
 
-    static _hasProperWebRTCOrNone() {
-        window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
-        return !window.RTCPeerConnection || window.RTCPeerConnection.generateCertificate;
+    static async _hasSupportForP256() {
+        try {
+            await window.crypto.subtle.generateKey({name: 'ECDSA', namedCurve: 'P-256'}, true, ['sign', 'verify']);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     static _hasProperScoping() {
