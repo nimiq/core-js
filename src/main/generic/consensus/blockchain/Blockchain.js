@@ -556,7 +556,7 @@ class Blockchain extends Observable {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head);
         }
-        return new InterlinkChain(headers, interlinks);
+        return interlinkChain;
     }
 
     /**
