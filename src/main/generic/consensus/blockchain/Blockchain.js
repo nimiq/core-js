@@ -541,24 +541,24 @@ class Blockchain extends Observable {
 
         // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
         if (maxTargetDepth > 0) {
-            let proof = this._getInnerChain(head, maxTargetDepth);
+            let interlinkChain = this._getInnerChain(head, maxTargetDepth);
 
             // Check if length >= m and, if not, decrease the depth and try again.
             let depth = maxTargetDepth;
-            while (proof.length < m && depth > 0) {
+            while (interlinkChain.length < m && depth > 0) {
                 depth--;
-                proof = this._getInnerChain(head, depth);
+                interlinkChain = this._getInnerChain(head, depth);
             }
 
-            // If depth > 0 return the proof, otherwise return whole chain as proof.
+            // If depth > 0 return the interlink chain, otherwise return the whole header chain.
             if (depth > 0) {
-                proof.prepend(Block.GENESIS);
-                return proof;
+                interlinkChain.prepend(Block.GENESIS);
+                return interlinkChain;
             }
         }
 
         // The interlink at head is empty or just contains the genesis block.
-        // Return the whole chain as proof.
+        // Return the whole header chain.
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
         while (!Block.GENESIS.equals(head)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
