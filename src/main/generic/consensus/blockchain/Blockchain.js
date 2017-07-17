@@ -494,10 +494,10 @@ class Blockchain extends Observable {
         // This is the 'interlink-update' algorithm from the PoPoW Paper.
         // Compute how much harder the current block hash is than the current target.
         const hash = await head.hash();
-        const target = BlockUtils.getDiscreteTarget(head.target);
-        const nextTarget = BlockUtils.getDiscreteTarget(this.getNextCompactTarget(head));
+        const targetDepth = BlockUtils.getTargetDepth(head.target);
+        const nextTargetDepth = BlockUtils.getTargetDepth(this.getNextCompactTarget(head));
         let i = 1, depth = 0;
-        while (BlockUtils.isProofOfWork(hash, 2**(nextTarget - i))) {
+        while (BlockUtils.isProofOfWork(hash, 2**(nextTargetDepth - i))) {
             depth = i;
             i++;
         }
@@ -518,11 +518,11 @@ class Blockchain extends Observable {
 
         // If the current interlink is longer, push the remaining hashes from the current interlink.
         // Offset is computed similar to constructInChain.
-        // The new index i' is i + log2(T'/T) -> i' = i + discrete(T') - discrete(T).
-        const offset = nextTarget - target;
+        // The new index i' (denoted as j) is i + log2(T'/T) -> i' = i + depth(T') - depth(T).
+        const offset = nextTargetDepth - targetDepth;
         const interlink = head.interlink;
-        for (let i_prime = depth + 1; i_prime < interlink.length + offset; i_prime++) {
-            hashes.push(interlink.hashes[i_prime - offset]);
+        for (let j = depth + 1; j < interlink.length + offset; j++) {
+            hashes.push(interlink.hashes[j - offset]);
         }
 
         return new BlockInterlink(hashes);
@@ -535,14 +535,14 @@ class Blockchain extends Observable {
      */
     async constructInterlinkChain(head, m) {
         head = head || this._mainChain.head;
-        const maxTarget = head.interlink.length - 1;
+        const maxTargetDepth = head.interlink.length - 1;
 
         // If we have at least a interlink depth > 0,
         // we try finding the maximal chain with length >= m.
-        if (maxTarget > 0) {
-            let proof = this.constructInChain(head, maxTarget);
+        if (maxTargetDepth > 0) {
+            let proof = this.constructInChain(head, maxTargetDepth);
             // Check if length >= m and, if not, reiterate.
-            let i = maxTarget;
+            let i = maxTargetDepth;
             while (proof.length < m && i > 0) {
                 --i;
                 proof = this.constructInChain(head, i);
@@ -572,19 +572,19 @@ class Blockchain extends Observable {
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
 
         // i_prime contains the updated index for the next interlink vector
-        // Since we base our interlink chain on the original head's target T, we have to recalculate i'
-        // as i' = i + log2(T'/T), where T' is the current heads target T'.
+        // Since we base our interlink chain on the original head's target T, we have to recalculate i' (denoted as j)
+        // as j = i + log2(T'/T), where T' is the current heads target T'.
         // TODO check whether we want to use log2 here
         // TODO discretize target
-        const target = BlockUtils.getDiscreteTarget(head.target);
-        let i_prime = i;
-        while (i_prime < head.interlink.length) {
-            head = await this.getBlock(head.interlink.hashes[i_prime]); // eslint-disable-line no-await-in-loop
+        const targetDepth = BlockUtils.getTargetDepth(head.target);
+        let j = i;
+        while (j < head.interlink.length) {
+            head = await this.getBlock(head.interlink.hashes[j]); // eslint-disable-line no-await-in-loop
 
             interlinkChain.prepend(head);
 
-            const target_prime = BlockUtils.getDiscreteTarget(head.target);
-            i_prime = Math.ceil(i + (target_prime - target));
+            const targetDepthPrime = BlockUtils.getTargetDepth(head.target);
+            j = Math.ceil(i + (targetDepthPrime - targetDepth));
         }
 
         return interlinkChain;

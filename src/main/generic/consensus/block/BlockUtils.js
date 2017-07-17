@@ -32,7 +32,7 @@ class BlockUtils {
         return compact;
     }
 
-    static getDiscreteTarget(target) {
+    static getTargetDepth(target) {
         return Math.ceil(Math.log2(target));
     }
 

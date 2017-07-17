@@ -511,8 +511,14 @@ class ConsensusAgent extends Observable {
      * @param {GetInterlinkChainMessage} msg
      * @private
      */
-    _onGetInterlinkChain(msg) {
-        this._peer.channel.interlinkchain(null);
+    async _onGetInterlinkChain(msg) {
+        const head = await this._blockchain.getBlock(msg.blockHash);
+
+        if (head) {
+            const interlinkChain = this._blockchain.constructInterlinkChain(head, msg.m);
+            this._peer.channel.interlinkchain(interlinkChain);
+        }
+        // TODO what to do if we do not know the requested head?
     }
 
     /**
