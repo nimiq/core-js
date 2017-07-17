@@ -16,7 +16,7 @@ class Blockchain extends Observable {
      * @return {Promise}
      * @private
      */
-    constructor(store, accounts, allowCheckpoint=true) {
+    constructor(store, accounts, allowCheckpoint=false) {
         super();
         this._store = store;
         this._accounts = accounts;
