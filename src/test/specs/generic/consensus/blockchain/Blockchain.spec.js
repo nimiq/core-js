@@ -299,7 +299,7 @@ describe('Blockchain', () => {
 
             //// Check that the getters return the expected values
             expect(testBlockchain.head).toBe(block);
-            expect(testBlockchain.totalWork).toBe(2);
+            expect(testBlockchain.totalWork).toBe(3);
             expect(testBlockchain.height).toBe(2);
             expect(testBlockchain.headHash).toEqual(hash);
             expect(testBlockchain.path).toEqual(hashes);
@@ -325,7 +325,7 @@ describe('Blockchain', () => {
 
             // Check that the getters return the new expected values
             expect(testBlockchain.head).toBe(block);
-            expect(testBlockchain.totalWork).toBe(4);
+            expect(testBlockchain.totalWork).toBe(15);
             expect(testBlockchain.height).toBe(4);
             expect(testBlockchain.headHash).toEqual(hash);
             expect(testBlockchain.path).toEqual(hashes);
