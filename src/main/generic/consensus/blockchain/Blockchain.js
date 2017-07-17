@@ -545,13 +545,13 @@ class Blockchain extends Observable {
 
             // Check if length >= m and, if not, decrease the depth and try again.
             let depth = maxTargetDepth;
-            while (interlinkChain.length < m && depth > 0) {
+            while (interlinkChain.length < m && depth > 1) {
                 depth--;
                 interlinkChain = this._getInnerChain(head, depth);
             }
 
-            // If depth > 0 return the interlink chain, otherwise return the whole header chain.
-            if (depth > 0) {
+            // If the interlink chain is long enough, return it, otherwise return the whole header chain.
+            if (interlinkChain.length >= m) {
                 interlinkChain.prepend(Block.GENESIS);
                 return interlinkChain;
             }
