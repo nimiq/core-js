@@ -50,10 +50,6 @@ class Address extends Primitive {
             && super.equals(o);
     }
 
-    toString() {
-        return this.toHex();
-    }
-
     /**
      * @param {string} base64
      * @return {Address}

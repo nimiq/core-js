@@ -335,7 +335,7 @@
             /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address;
+            this._wltAddress.innerText = $.wallet.address.toHex();
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
@@ -442,20 +442,20 @@
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
             $.blockchain.accountsHash().then(function(accountsHash) {
-                this._bcAccountsHash.innerText = accountsHash;
+                this._bcAccountsHash.innerText = accountsHash.toHex();
             }.bind(this));
 
-            this._hdHash.innerText = $.blockchain.headHash;
-            this._hdPrevHash.innerText = $.blockchain.head.prevHash;
-            this._hdAccountsHash.innerText = $.blockchain.head.accountsHash;
+            this._hdHash.innerText = $.blockchain.headHash.toHex();
+            this._hdPrevHash.innerText = $.blockchain.head.prevHash.toHex();
+            this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toHex();
             this._hdDifficulty.innerText = $.blockchain.head.difficulty;
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
 
             var el = document.createElement('div');
             var date = new Date(head.timestamp * 1000);
-            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash}</hash>, `
-                + `miner=<hash>${head.minerAddr}</hash>, difficulty=${head.difficulty}</div>`;
+            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toHex()}</hash>, `
+                + `miner=<hash>${head.minerAddr.toHex()}</hash>, difficulty=${head.difficulty}</div>`;
 
             var txPromises = [];
 
@@ -463,7 +463,7 @@
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    return `<div>&nbsp;-&gt; from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
+                    return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
             }
 
@@ -545,7 +545,7 @@
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr}</hash>, to=<hash>${tx.recipientAddr}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }

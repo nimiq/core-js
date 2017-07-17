@@ -66,10 +66,6 @@ class Hash extends Primitive {
         return o instanceof Hash && super.equals(o);
     }
 
-    toString() {
-        return this.toHex();
-    }
-
     /**
      * @param {string} base64
      * @return {Hash}
