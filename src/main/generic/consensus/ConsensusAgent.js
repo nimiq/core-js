@@ -486,9 +486,7 @@ class ConsensusAgent extends Observable {
             // XXX Assert that the full path back to genesis is available in
             // blockchain.path. When the chain grows very long, it makes no
             // sense to keep the full path in memory.
-            // We relax this assumption for clients that have a checkpoint loaded.
-            if (this._blockchain.path.length !== this._blockchain.height
-                    && !(this._blockchain.path.length > 0 && this._blockchain.checkPointLoaded && this._blockchain.path[0].equals(Block.CHECKPOINT.HASH))) {
+            if (this._blockchain.path.length !== this._blockchain.height) {
                 throw 'Blockchain.path.length != Blockchain.height';
             }
 
