@@ -485,25 +485,26 @@ class Blockchain extends Observable {
     }
 
     /**
+     * The 'InterlinkUpdate' algorithm from the PoPoW paper adapted for dynamic difficulty.
      * @param {Block} [head]
      * @returns {Promise.<BlockInterlink>}
      */
     async getNextInterlink(head) {
         head = head || this._mainChain.head;
 
-        // This is the 'interlink-update' algorithm from the PoPoW Paper.
-        // Compute how much harder the current block hash is than the current target.
+        // Compute how much harder the head block hash is than the next target.
         const hash = await head.hash();
-        const targetDepth = BlockUtils.getTargetDepth(head.target);
-        const nextTargetDepth = BlockUtils.getTargetDepth(this.getNextCompactTarget(head));
+        const nextTarget = BlockUtils.compactToTarget(this.getNextCompactTarget(head));
+        const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
         let i = 1, depth = 0;
-        while (BlockUtils.isProofOfWork(hash, 2**(nextTargetDepth - i))) {
+        while (BlockUtils.isProofOfWork(hash, Math.pow(2, nextTargetHeight - i))) {
             depth = i;
             i++;
         }
 
-        // If the current block hash is not hard enough, the interlink doesn't change.
-        if (depth === 0) {
+        // If the head block hash is not hard enough and the target height didn't change, the interlink doesn't change.
+        const targetHeight = BlockUtils.getTargetHeight(head.target);
+        if (depth === 0 && targetHeight === nextTargetHeight) {
             return head.interlink;
         }
 
@@ -511,50 +512,53 @@ class Blockchain extends Observable {
         /** @type {Array.<Hash>} */
         const hashes = [Block.GENESIS.HASH];
 
-        // Push the current block hash up to depth times onto the interlink.
+        // Push the current block hash up to depth times onto the new interlink. If depth == 0, it won't be pushed.
         for (let i = 0; i < depth; i++) {
             hashes.push(hash);
         }
 
-        // If the current interlink is longer, push the remaining hashes from the current interlink.
-        // Offset is computed similar to constructInChain.
-        // The new index i' (denoted as j) is i + log2(T'/T) -> i' = i + depth(T') - depth(T).
-        const offset = nextTargetDepth - targetDepth;
+        // Push the remaining hashes from the current interlink. If the target height decreases (i.e. the difficulty
+        // increases), we omit the block(s) at the beginning of the current interlink as they are not eligible for
+        // inclusion anymore. The new index i' (denoted as j) is i + log2(T'/T) -> i' = i + height(T') - height(T).
+        const offset = targetHeight - nextTargetHeight;
         const interlink = head.interlink;
-        for (let j = depth + 1; j < interlink.length + offset; j++) {
-            hashes.push(interlink.hashes[j - offset]);
+        for (let j = depth + offset + 1; j < interlink.length; j++) {
+            hashes.push(interlink.hashes[j]);
         }
 
         return new BlockInterlink(hashes);
     }
 
     /**
+     * The 'ConstructProof' algorithm from the PoPoW paper.
      * @param {Block} head
-     * @param {number} m
+     * @param {number} m Desired length of the interlink chain
      * @returns {InterlinkChain}
      */
-    async constructInterlinkChain(head, m) {
+    async getInterlinkChain(head, m) {
         head = head || this._mainChain.head;
         const maxTargetDepth = head.interlink.length - 1;
 
-        // If we have at least a interlink depth > 0,
-        // we try finding the maximal chain with length >= m.
+        // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
         if (maxTargetDepth > 0) {
-            let proof = this.constructInChain(head, maxTargetDepth);
-            // Check if length >= m and, if not, reiterate.
-            let i = maxTargetDepth;
-            while (proof.length < m && i > 0) {
-                --i;
-                proof = this.constructInChain(head, i);
+            let proof = this._getInnerChain(head, maxTargetDepth);
+
+            // Check if length >= m and, if not, decrease the depth and try again.
+            let depth = maxTargetDepth;
+            while (proof.length < m && depth > 0) {
+                depth--;
+                proof = this._getInnerChain(head, depth);
             }
 
             // If depth > 0 return the proof, otherwise return whole chain as proof.
-            if (i > 0) {
+            if (depth > 0) {
                 proof.prepend(Block.GENESIS);
                 return proof;
             }
         }
 
+        // The interlink at head is empty or just contains the genesis block.
+        // Return the whole chain as proof.
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
         while (!Block.GENESIS.equals(head)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
@@ -564,25 +568,25 @@ class Blockchain extends Observable {
     }
 
     /**
+     * The 'ConstructInChain' algorithm from the PoPoW paper adapted for dynamic difficulty.
      * @param {Block} head
-     * @param {number} i
+     * @param {number} depth
      * @returns {InterlinkChain}
+     * @private
      */
-    async constructInChain(head, i) {
+    async _getInnerChain(head, depth) {
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
 
-        // i_prime contains the updated index for the next interlink vector
-        // Since we base our interlink chain on the original head's target T, we have to recalculate i' (denoted as j)
-        // as j = i + log2(T'/T), where T' is the current heads target T'.
+        // Since we base our interlink chain on the original head's target T, we have to recalculate the interlink
+        // index i' (denoted as j) as j = i + log2(T'/T), where T' is the current heads target T'.
         const targetDepth = BlockUtils.getTargetDepth(head.target);
-        let j = i;
+        let j = depth;
         while (j < head.interlink.length) {
             head = await this.getBlock(head.interlink.hashes[j]); // eslint-disable-line no-await-in-loop
-
             interlinkChain.prepend(head);
 
             const targetDepthPrime = BlockUtils.getTargetDepth(head.target);
-            j = Math.ceil(i + (targetDepthPrime - targetDepth));
+            j = Math.ceil(depth + (targetDepthPrime - targetDepth));
         }
 
         return interlinkChain;

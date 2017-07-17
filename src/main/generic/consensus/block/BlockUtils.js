@@ -24,8 +24,12 @@ class BlockUtils {
         return (size << 24) + ((target / Math.pow(2, (size - 3) * 8)) & 0xffffff);
     }
 
-    static getTargetDepth(target) {
+    static getTargetHeight(target) {
         return Math.ceil(Math.log2(target));
+    }
+
+    static getTargetDepth(target) {
+        return BlockUtils.getTargetHeight(Policy.BLOCK_TARGET_MAX) - BlockUtils.getTargetHeight(target);
     }
 
     static compactToDifficulty(compact) {

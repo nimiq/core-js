@@ -36,6 +36,7 @@ class Policy {
     }
 
     /**
+     * The highest (easiest) block hash target.
      * @type {number}
      * @constant
      */
