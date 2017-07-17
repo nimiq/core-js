@@ -442,27 +442,27 @@ class Blockchain extends Observable {
     }
 
     /**
-     * @param {Chain} [chain]
+     * @param {Block} [head]
      * @returns {Promise.<number>}
      */
-    async getNextCompactTarget(chain) {
+    async getNextCompactTarget(head) {
         // The difficulty is adjusted every block.
-        chain = chain || this._mainChain;
+        head = head || this._mainChain.head;
 
         // If the given chain is the main chain, get the last DIFFICULTY_BLOCK_WINDOW
         // blocks via this._mainChain, otherwise fetch the path.
         let startHash;
-        if (chain === this._mainChain) {
+        if (head.equals(this._mainChain.head)) {
             const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW, 0);
             startHash = this._mainPath[startHeight];
         } else {
-            const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_BLOCK_WINDOW - 1);
+            const path = await this._fetchPath(head, Policy.DIFFICULTY_BLOCK_WINDOW - 1);
             startHash = path[0];
         }
 
         // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
         const startChain = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
-        const actualTime = chain.head.timestamp - startChain.head.timestamp;
+        const actualTime = head.timestamp - startChain.head.timestamp;
 
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
@@ -473,7 +473,7 @@ class Blockchain extends Observable {
         adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
 
         // Compute the next target.
-        const currentTarget = chain.head.target;
+        const currentTarget = head.target;
         let nextTarget = currentTarget * adjustment;
 
         // Make sure the target is below or equal the maximum allowed target (difficulty 1).
@@ -494,9 +494,10 @@ class Blockchain extends Observable {
         // This is the 'interlink-update' algorithm from the PoPoW Paper.
         // Compute how much harder the current block hash is than the current target.
         const hash = await head.hash();
-        const target = head.target;
+        const target = BlockUtils.getDiscreteTarget(head.target);
+        const nextTarget = BlockUtils.getDiscreteTarget(this.getNextCompactTarget(head));
         let i = 1, depth = 0;
-        while (BlockUtils.isProofOfWork(hash, target / 2**i)) {
+        while (BlockUtils.isProofOfWork(hash, 2**(nextTarget - i))) {
             depth = i;
             i++;
         }
@@ -516,9 +517,12 @@ class Blockchain extends Observable {
         }
 
         // If the current interlink is longer, push the remaining hashes from the current interlink.
+        // Offset is computed similar to constructInChain.
+        // The new index i' is i + log2(T'/T) -> i' = i + discrete(T') - discrete(T).
+        const offset = nextTarget - target;
         const interlink = head.interlink;
-        for (let i = depth + 1; i < interlink.length; i++) {
-            hashes.push(interlink.hashes[i]);
+        for (let i_prime = depth + 1; i_prime < interlink.length + offset; i_prime++) {
+            hashes.push(interlink.hashes[i_prime - offset]);
         }
 
         return new BlockInterlink(hashes);
@@ -572,15 +576,15 @@ class Blockchain extends Observable {
         // as i' = i + log2(T'/T), where T' is the current heads target T'.
         // TODO check whether we want to use log2 here
         // TODO discretize target
-        const target = head.target;
+        const target = BlockUtils.getDiscreteTarget(head.target);
         let i_prime = i;
         while (i_prime < head.interlink.length) {
             head = await this.getBlock(head.interlink.hashes[i_prime]); // eslint-disable-line no-await-in-loop
 
             interlinkChain.prepend(head);
 
-            const target_prime = head.target;
-            i_prime = Math.ceil(i + Math.log2(target_prime / target));
+            const target_prime = BlockUtils.getDiscreteTarget(head.target);
+            i_prime = Math.ceil(i + (target_prime - target));
         }
 
         return interlinkChain;

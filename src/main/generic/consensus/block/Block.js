@@ -46,6 +46,13 @@ class Block {
             + this._body.serializedSize;
     }
 
+    equals(o) {
+        return o instanceof Block
+            && this._header.equals(o._header)
+            && this._interlink.equals(o._interlink)
+            && this._body.equals(o._body);
+    }
+
     /**
      * @type {BlockHeader}
      */

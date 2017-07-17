@@ -32,6 +32,10 @@ class BlockUtils {
         return compact;
     }
 
+    static getDiscreteTarget(target) {
+        return Math.ceil(Math.log2(target));
+    }
+
     static compactToDifficulty(compact) {
         return Policy.BLOCK_TARGET_MAX / BlockUtils.compactToTarget(compact);
     }

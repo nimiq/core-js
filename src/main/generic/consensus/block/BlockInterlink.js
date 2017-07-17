@@ -44,6 +44,12 @@ class BlockInterlink {
         return size;
     }
 
+    equals(o) {
+        return o instanceof BlockInterlink
+            && this._hashes.length === o._hashes.length
+            && this._hashes.every((hash, i) => hash.equals(o.hashes[i]));
+    }
+
     /**
      * @returns {Promise.<Hash>}
      */
