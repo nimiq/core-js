@@ -574,8 +574,6 @@ class Blockchain extends Observable {
         // i_prime contains the updated index for the next interlink vector
         // Since we base our interlink chain on the original head's target T, we have to recalculate i' (denoted as j)
         // as j = i + log2(T'/T), where T' is the current heads target T'.
-        // TODO check whether we want to use log2 here
-        // TODO discretize target
         const targetDepth = BlockUtils.getTargetDepth(head.target);
         let j = i;
         while (j < head.interlink.length) {
