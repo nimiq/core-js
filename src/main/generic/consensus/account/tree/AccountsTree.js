@@ -476,6 +476,91 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @param {Array.<Address>} addresses
+     * @param {?IAccountsTreeStore} [transaction]
+     * @returns {Promise.<AccountsProof>}
+     */
+    async constructAccountsProof(addresses, transaction) {
+        transaction = transaction || this._store;
+        const rootKey = await transaction.getRootKey();
+        const rootNode = await transaction.get(rootKey);
+
+        const prefixes = [];
+        for (const address of addresses) {
+            prefixes.push(address.toHex());
+        }
+        // We sort the addresses to simplify traversal in post order (leftmost addresses first).
+        prefixes.sort();
+
+        const nodes = [];
+        await this._constructAccountsProof(transaction, rootNode, prefixes, nodes);
+        return new AccountsProof(nodes);
+    }
+
+    /**
+     * Constructs the accounts proof in post-order.
+     * @param {IAccountsTreeStore} transaction
+     * @param {AccountsTreeNode} node
+     * @param {Array.<string>} prefixes
+     * @param {Array.<AccountsTreeNode>} nodes
+     * @returns {Promise.<*>}
+     * @private
+     */
+    async _constructAccountsProof(transaction, node, prefixes, nodes) {
+        // For each prefix, descend the tree individually.
+        let numAccounts = 0, i = 0;
+        while (i < prefixes.length) {
+            let prefix = prefixes[i];
+            // Find common prefix between node and requested address.
+            const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
+
+            // If the prefix does not fully match, the requested address is not part
+            // of this node.
+            if (commonPrefix.length !== node.prefix.length) continue;
+
+            // Cut common prefix off the new address.
+            prefix = prefix.substr(commonPrefix.length);
+
+            // If the remaining address is empty, we have found the requested node.
+            if (!prefix.length) {
+                nodes.push(node);
+                numAccounts++;
+                continue;
+            }
+
+            // Group addresses with same prefix:
+            // Because of our ordering, they have to be located next to the current prefix.
+            // Hence, we iterate over the next prefixes, until we don't find commonalities anymore.
+            // In the next main iteration we can skip those we already requested here.
+            const subPrefixes = [prefix];
+            // Find other prefixes to descend into this tree as well.
+            let j = i+1;
+            for (; j < prefixes.length; ++j) {
+                // Since we ordered prefixes, there can't be any other prefixes with commonalities.
+                if (!prefixes[j].startsWith(commonPrefix)) break;
+                // But if there is a commonality, add it to the list.
+                subPrefixes.push(prefixes[j].substr(commonPrefix.length));
+            }
+            // Now j is the last index which doesn't have commonalities,
+            // we continue from there in the next iteration.
+            i = j;
+
+            // Descend into the matching child node if one exists.
+            const childKey = node.getChild(prefix);
+            if (childKey) {
+                const childNode = await transaction.get(childKey);
+                numAccounts += this._constructAccountsProof(transaction, childNode, subPrefixes, nodes);
+            }
+        }
+
+        // If this branch contained at least one account, we add this node.
+        if (numAccounts > 0) {
+            nodes.push(node);
+        }
+        return numAccounts;
+    }
+
+    /**
      * @returns {Promise.<AccountsTreeTransaction>}
      */
     async transaction() {
