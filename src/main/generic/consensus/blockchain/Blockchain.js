@@ -530,6 +530,27 @@ class Blockchain extends Observable {
         return interlinkChain;
     }
 
+    /**
+     * Retrieves up to maxBlocks predecessors of the given block.
+     * Returns an array of max k headers.
+     * @param {Block} head
+     * @param {number} k
+     * @return {Promise.<HeaderChain>}
+     * @private
+     */
+    async constructHeaderChain(head, k = 1000000) {
+        const headers = [];
+        let interlink = null;
+
+        while (!Block.GENESIS.equals(head) && headers.length < k) {
+            headers.unshift(head.header);
+            interlink = head.interlink;
+            head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
+        }
+
+        return new HeaderChain(headers, interlink);
+    }
+
     /** @type {Block} */
     get head() {
         return this._mainChain.head;
