@@ -442,20 +442,30 @@ class Blockchain extends Observable {
         // blocks via this._mainChain, otherwise fetch the path.
         let startHash;
         if (chain === this._mainChain) {
-            const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW, 0);
+            const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW - 1, 0);
             startHash = this._mainPath[startHeight];
         } else {
             const path = await this._fetchPath(chain.head, Policy.DIFFICULTY_BLOCK_WINDOW - 1);
             startHash = path[0];
         }
 
-        // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
-        const startChain = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
-        const actualTime = chain.head.timestamp - startChain.head.timestamp;
-
+        let actualTime;
+        // for the first Policy.DIFFICULTY_BLOCK_WINDOW blocks
+        if(chain.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
+            // simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block
+            // i.e. we simulate a sliding window that starts before the genesis block
+            actualTime = chain.head.timestamp + (Policy.DIFFICULTY_BLOCK_WINDOW - chain.height) * Policy.BLOCK_TIME + Policy.BLOCK_TIME;
+        } else {
+            // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
+            const startChain = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
+            actualTime = chain.head.timestamp - startChain.head.timestamp;
+        }
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
         let adjustment = actualTime / expectedTime;
+        console.log(actualTime);
+        console.log(expectedTime);
+        console.log(adjustment);
 
         // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
         adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
@@ -469,6 +479,10 @@ class Blockchain extends Observable {
         // Also enforce a minimum target of 1.
         nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
         nextTarget = Math.max(nextTarget, 1);
+
+        console.log("NextTarget " + nextTarget);
+        console.log("NextDifficulty " + BlockUtils.targetToDifficulty(nextTarget));
+        console.log("Chain Height " + chain.height);
 
         return BlockUtils.targetToCompact(nextTarget);
     }
