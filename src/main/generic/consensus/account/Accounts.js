@@ -57,6 +57,14 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<AccountsProof>}
+     */
+    constructAccountsProof(addresses) {
+        return this._tree.constructAccountsProof(addresses);
+    }
+
+    /**
      * @param {Block} block
      * @return {Promise}
      */

@@ -534,21 +534,69 @@ class Blockchain extends Observable {
      * Retrieves up to maxBlocks predecessors of the given block.
      * Returns an array of max k headers.
      * @param {Block} head
+     * @param {Hash} stopHash
      * @param {number} k
+     * @param {Array.<Hash>} blockLocatorHashes
      * @return {Promise.<HeaderChain>}
-     * @private
      */
-    async constructHeaderChain(head, k = 1000000) {
-        const headers = [];
-        let interlink = null;
+    async getHeaderChain(head, stopHash, k = 1000000, blockLocatorHashes = []) {
+        const knownBlocks = new HashSet();
+        knownBlocks.addAll(blockLocatorHashes);
 
-        while (!Block.GENESIS.equals(head) && headers.length < k) {
+        const headers = [], interlink = head.interlink;
+        let curHash = await head.hash(), foundStopHash = false;
+
+        // Traverse tree until length k is reached and we found the stopHash
+        while (!Block.GENESIS.equals(head) && (headers.length < k || !foundStopHash)) {
+            // Check that we at least include the stopHash.
+            if (curHash.eq(stopHash)) {
+                foundStopHash = true;
+            }
+
+            // Shortcut: if we the current hash is within the knownBlocks, stop.
+            if (knownBlocks.contains(curHash)) {
+                break;
+            }
+
+            // Prepend header.
             headers.unshift(head.header);
-            interlink = head.interlink;
+            curHash = head.prevHash;
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
         }
 
         return new HeaderChain(headers, interlink);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<Accounts>}
+     */
+    async getAccounts(blockHash) {
+        // Check position in path.
+        const pos = this._mainPath.indexOf(blockHash);
+        if (pos < this._mainPath.length - 1 - Policy.ACCOUNTS_PROOF_WINDOW) {
+            // TODO what to do if we do not know the requested block or it is outside our window?
+            throw 'Block hash not found or outside window';
+        }
+
+        const accounts = await Accounts.createTemporary(this._accounts);
+        let currentBlock = this.head;
+
+        // Do not revert the targeted block itself.
+        while (!(await currentBlock.hash()).equals(blockHash)) {
+            await accounts.revertBlock(currentBlock);
+            currentBlock = await this.getBlock(currentBlock.prevHash);
+        }
+
+        if (!currentBlock.accountsHash.equals(await accounts.hash())) {
+            throw 'AccountsHash mismatch while constructing Accounts';
+        }
+
+        if (!(await accounts._tree.verify())) {
+            throw 'AccountsTree verification failed';
+        }
+
+        return accounts;
     }
 
     /** @type {Block} */

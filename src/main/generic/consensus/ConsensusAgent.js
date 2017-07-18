@@ -513,7 +513,7 @@ class ConsensusAgent extends Observable {
         const head = await this._blockchain.getBlock(msg.blockHash);
 
         if (head) {
-            const interlinkChain = this._blockchain.getInterlinkChain(head, msg.m);
+            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.m);
             this._peer.channel.interlinkChain(interlinkChain);
         }
         // TODO what to do if we do not know the requested head?
@@ -523,16 +523,31 @@ class ConsensusAgent extends Observable {
      * @param {GetHeadersMessage} msg
      * @private
      */
-    _onGetHeaders(msg) {
-        this._peer.channel.headers(null);
+    async _onGetHeaders(msg) {
+        const head = await this._blockchain.getBlock(msg.blockHash);
+
+        if (head) {
+            const headerChain = await this._blockchain.getHeaderChain(head, msg.mustIncludeHash, msg.k, msg.hashes);
+            this._peer.channel.headers(headerChain);
+        }
+        // TODO what to do if we do not know the requested head?
     }
 
     /**
      * @param {GetAccountsProofMessage} msg
      * @private
      */
-    _onGetAccountsProof(msg) {
-        this._peer.channel.accountsProof(msg.blockHash, null);
+    async _onGetAccountsProof(msg) {
+        let accounts;
+        try {
+            accounts = await this._blockchain.getAccounts(msg.blockHash);
+        } catch(e) {
+            // TODO what should we do here?
+            return;
+        }
+
+        const proof = await accounts.constructAccountsProof(msg.addresses);
+        this._peer.channel.accountsProof(msg.blockHash, proof);
     }
 
     /**

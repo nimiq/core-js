@@ -209,11 +209,12 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Array.<Hash>} hashes
+     * @param {Hash} mustIncludeHash
      * @param {number} k
      * @return {boolean}
      */
-    getHeaders(hashes, k) {
-        return this._send(new GetHeadersMessage(hashes, k));
+    getHeaders(hashes, mustIncludeHash, k) {
+        return this._send(new GetHeadersMessage(hashes, mustIncludeHash, k));
     }
 
     /**

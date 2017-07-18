@@ -62,6 +62,15 @@ class Policy {
         return 2;
     }
 
+    /**
+     * Number of blocks an AccountsProof can be requested.
+     * @type {number}
+     * @constant
+     */
+    static get ACCOUNTS_PROOF_WINDOW() {
+        return 10; // Blocks
+    }
+
 
     /**
      * Convert Nimiq decimal to Number of Satoshis.

@@ -25,6 +25,15 @@ class HashSet {
         this._map.set(this._fnHash(value), value);
     }
 
+    /**
+     * @param {Array.<V>|*} collection
+     */
+    addAll(collection) {
+        for (const value of collection) {
+            this.add(value);
+        }
+    }
+
 
     /**
      * @param {V|*} value
