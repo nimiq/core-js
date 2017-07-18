@@ -4,7 +4,7 @@ class GetAddrMessage extends Message {
      * @param {number} serviceMask
      */
     constructor(protocolMask, serviceMask) {
-        super(Message.Type.GETADDR);
+        super(Message.Type.GET_ADDR);
         if (!NumberUtils.isUint8(protocolMask)) throw 'Malformed protocolMask';
         if (!NumberUtils.isUint32(serviceMask)) throw 'Malformed serviceMask';
         this._protocolMask = protocolMask;

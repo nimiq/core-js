@@ -6,7 +6,7 @@ class NetworkAgent extends Observable {
      * 
      * @listens PeerChannel#version
      * @listens PeerChannel#addr
-     * @listens PeerChannel#getaddr
+     * @listens PeerChannel#getAddr
      * @listens PeerChannel#ping
      * @listens PeerChannel#pong
      * @listens PeerChannel#close
@@ -65,7 +65,7 @@ class NetworkAgent extends Observable {
         // Listen to network/control messages from the peer.
         channel.on('version',   msg => this._onVersion(msg));
         channel.on('addr',      msg => this._onAddr(msg));
-        channel.on('getaddr',   msg => this._onGetAddr(msg));
+        channel.on('getAddr', msg => this._onGetAddr(msg));
         channel.on('ping',      msg => this._onPing(msg));
         channel.on('pong',      msg => this._onPong(msg));
 
@@ -236,7 +236,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getaddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
+        this._channel.getAddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.

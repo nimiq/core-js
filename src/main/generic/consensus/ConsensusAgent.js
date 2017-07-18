@@ -33,7 +33,7 @@ class ConsensusAgent extends Observable {
         /** @type {HashSet.<InvVector>} */
         this._knownObjects = new HashSet();
 
-        // InvVectors we want to request via getdata are collected here and
+        // InvVectors we want to request via getData are collected here and
         // periodically requested.
         /** @type {IndexedArray} */
         this._objectsToRequest = new IndexedArray([], true);
@@ -47,15 +47,15 @@ class ConsensusAgent extends Observable {
 
         // Listen to consensus messages from the peer.
         peer.channel.on('inv',                  msg => this._onInv(msg));
-        peer.channel.on('getdata',              msg => this._onGetData(msg));
-        peer.channel.on('notfound',             msg => this._onNotFound(msg));
+        peer.channel.on('getData', msg => this._onGetData(msg));
+        peer.channel.on('notFound', msg => this._onNotFound(msg));
         peer.channel.on('block',                msg => this._onBlock(msg));
         peer.channel.on('tx',                   msg => this._onTx(msg));
-        peer.channel.on('getblocks',            msg => this._onGetBlocks(msg));
+        peer.channel.on('getBlocks', msg => this._onGetBlocks(msg));
         peer.channel.on('mempool',              msg => this._onMempool(msg));
-        peer.channel.on('getinterlinkchain',    msg => this._onGetInterlinkChain(msg));
-        peer.channel.on('getaccountsproof',     msg => this._onGetAccountsProof(msg));
-        peer.channel.on('getheaders',           msg => this._onGetHeaders(msg));
+        peer.channel.on('getInterlinkChain', msg => this._onGetInterlinkChain(msg));
+        peer.channel.on('getAccountsProof', msg => this._onGetAccountsProof(msg));
+        peer.channel.on('getHeaders', msg => this._onGetHeaders(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -160,8 +160,8 @@ class ConsensusAgent extends Observable {
     }
 
     _requestBlocks() {
-        // XXX Only one getblocks request at a time.
-        if (this._timers.timeoutExists('getblocks')) {
+        // XXX Only one getBlocks request at a time.
+        if (this._timers.timeoutExists('getBlocks')) {
             Log.e(ConsensusAgent, `Duplicate _requestBlocks()`);
             return;
         }
@@ -185,13 +185,13 @@ class ConsensusAgent extends Observable {
         }
 
         // Request blocks from peer.
-        this._peer.channel.getblocks(hashes);
+        this._peer.channel.getBlocks(hashes);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
-        this._timers.setTimeout('getblocks', () => {
-            this._timers.clearTimeout('getblocks');
-            this._peer.channel.close('getblocks timeout');
+        this._timers.setTimeout('getBlocks', () => {
+            this._timers.clearTimeout('getBlocks');
+            this._peer.channel.close('getBlocks timeout');
         }, ConsensusAgent.REQUEST_TIMEOUT);
     }
 
@@ -201,8 +201,8 @@ class ConsensusAgent extends Observable {
      * @private
      */
     async _onInv(msg) {
-        // Clear the getblocks timeout.
-        this._timers.clearTimeout('getblocks');
+        // Clear the getBlocks timeout.
+        this._timers.clearTimeout('getBlocks');
 
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
@@ -244,7 +244,7 @@ class ConsensusAgent extends Observable {
             // Clear the request throttle timeout.
             this._timers.clearTimeout('inv');
 
-            // If there are enough objects queued up, send out a getdata request.
+            // If there are enough objects queued up, send out a getData request.
             if (this._objectsToRequest.length >= ConsensusAgent.REQUEST_THRESHOLD) {
                 this._requestData();
             }
@@ -270,19 +270,19 @@ class ConsensusAgent extends Observable {
 
         // Request all queued objects from the peer.
         // TODO depending in the REQUEST_THRESHOLD, we might need to split up
-        // the getdata request into multiple ones.
-        this._peer.channel.getdata(this._objectsToRequest.array);
+        // the getData request into multiple ones.
+        this._peer.channel.getData(this._objectsToRequest.array);
 
         // Reset the queue.
         this._objectsToRequest = new IndexedArray([], true);
 
         // Set timer to detect end of request / missing objects
-        this._timers.setTimeout('getdata', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getData', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
     }
 
     _noMoreData() {
         // Cancel the request timeout timer.
-        this._timers.clearTimeout('getdata');
+        this._timers.clearTimeout('getData');
 
         // Reset objects in flight.
         this._objectsInFlight = null;
@@ -382,7 +382,7 @@ class ConsensusAgent extends Observable {
 
         // Reset the request timeout if we expect more objects to come.
         if (!this._objectsInFlight.isEmpty()) {
-            this._timers.resetTimeout('getdata', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
+            this._timers.resetTimeout('getData', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
         } else {
             this._noMoreData();
         }
@@ -403,7 +403,7 @@ class ConsensusAgent extends Observable {
 
         // Check which of the requested objects we know.
         // Send back all known objects.
-        // Send notfound for unknown objects.
+        // Send notFound for unknown objects.
         const unknownObjects = [];
         for (const vector of msg.vectors) {
             switch (vector.type) {
@@ -436,7 +436,7 @@ class ConsensusAgent extends Observable {
 
         // Report any unknown objects back to the sender.
         if (unknownObjects.length) {
-            this._peer.channel.notfound(unknownObjects);
+            this._peer.channel.notFound(unknownObjects);
         }
     }
 
@@ -514,7 +514,7 @@ class ConsensusAgent extends Observable {
 
         if (head) {
             const interlinkChain = this._blockchain.getInterlinkChain(head, msg.m);
-            this._peer.channel.interlinkchain(interlinkChain);
+            this._peer.channel.interlinkChain(interlinkChain);
         }
         // TODO what to do if we do not know the requested head?
     }
@@ -532,7 +532,7 @@ class ConsensusAgent extends Observable {
      * @private
      */
     _onGetAccountsProof(msg) {
-        this._peer.channel.accountsproof(msg.blockHash, null);
+        this._peer.channel.accountsProof(msg.blockHash, null);
     }
 
     /**
@@ -568,24 +568,24 @@ class ConsensusAgent extends Observable {
     }
 }
 /**
- * Number of InvVectors in invToRequest pool to automatically trigger a getdata request.
+ * Number of InvVectors in invToRequest pool to automatically trigger a getData request.
  * @type {number}
  */
 ConsensusAgent.REQUEST_THRESHOLD = 50;
 /**
- * Time (ms) to wait after the last received inv message before sending getdata.
+ * Time (ms) to wait after the last received inv message before sending getData.
  * @type {number}
  */
 ConsensusAgent.REQUEST_THROTTLE = 500;
 /**
- * Maximum time (ms) to wait after sending out getdata or receiving the last object for this request.
+ * Maximum time (ms) to wait after sending out getData or receiving the last object for this request.
  * @type {number}
  */
 ConsensusAgent.REQUEST_TIMEOUT = 5000; 
 /**
  * Maximum number of blockchain sync retries before closing the connection.
  * XXX If the peer is on a long fork, it will count as a failed sync attempt
- * if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getblocks)
+ * if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getBlocks)
  * blocks.
  * @type {number}
  */

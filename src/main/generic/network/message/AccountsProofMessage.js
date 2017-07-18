@@ -4,7 +4,7 @@ class AccountsProofMessage extends Message {
      * @param {AccountsProof} accountsProof
      */
     constructor(blockHash, accountsProof) {
-        super(Message.Type.GETACCOUNTSPROOF);
+        super(Message.Type.GET_ACCOUNTS_PROOF);
         if (!blockHash|| !(blockHash instanceof Hash)) throw 'Malformed blockHash';
         if (!accountsProof || !(accountsProof instanceof AccountsProof)) throw 'Malformed proof';
         /** @type {Hash} */

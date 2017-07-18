@@ -87,7 +87,7 @@ class PeerChannel extends Observable {
      * @param {Array.<InvVector>} vectors
      * @return {boolean}
      */
-    notfound(vectors) {
+    notFound(vectors) {
         return this._send(new NotFoundMessage(vectors));
     }
 
@@ -95,7 +95,7 @@ class PeerChannel extends Observable {
      * @param {Array.<InvVector>} vectors
      * @return {boolean}
      */
-    getdata(vectors) {
+    getData(vectors) {
         return this._send(new GetDataMessage(vectors));
     }
 
@@ -121,7 +121,7 @@ class PeerChannel extends Observable {
      * @param {Hash} hashStop
      * @return {boolean}
      */
-    getblocks(hashes, hashStop = new Hash(null)) {
+    getBlocks(hashes, hashStop = new Hash(null)) {
         return this._send(new GetBlocksMessage(hashes, hashStop));
     }
 
@@ -156,7 +156,7 @@ class PeerChannel extends Observable {
      * @param {number} serviceMask
      * @return {boolean}
      */
-    getaddr(protocolMask, serviceMask) {
+    getAddr(protocolMask, serviceMask) {
         return this._send(new GetAddrMessage(protocolMask, serviceMask));
     }
 
@@ -194,7 +194,7 @@ class PeerChannel extends Observable {
      * @param {Array.<Address>} addresses
      * @return {boolean}
      */
-    getaccountsproof(blockHash, addresses) {
+    getAccountsProof(blockHash, addresses) {
         return this._send(new GetAccountsProofMessage(blockHash, addresses));
     }
 
@@ -203,7 +203,7 @@ class PeerChannel extends Observable {
      * @param {AccountsProof} accountsProof
      * @return {boolean}
      */
-    accountsproof(blockHash, accountsProof) {
+    accountsProof(blockHash, accountsProof) {
         return this._send(new AccountsProofMessage(blockHash, accountsProof));
     }
 
@@ -212,7 +212,7 @@ class PeerChannel extends Observable {
      * @param {number} k
      * @return {boolean}
      */
-    getheaders(hashes, k) {
+    getHeaders(hashes, k) {
         return this._send(new GetHeadersMessage(hashes, k));
     }
 
@@ -229,7 +229,7 @@ class PeerChannel extends Observable {
      * @param {number} m
      * @return {boolean}
      */
-    getinterlinkchain(blockHash, m) {
+    getInterlinkChain(blockHash, m) {
         return this._send(new GetInterlinkChainMessage(blockHash, m));
     }
 
@@ -237,7 +237,7 @@ class PeerChannel extends Observable {
      * @param {InterlinkChain} interlinkChain
      * @return {boolean}
      */
-    interlinkchain(interlinkChain) {
+    interlinkChain(interlinkChain) {
         return this._send(new InterlinkChainMessage(interlinkChain));
     }
 

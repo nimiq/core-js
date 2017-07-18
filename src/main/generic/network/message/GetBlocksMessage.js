@@ -4,7 +4,7 @@ class GetBlocksMessage extends Message {
      * @param {Hash} hashStop
      */
     constructor(hashes, hashStop) {
-        super(Message.Type.GETBLOCKS);
+        super(Message.Type.GET_BLOCKS);
         if (!hashes || !NumberUtils.isUint16(hashes.length)
             || hashes.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
         /** @type {Array.<Hash>} */

@@ -182,7 +182,7 @@ class GetDataMessage extends BaseInventoryMessage {
      * @param {Array.<InvVector>} vectors
      */
     constructor(vectors) {
-        super(Message.Type.GETDATA, vectors);
+        super(Message.Type.GET_DATA, vectors);
     }
 
     /**
@@ -207,7 +207,7 @@ class NotFoundMessage extends BaseInventoryMessage {
      * @param {Array.<InvVector>} vectors
      */
     constructor(vectors) {
-        super(Message.Type.NOTFOUND, vectors);
+        super(Message.Type.NOT_FOUND, vectors);
     }
 
     /**

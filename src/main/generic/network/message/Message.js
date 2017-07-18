@@ -4,7 +4,7 @@ class Message {
      * @param {Message.Type} type Message type
      */
     constructor(type) {
-        if (!type || !type.length || StringUtils.isMultibyte(type) || type.length > 12) throw 'Malformed type';
+        if (!type || !NumberUtils.isUint64(type)) throw 'Malformed type';
         /** @type {Message.Type} */
         this._type = type;
     }
@@ -21,7 +21,7 @@ class Message {
         buf.readPos = 4;
 
         // Read the type string.
-        const type = Message.Type.readPaddedString(buf);
+        const type = buf.readVarUint();
 
         // Reset the read position to original.
         buf.readPos = pos;
@@ -60,7 +60,7 @@ class Message {
         }
 
         const magic = buf.readUint32();
-        const type = Message.Type.readPaddedString(buf);
+        const type = buf.readVarUint();
         buf.readUint32(); // length is ignored
         const checksum = buf.readUint32();
 
@@ -96,7 +96,7 @@ class Message {
         }
 
         buf.writeUint32(Message.MAGIC);
-        buf.writePaddedString(this._type, 12);
+        buf.writeVarUint(this._type);
         buf.writeUint32(this.serializedSize);
         buf.writeUint32(0); // written later by _setChecksum()
 
@@ -106,7 +106,7 @@ class Message {
     /** @type {number} */
     get serializedSize() {
         return /*magic*/ 4
-            + /*type*/ 12
+            + /*type*/ SerialBuffer.varUintSize(this._type)
             + /*length*/ 4
             + /*checksum*/ 4;
     }
@@ -119,53 +119,32 @@ class Message {
 Message.MAGIC = 0x42042042;
 /**
  * Enum for message types.
- * @enum {string}
+ * @enum {number}
  */
 Message.Type = {
-    VERSION: 'version',
-    INV: 'inv',
-    GETDATA: 'getdata',
-    NOTFOUND: 'notfound',
-    GETBLOCKS: 'getblocks',
-    GETHEADERS: 'getheaders',
-    TX: 'tx',
-    BLOCK: 'block',
-    HEADERS: 'headers',
-    MEMPOOL: 'mempool',
-    REJECT: 'reject',
+    VERSION:    0,
+    INV:        1,
+    GET_DATA:   2,
+    NOT_FOUND:  3,
+    GET_BLOCKS: 4,
+    BLOCK:      5,
+    TX:         6,
+    MEMPOOL:    7,
+    REJECT:     8,
 
-    ADDR: 'addr',
-    GETADDR: 'getaddr',
-    PING: 'ping',
-    PONG: 'pong',
+    ADDR:       9,
+    GET_ADDR:   10,
+    PING:       11,
+    PONG:       12,
 
-    SIGNAL: 'signal',
-
-    SENDHEADERS: 'sendheaders',
+    SIGNAL:     14,
 
     // Nimiq
-    GETBALANCES: 'getbalances',
-    GETINTERLINKCHAIN: 'getinterlinkchain',
-    GETACCOUNTSPROOF: 'getaccountsproof',
-    BALANCES: 'balances',
-    INTERLINKCHAIN: 'interlinkchain',
-    ACCOUNTSPROOF: 'accountsproof',
-
-    /**
-     * @param {SerialBuffer} buf
-     * @returns {Message.Type}
-     */
-    readPaddedString: function (buf) {
-        return /** @type {Message.Type} */ (buf.readPaddedString(12));
-    },
-
-    /**
-     * @deprecated use {@link Message.Type.readPaddedString()}
-     * @param {SerialBuffer} buf
-     * @returns {Message.Type}
-     */
-    readVarString: function (buf) {
-        return /** @type {Message.Type} */ (buf.readVarLengthString());
-    }
+    GET_HEADERS:        15,
+    HEADERS:            16,
+    GET_INTERLINK_CHAIN: 17,
+    INTERLINK_CHAIN:     18,
+    GET_ACCOUNTS_PROOF:  19,
+    ACCOUNTS_PROOF:      20
 };
 Class.register(Message);

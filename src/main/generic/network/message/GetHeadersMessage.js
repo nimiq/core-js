@@ -4,7 +4,7 @@ class GetHeadersMessage extends Message {
      * @param {number} k
      */
     constructor(hashes, k) {
-        super(Message.Type.GETHEADERS);
+        super(Message.Type.GET_HEADERS);
         if (!hashes || !NumberUtils.isUint16(hashes.length)
             || hashes.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
         if (!NumberUtils.isUint16(k)) throw 'Malformed k';

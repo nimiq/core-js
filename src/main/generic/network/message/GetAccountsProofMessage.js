@@ -4,7 +4,7 @@ class GetAccountsProofMessage extends Message {
      * @param {Array.<Address>} addresses
      */
     constructor(blockHash, addresses) {
-        super(Message.Type.GETACCOUNTSPROOF);
+        super(Message.Type.GET_ACCOUNTS_PROOF);
         if (!blockHash|| !(blockHash instanceof Hash)) throw 'Malformed blockHash';
         if (!addresses || !NumberUtils.isUint16(addresses.length)
             || addresses.some(it => !(it instanceof Address))) throw 'Malformed addresses';

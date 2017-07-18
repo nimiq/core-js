@@ -128,6 +128,58 @@ class SerialBuffer extends Uint8Array {
     /**
      * @return {number}
      */
+    readVarUint() {
+        const value = this.readUint8();
+        if (value < 0xFD) {
+            return value;
+        } else if (value === 0xFD) {
+            return this.readUint16();
+        } else if (value === 0xFE) {
+            return this.readUint32();
+        } else /*if (value === 0xFF)*/ {
+            return this.readUint64();
+        }
+    }
+
+    /**
+     * @param {number} value
+     */
+    writeVarUint(value) {
+        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (value < 0xFD) {
+            this.writeUint8(value);
+        } else if (value <= 0xFFFF) {
+            this.writeUint8(0xFD);
+            this.writeUint16(value);
+        } else if (value <= 0xFFFFFFFF) {
+            this.writeUint8(0xFE);
+            this.writeUint32(value);
+        } else {
+            this.writeUint8(0xFF);
+            this.writeUint64(value);
+        }
+    }
+
+    /**
+     * @param {number} value
+     * @returns {number}
+     */
+    static varUintSize(value) {
+        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (value < 0xFD) {
+            return 1;
+        } else if (value <= 0xFFFF) {
+            return 3;
+        } else if (value <= 0xFFFFFFFF) {
+            return 5;
+        } else {
+            return 9;
+        }
+    }
+
+    /**
+     * @return {number}
+     */
     readFloat64() {
         const value = this._view.getFloat64(this._readPos);
         this._readPos += 8;

@@ -4,7 +4,7 @@ class GetInterlinkChainMessage extends Message {
      * @param {number} m
      */
     constructor(blockHash, m) {
-        super(Message.Type.GETINTERLINKCHAIN);
+        super(Message.Type.GET_INTERLINK_CHAIN);
         if (!blockHash|| !(blockHash instanceof Hash)) throw 'Malformed blockHash';
         if (!NumberUtils.isUint16(m)) throw 'Malformed m';
         /** @type {Hash} */

@@ -24,7 +24,7 @@ describe('P2PChannel', () => {
             done();
         });
         const client = new P2PChannel(spy, '<TEST>');
-        client.notfound([vec1]);
+        client.notFound([vec1]);
     });
 
     it('can send a GetDataMessage', (done) => {
@@ -35,7 +35,7 @@ describe('P2PChannel', () => {
             done();
         });
         const client = new P2PChannel(spy, '<TEST>');
-        client.getdata([vec1]);
+        client.getData([vec1]);
     });
 
     it('can send a BlockMessage', (done) => {

@@ -3,7 +3,7 @@ class InterlinkChainMessage extends Message {
      * @param {InterlinkChain} interlinkChain
      */
     constructor(interlinkChain) {
-        super(Message.Type.INTERLINKCHAIN);
+        super(Message.Type.INTERLINK_CHAIN);
         if (!interlinkChain|| !(interlinkChain instanceof InterlinkChain)) throw 'Malformed interlinkChain';
         /** @type {InterlinkChain} */
         this._interlinkChain = interlinkChain;
