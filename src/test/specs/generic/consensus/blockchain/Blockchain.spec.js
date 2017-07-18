@@ -139,18 +139,19 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can push and get a valid block, and get the next compact target', (done) => {
+    it('can push 100 blocks with constant difficulty, then increase the difficulty over 10 more blocks', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(Log, 'd').and.callThrough();
 
             let nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(2).toString(16));
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
 
-            // all timestamps are explicitly set to trigger an increase in difficulty after the last block
-            for (let i = 0; i < 2; ++i) {
-                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
+            let timestamp;
+            for (let i = 0; i < 100; ++i) {
+                timestamp = testBlockchain.height * Policy.BLOCK_TIME;
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, timestamp);
                 const hash = await block.hash();
                 const status = await testBlockchain.pushBlock(block);
                 expect(status).toBe(Blockchain.PUSH_OK);
@@ -162,20 +163,139 @@ describe('Blockchain', () => {
             }
 
             nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(4 * 2).toString(16));
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+
+            // all timestamps are explicitly set to trigger an increase in difficulty after the last block
+            for (let i = 0; i < 10; ++i) {
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 100 * Policy.BLOCK_TIME + i);
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(Blockchain.PUSH_OK);
+                expect(Log.d).not.toHaveBeenCalled();
+
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+            }
+
+            nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1.7266499802397577).toString(16));
+        })().then(done, done.fail);
+    });
+
+    it('can push 100 blocks with constant difficulty, then maximize the difficulty with one block', (done) => {
+        (async function () {
+            // This is needed to make sure pushBlock() went through successfully
+            // and wasn't ignored later in the process
+            spyOn(Log, 'd').and.callThrough();
+
+            let nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+
+            let timestamp;
+            for (let i = 0; i < 100; ++i) {
+                timestamp = testBlockchain.height * Policy.BLOCK_TIME;
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, timestamp);
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(Blockchain.PUSH_OK);
+                expect(Log.d).not.toHaveBeenCalled();
+
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+            }
+
+            nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
 
             // Push one last block
-            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME / 2);
+            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 100 * Policy.BLOCK_TIME);
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(Blockchain.PUSH_OK);
             expect(Log.d).not.toHaveBeenCalled();
 
-            // Check that the difficulty was multiplied by 2,
-            // since the timestamps in the blocks were crafted to double the difficulty
+            // Check that the difficulty was increased by one block only
             nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(8 * 2).toString(16));
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1.0101111299495984).toString(16));
         })().then(done, done.fail);
     });
+
+    it('can push 150 blocks and keep difficulty constant', (done) => {
+    (async function () {
+        // This is needed to make sure pushBlock() went through successfully
+        // and wasn't ignored later in the process
+        spyOn(Log, 'd').and.callThrough();
+
+        let nextCompactTarget = await testBlockchain.getNextCompactTarget();
+        expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+
+        // all timestamps are explicitly set to trigger no in- or decrease in difficulty after 100 blocks
+        for (let i = 0; i < 150; ++i) {
+            let timestamp = testBlockchain.height * Policy.BLOCK_TIME;
+
+            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, timestamp);
+            const hash = await block.hash();
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(Blockchain.PUSH_OK);
+            expect(Log.d).not.toHaveBeenCalled();
+
+            // Get that same block and check that they're the same
+            const resultBlock = await testBlockchain.getBlock(hash);
+            expect(resultBlock).toBe(block);
+
+            nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+        }
+    })().then(done, done.fail);
+    });
+
+    it('can push 150 blocks and keep difficulty increasing over each block', (done) => {
+        (async function () {
+            // This is needed to make sure pushBlock() went through successfully
+            // and wasn't ignored later in the process
+            spyOn(Log, 'd').and.callThrough();
+
+            let nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+
+            // all timestamps are explicitly set to trigger no in- or decrease in difficulty after 100 blocks
+            for (let i = 0; i < 100; ++i) {
+                let timestamp = testBlockchain.height * Policy.BLOCK_TIME - 1;
+
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, timestamp);
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(Blockchain.PUSH_OK);
+                expect(Log.d).not.toHaveBeenCalled();
+
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+
+            }
+            nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1.0521146324124835).toString(16));
+
+            for (let i = 0; i < 50; ++i) {
+                let timestamp = testBlockchain.height * Policy.BLOCK_TIME - 2;
+
+                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, timestamp);
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(Blockchain.PUSH_OK);
+                expect(Log.d).not.toHaveBeenCalled();
+
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+            }
+            nextCompactTarget = await testBlockchain.getNextCompactTarget();
+            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1.0791274504928567).toString(16));
+
+        })().then(done, done.fail);
+    });
+
 
     it('cannot push blocks with transactions to oneself', (done) => {
         (async function () {
@@ -299,7 +419,7 @@ describe('Blockchain', () => {
 
             //// Check that the getters return the expected values
             expect(testBlockchain.head).toBe(block);
-            expect(testBlockchain.totalWork).toBe(3);
+            expect(testBlockchain.totalWork).toBe(2);
             expect(testBlockchain.height).toBe(2);
             expect(testBlockchain.headHash).toEqual(hash);
             expect(testBlockchain.path).toEqual(hashes);
@@ -325,7 +445,7 @@ describe('Blockchain', () => {
 
             // Check that the getters return the new expected values
             expect(testBlockchain.head).toBe(block);
-            expect(testBlockchain.totalWork).toBe(15);
+            expect(testBlockchain.totalWork).toBe(4.020226714409248);
             expect(testBlockchain.height).toBe(4);
             expect(testBlockchain.headHash).toEqual(hash);
             expect(testBlockchain.path).toEqual(hashes);
