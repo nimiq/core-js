@@ -4,7 +4,7 @@ describe('Blockchain', () => {
 
     beforeEach(function (done) {
         originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 50000;
         (async function () {
             // create testing blockchain with only genesis and dummy users
             testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
@@ -144,6 +144,7 @@ describe('Blockchain', () => {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(Log, 'd').and.callThrough();
+
 
             let nextCompactTarget = await testBlockchain.getNextCompactTarget();
             expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
