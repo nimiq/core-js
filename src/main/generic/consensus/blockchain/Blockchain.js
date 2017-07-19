@@ -463,9 +463,6 @@ class Blockchain extends Observable {
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
         let adjustment = actualTime / expectedTime;
-        console.log(actualTime);
-        console.log(expectedTime);
-        console.log(adjustment);
 
         // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
         adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
@@ -479,10 +476,6 @@ class Blockchain extends Observable {
         // Also enforce a minimum target of 1.
         nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
         nextTarget = Math.max(nextTarget, 1);
-
-        console.log("NextTarget " + nextTarget);
-        console.log("NextDifficulty " + BlockUtils.targetToDifficulty(nextTarget));
-        console.log("Chain Height " + chain.height);
 
         return BlockUtils.targetToCompact(nextTarget);
     }
