@@ -91,8 +91,9 @@ class BlockHeader {
         return BlockUtils.isProofOfWork(pow, this.target);
     }
 
+
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @return {Promise.<Hash>}
      */
     async hash(buf) {
@@ -101,7 +102,7 @@ class BlockHeader {
     }
     
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @return {Promise.<Hash>}
      */
     async pow(buf) {

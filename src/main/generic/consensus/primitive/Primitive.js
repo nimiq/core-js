@@ -21,6 +21,10 @@ class Primitive {
         return o instanceof Primitive && BufferUtils.equals(this.serialize(), o.serialize());
     }
 
+    hashCode() {
+        return this.toBase64();
+    }
+
     /**
      * @abstract
      * @param {SerialBuffer} [buf]

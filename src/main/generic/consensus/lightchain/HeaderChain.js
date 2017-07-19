@@ -28,7 +28,7 @@ class HeaderChain {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
     serialize(buf) {

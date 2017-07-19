@@ -31,17 +31,27 @@ class InterlinkChain {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint16(this._headers.length);
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < this._headers.length; i++) {
             this._headers[i].serialize(buf);
             this._interlinks[i].serialize(buf);
         }
         return buf;
+    }
+
+    /** @type {number} */
+    get serializedSize() {
+        let size = /*count*/ 2;
+        for (let i = 0; i < this._headers.length; i++) {
+            size += this._headers[i].serializedSize;
+            size += this._interlinks[i].serializedSize;
+        }
+        return size;
     }
 
     /**
@@ -53,16 +63,6 @@ class InterlinkChain {
         // instead and iterate over it in reverse order.
         this._headers.unshift(block.header);
         this._interlinks.unshift(block.interlink);
-    }
-
-    /** @type {number} */
-    get serializedSize() {
-        let size = /*count*/ 2;
-        for (let i = 0; i < count; i++) {
-            size += this._headers[i].serializedSize;
-            size += this._interlinks[i].serializedSize;
-        }
-        return size;
     }
 
     /** @type {number} */

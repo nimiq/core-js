@@ -46,6 +46,141 @@ class Block {
             + this._body.serializedSize;
     }
 
+    /**
+     * @returns {Promise.<boolean>}
+     */
+    async verify() {
+        // Check that the maximum block size is not exceeded.
+        if (this.serializedSize > Policy.BLOCK_SIZE_MAX) {
+            Log.w(Block, 'Invalid block - max block size exceeded');
+            return false;
+        }
+
+        const senderPubKeys = {};
+        for (const tx of this._body.transactions) {
+            // Check that there is only one transaction per sender.
+            if (senderPubKeys[tx.senderPubKey]) {
+                Log.w(Block, 'Invalid block - more than one transaction per sender');
+                return false;
+            }
+            senderPubKeys[tx.senderPubKey] = true;
+
+            // Check that there are no transactions to oneself.
+            const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
+            if (tx.recipientAddr.equals(txSenderAddr)) {
+                Log.w(Block, 'Invalid block - sender and recipient coincide');
+                return false;
+            }
+        }
+
+        // Check that the headerHash matches the difficulty.
+        if (!(await this._header.verifyProofOfWork())) {
+            Log.w(Block, 'Invalid block - PoW verification failed');
+            return false;
+        }
+
+        // Check that bodyHash given in the header matches the actual bodyHash.
+        const bodyHash = await this._body.hash();
+        if (!this._header.bodyHash.equals(bodyHash)) {
+            Log.w(Block, 'Invalid block - body hash mismatch');
+            return false;
+        }
+
+        // Check that the interlinkHash given in the header matches the actual interlinkHash.
+        const interlinkHash = await this._interlink.hash();
+        if (!this._header.interlinkHash.equals(interlinkHash)) {
+            Log.w(Block, 'Invalid block - interlink hash mismatch');
+            return false;
+        }
+
+        // Check that all transaction signatures are valid.
+        for (const tx of this._body.transactions) {
+            if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
+                Log.w(Blockchain, 'Invalid block - invalid transaction signature');
+                return false;
+            }
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    /**
+     * @param {Block} prevBlock
+     * @returns {Promise.<boolean>}
+     */
+    async isSuccessorOf(prevBlock) {
+        // Check that the height is one higher than previous
+        if (this._header.height !== prevBlock.header.height + 1) {
+            return false;
+        }
+
+        // Check that the timestamp is greater or equal to the previous block's timestamp.
+        if (this._header.timestamp < prevBlock.header.timestamp) {
+            return false;
+        }
+
+        // Check that the hash of the previous block equals prevHash.
+        const prevHash = await prevBlock.hash();
+        if (!this._header.prevHash.equals(prevHash)) {
+            return false;
+        }
+
+        // Check that the interlink hash is correct.
+        const interlinkHash = await prevBlock.nextInterlink(this.target).hash();
+        if (!this._header.interlinkHash.equals(interlinkHash)) {
+            return false;
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    /**
+     * The 'InterlinkUpdate' algorithm from the PoPoW paper adapted for dynamic difficulty.
+     * @param {number} nextTarget
+     * @returns {Promise.<BlockInterlink>}
+     */
+    async nextInterlink(nextTarget) {
+        // Compute how much harder the block hash is than the next target.
+        const hash = await this.hash();
+        const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
+        let i = 1, depth = 0;
+        while (BlockUtils.isProofOfWork(hash, Math.pow(2, nextTargetHeight - i))) {
+            depth = i;
+            i++;
+        }
+
+        // If the block hash is not hard enough and the target height didn't change, the interlink doesn't change.
+        const targetHeight = BlockUtils.getTargetHeight(this.target);
+        if (depth === 0 && targetHeight === nextTargetHeight) {
+            return this.interlink;
+        }
+
+        // The interlink changes, start constructing a new one.
+        /** @type {Array.<Hash>} */
+        const hashes = [Block.GENESIS.HASH];
+
+        // Push the current block hash up to depth times onto the new interlink. If depth == 0, it won't be pushed.
+        for (let i = 0; i < depth; i++) {
+            hashes.push(hash);
+        }
+
+        // Push the remaining hashes from the current interlink. If the target height decreases (i.e. the difficulty
+        // increases), we omit the block(s) at the beginning of the current interlink as they are not eligible for
+        // inclusion anymore.
+        const offset = targetHeight - nextTargetHeight;
+        for (let j = depth + offset + 1; j < this.interlink.length; j++) {
+            hashes.push(this.interlink.hashes[j]);
+        }
+
+        return new BlockInterlink(hashes);
+    }
+
+    /**
+     * @param {Block|*} o
+     * @returns {boolean}
+     */
     equals(o) {
         return o instanceof Block
             && this._header.equals(o._header)

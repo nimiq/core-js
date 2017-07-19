@@ -259,7 +259,7 @@ class PeerChannel extends Observable {
      * @return {string}
      */
     toString() {
-        return 'PeerChannel{conn=' + this._conn + '}';
+        return `PeerChannel{conn=${this._conn}}`;
     }
 
     /** @type {PeerConnection} */
