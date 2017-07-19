@@ -69,10 +69,8 @@ class BlockChainV2 extends Observable {
      * @return {Promise.<number>}
      */
     append(block) {
-        return new Promise((resolve, error) => {
-            this._synchronizer.push(() => {
-                return this._append(block);
-            }, resolve, error);
+        return this._synchronizer.push(() => {
+            return this._append(block);
         });
     }
 
@@ -277,10 +275,8 @@ class BlockChainV2 extends Observable {
      * @returns {Promise.<boolean>}
      */
     prepend(block) {
-        return new Promise((resolve, error) => {
-            this._synchronizer.push(() => {
-                return this._prepend(block);
-            }, resolve, error);
+        return this._synchronizer.push(() => {
+            return this._prepend(block);
         });
     }
 

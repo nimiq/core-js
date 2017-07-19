@@ -105,10 +105,8 @@ class AccountsTree extends Observable {
      * @returns {Promise}
      */
     put(address, account, transaction) {
-        return new Promise((resolve, error) => {
-            this._synchronizer.push(() => {
-                return this._put(address, account, transaction);
-            }, resolve, error);
+        return this._synchronizer.push(() => {
+            return this._put(address, account, transaction);
         });
     }
 

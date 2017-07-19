@@ -104,10 +104,8 @@ class Blockchain extends Observable {
      * @return {Promise} Promise for this operation.
      */
     pushBlock(block) {
-        return new Promise((resolve, error) => {
-            this._synchronizer.push(() => {
-                return this._pushBlock(block);
-            }, resolve, error);
+        return this._synchronizer.push(() => {
+            return this._pushBlock(block);
         });
     }
 

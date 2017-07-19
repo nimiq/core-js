@@ -7,16 +7,17 @@ class Synchronizer extends Observable {
 
     /**
      * Push function to the Synchronizer for later, synchronous execution
-     * @param {function():T} fn Function to be invoked later by this Synchronizer
-     * @param {Function} resolve Function to be invoked after fn succeeded
-     * @param {Function} error Function to be invoked after fn failed
      * @template T
+     * @param {function():T} fn Function to be invoked later by this Synchronizer
+     * @returns {Promise.<T>}
      */
-    push(fn, resolve, error) {
-        this._queue.push({fn: fn, resolve: resolve, error: error});
-        if (!this._working) {
-            this._doWork();
-        }
+    push(fn) {
+        return new Promise((resolve, error) => {
+            this._queue.push({fn: fn, resolve: resolve, error: error});
+            if (!this._working) {
+                this._doWork();
+            }
+        });
     }
 
     async _doWork() {
