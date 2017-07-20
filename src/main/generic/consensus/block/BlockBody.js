@@ -53,6 +53,37 @@ class BlockBody {
     }
 
     /**
+     * @returns {Promise.<boolean>}
+     */
+    async verify() {
+        const senderPubKeys = {};
+        for (const tx of this._transactions) {
+            // Check that there is only one transaction per sender.
+            if (senderPubKeys[tx.senderPubKey]) {
+                Log.w(Block, 'Invalid block - more than one transaction per sender');
+                return false;
+            }
+            senderPubKeys[tx.senderPubKey] = true;
+
+            // Check that there are no transactions to oneself.
+            const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
+            if (tx.recipientAddr.equals(txSenderAddr)) {
+                Log.w(Block, 'Invalid block - sender and recipient coincide');
+                return false;
+            }
+
+            // Check that all transaction signatures are valid.
+            if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
+                Log.w(Blockchain, 'Invalid block - invalid transaction signature');
+                return false;
+            }
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    /**
      * @return {Promise.<Hash>}
      */
     hash() {

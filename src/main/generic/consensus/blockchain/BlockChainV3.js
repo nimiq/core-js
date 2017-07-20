@@ -1,90 +1,68 @@
-class BlockChainV2 extends Observable {
+class BlockChainV3 extends Observable {
     static getPersistent(accounts) {
         const store = BlockchainStore.getPersistent();
-        return new BlockChainV2(store, accounts);
+        return new BlockChainV3(store, accounts);
     }
 
     static createVolatile(accounts) {
         const store = BlockchainStore.createVolatile();
-        return new BlockChainV2(store, accounts);
+        return new BlockChainV3(store, accounts);
     }
 
     /**
      * @param {BlockStore} store
      * @param {Accounts} accounts
-     * @param {Block} head
-     * @return {Promise.<BlockChainV2>}
+     * @returns {Promise.<BlockChainV3>}
      * @private
      */
-    constructor(store, accounts, head) {
+    constructor(store, accounts) {
         super();
         this._store = store;
         this._accounts = accounts;
 
+        this._head = Block.GENESIS;
+        this._headHash = Block.GENESIS.HASH;
+        this._headBlockData = new BlockData(this._head.difficulty, /*isOnMainChain*/ true);
+
         /** @type {HashMap.<Hash, BlockData>} */
         this._blockData = new HashMap();
-
-        /** @type {Block} */
-        this._head = null;
-        /** @type {Hash} */
-        this._headHash = null;
-        /** @type {BlockData} */
-        this._headBlockData = null;
-        /** @type {Block} */
-        this._tail = null;
+        this._blockData.put(this._headHash, this._headBlockData);
 
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
 
-        return this._init(head);
+        return this._init();
     }
 
     /**
-     * @param {Block} head
-     * @returns {Promise.<BlockChainV2>}
+     * @returns {Promise.<BlockChainV3>}
      * @private
      */
-    async _init(head) {
-        // Validate that the AccountsTree state matches the head block.
-        const accountsHash = await this._accounts.hash();
-        if (!head.accountsHash.equals(accountsHash)) {
-            throw 'AccountsTree state does not match head block';
-        }
-
-        // TODO expand the chain from store!!?
-
-        // Initialize BlockData for head block.
-        const hash = head.hash();
-        const blockData = new BlockData(head.difficulty, /*isOnMainChain*/ true);
-        this._blockData.put(hash, blockData);
-
-        await this._updateHead(head);
-        this._tail = head;
-
+    async _init() {
+        // TODO load chain from store
         return this;
     }
 
     /**
      * @param {Block} block
-     * @return {Promise.<number>}
+     * @returns {Promise.<number>}
      */
-    append(block) {
+    push(block) {
         return this._synchronizer.push(() => {
-            return this._append(block);
+            return this._push(block);
         });
     }
 
     /**
      * @param {Block} block
-     * @return {Promise.<boolean>}
+     * @returns {Promise.<boolean>}
      * @private
      */
-    async _append(block) {
-        // Retrieve the previous block. Fail if we don't know it.
-        const prevBlock = await this._store.get(block.prevHash.toBase64());
-        if (!prevBlock) {
-            Log.w(BlockChainV2, 'Rejecting block - predecessor block unknown');
-            return false;
+    async _push(block) {
+        // Check if the given block is already known.
+        const hash = await block.hash();
+        if (this._blockData.contains(hash)) {
+            return true;
         }
 
         // Check all intrinsic block invariants.
@@ -92,32 +70,34 @@ class BlockChainV2 extends Observable {
             return false;
         }
 
-        // Check that the block is a valid successor of its predecessor.
-        if (!(await block.isImmediateSuccessorOf(prevBlock))) {
-            Log.w(BlockChainV2, 'Invalid block - not a valid successor');
+        // Check if the block's immediate predecessor is known.
+        /** @type {Block} */
+        let predecessor = await this._getImmediatePredecessor(block);
+        if (predecessor) {
+            // Otherwise, check if an interlink predecessor is known.
+            predecessor = await this._getInterlinkPredecessor(block);
+        }
+
+        // If no valid predecessor was found, fail.
+        if (!predecessor) {
             return false;
         }
 
-        // Check that the difficulty is correct.
-        const nextNBits = BlockUtils.targetToCompact(this.getNextTarget());
-        if (block.nBits !== nextNBits) {
-            Log.w(BlockChainV2, 'Invalid block - difficulty mismatch');
-            return false;
-        }
-
-        // Block looks good, store it (persistently).
-        this._store.put(block);
+        // Block looks good, store it.
+        await this._storeBlock(block);
 
         // Compute and store totalWork for the new block.
-        const prevData = this._blockData.get(block.prevHash) || {};
-        // TODO what is we don't find prevData? Just assuming totalWork = 0 could potentially cause problems.
-        const totalWork = (prevData.totalWork || 0) + block.difficulty;
+        const prevHash = await predecessor.hash();
+        const prevData = this._blockData.get(prevHash);
+        const totalWork = prevData.totalWork + block.difficulty;
         const blockData = new BlockData(totalWork);
-        const hash = await block.hash();
         this._blockData.put(hash, blockData);
 
+        // TODO we might be inserting a previously unknown block into the block tree.
+        // This results in all totalWork values after the newly inserted block became stale.
+
         // Check if the new block extends our current main chain.
-        if (block.prevHash.equals(this._headHash)) {
+        if (prevHash.equals(this._headHash)) {
             // Append new block to the main chain.
             if (!(await this._extend(block))) {
                 return false;
@@ -151,6 +131,119 @@ class BlockChainV2 extends Observable {
         Log.v(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${block.height}, totalWork=${blockData.totalWork}`);
 
         return true;
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _storeBlock(block) {
+        // If the block is not stored yet, store it.
+        const knownBlock = await this._store.get(hash.toBase64());
+        if (!knownBlock) {
+            return this._store.put(block);
+        }
+
+        // The block is already stored, check if it has all data.
+        if (knownBlock.hasInterlink() && knownBlock.hasBody()) {
+            return Promise.resolve();
+        }
+
+        // Add missing data to the stored block if it is contained in the given block.
+        let updated = false;
+        if (!knownBlock.hasInterlink() && block.hasInterlink()) {
+            knownBlock.interlink = block.interlink;
+            updated = true;
+        }
+        if (!knownBlock.hasBody() && block.hasBody()) {
+            knownBlock.body = block.body;
+            updated = true;
+        }
+
+        // Store the block if it was updated.
+        if (updated) {
+            return this._store.put(knownBlock);
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<Block|null>}
+     * @private
+     */
+    async _getImmediatePredecessor(block) {
+        const predecessor = await this._store.get(block.prevHash.toBase64());
+        if (!predecessor) {
+            return null;
+        }
+
+        // Check that the block is a valid successor of its immediate predecessor.
+        if (!(await block.isImmediateSuccessorOf(predecessor))) {
+            Log.w(BlockChainV3, 'Invalid block - not a valid immediate successor');
+            return null;
+        }
+
+        // Check that the difficulty is correct.
+        // TODO Not all blocks required to compute the difficulty might be available.
+        const nextNBits = BlockUtils.targetToCompact(await this.getNextTarget(predecessor));
+        if (block.nBits !== nextNBits) {
+            Log.w(BlockChainV3, 'Invalid block - difficulty mismatch');
+            return null;
+        }
+
+        // TODO what else needs to checked?
+
+        // Everything checks out, the given block is a valid immediate successor to a known block.
+        return predecessor;
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<Block|null>}
+     * @private
+     */
+    async _getInterlinkPredecessor(block) {
+        // Check if the block interlink is present.
+        if (!block.hasInterlink()) {
+            return null;
+        }
+
+        // If there is only the genesis block in the interlink, the block must be between the genesis block
+        // and the first block in the interlink chain. Return the genesis block in this case.
+        if (block.interlink.length === 1) {
+            return Block.GENESIS;
+        }
+
+        // Try to find a known block referenced in the interlink, starting from the easiest block.
+        /** @type {Block} */
+        let predecessor = null;
+        let i = 1;
+        do {
+            predecessor = await this._store.get(block.interlink[i].toBase64()); // eslint-disable-line no-await-in-loop
+            i++;
+        } while (!predecessor && i < block.interlink.length);
+
+        // Return if no interlink predecessor was found.
+        if (!predecessor) {
+            return null;
+        }
+
+        // Check that the block is a valid interlink successor of its interlink predecessor.
+        if (!(await block.isInterlinkSuccessorOf(predecessor))) {
+            Log.w(BlockChainV3, 'Invalid block - not a valid interlink successor');
+            return null;
+        }
+
+        // TODO We have to check if the block that we insert is being pointed to by other interlinks
+        // and validate that it fulfills the interlink condition. What if it doesn't match? Which block is valid?
+
+        // TODO Check for interlink fork (?): Two different blocks with unknown immediate predecessor but same interlink.
+
+        // Everything checks out, the given block is a valid interlink successor to a known block.
+        return predecessor;
     }
 
     /**
@@ -246,7 +339,9 @@ class BlockChainV2 extends Observable {
             // TODO consider including the previous hash in BlockData
             forkHead = await this._store.get(forkHead.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
             if (!forkHead) {
-                // TODO error handling
+                // TODO This happens when we reach the end of the contiguous portion of the blockchain.
+                // We will need to request additional blocks to resolve the fork!!!
+
                 throw `Failed to find predecessor block ${forkHead.prevHash.toBase64()} while rebranching`;
             }
             forkChain.unshift(forkHead);
@@ -270,57 +365,6 @@ class BlockChainV2 extends Observable {
         }
     }
 
-    /**
-     * @param {Block} block
-     * @returns {Promise.<boolean>}
-     */
-    prepend(block) {
-        return this._synchronizer.push(() => {
-            return this._prepend(block);
-        });
-    }
-
-    /**
-     * @param {Block} block
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    async _prepend(block) {
-        // Check all intrinsic block invariants.
-        if (!(await block.verify())) {
-            return false;
-        }
-
-        // Check that the block is a valid predecessor to our current tail.
-        if (!(await this._tail.isImmediateSuccessorOf(block))) {
-            Log.w(BlockChainV2, 'Invalid block - not a valid predecessor');
-            return false;
-        }
-
-        // TODO can we check difficulty here? probably not.
-
-        // Block looks good, store it (persistently).
-        // TODO what if we later (somehow) find out that the difficulty of the block is incorrect?
-        this._store.put(block);
-
-        // Compute and store totalWork for the new block. Since we are prepending, the totalWork is decreasing.
-        // Since the initial head block has totalWork == 0, prepended blocks will have negative totalWork.
-        // Recomputing the totalWork would be linear in the size of the blockchain. As a consequence, prepending
-        // blocks to the chain will not increase .totalWork until .updateTotalWork() is called.
-        const tailHash = await this._tail.hash();
-        const tailData = this._blockData.get(tailHash);
-        const totalWork = tailData.totalWork - block.difficulty;
-
-        // Prepended blocks are always on the main chain.
-        const blockData = new BlockData(totalWork, /*isOnMainChain*/ true);
-        const hash = await block.hash();
-        this._blockData.put(hash, blockData);
-
-        // Update tail.
-        this._tail = block;
-
-        return true;
-    }
 
     /**
      * Recomputes the value of the .totalWork property. It is not automatically updated when blocks are prepended.
@@ -328,6 +372,7 @@ class BlockChainV2 extends Observable {
     updateTotalWork() {
 
     }
+
 
     /**
      * @param {Hash} hash
@@ -485,7 +530,7 @@ class BlockChainV2 extends Observable {
         return this._synchronizer.working;
     }
 }
-Class.register(BlockChainV2);
+Class.register(BlockChainV3);
 
 class BlockData {
     /**

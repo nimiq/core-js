@@ -1,13 +1,14 @@
 class Block {
     /**
      * @param {BlockHeader} header
-     * @param {BlockInterlink} interlink
-     * @param {BlockBody} body
+     * @param {BlockInterlink} [interlink]
+     * @param {BlockBody} [body]
      */
     constructor(header, interlink, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
-        if (!(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
-        if (!(body instanceof BlockBody)) throw 'Malformed body';
+        if (interlink && !(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
+        if (body && !(body instanceof BlockBody)) throw 'Malformed body';
+
         /** @type {BlockHeader} */
         this._header = header;
         /** @type {BlockInterlink} */
@@ -50,39 +51,40 @@ class Block {
      * @returns {Promise.<boolean>}
      */
     async verify() {
+        // Check that the header hash matches the difficulty.
+        if (!(await this._header.verifyProofOfWork())) {
+            Log.w(Block, 'Invalid block - PoW verification failed');
+            return false;
+        }
+
         // Check that the maximum block size is not exceeded.
         if (this.serializedSize > Policy.BLOCK_SIZE_MAX) {
             Log.w(Block, 'Invalid block - max block size exceeded');
             return false;
         }
 
-        const senderPubKeys = {};
-        for (const tx of this._body.transactions) {
-            // Check that there is only one transaction per sender.
-            if (senderPubKeys[tx.senderPubKey]) {
-                Log.w(Block, 'Invalid block - more than one transaction per sender');
-                return false;
-            }
-            senderPubKeys[tx.senderPubKey] = true;
-
-            // Check that there are no transactions to oneself.
-            const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
-            if (tx.recipientAddr.equals(txSenderAddr)) {
-                Log.w(Block, 'Invalid block - sender and recipient coincide');
-                return false;
-            }
-        }
-
-        // Check that the headerHash matches the difficulty.
-        if (!(await this._header.verifyProofOfWork())) {
-            Log.w(Block, 'Invalid block - PoW verification failed');
+        // XXX Verify the interlink only if it is present.
+        if (this.hasInterlink() && !(await this._verifyInterlink())) {
             return false;
         }
 
-        // Check that bodyHash given in the header matches the actual bodyHash.
-        const bodyHash = await this._body.hash();
-        if (!this._header.bodyHash.equals(bodyHash)) {
-            Log.w(Block, 'Invalid block - body hash mismatch');
+        // XXX Verify the body only if it is present.
+        if (this.hasBody() && !(await this._verifyBody())) {
+            return false;
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    /**
+     * @returns {Promise.<boolean>}
+     * @private
+     */
+    async _verifyInterlink() {
+        // Check that the interlink connects to the correct genesis block.
+        if (!Block.GENESIS.HASH.equals(this._interlink[0])) {
+            Log.w(Block, 'Invalid block - wrong genesis block in interlink');
             return false;
         }
 
@@ -93,10 +95,57 @@ class Block {
             return false;
         }
 
-        // Check that all transaction signatures are valid.
-        for (const tx of this._body.transactions) {
-            if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
-                Log.w(Blockchain, 'Invalid block - invalid transaction signature');
+        // Everything checks out.
+        return true;
+    }
+
+    /**
+     * @returns {Promise.<boolean>}
+     * @private
+     */
+    async _verifyBody() {
+        // Check that the body is valid.
+        if (!(await this._body.verify())) {
+            return false;
+        }
+
+        // Check that bodyHash given in the header matches the actual body hash.
+        const bodyHash = await this._body.hash();
+        if (!this._header.bodyHash.equals(bodyHash)) {
+            Log.w(Block, 'Invalid block - body hash mismatch');
+            return false;
+        }
+
+        // Everything checks out.
+        return true;
+    }
+
+    /**
+     * @param {Block} predecessor
+     * @returns {Promise.<boolean>}
+     */
+    async isImmediateSuccessorOf(predecessor) {
+        // Check that the height is one higher than the previous height.
+        if (this._header.height !== predecessor.header.height + 1) {
+            return false;
+        }
+
+        // Check that the timestamp is greater or equal to the predecessor's timestamp.
+        if (this._header.timestamp < predecessor.header.timestamp) {
+            return false;
+        }
+
+        // Check that the hash of the predecessor block equals prevHash.
+        const prevHash = await predecessor.hash();
+        if (!this._header.prevHash.equals(prevHash)) {
+            return false;
+        }
+
+        // Check that the interlink hash is correct.
+        // XXX We can only verify this if the predecessor contains an interlink.
+        if (predecessor.hasInterlink()) {
+            const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
+            if (!this._header.interlinkHash.equals(interlinkHash)) {
                 return false;
             }
         }
@@ -106,29 +155,40 @@ class Block {
     }
 
     /**
-     * @param {Block} prevBlock
+     * @param {Block} predecessor
      * @returns {Promise.<boolean>}
      */
-    async isSuccessorOf(prevBlock) {
-        // Check that the height is one higher than previous
-        if (this._header.height !== prevBlock.header.height + 1) {
+    async isInterlinkSuccessorOf(predecessor) {
+        // If this block doesn't have an interlink, it cannot be interlink successor of anything.
+        if (!this.hasInterlink()) {
             return false;
         }
 
-        // Check that the timestamp is greater or equal to the previous block's timestamp.
-        if (this._header.timestamp < prevBlock.header.timestamp) {
+        // Check that the height is higher than the predecessor's.
+        if (this._header.height <= predecessor.header.height) {
             return false;
         }
 
-        // Check that the hash of the previous block equals prevHash.
-        const prevHash = await prevBlock.hash();
-        if (!this._header.prevHash.equals(prevHash)) {
+        // Check that the timestamp is greater or equal to the predecessor's timestamp.
+        if (this._header.timestamp < predecessor.header.timestamp) {
             return false;
         }
 
-        // Check that the interlink hash is correct.
-        const interlinkHash = await prevBlock.nextInterlink(this.target).hash();
-        if (!this._header.interlinkHash.equals(interlinkHash)) {
+        // Check that the hash of the predecessor block is part of the block's interlink.
+        // Determine the depth of the of the predecessor in the interlink chain at the same time.
+        const prevHash = await predecessor.hash();
+        let depth = this._interlink.length - 1;
+        while (depth >= 0 && !prevHash.equals(this._interlink[depth])) {
+            depth--;
+        }
+
+        // If the depth went below zero, we didn't find the prevHash in the interlink, fail.
+        if (depth < 0) {
+            return false;
+        }
+
+        // Check that the hash of the predecessor is hard enough for the interlink depth.
+        if (!BlockUtils.isProofOfWork(prevHash, this.target / Math.pow(2, depth))) {
             return false;
         }
 
@@ -141,7 +201,7 @@ class Block {
      * @param {number} nextTarget
      * @returns {Promise.<BlockInterlink>}
      */
-    async nextInterlink(nextTarget) {
+    async getNextInterlink(nextTarget) {
         // Compute how much harder the block hash is than the next target.
         const hash = await this.hash();
         const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
@@ -202,11 +262,39 @@ class Block {
         return this._interlink;
     }
 
+    // XXX Allow the interlink to be initialized later, but don't allow changing it.
+    /** @type {BlockInterlink} */
+    set interlink(interlink) {
+        if (this._interlink) throw 'Interlink already set';
+        this._interlink = interlink;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    hasInterlink() {
+        return !!this._interlink;
+    }
+
     /**
      * @type {BlockBody}
      */
     get body() {
         return this._body;
+    }
+
+    // XXX Allow the body to be initialized later, but don't allow changing it.
+    /** @type {BlockBody} */
+    set body(body) {
+        if (this._body) throw 'Body already set';
+        this._body = body;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    hasBody() {
+        return !!this._body;
     }
 
     /**
