@@ -1,6 +1,6 @@
 class IndexedArray {
-    constructor(array, ignoreDuplicates) {
-        this._array = array || new Array();
+    constructor(array, ignoreDuplicates = false) {
+        this._array = array || [];
         this._ignoreDuplicates = ignoreDuplicates;
 
         this._index = new HashMap();
@@ -16,7 +16,7 @@ class IndexedArray {
     }
 
     get(target, key) {
-        if (typeof key == 'symbol') {
+        if (typeof key === 'symbol') {
             return undefined;
         }
 
@@ -37,7 +37,7 @@ class IndexedArray {
 
     push(value) {
         if (this._index.contains(value)) {
-            if (!this._ignoreDuplicates) throw 'IndexedArray.push() failed - value ' + value + ' already exists';
+            if (!this._ignoreDuplicates) throw `IndexedArray.push() failed - value ${value} already exists`;
             return this._index.get(value);
         }
 

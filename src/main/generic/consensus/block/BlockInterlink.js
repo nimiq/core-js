@@ -5,7 +5,7 @@ class BlockInterlink {
     constructor(blockHashes) {
         if (!blockHashes || blockHashes.length === 0 || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
         /** @type {Array.<Hash>} */
-        this._hashes = blockHashes;
+        this._path = blockHashes;
     }
 
     /**
@@ -27,8 +27,8 @@ class BlockInterlink {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._hashes.length);
-        for (const hash of this._hashes) {
+        buf.writeUint8(this._path.length);
+        for (const hash of this._path) {
             hash.serialize(buf);
         }
         return buf;
@@ -39,7 +39,7 @@ class BlockInterlink {
      */
     get serializedSize() {
         let size = /*count*/ 1;
-        for (const hash of this._hashes) {
+        for (const hash of this._path) {
             size += hash.serializedSize;
         }
         return size;
@@ -47,29 +47,29 @@ class BlockInterlink {
 
     equals(o) {
         return o instanceof BlockInterlink
-            && this._hashes.length === o._hashes.length
-            && this._hashes.every((hash, i) => hash.equals(o.hashes[i]));
+            && this._path.length === o._path.length
+            && this._path.every((hash, i) => hash.equals(o.hashes[i]));
     }
 
     /**
      * @returns {Promise.<Hash>}
      */
     hash() {
-        return MerkleTree.computeRoot(this._hashes);
+        return MerkleTree.computeRoot(this._path);
     }
 
     /**
      * @type {Array.<Hash>}
      */
     get hashes() {
-        return this._hashes;
+        return this._path;
     }
 
     /**
      * @type {number}
      */
     get length() {
-        return this._hashes.length;
+        return this._path.length;
     }
 }
 Class.register(BlockInterlink);

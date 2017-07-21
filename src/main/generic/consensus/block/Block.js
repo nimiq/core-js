@@ -1,12 +1,12 @@
 class Block {
     /**
      * @param {BlockHeader} header
-     * @param {BlockInterlink} [interlink]
+     * @param {BlockInterlink} interlink
      * @param {BlockBody} [body]
      */
     constructor(header, interlink, body) {
         if (!(header instanceof BlockHeader)) throw 'Malformed header';
-        if (interlink && !(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
+        if (!(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
         if (body && !(body instanceof BlockBody)) throw 'Malformed body';
 
         /** @type {BlockHeader} */
@@ -63,8 +63,8 @@ class Block {
             return false;
         }
 
-        // XXX Verify the interlink only if it is present.
-        if (this.hasInterlink() && !(await this._verifyInterlink())) {
+        // Verify that the interlink is valid.
+        if (!(await this._verifyInterlink())) {
             return false;
         }
 
@@ -86,6 +86,14 @@ class Block {
         if (!Block.GENESIS.HASH.equals(this._interlink[0])) {
             Log.w(Block, 'Invalid block - wrong genesis block in interlink');
             return false;
+        }
+
+        // Check that all hashes in the interlink are hard enough for their respective depth.
+        for (let depth = 1; depth < this._interlink.length; depth++) {
+            if (!BlockUtils.isProofOfWork(this._interlink[depth], this.target / Math.pow(2, depth))) {
+                Log.w(Block, 'Invalid block - invalid block in interlink');
+                return false;
+            }
         }
 
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
@@ -142,12 +150,16 @@ class Block {
         }
 
         // Check that the interlink hash is correct.
-        // XXX We can only verify this if the predecessor contains an interlink.
-        if (predecessor.hasInterlink()) {
-            const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
-            if (!this._header.interlinkHash.equals(interlinkHash)) {
-                return false;
-            }
+        const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
+        if (!this._header.interlinkHash.equals(interlinkHash)) {
+            return false;
+        }
+
+        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
+        const adjustmentFactor = this._header.target / predecessor.header.target;
+        if (adjustmentFactor > Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR
+            || adjustmentFactor < 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR) {
+            return false;
         }
 
         // Everything checks out.
@@ -159,11 +171,6 @@ class Block {
      * @returns {Promise.<boolean>}
      */
     async isInterlinkSuccessorOf(predecessor) {
-        // If this block doesn't have an interlink, it cannot be interlink successor of anything.
-        if (!this.hasInterlink()) {
-            return false;
-        }
-
         // Check that the height is higher than the predecessor's.
         if (this._header.height <= predecessor.header.height) {
             return false;
@@ -175,20 +182,16 @@ class Block {
         }
 
         // Check that the hash of the predecessor block is part of the block's interlink.
-        // Determine the depth of the of the predecessor in the interlink chain at the same time.
         const prevHash = await predecessor.hash();
-        let depth = this._interlink.length - 1;
-        while (depth >= 0 && !prevHash.equals(this._interlink[depth])) {
-            depth--;
-        }
-
-        // If the depth went below zero, we didn't find the prevHash in the interlink, fail.
-        if (depth < 0) {
+        if (!this._interlink.some(hash => prevHash.equals(hash))) {
             return false;
         }
 
-        // Check that the hash of the predecessor is hard enough for the interlink depth.
-        if (!BlockUtils.isProofOfWork(prevHash, this.target / Math.pow(2, depth))) {
+        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
+        const adjustmentFactor = this._header.target / predecessor.header.target;
+        const heightDiff = this._header.height - predecessor.header.height;
+        if (adjustmentFactor > Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, heightDiff)
+                || adjustmentFactor < Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, -heightDiff)) {
             return false;
         }
 
@@ -262,20 +265,6 @@ class Block {
         return this._interlink;
     }
 
-    // XXX Allow the interlink to be initialized later, but don't allow changing it.
-    /** @type {BlockInterlink} */
-    set interlink(interlink) {
-        if (this._interlink) throw 'Interlink already set';
-        this._interlink = interlink;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    hasInterlink() {
-        return !!this._interlink;
-    }
-
     /**
      * @type {BlockBody}
      */
@@ -283,7 +272,7 @@ class Block {
         return this._body;
     }
 
-    // XXX Allow the body to be initialized later, but don't allow changing it.
+    // XXX Allow the body to be initialized later, but only allow it to be set once.
     /** @type {BlockBody} */
     set body(body) {
         if (this._body) throw 'Body already set';
