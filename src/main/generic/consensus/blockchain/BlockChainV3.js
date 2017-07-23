@@ -137,7 +137,7 @@ class BlockChainV3 extends Observable {
             }
 
             // Remember that this block is on the main chain.
-            blockData.isOnMainChain = true;
+            blockData.onMainChain = true;
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -151,7 +151,7 @@ class BlockChainV3 extends Observable {
             await this._rebranch(block);
 
             // Remember that this block is on the main chain.
-            blockData.isOnMainChain = true;
+            blockData.onMainChain = true;
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -292,7 +292,7 @@ class BlockChainV3 extends Observable {
         await this._accounts.revertBlock(this._head);
 
         // Mark the head block as not on the main chain anymore.
-        this._headBlockData.isOnMainChain = false;
+        this._headBlockData.onMainChain = false;
 
         // Update head block.
         await this._updateHead(prevBlock);
@@ -316,7 +316,7 @@ class BlockChainV3 extends Observable {
         const forkChain = [block];
         let forkHead = block;
         let prevData = this._blockData.get(forkHead.prevHash);
-        while (!prevData.isOnMainChain) {
+        while (!prevData.onMainChain) {
             // TODO consider including the previous hash in BlockData
             forkHead = await this._store.get(forkHead.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
             if (!forkHead) {
@@ -520,14 +520,3 @@ class SparseRegion {
 }
 
 
-class BlockData {
-    /**
-     * @param {number} totalWork
-     * @param {boolean} isOnMainChain
-     */
-    constructor(totalWork, isOnMainChain = false) {
-        this.totalWork = totalWork;
-        this.isOnMainChain = isOnMainChain;
-
-    }
-}

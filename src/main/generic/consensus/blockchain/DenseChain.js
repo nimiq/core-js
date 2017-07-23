@@ -1,5 +1,5 @@
 /**
- * A contiguous chain of light blocks.
+ * A double-ended, contiguous chain of light blocks.
  */
 class DenseChain extends Observable {
     /**
@@ -40,7 +40,7 @@ class DenseChain extends Observable {
         const hash = await head.hash();
         this._chain.push(hash);
 
-        const data = new BlockData(head.difficulty, /*isOnMainChain*/ true);
+        const data = new BlockData(null, head.difficulty, /*onMainChain*/ true);
         this._blockData.put(hash, data);
 
         return this;
@@ -57,6 +57,9 @@ class DenseChain extends Observable {
      * @private
      */
     async append(block) {
+        // XXX Sanity check: Collapsed chains cannot be used anymore.
+        if (this._hasCollapsed) throw 'Cannot prepend to collapsed chain';
+
         // Check if the given block is already part of this chain.
         const hash = await block.hash();
         if (this._blockData.contains(hash)) {
@@ -86,9 +89,11 @@ class DenseChain extends Observable {
         }
 
         // Block looks good, compute totalWork and create BlockData.
+        /** @type {BlockData} */
         const prevData = this._blockData.get(block.prevHash);
         const totalWork = prevData.totalWork + block.difficulty;
-        const blockData = new BlockData(totalWork);
+        const blockData = new BlockData(block.prevHash, totalWork);
+        prevData.successors.add(hash);
         this._blockData.put(hash, blockData);
 
         // Add block to interlink index.
@@ -111,7 +116,7 @@ class DenseChain extends Observable {
             await this._rebranch(block);
 
             // Remember that this block is on the main chain.
-            blockData.isOnMainChain = true;
+            blockData.onMainChain = true;
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -127,11 +132,55 @@ class DenseChain extends Observable {
     }
 
     /**
-     * @param {Block} block
+     * NOT SYNCHRONIZED! Callers must ensure synchronicity.
+     * Assumes that the given block is verified!
+     * @param {Block} block A *verified* block
      * @returns {Promise.<boolean>}
      */
     async prepend(block) {
+        // XXX Sanity check: Collapsed chains cannot be used anymore.
+        if (this._hasCollapsed) throw 'Cannot prepend to collapsed chain';
+
+        // Check if the given block is already part of this chain.
+        const hash = await block.hash();
+        if (this._blockData.contains(hash)) {
+            return true;
+        }
+
         // TODO what if we exceed MAX_LENGTH when prepending?
+
+        // Check that the block is a valid predecessor to our current tail.
+        if (!(await this._tail.isImmediateSuccessorOf(block))) {
+            Log.w(DenseChain, 'Invalid block - not a valid predecessor');
+            return false;
+        }
+
+        // TODO can we check difficulty here? probably not.
+        // TODO what if we later (somehow) find out that the difficulty of the block is incorrect?
+
+        // Compute & store totalWork for the new block. Since we are prepending, the totalWork is decreasing.
+        // Since the initial head block has totalWork == 0, prepended blocks will have negative totalWork.
+        // Prepended blocks are always on the main chain.
+        const totalWork = this._tailData.totalWork - block.difficulty;
+        const blockData = new BlockData(null, totalWork, /*onMainChain*/ true);
+        blockData.successors.add(this.tailHash);
+        this._tailData.predecessor = hash;
+        this._blockData.put(hash, blockData);
+
+        // Add block to interlink index.
+        await this._index(block);
+
+        // Update the totalWork of the entire chain.
+        this._totalWork += block.difficulty;
+
+        // Prepend block hash to chain.
+        // TODO unshift() is inefficient!!
+        this._chain.unshift(hash);
+
+        // Update tail.
+        this._tail = block;
+
+        return true;
     }
 
     /**
@@ -152,7 +201,7 @@ class DenseChain extends Observable {
 
         // If the given block is the immediate predecessor of this chain's tail, check that they are actually valid neighbors.
         if (this._tail.prevHash.equals(hash) && !(await this._tail.isImmediateSuccessorOf(block))) {
-            // The tail of this chain is not a valid successor to its predecessor. The whole chain is invalid.
+            // The tail of this chain is not a valid successor to its predecessor. The entire chain is invalid.
             await this._destroy();
             return false;
         }
@@ -177,7 +226,7 @@ class DenseChain extends Observable {
                 // We found a block with an inconsistent interlink that looked good when we added it to the chain
                 // because we didn't know the referenced (given) interlink block at that time. Cut off the bad block
                 // and all its successors.
-                await this._truncate(refBlock); // eslint-disable-line no-await-in-loop
+                await this._truncate(refBlock, /*preserveMainChain*/ false, /*removeFromStore*/ true); // eslint-disable-line no-await-in-loop
 
                 // We have cut the bad part from the chain. Continue ensuring consistency.
                 return this.ensureConsistency(block);
@@ -199,8 +248,8 @@ class DenseChain extends Observable {
         // The difficulty is adjusted every block.
         block = block || this._head;
 
-        // If the given chain is the main chain, get the last DIFFICULTY_BLOCK_WINDOW
-        // blocks via this._mainChain, otherwise fetch the path.
+        // If the given chain is on the main chain, get the last DIFFICULTY_BLOCK_WINDOW
+        // blocks via this._chain, otherwise fetch the path.
         let startHash;
         if (block.equals(this._head)) {
             const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW - 1, 0);
@@ -251,25 +300,22 @@ class DenseChain extends Observable {
      * @private
      */
     async _rebranch(block) {
-        Log.v(Blockchain, `Rebranching to fork ${headHash}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
-
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
         // Store the chain along the way. Rebranching fails if we reach the tail of the chain.
         const forkChain = [block];
         let forkHead = block;
         let prevData = this._blockData.get(forkHead.prevHash);
-        while (!prevData.isOnMainChain) {
-            // TODO consider including the previous hash in BlockData
+        while (!prevData.onMainChain) {
             forkHead = await this._store.get(forkHead.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
-            if (!forkHead) {
-                // TODO This happens when we reach the end of the contiguous portion of the blockchain.
-                // We will need to request additional blocks to resolve the fork!!!
+            // XXX Assert that the block is there.
+            if (!forkHead) throw 'Corrupted store: Failed to find predecessor while rebranching'
 
-                throw `Failed to find predecessor block ${forkHead.prevHash.toBase64()} while rebranching`;
-            }
-            forkChain.unshift(forkHead);
+            // Build the fork chain in reverse order for efficiency.
+            forkChain.push(forkHead);
+
             prevData = this._blockData.get(forkHead.prevHash);
+            if (!prevData) throw 'Reached tail of chain while rebranching';
         }
 
         // The predecessor of forkHead is the desired common ancestor.
@@ -278,14 +324,12 @@ class DenseChain extends Observable {
         Log.v(Blockchain, `Found common ancestor ${commonAncestor.toBase64()} ${forkChain.length} blocks up`);
 
         // Revert all blocks on the current main chain until the common ancestor.
-        while (!this._headHash.equals(commonAncestor)) {
-            await this._revert(); // eslint-disable-line no-await-in-loop
-        }
+        await this._revertTo(commonAncestor);
 
-        // We have reverted to the common ancestor state. Apply all blocks on
-        // the fork chain until we reach the new head.
-        for (const forkBlock of forkChain) {
-            await this._extend(forkBlock); // eslint-disable-line no-await-in-loop
+        // We have reverted to the common ancestor state. Extends the main chain with all blocks from forkChain.
+        // TODO With light blocks, we don't actually need to load the blocks from storage and apply them one-by-one. Just fast-forward the head.
+        for (let i = forkChain.length - 1; i >= 0; i++) {
+            await this._extend(forkChain[i]); // eslint-disable-line no-await-in-loop
         }
     }
 
@@ -306,7 +350,7 @@ class DenseChain extends Observable {
 
         // Mark the block as part of the main chain.
         // Must be done AFTER updating _head & _chain.
-        this._headData.isOnMainChain = true;
+        this._headData.onMainChain = true;
 
         // If the chain has grown too large, evict the tail block.
         if (this.length > DenseChain.MAX_LENGTH) {
@@ -315,39 +359,45 @@ class DenseChain extends Observable {
     }
 
     /**
-     * Cuts the head block off the main chain.
+     * Reverts the head of the main chain to the block specified by blockHash.
+     * @param {Hash} blockHash
      * @returns {Promise.<void>}
      * @private
      */
-    async _revert() {
+    async _revertTo(blockHash) {
         // Cannot revert if we are at the beginning of the chain.
         // TODO Should be attempt to load further blocks from storage?
         if (this.length === 1) {
             throw 'Cannot revert chain past initial block';
         }
 
-        // Load the predecessor block.
-        const prevHash = this._head.prevHash;
-        const predecessor = await this._store.get(prevHash.toBase64());
-        // XXX Assert that the predecessor is there.
-        if (!predecessor) throw 'Corrupted store: Failed to load predecessor from store';
+        // XXX Sanity check: Validate that the blockHash is known and on the main chain.
+        const blockData = this._blockData.get(blockHash);
+        if (!blockData || !blockData.onMainChain) throw 'Illegal blockHash - unknown or not on main chain';
 
-        // Save current head.
-        const oldHead = this._head;
-        const oldHash = this.headHash;
+        // Mark all blocks up to blockHash as not on the main chain anymore.
+        // Also compute the sum of totalWork that we are reverting.
+        // TODO Instead of summing up here, we could also compute this from the BlockData totalWork values.
+        let hash = this.headHash;
+        let totalWork = 0;
+        while (!hash.equals(blockHash)) {
+            /** @type {BlockData} */
+            const data = this._blockData.get(hash);
+            data.onMainChain = false;
+            totalWork += data.totalWork;
 
-        // Pop hash off chain.
-        this._chain.pop();
+            hash = data.predecessor;
+        }
 
-        // Update totalWork & headBlock.
-        this._totalWork -= this._head.difficulty;
-        this._head = predecessor;
+        // Update head block & totalWork.
+        this._head = await this._store.get(blockHash);
+        // XXX Assert that the block is there.
+        if (!this._head) throw 'Corrupted store: Failed to load block while reverting';
+        this._totalWork -= totalWork;
 
-        // Remove head block data.
-        this._blockData.remove(oldHash);
-
-        // Remove head from interlink index.
-        await this._unindex(oldHead);
+        // Truncate the main chain.
+        const index = this._chain.indexOf(blockHash);
+        this._chain.splice(index, this._chain.length - index);
     }
 
     /**
@@ -356,6 +406,9 @@ class DenseChain extends Observable {
      * @private
      */
     async _shift() {
+        // Remove all successors of the tail that are not on the main chain.
+        await this._truncate(this._tail);
+
         // Remove tail from interlink index.
         await this._unindex(this._tail);
 
@@ -375,44 +428,66 @@ class DenseChain extends Observable {
     }
 
     /**
-     * Removes badBlock and all its successors from this chain. If badBlock is the tail of this chain, the chain collapses.
-     * @param {Block} badBlock
+     * Removes startBlock and its successors from the chain. If preserveMainChain is set to true, only
+     * blocks that are not on the main chain will be removed. If removeFromStore is set to true, removed
+     * blocks will also be deleted from storage.
+     * @param {Block} startBlock
+     * @param {boolean} preserveMainChain
+     * @param {boolean} removeFromStore
      * @returns {Promise.<void>}
      * @private
      */
-    async _truncate(badBlock) {
-        // If badBlock is the tail of this chain, all blocks are invalid and this chain collapses.
-        const badHash = await badBlock.hash();
-        if (badHash.equals(this.tailHash)) {
-            return this._destroy();
-        }
+    async _truncate(startBlock, preserveMainChain = true, removeFromStore = false) {
+        const deleteSubTree = async /** @type {Hash} */ blockHash => {
+            /** @type {BlockData} */
+            const blockData = this._blockData.get(blockHash);
 
-        // Unindex all successors of badBlock and remove them from storage.
-        // TODO If we discard most of the region, it will be more efficient to rebuild the interlink index from the beginning.
-        const index = this._chain.indexOf(badBlock);
-        if (index < 0) return undefined;
-        for (let i = this._chain.length - 1; i > index; i++) {
-            const block = await this._store.get(this._chain[i].toBase64()); // eslint-disable-line no-await-in-loop
+            // Don't remove blocks on the main chain if preserveMainChain is set.
+            if (blockData.onMainChain && preserveMainChain) {
+                return;
+            }
+
+            // Recursively delete all subtrees.
+            for (/** @type {Hash} */ const succHash of blockData.successors.values()) {
+                await deleteSubTree(succHash); // eslint-disable-line no-await-in-loop
+            }
+
+            /** @type {Block} */
+            const block = await this._store.get(blockHash);
             // XXX Assert that the block is there.
-            if (!block) throw 'Failed to retrieve bad block from store';
+            if (!block) throw 'Corrupted store: Failed to load block while truncating';
 
-            await this._unindex(block); // eslint-disable-line no-await-in-loop
-            await this._store.remove(this._chain[i]); // eslint-disable-line no-await-in-loop
+            // Unindex and remove block data.
+            await this._unindex(block);
+            this._blockData.remove(blockHash);
+
+            // Delete from storage if removeFromStore is set.
+            if (removeFromStore) {
+                await this._store.remove(blockHash);
+            }
+        };
+
+        // Remove startBlock and its successors recursively.
+        const startHash = await startBlock.hash();
+        await deleteSubTree(startHash);
+
+        // If we have removed the tail of the chain (and did not preserve the main chain), the chain collapses.
+        if (startHash.equals(this.tailHash) && !preserveMainChain) {
+            await this._destroy();
+            return;
         }
 
-        // Delete badBlock itself. No need to retrieve it from storage first.
-        await this._unindex(badBlock);
-        await this._store.remove(badHash);
+        // Update the main chain if preserveMainChain is not set.
+        if (!preserveMainChain) {
+            // Truncate the main chain.
+            const index = this._chain.indexOf(startHash);
+            this._chain.splice(index, this._chain.length - index);
 
-        // Truncate the chain.
-        this._chain.splice(index, this._chain.length - index);
-
-        // Set the head to the bad block's predecessor.
-        this._head = await this._store.get(badBlock.prevHash.toBase64());
-        // XXX Assert that the block is there.
-        if (!this._head) throw 'Failed to retrieve new head block from store';
-
-        return undefined;
+            // Set the head to the bad block's predecessor.
+            this._head = await this._store.get(startBlock.prevHash.toBase64());
+            // XXX Assert that the block is there.
+            if (!this._head) throw 'Failed to retrieve new head block from store';
+        }
     }
 
     /**
@@ -517,9 +592,22 @@ class DenseChain extends Observable {
         return this._chain[0];
     }
 
+    /**
+     * @type {BlockData}
+     * @private
+     */
+    get _tailData() {
+        return this._blockData.get(this.tailHash);
+    }
+
     /** @type {number} */
     get length() {
         return this._hasCollapsed ? 0 : this._chain.length;
+    }
+
+    /** @type {number} */
+    get totalWork() {
+        return this._totalWork;
     }
 
     /** @returns {boolean} */
@@ -528,3 +616,4 @@ class DenseChain extends Observable {
     }
 }
 DenseChain.MAX_LENGTH = 5000;
+Class.register(DenseChain);
