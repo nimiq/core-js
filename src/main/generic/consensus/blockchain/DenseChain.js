@@ -10,14 +10,19 @@ class DenseChain extends Observable {
     constructor(store, head) {
         super();
         this._store = store;
+        /** @type {Block} */
         this._head = head;
+        /** @type {Hash} */
+        this._headHash = null;
+        /** @type {Block} */
         this._tail = head;
+        /** @type {Hash} */
+        this._tailHash = null;
 
+        /** @type {number} */
         this._totalWork = head.difficulty;
+        /** @type {boolean} */
         this._hasCollapsed = false;
-
-        /** @type {IndexedArray.<Hash>} */
-        this._chain = new IndexedArray();
 
         /** @type {HashMap.<Hash, BlockData>} */
         this._blockData = new HashMap();
@@ -38,7 +43,8 @@ class DenseChain extends Observable {
      */
     async _init(head) {
         const hash = await head.hash();
-        this._chain.push(hash);
+        this._headHash = hash;
+        this._tailHash = hash;
 
         const data = new BlockData(null, head.difficulty, /*onMainChain*/ true);
         this._blockData.put(hash, data);
@@ -173,10 +179,6 @@ class DenseChain extends Observable {
         // Update the totalWork of the entire chain.
         this._totalWork += block.difficulty;
 
-        // Prepend block hash to chain.
-        // TODO unshift() is inefficient!!
-        this._chain.unshift(hash);
-
         // Update tail.
         this._tail = block;
 
@@ -195,7 +197,7 @@ class DenseChain extends Observable {
 
         // If the given block is part of this chain, the interlink must be correct by construction.
         const hash = await block.hash();
-        if (this._path.indexOf(hash) >= 0) {
+        if (this._blockData.contains(hash)) {
             return true;
         }
 
@@ -238,15 +240,14 @@ class DenseChain extends Observable {
     }
 
     /**
-     * Computes the target value for the block after the given block or the head of the chain if no block is given.
+     * Computes the target value for the block after the given block or the head of this chain if no block is given.
      * @param {Block} [block]
      * @returns {Promise.<number>}
      */
     async getNextTarget(block) {
-        // FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
-
         // The difficulty is adjusted every block.
         block = block || this._head;
+
 
         // If the given chain is on the main chain, get the last DIFFICULTY_BLOCK_WINDOW
         // blocks via this._chain, otherwise fetch the path.
@@ -270,6 +271,9 @@ class DenseChain extends Observable {
             const startBlock = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
             actualTime = block.timestamp - startBlock.timestamp;
         }
+
+
+
 
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
@@ -340,16 +344,13 @@ class DenseChain extends Observable {
      * @private
      */
     async _extend(block) {
-        // Append to chain.
-        const hash = await block.hash();
-        this._chain.push(hash);
-
         // Update head block & total work.
         this._head = block;
+        this._headHash = await block.hash();
         this._totalWork += block.difficulty;
 
         // Mark the block as part of the main chain.
-        // Must be done AFTER updating _head & _chain.
+        // Must be done AFTER updating _headHash.
         this._headData.onMainChain = true;
 
         // If the chain has grown too large, evict the tail block.
@@ -359,7 +360,7 @@ class DenseChain extends Observable {
     }
 
     /**
-     * Reverts the head of the main chain to the block specified by blockHash.
+     * Reverts the head of the main chain to the block specified by blockHash, which must be on the main chain.
      * @param {Hash} blockHash
      * @returns {Promise.<void>}
      * @private
@@ -393,11 +394,8 @@ class DenseChain extends Observable {
         this._head = await this._store.get(blockHash);
         // XXX Assert that the block is there.
         if (!this._head) throw 'Corrupted store: Failed to load block while reverting';
+        this._headHash = blockHash;
         this._totalWork -= totalWork;
-
-        // Truncate the main chain.
-        const index = this._chain.indexOf(blockHash);
-        this._chain.splice(index, this._chain.length - index);
     }
 
     /**
@@ -409,20 +407,22 @@ class DenseChain extends Observable {
         // Remove all successors of the tail that are not on the main chain.
         await this._truncate(this._tail);
 
+        // Load the new tail. Since we have removed all successors of tail that are not on the main chain,
+        // there is only the main chain successor left.
+        const newTailHash = this._tailData.successors.values()[0];
+        const newTail = await this._store.get(newTailHash.toBase64());
+        // XXX Assert that the new tail is there.
+        if (!newTail) throw 'Corrupted store: Failed to retrieve tail';
+
         // Remove tail from interlink index.
         await this._unindex(this._tail);
 
         // Remove tail block data.
-        this._blockData.remove(this._chain[0]);
+        this._blockData.remove(this._tailHash);
 
-        // Cut the first hash off the chain.
-        // TODO check complexity of shift()
-        this._chain.shift();
-
-        // Load the new tail.
-        this._tail = await this._store.get(this._chain[0].toBase64());
-        // XXX Assert that the tail is there.
-        if (!this._tail) throw 'Corrupted store: Failed to retrieve tail';
+        // Update tail.
+        this._tail = newTail;
+        this._tailHash = newTailHash;
 
         // We do not decrement the totalWork as we have seen proof that there was more work done.
     }
@@ -442,14 +442,14 @@ class DenseChain extends Observable {
             /** @type {BlockData} */
             const blockData = this._blockData.get(blockHash);
 
-            // Don't remove blocks on the main chain if preserveMainChain is set.
-            if (blockData.onMainChain && preserveMainChain) {
-                return;
-            }
-
             // Recursively delete all subtrees.
             for (/** @type {Hash} */ const succHash of blockData.successors.values()) {
                 await deleteSubTree(succHash); // eslint-disable-line no-await-in-loop
+            }
+
+            // Don't remove blocks on the main chain if preserveMainChain is set.
+            if (blockData.onMainChain && preserveMainChain) {
+                return;
             }
 
             /** @type {Block} */
@@ -473,16 +473,12 @@ class DenseChain extends Observable {
 
         // If we have removed the tail of the chain (and did not preserve the main chain), the chain collapses.
         if (startHash.equals(this.tailHash) && !preserveMainChain) {
-            await this._destroy();
+            this._destroy();
             return;
         }
 
         // Update the main chain if preserveMainChain is not set.
         if (!preserveMainChain) {
-            // Truncate the main chain.
-            const index = this._chain.indexOf(startHash);
-            this._chain.splice(index, this._chain.length - index);
-
             // Set the head to the bad block's predecessor.
             this._head = await this._store.get(startBlock.prevHash.toBase64());
             // XXX Assert that the block is there.
@@ -544,23 +540,19 @@ class DenseChain extends Observable {
     }
 
     /**
-     * @returns {Promise.<void>}
+     * @returns {void}
      * @private
      */
-    async _destroy() {
-        // Remove all blocks from the store.
-        for (const hash of this._path) {
-            await this._store.remove(hash); // eslint-disable-line no-await-in-loop
-        }
-
-        // The region is invalid, mark it as collapsed.
+    _destroy() {
         this._hasCollapsed = true;
         this._totalWork = 0;
 
         // Free memory.
-        this._path = [];
         this._head = null;
+        this._headHash = null;
         this._tail = null;
+        this._tailHash = null;
+        this._blockData = null;
         this._interlinkIndex = null;
     }
 
@@ -571,7 +563,7 @@ class DenseChain extends Observable {
 
     /** @type {Hash} */
     get headHash() {
-        return this._chain[this._chain.length - 1];
+        return this._headHash;
     }
 
     /**
@@ -579,7 +571,7 @@ class DenseChain extends Observable {
      * @private
      */
     get _headData() {
-        return this._blockData.get(this.headHash);
+        return this._blockData.get(this._headHash);
     }
 
     /** @type {Block} */
@@ -589,7 +581,7 @@ class DenseChain extends Observable {
 
     /** @type {Hash} */
     get tailHash() {
-        return this._chain[0];
+        return this._tailHash;
     }
 
     /**
@@ -597,12 +589,12 @@ class DenseChain extends Observable {
      * @private
      */
     get _tailData() {
-        return this._blockData.get(this.tailHash);
+        return this._blockData.get(this._tailHash);
     }
 
     /** @type {number} */
     get length() {
-        return this._hasCollapsed ? 0 : this._chain.length;
+        return this._hasCollapsed ? 0 : this._head.height - this._tail.height + 1;
     }
 
     /** @type {number} */
