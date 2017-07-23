@@ -150,6 +150,8 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
+        const currentTimestampUTC = Date.now();
+
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
@@ -199,7 +201,8 @@ class NetworkAgent extends Observable {
             this._channel,
             msg.version,
             msg.startHeight,
-            msg.totalWork
+            msg.totalWork,
+            currentTimestampUTC - peerAddress.timestamp
         );
 
         // Remember that the peer has sent us this address.
