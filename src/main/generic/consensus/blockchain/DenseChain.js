@@ -86,12 +86,16 @@ class DenseChain extends Observable {
             return false;
         }
 
-        // Check that the difficulty is correct.
-        // TODO Not all blocks required to compute the difficulty might be available.
-        const nextNBits = BlockUtils.targetToCompact(await this.getNextTarget(predecessor));
-        if (block.nBits !== nextNBits) {
-            Log.w(DenseChain, 'Invalid block - difficulty mismatch');
-            return false;
+        // Check that the difficulty is correct. If we don't have enough blocks available to compute
+        // the difficulty, skip the check.
+        // TODO Check if this could be exploited somehow.
+        // FIXME We should check the difficulty of blocks that we don't check here as soon as all data to check it becomes available!!!
+        const nextTarget = await this.getNextTarget(predecessor);
+        if (nextTarget) {
+            if (block.nBits !== BlockUtils.targetToCompact(nextTarget)) {
+                Log.w(DenseChain, 'Invalid block - difficulty mismatch');
+                return false;
+            }
         }
 
         // Block looks good, compute totalWork and create BlockData.
@@ -120,9 +124,6 @@ class DenseChain extends Observable {
         if (totalWork > this._headData.totalWork) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(block);
-
-            // Remember that this block is on the main chain.
-            blockData.onMainChain = true;
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -248,32 +249,44 @@ class DenseChain extends Observable {
         // The difficulty is adjusted every block.
         block = block || this._head;
 
+        // Retrieve the timestamp of the block that appears DIFFICULTY_BLOCK_WINDOW blocks before the given block in the chain.
+        // The block might not be on the main chain. Also, there might not be enough blocks available in this chain to
+        // go back DIFFICULTY_BLOCK_WINDOW blocks, fail in this case.
 
-        // If the given chain is on the main chain, get the last DIFFICULTY_BLOCK_WINDOW
-        // blocks via this._chain, otherwise fetch the path.
-        let startHash;
-        if (block.equals(this._head)) {
-            const startHeight = Math.max(this._mainPath.length - Policy.DIFFICULTY_BLOCK_WINDOW - 1, 0);
-            startHash = this._mainPath[startHeight];
-        } else {
-            const path = await this._fetchPath(block, Policy.DIFFICULTY_BLOCK_WINDOW - 1);
-            startHash = path[0];
+        // Try to walk DIFFICULTY_BLOCK_WINDOW - 1 blocks back starting from the given block.
+        let blockHash = await block.hash();
+        let blockData = this._blockData.get(hash);
+        for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 1; i++) {
+            blockHash = blockData.predecessor;
+            blockData = this._blockData.get(blockHash);
+
+            // Abort if we have reached the tail of the chain or the genesis block.
+            if (!blockData || blockHash.equals(Block.GENESIS.HASH)) {
+                break;
+            }
         }
 
+        // If we couldn't go back far enough, fail.
+        // TODO Throw exception instead of returning an invalid target?
+        // TODO We probably should attempt to load missing blocks from storage.
+        if (!blockData) {
+            return 0; // not a valid target
+        }
+
+        // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate
+        // a sliding window that starts before the genesis block.
         let actualTime;
-        // for the first Policy.DIFFICULTY_BLOCK_WINDOW blocks
-        if(block.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
-            // simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block
-            // i.e. we simulate a sliding window that starts before the genesis block
-            actualTime = block.head.timestamp + (Policy.DIFFICULTY_BLOCK_WINDOW - block.height) * Policy.BLOCK_TIME + Policy.BLOCK_TIME;
+        // TODO check < vs. <=
+        if (block.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
+            // FIXME Check if this is correct!
+            actualTime = block.timestamp + (Policy.DIFFICULTY_BLOCK_WINDOW - block.height) * Policy.BLOCK_TIME + Policy.BLOCK_TIME;
         } else {
             // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
-            const startBlock = await this._store.get(startHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
+            const startBlock = await this._store.get(blockHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
+            // XXX Assert that the block is there.
+            if (!startBlock) throw 'Corrupted store: Failed to load start block when computing next target';
             actualTime = block.timestamp - startBlock.timestamp;
         }
-
-
-
 
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
@@ -480,7 +493,8 @@ class DenseChain extends Observable {
         // Update the main chain if preserveMainChain is not set.
         if (!preserveMainChain) {
             // Set the head to the bad block's predecessor.
-            this._head = await this._store.get(startBlock.prevHash.toBase64());
+            this._headHash = startBlock.prevHash;
+            this._head = await this._store.get(this._headHash.toBase64());
             // XXX Assert that the block is there.
             if (!this._head) throw 'Failed to retrieve new head block from store';
         }
