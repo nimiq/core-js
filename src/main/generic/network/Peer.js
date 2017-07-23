@@ -15,6 +15,11 @@ class Peer {
         this._startHeight = startHeight;
         /** @type {number} */
         this._totalWork = totalWork;
+
+        /**
+         * Offset between the peer's timestamp and our local timestamp.
+        * @type {number}
+        * */
         this._timestampOffset = timestampOffset;
     }
 
