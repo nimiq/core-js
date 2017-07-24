@@ -237,6 +237,26 @@ gulp.task('build-node', function () {
         .pipe(gulp.dest('dist'));
 });
 
+gulp.task('build-remote-api', function() {
+    return gulp.src([
+            './clients/remote-core/Observable.js',
+            './clients/remote-core/RemoteConnection.js',
+            './clients/remote-core/RemoteClass.js',
+            './clients/remote-core/RemoteAccounts.js',
+            './clients/remote-core/RemoteBlockchain.js',
+            './clients/remote-core/RemoteConsensus.js',
+            './clients/remote-core/RemoteMempool.js',
+            './clients/remote-core/RemoteMiner.js',
+            './clients/remote-core/RemoteNetwork.js',
+            './clients/remote-core/RemoteWallet.js',
+            './clients/remote-core/RemoteCore.js'
+        ])
+        .pipe(sourcemaps.init())
+            .pipe(concat('remote-api.js'))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
 gulp.task('test', ['watch'], function () {
     gulp.run(jasmine({
         files: ['dist/web.js'].concat(sources.test)
@@ -289,6 +309,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node']);
+gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node', 'build-remote-api']);
 
 gulp.task('default', ['build', 'serve']);
