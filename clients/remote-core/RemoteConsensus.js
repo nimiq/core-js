@@ -44,3 +44,4 @@ class RemoteConsensus extends RemoteClass {
         });
     }
 }
+Class.register(RemoteConsensus);

@@ -30,7 +30,14 @@ class RemoteNetwork extends RemoteClass {
      */
     constructor(remoteConnection, live) {
         super(RemoteNetwork.IDENTIFIER, RemoteNetwork.ATTRIBUTES, RemoteNetwork.EVENT_MAP, remoteConnection);
-        this.on(RemoteNetwork.EVENTS.PEERS_CHANGED, () => this._updateState(), !live);
+        this.on(RemoteNetwork.EVENTS.PEERS_CHANGED, networkState => {
+            this.peerCount = networkState.peerCount;
+            this.peerCountWebSocket = networkState.peerCountWebSocket;
+            this.peerCountWebRtc = networkState.peerCountWebRtc;
+            this.peerCountDumb = networkState.peerCountDumb;
+            this.bytesSent = networkState.bytesSent;
+            this.bytesReceived = networkState.bytesReceived;
+        }, !live);
     }
 
 
@@ -38,3 +45,4 @@ class RemoteNetwork extends RemoteClass {
         return (window.navigator.onLine === undefined || window.navigator.onLine) && this._remoteConnection.isConnected();
     }
 }
+Class.register(RemoteNetwork);

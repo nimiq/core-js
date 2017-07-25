@@ -72,17 +72,17 @@ class RemoteAPI {
         this._listeners = {};
         this._observedAccounts = new Set();
         $.accounts.on('populated', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.ACCOUNTS_POPULATED));
-        $.blockchain.on('head-changed', async head => this._broadcast(RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_HEAD_CHANGED, await this._getBlockInfo(head)));
+        $.blockchain.on('head-changed', head => this._broadcast(RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_HEAD_CHANGED, this._serializeToBase64(head)));
         $.blockchain.on('ready', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_READY));
         $.network.on('peers-changed', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.NETWORK_PEERS_CHANGED, this._getNetworkState()));
         $.network.on('peer-joined', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.NETWORK_PEER_JOINED));
         $.network.on('peer-left', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.NETWORK_PEER_LEFT));
         $.mempool.on('transactions-ready', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS_READY));
-        $.mempool.on('transaction-added', transaction => this._broadcast(RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTION_ADDED, this._getTransactionInfo(transaction)));
+        $.mempool.on('transaction-added', transaction => this._broadcast(RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTION_ADDED, this._serializeToBase64(transaction)));
         $.miner.on('start', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.MINER_STARTED));
         $.miner.on('stop', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.MINER_STOPPED));
         $.miner.on('hashrate-changed', hashrate => this._broadcast(RemoteAPI.MESSAGE_TYPES.MINER_HASHRATE_CHANGED, hashrate));
-        $.miner.on('block-mined', block => this._broadcast(RemoteAPI.MESSAGE_TYPES.MINER_BLOCK_MINED, this._getBlockInfo(block)));
+        $.miner.on('block-mined', block => this._broadcast(RemoteAPI.MESSAGE_TYPES.MINER_BLOCK_MINED, this._serializeToBase64(block)));
         $.consensus.on('established', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.CONSENSUS_ESTABLISHED));
         $.consensus.on('lost', () => this._broadcast(RemoteAPI.MESSAGE_TYPES.CONSENSUS_LOST));
         $.consensus.on('syncing', targetHeight => this._broadcast(RemoteAPI.MESSAGE_TYPES.CONSENSUS_SYNCING, targetHeight));
@@ -218,6 +218,10 @@ class RemoteAPI {
         this._send(ws, RemoteAPI.MESSAGE_TYPES.ERROR, errorMessage);
     }
 
+    _serializeToBase64(serializable) {
+        return Nimiq.BufferUtils.toBase64(serializable.serialize());
+    }
+
     _parseAddress(addressString) {
         try {
             return Nimiq.Address.fromHex(addressString);
@@ -237,8 +241,7 @@ class RemoteAPI {
         this.$.accounts.on(address, account => {
             this._broadcast(messageType, {
                 address: addressString,
-                value: account.balance.value,
-                nonce: account.balance.nonce
+                account: this._serializeToBase64(account)
             });
         });
     }
@@ -252,10 +255,9 @@ class RemoteAPI {
         this.$.accounts.getBalance(address)
             .then(balance => this._send(ws, RemoteAPI.MESSAGE_TYPES.ACCOUNTS_BALANCE, {
                 address: addressString,
-                value: balance.value,
-                nonce: balance.nonce
+                balance: this._serializeToBase64(balance)
             }))
-            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE, 'Failed to get balance for '+addressString));
+            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE, 'Failed to get balance for '+addressString+' - '+e));
     }
 
     _sendAccountsHash(ws) {
@@ -272,10 +274,11 @@ class RemoteAPI {
             this._sendError(ws, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK, 'A valid block hash in Base64 format required.');
             return;
         }
-        console.log('\n\n\nHash:', hash.toBase64(), hashString, hash.toBase64() === hashString);
         this.$.blockchain.getBlock(hash)
-            .then(block => this._getBlockInfo(block))
-            .then(blockInfo => this._send(ws, RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_BLOCK, blockInfo))
+            .then(block => this._send(ws, RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_BLOCK, {
+                block: this._serializeToBase64(block),
+                hash: hashString
+            }))
             .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK, 'Failed to get block '+hashString+' - '+e));
     }
 
@@ -286,7 +289,7 @@ class RemoteAPI {
     }
 
     _sendMempoolTransactions(ws) {
-        this._send(ws, RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS, this.$.mempool.getTransactions().map(this._getTransactionInfo));
+        this._send(ws, RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS, this.$.mempool.getTransactions().map(this._serializeToBase64));
     }
 
     _sendState(ws, type) {
@@ -295,7 +298,7 @@ class RemoteAPI {
         } else if (type === RemoteAPI.MESSAGE_TYPES.CONSENSUS_STATE) {
             this._send(ws, type, this._getConsensusState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_STATE) {
-            this._getBlockchainState().then(blockchainState => this._send(ws, type, blockchainState));
+            this._send(ws, type, this._getBlockchainState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.NETWORK_STATE) {
             this._send(ws, type, this._getNetworkState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.MEMPOOL_STATE) {
@@ -309,15 +312,11 @@ class RemoteAPI {
         }
     }
 
-    async _getSnapShot() {
-        return await Promise.all([
-            this._getAccountsState(),
-            this._getBlockchainState()
-        ]).then(promiseResults => {
-            let [accountsState, blockchainState] = promiseResults;
+    _getSnapShot() {
+        return this._getAccountsState().then(accountsState => {
             return {
                 accounts: accountsState,
-                blockchain: blockchainState,
+                blockchain: this._getBlockchainState(),
                 consensus: this._getConsensusState(),
                 mempool: this._getMempoolState(),
                 miner: this._getMinerState(),
@@ -327,10 +326,12 @@ class RemoteAPI {
         });
     }
 
-    async _getAccountsState() {
-        return {
-            hash: (await this.$.accounts.hash()).toBase64()
-        };
+    _getAccountsState() {
+        return this.$.accounts.hash().then(hash => {
+            return {
+                hash: hash.toBase64()
+            };
+        });
     }
 
     _getConsensusState() {
@@ -339,69 +340,15 @@ class RemoteAPI {
         };
     }
 
-    async _getBlockInfo(block) {
-        return Promise.all([
-            block.header.hash(),
-            block.body.hash()
-        ]).then(promiseResults => {
-            let [blockHash, bodyHash] = promiseResults;
-            blockHash = blockHash.toBase64();
-            bodyHash = bodyHash.toBase64();
-            let prevHash = block.header.prevHash.toBase64();
-            let minerAddr = block.minerAddr.toHex();
-            return {
-                header: {
-                    difficulty: block.header.difficulty,
-                    height: block.header.height,
-                    nBits: block.header.nBits,
-                    nonce: block.header.nonce,
-                    prevHash: prevHash,
-                    serializedSize: block.header.serializedSize,
-                    target: block.header.target,
-                    timestamp: block.header.timestamp,
-                    hash: blockHash
-                },
-                body: {
-                    hash: bodyHash,
-                    minerAddr: minerAddr,
-                    serializedSize: block.body.serializedSize,
-                    transactionCount: block.body.transactionCount,
-                    transactions: block.body.transactions.map(this._getTransactionInfo)
-                },
-                accountsHash: block.accountsHash.toBase64(),
-                hash: blockHash,
-                bodyHash: bodyHash,
-                difficulty: block.difficulty,
-                height: block.height,
-                minerAddr: minerAddr,
-                nBits: block.nBits,
-                nonce: block.nonce,
-                prevHash: prevHash,
-                serializedSize: block.serializedSize,
-                target: block.target,
-                timestamp: block.timestamp,
-                transactionCount: block.transactionCount,
-                transactions: block.transactions.map(this._getTransactionInfo)
-            };
-        });
-    }
-
-    async _getBlockchainState() {
-        return Promise.all([
-            this.$.blockchain.getNextCompactTarget(),
-            this._getBlockInfo(this.$.blockchain.head)
-        ]).then(promiseResults => {
-            const [nextCompactTarget, headInfo] = promiseResults;
-            return {
-                busy: this.$.blockchain.busy,
-                checkpointLoaded: this.$.blockchain.checkpointLoaded,
-                nextCompactTarget: nextCompactTarget,
-                height: this.$.blockchain.height,
-                head: headInfo,
-                headHash: this.$.blockchain.headHash,
-                totalWork: this.$.blockchain.totalWork
-            };
-        });
+    _getBlockchainState() {
+        return {
+            busy: this.$.blockchain.busy,
+            checkpointLoaded: this.$.blockchain.checkpointLoaded,
+            height: this.$.blockchain.height,
+            head: this._serializeToBase64(this.$.blockchain.head),
+            headHash: this.$.blockchain.headHash.toBase64(),
+            totalWork: this.$.blockchain.totalWork
+        };
     }
 
     _getNetworkState() {
@@ -415,22 +362,9 @@ class RemoteAPI {
         };
     }
 
-    async _getTransactionInfo(transaction) {
-        return {
-            fee: transaction.fee,
-            nonce: transaction.nonce,
-            recipientAddr: transaction.recipientAddr.toHex(),
-            senderPubKey: transaction.senderPubKey.toBase64(),
-            serializedContentSize: transaction.serializedContentSize,
-            serializedSize: transaction.serializedSize,
-            signature: transaction.signature.toBase64(),
-            value: transaction.value
-        };
-    }
-
     _getMempoolState() {
         return {
-            transactions: this.$.mempool.getTransactions().map(this._getTransactionInfo)
+            transactions: this.$.mempool.getTransactions().map(this._serializeToBase64)
         };
     }
 

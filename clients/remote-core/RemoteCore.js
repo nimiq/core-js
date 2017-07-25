@@ -2,6 +2,7 @@ class RemoteCore {
     /**
      * Construct a new remote core.
      * @param url - A websocket URL (protocol ws: or wss: for secure connections) pointing to a node running the RemoteAPI.
+     * @param liveUpdates - A list of strings naming the components that should get resynced with the server or 'all' to live update them all
      */
     constructor(url, liveUpdates) {
         const shouldLiveUpdate = component => liveUpdates === 'all' || (Array.isArray(liveUpdates) && liveUpdates.indexOf(component)!==-1);
@@ -22,3 +23,4 @@ class RemoteCore {
         });
     }
 }
+Class.register(RemoteCore);

@@ -1,7 +1,7 @@
 /** 
  * A wrapper around WebSocket that supports connection reestablishment
  */
-class RemoteConnection extends Observable {
+class RemoteConnection extends RemoteObservable {
     static get EVENTS() {
         return {
             CONNECTION_ESTABLISHED: 'connection-established',
@@ -75,7 +75,7 @@ class RemoteConnection extends Observable {
      * @param request - A request message that will be send to the server
      * @param expectedMessage - either a string corresponding to the expected message type or a function that checks whether it accepts a message
      */
-    request(request, expectedMessage) {
+    async request(request, expectedMessage) {
         return new Promise((resolve, reject) => {
             this.send(request);
             const callback = message => {
@@ -89,3 +89,4 @@ class RemoteConnection extends Observable {
         });
     }
 }
+Class.register(RemoteConnection);

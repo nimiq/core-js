@@ -1,6 +1,7 @@
 // TODO wildcard support
+// TODO in the long term replace this by Nimiq.Observable
 
-class Observable {
+class RemoteObservable {
     constructor(validEvents) {
         if (Array.isArray(validEvents)) {
             this._validEvents = validEvents;
@@ -33,15 +34,6 @@ class Observable {
     }
 
 
-    once(type, callback) {
-        const onceCallback = () => {
-            callback();
-            this.off(type, onceCallback);
-        };
-        this.on(type, onceCallback);
-    }
-
-
 
     fire(type, arg) {
         if (!(type in this._listeners)) {
@@ -55,3 +47,4 @@ class Observable {
         return !this._validEvents || this._validEvents.indexOf(type) !== -1;
     }
 }
+Class.register(RemoteObservable);

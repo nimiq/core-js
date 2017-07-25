@@ -34,7 +34,7 @@ class RemoteMempool extends RemoteClass {
         super(RemoteMempool.IDENTIFIER, RemoteMempool.ATTRIBUTES, RemoteMempool.EVENT_MAP, remoteConnection);
         this._transactions = {}; // the getTransaction and getTransactions methods are not async, therefore we can't
         // request the transaction from the server on the go but have to mirror them.
-        this.on(RemoteMempool.EVENTS.TRANSACTION_ADDED, transaction => this._transactions[transaction.hash] = transaction, !live); // TODO actual hash computation
+        this.on(RemoteMempool.EVENTS.TRANSACTION_ADDED, async transaction => this._transactions[await transaction.hash()] = transaction, !live);
         this.on(RemoteMempool.EVENTS.TRANSACTIONS_READY, () => this._updateState(), !live); // complete update as we
         // don't know which transactions have been evicted
     }
@@ -43,14 +43,17 @@ class RemoteMempool extends RemoteClass {
     /**
      * @overwrites _updateState in RemoteClass
      */ 
-    _updateState() {
+    async _updateState() {
         // mempool does not have public member variables but we want to update the mirrored transactions
-        this._remoteConnection.request({
+        return this._remoteConnection.request({
             command: RemoteMempool.COMMANDS.MEMPOOL_GET_TRANSACTIONS
         }, RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS)
-        .then(transactions => {
+        .then(serializedTransactions => {
             this._transactions = {};
-            transactions.forEach(transaction => this._transactions[transaction.hash]=transaction) // TODO actual hash computation
+            serializedTransactions.forEach(async serializedTransaction => {
+                const transaction = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromBase64(serializedTransaction));
+                this._transactions[await transaction.hash()] = transaction;
+            });
         });
     }
 
@@ -68,4 +71,18 @@ class RemoteMempool extends RemoteClass {
         }
         return transactions;
     }
+
+
+    /**
+     * @overwrites
+     */
+    _handleEvents(message) {
+        if (message.type === RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTION_ADDED) {
+            const transaction = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromBase64(message.data));
+            this.fire(RemoteMempool.EVENTS.TRANSACTION_ADDED, transaction);
+        } else {
+            super._handleEvents(message);
+        }
+    }
 }
+Class.register(RemoteMempool);

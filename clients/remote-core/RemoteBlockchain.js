@@ -38,8 +38,8 @@ class RemoteBlockchain extends RemoteClass {
         super(RemoteBlockchain.IDENTIFIER, RemoteBlockchain.ATTRIBUTES, RemoteBlockchain.EVENT_MAP, remoteConnection);
         this.on(RemoteBlockchain.EVENTS.HEAD_CHANGED, head => {
             this.head = head;
-            this.headHash = head.hash;
-            this.height += 1;
+            head.hash().then(hash => this.headHash = hash);
+            this.height = head.height;
             this.totalWork += head.difficulty;
             if (this.height % 20 === 0) {
                 // every couple blocks request a full update as the blockchain might have forked
@@ -47,6 +47,18 @@ class RemoteBlockchain extends RemoteClass {
             }
         }, !live);
         this._accounts = accounts;
+    }
+
+
+    /**
+     * @overwrites
+     */
+    async _updateState() {
+        return super._updateState().then(state => {
+            this.head = Nimiq.Block.unserialize(Nimiq.BufferUtils.fromBase64(state.head));
+            this.headHash = Nimiq.Hash.fromBase64(state.headHash);
+            return state;
+        });
     }
 
 
@@ -62,10 +74,25 @@ class RemoteBlockchain extends RemoteClass {
     }
 
 
-    async getBlock(hashString) {
+    async getBlock(hash) {
+        const hashString = hash.toBase64();
         return this._remoteConnection.request({
             command: RemoteBlockchain.COMMANDS.BLOCKCHAIN_GET_BLOCK,
             hash: hashString
-        }, message => message.type === RemoteBlockchain.MESSAGE_TYPES.BLOCKCHAIN_BLOCK && message.data.hash === hashString);
+        }, message => message.type === RemoteBlockchain.MESSAGE_TYPES.BLOCKCHAIN_BLOCK && message.data.hash === hashString)
+        .then(data => Nimiq.Block.unserialize(Nimiq.BufferUtils.fromBase64(data.block)));
+    }
+
+    /**
+     * @overwrites
+     */
+    _handleEvents(message) {
+        if (message.type === RemoteBlockchain.MESSAGE_TYPES.BLOCKCHAIN_HEAD_CHANGED) {
+            const head = Nimiq.Block.unserialize(Nimiq.BufferUtils.fromBase64(message.data));
+            this.fire(RemoteBlockchain.EVENTS.HEAD_CHANGED, head);
+        } else {
+            super._handleEvents(message);
+        }
     }
 }
+Class.register(RemoteBlockchain);

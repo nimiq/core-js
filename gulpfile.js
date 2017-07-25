@@ -125,6 +125,19 @@ const sources = {
         './src/main/**/*.js',
         './src/test/**/*.js',
         '!./src/**/node_modules/**/*.js'
+    ],
+    remoteApi: [
+        './clients/remote-core/RemoteObservable.js',
+        './clients/remote-core/RemoteConnection.js',
+        './clients/remote-core/RemoteClass.js',
+        './clients/remote-core/RemoteAccounts.js',
+        './clients/remote-core/RemoteBlockchain.js',
+        './clients/remote-core/RemoteConsensus.js',
+        './clients/remote-core/RemoteMempool.js',
+        './clients/remote-core/RemoteMiner.js',
+        './clients/remote-core/RemoteNetwork.js',
+        './clients/remote-core/RemoteWallet.js',
+        './clients/remote-core/RemoteCore.js'
     ]
 };
 
@@ -238,21 +251,40 @@ gulp.task('build-node', function () {
 });
 
 gulp.task('build-remote-api', function() {
-    return gulp.src([
-            './clients/remote-core/Observable.js',
-            './clients/remote-core/RemoteConnection.js',
-            './clients/remote-core/RemoteClass.js',
-            './clients/remote-core/RemoteAccounts.js',
-            './clients/remote-core/RemoteBlockchain.js',
-            './clients/remote-core/RemoteConsensus.js',
-            './clients/remote-core/RemoteMempool.js',
-            './clients/remote-core/RemoteMiner.js',
-            './clients/remote-core/RemoteNetwork.js',
-            './clients/remote-core/RemoteWallet.js',
-            './clients/remote-core/RemoteCore.js'
-        ])
+    return gulp.src(['./src/loader/prefix.js.template'].concat(['./src/main/platform/browser/Class.js']).concat(sources.remoteApi).concat(['./src/loader/suffix.js.template']))
         .pipe(sourcemaps.init())
             .pipe(concat('remote-api.js'))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build-remote-api-stand-alone', function() {
+    return gulp.src(['./src/loader/prefix.js.template'].concat([
+            './src/main/platform/browser/Class.js',
+            './src/main/platform/browser/crypto/CryptoLib.js',
+            './src/main/generic/utils/number/NumberUtils.js',
+            './src/main/generic/utils/buffer/SerialBuffer.js',
+            './src/main/generic/utils/buffer/BufferUtils.js',
+            './src/main/generic/utils/crypto/Crypto.js',
+            './src/main/generic/utils/array/ArrayUtils.js',
+            './src/main/generic/utils/array/IndexedArray.js', // needed for old checkpoints in Block.js. Maybe try to remove it
+            './src/main/generic/consensus/Policy.js',
+            './src/main/generic/consensus/primitive/Primitive.js',
+            './src/main/generic/consensus/primitive/Hash.js',
+            './src/main/generic/consensus/primitive/PublicKey.js',
+            './src/main/generic/consensus/primitive/Signature.js',
+            './src/main/generic/consensus/account/Address.js',
+            './src/main/generic/consensus/account/Balance.js',
+            './src/main/generic/consensus/account/Account.js',
+            './src/main/generic/consensus/account/Address.js',
+            './src/main/generic/consensus/block/BlockUtils.js', // needed for Genesis Block creation in Block.js. Maybe try to remove it
+            './src/main/generic/consensus/block/BlockHeader.js',
+            './src/main/generic/consensus/block/BlockBody.js',
+            './src/main/generic/consensus/block/Block.js',
+            './src/main/generic/consensus/transaction/Transaction.js'
+        ]).concat(sources.remoteApi).concat(['./src/loader/suffix.js.template']))
+        .pipe(sourcemaps.init())
+            .pipe(concat('remote-api-stand-alone.js'))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
@@ -309,6 +341,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node', 'build-remote-api']);
+gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node', 'build-remote-api', 'build-remote-api-stand-alone']);
 
 gulp.task('default', ['build', 'serve']);

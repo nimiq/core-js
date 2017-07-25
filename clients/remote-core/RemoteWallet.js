@@ -9,4 +9,16 @@ class RemoteWallet extends RemoteClass {
     constructor(remoteConnection) {
         super(RemoteWallet.IDENTIFIER, RemoteWallet.ATTRIBUTES, {}, remoteConnection);
     }
+
+    /**
+     * @overwrites
+     */
+    async _updateState() {
+        return super._updateState().then(state => {
+            this.address = Nimiq.Address.fromHex(state.address);
+            this.publicKey = Nimiq.PublicKey.unserialize(Nimiq.BufferUtils.fromBase64(state.publicKey));
+            return state;
+        });
+    }
 }
+Class.register(RemoteWallet);

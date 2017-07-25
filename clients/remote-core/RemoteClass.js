@@ -1,4 +1,4 @@
-class RemoteClass extends Observable {
+class RemoteClass extends RemoteObservable {
     constructor(identifier, attributes, eventMap, remoteConnection) {
         super(eventMap);
         this._identifier = identifier;
@@ -18,15 +18,15 @@ class RemoteClass extends Observable {
         this._remoteConnection.on(RemoteConnection.EVENTS.CONNECTION_ESTABLISHED, () => this._updateState());
     }
 
-    _updateState() {
+    async _updateState() {
         return this._remoteConnection.request({
             command: 'get-state',
             type: this._identifier
         }, this._identifier)
-        .then(data => {
-            this._attributes.forEach(attribute => this[attribute] = data[attribute]);
-            return data;
-        })
+        .then(state => {
+            this._attributes.forEach(attribute => this[attribute] = state[attribute]);
+            return state;
+        });
     }
 
     _handleEvents(message) {
@@ -59,3 +59,4 @@ class RemoteClass extends Observable {
         }
     }
 }
+Class.register(RemoteClass);
