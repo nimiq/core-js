@@ -64,7 +64,7 @@ class DenseChain extends Observable {
      */
     async append(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
-        if (this._hasCollapsed) throw 'Cannot prepend to collapsed chain';
+        if (this._hasCollapsed) throw 'Cannot append to collapsed chain';
 
         // Check if the given block is already part of this chain.
         const hash = await block.hash();
@@ -191,25 +191,28 @@ class DenseChain extends Observable {
      * @returns {Promise.<boolean>}
      */
     async ensureConsistency(block) {
-        // If the chain has collapsed, it is always inconsistent.
-        if (this._hasCollapsed) {
-            return false;
-        }
+        // XXX Sanity check: Collapsed chains cannot be used anymore.
+        if (this._hasCollapsed) throw 'Cannot ensure consistency on collapsed chain';
 
-        // If the given block is part of this chain, the interlink must be correct by construction.
+        // If the given block is part of this chain, its interlink must be correct by construction.
         const hash = await block.hash();
         if (this._blockData.contains(hash)) {
             return true;
         }
 
-        // If the given block is the immediate predecessor of this chain's tail, check that they are actually valid neighbors.
+        // If the given block is the immediate predecessor of this chain's tail, check that they are actually valid successors.
         if (this._tail.prevHash.equals(hash) && !(await this._tail.isImmediateSuccessorOf(block))) {
             // The tail of this chain is not a valid successor to its predecessor. The entire chain is invalid.
+            // Delete all blocks from storage.
+            await this._truncate(this._tail, false, true);
+
+            // Mark chain as collapsed.
             await this._destroy();
+
             return false;
         }
 
-        // If there are no blocks in this chain that reference the given block, there is nothing to check.
+        // If there are no blocks in this chain that reference the given block, there is nothing more to check.
         /** @type {HashSet.<Hash>} */
         const references = this._interlinkIndex.get(hash);
         if (!references) {

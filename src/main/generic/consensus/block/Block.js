@@ -187,6 +187,14 @@ class Block {
             return false;
         }
 
+        // If the predecessor happens to be the immediate predecessor, also verify the interlink.
+        if (this._header.prevHash.equals(prevHash)) {
+            const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
+            if (!this._header.interlinkHash.equals(interlinkHash)) {
+                return false;
+            }
+        }
+
         // Check that the target adjustment between the blocks does not exceed the theoretical limit.
         const adjustmentFactor = this._header.target / predecessor.header.target;
         const heightDiff = this._header.height - predecessor.header.height;
@@ -197,6 +205,15 @@ class Block {
 
         // Everything checks out.
         return true;
+    }
+
+    /**
+     * @param {Block} predecessor
+     * @returns {Promise.<boolean>}
+     */
+    async isSuccessorOf(predecessor) {
+        // TODO Improve this! Lots of duplicate checks.
+        return await this.isImmediateSuccessorOf(predecessor) || this.isInterlinkSuccessorOf(predecessor);
     }
 
     /**
