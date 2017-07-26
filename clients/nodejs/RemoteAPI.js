@@ -1,7 +1,6 @@
 const Nimiq = require('../../dist/node.js');
-const WebSocket = require('ws'); // https://github.com/websockets/ws
-const https = require('https');
-const fs = require('fs');
+const AuthenticatedConnection = require('./AuthenticatedConnection.js');
+const AuthenticatingWebSocketServer = require('./AuthenticatingWebSocketServer.js');
 
 class RemoteAPI {
     static get COMMANDS () {
@@ -53,19 +52,10 @@ class RemoteAPI {
         };
     }
 
-    constructor($, port, sslKey, sslCert) {
+    constructor($, port, sslKeyFile, sslCertFile, authSecretFile) {
         this.$ = $;
-        const sslOptions = {
-            key: fs.readFileSync(sslKey),
-            cert: fs.readFileSync(sslCert)
-        };
-        const httpsServer = https.createServer(sslOptions, (req, res) => {
-            res.writeHead(200);
-            res.end('Nimiq NodeJS Remote API\n');
-        }).listen(port);
-        // websocket server
-        this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', (ws, message) => this._onConnection(ws, message)); // TODO authentication
+        const webSocketServer = new AuthenticatingWebSocketServer(port, sslKeyFile, sslCertFile, authSecretFile);
+        webSocketServer.on(AuthenticatingWebSocketServer.EVENTS.NEW_CONNECTION, connection => this._onConnection(connection));
         console.log('Remote API listening on port', port);
 
         // listeners:
@@ -88,43 +78,36 @@ class RemoteAPI {
         $.consensus.on('syncing', targetHeight => this._broadcast(RemoteAPI.MESSAGE_TYPES.CONSENSUS_SYNCING, targetHeight));
     }
 
-    _onConnection(ws) {
+    _onConnection(connection) {
         // handle websocket connection
-        this._getSnapShot().then(snapshot => this._send(ws, RemoteAPI.MESSAGE_TYPES.SNAPSHOT, snapshot));
 
-        ws.on('message', message => this._onMessage(ws, message));
-        ws.on('close', () => this._unregisterListeners(ws));
+        connection.on('message', message => this._onMessage(connection, message));
+        connection.on('close', () => this._unregisterListeners(connection));
 
         console.log('Remote API established connection.');
     }
 
-    _onMessage(ws, message) {
-        try {
-            message = JSON.parse(message);
-        } catch(e) {
-            this._sendError(ws, message, 'Couldn\'t parse command');
-            return;
-        }
+    _onMessage(connection, message) {
         if (message.command === RemoteAPI.COMMANDS.REGISTER_LISTENER) {
-            this._registerListener(ws, message);
+            this._registerListener(connection, message);
         } else if (message.command === RemoteAPI.COMMANDS.UNREGISTER_LISTENER) {
-            this._unregisterListener(ws, message);
+            this._unregisterListener(connection, message);
         } else if (message.command === RemoteAPI.COMMANDS.GET_SNAPSHOT) {
-            this._getSnapShot().then(snapshot => this._send(ws, RemoteAPI.MESSAGE_TYPES.SNAPSHOT, snapshot));
+            this._getSnapShot().then(snapshot => connection.send(RemoteAPI.MESSAGE_TYPES.SNAPSHOT, snapshot));
         } else if (message.command === RemoteAPI.COMMANDS.GET_STATE) {
-            this._sendState(ws, message.type);
+            this._sendState(connection, message.type);
         } else if (message.command === RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE) {
-            this._sendAccountsBalance(ws, message.address);
+            this._sendAccountsBalance(connection, message.address);
         } else if (message.command === RemoteAPI.COMMANDS.ACCOUNTS_GET_HASH) {
-            this._sendAccountsHash(ws);
+            this._sendAccountsHash(connection);
         } else if (message.command === RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK) {
-            this._sendBlock(ws, message.hash);
+            this._sendBlock(connection, message.hash);
         } else if (message.command === RemoteAPI.COMMANDS.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET) {
-            this._sendNextCompactTarget(ws);
+            this._sendNextCompactTarget(connection);
         } else if (message.command === RemoteAPI.COMMANDS.MEMPOOL_GET_TRANSACTIONS) {
-            this._sendMempoolTransactions(ws);
+            this._sendMempoolTransactions(connection);
         } else {
-            this._sendError(ws, message.command, 'Unsupported command.');
+            connection.sendError('Unsupported command.', message.command);
         }
     }
 
@@ -138,62 +121,49 @@ class RemoteAPI {
         return type && (VALID_LISTENER_TYPES.indexOf(type) !== -1 || type.startsWith(RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED));
     }
 
-    _registerListener(ws, message) {
+    _registerListener(connection, message) {
         let type = message.type;
         if (type === RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED) {
             const address = this._parseAddress(message.address);
             if (!address) {
-                this._sendError(ws, RemoteAPI.COMMANDS.REGISTER_LISTENER, 'Type ' + RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED
-                    + ' requires a valid address in hex format');
+                connection.sendError('Type ' + RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED
+                    + ' requires a valid address in hex format', RemoteAPI.COMMANDS.REGISTER_LISTENER);
                 return;
             }
             type = type + '-' + message.address.toLowerCase();
             this._setupAccountChangeListener(address);
         }
         if (!this._isValidListenerType(type)) {
-            this._sendError(ws, RemoteAPI.COMMANDS.REGISTER_LISTENER, type + ' is not a valid type.');
+            connection.sendError(type + ' is not a valid type.', RemoteAPI.COMMANDS.REGISTER_LISTENER);
             return;
         }
         if (!this._listeners[type]) {
             this._listeners[type] = new Set();
         }
-        this._listeners[type].add(ws);
-        this._send(ws, RemoteAPI.MESSAGE_TYPES.INFO, 'Listener for type '+type+' registered.');
+        this._listeners[type].add(connection);
+        connection.send(RemoteAPI.MESSAGE_TYPES.INFO, 'Listener for type '+type+' registered.');
     }
 
-    _unregisterListener(ws, message) {
+    _unregisterListener(connection, message) {
         let type = message.type;
         if (type === RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED) {
             const address = this._parseAddress(message.address);
             if (!address) {
-                this._sendError(ws, RemoteAPI.COMMANDS.UNREGISTER_LISTENER, 'Type ' + RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED
-                    + ' requires a valid address in hex format');
+                connection.sendError('Type ' + RemoteAPI.MESSAGE_TYPES.ACCOUNTS_ACCOUNT_CHANGED
+                    + ' requires a valid address in hex format', RemoteAPI.COMMANDS.UNREGISTER_LISTENER);
                 return;
             }
             type = type + '-' + message.address.toLowerCase();
         }
         if (type in this._listeners) {
-            this._listeners[type].delete(ws);
+            this._listeners[type].delete(connection);
         }
-        this._send(ws, RemoteAPI.MESSAGE_TYPES.INFO, 'Listener for type '+type+' unregistered.');
+        connection.send(RemoteAPI.MESSAGE_TYPES.INFO, 'Listener for type '+type+' unregistered.');
     }
 
-    _unregisterListeners(ws) {
+    _unregisterListeners(connection) {
         for (const type in this._listeners) {
-            this._unregisterListener(ws, type);
-        }
-    }
-
-    _send(ws, type, data) {
-        if (ws.readyState === WebSocket.OPEN) {
-            // if the connection is (still) open, send the message
-            let message = {
-                type: type
-            };
-            if (data !== undefined) {
-                message.data = data;
-            }
-            ws.send(JSON.stringify(message));
+            this._unregisterListener(connection, type);
         }
     }
 
@@ -206,16 +176,11 @@ class RemoteAPI {
             message.data = data;
         }
         message = JSON.stringify(message);
-        for (let ws of this._listeners[type]) {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(message);
+        for (let connection of this._listeners[type]) {
+            if (connection.connected) {
+                connection.send(message);
             }
         }
-    }
-
-    _sendError(ws, command, errorMessage) {
-        errorMessage = 'Error' + (command? ' executing '+command : '') + ': ' +errorMessage;
-        this._send(ws, RemoteAPI.MESSAGE_TYPES.ERROR, errorMessage);
     }
 
     _serializeToBase64(serializable) {
@@ -246,69 +211,69 @@ class RemoteAPI {
         });
     }
 
-    _sendAccountsBalance(ws, addressString) {
+    _sendAccountsBalance(connection, addressString) {
         const address = this._parseAddress(addressString);
         if (!address) {
-            this._sendError(ws, RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE, 'A valid address in hex format required.');
+            connection.sendError('A valid address in hex format required.', RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE);
             return;
         }
         this.$.accounts.getBalance(address)
-            .then(balance => this._send(ws, RemoteAPI.MESSAGE_TYPES.ACCOUNTS_BALANCE, {
+            .then(balance => connection.send(RemoteAPI.MESSAGE_TYPES.ACCOUNTS_BALANCE, {
                 address: addressString,
                 balance: this._serializeToBase64(balance)
             }))
-            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE, 'Failed to get balance for '+addressString+' - '+e));
+            .catch(e => connection.sendError('Failed to get balance for '+addressString+' - '+e, RemoteAPI.COMMANDS.ACCOUNTS_GET_BALANCE));
     }
 
-    _sendAccountsHash(ws) {
+    _sendAccountsHash(connection) {
         this.$.accounts.hash()
-            .then(hash => this._send(ws, RemoteAPI.MESSAGE_TYPES.ACCOUNTS_HASH, hash.toBase64()))
-            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.ACCOUNTS_GET_HASH, 'Failed to get accounts hash.'));
+            .then(hash => connection.send(RemoteAPI.MESSAGE_TYPES.ACCOUNTS_HASH, hash.toBase64()))
+            .catch(e => connection.sendError('Failed to get accounts hash.', RemoteAPI.COMMANDS.ACCOUNTS_GET_HASH));
     }
 
-    _sendBlock(ws, hashString) {
+    _sendBlock(connection, hashString) {
         let hash;
         try {
             hash = Nimiq.Hash.fromBase64(hashString);
         } catch(e) {
-            this._sendError(ws, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK, 'A valid block hash in Base64 format required.');
+            connection.sendError('A valid block hash in Base64 format required.', RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK);
             return;
         }
         this.$.blockchain.getBlock(hash)
-            .then(block => this._send(ws, RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_BLOCK, {
+            .then(block => connection.send(RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_BLOCK, {
                 block: this._serializeToBase64(block),
                 hash: hashString
             }))
-            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK, 'Failed to get block '+hashString+' - '+e));
+            .catch(e => connection.sendError('Failed to get block '+hashString+' - '+e, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_BLOCK));
     }
 
-    _sendNextCompactTarget(ws) {
+    _sendNextCompactTarget(connection) {
         this.$.blockchain.getNextCompactTarget()
-            .then(nextCompactTarget => this._send(ws, RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_NEXT_COMPACT_TARGET, nextCompactTarget))
-            .catch(e => this._sendError(ws, RemoteAPI.COMMANDS.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET, 'Failed to get next compact target.'));
+            .then(nextCompactTarget => connection.send(RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_NEXT_COMPACT_TARGET, nextCompactTarget))
+            .catch(e => connection.sendError('Failed to get next compact target.', RemoteAPI.COMMANDS.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET));
     }
 
-    _sendMempoolTransactions(ws) {
-        this._send(ws, RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS, this.$.mempool.getTransactions().map(this._serializeToBase64));
+    _sendMempoolTransactions(connection) {
+        connection.send(RemoteAPI.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS, this.$.mempool.getTransactions().map(this._serializeToBase64));
     }
 
-    _sendState(ws, type) {
+    _sendState(connection, type) {
         if (type === RemoteAPI.MESSAGE_TYPES.ACCOUNTS_STATE) {
-            this._getAccountsState().then(accountsState => this._send(ws, type, accountsState));
+            this._getAccountsState().then(accountsState => connection.send(type, accountsState));
         } else if (type === RemoteAPI.MESSAGE_TYPES.CONSENSUS_STATE) {
-            this._send(ws, type, this._getConsensusState());
+            connection.send(type, this._getConsensusState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.BLOCKCHAIN_STATE) {
-            this._send(ws, type, this._getBlockchainState());
+            connection.send(type, this._getBlockchainState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.NETWORK_STATE) {
-            this._send(ws, type, this._getNetworkState());
+            connection.send(type, this._getNetworkState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.MEMPOOL_STATE) {
-            this._send(ws, type, this._getMempoolState());
+            connection.send(type, this._getMempoolState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.MINER_STATE) {
-            this._send(ws, type, this._getMinerState());
+            connection.send(type, this._getMinerState());
         } else if (type === RemoteAPI.MESSAGE_TYPES.WALLET_STATE) {
-            this._send(ws, type, this._getWalletState());
+            connection.send(type, this._getWalletState());
         } else {
-            this._sendError(ws, RemoteAPI.COMMANDS.GET_STATE, type + ' is not a valid type.');
+            connection.sendError(type + ' is not a valid type.', RemoteAPI.COMMANDS.GET_STATE);
         }
     }
 

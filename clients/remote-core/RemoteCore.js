@@ -4,9 +4,9 @@ class RemoteCore {
      * @param url - A websocket URL (protocol ws: or wss: for secure connections) pointing to a node running the RemoteAPI.
      * @param liveUpdates - A list of strings naming the components that should get resynced with the server or 'all' to live update them all
      */
-    constructor(url, liveUpdates) {
+    constructor(url, authenticationSecret, liveUpdates) {
         const shouldLiveUpdate = component => liveUpdates === 'all' || (Array.isArray(liveUpdates) && liveUpdates.indexOf(component)!==-1);
-        this._remoteConnection = new RemoteConnection(url);
+        this._remoteConnection = new RemoteConnection(url, authenticationSecret);
         this.accounts = new RemoteAccounts(this._remoteConnection);
         this.blockchain = new RemoteBlockchain(this._remoteConnection, this.accounts, shouldLiveUpdate('blockchain'));
         this.consensus = new RemoteConsensus(this._remoteConnection, shouldLiveUpdate('consensus'));

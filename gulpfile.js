@@ -271,6 +271,7 @@ gulp.task('build-remote-api-stand-alone', function() {
             './src/main/generic/consensus/Policy.js',
             './src/main/generic/consensus/primitive/Primitive.js',
             './src/main/generic/consensus/primitive/Hash.js',
+            './src/main/generic/consensus/primitive/PrivateKey.js',
             './src/main/generic/consensus/primitive/PublicKey.js',
             './src/main/generic/consensus/primitive/Signature.js',
             './src/main/generic/consensus/account/Address.js',
