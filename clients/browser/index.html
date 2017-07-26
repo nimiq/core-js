@@ -459,13 +459,13 @@
 
             var txPromises = [];
 
-            for (var tx of head.transactions) {
+            head.transactions.forEach(function(tx) {
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                     return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
-            }
+            });
 
             Promise.all(txPromises).then(function(results) {
                 el.innerHTML = html + results.join('');
@@ -540,7 +540,7 @@
                 this._mplTransactions.removeChild(this._mplTransactions.firstChild);
             }
 
-            for (var tx of txs) {
+            txs.forEach(function(tx) {
                 tx.getSenderAddr().then(function(senderAddr) {
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
@@ -548,7 +548,7 @@
                     el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
-            }
+            });
         }
     }
 
