@@ -11,7 +11,7 @@ class RemoteClass extends RemoteObservable {
         this._registeredServerEvents = new Set();
         this._remoteConnection = remoteConnection;
         this._remoteConnection.on('message', message => this._handleEvents(message));
-        if (this._remoteConnection.isConnected()) {
+        if (this._remoteConnection.connected) {
             this._updateState();
         }
         // request the current state whenever the connection is (re)established

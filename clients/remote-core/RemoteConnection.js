@@ -62,16 +62,16 @@ class RemoteConnection extends RemoteObservable {
         this._ws.onmessage = event => this._onMessage(event.data);
     }
 
-    isAuthenticated() {
+    get authenticated() {
         return this._authenticationStatus === RemoteConnection.AUTHENTICATION_STATUS.AUTHENTICATED;
     }
 
-    isWebSocketOpen() {
+    get webSocketOpen() {
         return this._ws && this._ws.readyState === WebSocket.OPEN;
     }
 
-    isConnected() {
-        return this.isWebSocketOpen() && this.isAuthenticated();
+    get connected() {
+        return this.webSocketOpen && this.authenticated;
     }
 
     send(message, persistent) {
@@ -80,8 +80,8 @@ class RemoteConnection extends RemoteObservable {
         if (persistent) {
             this._persistentMessages.push(message);
         }
-        if (this.isWebSocketOpen()
-            && (this.isAuthenticated() || type === RemoteConnection.MESSAGE_TYPES.AUTHENTICATION_CLIENT_SERVER_RESPONSE)) {
+        if (this.webSocketOpen
+            && (this.authenticated || type === RemoteConnection.MESSAGE_TYPES.AUTHENTICATION_CLIENT_SERVER_RESPONSE)) {
             this._ws.send(message);
         } else if (!persistent) {
             // add it to the queue if it isn't persistent anyways
@@ -112,7 +112,7 @@ class RemoteConnection extends RemoteObservable {
 
     _onMessage(message) {
         message = JSON.parse(message);
-        if (this.isAuthenticated()) {
+        if (this.authenticated) {
             this.fire(RemoteConnection.EVENTS.MESSAGE, message);
         } else if (this._authenticationStatus === RemoteConnection.AUTHENTICATION_STATUS.WAITING_FOR_SERVER_CHALLENGE) {
             if (message.type === RemoteConnection.MESSAGE_TYPES.AUTHENTICATION_SERVER_CLIENT_CHALLENGE) {

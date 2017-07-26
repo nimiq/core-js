@@ -42,7 +42,7 @@ class RemoteNetwork extends RemoteClass {
 
 
     isOnline() {
-        return (window.navigator.onLine === undefined || window.navigator.onLine) && this._remoteConnection.isConnected();
+        return (window.navigator.onLine === undefined || window.navigator.onLine) && this._remoteConnection.connected;
     }
 }
 Class.register(RemoteNetwork);

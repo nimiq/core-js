@@ -23,8 +23,8 @@ class AuthenticatingWebSocketServer extends Nimiq.Observable {
             res.writeHead(200);
             res.end('Nimiq NodeJS Remote API\n');
         }).listen(port);
-        this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', ws => {
+        const wss = new WebSocket.Server({server: httpsServer});
+        wss.on('connection', ws => {
             const connection = new AuthenticatedConnection(ws, authSecret);
             connection.on(AuthenticatedConnection.EVENTS.CONNECTION_ESTABLISHED,
                 () => this.fire(AuthenticatingWebSocketServer.EVENTS.NEW_CONNECTION, connection));

@@ -7,11 +7,6 @@ class RemoteMempool extends RemoteClass {
             TRANSACTIONS_READY: 'transactions-ready'
         };
     }
-    static get COMMANDS() {
-        return {
-            MEMPOOL_GET_TRANSACTIONS: 'mempool-get-transactions'
-        };
-    }
     static get MESSAGE_TYPES() {
         return {
             MEMPOOL_TRANSACTION_ADDED: 'mempool-transaction-added',
@@ -45,12 +40,9 @@ class RemoteMempool extends RemoteClass {
      */ 
     async _updateState() {
         // mempool does not have public member variables but we want to update the mirrored transactions
-        return this._remoteConnection.request({
-            command: RemoteMempool.COMMANDS.MEMPOOL_GET_TRANSACTIONS
-        }, RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS)
-        .then(serializedTransactions => {
+        return super._updateState().then(state => {
             this._transactions = {};
-            serializedTransactions.forEach(async serializedTransaction => {
+            state.transactions.forEach(async serializedTransaction => {
                 const transaction = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromBase64(serializedTransaction));
                 this._transactions[await transaction.hash()] = transaction;
             });

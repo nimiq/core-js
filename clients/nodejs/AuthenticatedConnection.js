@@ -112,7 +112,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
         if (this.authenticated) {
             this.fire(AuthenticatedConnection.EVENTS.MESSAGE, message);
         } else {
-            // handle authentification
+            // handle authentication
             if (message.type === AuthenticatedConnection.MESSAGE_TYPES.AUTHENTICATION_CLIENT_SERVER_RESPONSE) {
                 this._handleAuthenticationClientServerResponse(message);
             } else {
