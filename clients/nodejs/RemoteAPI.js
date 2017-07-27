@@ -111,7 +111,7 @@ class RemoteAPI {
     }
 
     _getSnapShot() {
-        return this._getAccountsState().then(accountsState => {
+        return this._accountsAPI.getState().then(accountsState => {
             return {
                 accounts: accountsState,
                 blockchain: this._blockchainAPI.getState(),

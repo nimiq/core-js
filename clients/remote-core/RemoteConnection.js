@@ -1,5 +1,5 @@
 /** 
- * A wrapper around WebSocket that supports connection reestablishment
+ * A wrapper around WebSocket that supports connection reestablishment and authentication
  */
 class RemoteConnection extends RemoteObservable {
     static get EVENTS() {
@@ -138,7 +138,8 @@ class RemoteConnection extends RemoteObservable {
         // we got a challenge from the server. Answer with a hash and a challenge from us
         this._serverChallenge = message.data;
         this._clientChallenge = await this._generateChallenge();
-        const clientServerHash = await Nimiq.Hash.hard(Nimiq.BufferUtils.fromAscii(this._clientChallenge + this._serverChallenge + this._authenticationSecret));
+        const clientServerHash = await Nimiq.HashMessageAuthenticationCode.hmac(
+            await Nimiq.HashMessageAuthenticationCode.hmac(this._authenticationSecret, this._clientChallenge), this._serverChallenge);
         this.send({
             type: RemoteConnection.MESSAGE_TYPES.AUTHENTICATION_CLIENT_SERVER_RESPONSE,
             hash: clientServerHash.toBase64(),
@@ -149,7 +150,8 @@ class RemoteConnection extends RemoteObservable {
 
 
     async _checkServerResponse(message) {
-        const serverClientHash = await Nimiq.Hash.hard(Nimiq.BufferUtils.fromAscii(this._serverChallenge + this._clientChallenge + this._authenticationSecret));
+        const serverClientHash = await Nimiq.HashMessageAuthenticationCode.hmac(
+            await Nimiq.HashMessageAuthenticationCode.hmac(this._authenticationSecret, this._serverChallenge), this._clientChallenge);
         if (serverClientHash.toBase64() === message.data) {
             // authentication successful
             this._authenticationStatus = RemoteConnection.AUTHENTICATION_STATUS.AUTHENTICATED;

@@ -127,6 +127,7 @@ const sources = {
         '!./src/**/node_modules/**/*.js'
     ],
     remoteApi: [
+        './clients/nodejs/HashMessageAuthenticationCode.js',
         './clients/remote-core/RemoteObservable.js',
         './clients/remote-core/RemoteConnection.js',
         './clients/remote-core/RemoteClass.js',
@@ -267,7 +268,8 @@ gulp.task('build-remote-api-stand-alone', function() {
             './src/main/generic/utils/buffer/BufferUtils.js',
             './src/main/generic/utils/crypto/Crypto.js',
             './src/main/generic/utils/array/ArrayUtils.js',
-            './src/main/generic/utils/array/IndexedArray.js', // needed for old checkpoints in Block.js. Maybe try to remove it
+            './src/main/generic/utils/string/StringUtils.js',
+            './src/main/generic/utils/array/IndexedArray.js',
             './src/main/generic/consensus/Policy.js',
             './src/main/generic/consensus/primitive/Primitive.js',
             './src/main/generic/consensus/primitive/Hash.js',
@@ -278,7 +280,7 @@ gulp.task('build-remote-api-stand-alone', function() {
             './src/main/generic/consensus/account/Balance.js',
             './src/main/generic/consensus/account/Account.js',
             './src/main/generic/consensus/account/Address.js',
-            './src/main/generic/consensus/block/BlockUtils.js', // needed for Genesis Block creation in Block.js. Maybe try to remove it
+            './src/main/generic/consensus/block/BlockUtils.js',
             './src/main/generic/consensus/block/BlockHeader.js',
             './src/main/generic/consensus/block/BlockBody.js',
             './src/main/generic/consensus/block/Block.js',

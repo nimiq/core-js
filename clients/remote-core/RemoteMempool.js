@@ -10,8 +10,7 @@ class RemoteMempool extends RemoteClass {
     static get MESSAGE_TYPES() {
         return {
             MEMPOOL_TRANSACTION_ADDED: 'mempool-transaction-added',
-            MEMPOOL_TRANSACTIONS_READY: 'mempool-transactions-ready',
-            MEMPOOL_TRANSACTIONS: 'mempool-transactions'
+            MEMPOOL_TRANSACTIONS_READY: 'mempool-transactions-ready'
         };
     }
     static get EVENT_MAP() {

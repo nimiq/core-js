@@ -1,5 +1,6 @@
 const Nimiq = require('../../dist/node.js');
 const WebSocket = require('ws'); // https://github.com/websockets/ws
+require('./HashMessageAuthenticationCode.js'); // gets bound to the Nimiq object
 
 
 class AuthenticatedConnection extends Nimiq.Observable {
@@ -59,9 +60,9 @@ class AuthenticatedConnection extends Nimiq.Observable {
         if (this.authenticated) {
             return;
         }
-        this._authChallenge = await this._generateChallenge();
+        this._serverChallenge = await this._generateChallenge();
         this._authTimeout = setTimeout(() => this._onAuthenticationTimeout(), AuthenticatedConnection.AUTHENTICATION_TIMEOUT);
-        this.send(AuthenticatedConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_CHALLENGE, this._authChallenge);
+        this.send(AuthenticatedConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_CHALLENGE, this._serverChallenge);
     }
 
 
@@ -73,7 +74,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
 
     _closeConnection() {
         this._authenticated = false;
-        this._authChallenge = null;
+        this._serverChallenge = null;
         clearTimeout(this._authTimeout);
         this._authTimeout = null;
         this._ws.terminate();
@@ -123,7 +124,8 @@ class AuthenticatedConnection extends Nimiq.Observable {
         }
         const clientChallenge = message.challenge;
         // check the hash
-        const clientServerHash = await Nimiq.Hash.hard(Nimiq.BufferUtils.fromAscii(clientChallenge + this._authChallenge + this._authSecret));
+        const clientServerHash = await Nimiq.HashMessageAuthenticationCode.hmac(
+            await Nimiq.HashMessageAuthenticationCode.hmac(this._authSecret, clientChallenge), this._serverChallenge);
         if (clientServerHash.toBase64() === message.hash) {
             this._onAuthenticationSucces(clientChallenge);
         } else {
@@ -138,7 +140,8 @@ class AuthenticatedConnection extends Nimiq.Observable {
         clearTimeout(this._authTimeout);
         this.fire(AuthenticatedConnection.Events.CONNECTION_ESTABLISHED);
         // answer the client challenge to also authenticate us to the client
-        const serverClientHash = await Nimiq.Hash.hard(Nimiq.BufferUtils.fromAscii(this._authChallenge + clientChallenge + this._authSecret));
+        const serverClientHash = await Nimiq.HashMessageAuthenticationCode.hmac(
+            await Nimiq.HashMessageAuthenticationCode.hmac(this._authSecret, this._serverChallenge), clientChallenge);
         this.send(AuthenticatedConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_RESPONSE, serverClientHash.toBase64());
     }
 }
