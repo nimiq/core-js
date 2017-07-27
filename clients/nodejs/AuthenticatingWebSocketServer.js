@@ -6,11 +6,6 @@ const fs = require('fs');
 
 
 class AuthenticatingWebSocketServer extends Nimiq.Observable {
-    static get EVENTS() {
-        return {
-            NEW_CONNECTION: 'new-connection'
-        };
-    }
     constructor(port, sslKeyFile, sslCertFile, authSecretFile) {
         super();
         const authSecret = fs.readFileSync(authSecretFile, 'utf8').trim();
@@ -26,11 +21,13 @@ class AuthenticatingWebSocketServer extends Nimiq.Observable {
         const wss = new WebSocket.Server({server: httpsServer});
         wss.on('connection', ws => {
             const connection = new AuthenticatedConnection(ws, authSecret);
-            connection.on(AuthenticatedConnection.EVENTS.CONNECTION_ESTABLISHED,
-                () => this.fire(AuthenticatingWebSocketServer.EVENTS.NEW_CONNECTION, connection));
+            connection.on(AuthenticatedConnection.Events.CONNECTION_ESTABLISHED,
+                () => this.fire(AuthenticatingWebSocketServer.Events.NEW_CONNECTION, connection));
         });
     }
 }
-
+AuthenticatingWebSocketServer.Events = {
+    NEW_CONNECTION: 'new-connection'
+};
 
 module.exports = AuthenticatingWebSocketServer;
