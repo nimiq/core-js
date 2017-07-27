@@ -1,6 +1,10 @@
 const RemoteApiComponent = require('./RemoteApiComponent.js');
 
 class RemoteMinerAPI extends RemoteApiComponent {
+    /**
+     * Create a new miner API.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         super($);
         $.miner.on('start', () => this._broadcast(RemoteMinerAPI.MessageTypes.MINER_STARTED));
@@ -9,14 +13,14 @@ class RemoteMinerAPI extends RemoteApiComponent {
         $.miner.on('block-mined', block => this._broadcast(RemoteMinerAPI.MessageTypes.MINER_BLOCK_MINED, this._serializeToBase64(block)));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     _isValidListenerType(type) {
         const VALID_LISTENER_TYPES = [RemoteMinerAPI.MessageTypes.MINER_STARTED, RemoteMinerAPI.MessageTypes.MINER_STOPPED,
             RemoteMinerAPI.MessageTypes.MINER_HASHRATE_CHANGED, RemoteMinerAPI.MessageTypes.MINER_BLOCK_MINED];
         return VALID_LISTENER_TYPES.indexOf(type) !== -1;
     }
 
-    /** @overwrites */
+    /** @overwrite */
     getState() {
         return {
             address: this.$.miner.address.toHex(),
@@ -25,6 +29,7 @@ class RemoteMinerAPI extends RemoteApiComponent {
         };
     }
 }
+/** @enum */
 RemoteMinerAPI.MessageTypes = {
     MINER_STATE: 'miner',
     MINER_STARTED: 'miner-started',

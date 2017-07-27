@@ -1,5 +1,5 @@
 const Nimiq = require('../../dist/node.js');
-const RemoteApi = require('./RemoteAPI.js');
+const RemoteApi = require('../remote-core/server/RemoteAPI.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {

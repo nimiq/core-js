@@ -1,11 +1,15 @@
 const RemoteApiComponent = require('./RemoteApiComponent.js');
 
 class RemoteWalletAPI extends RemoteApiComponent {
+    /**
+     * Create a new wallet API.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         super($);
     }
 
-    /** @overwrites */
+    /** @overwrite */
     getState() {
         return {
             address: this.$.wallet.address.toHex(),
@@ -13,6 +17,7 @@ class RemoteWalletAPI extends RemoteApiComponent {
         };
     }
 }
+/** @enum */
 RemoteWalletAPI.MessageTypes = {
     WALLET_STATE: 'wallet'
 };

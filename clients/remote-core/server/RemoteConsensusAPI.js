@@ -1,6 +1,10 @@
 const RemoteApiComponent = require('./RemoteApiComponent.js');
 
 class RemoteConsensusAPI extends RemoteApiComponent {
+    /**
+     * Create a new consensus API.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         super($);
         $.consensus.on('established', () => this._broadcast(RemoteConsensusAPI.MessageTypes.CONSENSUS_ESTABLISHED));
@@ -8,19 +12,20 @@ class RemoteConsensusAPI extends RemoteApiComponent {
         $.consensus.on('syncing', targetHeight => this._broadcast(RemoteConsensusAPI.MessageTypes.CONSENSUS_SYNCING, targetHeight));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     _isValidListenerType(type) {
         return type===RemoteConsensusAPI.MessageTypes.CONSENSUS_ESTABLISHED || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_LOST
             || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_SYNCING;
     }
 
-    /** @overwrites */
+    /** @overwrite */
     getState() {
         return {
             established: this.$.consensus.established
         };
     }
 }
+/** @enum */
 RemoteConsensusAPI.MessageTypes = {
     CONSENSUS_STATE: 'consensus',
     CONSENSUS_ESTABLISHED: 'consensus-established',

@@ -1,15 +1,19 @@
-const Nimiq = require('../../dist/node.js');
+const Nimiq = require('../../../dist/node.js');
 const RemoteApiComponent = require('./RemoteApiComponent.js');
 const RemoteAPI = require('./RemoteAPI.js');
 
 class RemoteAccountsAPI extends RemoteApiComponent {
+    /**
+     * Create a new accounts API.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         super($);
         this._observedAccounts = new Set();
         $.accounts.on('populated', () => this._broadcast(RemoteAccountsAPI.MessageTypes.ACCOUNTS_POPULATED));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     handleMessage(connection, message) {
         if (message.command === RemoteAccountsAPI.Commands.ACCOUNTS_GET_BALANCE) {
             this._sendAccountsBalance(connection, message.address);
@@ -22,12 +26,12 @@ class RemoteAccountsAPI extends RemoteApiComponent {
         }
     }
 
-    /** @overwrites */
+    /** @overwrite */
     _isValidListenerType(type) {
         return type && (type===RemoteAccountsAPI.MessageTypes.ACCOUNTS_POPULATED || type.startsWith(RemoteAccountsAPI.MessageTypes.ACCOUNTS_ACCOUNT_CHANGED));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     registerListener(connection, message) {
         if (message.type === RemoteAccountsAPI.MessageTypes.ACCOUNTS_ACCOUNT_CHANGED) {
             const address = this._parseAddress(message.address);
@@ -41,7 +45,7 @@ class RemoteAccountsAPI extends RemoteApiComponent {
         return super.registerListener(connection, message);
     }
 
-    /** @overwrites */
+    /** @overwrite */
     unregisterListener(connection, message) {
         if (message.type === RemoteAccountsAPI.MessageTypes.ACCOUNTS_ACCOUNT_CHANGED) {
             const address = this._parseAddress(message.address);
@@ -58,7 +62,7 @@ class RemoteAccountsAPI extends RemoteApiComponent {
      * @private
      * Parse a hex address string to an Address instance.
      * @param {string} addressString - An address in hex format
-     * @returns {Nimiq.Address} - An Address instance
+     * @returns {Nimiq.Address} An Address instance
      */
     _parseAddress(addressString) {
         try {
@@ -121,8 +125,8 @@ class RemoteAccountsAPI extends RemoteApiComponent {
     }
 
     /** 
-     * @overwrites
-     * @returns {Promise}
+     * @overwrite
+     * @returns {Promise.<object>}
      */
     getState() {
         return this.$.accounts.hash().then(hash => {
@@ -132,10 +136,12 @@ class RemoteAccountsAPI extends RemoteApiComponent {
         });
     }
 }
+/** @enum */
 RemoteAccountsAPI.Commands = {
     ACCOUNTS_GET_BALANCE: 'accounts-get-balance',
     ACCOUNTS_GET_HASH: 'accounts-get-hash'
 };
+/** @enum */
 RemoteAccountsAPI.MessageTypes = {
     ACCOUNTS_STATE: 'accounts',
     ACCOUNTS_ACCOUNT_CHANGED: 'accounts-account-changed',

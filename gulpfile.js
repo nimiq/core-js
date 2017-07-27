@@ -127,18 +127,18 @@ const sources = {
         '!./src/**/node_modules/**/*.js'
     ],
     remoteApi: [
-        './clients/nodejs/HashMessageAuthenticationCode.js',
-        './clients/remote-core/RemoteObservable.js',
-        './clients/remote-core/RemoteConnection.js',
-        './clients/remote-core/RemoteClass.js',
-        './clients/remote-core/RemoteAccounts.js',
-        './clients/remote-core/RemoteBlockchain.js',
-        './clients/remote-core/RemoteConsensus.js',
-        './clients/remote-core/RemoteMempool.js',
-        './clients/remote-core/RemoteMiner.js',
-        './clients/remote-core/RemoteNetwork.js',
-        './clients/remote-core/RemoteWallet.js',
-        './clients/remote-core/RemoteCore.js'
+        './clients/remote-core/shared/HashMessageAuthenticationCode.js',
+        './clients/remote-core/client/RemoteObservable.js',
+        './clients/remote-core/client/RemoteConnection.js',
+        './clients/remote-core/client/RemoteClass.js',
+        './clients/remote-core/client/RemoteAccounts.js',
+        './clients/remote-core/client/RemoteBlockchain.js',
+        './clients/remote-core/client/RemoteConsensus.js',
+        './clients/remote-core/client/RemoteMempool.js',
+        './clients/remote-core/client/RemoteMiner.js',
+        './clients/remote-core/client/RemoteNetwork.js',
+        './clients/remote-core/client/RemoteWallet.js',
+        './clients/remote-core/client/RemoteCore.js'
     ]
 };
 

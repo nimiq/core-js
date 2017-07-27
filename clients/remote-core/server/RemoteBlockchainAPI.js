@@ -1,14 +1,18 @@
-const Nimiq = require('../../dist/node.js');
+const Nimiq = require('../../../dist/node.js');
 const RemoteApiComponent = require('./RemoteApiComponent.js');
 
 class RemoteBlockchainAPI extends RemoteApiComponent {
+    /**
+     * Create a new blockchain API.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         super($);
         $.blockchain.on('head-changed', head => this._broadcast(RemoteBlockchainAPI.MessageTypes.BLOCKCHAIN_HEAD_CHANGED, this._serializeToBase64(head)));
         $.blockchain.on('ready', () => this._broadcast(RemoteBlockchainAPI.MessageTypes.BLOCKCHAIN_READY));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     handleMessage(connection, message) {
         if (message.command === RemoteBlockchainAPI.Commands.BLOCKCHAIN_GET_BLOCK) {
             this._sendBlock(connection, message.hash);
@@ -21,7 +25,7 @@ class RemoteBlockchainAPI extends RemoteApiComponent {
         }
     }
 
-    /** @overwrites */
+    /** @overwrite */
     _isValidListenerType(type) {
         return type===RemoteBlockchainAPI.MessageTypes.BLOCKCHAIN_HEAD_CHANGED || type===RemoteBlockchainAPI.MessageTypes.BLOCKCHAIN_READY;
     }
@@ -59,7 +63,7 @@ class RemoteBlockchainAPI extends RemoteApiComponent {
             .catch(e => connection.sendError('Failed to get next compact target.', RemoteBlockchainAPI.Commands.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET));
     }
 
-    /** @overwrites */
+    /** @overwrite */
     getState() {
         return {
             busy: this.$.blockchain.busy,
@@ -71,10 +75,12 @@ class RemoteBlockchainAPI extends RemoteApiComponent {
         };
     }
 }
+/** @enum */
 RemoteBlockchainAPI.Commands = {
     BLOCKCHAIN_GET_BLOCK: 'get-block',
     BLOCKCHAIN_GET_NEXT_COMPACT_TARGET: 'blockchain-get-next-compact-target'
 };
+/** @enum */
 RemoteBlockchainAPI.MessageTypes = {
     BLOCKCHAIN_STATE: 'blockchain',
     BLOCKCHAIN_HEAD_CHANGED: 'blockchain-head-changed',

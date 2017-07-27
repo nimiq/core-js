@@ -1,9 +1,15 @@
 if (typeof(require) !== 'undefined') {
     // we are in Node
-    Nimiq = require('../../dist/node.js');
+    Nimiq = require('../../../dist/node.js');
 }
 
 class HashMessageAuthenticationCode {
+    /**
+     * Compute the Hash Message Authetication code of a secret and a message.
+     * @param {Nimiq.Hash|Uint8Array|string} secret
+     * @param {string} message
+     * @returns {Promise.<Nimiq.Hash>}
+     */
     static async hmac(secret, message) {
         if (typeof(message) !== 'string' || Nimiq.StringUtils.isMultibyte(message)) {
             throw Error('Illegal message.');
@@ -22,6 +28,11 @@ class HashMessageAuthenticationCode {
         return await Nimiq.Hash.light(outerConcatenation);
     }
 
+    /**
+     * Convert a secret to a buffer of exactly the size of a hash.
+     * @param {Nimiq.Hash|Uint8Array|string} secret
+     * @returns {Promise.<Uint8Array>}
+     */
     static async _hmacSecretToBuffer(secret) {
         const hashSize = Nimiq.Crypto.hashSize;
         if (Nimiq.Hash.isHash(secret)) {
@@ -48,6 +59,12 @@ class HashMessageAuthenticationCode {
         }
     }
 
+    /**
+     * xor every entry of a buffer with a given pad.
+     * @param {Uint8Array} buffer - The buffer which must have exactly the size of a hash. The buffer stays unchanged.
+     * @param {number} pad - The pad which must be a Uint8.
+     * @returns {Uint8Array} The result
+     */
     static _xorPad(buffer, pad) {
         const hashSize = Nimiq.Crypto.hashSize;
         if (!(buffer instanceof Uint8Array) || buffer.byteLength!==hashSize) {
@@ -63,6 +80,8 @@ class HashMessageAuthenticationCode {
         return resultBuffer;
     }
 }
+/** @const */
 HashMessageAuthenticationCode.OUTER_PAD = 0x5C;
+/** @const */
 HashMessageAuthenticationCode.INNER_PAD = 0x36;
 Class.register(HashMessageAuthenticationCode);

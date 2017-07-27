@@ -30,13 +30,24 @@ class RemoteAPI {
         console.log('Remote API listening on port', port);
     }
 
+    /**
+     * @private
+     * Handle a new incoming connection.
+     * @param {AuthenticatedConnection} connection - the authenticated incoming connection.
+     */
     _onConnection(connection) {
-        // handle websocket connection
         connection.on('message', message => this._onMessage(connection, message));
         connection.on('close', () => this._unregisterListeners(connection));
         console.log('Remote API established connection.');
     }
 
+    /**
+     * @private
+     * Handle an incoming message.
+     * @param {AuthenticatedConnection} connection - The connection that sent the message
+     * @param {object} message - The message object
+     * @param {string} message.command - The requested command
+     */
     _onMessage(connection, message) {
         if (message.command === RemoteAPI.Commands.REGISTER_LISTENER) {
             this._registerListener(connection, message);
@@ -58,6 +69,13 @@ class RemoteAPI {
         }
     }
 
+    /**
+     * @private
+     * Handle a listener registration request.
+     * @param {AuthenticatedConnection} connection - The connection that sends the request.
+     * @param {object} message - The request message
+     * @param {string} message.type - The listener type
+     */
     _registerListener(connection, message) {
         this._accountsAPI.registerListener(connection, message)
         || this._blockchainAPI.registerListener(connection, message)
@@ -69,6 +87,13 @@ class RemoteAPI {
         || connection.sendError(message.type + ' is not a valid type.', RemoteAPI.Commands.REGISTER_LISTENER);
     }
 
+    /**
+     * @private
+     * Handle a listener unregistration request.
+     * @param {AuthenticatedConnection} connection - The connection that sends the request.
+     * @param {object} message - The request message
+     * @param {string} message.type - The listener type
+     */
     _unregisterListener(connection, message) {
         this._accountsAPI.unregisterListener(connection, message)
         || this._blockchainAPI.unregisterListener(connection, message)
@@ -80,6 +105,11 @@ class RemoteAPI {
         || connection.sendError(message.type + ' is not a valid type.', RemoteAPI.Commands.UNREGISTER_LISTENER);
     }
 
+    /**
+     * @private
+     * Unregister all listeners registered for a specific connection.
+     * @param {AuthenticatedConnection} connection - The connection for which all event listeners should be revoked.
+     */
     _unregisterListeners(connection) {
         this._accountsAPI.unregisterListeners(connection);
         this._blockchainAPI.unregisterListeners(connection);
@@ -90,6 +120,12 @@ class RemoteAPI {
         this._walletAPI.unregisterListeners(connection);
     }
 
+    /**
+     * @private
+     * Send the current state of one of the RemoteApiComponents.
+     * @param {AuthenticatedConnection} connection - The connection that sends the request
+     * @param {string} type - The type specifying which remote api components state to send.
+     */ 
     _sendState(connection, type) {
         if (type === RemoteAccountsAPI.MessageTypes.ACCOUNTS_STATE) {
             this._accountsAPI.getState().then(accountsState => connection.send(type, accountsState));
@@ -110,6 +146,10 @@ class RemoteAPI {
         }
     }
 
+    /*
+     * @private
+     * Collect the current state of all the remote api components.
+     */
     _getSnapShot() {
         return this._accountsAPI.getState().then(accountsState => {
             return {
@@ -124,12 +164,18 @@ class RemoteAPI {
         });
     }
 }
+/**
+ * @enum
+ */
 RemoteAPI.Commands = {
     GET_SNAPSHOT: 'get-snapshot',
     GET_STATE: 'get-state',
     REGISTER_LISTENER: 'register-listener',
     UNREGISTER_LISTENER: 'unregister-listener'
 };
+/**
+ * @enum
+ */
 RemoteAPI.MessageTypes = {
     SNAPSHOT: 'snapshot',
     ERROR: 'error'

@@ -1,10 +1,14 @@
-const Nimiq = require('../../dist/node.js');
+const Nimiq = require('../../../dist/node.js');
 const RemoteAPI = require('./RemoteAPI.js');
 
 /**
  * Base Class for the components of the Remote API.
  */
 class RemoteApiComponent {
+    /**
+     * Create a new API component.
+     * @param {Nimiq.Core} $ - a nimiq instance
+     */
     constructor($) {
         this.$ = $;
         this._listeners = {};
@@ -15,7 +19,7 @@ class RemoteApiComponent {
      * Handle the message if it supported.
      * @param {AuthenticatedConnection} connection - The connection that sent the message and that a potential answer should be sent to
      * @param {object} message - The message
-     * @returns {boolean} - whether the message was handled.
+     * @returns {boolean} whether the message was handled.
      */
     handleMessage(connection, message) {
         return false;
@@ -25,7 +29,7 @@ class RemoteApiComponent {
      * @protected
      * Checks whether a listener type registration is supported.
      * @param {string} type - The listener type.
-     * @returns {boolean} - whether the listener type is supported.
+     * @returns {boolean} whether the listener type is supported.
      */
     _isValidListenerType(type) {
         return false;
@@ -36,7 +40,7 @@ class RemoteApiComponent {
      * Register a listener if that type is supported.
      * @param {AuthenticatedConnection} connection - The connection that wants to register a listener.
      * @param {object} message - The request message.
-     * @returns {boolean} - whether the type is supported.
+     * @returns {boolean} whether the type is supported.
      */
     registerListener(connection, message) {
         let type = message.type;
