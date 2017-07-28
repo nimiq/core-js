@@ -10,21 +10,22 @@ class RemoteBlockchain extends RemoteClass {
         this.on(RemoteBlockchain.Events.HEAD_CHANGED, head => {
             this.head = head;
             head.hash().then(hash => this.headHash = hash);
-            this.height = head.height;
             this.totalWork += head.difficulty;
-            if (this.height % 20 === 0) {
+            if (this.height % 20 === 0 || head.height!==this.height+1) {
                 // every couple blocks request a full update as the blockchain might have forked
                 this._updateState();
             }
+            this.height = head.height;
         }, !live);
         this._accounts = accounts;
     }
 
 
     /**
-     * @overwrites
+     * @async
+     * @overwrite
      */
-    async _updateState() {
+    _updateState() {
         return super._updateState().then(state => {
             this.head = Nimiq.Block.unserialize(Nimiq.BufferUtils.fromBase64(state.head));
             this.headHash = Nimiq.Hash.fromBase64(state.headHash);
@@ -33,19 +34,22 @@ class RemoteBlockchain extends RemoteClass {
     }
 
 
-    async accountsHash() {
+    /** @async */
+    accountsHash() {
         return this._accounts.hash();
     }
 
 
-    async getNextCompactTarget() {
+    /** @async */
+    getNextCompactTarget() {
         return this._remoteConnection.request({
             command: RemoteBlockchain.Commands.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET
         }, RemoteBlockchain.MessageTypes.BLOCKCHAIN_NEXT_COMPACT_TARGET);
     }
 
 
-    async getBlock(hash) {
+    /** @async */
+    getBlock(hash) {
         const hashString = hash.toBase64();
         return this._remoteConnection.request({
             command: RemoteBlockchain.Commands.BLOCKCHAIN_GET_BLOCK,
@@ -55,7 +59,7 @@ class RemoteBlockchain extends RemoteClass {
     }
 
     /**
-     * @overwrites
+     * @overwrite
      */
     _handleEvents(message) {
         if (message.type === RemoteBlockchain.MessageTypes.BLOCKCHAIN_HEAD_CHANGED) {

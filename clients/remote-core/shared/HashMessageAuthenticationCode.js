@@ -1,4 +1,4 @@
-if (typeof(require) !== 'undefined') {
+if (typeof(window) === 'undefined') {
     // we are in Node
     Nimiq = require('../../../dist/node.js');
 }

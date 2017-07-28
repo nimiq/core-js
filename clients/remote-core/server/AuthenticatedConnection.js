@@ -68,6 +68,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
 
     _onAuthenticationTimeout() {
         this.sendError('Authentication Timeout.');
+        Nimiq.Log.i('Authentication timeout for a client. Closing the connection.');
         this._closeConnection();
     }
 
@@ -91,7 +92,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
         } catch(e) {
             this.sendError('Message parse error: '+message);
             if (!this.authenticated) {
-                // a not authenticated client send us an invalid message.
+                Nimiq.Log.i(AuthenticatedConnection, 'A not authenticated client sent us an invalid message. Closing the connection.');
                 this._closeConnection();
             }
             return;
@@ -104,6 +105,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
                 this._handleAuthenticationClientServerResponse(message);
             } else {
                 this.sendError('Not authenticated.');
+                Nimiq.Log.i(AuthenticatedConnection, 'A not authenticated client sent us an invalid message. Closing the connection.');
                 this._closeConnection();
             }
         }
@@ -119,6 +121,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
     async _handleAuthenticationClientServerResponse(message) {
         if (!message || typeof(message.hash)!=='string' || typeof(message.challenge)!=='string') {
             this.sendError('Authentication failed: Illegal response.');
+            Nimiq.Log.i(AuthenticatedConnection, 'Client Authentication failed: Illegal response. Closing the connection.');
             this._closeConnection();
             return;
         }
@@ -130,6 +133,7 @@ class AuthenticatedConnection extends Nimiq.Observable {
             this._onAuthenticationSucces(clientChallenge);
         } else {
             this.sendError('Authentication failed: invalid hash');
+            Nimiq.Log.i(AuthenticatedConnection, 'Client Authentication failed: Invalid hash. Closing the connection.');
             this._closeConnection();
         }
     }

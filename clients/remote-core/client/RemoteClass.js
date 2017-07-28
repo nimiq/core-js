@@ -15,7 +15,8 @@ class RemoteClass extends RemoteObservable {
         this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ESTABLISHED, () => this._updateState());
     }
 
-    async _updateState() {
+    /** @async */
+    _updateState() {
         return this._remoteConnection.request({
             command: 'get-state',
             type: this._identifier

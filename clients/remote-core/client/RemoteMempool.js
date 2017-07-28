@@ -14,9 +14,10 @@ class RemoteMempool extends RemoteClass {
 
 
     /**
-     * @overwrites _updateState in RemoteClass
+     * @async
+     * @overwrite
      */ 
-    async _updateState() {
+    _updateState() {
         // mempool does not have public member variables but we want to update the mirrored transactions
         return super._updateState().then(state => {
             this._transactions = {};
@@ -44,7 +45,7 @@ class RemoteMempool extends RemoteClass {
 
 
     /**
-     * @overwrites
+     * @overwrite
      */
     _handleEvents(message) {
         if (message.type === RemoteMempool.MessageTypes.MEMPOOL_TRANSACTION_ADDED) {

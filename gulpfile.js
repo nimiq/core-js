@@ -139,6 +139,32 @@ const sources = {
         './clients/remote-core/client/RemoteNetwork.js',
         './clients/remote-core/client/RemoteWallet.js',
         './clients/remote-core/client/RemoteCore.js'
+    ],
+    remoteApiDependencies: [
+        './src/main/platform/browser/Class.js',
+        './src/main/platform/browser/crypto/CryptoLib.js',
+        './src/main/generic/utils/number/NumberUtils.js',
+        './src/main/generic/utils/buffer/SerialBuffer.js',
+        './src/main/generic/utils/buffer/BufferUtils.js',
+        './src/main/generic/utils/crypto/Crypto.js',
+        './src/main/generic/utils/array/ArrayUtils.js',
+        './src/main/generic/utils/string/StringUtils.js',
+        './src/main/generic/utils/array/IndexedArray.js',
+        './src/main/generic/consensus/Policy.js',
+        './src/main/generic/consensus/primitive/Primitive.js',
+        './src/main/generic/consensus/primitive/Hash.js',
+        './src/main/generic/consensus/primitive/PrivateKey.js',
+        './src/main/generic/consensus/primitive/PublicKey.js',
+        './src/main/generic/consensus/primitive/Signature.js',
+        './src/main/generic/consensus/account/Address.js',
+        './src/main/generic/consensus/account/Balance.js',
+        './src/main/generic/consensus/account/Account.js',
+        './src/main/generic/consensus/account/Address.js',
+        './src/main/generic/consensus/block/BlockUtils.js',
+        './src/main/generic/consensus/block/BlockHeader.js',
+        './src/main/generic/consensus/block/BlockBody.js',
+        './src/main/generic/consensus/block/Block.js',
+        './src/main/generic/consensus/transaction/Transaction.js'
     ]
 };
 
@@ -260,34 +286,37 @@ gulp.task('build-remote-api', function() {
 });
 
 gulp.task('build-remote-api-stand-alone', function() {
-    return gulp.src(['./src/loader/prefix.js.template'].concat([
-            './src/main/platform/browser/Class.js',
-            './src/main/platform/browser/crypto/CryptoLib.js',
-            './src/main/generic/utils/number/NumberUtils.js',
-            './src/main/generic/utils/buffer/SerialBuffer.js',
-            './src/main/generic/utils/buffer/BufferUtils.js',
-            './src/main/generic/utils/crypto/Crypto.js',
-            './src/main/generic/utils/array/ArrayUtils.js',
-            './src/main/generic/utils/string/StringUtils.js',
-            './src/main/generic/utils/array/IndexedArray.js',
-            './src/main/generic/consensus/Policy.js',
-            './src/main/generic/consensus/primitive/Primitive.js',
-            './src/main/generic/consensus/primitive/Hash.js',
-            './src/main/generic/consensus/primitive/PrivateKey.js',
-            './src/main/generic/consensus/primitive/PublicKey.js',
-            './src/main/generic/consensus/primitive/Signature.js',
-            './src/main/generic/consensus/account/Address.js',
-            './src/main/generic/consensus/account/Balance.js',
-            './src/main/generic/consensus/account/Account.js',
-            './src/main/generic/consensus/account/Address.js',
-            './src/main/generic/consensus/block/BlockUtils.js',
-            './src/main/generic/consensus/block/BlockHeader.js',
-            './src/main/generic/consensus/block/BlockBody.js',
-            './src/main/generic/consensus/block/Block.js',
-            './src/main/generic/consensus/transaction/Transaction.js'
-        ]).concat(sources.remoteApi).concat(['./src/loader/suffix.js.template']))
+    return gulp.src(['./src/loader/prefix.js.template'].concat(sources.remoteApiDependencies).concat(sources.remoteApi).concat(['./src/loader/suffix.js.template']))
         .pipe(sourcemaps.init())
             .pipe(concat('remote-api-stand-alone.js'))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build-remote-api-stand-alone-babel', function() {
+    return merge(
+        browserify([], {
+            require: [
+                'babel-runtime/core-js/set',
+                'babel-runtime/core-js/json/stringify',
+                'babel-runtime/core-js/object/values',
+                'babel-runtime/core-js/object/keys',
+                'babel-runtime/core-js/promise',
+                'babel-runtime/core-js/array/from',
+                'babel-runtime/core-js/number/max-safe-integer',
+                'babel-runtime/core-js/number/is-integer',
+                'babel-runtime/helpers/asyncToGenerator'
+            ]
+        }).bundle()
+            .pipe(source('babel.js'))
+            .pipe(buffer())
+            .pipe(uglify()),
+        gulp.src(['./src/loader/prefix.js.template'].concat(sources.remoteApiDependencies).concat(sources.remoteApi).concat(['./src/loader/suffix.js.template']))
+            .pipe(sourcemaps.init())
+            .pipe(concat('remote-api-stand-alone.js'))
+            .pipe(babel(babel_config)))
+        .pipe(sourcemaps.init())
+        .pipe(concat('remote-api-stand-alone-babel.js'))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
@@ -344,6 +373,7 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node', 'build-remote-api', 'build-remote-api-stand-alone']);
+gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node', 'build-remote-api', 'build-remote-api-stand-alone'
+    , 'build-remote-api-stand-alone-babel']);
 
 gulp.task('default', ['build', 'serve']);

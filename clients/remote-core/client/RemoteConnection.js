@@ -13,6 +13,7 @@ class RemoteConnection extends RemoteObservable {
         this._authenticationStatus = RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE;
         this._sendQueue = [];
         this._persistentMessages = []; // messages that should be resend when a new web socket gets opened
+        this._dontReconnect = false;
         window.addEventListener('online', () => this._setupWebSocket());
         if (navigator.onLine) {
             this._setupWebSocket();
@@ -20,7 +21,7 @@ class RemoteConnection extends RemoteObservable {
     }
 
     _setupWebSocket() {
-        if (this._ws) return;
+        if (this._ws || this._dontReconnect) return;
         this._authenticationStatus = RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE;
         this._clientChallenge = null;
         this._serverChallenge = null;
@@ -67,17 +68,20 @@ class RemoteConnection extends RemoteObservable {
     }
 
     /**
+     * @async
      * Request a data set (e.g. via get-state or accounts-get-balance) and resolve with the data when
      * the server send us he expected message.
      * @param request - A request message that will be send to the server
      * @param expectedMessage - either a string corresponding to the expected message type or a function that checks whether it accepts a message
      */
-    async request(request, expectedMessage) {
+    request(request, expectedMessage) {
         return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(Error('Timeout')), 30000);
             this.send(request);
             const callback = message => {
                 if ((typeof(expectedMessage)==='string' && message.type === expectedMessage)
                     || (typeof(expectedMessage)==='function' && expectedMessage(message))) {
+                    clearTimeout(timeout);
                     this.off(RemoteConnection.Events.MESSAGE, callback);
                     resolve(message.data);
                 }
@@ -91,22 +95,19 @@ class RemoteConnection extends RemoteObservable {
         message = JSON.parse(message);
         if (this.authenticated) {
             this.fire(RemoteConnection.Events.MESSAGE, message);
-        } else if (this._authenticationStatus === RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE) {
-            if (message.type === RemoteConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_CHALLENGE) {
-                this._answerServerChallenge(message);
-            } else {
-                this.fire(RemoteConnection.Events.CONNECTION_ERROR,
-                    'Got wrong message from server while waiting for challenge: '+message.type+' - '+message.data);
-                this._ws.close();
-            }
-        } else if (this._authenticationStatus === RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_RESPONSE) {
-            if (message.type === RemoteConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_RESPONSE) {
-                this._checkServerResponse(message);
-            } else {
-                this.fire(RemoteConnection.Events.CONNECTION_ERROR,
-                    'Got wrong message from server while waiting for response for challenge: '+message.type+' - '+message.data);
-                this._ws.close();
-            }
+        } else if (this._authenticationStatus === RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE
+            && message.type === RemoteConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_CHALLENGE) {
+            this._answerServerChallenge(message);
+        } else if (this._authenticationStatus === RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_RESPONSE
+            && message.type === RemoteConnection.MessageTypes.AUTHENTICATION_SERVER_CLIENT_RESPONSE) {
+            this._checkServerResponse(message);
+        } else {
+            const errrorMessage = message.type===RemoteConnection.MessageTypes.ERROR?
+                'Authentication Error: ' + message.data
+                : 'Got wrong message from server while in state ' + this._authenticationStatus + ': '+message.type+' - '+message.data;
+            this.fire(RemoteConnection.Events.CONNECTION_ERROR, errrorMessage);
+            this._dontReconnect = true;
+            this._ws.close();
         }
     }
 
@@ -163,11 +164,12 @@ RemoteConnection.Events = {
 RemoteConnection.MessageTypes = {
     AUTHENTICATION_SERVER_CLIENT_CHALLENGE: 'authentication-server-client-challenge',
     AUTHENTICATION_CLIENT_SERVER_RESPONSE: 'authentication-client-server-response',
-    AUTHENTICATION_SERVER_CLIENT_RESPONSE: 'authentication-server-client-response'
+    AUTHENTICATION_SERVER_CLIENT_RESPONSE: 'authentication-server-client-response',
+    ERROR: 'error'
 };
 RemoteConnection.AuthenticationStatus = {
     WAITING_FOR_SERVER_CHALLENGE: 'waiting-for-server-challenge',
-    WAITING_FOR_SERVER_RESPONSE: 'client-server-response-sent',
+    WAITING_FOR_SERVER_RESPONSE: 'waiting-for-server-response',
     AUTHENTICATED: 'authenticated'
 };
 

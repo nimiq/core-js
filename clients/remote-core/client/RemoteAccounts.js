@@ -7,14 +7,16 @@ class RemoteAccounts extends RemoteClass {
         this._registeredAccountListeners = new Set();
     }
 
-    async hash() {
+    /** @async */
+    hash() {
         return this._remoteConnection.request({
             command: RemoteAccounts.Commands.GET_HASH
         }, RemoteAccounts.MessageTypes.ACCOUNTS_HASH)
         .then(hashBase64 => Nimiq.Hash.fromBase64(hashBase64));
     }
 
-    async getBalance(address) {
+    /** @async */
+    getBalance(address) {
         const addressString = address.toHex().toLowerCase();
         return this._remoteConnection.request({
             command: RemoteAccounts.Commands.GET_BALANCE,
@@ -23,9 +25,13 @@ class RemoteAccounts extends RemoteClass {
         .then(data => Nimiq.Balance.unserialize(Nimiq.BufferUtils.fromBase64(data.balance)))
     }
 
-    async _updateState() {
+    /** 
+     * @async
+     * @overwrite
+     */
+    _updateState() {
         // accounts have no state as they have no member variables
-        return;
+        return Promise.resolve();
     }
 
     /**

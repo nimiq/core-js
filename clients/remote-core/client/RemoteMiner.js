@@ -11,9 +11,10 @@ class RemoteMiner extends RemoteClass {
 
 
     /**
-     * @overwrites
+     * @async
+     * @overwrite
      */
-    async _updateState() {
+    _updateState() {
         return super._updateState().then(state => {
             this.address = Nimiq.Address.fromHex(state.address);
             return state;
@@ -22,7 +23,7 @@ class RemoteMiner extends RemoteClass {
 
 
     /**
-     * @overwrites
+     * @overwrite
      */
     _handleEvents(message) {
         if (message.type === RemoteMiner.MessageTypes.BLOCK_MINED) {

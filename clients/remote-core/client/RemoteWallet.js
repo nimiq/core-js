@@ -8,9 +8,10 @@ class RemoteWallet extends RemoteClass {
     }
 
     /**
-     * @overwrites
+     * @async
+     * @overwrite
      */
-    async _updateState() {
+    _updateState() {
         return super._updateState().then(state => {
             this.address = Nimiq.Address.fromHex(state.address);
             this.publicKey = Nimiq.PublicKey.unserialize(Nimiq.BufferUtils.fromBase64(state.publicKey));

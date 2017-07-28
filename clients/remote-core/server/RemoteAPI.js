@@ -1,3 +1,4 @@
+const Nimiq = require('../../../dist/node.js');
 const AuthenticatedConnection = require('./AuthenticatedConnection.js');
 const AuthenticatingWebSocketServer = require('./AuthenticatingWebSocketServer.js');
 const RemoteAccountsAPI = require('./RemoteAccountsAPI.js');
@@ -27,7 +28,7 @@ class RemoteAPI {
         this._walletAPI = new RemoteWalletAPI($);
         const webSocketServer = new AuthenticatingWebSocketServer(port, sslKeyFile, sslCertFile, authSecretFile);
         webSocketServer.on(AuthenticatingWebSocketServer.Events.NEW_CONNECTION, connection => this._onConnection(connection));
-        console.log('Remote API listening on port', port);
+        Nimiq.Log.i('Remote API listening on port' + port);
     }
 
     /**
@@ -38,7 +39,7 @@ class RemoteAPI {
     _onConnection(connection) {
         connection.on('message', message => this._onMessage(connection, message));
         connection.on('close', () => this._unregisterListeners(connection));
-        console.log('Remote API established connection.');
+        Nimiq.Log.i('Remote API established connection.');
     }
 
     /**

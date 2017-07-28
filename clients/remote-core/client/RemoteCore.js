@@ -19,7 +19,7 @@ class RemoteCore {
         this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ERROR, () => console.error('Error connecting to '+url));
         this._remoteConnection.on(RemoteConnection.Events.MESSAGE, message => {
             if (message.type === 'error') {
-                console.error(message.data);
+                console.error('Error message from remote server: ' + message.data);
             }
         });
     }
