@@ -32,8 +32,8 @@ class RemoteMinerAPI extends RemoteApiComponent {
 /** @enum */
 RemoteMinerAPI.MessageTypes = {
     MINER_STATE: 'miner',
-    MINER_STARTED: 'miner-started',
-    MINER_STOPPED: 'miner-stopped',
+    MINER_STARTED: 'miner-start',
+    MINER_STOPPED: 'miner-stop',
     MINER_HASHRATE_CHANGED: 'miner-hashrate-changed',
     MINER_BLOCK_MINED: 'miner-block-mined',
 };

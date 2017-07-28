@@ -1,7 +1,4 @@
 class RemoteWallet extends RemoteClass {
-    static get IDENTIFIER() { return 'wallet'; }
-    static get ATTRIBUTES() { return ['address', 'publicKey']; }
-
     /**
      * Construct a remote wallet handler connected over a remote connection.
      * @param remoteConnection - a remote connection to the server
@@ -21,4 +18,7 @@ class RemoteWallet extends RemoteClass {
         });
     }
 }
+RemoteWallet.IDENTIFIER = 'wallet';
+RemoteWallet.ATTRIBUTES = ['address', 'publicKey'];
+
 Class.register(RemoteWallet);

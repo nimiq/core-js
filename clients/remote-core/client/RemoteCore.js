@@ -16,8 +16,8 @@ class RemoteCore {
         this.network = new RemoteNetwork(this._remoteConnection, shouldLiveUpdate('network'));
         this.wallet = new RemoteWallet(this._remoteConnection);
 
-        this._remoteConnection.on(RemoteConnection.EVENTS.CONNECTION_ERROR, () => console.error('Error connecting to '+url));
-        this._remoteConnection.on(RemoteConnection.EVENTS.MESSAGE, message => {
+        this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ERROR, () => console.error('Error connecting to '+url));
+        this._remoteConnection.on(RemoteConnection.Events.MESSAGE, message => {
             if (message.type === 'error') {
                 console.error(message.data);
             }

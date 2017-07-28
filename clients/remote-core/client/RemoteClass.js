@@ -1,13 +1,10 @@
 class RemoteClass extends RemoteObservable {
-    constructor(identifier, attributes, eventMap, remoteConnection) {
-        super(eventMap);
+    constructor(identifier, attributes, events, remoteConnection) {
+        events = Object.values(events);
+        super(events);
+        this._events = events;
         this._identifier = identifier;
         this._attributes = attributes;
-        this._eventMap = eventMap || {};
-        this._inverseEventMap = {};
-        for (let key in this._eventMap) {
-            this._inverseEventMap[this._eventMap[key]] = key;
-        }
         this._registeredServerEvents = new Set();
         this._remoteConnection = remoteConnection;
         this._remoteConnection.on('message', message => this._handleEvents(message));
@@ -15,7 +12,7 @@ class RemoteClass extends RemoteObservable {
             this._updateState();
         }
         // request the current state whenever the connection is (re)established
-        this._remoteConnection.on(RemoteConnection.EVENTS.CONNECTION_ESTABLISHED, () => this._updateState());
+        this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ESTABLISHED, () => this._updateState());
     }
 
     async _updateState() {
@@ -30,14 +27,17 @@ class RemoteClass extends RemoteObservable {
     }
 
     _handleEvents(message) {
-        if (message.type in this._eventMap) {
-            this.fire(this._eventMap[message.type], message.data);
+        const serverEvent = message.type;
+        const clientEvent = this._removeNameSpace(serverEvent);
+        if (this._events.indexOf(clientEvent)!==-1) {
+            this.fire(clientEvent, message.data);
         }
     }
 
     on(type, callback, lazyRegister) {
-        super.on(type, callback);
-        const serverEvent = this._inverseEventMap[type] || type;
+        const clientEvent = type;
+        const serverEvent = this._addNameSpace(type);
+        super.on(clientEvent, callback); // this also checks whether it is a valid event
         if (!lazyRegister && !this._registeredServerEvents.has(serverEvent)) {
             this._registeredServerEvents.add(serverEvent);
             this._remoteConnection.send({
@@ -48,15 +48,24 @@ class RemoteClass extends RemoteObservable {
     }
 
     off(type, callback) {
-        super.off(type, callback);
-        const serverEvent = this._inverseEventMap[type] || type;
-        if ((type in this._listeners) && this._listeners[type].length === 0 && this._registeredServerEvents.has(serverEvent)) {
+        const clientEvent = type;
+        const serverEvent = this._addNameSpace(type);
+        super.off(clientEvent, callback);
+        if ((clientEvent in this._listeners) && this._listeners[clientEvent].length === 0 && this._registeredServerEvents.has(serverEvent)) {
             this._registeredServerEvents.delete(serverEvent);
             this._remoteConnection.send({
                 command: 'unregister-listener',
                 type: serverEvent
             }, true);
         }
+    }
+
+    _addNameSpace(eventName) {
+        return this._identifier + '-' + eventName;
+    }
+
+    _removeNameSpace(eventName) {
+        return eventName.substr(this._identifier.length + 1); // +1 for the hyphen
     }
 }
 Class.register(RemoteClass);

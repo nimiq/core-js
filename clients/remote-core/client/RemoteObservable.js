@@ -3,11 +3,10 @@
 
 class RemoteObservable {
     constructor(validEvents) {
-        if (Array.isArray(validEvents)) {
-            this._validEvents = validEvents;
-        } else if (validEvents) {
-            this._validEvents = Object.values(validEvents);
+        if (typeof(validEvents) === 'object') {
+            validEvents = Object.values(validEvents);
         }
+        this._validEvents = validEvents;
         this._listeners = {};
     }
 
@@ -44,7 +43,7 @@ class RemoteObservable {
 
 
     _isValidEvent(type) {
-        return !this._validEvents || this._validEvents.indexOf(type) !== -1;
+        return this._validEvents.indexOf(type) !== -1;
     }
 }
 Class.register(RemoteObservable);

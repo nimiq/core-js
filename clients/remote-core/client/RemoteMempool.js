@@ -1,35 +1,14 @@
 class RemoteMempool extends RemoteClass {
-    static get IDENTIFIER() { return 'mempool'; }
-    static get ATTRIBUTES() { return []; }
-    static get EVENTS() {
-        return {
-            TRANSACTION_ADDED: 'transaction-added',
-            TRANSACTIONS_READY: 'transactions-ready'
-        };
-    }
-    static get MESSAGE_TYPES() {
-        return {
-            MEMPOOL_TRANSACTION_ADDED: 'mempool-transaction-added',
-            MEMPOOL_TRANSACTIONS_READY: 'mempool-transactions-ready'
-        };
-    }
-    static get EVENT_MAP() {
-        let map = {};
-        map[RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTION_ADDED] = RemoteMempool.EVENTS.TRANSACTION_ADDED;
-        map[RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTIONS_READY] = RemoteMempool.EVENTS.TRANSACTIONS_READY;
-        return map;
-    }
-
     /**
      * Construct a remote mempool connected over a remote connection.
      * @param remoteConnection - a remote connection to the server
      */
     constructor(remoteConnection, live) {
-        super(RemoteMempool.IDENTIFIER, RemoteMempool.ATTRIBUTES, RemoteMempool.EVENT_MAP, remoteConnection);
+        super(RemoteMempool.IDENTIFIER, RemoteMempool.ATTRIBUTES, RemoteMempool.Events, remoteConnection);
         this._transactions = {}; // the getTransaction and getTransactions methods are not async, therefore we can't
         // request the transaction from the server on the go but have to mirror them.
-        this.on(RemoteMempool.EVENTS.TRANSACTION_ADDED, async transaction => this._transactions[await transaction.hash()] = transaction, !live);
-        this.on(RemoteMempool.EVENTS.TRANSACTIONS_READY, () => this._updateState(), !live); // complete update as we
+        this.on(RemoteMempool.Events.TRANSACTION_ADDED, async transaction => this._transactions[await transaction.hash()] = transaction, !live);
+        this.on(RemoteMempool.Events.TRANSACTIONS_READY, () => this._updateState(), !live); // complete update as we
         // don't know which transactions have been evicted
     }
 
@@ -68,12 +47,23 @@ class RemoteMempool extends RemoteClass {
      * @overwrites
      */
     _handleEvents(message) {
-        if (message.type === RemoteMempool.MESSAGE_TYPES.MEMPOOL_TRANSACTION_ADDED) {
+        if (message.type === RemoteMempool.MessageTypes.MEMPOOL_TRANSACTION_ADDED) {
             const transaction = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromBase64(message.data));
-            this.fire(RemoteMempool.EVENTS.TRANSACTION_ADDED, transaction);
+            this.fire(RemoteMempool.Events.TRANSACTION_ADDED, transaction);
         } else {
             super._handleEvents(message);
         }
     }
 }
+RemoteMempool.IDENTIFIER = 'mempool';
+RemoteMempool.ATTRIBUTES = [];
+RemoteMempool.Events = {
+    TRANSACTION_ADDED: 'transaction-added',
+    TRANSACTIONS_READY: 'transactions-ready'
+};
+RemoteMempool.MessageTypes = {
+    MEMPOOL_TRANSACTION_ADDED: 'mempool-transaction-added',
+    MEMPOOL_TRANSACTIONS_READY: 'mempool-transactions-ready'
+};
+
 Class.register(RemoteMempool);
