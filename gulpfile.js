@@ -305,7 +305,9 @@ gulp.task('build-remote-api-stand-alone-babel', function() {
                 'babel-runtime/core-js/array/from',
                 'babel-runtime/core-js/number/max-safe-integer',
                 'babel-runtime/core-js/number/is-integer',
-                'babel-runtime/helpers/asyncToGenerator'
+                'babel-runtime/helpers/asyncToGenerator',
+                'fast-sha256', // needed for Hash computation in HashMessageAuthentication
+                'elliptic'
             ]
         }).bundle()
             .pipe(source('babel.js'))

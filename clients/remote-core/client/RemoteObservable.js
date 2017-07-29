@@ -1,5 +1,4 @@
-// TODO wildcard support
-// TODO in the long term replace this by Nimiq.Observable
+// TODO in the long term merge this with Nimiq.Observable
 
 class RemoteObservable {
     constructor(validEvents) {
@@ -10,22 +9,22 @@ class RemoteObservable {
         this._listeners = {};
     }
 
-    on(type, callback) {
+    on(type, listener) {
         if (!this._isValidEvent(type)) {
             throw Error('Unsupported Event Type '+type);
         }
         if (!(type in this._listeners)) {
             this._listeners[type] = [];
         }
-        this._listeners[type].push(callback);
+        this._listeners[type].push(listener);
     }
 
 
-    off(type, callback) {
+    off(type, listener) {
         if (!(type in this._listeners)) {
             return;
         }
-        let index = this._listeners[type].indexOf(callback);
+        let index = this._listeners[type].indexOf(listener);
         if (index === -1) {
             return;
         }
@@ -38,12 +37,18 @@ class RemoteObservable {
         if (!(type in this._listeners)) {
             return;
         }
-        this._listeners[type].forEach(callback => callback(arg));
+        // notify listeners. Use setTimeout run the listener in a microtask after the current code has finished
+        this._listeners[type].forEach(listener => setTimeout(() => listener(arg)));
+        // Notify wildcard listeners. Pass event type as first argument
+        if (this._listeners[RemoteObservable.WILDCARD]) {
+            this._listeners[RemoteObservable.WILDCARD].forEach(listener => setTimeout(() => listener.apply(null, arguments)));
+        }
     }
 
 
     _isValidEvent(type) {
-        return this._validEvents.indexOf(type) !== -1;
+        return type===RemoteObservable.WILDCARD || this._validEvents.indexOf(type) !== -1;
     }
 }
+RemoteObservable.WILDCARD = '*';
 Class.register(RemoteObservable);

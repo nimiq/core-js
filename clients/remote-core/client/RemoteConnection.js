@@ -13,7 +13,7 @@ class RemoteConnection extends RemoteObservable {
         this._authenticationStatus = RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE;
         this._sendQueue = [];
         this._persistentMessages = []; // messages that should be resend when a new web socket gets opened
-        this._dontReconnect = false;
+        this._wasConnected = false;
         window.addEventListener('online', () => this._setupWebSocket());
         if (navigator.onLine) {
             this._setupWebSocket();
@@ -21,7 +21,7 @@ class RemoteConnection extends RemoteObservable {
     }
 
     _setupWebSocket() {
-        if (this._ws || this._dontReconnect) return;
+        if (this._ws) return;
         this._authenticationStatus = RemoteConnection.AuthenticationStatus.WAITING_FOR_SERVER_CHALLENGE;
         this._clientChallenge = null;
         this._serverChallenge = null;
@@ -30,12 +30,15 @@ class RemoteConnection extends RemoteObservable {
             // note that onclose also gets called in case that a connection couldn't be established
             this._ws = null;
             this.fire(RemoteConnection.Events.CONNECTION_LOST);
-            setTimeout(() => this._setupWebSocket(), 5000); // try to reconnect
+            if (this._wasConnected) {
+                // if we were already once successfully connected try to reconnect
+                setTimeout(() => this._setupWebSocket(), 5000);
+            }
         }
         this._ws.onerror = () => {
             // note that in the case of error the onclose also gets triggered
             this._ws = null;
-            this.fire(RemoteConnection.Events.CONNECTION_ERROR);
+            this.fire(RemoteConnection.Events.CONNECTION_ERROR, 'WebSocket connection error.');
         };
         this._ws.onmessage = event => this._onMessage(event.data);
     }
@@ -106,7 +109,6 @@ class RemoteConnection extends RemoteObservable {
                 'Authentication Error: ' + message.data
                 : 'Got wrong message from server while in state ' + this._authenticationStatus + ': '+message.type+' - '+message.data;
             this.fire(RemoteConnection.Events.CONNECTION_ERROR, errrorMessage);
-            this._dontReconnect = true;
             this._ws.close();
         }
     }
@@ -147,6 +149,7 @@ class RemoteConnection extends RemoteObservable {
         this._sendQueue.forEach(message => this._ws.send(message));
         this._sendQueue = [];
         this.fire(RemoteConnection.Events.CONNECTION_ESTABLISHED);
+        this._wasConnected = true;
     }
 
 
