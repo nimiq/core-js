@@ -37,7 +37,7 @@ class RejectMessage extends Message {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
     serialize(buf) {

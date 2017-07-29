@@ -20,7 +20,7 @@ class BlockMessage extends Message {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @return {SerialBuffer}
      */
     serialize(buf) {
