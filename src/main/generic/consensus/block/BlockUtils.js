@@ -82,11 +82,19 @@ class BlockUtils {
 
     /**
      * @param {Hash} hash
+     * @returns {number}
+     */
+    static realWork(hash) {
+        return parseInt(hash.toHex(), 16);
+    }
+
+    /**
+     * @param {Hash} hash
      * @param {number} target
      * @returns {boolean}
      */
     static isProofOfWork(hash, target) {
-        return parseInt(hash.toHex(), 16) <= target;
+        return BlockUtils.realWork(hash) <= target;
     }
 
     /**

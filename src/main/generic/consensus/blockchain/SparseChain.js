@@ -23,7 +23,7 @@ class SparseChain extends Observable {
         this._blockData = new HashMap();
 
         // Initialize genesis data.
-        const genesisData = new BlockData(null, /*TODO real work*/, true);
+        const genesisData = new BlockData(null, BlockUtils.realWork(Block.GENESIS.HASH), true);
         this._blockData.put(Block.GENESIS.HASH, genesisData);
 
         /**
@@ -85,18 +85,66 @@ class SparseChain extends Observable {
             }
         }
 
-        // TODO Verify that interlink construction for block b is valid by looking at the closest predecessor and closest successor.
-
         // The block looks valid. Make sure that the chain is consistent with it.
-        await this._truncateInconsistentBlocks(block, succeedsMainChain);
+        await this._truncateInconsistentBlocks(block);
 
+        // Create BlockData for the block. We might be inserting the block, so we need to fix the
+        // BlockData predecessor/successor pointers.
+        const prevHash = await predecessor.hash();
+        /** @type {BlockData} */
+        const prevData = this._blockData.get(prevHash);
+        const totalWork = prevData.totalWork + BlockUtils.realWork(hash);
+        const blockData = new BlockData(prevHash, totalWork);
 
+        // Check if the predecessor already has successors. If so, the new block will contribute work to any successor
+        // that is also a successor of the new block. Note that two successors might be on the same chain. Update all
+        // subsequent total work values. If the new block is not part of the main chain (TODO or cannot be identified as such yet ?!?!)
+        // the chain might need to rebranch.
+        let maxChain = { totalWork: 0, head: null };
+        for (/** @type {Hash} */ const succHash of prevData.successors.values()) {
+            // Move all successors that are also successors of the new block to the new block.
+            const successor = await this._store.get(succHash.toBase64()); // eslint-disable-line no-await-in-loop
+            // XXX Assert that the block is there.
+            if (!successor) throw 'Corrupted store';
+
+            if (successor.isInterlinkSuccessorOf(block)) {
+                // Insert new blockData between prevData and succData.
+                /** @type {BlockData} */
+                const succData = this._blockData.get(succHash);
+                succData.predecessor = hash;
+                prevData.successors.remove(successor);
+                blockData.successors.add(successor);
+
+                const result = this._updateTotalWork(succHash);
+                if (result && result.totalWork > maxChain.totalWork) {
+                    maxChain = result;
+                }
+            }
+        }
+
+        // Link & store new BlockData.
+        prevData.successors.add(hash);
+        this._blockData.put(hash, blockData);
+
+        // TODO Close holes in main chain: Blocks that were not referenced by any main chain successor might become referenced transitively when holes are filled.
+        const onMainChain = references.values().some(hash => {
+            const data = this._blockData.get(hash);
+            return data && data.onMainChain;
+        });
+        if (onMainChain && !succeedsMainChain) {
+            // TODO ...
+        }
+
+        // Add block to interlink index.
+        await this._index(block);
 
 
         // Several possible insert positions:
         // 1. Successor of the current main head
-        const prevHash = await predecessor.hash();
         if (prevHash.equals(this._headHash)) {
+            // XXX DEV Sanity check
+            if (maxChain.head) throw 'Illegal state';
+
             // Append new block to the main chain.
             await this._extend(block);
 
@@ -129,18 +177,6 @@ class SparseChain extends Observable {
         // When advancing the head, remove any blocks that are not referenced in any interlink.
 
 
-        // Block looks good, compute totalWork and create BlockData.
-
-        /** @type {BlockData} */
-        const prevData = this._blockData.get(prevHash);
-        const totalWork = prevData.totalWork + block.difficulty;
-        const blockData = new BlockData(prevHash, totalWork);
-        prevData.successors.add(hash);
-        this._blockData.put(hash, blockData);
-
-        // Add block to interlink index.
-        await this._index(block);
-
 
         // Otherwise, check if the totalWork of the block is harder than our current main chain.
         if (totalWork > this._headData.totalWork) {
@@ -160,13 +196,22 @@ class SparseChain extends Observable {
         return true;
     }
 
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async containsPredecessorOf(block) {
+        return !!(await this._getPredecessor(block));
+    }
+
+
+    /** Private API **/
 
     /**
      * @param {Block} block
-     * @param {boolean} succeedsMainChain
      * @returns {Promise.<void>}
      */
-    async _truncateInconsistentBlocks(block, succeedsMainChain) {
+    async _truncateInconsistentBlocks(block) {
         const hash = await block.hash();
 
         // If there are no blocks in this chain that reference the given block, nothing to do.
@@ -197,40 +242,56 @@ class SparseChain extends Observable {
             }
         }
 
-        // Check that the main chain is consistent: If block is succeeded by at least one block that is on the main
-        // chain, the block must be a successor to the main chain and not be on a fork. If the block is on a fork, the
-        // main chain is inconsistent ... TODO what happens now?
-        // TODO Check fork consistency as well somehow?
-        const onMainChain = references.values().some(hash => {
-            const data = this._blockData.get(hash);
-            return data && data.onMainChain;
-        });
-        if (onMainChain && !succeedsMainChain) {
-            // TODO ...
-        }
+        // TODO Verify that interlink construction for block b is valid by looking at the closest predecessor and closest successor.
 
         return Promise.resolve();
     }
 
+    /**
+     * @param {Hash} blockHash
+     * @returns {{head: Hash, totalWork: number}|null}
+     * @private
+     */
+    _updateTotalWork(blockHash) {
+        // TODO Improve efficiency by tracking the total work per subtree (Patricia style)
+        /** @type {BlockData} */
+        const blockData = this._blockData.get(blockHash);
+        /** @type {BlockData} */
+        const prevData = this._blockData.get(blockData.predecessor);
+        if (!prevData) {
+            return null;
+        }
 
+        // Check if the totalWork for blockHash is correct.
+        const expectedWork = prevData.totalWork + BlockUtils.realWork(blockHash);
+        if (blockData.totalWork === expectedWork) {
+            return null;
+        }
 
+        // XXX If not, update it and recurse ... this is expensive!!!
+        blockData.totalWork = expectedWork;
 
+        let maxChain = { totalWork: 0, head: null };
+        for (const succHash of blockData.successors.values()) {
+            const result = this._updateTotalWork(succHash);
+            if (result && result.totalWork > maxChain.totalWork) {
+                maxChain = result;
+            }
+        }
 
+        return {
+            head: maxChain.head || blockHash,
+            totalWork: expectedWork + maxChain.totalWork
+        };
+    }
 
-
-
-
-
-
-
-
-    /** Private API **/
 
     /**
+     * TODO
      * @param {Block} block
      * @returns {Promise.<void>}
      * @private
-     */
+     * /
     async _rebranch(block) {
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
@@ -264,6 +325,7 @@ class SparseChain extends Observable {
             await this._extend(forkChain[i]); // eslint-disable-line no-await-in-loop
         }
     }
+    */
 
     /**
      * Extends the main chain with the given block.
@@ -275,17 +337,14 @@ class SparseChain extends Observable {
         // Update head block & total work.
         this._head = block;
         this._headHash = await block.hash();
-        this._totalWork += block.difficulty;
 
         // Mark the block as part of the main chain.
         // Must be done AFTER updating _headHash.
         this._headData.onMainChain = true;
 
-        // If the chain has grown too large, evict the tail block.
-        if (this.length > DenseChain.MAX_LENGTH) {
-            await this._shift();
-        }
+        // TODO clean up blocks from the sparse chain that are not referenced in any interlink or whose depth is too low (?)
     }
+
 
     /**
      * Reverts the head of the main chain to the block specified by blockHash, which must be on the main chain.
@@ -356,6 +415,8 @@ class SparseChain extends Observable {
             // XXX Assert that the block is there.
             if (!block) throw 'Corrupted store: Failed to load block while truncating';
 
+            // TODO Fix BlockData predecessor and successors!!
+
             // Unindex and remove block data.
             await this._unindex(block);
             this._blockData.remove(blockHash);
@@ -377,6 +438,7 @@ class SparseChain extends Observable {
         }
 
         // Update the main chain if preserveMainChain is not set.
+        // TODO We will need to find the new head!!!!!!!
         if (!preserveMainChain) {
             // Set the head to the bad block's predecessor.
             this._headHash = startBlock.prevHash;

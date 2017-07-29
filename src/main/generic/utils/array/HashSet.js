@@ -26,14 +26,13 @@ class HashSet {
     }
 
     /**
-     * @param {Array.<V>|*} collection
+     * @param {Array.<V|*>} collection
      */
     addAll(collection) {
         for (const value of collection) {
             this.add(value);
         }
     }
-
 
     /**
      * @param {V|*} value
@@ -48,6 +47,15 @@ class HashSet {
      */
     remove(value) {
         this._map.delete(this._fnHash(value));
+    }
+
+    /**
+     * @param {Array.<V|*>} collection
+     */
+    removeAll(collection) {
+        for (const value of collection) {
+            this.remove(value);
+        }
     }
 
     clear() {

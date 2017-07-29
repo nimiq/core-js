@@ -187,11 +187,58 @@ class Block {
             return false;
         }
 
-        // If the predecessor happens to be the immediate predecessor, also verify the interlink.
+        // If the predecessor happens to be the immediate predecessor, check additionally:
+        // - that the height of the successor is one higher
+        // - that the interlink is correct.
         if (this._header.prevHash.equals(prevHash)) {
+            if (this._header.height !== predecessor.header.height + 1) {
+                return false;
+            }
+
             const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
             if (!this._header.interlinkHash.equals(interlinkHash)) {
                 return false;
+            }
+        }
+        // Otherwise, if the prevHash doesn't match but the blocks should be adjacent according to their height fields,
+        // this cannot be a valid successor of predecessor.
+        else if (this._header.height === predecessor.height.height + 1) {
+            return false;
+        }
+        // Otherwise, check that the interlink construction is valid given the information we have.
+        else {
+            // TODO Take different targets into account.
+
+            // The number of new blocks in the interlink is bounded by the height difference.
+            /** @type {HashSet.<Hash>} */
+            const hashes = new HashSet();
+            hashes.addAll(this._interlink.hashes);
+            hashes.removeAll(predecessor.interlink.hashes);
+            if (hashes.length > this._header.height - predecessor.header.height) {
+                return false;
+            }
+
+            // If the same block is found in both interlinks, all blocks at lower depths must be the same in both interlinks.
+            const thisInterlink = new IndexedArray(this._interlink.hashes);
+            const prevInterlink = predecessor.interlink.hashes;
+            let expectedDepth = null;
+            for (let i = 1; i < prevInterlink.length; i++) {
+                const hash = prevInterlink[i];
+                const depth = thisInterlink.indexOf(hash);
+                if (depth > 0) {
+                    if (expectedDepth === null) {
+                        expectedDepth = depth + 1;
+                    }
+                    else if (expectedDepth === depth) {
+                        expectedDepth++;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else if (expectedDepth !== null) {
+                    return false;
+                }
             }
         }
 

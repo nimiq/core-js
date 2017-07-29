@@ -55,6 +55,19 @@ class DenseChain extends Observable {
 
     /** Public API **/
 
+    async add(block) {
+        // XXX Sanity check: Collapsed chains cannot be used anymore.
+        if (this._hasCollapsed) throw 'Cannot append to collapsed chain';
+
+        // Check if the given block is already part of this chain.
+        const hash = await block.hash();
+        if (this._blockData.contains(hash)) {
+            return true;
+        }
+
+        // append() | prepend()
+    }
+
     /**
      * NOT SYNCHRONIZED! Callers must ensure synchronicity.
      * Assumes that the given block is verified!
@@ -311,6 +324,23 @@ class DenseChain extends Observable {
         return nextTarget;
     }
 
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async containsNeighborOf(block) {
+        return !!(await this._getPredecessor(block)) || this._tail.isImmediateSuccessorOf(block);
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async contains(block) {
+        const hash = await block.hash();
+        return this._blockData.contains(hash);
+    }
+
 
     /** Private API **/
 
@@ -329,7 +359,7 @@ class DenseChain extends Observable {
         while (!prevData.onMainChain) {
             forkHead = await this._store.get(forkHead.prevHash.toBase64()); // eslint-disable-line no-await-in-loop
             // XXX Assert that the block is there.
-            if (!forkHead) throw 'Corrupted store: Failed to find predecessor while rebranching'
+            if (!forkHead) throw 'Corrupted store: Failed to find predecessor while rebranching';
 
             // Build the fork chain in reverse order for efficiency.
             forkChain.push(forkHead);
@@ -472,6 +502,8 @@ class DenseChain extends Observable {
             const block = await this._store.get(blockHash);
             // XXX Assert that the block is there.
             if (!block) throw 'Corrupted store: Failed to load block while truncating';
+
+            // TODO Fix BlockData predecessor and successors!!
 
             // Unindex and remove block data.
             await this._unindex(block);

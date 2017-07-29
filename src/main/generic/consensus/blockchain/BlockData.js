@@ -34,6 +34,11 @@ class BlockData {
         return this._totalWork;
     }
 
+    /** @type {number} */
+    set totalWork(totalWork) {
+        this._totalWork = totalWork;
+    }
+
     /** @type {boolean} */
     get onMainChain() {
         return this._onMainChain;
