@@ -13,6 +13,18 @@ class RemoteAccountsAPI extends RemoteApiComponent {
         $.accounts.on('populated', () => this._broadcast(RemoteAccountsAPI.MessageTypes.ACCOUNTS_POPULATED));
     }
 
+    /** 
+     * @overwrite
+     * @returns {Promise.<object>}
+     */
+    getState() {
+        return this.$.accounts.hash().then(hash => {
+            return {
+                hash: hash.toBase64()
+            };
+        });
+    }
+
     /** @overwrite */
     handleMessage(connection, message) {
         if (message.command === RemoteAccountsAPI.Commands.ACCOUNTS_GET_BALANCE) {
@@ -62,13 +74,13 @@ class RemoteAccountsAPI extends RemoteApiComponent {
      * @private
      * Parse a hex address string to an Address instance.
      * @param {string} addressString - An address in hex format
-     * @returns {Nimiq.Address} An Address instance
+     * @returns {Nimiq.Address|boolean} An Address instance or false
      */
     _parseAddress(addressString) {
         try {
             return Nimiq.Address.fromHex(addressString);
         } catch(e) {
-            return false;
+            return null;
         }
     }
 
@@ -122,18 +134,6 @@ class RemoteAccountsAPI extends RemoteApiComponent {
         this.$.accounts.hash()
             .then(hash => connection.send(RemoteAccountsAPI.MessageTypes.ACCOUNTS_HASH, hash.toBase64()))
             .catch(e => connection.sendError('Failed to get accounts hash.', RemoteAccountsAPI.Commands.ACCOUNTS_GET_HASH));
-    }
-
-    /** 
-     * @overwrite
-     * @returns {Promise.<object>}
-     */
-    getState() {
-        return this.$.accounts.hash().then(hash => {
-            return {
-                hash: hash.toBase64()
-            };
-        });
     }
 }
 /** @enum */

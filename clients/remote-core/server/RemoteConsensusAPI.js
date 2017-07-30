@@ -13,16 +13,16 @@ class RemoteConsensusAPI extends RemoteApiComponent {
     }
 
     /** @overwrite */
-    _isValidListenerType(type) {
-        return type===RemoteConsensusAPI.MessageTypes.CONSENSUS_ESTABLISHED || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_LOST
-            || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_SYNCING;
-    }
-
-    /** @overwrite */
     getState() {
         return {
             established: this.$.consensus.established
         };
+    }
+
+    /** @overwrite */
+    _isValidListenerType(type) {
+        return type===RemoteConsensusAPI.MessageTypes.CONSENSUS_ESTABLISHED || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_LOST
+            || type===RemoteConsensusAPI.MessageTypes.CONSENSUS_SYNCING;
     }
 }
 /** @enum */

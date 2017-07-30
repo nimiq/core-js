@@ -7,6 +7,22 @@ class RemoteMiner extends RemoteClass {
     constructor(remoteConnection, live) {
         super(RemoteMiner.IDENTIFIER, RemoteMiner.ATTRIBUTES, RemoteMiner.Events, remoteConnection);
         this.on(RemoteMiner.Events.HASHRATE_CHANGED, hashrate => this.hashrate = hashrate, !live);
+        this.on(RemoteMiner.Events.STARTED, () => this.working = true, !live);
+        this.on(RemoteMiner.Events.STOPPED, () => this.working = false, !live);
+    }
+
+
+    startWork() {
+        this._remoteConnection.send({
+            command: RemoteMiner.Commands.MINER_START_WORK
+        });
+    }
+
+
+    stopWork() {
+        this._remoteConnection.send({
+            command: RemoteMiner.Commands.MINER_STOP_WORK
+        });
     }
 
 
@@ -41,6 +57,10 @@ RemoteMiner.Events = {
     STOPPED: 'stop',
     HASHRATE_CHANGED: 'hashrate-changed',
     BLOCK_MINED: 'block-mined'
+};
+RemoteMiner.Commands = {
+    MINER_START_WORK: 'miner-start-work',
+    MINER_STOP_WORK: 'miner-stop-work'
 };
 RemoteMiner.MessageTypes = {
     MINER_STARTED: 'miner-start',

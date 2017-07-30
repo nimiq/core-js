@@ -249,6 +249,11 @@ hash {
     width: 100%;
 }
 
+.has-divider {
+    border-top: 1px solid #aaa;
+    padding-top: 12px;
+}
+
 
 /* The order of these consensus classes is important to enable overwriting */
 
@@ -313,16 +318,23 @@ hash {
     opacity: 0.6;
 }
 
+#instance-tabs {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 14px;
+    display: flex;
+}
+
 [tab] {
-    width: 50%;
-    float: left;
     text-align: center;
-    border-top: 1px solid white;
     color: rgba(255,255,255,.7);
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding: 7px 10px;
     background: rgba(255, 255, 255, 0.42);
     cursor: pointer;
+    flex-grow: 1;
 }
 
 [tab]:first-child {
@@ -335,32 +347,28 @@ hash {
 }
 
 [tab].active-tab {
-    font-weight: bold;
+    font-weight: 600;
     color: white;
 }
 
-#setup-tabs.disabled {
-    cursor: not-allowed;
-    height: 36px;
-}
-#setup-tabs.disabled > [tab] {
+#instance-tabs.disabled > [tab] {
     pointer-events: none;
+    border: none;
+    text-align: left;
+}
+
+#instance-tabs.disabled > [tab]:not(.active-tab) {
+    display: none;
 }
 
 #newWallet {
     padding: 20px 0px;
     text-align: center;
-    border-bottom: 1px solid #aaa;
-    margin-bottom: 18px;
 }
 
 #newWallet button {
     display: inline-block;
     margin-top: 10px;
-}
-
-#loadWalletFromSeed {
-    padding: 5px 0px;
 }
 
 #walletSeed {
@@ -433,8 +441,6 @@ hash {
 }
 
 #saved-server-connections {
-    border-top: 1px solid #aaa;
-    padding-top: 12px;
     padding-left: 0;
     padding-right: 0;
 }

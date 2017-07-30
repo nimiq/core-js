@@ -22,7 +22,7 @@ class RemoteAccounts extends RemoteClass {
             command: RemoteAccounts.Commands.GET_BALANCE,
             address: addressString
         }, message => message.type === RemoteAccounts.MessageTypes.ACCOUNTS_BALANCE && message.data.address.toLowerCase() === addressString)
-        .then(data => Nimiq.Balance.unserialize(Nimiq.BufferUtils.fromBase64(data.balance)))
+        .then(data => Nimiq.Balance.unserialize(Nimiq.BufferUtils.fromBase64(data.balance)));
     }
 
     /** 

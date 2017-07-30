@@ -32,48 +32,32 @@
 
     <div class="left">
         <div class="info">
-            <div class="info-title">Setup</div>
-            <div id="setup-tabs">
-                <div class="active-tab" tab="local">Local</div>
-                <div tab="remote">Remote</div>
+            <div id="instance-tabs">
+                <div class="active-tab" tab="local">Local Instance</div>
+                <div tab="remote">Remote Instance</div>
             </div>
             <hr/>
 
             <div id="local-instance-info">
-                <div class="info-block init-wallet">
-
-                    <div id="newWallet" >
+                <div class="init-wallet">
+                    <div id="newWallet" class="info-block">
                         Nimiq Testnet stores your wallet in your browser<br/>
                         Load an existing browser wallet or create a new wallet:
                         <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
                     </div>
-                    <div id="loadWalletFromSeed">
+                    <div id="loadWalletFromSeed" class="info-block has-divider">
                         <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
                         <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
 
                         <div class="clr-both"></div>
                         <small class="get-seed-hint">
-                            A wallet seed is a private key that governs access to a Nimiq address<br/>
-                            You can export your wallet seed once a wallet has been created<br/>
-                         </small>
-                     </div>
-
+                            A wallet seed is a private key that governs access to a Nimiq address.<br/>
+                            You can export your wallet seed once a wallet has been created.<br/>
+                        </small>
+                    </div>
                 </div>
                 <div class="info-block copy-wallet-seed">
                   <button onclick="copyWalletSeed()">Copy wallet seed</button>
-                </div>
-
-                <div class="info-block wallet-address">
-                    <strong>Address</strong>
-                    <span id="wltAddress"></span>
-                </div>
-                <div class="info-block wallet-balance">
-                    <strong>Balance</strong>
-                    <span id="wltBalance"></span>
-                </div>
-                <div class="info-block wallet-nonce">
-                    <strong>Nonce</strong>
-                    <span id="wltNonce"></span>
                 </div>
             </div>
 
@@ -100,7 +84,7 @@
                         <button type="button" id="remote-connect-button">Connect</button>
                     </div>
                     <hr class="morespace"/>
-                    <div id="saved-server-connections" class="info-block">
+                    <div id="saved-server-connections" class="info-block has-divider">
                         <strong>Saved Connections:</strong>
                         <div id="saved-server-connections-list"></div>
                     </div>
@@ -108,6 +92,19 @@
                 <div id="remote-server-connected" class="info-block" style="display:none">
                     Connected to <div id="connected-remote-server-url"></div>
                 </div>
+            </div>
+
+            <div class="info-block wallet-address has-divider">
+                <strong>Address</strong>
+                <span id="wltAddress"></span>
+            </div>
+            <div class="info-block wallet-balance">
+                <strong>Balance</strong>
+                <span id="wltBalance"></span>
+            </div>
+            <div class="info-block wallet-nonce">
+                <strong>Nonce</strong>
+                <span id="wltNonce"></span>
             </div>
             <hr/>
         </div>
@@ -609,7 +606,7 @@
         var walletSeed = document.getElementById('walletSeed').value.trim();
         var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
 
-        document.getElementById('setup-tabs').classList.add('disabled');
+        document.getElementById('instance-tabs').classList.add('disabled');
 
         Nimiq.init(function($) {
             window.$ = $;
@@ -618,8 +615,8 @@
             overlay_.style.display = 'none';
             window.ui = new MinerUI($);
 
-            document.querySelector('.info-block.init-wallet').style.display = 'none';
-            document.querySelector('.info-block.copy-wallet-seed').style.display = 'block';
+            document.querySelector('.init-wallet').style.display = 'none';
+            document.querySelector('.copy-wallet-seed').style.display = 'block';
         }, function(code) {
             document.getElementById('blockchain-title').classList.remove('initializing');
             document.querySelector('#wltAddress').innerText = '';
@@ -646,7 +643,7 @@
 
     class RemoteUi {
         constructor() {
-            this._tabs = document.getElementById('setup-tabs');
+            this._tabs = document.getElementById('instance-tabs');
             this._connectScreen = document.getElementById('remote-server-connect');
             this._connectedScreen = document.getElementById('remote-server-connected');
             this._urlInput = document.getElementById('remote-server-url');
@@ -693,7 +690,7 @@
                     new URL('wss://'+url);
                     return 'wss://'+url;
                 } catch(e) {
-                    return false;
+                    return null;
                 }
             }
         }

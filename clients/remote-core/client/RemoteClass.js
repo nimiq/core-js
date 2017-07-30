@@ -89,6 +89,16 @@ class RemoteClass extends RemoteObservable {
             }, true);
         }
     }
+
+    /**
+     * @protected
+     * Serialize an object to base 64.
+     * @param {*} serializable - An object that implements a serialize method.
+     * @returns {string} - The base 64 representation.
+     */
+    _serializeToBase64(serializable) {
+        return Nimiq.BufferUtils.toBase64(serializable.serialize());
+    }
 }
 RemoteClass.Events = {
     INITIALIZED: 'initialized'

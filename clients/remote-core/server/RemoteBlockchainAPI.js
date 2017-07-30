@@ -13,6 +13,18 @@ class RemoteBlockchainAPI extends RemoteApiComponent {
     }
 
     /** @overwrite */
+    getState() {
+        return {
+            busy: this.$.blockchain.busy,
+            checkpointLoaded: this.$.blockchain.checkpointLoaded,
+            height: this.$.blockchain.height,
+            head: this._serializeToBase64(this.$.blockchain.head),
+            headHash: this.$.blockchain.headHash.toBase64(),
+            totalWork: this.$.blockchain.totalWork
+        };
+    }
+
+    /** @overwrite */
     handleMessage(connection, message) {
         if (message.command === RemoteBlockchainAPI.Commands.BLOCKCHAIN_GET_BLOCK) {
             this._sendBlock(connection, message.hash);
@@ -61,18 +73,6 @@ class RemoteBlockchainAPI extends RemoteApiComponent {
         this.$.blockchain.getNextCompactTarget()
             .then(nextCompactTarget => connection.send(RemoteBlockchainAPI.MessageTypes.BLOCKCHAIN_NEXT_COMPACT_TARGET, nextCompactTarget))
             .catch(e => connection.sendError('Failed to get next compact target.', RemoteBlockchainAPI.Commands.BLOCKCHAIN_GET_NEXT_COMPACT_TARGET));
-    }
-
-    /** @overwrite */
-    getState() {
-        return {
-            busy: this.$.blockchain.busy,
-            checkpointLoaded: this.$.blockchain.checkpointLoaded,
-            height: this.$.blockchain.height,
-            head: this._serializeToBase64(this.$.blockchain.head),
-            headHash: this.$.blockchain.headHash.toBase64(),
-            totalWork: this.$.blockchain.totalWork
-        };
     }
 }
 /** @enum */
