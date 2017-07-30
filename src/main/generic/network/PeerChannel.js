@@ -23,7 +23,7 @@ class PeerChannel extends Observable {
         } catch(e) {
             Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}: ${e}`);
 
-            // Ban client if it sends junk.
+            // Ban peer if it sends junk.
             // TODO We should probably be more lenient here. Bitcoin sends a
             // reject message if the message can't be decoded.
             // From the Bitcoin Reference:
@@ -226,12 +226,13 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Hash} blockHash
+     * @param {Hash} headHash
      * @param {number} m
+     * @param {Array.<Hash>} locators
      * @return {boolean}
      */
-    getInterlinkChain(blockHash, m) {
-        return this._send(new GetInterlinkChainMessage(blockHash, m));
+    getInterlinkChain(headHash, m, locators) {
+        return this._send(new GetInterlinkChainMessage(headHash, m, locators));
     }
 
     /**

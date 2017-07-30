@@ -54,7 +54,7 @@ class Policy {
     }
 
     /**
-     * Limits the rate at which the difficulty is adjusted min/max
+     * Limits the rate at which the difficulty is adjusted min/max.
      * @type {number}
      * @constant
      */
@@ -63,12 +63,23 @@ class Policy {
     }
 
     /**
-     * Number of blocks an AccountsProof can be requested.
+     * The minimum required length of the interlink chain.
+     * FIXME naming
      * @type {number}
      * @constant
      */
-    static get ACCOUNTS_PROOF_WINDOW() {
-        return 10; // Blocks
+    static get M() {
+        return 300;
+    }
+
+    /**
+     * The desired length of the dense head portion of the chain.
+     * FIXME naming
+     * @type {number}
+     * @constant
+     */
+    static get K() {
+        return 200;
     }
 
 

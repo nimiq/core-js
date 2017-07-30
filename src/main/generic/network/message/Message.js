@@ -77,7 +77,8 @@ class Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @private
+     * @returns {void}
+     * @protected
      */
     _setChecksum(buf) {
         const checksum = CRC32.compute(buf);

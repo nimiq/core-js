@@ -55,17 +55,26 @@ class DenseChain extends Observable {
 
     /** Public API **/
 
+    /**
+     * NOT SYNCHRONIZED! Callers must ensure synchronicity.
+     * Assumes that the given block is verified!
+     * @param {Block} block A *verified* block
+     * @returns {Promise.<boolean>}
+     */
     async add(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
-        if (this._hasCollapsed) throw 'Cannot append to collapsed chain';
+        if (this._hasCollapsed) throw 'Cannot add to collapsed chain';
 
-        // Check if the given block is already part of this chain.
+        // XXX Sanity check: Given block must be verified.
+        if (!block.isVerified()) throw 'DenseChain requires verified blocks';
+
+        // Check if this block should be pre- or appended.
         const hash = await block.hash();
-        if (this._blockData.contains(hash)) {
-            return true;
+        if (this._tail.prevHash.equals(hash)) {
+            return this._prepend(block);
+        } else {
+            return this._append(block);
         }
-
-        // append() | prepend()
     }
 
     /**
@@ -75,7 +84,7 @@ class DenseChain extends Observable {
      * @returns {Promise.<boolean>}
      * @private
      */
-    async append(block) {
+    async _append(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
         if (this._hasCollapsed) throw 'Cannot append to collapsed chain';
 
@@ -101,6 +110,7 @@ class DenseChain extends Observable {
 
         // Check that the difficulty is correct. If we don't have enough blocks available to compute
         // the difficulty, skip the check.
+        // TODO We should compute the tightest possible bounds given the data we have if we can't compute the difficulty exactly!
         // TODO Check if this could be exploited somehow.
         // FIXME We should check the difficulty of blocks that we don't check here as soon as all data to check it becomes available!!!
         const nextTarget = await this.getNextTarget(predecessor);
@@ -157,7 +167,7 @@ class DenseChain extends Observable {
      * @param {Block} block A *verified* block
      * @returns {Promise.<boolean>}
      */
-    async prepend(block) {
+    async _prepend(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
         if (this._hasCollapsed) throw 'Cannot prepend to collapsed chain';
 
@@ -328,17 +338,35 @@ class DenseChain extends Observable {
      * @param {Block} block
      * @returns {Promise.<boolean>}
      */
-    async containsNeighborOf(block) {
-        return !!(await this._getPredecessor(block)) || this._tail.isImmediateSuccessorOf(block);
+    async contains(block) {
+        const hash = await block.hash();
+        return this._blockData.contains(hash);
     }
 
     /**
      * @param {Block} block
      * @returns {Promise.<boolean>}
      */
-    async contains(block) {
+    async containsPredecessorOf(block) {
+        return !!(await this._getPredecessor(block));
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async containsNeighborOf(block) {
+        return await this.containsPredecessorOf(block) || this._tail.isImmediateSuccessorOf(block);
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async isOnMainChain(block) {
         const hash = await block.hash();
-        return this._blockData.contains(hash);
+        const data =this._blockData.get(hash);
+        return !!data && data.onMainChain;
     }
 
 

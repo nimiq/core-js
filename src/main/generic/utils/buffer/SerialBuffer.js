@@ -41,6 +41,15 @@ class SerialBuffer extends Uint8Array {
     }
 
     /**
+     * Resets the read and write position of the buffer to zero.
+     * @returns {void}
+     */
+    reset() {
+        this._readPos = 0;
+        this._writePos = 0;
+    }
+
+    /**
      * @param {number} length
      * @return {Uint8Array}
      */

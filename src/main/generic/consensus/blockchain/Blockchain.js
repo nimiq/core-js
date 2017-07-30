@@ -204,27 +204,53 @@ class Blockchain extends Observable {
     }
 
     /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async containsPredecessorOf(block) {
+        return this._sparse.containsPredecessorOf(block) || this._dense.containsPredecessorOf(block);
+    }
+
+    /**
      * The 'ConstructProof' algorithm from the PoPoW paper.
      * @param {Block} head
      * @param {number} m Desired length of the interlink chain
+     * @param {Array.<Hash>} [locators] Return the interlink chain immediately if one of the hashes in locators is encountered during construction, irrespective of m.
      * @returns {InterlinkChain}
      */
-    async getInterlinkChain(head, m) {
-        head = head || this._mainChain.head;
-        const maxTargetDepth = head.interlink.length - 1;
+    async getInterlinkChain(head, m, locators) {
+        head = head || this.head;
+
+        /** @type {HashSet.<Hash>} */
+        const locatorSet = new HashSet();
+        if (locators) {
+            locatorSet.addAll(locators);
+        }
 
         // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
+        const maxTargetDepth = head.interlink.length - 1;
         if (maxTargetDepth > 0) {
-            let interlinkChain = this._getInnerChain(head, maxTargetDepth);
+            let interlinkChain = this._getInnerChain(head, maxTargetDepth, locatorSet);
+
+            // XXX Hack: If a locator hash was found, return the chain immediately.
+            if (interlinkChain.locator) {
+                return interlinkChain;
+            }
 
             // Check if length >= m and, if not, decrease the depth and try again.
             let depth = maxTargetDepth;
-            while (interlinkChain.length < m && depth > 1) {
+            while (interlinkChain.length < m && !interlinkChain.locator && depth > 1) {
                 depth--;
-                interlinkChain = this._getInnerChain(head, depth);
+                interlinkChain = this._getInnerChain(head, depth, locatorSet);
             }
 
-            // If the interlink chain is long enough, return it.
+            // If a locator was found, prepend the locator block and return.
+            if (interlinkChain.locator) {
+                interlinkChain.prepend(await this.getBlock(interlinkChain.locator));
+                return interlinkChain;
+            }
+
+            // If the interlink chain is long enough, prepend the genesis block and return.
             if (interlinkChain.length >= m) {
                 interlinkChain.prepend(Block.GENESIS);
                 return interlinkChain;
@@ -234,7 +260,7 @@ class Blockchain extends Observable {
         // An interlink chain with the desired length m could not be constructed.
         // Return the whole header chain.
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
-        while (!Block.GENESIS.equals(head)) {
+        while (!Block.GENESIS.equals(head) && !locatorSet.contains(head.prevHash)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head);
         }
@@ -245,10 +271,11 @@ class Blockchain extends Observable {
      * The 'ConstructInChain' algorithm from the PoPoW paper adapted for dynamic difficulty.
      * @param {Block} head
      * @param {number} depth
+     * @param {HashSet.<Hash>} locatorSet
      * @returns {InterlinkChain}
      * @private
      */
-    async _getInnerChain(head, depth) {
+    async _getInnerChain(head, depth, locatorSet) {
         const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
 
         // Since we base our interlink chain on the original head's target T, we have to recalculate the interlink
@@ -256,7 +283,15 @@ class Blockchain extends Observable {
         const targetDepth = BlockUtils.getTargetDepth(head.target);
         let j = depth;
         while (j < head.interlink.length) {
-            head = await this.getBlock(head.interlink.hashes[j]); // eslint-disable-line no-await-in-loop
+            // Stop early if we encounter a locator hash.
+            const hash = head.interlink.hashes[j];
+            if (locatorSet.contains(hash)) {
+                // XXX Hack to let the caller know that a locator hash was encountered.
+                interlinkChain.locator = hash;
+                return interlinkChain;
+            }
+
+            head = await this.getBlock(hash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head);
 
             const targetDepthPrime = BlockUtils.getTargetDepth(head.target);
@@ -304,9 +339,35 @@ class Blockchain extends Observable {
     }
 
     /**
+     * @returns {Promise.<Array.<Hash>>}
+     */
+    async getLocators() {
+        /** @type {Array.<Hash>} */
+        const locators = [];
+
+        // Top 10 hashes starting from the head.
+        let block = this.head, lastBlock = this.head;
+        for (let i = 0; block && i < 10; i++) {
+            locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
+            lastBlock = block;
+            block = this.getBlock(block.prevHash);
+        }
+
+        // Interlink chain starting at the last block (m = 30).
+        // TODO Improve this.
+        /** @type {InterlinkChain} */
+        const interlinkChain = await this.getInterlinkChain(lastBlock, 30);
+        for (const header of interlinkChain.headers) {
+            locators.push(await header.hash()); // eslint-disable-line no-await-in-loop
+        }
+
+        return locators;
+    }
+
+    /**
      * @param {Hash} blockHash
      * @returns {Promise.<Accounts>}
-     */
+     * /
     async getAccounts(blockHash) {
         // Check position in path.
         const pos = this._mainPath.indexOf(blockHash);
@@ -334,6 +395,7 @@ class Blockchain extends Observable {
 
         return accounts;
     }
+     */
 
 
     /** @type {Block} */

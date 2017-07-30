@@ -1,16 +1,21 @@
 class GetInterlinkChainMessage extends Message {
     /**
-     * @param {Hash} blockHash
+     * @param {Hash} headHash
      * @param {number} m
+     * @param {Array.<Hash>} locators
      */
-    constructor(blockHash, m) {
+    constructor(headHash, m, locators) {
         super(Message.Type.GET_INTERLINK_CHAIN);
-        if (!blockHash|| !(blockHash instanceof Hash)) throw 'Malformed blockHash';
+        if (!Hash.isHash(headHash)) throw 'Malformed headHash';
         if (!NumberUtils.isUint16(m)) throw 'Malformed m';
+        if (!locators || !NumberUtils.isUint16(locators.length)
+            || locators.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
         /** @type {Hash} */
-        this._blockHash = blockHash;
+        this._headHash = headHash;
         /** @type {number} */
         this._m = m;
+        /** @type {Array.<Hash>} */
+        this._locators = locators;
     }
 
     /**
@@ -19,9 +24,14 @@ class GetInterlinkChainMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const blockHash = Hash.unserialize(buf);
+        const headHash = Hash.unserialize(buf);
         const m = buf.readUint16();
-        return new GetInterlinkChainMessage(blockHash, m);
+        const count = buf.readUint16();
+        const locators = [];
+        for (let i = 0; i < count; i++) {
+            locators.push(Hash.unserialize(buf));
+        }
+        return new GetInterlinkChainMessage(headHash, m, locators);
     }
 
     /**
@@ -31,8 +41,12 @@ class GetInterlinkChainMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        this._blockHash.serialize(buf);
+        this._headHash.serialize(buf);
         buf.writeUint16(this._m);
+        buf.writeUint16(this._locators.length);
+        for (const hash of this._locators) {
+            hash.serialize(buf);
+        }
         super._setChecksum(buf);
         return buf;
     }
@@ -40,18 +54,25 @@ class GetInterlinkChainMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*blockHash*/ this._blockHash.serializedSize
-            + /*m*/ 2;
+            + this._headHash.serializedSize
+            + /*m*/ 2
+            + /*count*/ 2
+            + this._locators.reduce((sum, hash) => sum + hash.serializedSize, 0);
     }
 
     /** @type {Hash} */
-    get blockHash() {
-        return this._blockHash;
+    get headHash() {
+        return this._headHash;
     }
 
     /** @type {number} */
     get m() {
         return this._m;
+    }
+
+    /** @type {Array.<Hash>} */
+    get locators() {
+        return this._locators;
     }
 }
 Class.register(GetInterlinkChainMessage);

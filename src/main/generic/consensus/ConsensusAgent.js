@@ -46,13 +46,14 @@ class ConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv',                  msg => this._onInv(msg));
+        peer.channel.on('inv', msg => this._onInv(msg));
         peer.channel.on('getData', msg => this._onGetData(msg));
         peer.channel.on('notFound', msg => this._onNotFound(msg));
-        peer.channel.on('block',                msg => this._onBlock(msg));
-        peer.channel.on('tx',                   msg => this._onTx(msg));
+        peer.channel.on('block', msg => this._onBlock(msg));
+        peer.channel.on('tx', msg => this._onTx(msg));
         peer.channel.on('getBlocks', msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool',              msg => this._onMempool(msg));
+        peer.channel.on('mempool', msg => this._onMempool(msg));
+
         peer.channel.on('getInterlinkChain', msg => this._onGetInterlinkChain(msg));
         peer.channel.on('getAccountsProof', msg => this._onGetAccountsProof(msg));
         peer.channel.on('getHeaders', msg => this._onGetHeaders(msg));
@@ -162,7 +163,7 @@ class ConsensusAgent extends Observable {
     _requestBlocks() {
         // XXX Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
-            Log.e(ConsensusAgent, `Duplicate _requestBlocks()`);
+            Log.e(ConsensusAgent, 'Duplicate _requestBlocks()');
             return;
         }
 
@@ -390,6 +391,7 @@ class ConsensusAgent extends Observable {
 
 
     /* Request endpoints */
+
     /**
      * @param {GetDataMessage} msg
      * @return {Promise}
@@ -510,12 +512,13 @@ class ConsensusAgent extends Observable {
      * @private
      */
     async _onGetInterlinkChain(msg) {
-        const head = await this._blockchain.getBlock(msg.blockHash);
+        const head = await this._blockchain.getBlock(msg.headHash);
 
         if (head) {
-            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.m);
+            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.m, msg.locators);
             this._peer.channel.interlinkChain(interlinkChain);
         }
+
         // TODO what to do if we do not know the requested head?
     }
 

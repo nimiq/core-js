@@ -15,6 +15,9 @@ class Block {
         this._interlink = interlink;
         /** @type {BlockBody} */
         this._body = body;
+
+        /** @type {boolean} */
+        this._verified = false;
     }
 
     /**
@@ -24,7 +27,13 @@ class Block {
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
         const interlink = BlockInterlink.unserialize(buf);
-        const body = BlockBody.unserialize(buf);
+
+        let body = undefined;
+        const bodyPresent = buf.readUint8();
+        if (bodyPresent) {
+            body = BlockBody.unserialize(buf);
+        }
+
         return new Block(header, interlink, body);
     }
 
@@ -36,7 +45,14 @@ class Block {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._header.serialize(buf);
         this._interlink.serialize(buf);
-        this._body.serialize(buf);
+
+        if (this._body) {
+            buf.writeUint8(1);
+            this._body.serialize(buf);
+        } else {
+            buf.writeUint8(0);
+        }
+
         return buf;
     }
 
@@ -44,7 +60,8 @@ class Block {
     get serializedSize() {
         return this._header.serializedSize
             + this._interlink.serializedSize
-            + this._body.serializedSize;
+            + /*bodyPresent*/ 1
+            + this._body ? this._body.serializedSize : 0;
     }
 
     /**
@@ -69,11 +86,12 @@ class Block {
         }
 
         // XXX Verify the body only if it is present.
-        if (this.hasBody() && !(await this._verifyBody())) {
+        if (this.isFull() && !(await this._verifyBody())) {
             return false;
         }
 
         // Everything checks out.
+        this._verified = true;
         return true;
     }
 
@@ -126,6 +144,13 @@ class Block {
 
         // Everything checks out.
         return true;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isVerified() {
+        return this._verified;
     }
 
     /**
@@ -316,6 +341,35 @@ class Block {
     }
 
     /**
+     * @returns {boolean}
+     */
+    isLight() {
+        return !this._body;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isFull() {
+        return !!this._body;
+    }
+
+    /**
+     * @returns {Block}
+     */
+    toLight() {
+        return this.isLight() ? this : new Block(this._header, this._interlink);
+    }
+
+    /**
+     * @param {BlockBody} body
+     * @returns {Block}
+     */
+    toFull(body) {
+        return this.isFull() ? this : new Block(this._header, this._interlink, body);
+    }
+
+    /**
      * @type {BlockHeader}
      */
     get header() {
@@ -333,21 +387,10 @@ class Block {
      * @type {BlockBody}
      */
     get body() {
+        if (this.isLight()) {
+            throw 'Cannot access body of light block';
+        }
         return this._body;
-    }
-
-    // XXX Allow the body to be initialized later, but only allow it to be set once.
-    /** @type {BlockBody} */
-    set body(body) {
-        if (this._body) throw 'Body already set';
-        this._body = body;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    hasBody() {
-        return !!this._body;
     }
 
     /**
@@ -435,10 +478,11 @@ class Block {
     }
 
     /**
+     * @param {SerialBuffer} [buf]
      * @returns {Promise.<Hash>}
      */
-    hash() {
-        return this._header.hash();
+    hash(buf) {
+        return this._header.hash(buf);
     }
 }
 Class.register(Block);

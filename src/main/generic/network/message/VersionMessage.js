@@ -3,16 +3,14 @@ class VersionMessage extends Message {
      * @param {number} version
      * @param {PeerAddress} peerAddress
      * @param {Hash} genesisHash
-     * @param {number} startHeight
-     * @param {number} totalWork
+     * @param {Hash} headHash
      */
-    constructor(version, peerAddress, genesisHash, startHeight, totalWork) {
+    constructor(version, peerAddress, genesisHash, headHash) {
         super(Message.Type.VERSION);
         if (!NumberUtils.isUint32(version)) throw 'Malformed version';
         if (!peerAddress || !(peerAddress instanceof PeerAddress)) throw 'Malformed peerAddress';
         if (!Hash.isHash(genesisHash)) throw 'Malformed genesisHash';
-        if (!NumberUtils.isUint32(startHeight)) throw 'Malformed startHeight';
-        // TODO Validate that totalWork is a valid double.
+        if (!Hash.isHash(headHash)) throw 'Malformed headHash';
 
         /** @type {number} */
         this._version = version;
@@ -20,10 +18,8 @@ class VersionMessage extends Message {
         this._peerAddress = peerAddress;
         /** @type {Hash} */
         this._genesisHash = genesisHash;
-        /** @type {number} */
-        this._startHeight = startHeight;
-        /** @type {number} */
-        this._totalWork = totalWork;
+        /** @type {Hash} */
+        this._headHash = headHash;
     }
 
     /**
@@ -35,9 +31,8 @@ class VersionMessage extends Message {
         const version = buf.readUint32();
         const peerAddress = PeerAddress.unserialize(buf);
         const genesisHash = Hash.unserialize(buf);
-        const startHeight = buf.readUint32();
-        const totalWork = buf.readFloat64();
-        return new VersionMessage(version, peerAddress, genesisHash, startHeight, totalWork);
+        const headHash = Hash.unserialize(buf);
+        return new VersionMessage(version, peerAddress, genesisHash, headHash);
     }
 
     /**
@@ -50,8 +45,7 @@ class VersionMessage extends Message {
         buf.writeUint32(this._version);
         this._peerAddress.serialize(buf);
         this._genesisHash.serialize(buf);
-        buf.writeUint32(this._startHeight);
-        buf.writeFloat64(this._totalWork);
+        this._headHash.serialize(buf);
         super._setChecksum(buf);
         return buf;
     }
@@ -62,8 +56,7 @@ class VersionMessage extends Message {
             + /*version*/ 4
             + this._peerAddress.serializedSize
             + this._genesisHash.serializedSize
-            + /*startHeight*/ 4
-            + /*totalWork*/ 8;
+            + this._headHash.serializedSize;
     }
 
     /** @type {number} */
@@ -81,14 +74,9 @@ class VersionMessage extends Message {
         return this._genesisHash;
     }
 
-    /** @type {number} */
-    get startHeight() {
-        return this._startHeight;
-    }
-
-    /** @type {number} */
-    get totalWork() {
-        return this._totalWork;
+    /** @type {Hash} */
+    get headHash() {
+        return this._headHash;
     }
 }
 Class.register(VersionMessage);
