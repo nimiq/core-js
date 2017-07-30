@@ -12,11 +12,25 @@ class RemoteConsensus extends RemoteClass {
             this.established = false;
             this.fire(RemoteConsensus.Events.LOST);
         });
-        this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ESTABLISHED, async () => {
-            await this._updateState();
+        this.on(RemoteClass.Events.INITIALIZED, () => setTimeout(() => {
+            // fire a delayed consensus established event for listeners that have just registered at initialization
             if (this.established) {
                 this.fire(RemoteConsensus.Events.ESTABLISHED);
             }
+        }, 500));
+    }
+
+    /**
+     * @async
+     * @overwrite
+     */
+    _updateState() {
+        return super._updateState().then(state => {
+            if (state.established) {
+                // fire the established event for the case that we were disconnected from the server and fired a consensus lost event
+                this.fire(RemoteConsensus.Events.ESTABLISHED);
+            }
+            return state;
         });
     }
 }

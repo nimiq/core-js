@@ -17,11 +17,18 @@ class RemoteCore extends RemoteObservable {
         this.network = new RemoteNetwork(this._remoteConnection, shouldLiveUpdate('network'));
         this.wallet = new RemoteWallet(this._remoteConnection);
 
+        this._initialized = false;
+        this._initializationErrorFired = false;
         this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ERROR, errorMessage => {
-            console.error('Error connecting to ', url);
+            console.error('Error connecting to ', url, errorMessage);
             this.fire(RemoteCore.Events.CONNECTION_ERROR, errorMessage);
+            this._fireInitializationError(errorMessage);
         });
-        this._remoteConnection.on(RemoteConnection.Events.CONNECTION_LOST, () => this.fire(RemoteCore.Events.CONNECTION_LOST));
+        this._remoteConnection.on(RemoteConnection.Events.CONNECTION_LOST, () => {
+            this.fire(RemoteCore.Events.CONNECTION_LOST);
+            // if the connection was lost for whatever reason before we initialized consider this an initialization error
+            this._fireInitializationError();
+        });
         this._remoteConnection.on(RemoteConnection.Events.CONNECTION_ESTABLISHED, () => this.fire(RemoteCore.Events.CONNECTION_ESTABLISHED));
         this._remoteConnection.on(RemoteConnection.Events.MESSAGE, message => {
             if (message.type === 'error') {
@@ -31,9 +38,17 @@ class RemoteCore extends RemoteObservable {
         this._notifyOnInitialized();
     }
 
+    _fireInitializationError(error) {
+        if (!this._initialized && !this._initializationErrorFired) {
+            console.error(error || 'Initialization error.');
+            this.fire(RemoteCore.Events.INITIALIZATION_ERROR, error);
+            this._initializationErrorFired = true;
+        }
+    }
+
     _notifyOnInitialized() {
         const createPromise = component => new Promise((resolve, reject) => {
-            const timeout = setTimeout(reject, RemoteCore.INITIALIZATION_TIMEOUT);
+            const timeout = setTimeout(() => reject(Error('Initialization timeout')), RemoteCore.INITIALIZATION_TIMEOUT);
             component.on(RemoteClass.Events.INITIALIZED, () => {
                 clearTimeout(timeout);
                 resolve();
@@ -41,16 +56,19 @@ class RemoteCore extends RemoteObservable {
         });
         Promise.all([createPromise(this.blockchain), createPromise(this.consensus), createPromise(this.mempool), createPromise(this.miner),
             createPromise(this.network), createPromise(this.wallet)])
-            .then(() => this.fire(RemoteCore.Events.INITIALIZED))
-            .catch(e => { console.error(e); this.fire(RemoteCore.Events.INITIALIZATION_ERROR, e); });
+            .then(() => {
+                this._initialized = true;
+                this.fire(RemoteCore.Events.INITIALIZED);
+            })
+            .catch(e => this._fireInitializationError(e));
     }
 }
 RemoteCore.INITIALIZATION_TIMEOUT = 45000;
 RemoteCore.Events = {
     CONNECTION_ESTABLISHED: 'connection-established',
     CONNECTION_LOST: 'connection-lost',
-    CONNECTION_ERROR: 'connection-error',
+    CONNECTION_ERROR: 'connection-error', // can be fired repeatedly if a reconnect attempt fails after connection lost
     INITIALIZED: 'initialized',
-    INITIALIZATION_ERROR: 'initialization-error'
+    INITIALIZATION_ERROR: 'initialization-error' // will be fired at most once and never after the initialization succeeded
 };
 Class.register(RemoteCore);

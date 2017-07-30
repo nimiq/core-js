@@ -313,6 +313,40 @@ hash {
     opacity: 0.6;
 }
 
+[tab] {
+    width: 50%;
+    float: left;
+    text-align: center;
+    border-top: 1px solid white;
+    color: rgba(255,255,255,.7);
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background: rgba(255, 255, 255, 0.42);
+    cursor: pointer;
+}
+
+[tab]:first-child {
+    border-right: 1px solid white;
+    box-sizing: border-box;
+}
+
+[tab]:hover {
+    background: rgba(255, 255, 255, 0.32);
+}
+
+[tab].active-tab {
+    font-weight: bold;
+    color: white;
+}
+
+#setup-tabs.disabled {
+    cursor: not-allowed;
+    height: 36px;
+}
+#setup-tabs.disabled > [tab] {
+    pointer-events: none;
+}
+
 #newWallet {
     padding: 20px 0px;
     text-align: center;
@@ -396,4 +430,42 @@ hash {
     text-align: center;
     margin-top: 15%;
     padding: 15px;
+}
+
+#saved-server-connections {
+    border-top: 1px solid #aaa;
+    padding-top: 12px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#saved-server-connections > strong {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.list-entry {
+    display: flex;
+    padding: 8px 0;
+    cursor: pointer;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.list-entry:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.list-entry-content {
+    flex-grow: 1;
+    padding-right: 8px;
+}
+
+.list-entry-delete {
+    align-self: center;
+    font-weight: bold;
+}
+
+.list-entry-delete:hover {
+    color: red;
 }

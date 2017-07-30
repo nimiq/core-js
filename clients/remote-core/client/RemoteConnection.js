@@ -106,7 +106,7 @@ class RemoteConnection extends RemoteObservable {
             this._checkServerResponse(message);
         } else {
             const errrorMessage = message.type===RemoteConnection.MessageTypes.ERROR?
-                'Authentication Error: ' + message.data
+                message.data
                 : 'Got wrong message from server while in state ' + this._authenticationStatus + ': '+message.type+' - '+message.data;
             this.fire(RemoteConnection.Events.CONNECTION_ERROR, errrorMessage);
             this._ws.close();

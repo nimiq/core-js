@@ -32,43 +32,82 @@
 
     <div class="left">
         <div class="info">
-            <div class="info-title">Wallet</div>
+            <div class="info-title">Setup</div>
+            <div id="setup-tabs">
+                <div class="active-tab" tab="local">Local</div>
+                <div tab="remote">Remote</div>
+            </div>
             <hr/>
 
-            <div class="info-block init-wallet">
+            <div id="local-instance-info">
+                <div class="info-block init-wallet">
 
-                <div id="newWallet" >
-                    Nimiq Testnet stores your wallet in your browser<br/>
-                    Load an existing browser wallet or create a new wallet:
-                    <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
+                    <div id="newWallet" >
+                        Nimiq Testnet stores your wallet in your browser<br/>
+                        Load an existing browser wallet or create a new wallet:
+                        <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
+                    </div>
+                    <div id="loadWalletFromSeed">
+                        <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
+                        <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
+
+                        <div class="clr-both"></div>
+                        <small class="get-seed-hint">
+                            A wallet seed is a private key that governs access to a Nimiq address<br/>
+                            You can export your wallet seed once a wallet has been created<br/>
+                         </small>
+                     </div>
+
                 </div>
-                <div id="loadWalletFromSeed">
-                    <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
-                    <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
+                <div class="info-block copy-wallet-seed">
+                  <button onclick="copyWalletSeed()">Copy wallet seed</button>
+                </div>
 
-                    <div class="clr-both"></div>
-                    <small class="get-seed-hint">
-                        A wallet seed is a private key that governs access to a Nimiq address<br/>
-                        You can export your wallet seed once a wallet has been created<br/>
-                     </small>
-                 </div>
+                <div class="info-block wallet-address">
+                    <strong>Address</strong>
+                    <span id="wltAddress"></span>
+                </div>
+                <div class="info-block wallet-balance">
+                    <strong>Balance</strong>
+                    <span id="wltBalance"></span>
+                </div>
+                <div class="info-block wallet-nonce">
+                    <strong>Nonce</strong>
+                    <span id="wltNonce"></span>
+                </div>
+            </div>
 
-            </div>
-            <div class="info-block copy-wallet-seed">
-              <button onclick="copyWalletSeed()">Copy wallet seed</button>
-            </div>
-
-            <div class="info-block wallet-address">
-                <strong>Address</strong>
-                <span id="wltAddress"></span>
-            </div>
-            <div class="info-block wallet-balance">
-                <strong>Balance</strong>
-                <span id="wltBalance"></span>
-            </div>
-            <div class="info-block wallet-nonce">
-                <strong>Nonce</strong>
-                <span id="wltNonce"></span>
+            <div id="remote-instance-info" style="display:none">
+                <div id="remote-server-connect">
+                    <div class="info-block">
+                        <strong>Connect to a remote server.</strong>
+                    </div>
+                    <hr/>
+                    <div class="input-group">
+                        <label for="remote-server-url">URL</label>
+                        <input id="remote-server-url" size="42">
+                    </div>
+                    <div class="input-group">
+                        <label for="remote-server-port">Port</label>
+                        <input id="remote-server-port" size="42">
+                    </div>
+                    <div class="input-group">
+                        <label for="remote-server-password">Password</label>
+                        <input id="remote-server-password" size="42" type="password">
+                    </div>
+                    <hr class="morespace"/>
+                    <div class="input-group">
+                        <button type="button" id="remote-connect-button">Connect</button>
+                    </div>
+                    <hr class="morespace"/>
+                    <div id="saved-server-connections" class="info-block">
+                        <strong>Saved Connections:</strong>
+                        <div id="saved-server-connections-list"></div>
+                    </div>
+                </div>
+                <div id="remote-server-connected" class="info-block" style="display:none">
+                    Connected to <div id="connected-remote-server-url"></div>
+                </div>
             </div>
             <hr/>
         </div>
@@ -78,8 +117,8 @@
             <hr class="morespace"/>
             <form>
                 <div class="input-group">
-                  <label for="txRecipientAddr">Recipient</label>
-                  <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
+                    <label for="txRecipientAddr">Recipient</label>
+                    <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
                 </div>
                 <div class="input-group">
                     <label for="txValue">Value</label>
@@ -360,6 +399,7 @@
         }
 
         _submitTransaction(e) {
+            e.preventDefault();
             var elRecipientAddr = document.querySelector('#txRecipientAddr');
             var elValue = document.querySelector('#txValue');
             var elFee = document.querySelector('#txFee');
@@ -373,24 +413,24 @@
 
             if (!recipientAddr) {
                 elRecipientAddr.className = 'error';
-                return;
+                return false;
             }
             var address;
             try {
                 address = new Nimiq.Address(Nimiq.BufferUtils.fromHex(recipientAddr));
             } catch (e) {
                 elRecipientAddr.className = 'error';
-                return;
+                return false;
             }
 
             if (isNaN(value) || value <= 0) {
                 elValue.className = 'error';
-                return;
+                return false;
             }
 
             if (isNaN(fee) || fee < 0) {
                 elFee.className = 'error';
-                return;
+                return false;
             }
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
@@ -407,7 +447,6 @@
                 });
             });
 
-            e.preventDefault();
             return false;
         }
 
@@ -521,12 +560,30 @@
                     el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
-            });
+            }.bind(this));
         }
     }
 
     // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
+    var localInstanceInfo = document.querySelector('#local-instance-info');
+    var remoteInstanceInfo = document.querySelector('#remote-instance-info');
+
+    // Edge quirks: NodeLists dont have forEach
+    Array.prototype.forEach.call(document.querySelectorAll('[tab]'), function(tab) {
+        tab.addEventListener('click', function() {
+            var type = tab.getAttribute('tab');
+            document.querySelector('.active-tab').classList.remove('active-tab');
+            tab.classList.add('active-tab');
+            if (type === 'local') {
+                localInstanceInfo.style.display = 'block';
+                remoteInstanceInfo.style.display = 'none';
+            } else {
+                localInstanceInfo.style.display = 'none';
+                remoteInstanceInfo.style.display = 'block';
+            }
+        });
+    });
 
     function copyWalletSeed() {
         if (typeof $ === 'undefined') {
@@ -551,6 +608,8 @@
 
         var walletSeed = document.getElementById('walletSeed').value.trim();
         var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
+
+        document.getElementById('setup-tabs').classList.add('disabled');
 
         Nimiq.init(function($) {
             window.$ = $;
@@ -581,9 +640,184 @@
             }
         },
         options
-      );
-
+        );
     }
+
+
+    class RemoteUi {
+        constructor() {
+            this._tabs = document.getElementById('setup-tabs');
+            this._connectScreen = document.getElementById('remote-server-connect');
+            this._connectedScreen = document.getElementById('remote-server-connected');
+            this._urlInput = document.getElementById('remote-server-url');
+            this._portInput = document.getElementById('remote-server-port');
+            this._passwordInput = document.getElementById('remote-server-password');
+            this._connectedServerUrlEl = document.getElementById('connected-remote-server-url');
+            this._savedServerConnectionsEl = document.getElementById('saved-server-connections');
+            this._savedServerConnectionsList = document.getElementById('saved-server-connections-list');
+            this._connectButton = document.getElementById('remote-connect-button');
+            this._connectButton.addEventListener('click', this._connect.bind(this));
+            this._url = null;
+
+            this._savedServerConnections = JSON.parse(localStorage[RemoteUi.KEY_SAVED_SERVER_CONNECTIONS] || '{}'); // map full url -> password
+
+            if (Object.keys(this._savedServerConnections).length === 0) {
+                this._savedServerConnectionsEl.style.display = 'none';
+            } else {
+                this._buildSavedConnectionsList();
+            }
+        }
+
+        _loadApi() {
+            if (window.Nimiq && Nimiq.RemoteCore) {
+                return Promise.resolve(); // already loaded
+            }
+            this._tabs.classList.add('disabled');
+            return new Promise(function(resolve, reject) {
+                var script = document.createElement('script');
+                script.onreadystatechange = resolve; // for legacy browsers
+                script.onload = resolve;
+                script.onerror = reject;
+                script.type = 'text/javascript';
+                script.src = '../../dist/remote-api-stand-alone-babel.js';
+                document.body.appendChild(script);
+            });
+        }
+
+        _validateUrl(url) {
+            try {
+                new URL(url);
+                return url;
+            } catch(e) {
+                try {
+                    new URL('wss://'+url);
+                    return 'wss://'+url;
+                } catch(e) {
+                    return false;
+                }
+            }
+        }
+
+        _isValidPort(port) {
+            if (port === '') return false;
+            port = Number(port);
+            return !Number.isNaN(port);
+        }
+
+        _constructUrl(url, port) {
+            var url = new URL(url);
+            url.protocol = 'wss'; // secure websocket connection
+            url.port = port;
+            return url;
+        }
+
+        _connect() {
+            this._loadApi().then(function() {
+                var baseUrl = this._urlInput.value.trim();
+                var validatedUrl = this._validateUrl(baseUrl);
+                var port = this._portInput.value.trim();
+                if (!validatedUrl) {
+                    alert('"'+baseUrl+'" is not a valid URL.');
+                    return;
+                }
+                if (!this._isValidPort(port)) {
+                    alert('"'+port+'" is not a valid port.');
+                    return;
+                }
+                this._urlInput.value = validatedUrl;
+                this._url = this._constructUrl(validatedUrl, port);
+                this._password = this._passwordInput.value.trim();
+                this._connectButton.disabled = true;
+                this._connectButton.textContent = 'connecting';
+                this.$ = new Nimiq.RemoteCore(this._url, this._password, 'all');
+                this.$.on(Nimiq.RemoteCore.Events.INITIALIZED, this._onInitialized.bind(this));
+                this.$.on(Nimiq.RemoteCore.Events.INITIALIZATION_ERROR, this._onInitializationFailed.bind(this));
+                this.$._remoteConnection.on('message', message => console.log(message));
+            }.bind(this));
+        }
+
+        _onInitialized() {
+            console.log('Nimiq Remote Core initialized');
+            window.$ = this.$;
+            window.ui = new MinerUI(this.$);
+            this._connectedServerUrlEl.textContent = this._url.href;
+            this._connectedScreen.style.display = 'block';
+            this._connectScreen.style.display = 'none';
+            if (!this._isCurrentServerConnectionSaved()) {
+                this._saveCurrentServerConnection(confirm('Do you want to save the password for '+this._url.href+'?'));
+            }
+        }
+
+        _onInitializationFailed(errorMessage) {
+            alert('Initialization failed, be sure to have the correct connection settings.\n\n' + (errorMessage || ''));
+            this._connectButton.disabled = false;
+            this._connectButton.textContent = 'Connect';
+            this._connectedScreen.style.display = 'none';
+            this._connectScreen.style.display = 'block';
+        }
+
+        _isCurrentServerConnectionSaved() {
+            var href = this._url.href;
+            return href in this._savedServerConnections;
+        }
+
+        _saveCurrentServerConnection(savePassword) {
+            var href = this._url.href;
+            this._savedServerConnections[href] = savePassword? this._password.trim() : null;
+            localStorage[RemoteUi.KEY_SAVED_SERVER_CONNECTIONS] = JSON.stringify(this._savedServerConnections);
+        }
+
+        _deleteServerConnection(urlString) {
+            delete this._savedServerConnections[urlString];
+            localStorage[RemoteUi.KEY_SAVED_SERVER_CONNECTIONS] = JSON.stringify(this._savedServerConnections);
+        }
+
+        _buildSavedConnectionsList() {
+            // rebuild the whole list. Inefficient but usually just called once
+            while (this._savedServerConnectionsList.firstChild) {
+                this._savedServerConnectionsList.removeChild(this._savedServerConnectionsList.firstChild);
+            }
+            var savedConnectionUrls = Object.keys(this._savedServerConnections);
+            savedConnectionUrls.forEach(function(connectionUrl) {
+                var entry = document.createElement('div');
+                entry.classList.add('list-entry');
+                var content = document.createElement('div');
+                content.classList.add('list-entry-content');
+                content.textContent = connectionUrl;
+                var deleteButton = document.createElement('div');
+                deleteButton.classList.add('list-entry-delete');
+                deleteButton.textContent = 'X';
+
+                entry.addEventListener('click', function() {
+                    this._applySettingsFromSavedConnection(connectionUrl);
+                }.bind(this));
+                deleteButton.addEventListener('click', function(event) {
+                    this._deleteServerConnection(connectionUrl);
+                    this._buildSavedConnectionsList();
+                    event.stopPropagation();
+                    return false;
+                }.bind(this));
+
+                entry.appendChild(content);
+                entry.appendChild(deleteButton);
+                this._savedServerConnectionsList.appendChild(entry);
+            }.bind(this));
+        }
+
+        _applySettingsFromSavedConnection(urlString) {
+            var url = new URL(urlString);
+            this._portInput.value = url.port;
+            this._urlInput.value = url.href.replace(':'+url.port, '');
+            var password = this._savedServerConnections[urlString];
+            if (password) {
+                this._passwordInput.value = password;
+            } else {
+                this._passwordInput.value = '';
+            }
+        }
+    }
+    RemoteUi.KEY_SAVED_SERVER_CONNECTIONS = 'saved-server-connections'
+    new RemoteUi();
 </script>
 </body>
 </html>
