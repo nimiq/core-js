@@ -43,11 +43,11 @@
                     <div id="newWallet" class="info-block">
                         Nimiq Testnet stores your wallet in your browser<br/>
                         Load an existing browser wallet or create a new wallet:
-                        <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
+                        <button class="greenbutton" start-button><strong>Create/Load Wallet</strong></button>
                     </div>
                     <div id="loadWalletFromSeed" class="info-block has-divider">
                         <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
-                        <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
+                        <button class="f-left" start-button><strong>Load Wallet</strong></button>
 
                         <div class="clr-both"></div>
                         <small class="get-seed-hint">
@@ -565,8 +565,9 @@
     var overlay_ = document.querySelector('#overlay');
     var localInstanceInfo = document.querySelector('#local-instance-info');
     var remoteInstanceInfo = document.querySelector('#remote-instance-info');
+    // Edge quirks: transform the Nodelist to an Array because NodeList doesn't have forEach in Edge
+    var startButtons = Array.prototype.map.call(document.querySelectorAll('[start-button]'), function(node) { return node });
 
-    // Edge quirks: NodeLists dont have forEach
     Array.prototype.forEach.call(document.querySelectorAll('[tab]'), function(tab) {
         tab.addEventListener('click', function() {
             var type = tab.getAttribute('tab');
@@ -599,9 +600,14 @@
         alert('Wallet seed copied to clipboard');
     }
 
+
     function startNimiq() {
         document.getElementById('blockchain-title').classList.add('initializing');
         document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
+
+        startButtons.forEach(function(startButton) {
+            startButton.disabled = true;
+        });
 
         var walletSeed = document.getElementById('walletSeed').value.trim();
         var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
@@ -621,6 +627,10 @@
             document.getElementById('blockchain-title').classList.remove('initializing');
             document.querySelector('#wltAddress').innerText = '';
 
+            startButtons.forEach(function(startButton) {
+                startButton.disabled = false;
+            });
+
             switch (code) {
                 case Nimiq.ERR_WAIT:
                     overlay_.style.display = 'block';
@@ -636,8 +646,7 @@
                     break;
             }
         },
-        options
-        );
+        options);
     }
 
 
@@ -815,6 +824,10 @@
     }
     RemoteUi.KEY_SAVED_SERVER_CONNECTIONS = 'saved-server-connections'
     new RemoteUi();
+
+    startButtons.forEach(function(startButton) {
+        startButton.addEventListener('click', startNimiq);
+    });
 </script>
 </body>
 </html>
