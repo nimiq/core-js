@@ -102,13 +102,17 @@ class Mempool extends Observable {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
+        const promises = [];
         for (const hash in this._transactions) {
             const transaction = this._transactions[hash];
-            if (!(await this._verifyTransactionBalance(transaction, true))) { // eslint-disable-line no-await-in-loop
-                delete this._transactions[hash];
-                delete this._senderPubKeys[transaction.senderPubKey];
-            }
+            promises.push(this._verifyTransactionBalance(transaction, true).then(isValid => {
+                if (!isValid) {
+                    delete this._transactions[hash];
+                    delete this._senderPubKeys[transaction.senderPubKey];
+                }
+            }));
         }
+        await Promise.all(promises);
 
         // Tell listeners that the pool has updated after a blockchain head change.
         this.fire('transactions-ready');
