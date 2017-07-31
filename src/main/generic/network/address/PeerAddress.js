@@ -14,7 +14,7 @@ class PeerAddress {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {PeerAddress}
+     * @returns {PeerAddress}
      */
     static unserialize(buf) {
         const protocol = buf.readUint8();
@@ -34,8 +34,8 @@ class PeerAddress {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -62,8 +62,8 @@ class PeerAddress {
     }
 
     /**
-     * @param {PeerAddress} o
-     * @return {boolean}
+     * @param {PeerAddress|*} o
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof PeerAddress
@@ -108,7 +108,7 @@ class PeerAddress {
     }
 
     /**
-     * @return {boolean}
+     * @returns {boolean}
      */
     isSeed() {
         return this._timestamp === 0;
@@ -120,7 +120,7 @@ class WsPeerAddress extends PeerAddress {
     /**
      * @param {string} host
      * @param {number} port
-     * @return {WsPeerAddress}
+     * @returns {WsPeerAddress}
      */
     static seed(host, port) {
         return new WsPeerAddress(Services.DEFAULT, /*timestamp*/ 0, NetAddress.UNSPECIFIED, host, port);
@@ -143,7 +143,7 @@ class WsPeerAddress extends PeerAddress {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {WsPeerAddress}
+     * @returns {WsPeerAddress}
      */
     static unserialize(buf) {
         const services = buf.readUint32();
@@ -155,8 +155,8 @@ class WsPeerAddress extends PeerAddress {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -176,8 +176,8 @@ class WsPeerAddress extends PeerAddress {
 
     /**
      * @override
-     * @param {PeerAddress} o
-     * @return {boolean}
+     * @param {PeerAddress|*} o
+     * @returns {boolean}
      */
     equals(o) {
         return super.equals(o)
@@ -191,7 +191,7 @@ class WsPeerAddress extends PeerAddress {
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `wss://${this._host}:${this._port}`;
@@ -227,7 +227,7 @@ class RtcPeerAddress extends PeerAddress {
 
     /**
      * @param {string} arg
-     * @return {boolean}
+     * @returns {boolean}
      */
     static isSignalId(arg) {
         return /[a-z0-9]{32}/i.test(arg);
@@ -235,7 +235,7 @@ class RtcPeerAddress extends PeerAddress {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {RtcPeerAddress}
+     * @returns {RtcPeerAddress}
      */
     static unserialize(buf) {
         const services = buf.readUint32();
@@ -247,8 +247,8 @@ class RtcPeerAddress extends PeerAddress {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -267,8 +267,8 @@ class RtcPeerAddress extends PeerAddress {
 
     /**
      * @override
-     * @param {PeerAddress} o
-     * @return {boolean}
+     * @param {PeerAddress|*} o
+     * @returns {boolean}
      */
     equals(o) {
         return super.equals(o)
@@ -281,7 +281,7 @@ class RtcPeerAddress extends PeerAddress {
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `rtc://${this._signalId}`;
@@ -319,7 +319,7 @@ class DumbPeerAddress extends PeerAddress {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {DumbPeerAddress}
+     * @returns {DumbPeerAddress}
      */
     static unserialize(buf) {
         const services = buf.readUint32();
@@ -330,8 +330,8 @@ class DumbPeerAddress extends PeerAddress {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -349,7 +349,7 @@ class DumbPeerAddress extends PeerAddress {
     /**
      * @override
      * @param {PeerAddress} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     equals(o) {
         return super.equals(o)
@@ -362,7 +362,7 @@ class DumbPeerAddress extends PeerAddress {
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `${this._id}`;

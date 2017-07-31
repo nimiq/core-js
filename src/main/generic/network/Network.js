@@ -111,15 +111,15 @@ class Network extends Observable {
 
         // If in browser, add event listener for online/offline detection.
         if (PlatformUtils.isBrowser()) {
-            window.addEventListener('online', _ => this._onOnline());
-            window.addEventListener('offline', _ => this._onOffline());
+            window.addEventListener('online', () => this._onOnline());
+            window.addEventListener('offline', () => this._onOffline());
         }
 
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
 
         /** @type {number} */
-        this._networkTimestampOffset = 0;
+        this._timeOffset = 0;
 
         return this;
     }
@@ -156,8 +156,8 @@ class Network extends Observable {
     /**
      * @return {number}
      */
-    getNetworkAdjustedTimestamp() {
-        return Date.now() - this._networkTimestampOffset;
+    getTime() {
+        return Date.now() + this._timeOffset;
     }
 
     _onOnline() {
@@ -187,6 +187,7 @@ class Network extends Observable {
 
     /**
      * @param {Array.<PeerAddress>} addresses
+     * @returns {void}
      * @private
      */
     _relayAddresses(addresses) {
@@ -230,6 +231,7 @@ class Network extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
+     * @returns {void}
      * @private
      */
     _connect(peerAddress) {
@@ -264,6 +266,7 @@ class Network extends Observable {
      * @listens NetworkAgent#handshake
      * @listens NetworkAgent#close
      * @param {PeerConnection} conn
+     * @returns {void}
      * @private
      */
     _onConnection(conn) {
@@ -325,6 +328,7 @@ class Network extends Observable {
      * @fires Network#peers-changed
      * @param {Peer} peer
      * @param {NetworkAgent} agent
+     * @returns {void}
      * @private
      */
     _onHandshake(peer, agent) {
@@ -369,7 +373,7 @@ class Network extends Observable {
         }
 
         // Recalculate the network adjusted offset
-        this._updateNetworkTimestampOffset();
+        this._updateTimeOffset();
 
         // Mark the peer's address as connected.
         this._addresses.connected(agent.channel, peer.peerAddress);
@@ -390,6 +394,7 @@ class Network extends Observable {
      * Connection to this peer address failed.
      * @param {PeerAddress} peerAddress
      * @param {string|*} [reason]
+     * @returns {void}
      * @private
      */
     _onError(peerAddress, reason) {
@@ -411,6 +416,7 @@ class Network extends Observable {
      * @param {Peer} peer
      * @param {PeerChannel} channel
      * @param {boolean} closedByRemote
+     * @returns {void}
      * @private
      */
     _onClose(peer, channel, closedByRemote) {
@@ -452,7 +458,7 @@ class Network extends Observable {
         }
 
         // Recalculate the network adjusted offset
-        this._updateNetworkTimestampOffset();
+        this._updateTimeOffset();
 
         this._checkPeerCount();
     }
@@ -461,6 +467,7 @@ class Network extends Observable {
      * This peer channel was banned.
      * @param {PeerChannel} channel
      * @param {string|*} [reason]
+     * @returns {void}
      * @private
      */
     _onBan(channel, reason) {
@@ -476,7 +483,7 @@ class Network extends Observable {
 
     /**
      * @param {PeerConnection} conn
-     * @return {boolean}
+     * @returns {boolean}
      * @private
      */
     _incrementConnectionCount(conn) {
@@ -496,6 +503,7 @@ class Network extends Observable {
 
     /**
      * @param {NetAddress} netAddress
+     * @returns {void}
      * @private
      */
     _decrementConnectionCount(netAddress) {
@@ -505,23 +513,29 @@ class Network extends Observable {
     }
 
     /**
-     * Updates the network timestamp offset by calculating the median offset
-     * from all our peers
+     * Updates the network time offset by calculating the median offset
+     * from all our peers.
+     * @returns {void}
      * @private
      */
-    _updateNetworkTimestampOffset() {
+    _updateTimeOffset() {
         const agents = this._agents.values();
 
-        let offsets = [];
-        agents.forEach(agent => offsets.push(agent.peer.timestampOffset));
+        const offsets = [0]; // Add our own offset.
+        agents.forEach(agent => {
+            // The agent.peer property is null pre-handshake.
+            if (agent.peer) {
+                offsets.push(agent.peer.timeOffset);
+            }
+        });
 
         const offsetsLength = offsets.length;
-        offsets.sort((a, b) => (a - b));
+        offsets.sort((a, b) => a - b);
 
-        if ((offsetsLength % 2) == 0) {
-            this._networkTimestampOffset = (offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2;
+        if ((offsetsLength % 2) === 0) {
+            this._timeOffset = (offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2;
         } else {
-            this._networkTimestampOffset = offsets[(offsetsLength - 1) / 2];
+            this._timeOffset = offsets[(offsetsLength - 1) / 2];
         }
     }
 
@@ -530,6 +544,7 @@ class Network extends Observable {
     /**
      * @param {PeerChannel} channel
      * @param {SignalMessage} msg
+     * @returns {void}
      * @private
      */
     _onSignal(channel, msg) {
@@ -551,7 +566,8 @@ class Network extends Observable {
         // If the signal has the unroutable flag set and we previously forwarded a matching signal,
         // mark the route as unusable.
         if (msg.isUnroutable() && this._forwards.signalForwarded(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, /*nonce*/ msg.nonce)) {
-            this._addresses.unroutable(channel, msg.senderId);
+            const senderAddr = this._addresses.getBySignalId(msg.senderId);
+            this._addresses.unroutable(channel, senderAddr);
         }
 
         // If the signal is intended for us, pass it on to our WebRTC connector.
@@ -559,7 +575,8 @@ class Network extends Observable {
             // If we sent out a signal that did not reach the recipient because of TTL
             // or it was unroutable, delete this route.
             if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
-                this._addresses.unroutable(channel, msg.senderId);
+                const senderAddr = this._addresses.getBySignalId(msg.senderId);
+                this._addresses.unroutable(channel, senderAddr);
             }
             this._rtcConnector.onSignal(channel, msg);
             return;
@@ -666,8 +683,8 @@ class SignalStore {
     }
 
     /**
-     * @param {number} senderId
-     * @param {number} recipientId
+     * @param {string} senderId
+     * @param {string} recipientId
      * @param {number} nonce
      */
     add(senderId, recipientId, nonce) {
@@ -691,8 +708,8 @@ class SignalStore {
     }
 
     /**
-     * @param {number} senderId
-     * @param {number} recipientId
+     * @param {string} senderId
+     * @param {string} recipientId
      * @param {number} nonce
      * @return {boolean}
      */
@@ -702,8 +719,8 @@ class SignalStore {
     }
 
     /**
-     * @param {number} senderId
-     * @param {number} recipientId
+     * @param {string} senderId
+     * @param {string} recipientId
      * @param {number} nonce
      * @return {boolean}
      */
@@ -729,14 +746,14 @@ Class.register(SignalStore);
 
 class ForwardedSignal {
     /**
-     * @param {number} senderId
-     * @param {number} recipientId
+     * @param {string} senderId
+     * @param {string} recipientId
      * @param {number} nonce
      */
     constructor(senderId, recipientId, nonce) {
-        /** @type {number} */
+        /** @type {string} */
         this._senderId = senderId;
-        /** @type {number} */
+        /** @type {string} */
         this._recipientId = recipientId;
         /** @type {number} */
         this._nonce = nonce;
@@ -744,7 +761,7 @@ class ForwardedSignal {
 
     /**
      * @param {ForwardedSignal} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof ForwardedSignal
@@ -758,7 +775,7 @@ class ForwardedSignal {
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `ForwardedSignal{senderId=${this._senderId}, recipientId=${this._recipientId}, nonce=${this._nonce}}`;

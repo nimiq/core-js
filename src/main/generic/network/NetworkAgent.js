@@ -85,7 +85,6 @@ class NetworkAgent extends Observable {
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
-
             // Exclude RTC addresses that are already at MAX_DISTANCE.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
@@ -150,7 +149,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
-        const currentTimestampUTC = Date.now();
+        const now = Date.now();
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -189,6 +188,7 @@ class NetworkAgent extends Observable {
         // The client might not send its netAddress. Set it from our address database if we have it.
         const peerAddress = msg.peerAddress;
         if (!peerAddress.netAddress) {
+            /** @type {PeerAddress} */
             const storedAddress = this._addresses.get(peerAddress);
             if (storedAddress && storedAddress.netAddress) {
                 peerAddress.netAddress = storedAddress.netAddress;
@@ -204,7 +204,7 @@ class NetworkAgent extends Observable {
             msg.version,
             msg.startHeight,
             msg.totalWork,
-            currentTimestampUTC - peerAddress.timestamp
+            peerAddress.timestamp - now
         );
 
         // Remember that the peer has sent us this address.
