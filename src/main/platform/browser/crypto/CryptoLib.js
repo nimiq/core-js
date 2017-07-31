@@ -10,16 +10,14 @@ class CryptoLib {
     }
 
     static _init_poly() {
-        if (!('require' in window)) throw 'Crypto polyfill not available.';
-        
         const poly = {
             _nimiq_isSlowCurves: true,
             _nimiq_callDigestDelayedWhenMining: true
         };
 
         // We can use Webkit's SHA-256
-        let subtle = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
-        let wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
+        const subtle = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
+        const wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
         if (poly.digest) {
             // Keep original
         } else if (subtle) {
@@ -29,6 +27,8 @@ class CryptoLib {
             poly.digest = (alg, arr) => wk.digest(alg, arr);
         } else {
             poly._nimiq_callDigestDelayedWhenMining = true;
+
+            if (!('require' in window)) throw 'Crypto polyfill not available.';
             const sha256 = window.require('fast-sha256');
             poly.digest = async (alg, arr) => {
                 if (alg !== 'SHA-256') throw 'Unsupported algorithm.';
@@ -82,6 +82,7 @@ class CryptoLib {
     static _use_elliptic(poly) {
         poly._nimiq_isSlowCurves = true;
 
+        if (!('require' in window)) throw 'Crypto polyfill not available.';
         const ec = window.require('elliptic').ec('p256');
 
         poly.generateKey = function (config, exportable, usage) {
