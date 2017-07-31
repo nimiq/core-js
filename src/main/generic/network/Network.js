@@ -118,6 +118,9 @@ class Network extends Observable {
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
 
+        /** @type {number} */
+        this._networkTimestampOffset = 0;
+
         return this;
     }
 
@@ -148,6 +151,13 @@ class Network extends Observable {
     isOnline() {
         // If in doubt, return true.
         return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
+    }
+
+    /**
+     * @return {number}
+     */
+    getNetworkAdjustedTimestamp() {
+        return Date.now() - this._networkTimestampOffset;
     }
 
     _onOnline() {
@@ -358,6 +368,9 @@ class Network extends Observable {
             return;
         }
 
+        // Recalculate the network adjusted offset
+        this._updateNetworkTimestampOffset();
+
         // Mark the peer's address as connected.
         this._addresses.connected(agent.channel, peer.peerAddress);
 
@@ -438,6 +451,9 @@ class Network extends Observable {
             }
         }
 
+        // Recalculate the network adjusted offset
+        this._updateNetworkTimestampOffset();
+
         this._checkPeerCount();
     }
 
@@ -488,6 +504,26 @@ class Network extends Observable {
         this._connectionCounts.put(netAddress, numConnections);
     }
 
+    /**
+     * Updates the network timestamp offset by calculating the median offset
+     * from all our peers
+     * @private
+     */
+    _updateNetworkTimestampOffset() {
+        const agents = this._agents.values();
+
+        let offsets = [];
+        agents.forEach(agent => offsets.push(agent.peer.timestampOffset));
+
+        const offsetsLength = offsets.length;
+        offsets.sort((a, b) => (a - b));
+
+        if ((offsetsLength % 2) == 0) {
+            this._networkTimestampOffset = (offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2;
+        } else {
+            this._networkTimestampOffset = offsets[(offsetsLength - 1) / 2];
+        }
+    }
 
     /* Signaling */
 

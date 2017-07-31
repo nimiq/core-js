@@ -3,7 +3,7 @@ class NetworkAgent extends Observable {
      * @param {Blockchain} blockchain
      * @param {PeerAddresses} addresses
      * @param {PeerChannel} channel
-     * 
+     *
      * @listens PeerChannel#version
      * @listens PeerChannel#addr
      * @listens PeerChannel#getaddr
@@ -85,7 +85,7 @@ class NetworkAgent extends Observable {
         // Only relay addresses that the peer doesn't know yet. If the address
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
-            
+
             // Exclude RTC addresses that are already at MAX_DISTANCE.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
                 return false;
@@ -150,6 +150,8 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
+        const currentTimestampUTC = Date.now();
+
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
@@ -194,12 +196,15 @@ class NetworkAgent extends Observable {
         }
         this._channel.peerAddress = peerAddress;
 
-        // Create peer object.
+        // Create peer object. Since the initial version message received from the
+        // peer contains their local timestamp, we can use it to calculate their
+        // offset to our local timestamp and store it for later (last argument).
         this._peer = new Peer(
             this._channel,
             msg.version,
             msg.startHeight,
-            msg.totalWork
+            msg.totalWork,
+            currentTimestampUTC - peerAddress.timestamp
         );
 
         // Remember that the peer has sent us this address.

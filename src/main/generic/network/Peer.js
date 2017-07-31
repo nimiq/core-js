@@ -4,8 +4,9 @@ class Peer {
      * @param {number} version
      * @param {number} startHeight
      * @param {number} totalWork
+     * @param {number} timestampOffset
      */
-    constructor(channel, version, startHeight, totalWork) {
+    constructor(channel, version, startHeight, totalWork, timestampOffset) {
         /** @type {PeerChannel} */
         this._channel = channel;
         /** @type {number} */
@@ -14,6 +15,12 @@ class Peer {
         this._startHeight = startHeight;
         /** @type {number} */
         this._totalWork = totalWork;
+
+        /**
+         * Offset between the peer's timestamp and our local timestamp.
+        * @type {number}
+        * */
+        this._timestampOffset = timestampOffset;
     }
 
     /** @type {PeerChannel} */
@@ -34,6 +41,11 @@ class Peer {
     /** @type {number} */
     get totalWork() {
         return this._totalWork;
+    }
+
+    /** @type {number} */
+    get timestampOffset() {
+        return this._timestampOffset;
     }
 
     /** @type {number} */
