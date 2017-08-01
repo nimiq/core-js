@@ -151,8 +151,11 @@ class Nimiq {
         return {
             'catch': function (handler) {
                 handler(Nimiq.ERR_UNSUPPORTED);
+                return this;
             },
-            'then': function () {}
+            'then': function () {
+                return this;
+            }
         };
     }
 
