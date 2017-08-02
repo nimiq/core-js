@@ -40,11 +40,11 @@
                 <div id="newWallet" >
                     Nimiq Testnet stores your wallet in your browser<br/>
                     Load an existing browser wallet or create a new wallet:
-                    <button class="greenbutton" onclick="startNimiq()"><strong>Create/Load Wallet</strong></button>
+                    <button class="greenbutton" start-button><strong>Create/Load Wallet</strong></button>
                 </div>
                 <div id="loadWalletFromSeed">
                     <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
-                    <button class="f-left" onclick="startNimiq()"><strong>Load Wallet</strong></button>
+                    <button class="f-left" start-button><strong>Load Wallet</strong></button>
 
                     <div class="clr-both"></div>
                     <small class="get-seed-hint">
@@ -459,13 +459,13 @@
 
             var txPromises = [];
 
-            for (var tx of head.transactions) {
+            head.transactions.forEach(function(tx) {
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
                     return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
-            }
+            });
 
             Promise.all(txPromises).then(function(results) {
                 el.innerHTML = html + results.join('');
@@ -540,7 +540,7 @@
                 this._mplTransactions.removeChild(this._mplTransactions.firstChild);
             }
 
-            for (var tx of txs) {
+            txs.forEach(function(tx) {
                 tx.getSenderAddr().then(function(senderAddr) {
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
@@ -548,12 +548,14 @@
                     el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
-            }
+            }.bind(this));
         }
     }
 
     // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
+    // Edge quirks: transform the Nodelist to an Array because NodeList doesn't have forEach in Edge
+    var startButtons = Array.prototype.map.call(document.querySelectorAll('[start-button]'), function(node) { return node });
 
     function copyWalletSeed() {
         if (typeof $ === 'undefined') {
@@ -572,9 +574,14 @@
         alert('Wallet seed copied to clipboard');
     }
 
+
     function startNimiq() {
         document.getElementById('blockchain-title').classList.add('initializing');
         document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
+
+        startButtons.forEach(function(startButton) {
+            startButton.disabled = true;
+        });
 
         var walletSeed = document.getElementById('walletSeed').value.trim();
         var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
@@ -592,6 +599,10 @@
             document.getElementById('blockchain-title').classList.remove('initializing');
             document.querySelector('#wltAddress').innerText = '';
 
+            startButtons.forEach(function(startButton) {
+                startButton.disabled = false;
+            });
+
             switch (code) {
                 case Nimiq.ERR_WAIT:
                     overlay_.style.display = 'block';
@@ -607,10 +618,12 @@
                     break;
             }
         },
-        options
-      );
-
+        options);
     }
+
+    startButtons.forEach(function(startButton) {
+        startButton.addEventListener('click', startNimiq);
+    });
 </script>
 </body>
 </html>
