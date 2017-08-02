@@ -71,6 +71,9 @@ class Miner extends Observable {
          */
         this._totalElapsed = 0;
 
+        // Flag indicating that the mempool has changed since we started mining the current block.
+        this._mempoolChanged = false;
+
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
         // when the eviction process finishes. Restart work on the next block
@@ -78,7 +81,7 @@ class Miner extends Observable {
         this._mempool.on('transactions-ready', () => this._startWork());
 
         // Immediately start processing transactions when they come in.
-        this._mempool.on('transaction-added', () => this._startWork());
+        this._mempool.on('transaction-added', () => this._mempoolChanged = true);
     }
 
     startWork() {
@@ -111,6 +114,7 @@ class Miner extends Observable {
         // Construct next block.
         const block = await this._getNextBlock();
         const buffer = block.header.serialize();
+        this._mempoolChanged = false;
 
         Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
@@ -120,6 +124,12 @@ class Miner extends Observable {
 
 
     async _mine(block, buffer) {
+        // If the mempool has changed, restart work with the changed transactions.
+        if (this._mempoolChanged) {
+            this._startWork();
+            return;
+        }
+
         // Abort mining if the blockchain head changed.
         if (!this._blockchain.headHash.equals(block.prevHash)) {
             return;
