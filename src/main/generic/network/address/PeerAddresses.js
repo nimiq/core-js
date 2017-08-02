@@ -12,7 +12,7 @@ class PeerAddresses extends Observable {
 
         /**
          * Map from signalIds to RTC peerAddresses.
-         * @type {HashMap.<number,PeerAddressState>}
+         * @type {HashMap.<string,PeerAddressState>}
          * @private
          */
         this._signalIds = new HashMap();
@@ -33,7 +33,7 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * @return {?PeerAddress}
+     * @returns {?PeerAddress}
      */
     pickAddress() {
         const addresses = this._store.values();
@@ -70,7 +70,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddressState} peerAddressState
-     * @return {number}
+     * @returns {number}
      * @private
      */
     _scoreAddress(peerAddressState) {
@@ -109,7 +109,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {number}
+     * @returns {number}
      * @private
      */
     _scoreProtocol(peerAddress) {
@@ -142,15 +142,27 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {PeerAddressState}
+     * @returns {PeerAddress|null}
      */
     get(peerAddress) {
-        return this._store.get(peerAddress);
+        /** @type {PeerAddressState} */
+        const peerAddressState = this._store.get(peerAddress);
+        return peerAddressState ? peerAddressState.peerAddress : null;
     }
 
     /**
-     * @param {number} signalId
-     * @return {PeerChannel}
+     * @param {string} signalId
+     * @returns {PeerAddress|null}
+     */
+    getBySignalId(signalId) {
+        /** @type {PeerAddressState} */
+        const peerAddressState = this._signalIds.get(signalId);
+        return peerAddressState ? peerAddressState.peerAddress : null;
+    }
+
+    /**
+     * @param {string} signalId
+     * @returns {PeerChannel}
      */
     getChannelBySignalId(signalId) {
         const peerAddressState = this._signalIds.get(signalId);
@@ -165,7 +177,7 @@ class PeerAddresses extends Observable {
      * @param {number} protocolMask
      * @param {number} serviceMask
      * @param {number} maxAddresses
-     * @return {Array.<PeerAddress>}
+     * @returns {Array.<PeerAddress>}
      */
     query(protocolMask, serviceMask, maxAddresses = 1000) {
         // XXX inefficient linear scan
@@ -242,7 +254,7 @@ class PeerAddresses extends Observable {
     /**
      * @param {PeerChannel} channel
      * @param {PeerAddress|RtcPeerAddress} peerAddress
-     * @return {boolean}
+     * @returns {boolean}
      * @private
      */
     _add(channel, peerAddress) {
@@ -337,6 +349,7 @@ class PeerAddresses extends Observable {
     /**
      * Called when a connection to this peerAddress is being established.
      * @param {PeerAddress} peerAddress
+     * @returns {void}
      */
     connecting(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
@@ -360,6 +373,7 @@ class PeerAddresses extends Observable {
      * If it is already known, it has been updated by a previous version message.
      * @param {PeerChannel} channel
      * @param {PeerAddress|RtcPeerAddress} peerAddress
+     * @returns {void}
      */
     connected(channel, peerAddress) {
         let peerAddressState = this._store.get(peerAddress);
@@ -407,6 +421,7 @@ class PeerAddresses extends Observable {
      * Called when a connection to this peerAddress is closed.
      * @param {PeerChannel} channel
      * @param {boolean} closedByRemote
+     * @returns {void}
      */
     disconnected(channel, closedByRemote) {
         const peerAddress = channel.peerAddress;
@@ -441,6 +456,7 @@ class PeerAddresses extends Observable {
     /**
      * Called when a connection attempt to this peerAddress has failed.
      * @param {PeerAddress} peerAddress
+     * @returns {void}
      */
     unreachable(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
@@ -463,8 +479,13 @@ class PeerAddresses extends Observable {
      * Called when a message has been returned as unroutable.
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
+     * @returns {void}
      */
     unroutable(channel, peerAddress) {
+        if (!peerAddress) {
+            return;
+        }
+
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -484,6 +505,7 @@ class PeerAddresses extends Observable {
     /**
      * @param {PeerAddress} peerAddress
      * @param {number} duration in minutes
+     * @returns {void}
      */
     ban(peerAddress, duration = 10 /*minutes*/) {
         let peerAddressState = this._store.get(peerAddress);
@@ -504,7 +526,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {boolean}
+     * @returns {boolean}
      */
     isConnecting(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
@@ -513,7 +535,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {boolean}
+     * @returns {boolean}
      */
     isConnected(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
@@ -522,7 +544,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {boolean}
+     * @returns {boolean}
      */
     isBanned(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
@@ -537,6 +559,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
+     * @returns {void}
      * @private
      */
     _remove(peerAddress) {
@@ -568,6 +591,7 @@ class PeerAddresses extends Observable {
     /**
      * Delete all RTC-only routes that are signalable over the given peer.
      * @param {PeerChannel} channel
+     * @returns {void}
      * @private
      */
     _removeBySignalChannel(channel) {
@@ -585,6 +609,7 @@ class PeerAddresses extends Observable {
     /**
      * @param {PeerAddress} peerAddress
      * @param {number} delta
+     * @returns {void}
      * @private
      */
     _updateConnectedPeerCount(peerAddress, delta) {
@@ -603,11 +628,15 @@ class PeerAddresses extends Observable {
         }
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
     _housekeeping() {
         const now = Date.now();
         const unbannedAddresses = [];
 
-        for (const peerAddressState of this._store.values()) {
+        for (/** @type {PeerAddressState} */ const peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
 
             switch (peerAddressState) {
@@ -658,7 +687,7 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @return {boolean}
+     * @returns {boolean}
      * @private
      */
     _exceedsAge(peerAddress) {
@@ -710,6 +739,9 @@ PeerAddresses.SEED_PEERS = [
 Class.register(PeerAddresses);
 
 class PeerAddressState {
+    /**
+     * @param {PeerAddress} peerAddress
+     */
     constructor(peerAddress) {
         /** @type {PeerAddress} */
         this.peerAddress = peerAddress;
@@ -770,6 +802,7 @@ class PeerAddressState {
      * @param {PeerChannel} signalChannel
      * @param {number} distance
      * @param {number} timestamp
+     * @returns {void}
      */
     addRoute(signalChannel, distance, timestamp) {
         const oldRoute = this._routes.get(signalChannel);
@@ -789,6 +822,9 @@ class PeerAddressState {
         }
     }
 
+    /**
+     * @returns {void}
+     */
     deleteBestRoute() {
         if (this._bestRoute) {
             this.deleteRoute(this._bestRoute.signalChannel);
@@ -797,6 +833,7 @@ class PeerAddressState {
 
     /**
      * @param {PeerChannel} signalChannel
+     * @returns {void}
      */
     deleteRoute(signalChannel) {
         this._routes.remove(signalChannel); // maps to same hashCode
@@ -805,18 +842,25 @@ class PeerAddressState {
         }
     }
 
+    /**
+     * @returns {void}
+     */
     deleteAllRoutes() {
         this._bestRoute = null;
         this._routes = new HashSet();
     }
 
     /**
-     * @return {boolean}
+     * @returns {boolean}
      */
     hasRoute() {
         return this._routes.length > 0;
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
     _updateBestRoute() {
         let bestRoute = null;
         // Choose the route with minimal distance and maximal timestamp.
@@ -836,20 +880,23 @@ class PeerAddressState {
     }
 
     /**
-     * @param {PeerAddressState} o
-     * @return {boolean}
+     * @param {PeerAddressState|*} o
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof PeerAddressState
             && this.peerAddress.equals(o.peerAddress);
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this.peerAddress.hashCode();
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `PeerAddressState{peerAddress=${this.peerAddress}, state=${this.state}, `
@@ -895,19 +942,22 @@ class SignalRoute {
 
     /**
      * @param {SignalRoute} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof SignalRoute
             && this._signalChannel.equals(o._signalChannel);
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this._signalChannel.hashCode();
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `SignalRoute{signalChannel=${this._signalChannel}, distance=${this._distance}, timestamp=${this.timestamp}, failedAttempts=${this.failedAttempts}}`;
