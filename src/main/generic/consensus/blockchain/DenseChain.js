@@ -59,7 +59,7 @@ class DenseChain extends Observable {
      * NOT SYNCHRONIZED! Callers must ensure synchronicity.
      * Assumes that the given block is verified!
      * @param {Block} block A *verified* block
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<number>}
      */
     async add(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
@@ -81,7 +81,7 @@ class DenseChain extends Observable {
      * NOT SYNCHRONIZED! Callers must ensure synchronicity.
      * Assumes that the given block is verified!
      * @param {Block} block A *verified* block
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<number>}
      * @private
      */
     async _append(block) {
@@ -91,7 +91,7 @@ class DenseChain extends Observable {
         // Check if the given block is already part of this chain.
         const hash = await block.hash();
         if (this._blockData.contains(hash)) {
-            return true;
+            return DenseChain.OK_KNOWN;
         }
 
         // Check if the block's immediate predecessor is part of the chain.
@@ -99,13 +99,13 @@ class DenseChain extends Observable {
         const predecessor = await this._getPredecessor(block);
         if (!predecessor) {
             Log.w(DenseChain, 'Rejected block - unknown predecessor');
-            return false;
+            return DenseChain.ERR_ORPHAN;
         }
 
         // Check that the block is a valid successor of its immediate predecessor.
         if (!(await block.isImmediateSuccessorOf(predecessor))) {
             Log.w(DenseChain, 'Invalid block - not a valid immediate successor');
-            return false;
+            return DenseChain.ERR_INVALID;
         }
 
         // Check that the difficulty is correct. If we don't have enough blocks available to compute
@@ -117,7 +117,7 @@ class DenseChain extends Observable {
         if (nextTarget) {
             if (block.nBits !== BlockUtils.targetToCompact(nextTarget)) {
                 Log.w(DenseChain, 'Invalid block - difficulty mismatch');
-                return false;
+                return DenseChain.ERR_INVALID;
             }
         }
 
@@ -140,7 +140,7 @@ class DenseChain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this._head);
 
-            return true;
+            return DenseChain.OK_EXTENDED;
         }
 
         // Otherwise, check if the totalWork of the block is harder than our current main chain.
@@ -151,21 +151,21 @@ class DenseChain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return true;
+            return DenseChain.OK_REBRANCHED;
         }
 
         // Otherwise, we are creating/extending a fork. We have stored the block,
         // the head didn't change, nothing else to do.
         Log.v(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${block.height}, totalWork=${blockData.totalWork}`);
 
-        return true;
+        return DenseChain.OK_FORKED;
     }
 
     /**
      * NOT SYNCHRONIZED! Callers must ensure synchronicity.
      * Assumes that the given block is verified!
      * @param {Block} block A *verified* block
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<number>}
      */
     async _prepend(block) {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
@@ -174,7 +174,7 @@ class DenseChain extends Observable {
         // Check if the given block is already part of this chain.
         const hash = await block.hash();
         if (this._blockData.contains(hash)) {
-            return true;
+            return DenseChain.OK_KNOWN;
         }
 
         // TODO what if we exceed MAX_LENGTH when prepending?
@@ -182,7 +182,7 @@ class DenseChain extends Observable {
         // Check that the block is a valid predecessor to our current tail.
         if (!(await this._tail.isImmediateSuccessorOf(block))) {
             Log.w(DenseChain, 'Invalid block - not a valid predecessor');
-            return false;
+            return DenseChain.ERR_INVALID;
         }
 
         // TODO can we check difficulty here? probably not.
@@ -206,7 +206,7 @@ class DenseChain extends Observable {
         // Update tail.
         this._tail = block;
 
-        return true;
+        return DenseChain.OK_PREPENDED;
     }
 
     /**
@@ -281,15 +281,10 @@ class DenseChain extends Observable {
 
         // Try to walk DIFFICULTY_BLOCK_WINDOW - 1 blocks back starting from the given block.
         let blockHash = await block.hash();
-        let blockData = this._blockData.get(hash);
-        for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 1; i++) {
+        let blockData = this._blockData.get(blockHash);
+        for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 1 && !blockHash.equals(Block.GENESIS.HASH) && blockData; i++) {
             blockHash = blockData.predecessor;
-            blockData = this._blockData.get(blockHash);
-
-            // Abort if we have reached the tail of the chain or the genesis block.
-            if (!blockData || blockHash.equals(Block.GENESIS.HASH)) {
-                break;
-            }
+            blockData = blockHash && this._blockData.get(blockHash);
         }
 
         // If we couldn't go back far enough, fail.
@@ -684,5 +679,13 @@ class DenseChain extends Observable {
         return this._hasCollapsed;
     }
 }
+DenseChain.ERR_ORPHAN = -1;
+DenseChain.ERR_INVALID = -1;
+DenseChain.OK_KNOWN = 0;
+DenseChain.OK_PREPENDED = 1;
+DenseChain.OK_EXTENDED = 2;
+DenseChain.OK_REBRANCHED = 3;
+DenseChain.OK_FORKED = 4;
+
 DenseChain.MAX_LENGTH = 5000;
 Class.register(DenseChain);

@@ -63,11 +63,11 @@ class NetworkAgent extends Observable {
         this._versionAttempts = 0;
 
         // Listen to network/control messages from the peer.
-        channel.on('version',   msg => this._onVersion(msg));
-        channel.on('addr',      msg => this._onAddr(msg));
+        channel.on('version', msg => this._onVersion(msg));
+        channel.on('addr', msg => this._onAddr(msg));
         channel.on('getAddr', msg => this._onGetAddr(msg));
-        channel.on('ping',      msg => this._onPing(msg));
-        channel.on('pong',      msg => this._onPong(msg));
+        channel.on('ping', msg => this._onPing(msg));
+        channel.on('pong', msg => this._onPong(msg));
 
         // Clean up when the peer disconnects.
         channel.on('close', closedByRemote => this._onClose(closedByRemote));
@@ -114,10 +114,10 @@ class NetworkAgent extends Observable {
     /* Handshake */
 
     handshake() {
-        // Kick off the handshake by telling the peer our version, network address & blockchain height.
+        // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.height, this._blockchain.totalWork)) {
+        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.headHash)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
                 this._channel.close('sending of version message failed');
@@ -202,8 +202,7 @@ class NetworkAgent extends Observable {
         this._peer = new Peer(
             this._channel,
             msg.version,
-            msg.startHeight,
-            msg.totalWork,
+            msg.headHash,
             peerAddress.timestamp - now
         );
 

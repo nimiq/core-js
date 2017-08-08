@@ -67,12 +67,11 @@ class PeerChannel extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @param {number} startHeight
-     * @param {number} totalWork
+     * @param {Hash} headHash
      * @return {boolean}
      */
-    version(peerAddress, startHeight, totalWork) {
-        return this._send(new VersionMessage(Version.CODE, peerAddress, Block.GENESIS.HASH, startHeight, totalWork));
+    version(peerAddress, headHash) {
+        return this._send(new VersionMessage(Version.CODE, peerAddress, Block.GENESIS.HASH, headHash));
     }
 
     /**

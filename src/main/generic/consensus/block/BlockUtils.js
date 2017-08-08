@@ -84,8 +84,16 @@ class BlockUtils {
      * @param {Hash} hash
      * @returns {number}
      */
-    static realWork(hash) {
+    static hashToTarget(hash) {
         return parseInt(hash.toHex(), 16);
+    }
+
+    /**
+     * @param {Hash} hash
+     * @returns {number}
+     */
+    static realDifficulty(hash) {
+        return BlockUtils.targetToDifficulty(BlockUtils.hashToTarget(hash));
     }
 
     /**
@@ -94,7 +102,7 @@ class BlockUtils {
      * @returns {boolean}
      */
     static isProofOfWork(hash, target) {
-        return BlockUtils.realWork(hash) <= target;
+        return parseInt(hash.toHex(), 16) <= target;
     }
 
     /**

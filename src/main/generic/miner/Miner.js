@@ -151,11 +151,13 @@ class Miner extends Observable {
 
         // Check if we have found a block.
         if (isPoW) {
+            Log.i(Miner, 'Mined block', block);
+
             // Tell listeners that we've mined a block.
             this.fire('block-mined', block, this);
 
             // Push block into blockchain.
-            this._blockchain.pushBlock(block);
+            this._blockchain.push(block);
         } else {
             // Increment nonce.
             block.header.nonce++;
@@ -170,7 +172,7 @@ class Miner extends Observable {
      * @private
      */
     async _getNextBlock() {
-        const body = await this._getNextBody();
+        const body = this._getNextBody();
         const interlink = await this._blockchain.getNextInterlink();
         const header = await this._getNextHeader(body, interlink);
         return new Block(header, interlink, body);
@@ -184,26 +186,30 @@ class Miner extends Observable {
      */
     async _getNextHeader(body, interlink) {
         const prevHash = await this._blockchain.headHash;
-        const accounts = await this._blockchain.createTemporaryAccounts();
-        await accounts.commitBlockBody(body);
-        const accountsHash = await accounts.hash();
+
+        // TODO
+        //const accounts = await this._blockchain.createTemporaryAccounts();
+        //await accounts.commitBlockBody(body);
+        //const accountsHash = await accounts.hash();
+        const accountsHash = new Hash(null);
+
         const bodyHash = await body.hash();
         const height = this._blockchain.height + 1;
         const timestamp = this._getNextTimestamp();
-        const nBits = await this._blockchain.getNextCompactTarget();
+        const nBits = BlockUtils.targetToCompact(await this._blockchain.getNextTarget());
         const nonce = Math.round(Math.random() * 100000);
         const interlinkHash = await interlink.hash();
         return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
     }
 
     /**
-     * @return {Promise.<BlockBody>}
+     * @return {BlockBody}
      * @private
      */
-    async _getNextBody() {
+    _getNextBody() {
         // Get transactions from mempool (default is maxCount=5000).
         // TODO Completely fill up the block with transactions until the size limit is reached.
-        const transactions = await this._mempool.getTransactions();
+        const transactions = this._mempool.getTransactions();
         return new BlockBody(this._address, transactions);
     }
 

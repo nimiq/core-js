@@ -100,15 +100,22 @@ class Block {
      * @private
      */
     async _verifyInterlink() {
+        // Check that the interlink contains at least one block.
+        // This is not true for the genesis interlink, which is empty.
+        if (this._interlink.length === 0) {
+            Log.w(Block, 'Invalid block - empty interlink');
+            return false;
+        }
+
         // Check that the interlink connects to the correct genesis block.
-        if (!Block.GENESIS.HASH.equals(this._interlink[0])) {
+        if (!Block.GENESIS.HASH.equals(this._interlink.hashes[0])) {
             Log.w(Block, 'Invalid block - wrong genesis block in interlink');
             return false;
         }
 
         // Check that all hashes in the interlink are hard enough for their respective depth.
         for (let depth = 1; depth < this._interlink.length; depth++) {
-            if (!BlockUtils.isProofOfWork(this._interlink[depth], this.target / Math.pow(2, depth))) {
+            if (!BlockUtils.isProofOfWork(this._interlink.hashes[depth], this.target / Math.pow(2, depth))) {
                 Log.w(Block, 'Invalid block - invalid block in interlink');
                 return false;
             }
@@ -304,9 +311,10 @@ class Block {
         }
 
         // If the block hash is not hard enough and the target height didn't change, the interlink doesn't change.
+        // Exception: The genesis block has an empty interlink, its successor (and all other blocks) contain the genesis hash.
         const targetHeight = BlockUtils.getTargetHeight(this.target);
         if (depth === 0 && targetHeight === nextTargetHeight) {
-            return this.interlink;
+            return this.interlink.length > 0 ? this.interlink : new BlockInterlink([Block.GENESIS.HASH]);
         }
 
         // The interlink changes, start constructing a new one.
@@ -497,9 +505,9 @@ Block.GENESIS = new Block(
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        38760),
+        74046),
     new BlockInterlink([]),
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('5eKwilmaRc8xCO79IXIFLPuuNOvfQ04BLMNenkhYfs0=');
+Block.GENESIS.HASH = Hash.fromBase64('AACseN3e0V1v8EKnuYGX1YN6nCJAsDxKBD3QOWSF32Y=');

@@ -17,26 +17,78 @@ class Blockchain extends Observable {
      */
     constructor(store, accounts) {
         super();
+        /**
+         * @type {BlockStore}
+         * @private
+         */
         this._store = store;
+        /**
+         * @type {Accounts}
+         * @private
+         */
         this._accounts = accounts;
 
-        this._sparse = new SparseChain(store);
-        this._dense = new DenseChain(store, /*TODO*/ Block.GENESIS);
-        //this._full = new FullChain();
+        /**
+         * @type {SparseChain}
+         * @private
+         */
+        this._sparse = null;
+        /**
+         * @type {DenseChain}
+         * @private
+         */
+        this._dense = null;
+
+        // TODO this._full = new FullChain();
 
         // Blocks arriving fast over the network will create a backlog of blocks
         // in the synchronizer queue. Tell listeners when the blockchain is
         // ready to accept blocks again.
+        /**
+         * @type {Synchronizer}
+         * @private
+         */
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
 
         return this._init();
     }
 
+    /**
+     * @returns {Promise.<Blockchain>}
+     * @private
+     */
     async _init() {
-        // TODO load from storage
+        // Init sparse chain.
+        this._sparse = await new SparseChain(this._store);
+
+        // Load head.
+        /** @type {Block} */
+        const head = await this._store.getHead();
+        if (!head) {
+            this._dense = await new DenseChain(this._store, Block.GENESIS);
+            return this;
+        }
+
+        // Load sparse chain.
+        const interlinkChain = this.getInterlinkChain(head, Policy.M);
+        for (let i = 1; i < interlinkChain.length; i++) {
+            if (await this._sparse.append(interlinkChain.blocks[i]) !== SparseChain.OK_EXTENDED) { // eslint-disable-line no-await-in-loop
+                throw 'Failed to load interlink chain from storage';
+            }
+        }
+
+        // Load dense chain.
+        this._dense = new DenseChain(this._store, head);
+        let block = head;
+        for (let i = 0; !Block.GENESIS.equals(block) && i < Policy.K; i++) {
+            block = await this.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+            await this._dense._prepend(block); // eslint-disable-line no-await-in-loop
+        }
+
         return this;
     }
+
 
     /**
      * @param {Block} block
@@ -71,22 +123,53 @@ class Blockchain extends Observable {
             // The blocks predecessor or successor is part of the dense chain.
             const result = await this._dense.add(block);
             switch (result) {
-                case DenseChain.REJECTED:
+                case DenseChain.ERR_INVALID:
                     // The block is invalid, reject.
                     return false;
 
-                case DenseChain.EXTENDED: {
+                case DenseChain.OK_EXTENDED: {
                     // The block was appended to the main chain and has become the new head.
                     // Update the head of the sparse chain.
                     const resultSparse = await this._sparse.add(block);
-                    if (resultSparse !== SparseChain.EXTENDED) {
-                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.EXTENDED}`;
+                    if (resultSparse !== SparseChain.OK_EXTENDED) {
+                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_EXTENDED}`;
                     }
                     break;
                 }
 
-                case DenseChain.ACCEPTED:
+                case DenseChain.OK_PREPENDED: {
+                    // The block was prepended to the main chain.
+                    // TODO what to do here?
+                    const resultSparse = await this._sparse.add(block);
+                    if (resultSparse !== SparseChain.OK_ACCEPTED) {
+                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_ACCEPTED}`;
+                    }
+                    break;
+                }
+
+                case DenseChain.OK_REBRANCHED: {
+                    // The dense chain rebranched.
+                    // TODO what to do here?
+                    const resultSparse = await this._sparse.add(block);
+                    if (resultSparse !== SparseChain.OK_REBRANCHED) {
+                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_REBRANCHED}`;
+                    }
+                    break;
+                }
+
+                case DenseChain.OK_FORKED: {
                     // The block is on a fork.
+                    // TODO what to do here?
+                    const resultSparse = await this._sparse.add(block);
+                    if (resultSparse !== SparseChain.OK_PENDING) {
+                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_PENDING}`;
+                    }
+                    break;
+                }
+
+                case DenseChain.ERR_ORPHAN:
+                    // XXX Should not happen since dense.containsNeighborOf(block) == true.
+                    throw 'Illegal state';
             }
         }
 
@@ -94,17 +177,18 @@ class Blockchain extends Observable {
         else if (this._sparse.containsPredecessorOf(block)) {
             const result = this._sparse.add(block);
             switch (result) {
-                case SparseChain.REJECTED:
+                case SparseChain.ERR_INVALID:
                     // The block is invalid, reject.
                     return false;
 
-                case SparseChain.EXTENDED:
+                case SparseChain.OK_EXTENDED:
                     // The block was appended to the main chain and has become the new head.
                     // Since the block does not attach to our current dense chain, scratch it and create a new one.
-                    this._dense = new DenseChain(this._store, this._sparse.head);
+                    this._dense = await new DenseChain(this._store, this._sparse.head);
                     break;
 
-                case SparseChain.TRUNCATED:
+                /*
+                case SparseChain.OK_TRUNCATED:
                     // The block caused the sparse chain to be truncated.
                     // If the new head is not part of the dense chain anymore, or if the dense chain is fully
                     // inconsistent with the new block, create a new one.
@@ -118,12 +202,12 @@ class Blockchain extends Observable {
                     }
 
                     break;
-
+                */
                 // TODO forks
 
-                case SparseChain.ACCEPTED:
-
-                    break;
+                case SparseChain.OK_ACCEPTED:
+                default:
+                    throw `TODO: SparseChain.add() returned ${result}`;
             }
 
         }
@@ -154,8 +238,10 @@ class Blockchain extends Observable {
 
 
         // Store the block persistently.
-        this._store.put(block);
-        // TODO update persistent head
+        await this._store.put(block);
+
+        // Update persistent head.
+        await this._store.setHead(this._dense.head);
 
         return true;
     }
@@ -199,6 +285,7 @@ class Blockchain extends Observable {
      * @returns {Promise.<BlockInterlink>}
      */
     async getNextInterlink(block) {
+        block = block || this.head;
         const nextTarget = await this.getNextTarget(block);
         return block.getNextInterlink(nextTarget);
     }
@@ -208,11 +295,12 @@ class Blockchain extends Observable {
      * @returns {Promise.<boolean>}
      */
     async containsPredecessorOf(block) {
-        return this._sparse.containsPredecessorOf(block) || this._dense.containsPredecessorOf(block);
+        return await this._sparse.containsPredecessorOf(block) || this._dense.containsPredecessorOf(block);
     }
 
     /**
      * The 'ConstructProof' algorithm from the PoPoW paper.
+     * TODO Add support to request chains with a specific depth rooted at a specific block.
      * @param {Block} head
      * @param {number} m Desired length of the interlink chain
      * @param {Array.<Hash>} [locators] Return the interlink chain immediately if one of the hashes in locators is encountered during construction, irrespective of m.
@@ -259,7 +347,7 @@ class Blockchain extends Observable {
 
         // An interlink chain with the desired length m could not be constructed.
         // Return the whole header chain.
-        const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
+        const interlinkChain = new InterlinkChain([head]);
         while (!Block.GENESIS.equals(head) && !locatorSet.contains(head.prevHash)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head);
@@ -291,8 +379,9 @@ class Blockchain extends Observable {
                 return interlinkChain;
             }
 
+            // TODO Omit loading of block body as we are only interested in light blocks.
             head = await this.getBlock(hash); // eslint-disable-line no-await-in-loop
-            interlinkChain.prepend(head);
+            interlinkChain.prepend(head.toLight());
 
             const targetDepthPrime = BlockUtils.getTargetDepth(head.target);
             j = Math.ceil(depth + (targetDepthPrime - targetDepth));
@@ -357,8 +446,8 @@ class Blockchain extends Observable {
         // TODO Improve this.
         /** @type {InterlinkChain} */
         const interlinkChain = await this.getInterlinkChain(lastBlock, 30);
-        for (const header of interlinkChain.headers) {
-            locators.push(await header.hash()); // eslint-disable-line no-await-in-loop
+        for (const interlinkBlock of interlinkChain.blocks) {
+            locators.push(await interlinkBlock.hash()); // eslint-disable-line no-await-in-loop
         }
 
         return locators;
@@ -397,6 +486,11 @@ class Blockchain extends Observable {
     }
      */
 
+    /** @returns {Hash} */
+    async accountsHash() {
+        // TODO
+        return new Hash(null);
+    }
 
     /** @type {Block} */
     get head() {
@@ -406,6 +500,16 @@ class Blockchain extends Observable {
     /** @type {Hash} */
     get headHash() {
         return this._dense.headHash;
+    }
+
+    /** @type {number} */
+    get height() {
+        return this._dense.head.height;
+    }
+
+    /** @type {number} */
+    get totalWork() {
+        return this._sparse.realWork;
     }
 
     /** @type {number} */

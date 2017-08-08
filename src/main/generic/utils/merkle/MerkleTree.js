@@ -38,6 +38,9 @@ class MerkleTree {
      * @private
      */
     static _hash(o) {
+        if (o instanceof Hash) {
+            return Promise.resolve(o);
+        }
         if (typeof o.hash !== 'function') {
             throw 'MerkleTree objects require a .hash() method';
         }

@@ -117,6 +117,7 @@ class BlockHeader {
     equals(o) {
         return o instanceof BlockHeader
             && this._prevHash.equals(o.prevHash)
+            && this._interlinkHash.equals(o.interlinkHash)
             && this._bodyHash.equals(o.bodyHash)
             && this._accountsHash.equals(o.accountsHash)
             && this._nBits === o.nBits
@@ -131,6 +132,7 @@ class BlockHeader {
     toString() {
         return `BlockHeader{`
             + `prevHash=${this._prevHash}, `
+            + `interlinkHash=${this._interlinkHash}, `
             + `bodyHash=${this._bodyHash}, `
             + `accountsHash=${this._accountsHash}, `
             + `nBits=${this._nBits.toString(16)}, `

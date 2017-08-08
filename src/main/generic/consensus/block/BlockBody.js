@@ -27,8 +27,8 @@ class BlockBody {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);

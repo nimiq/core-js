@@ -10,7 +10,7 @@ class BlockStore {
 
 class PersistentBlockStore extends ObjectDB {
     constructor() {
-        super('blocksV2', Block);
+        super('blocks', Block);
     }
 
     async getHead() {

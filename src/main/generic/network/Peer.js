@@ -2,24 +2,20 @@ class Peer {
     /**
      * @param {PeerChannel} channel
      * @param {number} version
-     * @param {number} startHeight
-     * @param {number} totalWork
+     * @param {Hash} headHash
      * @param {number} timeOffset
      */
-    constructor(channel, version, startHeight, totalWork, timeOffset) {
+    constructor(channel, version, headHash, timeOffset) {
         /** @type {PeerChannel} */
         this._channel = channel;
         /** @type {number} */
         this._version = version;
-        /** @type {number} */
-        this._startHeight = startHeight;
-        /** @type {number} */
-        this._totalWork = totalWork;
-
+        /** @type {Hash} */
+        this._headHash = headHash;
         /**
          * Offset between the peer's time and our local time.
-        * @type {number}
-        * */
+         * @type {number}
+         */
         this._timeOffset = timeOffset;
     }
 
@@ -33,14 +29,9 @@ class Peer {
         return this._version;
     }
 
-    /** @type {number} */
-    get startHeight() {
-        return this._startHeight;
-    }
-
-    /** @type {number} */
-    get totalWork() {
-        return this._totalWork;
+    /** @type {Hash} */
+    get headHash() {
+        return this._headHash;
     }
 
     /** @type {number} */
@@ -65,7 +56,7 @@ class Peer {
 
     /**
      * @param {Peer} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof Peer
@@ -77,7 +68,7 @@ class Peer {
     }
 
     /**
-     * @return {string}
+     * @returns {string}
      */
     toString() {
         return `Peer{version=${this._version}, startHeight=${this._startHeight}, `

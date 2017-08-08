@@ -51,7 +51,7 @@ class Consensus extends Observable {
      */
     _onPeerJoined(peer) {
         // Create a ConsensusAgent for each peer that connects.
-        const agent = new ConsensusAgent(this._blockchain, this._mempool, peer);
+        const agent = new LightConsensusAgent(this._blockchain, this._mempool, peer);
         this._agents.put(peer.id, agent);
 
         // If no more peers connect within the specified timeout, start syncing.

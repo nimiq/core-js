@@ -113,10 +113,12 @@ class LightConsensusAgent extends Observable {
         this._knownObjects.add(vector);
     }
 
+    syncBlockchain() {
+        return this._requestInterlinkChain();
+    }
+
 
     /* Private API */
-
-
 
     async _requestInterlinkChain() {
         // XXX Only one getInterlinkChain request at a time.
@@ -128,7 +130,7 @@ class LightConsensusAgent extends Observable {
 
         // Request interlink chain from peer.
         const locators = await this._blockchain.getLocators();
-        this._peer.channel.getInterlinkChain(/*TODO peer headHash */, Policy.M, locators);
+        this._peer.channel.getInterlinkChain(this._peer.headHash, Policy.M, locators);
 
         // Drop the peer if it doesn't send the interlink chain within the timeout.
         // TODO should we ban here instead?
@@ -145,6 +147,8 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _onInterlinkChain(msg) {
+        Log.d(LightConsensusAgent, `[INTERLINK] Received from ${this._peer}`, msg.interlinkChain);
+
         // Check if we have requested an interlink chain, reject unsolicited ones.
         if (!this._timers.timeoutExists('getInterlinkChain')) {
             Log.w(LightConsensusAgent, `Unsolicited interlink chain received from ${this._peer}`);
@@ -165,7 +169,13 @@ class LightConsensusAgent extends Observable {
         }
 
         // Check that interlink chain ends with the peer's head block.
-
+        const headHash = await interlinkChain.head.hash();
+        if (!this._peer.headHash.equals(headHash)) {
+            Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer} - unexpected head`);
+            // TODO ban instead?
+            this._peer.channel.close('invalid interlink received - unexpected head');
+            return;
+        }
 
         // Check that the interlink chain is either:
         // - rooted (starts with the genesis block) and either:
@@ -175,7 +185,8 @@ class LightConsensusAgent extends Observable {
             // Interlink chain looks good
         }
 
-        // - Starts with a block whose (interlink) predecessor is known to us.
+        // - Starts with a block whose (interlink) predecessor is known to us (i.e. the chain can be shorter
+        //   if one of the locator hashes was encountered during construction).
         else if (this._blockchain.containsPredecessorOf(interlinkChain.tail)) {
             // Interlink chain looks good
         }

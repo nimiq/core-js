@@ -26,7 +26,7 @@ class Mempool extends Observable {
     /**
      * @param {Transaction} transaction
      * @fires Mempool#transaction-added
-     * @return {Promise.<boolean>}
+     * @returns {Promise.<boolean>}
      */
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
@@ -61,7 +61,7 @@ class Mempool extends Observable {
     // Currently not asynchronous, but might be in the future.
     /**
      * @param {string} hash
-     * @return {Transaction}
+     * @returns {Transaction}
      */
     getTransaction(hash) {
         return this._transactions[hash];
@@ -70,7 +70,7 @@ class Mempool extends Observable {
     // Currently not asynchronous, but might be in the future.
     /**
      * @param {number} maxCount
-     * @return {Array.<Transaction>}
+     * @returns {Array.<Transaction>}
      */
     getTransactions(maxCount = 5000) {
         // TODO Add logic here to pick the "best" transactions.
@@ -84,7 +84,7 @@ class Mempool extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @returns {Promise.<boolean>}
      * @private
      */
     async _verifyTransaction(transaction) {
@@ -108,7 +108,7 @@ class Mempool extends Observable {
     /**
      * @param {Transaction} transaction
      * @param {boolean} quiet
-     * @return {Promise.<boolean>}
+     * @returns {Promise.<boolean>}
      * @private
      */
     async _verifyTransactionBalance(transaction, quiet = false) {
@@ -133,7 +133,7 @@ class Mempool extends Observable {
 
     /**
      * @fires Mempool#transaction-ready
-     * @return {Promise}
+     * @returns {Promise}
      * @private
      */
     async _evictTransactions() {

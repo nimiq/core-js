@@ -23,7 +23,7 @@ class SparseChain extends Observable {
         this._blockData = new HashMap();
 
         // Initialize genesis data.
-        const genesisData = new BlockData(null, BlockUtils.realWork(Block.GENESIS.HASH), true);
+        const genesisData = new BlockData(null, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
         this._blockData.put(Block.GENESIS.HASH, genesisData);
 
         /**
@@ -42,13 +42,12 @@ class SparseChain extends Observable {
      * Assumes that the given block is verified!
      * @param {Block} block A *verified* block
      * @returns {Promise.<number>}
-     * @private
      */
     async append(block) {
         // Check if the given block is already part of this chain.
         const hash = await block.hash();
         if (this._blockData.contains(hash)) {
-            return SparseChain.ACCEPTED;
+            return SparseChain.OK_KNOWN;
         }
 
         // Find the closest interlink predecessor of the given block in this chain.
@@ -56,13 +55,13 @@ class SparseChain extends Observable {
         const predecessor = await this._getPredecessor(block);
         if (!predecessor) {
             Log.w(SparseChain, 'Rejected block - no predecessor found');
-            return SparseChain.REJECTED;
+            return SparseChain.ERR_ORPHAN;
         }
 
         // Check that the block is a valid successor (immediate or interlink) of its predecessor.
         if (!(await block.isSuccessorOf(predecessor))) {
             Log.w(SparseChain, 'Invalid block - not a valid successor');
-            return SparseChain.REJECTED;
+            return SparseChain.ERR_INVALID;
         }
 
         // Check that the block's prevHash and interlink are consistent with the main chain: Look at each block in the interlink
@@ -80,7 +79,7 @@ class SparseChain extends Observable {
                 if (metMainChain && !data.onMainChain) {
                     // An earlier interlink predecessor was on the main chain, this one isn't. Something is wrong with this block.
                     Log.w(SparseChain, 'Rejected block - inconsistent interlink/main chain');
-                    return SparseChain.REJECTED;
+                    return SparseChain.ERR_INVALID;
                 }
             }
         }
@@ -93,7 +92,7 @@ class SparseChain extends Observable {
         const prevHash = await predecessor.hash();
         /** @type {BlockData} */
         const prevData = this._blockData.get(prevHash);
-        const totalWork = prevData.totalWork + BlockUtils.realWork(hash);
+        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(hash);
         const blockData = new BlockData(prevHash, totalWork);
 
         // Check if the predecessor already has successors. If so, the new block will contribute work to any successor
@@ -126,24 +125,37 @@ class SparseChain extends Observable {
         prevData.successors.add(hash);
         this._blockData.put(hash, blockData);
 
-        // TODO Close holes in main chain: Blocks that were not referenced by any main chain successor might become referenced transitively when holes are filled.
-        const onMainChain = references.values().some(hash => {
+        // Check if the block is succeeded by a block on the main chain. If it is, the block and its predecessors must
+        // be on the main chain as well. This closes holes in main chain: Blocks that were not referenced by any main
+        // chain successor might become referenced transitively when new blocks are added.
+        const references = this._interlinkIndex.get(hash);
+        const onMainChain = references && references.values().some(hash => {
             const data = this._blockData.get(hash);
             return data && data.onMainChain;
         });
+        blockData.onMainChain = onMainChain;
         if (onMainChain && !succeedsMainChain) {
-            // TODO ...
+            // XXX DEV Assertions
+            if (prevData.onMainChain) throw 'Illegal state';
+
+            /** @type {BlockData} */
+            let data = prevData;
+            while (!data.onMainChain) {
+                data.onMainChain = true;
+                data = this._blockData.get(data.predecessor);
+            }
         }
 
         // Add block to interlink index.
         await this._index(block);
 
-
         // Several possible insert positions:
         // 1. Successor of the current main head
         if (prevHash.equals(this._headHash)) {
-            // XXX DEV Sanity check
+            // XXX DEV Assertions
             if (maxChain.head) throw 'Illegal state';
+            if (onMainChain) throw 'Illegal state';
+            if (!succeedsMainChain) throw 'Illegal state';
 
             // Append new block to the main chain.
             await this._extend(block);
@@ -151,49 +163,33 @@ class SparseChain extends Observable {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this._head);
 
-            return SparseChain.EXTENDED;
+            return SparseChain.OK_EXTENDED;
         }
 
         // 2. Inner block of the main chain
         else if (onMainChain) {
-            // Recompute totalWork values
+            // XXX DEV Assertions
+            if (!this._head.equals(maxChain.head)) throw 'Illegal state';
 
-            return SparseChain.ACCEPTED;
+            return SparseChain.OK_ACCEPTED;
         }
 
-        // 3. Inner block of a fork
-        else if (references && references.length > 0) {
-            // Recompute totalWork values
-            // TODO might rebranch
-        }
-
-        // 4. Successor of a fork head
-        else {
-            // TODO might rebranch
-        }
-
-
-        // We only want interlink blocks in this chain.
-        // When advancing the head, remove any blocks that are not referenced in any interlink.
-
-
-
-        // Otherwise, check if the totalWork of the block is harder than our current main chain.
-        if (totalWork > this._headData.totalWork) {
+        // 3. On a fork: Inner or successor block. Check if we need to rebranch.
+        else if (maxChain.totalWork > this._headData.totalWork) {
             // A fork has become the hardest chain, rebranch to it.
-            await this._rebranch(block);
+            // TODO await this._rebranch(block);
+            throw 'TODO rebranch';
 
             // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
+            // this.fire('head-changed', this.head);
 
-            return true;
+            // return SparseChain.OK_REBRANCHED;
         }
 
-        // Otherwise, we are creating/extending a fork. We have stored the block,
-        // the head didn't change, nothing else to do.
-        Log.v(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${block.height}, totalWork=${blockData.totalWork}`);
+        // TODO We don't know whether this block is on a branch or the main chain.
+        // We can be sure that it is on a fork if there is a block with the same height on the main chain already.
 
-        return true;
+        return SparseChain.OK_PENDING;
     }
 
     /**
@@ -242,7 +238,7 @@ class SparseChain extends Observable {
             }
         }
 
-        // TODO Verify that interlink construction for block b is valid by looking at the closest predecessor and closest successor.
+        // TODO Verify that interlink construction for block is valid by looking at the closest predecessor and closest successor.
 
         return Promise.resolve();
     }
@@ -263,7 +259,7 @@ class SparseChain extends Observable {
         }
 
         // Check if the totalWork for blockHash is correct.
-        const expectedWork = prevData.totalWork + BlockUtils.realWork(blockHash);
+        const expectedWork = prevData.totalWork + BlockUtils.realDifficulty(blockHash);
         if (blockData.totalWork === expectedWork) {
             return null;
         }
@@ -551,17 +547,15 @@ class SparseChain extends Observable {
     }
 
     /** @type {number} */
-    get length() {
-        return this._hasCollapsed ? 0 : this._head.height - this._tail.height + 1;
-    }
-
-    /** @type {number} */
-    get totalWork() {
-        return this._totalWork;
+    get realWork() {
+        return this._headData.totalWork;
     }
 }
-SparseChain.REJECTED = 0;
-SparseChain.ACCEPTED = 1;
-SparseChain.EXTENDED = 2;
-SparseChain.TRUNCATED = -1;
+SparseChain.ERR_ORPHAN = -2;
+SparseChain.ERR_INVALID = -1;
+SparseChain.OK_KNOWN = 0;
+SparseChain.OK_ACCEPTED = 1;
+SparseChain.OK_EXTENDED = 2;
+SparseChain.OK_REBRANCHED = 3;
+SparseChain.OK_PENDING = 4;
 Class.register(SparseChain);

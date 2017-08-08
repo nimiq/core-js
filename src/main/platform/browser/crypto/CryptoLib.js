@@ -11,8 +11,8 @@ class CryptoLib {
 
     static _init_poly() {
         const poly = {
-            _nimiq_isSlowCurves: true,
-            _nimiq_callDigestDelayedWhenMining: true
+            _nimiq_isSlowCurves: false,
+            _nimiq_callDigestDelayedWhenMining: false
         };
 
         // We can use Webkit's SHA-256

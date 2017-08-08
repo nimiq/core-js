@@ -114,7 +114,7 @@
                 <span id="mnrLastBlockTs"></span>
             </div>
             <div class="input-group">
-                <button id="mnrStartBtn" disabled>Start Mining</button>
+                <button id="mnrStartBtn">Start Mining</button>
             </div>
             <hr/>
         </div>
@@ -216,31 +216,6 @@
 
 <script type="text/javascript">
 
-    // initial check for existing wallet in browser
-    // this wont work in chrome https://stackoverflow.com/questions/23753014/check-existence-of-indexeddb-database
-    //
-    //
-    //
-    // var nim_openRequest = indexedDB.open('nimiq'); //indexedDB.open('nimiq', {version: 4, storage: "temporary"} );
-    // nim_openRequest.onsuccess = function(event) {
-    //     var nim_db = event.target.result;
-    //     try {
-    //         var nim_request = nim_db.transaction("wallet").objectStore("wallet").get("keys");
-    //     }
-    //     catch (e) {
-    //        document.getElementById('newWallet').style.display = 'block';
-    //        //var nim_remove_nonexistant_db = indexedDB.deleteDatabase('nimiq');
-    //        console.log('blank (hopefully!) indexedDB deleted');
-    //        return;
-    //     }
-    //     nim_request.onsuccess = function(event) {
-    //         var browser_has_keys = event.target.result; console.log(browser_has_keys);
-    //         if( browser_has_keys == null ) {   document.getElementById('newWallet').style.display = 'block';   }
-    //         else {   document.getElementById('loadWalletFromDB').style.display = 'block';   }
-    //     }
-    // }
-
-
     class MinerUI {
 
         constructor($) {
@@ -281,14 +256,14 @@
             $.consensus.on('established', function() {
                 document.getElementById('blockchain-title').classList.add('consensus-established');
                 document.getElementById('txSubmitBtn').removeAttribute('disabled');
-                document.getElementById('mnrStartBtn').removeAttribute('disabled');
+                //document.getElementById('mnrStartBtn').removeAttribute('disabled');
             }.bind(this));
 
             $.consensus.on('lost', function() {
                 $.miner.stopWork();
                 document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
                 document.getElementById('txSubmitBtn').setAttribute('disabled', '');
-                document.getElementById('mnrStartBtn').setAttribute('disabled', '');
+                //document.getElementById('mnrStartBtn').setAttribute('disabled', '');
             }.bind(this));
 
             // Blockchain
@@ -478,10 +453,10 @@
         }
 
         _toggleMining() {
-            if (!$.consensus.established) {
-                console.warn('Not starting miner - consensus not established');
-                return;
-            }
+            //if (!$.consensus.established) {
+            //    console.warn('Not starting miner - consensus not established');
+            //    return;
+            //}
 
             if (!$.miner.working) {
                 $.miner.startWork();
