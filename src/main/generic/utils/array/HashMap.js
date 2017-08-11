@@ -50,7 +50,7 @@ class HashMap {
      * @returns {boolean}
      */
     contains(key) {
-        return this._map.has(key);
+        return this._map.has(this._fnHash(key));
     }
 
     /**
