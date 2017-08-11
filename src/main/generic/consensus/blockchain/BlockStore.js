@@ -21,7 +21,7 @@ class PersistentBlockStore extends ObjectDB {
 
     async setHead(head) {
         const key = await this.key(head);
-        return await ObjectDB.prototype.putString.call(this, 'head', key);
+        return ObjectDB.prototype.putString.call(this, 'head', key);
     }
 }
 

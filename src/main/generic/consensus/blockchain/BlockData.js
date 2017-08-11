@@ -20,7 +20,6 @@ class BlockData {
 
     /** @type {Hash} */
     set predecessor(predecessor) {
-        if (this._predecessor) throw 'BlockData.predecessor already set';
         this._predecessor = predecessor;
     }
 

@@ -136,10 +136,6 @@ class DenseChain extends Observable {
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
             await this._extend(block);
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this._head);
-
             return DenseChain.OK_EXTENDED;
         }
 
@@ -147,10 +143,6 @@ class DenseChain extends Observable {
         if (totalWork > this._headData.totalWork) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(block);
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
-
             return DenseChain.OK_REBRANCHED;
         }
 
@@ -205,6 +197,7 @@ class DenseChain extends Observable {
 
         // Update tail.
         this._tail = block;
+        this._tailHash = hash;
 
         return DenseChain.OK_PREPENDED;
     }
@@ -584,7 +577,7 @@ class DenseChain extends Observable {
      */
     async _index(block) {
         const hash = await block.hash();
-        for (const reference of block.interlink) {
+        for (const reference of block.interlink.hashes) {
             /** @type HashSet.<Hash> **/
             let set = this._interlinkIndex.get(reference);
             if (!set) {
@@ -602,7 +595,7 @@ class DenseChain extends Observable {
      */
     async _unindex(block) {
         const hash = await block.hash();
-        for (const reference of block.interlink) {
+        for (const reference of block.interlink.hashes) {
             /** @type HashSet.<Hash> **/
             const set = this._interlinkIndex.get(reference);
             if (set) {

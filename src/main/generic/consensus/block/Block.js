@@ -61,7 +61,7 @@ class Block {
         return this._header.serializedSize
             + this._interlink.serializedSize
             + /*bodyPresent*/ 1
-            + this._body ? this._body.serializedSize : 0;
+            + (this._body ? this._body.serializedSize : 0);
     }
 
     /**
@@ -182,7 +182,8 @@ class Block {
         }
 
         // Check that the interlink hash is correct.
-        const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
+        const interlink = await predecessor.getNextInterlink(this.target);
+        const interlinkHash = await interlink.hash();
         if (!this._header.interlinkHash.equals(interlinkHash)) {
             return false;
         }
@@ -205,17 +206,20 @@ class Block {
     async isInterlinkSuccessorOf(predecessor) {
         // Check that the height is higher than the predecessor's.
         if (this._header.height <= predecessor.header.height) {
+            Log.v(Block, 'No interlink predecessor - height');
             return false;
         }
 
         // Check that the timestamp is greater or equal to the predecessor's timestamp.
         if (this._header.timestamp < predecessor.header.timestamp) {
+            Log.v(Block, 'No interlink predecessor - timestamp');
             return false;
         }
 
         // Check that the hash of the predecessor block is part of the block's interlink.
         const prevHash = await predecessor.hash();
-        if (!this._interlink.some(hash => prevHash.equals(hash))) {
+        if (!this._interlink.hashes.some(hash => prevHash.equals(hash))) {
+            Log.v(Block, 'No interlink predecessor - not in interlink');
             return false;
         }
 
@@ -224,17 +228,21 @@ class Block {
         // - that the interlink is correct.
         if (this._header.prevHash.equals(prevHash)) {
             if (this._header.height !== predecessor.header.height + 1) {
+                Log.v(Block, 'No interlink predecessor - immediate height');
                 return false;
             }
 
-            const interlinkHash = await predecessor.getNextInterlink(this.target).hash();
+            const interlink = await predecessor.getNextInterlink(this.target);
+            const interlinkHash = await interlink.hash();
             if (!this._header.interlinkHash.equals(interlinkHash)) {
+                Log.v(Block, 'No interlink predecessor - immediate interlink');
                 return false;
             }
         }
         // Otherwise, if the prevHash doesn't match but the blocks should be adjacent according to their height fields,
         // this cannot be a valid successor of predecessor.
         else if (this._header.height === predecessor.height.height + 1) {
+            Log.v(Block, 'No interlink predecessor - immediate height (2)');
             return false;
         }
         // Otherwise, check that the interlink construction is valid given the information we have.
@@ -247,16 +255,17 @@ class Block {
             hashes.addAll(this._interlink.hashes);
             hashes.removeAll(predecessor.interlink.hashes);
             if (hashes.length > this._header.height - predecessor.header.height) {
+                Log.v(Block, 'No interlink predecessor - interlink length');
                 return false;
             }
 
             // If the same block is found in both interlinks, all blocks at lower depths must be the same in both interlinks.
-            const thisInterlink = new IndexedArray(this._interlink.hashes);
-            const prevInterlink = predecessor.interlink.hashes;
+            const thisInterlink = this._interlink.hashes.map(it => it.toBase64());
+            const prevInterlink = predecessor.interlink.hashes.map(it => it.toBase64());
             let expectedDepth = null;
-            for (let i = 1; i < prevInterlink.length; i++) {
+            for (let i = 1; i < prevInterlink.length && expectedDepth < thisInterlink.length; i++) {
                 const hash = prevInterlink[i];
-                const depth = thisInterlink.indexOf(hash);
+                const depth = thisInterlink.indexOf(hash, expectedDepth || 0);
                 if (depth > 0) {
                     if (expectedDepth === null) {
                         expectedDepth = depth + 1;
@@ -265,10 +274,12 @@ class Block {
                         expectedDepth++;
                     }
                     else {
+                        Log.v(Block, 'No interlink predecessor - expected depth');
                         return false;
                     }
                 }
                 else if (expectedDepth !== null) {
+                    Log.v(Block, 'No interlink predecessor - expected depth (2)');
                     return false;
                 }
             }
@@ -279,6 +290,7 @@ class Block {
         const heightDiff = this._header.height - predecessor.header.height;
         if (adjustmentFactor > Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, heightDiff)
                 || adjustmentFactor < Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, -heightDiff)) {
+            Log.v(Block, 'No interlink predecessor - difficulty adjustment');
             return false;
         }
 

@@ -3,8 +3,8 @@ class InterlinkChain {
      * @param {Array.<Block>} blocks
      */
     constructor(blocks) {
-        if (!blocks || !NumberUtils.isUint16(blocks.length) || blocks.length  === 0
-            || blocks.some(it => !(it instanceof Block) || !it.isLight())) throw 'Malformed blocks';
+        if (!blocks || !NumberUtils.isUint16(blocks.length) || blocks.length === 0
+            || blocks.some(it => !(it instanceof Block) || !it.isLight())) throw new Error('Malformed blocks');
         /** @type {Array.<Block>} */
         this._blocks = blocks;
     }

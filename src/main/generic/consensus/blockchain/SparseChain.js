@@ -16,9 +16,6 @@ class SparseChain extends Observable {
         /** @type {Hash} */
         this._headHash = Block.GENESIS.HASH;
 
-        /** @type {number} */
-        this._totalWork = Block.GENESIS.difficulty;
-
         /** @type {HashMap.<Hash, BlockData>} */
         this._blockData = new HashMap();
 
@@ -378,7 +375,6 @@ class SparseChain extends Observable {
         // XXX Assert that the block is there.
         if (!this._head) throw 'Corrupted store: Failed to load block while reverting';
         this._headHash = blockHash;
-        this._totalWork -= totalWork;
     }
 
     /**
@@ -451,6 +447,11 @@ class SparseChain extends Observable {
      * @private
      */
     async _getPredecessor(block) {
+        // Check if we know the immediate predecessor.
+        if (this._blockData.contains(block.prevHash)) {
+            return this._store.get(block.prevHash.toBase64());
+        }
+
         // If there is only the genesis block in the interlink, the block must be between the genesis block
         // and the first block in the interlink chain. Return the genesis block in this case.
         if (block.interlink.length === 1) {
@@ -470,7 +471,7 @@ class SparseChain extends Observable {
             predecessor = await this._store.get(hash.toBase64()); // eslint-disable-line no-await-in-loop
         } while (!predecessor && i < block.interlink.length);
 
-        // TODO If we don't find predecessor in memory, there might be one in storage. Materialize it.
+        // TODO If we don't find a predecessor in memory, there might be one in storage. Materialize it.
 
         // Return the predecessor or null if none was found.
         return predecessor;
@@ -486,7 +487,7 @@ class SparseChain extends Observable {
     async _index(block) {
         // TODO We don't need to index the genesis block.
         const hash = await block.hash();
-        for (const reference of [block.prevHash, ...block.interlink]) {
+        for (const reference of [block.prevHash, ...block.interlink.hashes]) {
             /** @type HashSet.<Hash> **/
             let set = this._interlinkIndex.get(reference);
             if (!set) {
@@ -505,7 +506,7 @@ class SparseChain extends Observable {
     async _unindex(block) {
         const hash = await block.hash();
         // TODO We don't need to index the genesis block.
-        for (const reference of [block.prevHash, ...block.interlink]) {
+        for (const reference of [block.prevHash, ...block.interlink.hashes]) {
             /** @type HashSet.<Hash> **/
             const set = this._interlinkIndex.get(reference);
             if (set) {
@@ -519,8 +520,6 @@ class SparseChain extends Observable {
      * @private
      */
     _destroy() {
-        this._totalWork = 0;
-
         // Free memory.
         this._head = null;
         this._headHash = null;

@@ -62,16 +62,21 @@ class Blockchain extends Observable {
         // Init sparse chain.
         this._sparse = await new SparseChain(this._store);
 
-        // Load head.
+        // Load head. If no head is found, initialize storage with the genesis block.
         /** @type {Block} */
         const head = await this._store.getHead();
         if (!head) {
+            // TODO Use transaction
+            this._store.put(Block.GENESIS);
+            this._store.setHead(Block.GENESIS.HASH);
+
             this._dense = await new DenseChain(this._store, Block.GENESIS);
             return this;
         }
 
         // Load sparse chain.
-        const interlinkChain = this.getInterlinkChain(head, Policy.M);
+        /** @type {InterlinkChain} */
+        const interlinkChain = await this.getInterlinkChain(head, Policy.M);
         for (let i = 1; i < interlinkChain.length; i++) {
             if (await this._sparse.append(interlinkChain.blocks[i]) !== SparseChain.OK_EXTENDED) { // eslint-disable-line no-await-in-loop
                 throw 'Failed to load interlink chain from storage';
@@ -79,7 +84,7 @@ class Blockchain extends Observable {
         }
 
         // Load dense chain.
-        this._dense = new DenseChain(this._store, head);
+        this._dense = await new DenseChain(this._store, head);
         let block = head;
         for (let i = 0; !Block.GENESIS.equals(block) && i < Policy.K; i++) {
             block = await this.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
@@ -103,6 +108,7 @@ class Blockchain extends Observable {
     /**
      * @param {Block} block
      * @returns {Promise.<boolean>}
+     * @fires Blockchain#head-changed
      * @private
      */
     async _push(block) {
@@ -110,11 +116,13 @@ class Blockchain extends Observable {
 
         // Check all intrinsic block invariants.
         if (!(await block.verify())) {
+            Log.w(Blockchain, 'Rejecting block - verification failed');
             return false;
         }
 
         // Check that all known interlink blocks are valid predecessors of the given block.
         if (!(await this._verifyInterlink(block))) {
+            Log.w(Blockchain, 'Rejecting block - interlink verification failed');
             return false;
         }
 
@@ -125,49 +133,69 @@ class Blockchain extends Observable {
             switch (result) {
                 case DenseChain.ERR_INVALID:
                     // The block is invalid, reject.
+                    Log.w(Blockchain, `INVALID [dense]: hash=${await block.hash()}`);
                     return false;
 
                 case DenseChain.OK_EXTENDED: {
                     // The block was appended to the main chain and has become the new head.
                     // Update the head of the sparse chain.
-                    const resultSparse = await this._sparse.add(block);
+                    const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_EXTENDED) {
                         throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_EXTENDED}`;
                     }
+
+                    Log.d(Blockchain, `EXTENDED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+
+                    // Tell listeners that the head of the chain has changed.
+                    this.fire('head-changed', this.head);
+
                     break;
                 }
 
                 case DenseChain.OK_PREPENDED: {
                     // The block was prepended to the main chain.
                     // TODO what to do here?
-                    const resultSparse = await this._sparse.add(block);
+                    const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_ACCEPTED) {
                         throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_ACCEPTED}`;
                     }
+
+                    Log.d(Blockchain, `PREPENDED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, tail=${this._dense.tailHash}`);
+
                     break;
                 }
 
                 case DenseChain.OK_REBRANCHED: {
                     // The dense chain rebranched.
                     // TODO what to do here?
-                    const resultSparse = await this._sparse.add(block);
+                    const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_REBRANCHED) {
                         throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_REBRANCHED}`;
                     }
+
+                    Log.d(Blockchain, `REBRANCHED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+
+                    // Tell listeners that the head of the chain has changed.
+                    this.fire('head-changed', this.head);
+
                     break;
                 }
 
                 case DenseChain.OK_FORKED: {
                     // The block is on a fork.
                     // TODO what to do here?
-                    const resultSparse = await this._sparse.add(block);
+                    const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_PENDING) {
                         throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_PENDING}`;
                     }
+
+                    Log.d(Blockchain, `FORKED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+
                     break;
                 }
 
                 case DenseChain.ERR_ORPHAN:
+                default:
                     // XXX Should not happen since dense.containsNeighborOf(block) == true.
                     throw 'Illegal state';
             }
@@ -175,7 +203,7 @@ class Blockchain extends Observable {
 
         // Otherwise, check if we can attach the block to the sparse chain.
         else if (this._sparse.containsPredecessorOf(block)) {
-            const result = this._sparse.add(block);
+            const result = this._sparse.append(block);
             switch (result) {
                 case SparseChain.ERR_INVALID:
                     // The block is invalid, reject.
@@ -185,6 +213,9 @@ class Blockchain extends Observable {
                     // The block was appended to the main chain and has become the new head.
                     // Since the block does not attach to our current dense chain, scratch it and create a new one.
                     this._dense = await new DenseChain(this._store, this._sparse.head);
+
+                    Log.d(Blockchain, `EXTENDED [sparse]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+
                     break;
 
                 /*
@@ -193,7 +224,7 @@ class Blockchain extends Observable {
                     // If the new head is not part of the dense chain anymore, or if the dense chain is fully
                     // inconsistent with the new block, create a new one.
                     if (!(await this._dense.contains(this._sparse.head)) || !(await this._dense.ensureConsistency(block))) {
-                        this._dense = new DenseChain(this._store, this._sparse.head);
+                        this._dense = await new DenseChain(this._store, this._sparse.head);
                     }
 
                     // The sparse and dense head should coincide now.
@@ -210,6 +241,11 @@ class Blockchain extends Observable {
                     throw `TODO: SparseChain.add() returned ${result}`;
             }
 
+        }
+
+        // TODO what to do here?
+        else {
+            Log.w(Blockchain, `Block cannot be attached: ${await block.hash()}`, block);
         }
 
 
@@ -255,8 +291,9 @@ class Blockchain extends Observable {
         // Check that all blocks referenced in the interlink of the given block are valid predecessors of that block.
         // We only check the blocks that are already in storage. interlink[0] == Genesis is checked in Block.verify().
         for (let i = 1; i < block.interlink.length; i++) {
-            const predecessor = await this._store.get(block.interlink[i].toBase64()); // eslint-disable-line no-await-in-loop
+            const predecessor = await this._store.get(block.interlink.hashes[i].toBase64()); // eslint-disable-line no-await-in-loop
             if (predecessor && !(await block.isInterlinkSuccessorOf(predecessor))) { // eslint-disable-line no-await-in-loop
+                Log.w(Blockchain, `Invalid interlink - block ${await block.hash()} is not a valid successor of ${await predecessor.hash()} @ ${i}`);
                 return false;
             }
         }
@@ -304,7 +341,7 @@ class Blockchain extends Observable {
      * @param {Block} head
      * @param {number} m Desired length of the interlink chain
      * @param {Array.<Hash>} [locators] Return the interlink chain immediately if one of the hashes in locators is encountered during construction, irrespective of m.
-     * @returns {InterlinkChain}
+     * @returns {Promise.<InterlinkChain>}
      */
     async getInterlinkChain(head, m, locators) {
         head = head || this.head;
@@ -318,7 +355,8 @@ class Blockchain extends Observable {
         // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
         const maxTargetDepth = head.interlink.length - 1;
         if (maxTargetDepth > 0) {
-            let interlinkChain = this._getInnerChain(head, maxTargetDepth, locatorSet);
+            /** @type {InterlinkChain} */
+            let interlinkChain = await this._getInnerChain(head, maxTargetDepth, locatorSet);
 
             // XXX Hack: If a locator hash was found, return the chain immediately.
             if (interlinkChain.locator) {
@@ -329,7 +367,7 @@ class Blockchain extends Observable {
             let depth = maxTargetDepth;
             while (interlinkChain.length < m && !interlinkChain.locator && depth > 1) {
                 depth--;
-                interlinkChain = this._getInnerChain(head, depth, locatorSet);
+                interlinkChain = await this._getInnerChain(head, depth, locatorSet); // eslint-disable-line no-await-in-loop
             }
 
             // If a locator was found, prepend the locator block and return.
@@ -347,10 +385,10 @@ class Blockchain extends Observable {
 
         // An interlink chain with the desired length m could not be constructed.
         // Return the whole header chain.
-        const interlinkChain = new InterlinkChain([head]);
+        const interlinkChain = new InterlinkChain([head.toLight()]);
         while (!Block.GENESIS.equals(head) && !locatorSet.contains(head.prevHash)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
-            interlinkChain.prepend(head);
+            interlinkChain.prepend(head.toLight());
         }
         return interlinkChain;
     }
@@ -360,11 +398,11 @@ class Blockchain extends Observable {
      * @param {Block} head
      * @param {number} depth
      * @param {HashSet.<Hash>} locatorSet
-     * @returns {InterlinkChain}
+     * @returns {Promise.<InterlinkChain>}
      * @private
      */
     async _getInnerChain(head, depth, locatorSet) {
-        const interlinkChain = new InterlinkChain([head.header], [head.interlink]);
+        const interlinkChain = new InterlinkChain([head.toLight()]);
 
         // Since we base our interlink chain on the original head's target T, we have to recalculate the interlink
         // index i' (denoted as j) as j = i + log2(T'/T), where T' is the current heads target T'.
@@ -509,7 +547,8 @@ class Blockchain extends Observable {
 
     /** @type {number} */
     get totalWork() {
-        return this._sparse.realWork;
+        // FIXME What makes sense here? We can only estimate the 'actual' total work.
+        return Math.max(this._sparse.realWork, this._dense.totalWork);
     }
 
     /** @type {number} */
