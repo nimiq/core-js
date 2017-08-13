@@ -126,12 +126,12 @@
             <hr/>
 
             <div class="info-block">
-                <strong>Total work</strong>
-                <span id="bcTotalWork"></span>
+                <strong>Work</strong>
+                <span id="bcDenseWork"></span> <small>dense</small> / <span id="bcSparseWork"></span> <small>sparse</small>
             </div>
             <div class="info-block">
                 <strong>Height</strong>
-                <span id="bcHeight"></span>
+                <span id="bcHeight"></span> / <span id="bcDenseLength"></span> <small>dense</small> / <span id="bcSparseLength"></span> <small>sparse</small>
             </div>
             <div class="info-block">
                 <strong>Accounts Hash</strong>
@@ -272,9 +272,15 @@
 
             // Blockchain
             /** @type {HTMLElement} */
-            this._bcTotalWork = document.querySelector('#bcTotalWork');
+            this._bcDenseWork = document.querySelector('#bcDenseWork');
+            /** @type {HTMLElement} */
+            this._bcSparseWork = document.querySelector('#bcSparseWork');
             /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
+            this._bcDenseLength = document.querySelector('#bcDenseLength');
+            /** @type {HTMLElement} */
+            this._bcSparseLength = document.querySelector('#bcSparseLength');
             /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
@@ -420,8 +426,11 @@
         }
 
         _headChanged(head) {
-            this._bcTotalWork.innerText = $.blockchain.totalWork;
+            this._bcDenseWork.innerText = $.blockchain._dense.totalWork; // XXX
+            this._bcSparseWork.innerText = $.blockchain._sparse.realWork; // XXX
             this._bcHeight.innerText = $.blockchain.height;
+            this._bcDenseLength.innerText = $.blockchain.denseLength;
+            this._bcSparseLength.innerText = $.blockchain.sparseLength;
             $.blockchain.accountsHash().then(function(accountsHash) {
                 this._bcAccountsHash.innerText = accountsHash.toBase64();
             }.bind(this));

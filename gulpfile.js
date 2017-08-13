@@ -51,6 +51,7 @@ const sources = {
         './src/main/generic/utils/array/HashSet.js',
         './src/main/generic/utils/array/Queue.js',
         './src/main/generic/utils/array/IndexedArray.js',
+        './src/main/generic/utils/assert/assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
         './src/main/generic/utils/crypto/Crypto.js',

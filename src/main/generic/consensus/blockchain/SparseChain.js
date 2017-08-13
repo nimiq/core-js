@@ -16,11 +16,11 @@ class SparseChain extends Observable {
         /** @type {Hash} */
         this._headHash = Block.GENESIS.HASH;
 
-        /** @type {HashMap.<Hash, BlockData>} */
+        /** @type {HashMap.<Hash, SparseBlockData>} */
         this._blockData = new HashMap();
 
         // Initialize genesis data.
-        const genesisData = new BlockData(null, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
+        const genesisData = new SparseBlockData(null, BlockUtils.realDifficulty(Block.GENESIS.HASH), 1, true);
         this._blockData.put(Block.GENESIS.HASH, genesisData);
 
         /**
@@ -87,16 +87,17 @@ class SparseChain extends Observable {
         // Create BlockData for the block. We might be inserting the block, so we need to fix the
         // BlockData predecessor/successor pointers.
         const prevHash = await predecessor.hash();
-        /** @type {BlockData} */
+        /** @type {SparseBlockData} */
         const prevData = this._blockData.get(prevHash);
         const totalWork = prevData.totalWork + BlockUtils.realDifficulty(hash);
-        const blockData = new BlockData(prevHash, totalWork);
+        const length = prevData.length + 1;
+        const blockData = new SparseBlockData(prevHash, totalWork, length);
 
         // Check if the predecessor already has successors. If so, the new block will contribute work to any successor
         // that is also a successor of the new block. Note that two successors might be on the same chain. Update all
         // subsequent total work values. If the new block is not part of the main chain (TODO or cannot be identified as such yet ?!?!)
         // the chain might need to rebranch.
-        let maxChain = { totalWork: 0, head: null };
+        let maxChain = { totalWork: 0, length: 0, head: null };
         for (/** @type {Hash} */ const succHash of prevData.successors.values()) {
             // Move all successors that are also successors of the new block to the new block.
             const successor = await this._store.get(succHash.toBase64()); // eslint-disable-line no-await-in-loop
@@ -242,29 +243,31 @@ class SparseChain extends Observable {
 
     /**
      * @param {Hash} blockHash
-     * @returns {{head: Hash, totalWork: number}|null}
+     * @returns {{head: Hash, totalWork: number, length: number}|null}
      * @private
      */
     _updateTotalWork(blockHash) {
         // TODO Improve efficiency by tracking the total work per subtree (Patricia style)
-        /** @type {BlockData} */
+        /** @type {SparseBlockData} */
         const blockData = this._blockData.get(blockHash);
-        /** @type {BlockData} */
+        /** @type {SparseBlockData} */
         const prevData = this._blockData.get(blockData.predecessor);
         if (!prevData) {
             return null;
         }
 
-        // Check if the totalWork for blockHash is correct.
+        // Check if the totalWork/length for blockHash is correct.
         const expectedWork = prevData.totalWork + BlockUtils.realDifficulty(blockHash);
-        if (blockData.totalWork === expectedWork) {
+        const expectedLength = prevData.length + 1;
+        if (blockData.totalWork === expectedWork && blockData.length === expectedLength) {
             return null;
         }
 
         // XXX If not, update it and recurse ... this is expensive!!!
         blockData.totalWork = expectedWork;
+        blockData.length = expectedLength;
 
-        let maxChain = { totalWork: 0, head: null };
+        let maxChain = { totalWork: 0, length: 0, head: null };
         for (const succHash of blockData.successors.values()) {
             const result = this._updateTotalWork(succHash);
             if (result && result.totalWork > maxChain.totalWork) {
@@ -274,7 +277,8 @@ class SparseChain extends Observable {
 
         return {
             head: maxChain.head || blockHash,
-            totalWork: expectedWork + maxChain.totalWork
+            totalWork: expectedWork + maxChain.totalWork,
+            length: expectedLength + maxChain.length
         };
     }
 
@@ -327,6 +331,10 @@ class SparseChain extends Observable {
      * @private
      */
     async _extend(block) {
+        // Save current head.
+        const oldHead = this._head;
+        const oldHeadHash = this._headHash;
+
         // Update head block & total work.
         this._head = block;
         this._headHash = await block.hash();
@@ -336,6 +344,24 @@ class SparseChain extends Observable {
         this._headData.onMainChain = true;
 
         // TODO clean up blocks from the sparse chain that are not referenced in any interlink or whose depth is too low (?)
+
+        assert(oldHeadHash.equals(this._headData.predecessor));
+
+        // XXX If the previous head is not an interlink block, remove it from the sparse chain.
+        if (!this._head.interlink.hashes.some(hash => oldHeadHash.equals(hash))) {
+            const blockData = this._blockData.get(oldHeadHash);
+            assert(blockData.successors.length === 1);
+            this._headData.predecessor = blockData.predecessor;
+
+            const prevData = this._blockData.get(blockData.predecessor);
+            prevData.successors.remove(oldHeadHash);
+            prevData.successors.add(this._headHash);
+
+            await this._unindex(oldHead);
+            this._blockData.remove(oldHeadHash);
+
+            this._updateTotalWork(this._headHash);
+        }
     }
 
 
@@ -538,7 +564,7 @@ class SparseChain extends Observable {
     }
 
     /**
-     * @type {BlockData}
+     * @type {SparseBlockData}
      * @private
      */
     get _headData() {
@@ -548,6 +574,11 @@ class SparseChain extends Observable {
     /** @type {number} */
     get realWork() {
         return this._headData.totalWork;
+    }
+
+    /** @type {number} */
+    get length() {
+        return this._headData.length;
     }
 }
 SparseChain.ERR_ORPHAN = -2;

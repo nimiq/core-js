@@ -65,9 +65,6 @@ class DenseChain extends Observable {
         // XXX Sanity check: Collapsed chains cannot be used anymore.
         if (this._hasCollapsed) throw 'Cannot add to collapsed chain';
 
-        // XXX Sanity check: Given block must be verified.
-        if (!block.isVerified()) throw 'DenseChain requires verified blocks';
-
         // Check if this block should be pre- or appended.
         const hash = await block.hash();
         if (this._tail.prevHash.equals(hash)) {
@@ -268,47 +265,54 @@ class DenseChain extends Observable {
         // The difficulty is adjusted every block.
         block = block || this._head;
 
+        let blockHash = await block.hash();
+        if (Block.GENESIS.HASH.equals(blockHash)) {
+            return Block.GENESIS.target;
+        }
+
         // Retrieve the timestamp of the block that appears DIFFICULTY_BLOCK_WINDOW blocks before the given block in the chain.
         // The block might not be on the main chain. Also, there might not be enough blocks available in this chain to
         // go back DIFFICULTY_BLOCK_WINDOW blocks, fail in this case.
 
-        // Try to walk DIFFICULTY_BLOCK_WINDOW - 1 blocks back starting from the given block.
-        let blockHash = await block.hash();
+        // Try to walk DIFFICULTY_BLOCK_WINDOW blocks back starting from the given block. Stop at the first block after the
+        // genesis block.
         let blockData = this._blockData.get(blockHash);
-        for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 1 && !blockHash.equals(Block.GENESIS.HASH) && blockData; i++) {
+        for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW && blockData && !Block.GENESIS.HASH.equals(blockData.predecessor); i++) {
             blockHash = blockData.predecessor;
             blockData = blockHash && this._blockData.get(blockHash);
         }
 
-        // If we couldn't go back far enough, fail.
+        // If we couldn't go back far enough (because we don't know all blocks), fail.
         // TODO Throw exception instead of returning an invalid target?
         // TODO We probably should attempt to load missing blocks from storage.
         if (!blockData) {
             return 0; // not a valid target
         }
 
+        // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
+        const startBlock = await this._store.get(blockHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
+        // XXX Assert that the block is there.
+        if (!startBlock) throw new Error('Corrupted store: Failed to load start block when computing next target');
+        let actualTime = block.timestamp - startBlock.timestamp;
+
         // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate
         // a sliding window that starts before the genesis block.
-        let actualTime;
-        // TODO check < vs. <=
         if (block.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
-            // FIXME Check if this is correct!
-            actualTime = block.timestamp + (Policy.DIFFICULTY_BLOCK_WINDOW - block.height) * Policy.BLOCK_TIME + Policy.BLOCK_TIME;
-        } else {
-            // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
-            const startBlock = await this._store.get(blockHash.toBase64()); // chain head is Policy.DIFFICULTY_BLOCK_WINDOW back
-            // XXX Assert that the block is there.
-            if (!startBlock) throw 'Corrupted store: Failed to load start block when computing next target';
-            actualTime = block.timestamp - startBlock.timestamp;
+            actualTime += (Policy.DIFFICULTY_BLOCK_WINDOW - block.height + 2) * Policy.BLOCK_TIME;
         }
 
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
         let adjustment = actualTime / expectedTime;
 
+        // Dampen the adjustment.
+        adjustment = (adjustment - 1) * 0.5 + 1;
+
         // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
         adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
         adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+
+        console.log(`actualTime: ${actualTime}, adjustment: ${adjustment}`);
 
         // Compute the next target.
         const currentTarget = block.target;

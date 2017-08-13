@@ -126,6 +126,8 @@ class Blockchain extends Observable {
             return false;
         }
 
+        let headChanged = false;
+
         // Check if the block can be attached to the dense chain.
         if (this._dense.containsNeighborOf(block)) {
             // The blocks predecessor or successor is part of the dense chain.
@@ -146,9 +148,7 @@ class Blockchain extends Observable {
 
                     Log.d(Blockchain, `EXTENDED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
-                    // Tell listeners that the head of the chain has changed.
-                    this.fire('head-changed', this.head);
-
+                    headChanged = true;
                     break;
                 }
 
@@ -175,9 +175,7 @@ class Blockchain extends Observable {
 
                     Log.d(Blockchain, `REBRANCHED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
-                    // Tell listeners that the head of the chain has changed.
-                    this.fire('head-changed', this.head);
-
+                    headChanged = true;
                     break;
                 }
 
@@ -216,6 +214,7 @@ class Blockchain extends Observable {
 
                     Log.d(Blockchain, `EXTENDED [sparse]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
+                    headChanged = true;
                     break;
 
                 /*
@@ -278,6 +277,11 @@ class Blockchain extends Observable {
 
         // Update persistent head.
         await this._store.setHead(this._dense.head);
+
+        // Tell listeners if the head of the chain has changed.
+        if (headChanged) {
+            this.fire('head-changed', this.head);
+        }
 
         return true;
     }
@@ -353,10 +357,10 @@ class Blockchain extends Observable {
         }
 
         // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
-        const maxTargetDepth = head.interlink.length - 1;
-        if (maxTargetDepth > 0) {
+        const maxDepth = BlockUtils.getTargetDepth(head.target) + head.interlink.length - 1;
+        if (maxDepth > 0) {
             /** @type {InterlinkChain} */
-            let interlinkChain = await this._getInnerChain(head, maxTargetDepth, locatorSet);
+            let interlinkChain = await this._getInnerChain(head, maxDepth, locatorSet);
 
             // XXX Hack: If a locator hash was found, return the chain immediately.
             if (interlinkChain.locator) {
@@ -364,7 +368,7 @@ class Blockchain extends Observable {
             }
 
             // Check if length >= m and, if not, decrease the depth and try again.
-            let depth = maxTargetDepth;
+            let depth = maxDepth;
             while (interlinkChain.length < m && !interlinkChain.locator && depth > 1) {
                 depth--;
                 interlinkChain = await this._getInnerChain(head, depth, locatorSet); // eslint-disable-line no-await-in-loop
@@ -378,7 +382,7 @@ class Blockchain extends Observable {
 
             // If the interlink chain is long enough, prepend the genesis block and return.
             if (interlinkChain.length >= m) {
-                interlinkChain.prepend(Block.GENESIS);
+                interlinkChain.prepend(Block.GENESIS.toLight());
                 return interlinkChain;
             }
         }
@@ -404,10 +408,7 @@ class Blockchain extends Observable {
     async _getInnerChain(head, depth, locatorSet) {
         const interlinkChain = new InterlinkChain([head.toLight()]);
 
-        // Since we base our interlink chain on the original head's target T, we have to recalculate the interlink
-        // index i' (denoted as j) as j = i + log2(T'/T), where T' is the current heads target T'.
-        const targetDepth = BlockUtils.getTargetDepth(head.target);
-        let j = depth;
+        let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 1);
         while (j < head.interlink.length) {
             // Stop early if we encounter a locator hash.
             const hash = head.interlink.hashes[j];
@@ -421,8 +422,7 @@ class Blockchain extends Observable {
             head = await this.getBlock(hash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head.toLight());
 
-            const targetDepthPrime = BlockUtils.getTargetDepth(head.target);
-            j = Math.ceil(depth + (targetDepthPrime - targetDepth));
+            j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 1);
         }
 
         return interlinkChain;
@@ -447,7 +447,7 @@ class Blockchain extends Observable {
         // Traverse tree until length k is reached and we found the stopHash
         while (!Block.GENESIS.equals(head) && (headers.length < k || !foundStopHash)) {
             // Check that we at least include the stopHash.
-            if (curHash.eq(stopHash)) {
+            if (curHash.equals(stopHash)) {
                 foundStopHash = true;
             }
 

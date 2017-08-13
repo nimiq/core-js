@@ -15,9 +15,6 @@ class Block {
         this._interlink = interlink;
         /** @type {BlockBody} */
         this._body = body;
-
-        /** @type {boolean} */
-        this._verified = false;
     }
 
     /**
@@ -91,7 +88,6 @@ class Block {
         }
 
         // Everything checks out.
-        this._verified = true;
         return true;
     }
 
@@ -114,8 +110,9 @@ class Block {
         }
 
         // Check that all hashes in the interlink are hard enough for their respective depth.
+        const targetHeight = BlockUtils.getTargetHeight(this.target);
         for (let depth = 1; depth < this._interlink.length; depth++) {
-            if (!BlockUtils.isProofOfWork(this._interlink.hashes[depth], this.target / Math.pow(2, depth))) {
+            if (!BlockUtils.isProofOfWork(this._interlink.hashes[depth], Math.pow(2, targetHeight - depth))) {
                 Log.w(Block, 'Invalid block - invalid block in interlink');
                 return false;
             }
@@ -151,13 +148,6 @@ class Block {
 
         // Everything checks out.
         return true;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    isVerified() {
-        return this._verified;
     }
 
     /**
@@ -255,31 +245,29 @@ class Block {
             hashes.addAll(this._interlink.hashes);
             hashes.removeAll(predecessor.interlink.hashes);
             if (hashes.length > this._header.height - predecessor.header.height) {
-                Log.v(Block, 'No interlink predecessor - interlink length');
+                Log.v(Block, 'No interlink predecessor - too many new blocks');
+                return false;
+            }
+
+            // Check that the interlink is not too short.
+            const thisDepth = BlockUtils.getTargetDepth(this.target);
+            const prevDepth = BlockUtils.getTargetDepth(predecessor.target);
+            const depthDiff = thisDepth - prevDepth;
+            if (this._interlink.length < predecessor.interlink.length - depthDiff) {
+                Log.v(Block, 'No interlink predecessor - interlink too short');
                 return false;
             }
 
             // If the same block is found in both interlinks, all blocks at lower depths must be the same in both interlinks.
-            const thisInterlink = this._interlink.hashes.map(it => it.toBase64());
-            const prevInterlink = predecessor.interlink.hashes.map(it => it.toBase64());
-            let expectedDepth = null;
-            for (let i = 1; i < prevInterlink.length && expectedDepth < thisInterlink.length; i++) {
-                const hash = prevInterlink[i];
-                const depth = thisInterlink.indexOf(hash, expectedDepth || 0);
-                if (depth > 0) {
-                    if (expectedDepth === null) {
-                        expectedDepth = depth + 1;
-                    }
-                    else if (expectedDepth === depth) {
-                        expectedDepth++;
-                    }
-                    else {
-                        Log.v(Block, 'No interlink predecessor - expected depth');
-                        return false;
-                    }
+            let commonBlock = false;
+            const thisInterlink = this._interlink.hashes;
+            const prevInterlink = predecessor.interlink.hashes;
+            for (let i = 1; i < prevInterlink.length && i - depthDiff < thisInterlink.length; i++) {
+                if (prevInterlink[i].equals(thisInterlink[i - depthDiff])) {
+                    commonBlock = true;
                 }
-                else if (expectedDepth !== null) {
-                    Log.v(Block, 'No interlink predecessor - expected depth (2)');
+                else if (commonBlock) {
+                    Log.v(Block, 'No interlink predecessor - invalid common suffix');
                     return false;
                 }
             }
@@ -290,7 +278,7 @@ class Block {
         const heightDiff = this._header.height - predecessor.header.height;
         if (adjustmentFactor > Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, heightDiff)
                 || adjustmentFactor < Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, -heightDiff)) {
-            Log.v(Block, 'No interlink predecessor - difficulty adjustment');
+            Log.v(Block, 'No interlink predecessor - target adjustment out of bounds');
             return false;
         }
 

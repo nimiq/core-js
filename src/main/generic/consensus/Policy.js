@@ -14,7 +14,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_TIME() {
-        return 60; // Seconds
+        return 30; // Seconds
     }
 
     /**
@@ -32,7 +32,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_SIZE_MAX() {
-        return 1e6; // 1 MB
+        return 5e5; // 500 KB
     }
 
     /**

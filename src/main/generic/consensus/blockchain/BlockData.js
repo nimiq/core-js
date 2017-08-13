@@ -48,3 +48,27 @@ class BlockData {
         this._onMainChain = onMainChain;
     }
 }
+Class.register(BlockData);
+
+class SparseBlockData extends BlockData {
+    /**
+     * @param {Hash|null} predecessor
+     * @param {number} totalWork
+     * @param {boolean} onMainChain
+     */
+    constructor(predecessor, totalWork, length, onMainChain = false) {
+        super(predecessor, totalWork, onMainChain);
+        this._length = length;
+    }
+
+    /** @type {number} */
+    get length() {
+        return this._length;
+    }
+
+    /** @type {number} */
+    set length(length) {
+        this._length = length;
+    }
+}
+Class.register(SparseBlockData);
