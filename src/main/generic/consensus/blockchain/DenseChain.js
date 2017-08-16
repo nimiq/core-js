@@ -275,7 +275,7 @@ class DenseChain extends Observable {
         // go back DIFFICULTY_BLOCK_WINDOW blocks, fail in this case.
 
         // Try to walk DIFFICULTY_BLOCK_WINDOW blocks back starting from the given block. Stop at the first block after the
-        // genesis block.
+        // genesis block at the latest.
         let blockData = this._blockData.get(blockHash);
         for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW && blockData && !Block.GENESIS.HASH.equals(blockData.predecessor); i++) {
             blockHash = blockData.predecessor;
@@ -684,5 +684,5 @@ DenseChain.OK_EXTENDED = 2;
 DenseChain.OK_REBRANCHED = 3;
 DenseChain.OK_FORKED = 4;
 
-DenseChain.MAX_LENGTH = 5000;
+DenseChain.MAX_LENGTH = 500;
 Class.register(DenseChain);

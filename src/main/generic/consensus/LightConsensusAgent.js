@@ -46,27 +46,24 @@ class LightConsensusAgent extends Observable {
         this._timers = new Timers();
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('interlinkChain', msg => this._onInterlinkChain(msg));
-
-        peer.channel.on('getInterlinkChain', msg => this._onGetInterlinkChain(msg));
-        peer.channel.on('getAccountsProof', msg => this._onGetAccountsProof(msg));
-        peer.channel.on('getHeaders', msg => this._onGetHeaders(msg));
+        peer.channel.on('get-interlink-chain', msg => this._onGetInterlinkChain(msg));
+        peer.channel.on('interlink-chain', msg => this._onInterlinkChain(msg));
+        peer.channel.on('get-headers', msg => this._onGetHeaders(msg));
+        peer.channel.on('headers', msg => this._onHeaders(msg));
+        peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
 
         // Wait for the blockchain to processes queued blocks before requesting more.
         this._blockchain.on('ready', () => {
-            if (this._syncing) this.syncBlockchain();
+            //if (this._syncing) this.syncBlockchain();
         });
     }
 
-    /* Public API */
-
     /**
-     * 
      * @param {Block} block
-     * @return {Promise}
+     * @returns {Promise}
      */
     async relayBlock(block) {
         // Don't relay if no consensus established yet.
@@ -92,7 +89,7 @@ class LightConsensusAgent extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise}
+     * @returns {Promise}
      */
     async relayTransaction(transaction) {
         // TODO Don't relay if no consensus established yet ???
@@ -113,24 +110,57 @@ class LightConsensusAgent extends Observable {
         this._knownObjects.add(vector);
     }
 
-    syncBlockchain() {
-        return this._requestInterlinkChain();
+    /**
+     * @returns {Promise.<void>}
+     */
+    async syncBlockchain() {
+        this._syncing = true;
+
+        // Check if our head corresponds to the peer's head.
+        if (this._blockchain.headHash.equals(this._peer.headHash)) {
+            // If the dense portion of the blockchain is long enough, we're done syncing.
+            if (this._blockchain.denseLength >= Policy.K) {
+                this._syncFinished();
+            }
+            // Otherwise, request header chain from the peer.
+            else {
+                this._requestHeaderChain();
+            }
+        }
+        // Otherwise, check if we already know the peer's head block. If so, there is nothing new to be learned from this peer.
+        else {
+            const headBlock = await this._blockchain.getBlock(this._peer.headHash);
+            if (headBlock) {
+                this._syncFinished();
+                return;
+            }
+
+            // If we don't know the peer's head block, request interlink chain.
+            this._requestInterlinkChain();
+        }
+    }
+
+    /**
+     * @returns {void}
+     * @private
+     */
+    _syncFinished() {
+        this._syncing = false;
+        this._synced = true;
+        this.fire('sync');
     }
 
 
-    /* Private API */
-
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _requestInterlinkChain() {
-        // XXX Only one getInterlinkChain request at a time.
-        // TODO do we need this?
-        if (this._timers.timeoutExists('getInterlinkChain')) {
-            Log.e(ConsensusAgent, 'Duplicate _requestInterlinkChain()');
-            return;
-        }
+        assert(!this._timers.timeoutExists('getInterlinkChain'));
 
         // Request interlink chain from peer.
         const locators = await this._blockchain.getLocators();
-        this._peer.channel.getInterlinkChain(this._peer.headHash, Policy.M, locators);
+        this._peer.channel.getInterlinkChain(Policy.M, this._peer.headHash, locators);
 
         // Drop the peer if it doesn't send the interlink chain within the timeout.
         // TODO should we ban here instead?
@@ -147,11 +177,11 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _onInterlinkChain(msg) {
-        Log.d(LightConsensusAgent, `[INTERLINK] Received from ${this._peer}`, msg.interlinkChain);
+        Log.d(LightConsensusAgent, `[INTERLINK] Received from ${this._peer.peerAddress}: ${msg.interlinkChain}`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
         if (!this._timers.timeoutExists('getInterlinkChain')) {
-            Log.w(LightConsensusAgent, `Unsolicited interlink chain received from ${this._peer}`);
+            Log.w(LightConsensusAgent, `Unsolicited interlink chain received from ${this._peer.peerAddress}`);
             // TODO close/ban?
             return;
         }
@@ -162,7 +192,7 @@ class LightConsensusAgent extends Observable {
         // Check that interlink chain is valid.
         const interlinkChain = msg.interlinkChain;
         if (!(await interlinkChain.verify())) {
-            Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer}`);
+            Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('invalid interlink received');
             return;
@@ -171,7 +201,7 @@ class LightConsensusAgent extends Observable {
         // Check that interlink chain ends with the peer's head block.
         const headHash = await interlinkChain.head.hash();
         if (!this._peer.headHash.equals(headHash)) {
-            Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer} - unexpected head`);
+            Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer.peerAddress} - unexpected head`);
             // TODO ban instead?
             this._peer.channel.close('invalid interlink received - unexpected head');
             return;
@@ -181,16 +211,31 @@ class LightConsensusAgent extends Observable {
         // - rooted (starts with the genesis block) and either:
         //   - long enough (>=m)
         //   - dense (the peer's whole chain is less than m long)
-        if (interlinkChain.isRooted() && (interlinkChain.length >= Policy.M || interlinkChain.isDense())) {
-            // Interlink chain looks good
-        }
-
         // - Starts with a block whose (interlink) predecessor is known to us (i.e. the chain can be shorter
         //   if one of the locator hashes was encountered during construction).
-        else if (this._blockchain.containsPredecessorOf(interlinkChain.tail)) {
-            // Interlink chain looks good
-        }
+        if ((await interlinkChain.isRooted() && (interlinkChain.length >= Policy.M || await interlinkChain.isDense()))
+                || await this._blockchain.containsPredecessorOf(interlinkChain.tail)) {
 
+            // Interlink chain looks good. Add all blocks to our blockchain.
+            const promises = [];
+            for (const block of interlinkChain.blocks) {
+                promises.push(this._blockchain.push(block));
+            }
+
+            // If not all blocks were pushed successfully, drop the peer.
+            const results = await Promise.all(promises);
+            Log.d(LightConsensusAgent, `Added ${interlinkChain.length} blocks to blockchain: ${results}`);
+
+            if (results.some(result => !result)) {
+                this._peer.channel.close('invalid interlink received - push failed');
+                return;
+            }
+
+            // Interlink chain successfully received, continue syncing.
+            if (this._syncing) {
+                this.syncBlockchain();
+            }
+        }
         // Otherwise, reject chain and drop peer.
         else {
             Log.w(LightConsensusAgent, `Invalid interlink chain received from ${this._peer}`);
@@ -206,32 +251,100 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _onGetInterlinkChain(msg) {
+        Log.d(LightConsensusAgent, `[GET-INTERLINK] Received from ${this._peer.peerAddress}: headHash=${msg.headHash}, m=${msg.m}, locators=${msg.locators}`);
+
         const head = await this._blockchain.getBlock(msg.headHash);
-
         if (head) {
-            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.m, msg.locators);
+            const interlinkChain = await this._blockchain.getInterlinkChain(msg.m, head, msg.locators);
             this._peer.channel.interlinkChain(interlinkChain);
+        } else {
+            // TODO what to do if we do not know the requested head?
+            Log.w(LightConsensusAgent, `Requested interlink head not found: ${msg.headHash}`);
         }
-
-        // TODO what to do if we do not know the requested head?
     }
 
     /**
+     * @returns {void}
+     * @private
+     */
+    _requestHeaderChain() {
+        assert(!this._timers.timeoutExists('getHeaderChain'));
+
+        // Request headers from peer.
+        this._peer.channel.getHeaders(Policy.K, this._blockchain.headHash);
+
+        // Drop the peer if it doesn't send the headers within the timeout.
+        // TODO should we ban here instead?
+        this._timers.setTimeout('getHeaderChain', () => {
+            this._timers.clearTimeout('getHeaderChain');
+            this._peer.channel.close('getHeaderChain timeout');
+        }, LightConsensusAgent.HEADERS_REQUEST_TIMEOUT);
+    }
+
+    /**
+     * @param {HeadersMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onHeaders(msg) {
+        Log.d(LightConsensusAgent, `[HEADERS] Received from ${this._peer.peerAddress}: ${msg.headerChain}`);
+
+        // Check if we have requested a header chain, reject unsolicited ones.
+        if (!this._timers.timeoutExists('getHeaderChain')) {
+            Log.w(LightConsensusAgent, `Unsolicited header chain received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear timeout.
+        this._timers.clearTimeout('getHeaderChain');
+
+        // TODO verify header chain?
+        const headerChain = msg.headerChain;
+
+        // Add blocks to blockchain.
+        const promises = [];
+        for (const block of headerChain.blocks) {
+            promises.push(this._blockchain.push(block));
+        }
+
+        // If not all blocks were pushed successfully, drop the peer.
+        const results = await Promise.all(promises);
+        Log.d(LightConsensusAgent, `Added ${headerChain.length} blocks to blockchain: ${results}`);
+
+        if (results.some(result => !result)) {
+            this._peer.channel.close('invalid headers received - push failed');
+            return;
+        }
+
+        // Header chain successfully received, continue syncing.
+        if (this._syncing) {
+            this.syncBlockchain();
+        }
+    }
+
+
+    /**
      * @param {GetHeadersMessage} msg
+     * @returns {Promise.<void>}
      * @private
      */
     async _onGetHeaders(msg) {
-        const head = await this._blockchain.getBlock(msg.blockHash);
-
+        Log.d(LightConsensusAgent, `[GET-HEADERS] Received from ${this._peer.peerAddress}: headHash=${msg.headHash}, k=${msg.k}`);
+        
+        const head = await this._blockchain.getBlock(msg.headHash);
         if (head) {
-            const headerChain = await this._blockchain.getHeaderChain(head, msg.mustIncludeHash, msg.k, msg.hashes);
+            const headerChain = await this._blockchain.getHeaderChain(msg.k, head);
             this._peer.channel.headers(headerChain);
+        } else {
+            // TODO what to do if we do not know the requested head?
+            Log.w(LightConsensusAgent, `Requested headers head not found: ${msg.headHash}`);
         }
-        // TODO what to do if we do not know the requested head?
     }
 
     /**
      * @param {GetAccountsProofMessage} msg
+     * @returns {Promise.<void>}
      * @private
      */
     async _onGetAccountsProof(msg) {
@@ -284,4 +397,5 @@ class LightConsensusAgent extends Observable {
  * @type {number}
  */
 LightConsensusAgent.INTERLINK_REQUEST_TIMEOUT = 1000 * 10; // 10 seconds
+LightConsensusAgent.HEADERS_REQUEST_TIMEOUT = 1000 * 10; // 10 seconds
 Class.register(LightConsensusAgent);

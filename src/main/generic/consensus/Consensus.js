@@ -75,24 +75,9 @@ class Consensus extends Observable {
             return;
         }
 
-        // Find the peers with the hardest chain that aren't sync'd yet.
-        let bestTotalWork = -1;
-        let bestAgents = [];
-        for (const agent of this._agents.values()) {
-            if (!agent.synced && agent.peer.totalWork > bestTotalWork) {
-                bestTotalWork = agent.peer.totalWork;
-                bestAgents = [agent];
-            } else if (!agent.synced && agent.peer.totalWork === bestTotalWork) {
-                bestAgents.push(agent);
-            }
-        }
-        // Choose a random peer from those.
-        let bestAgent = null;
-        if (bestAgents.length > 0) {
-            bestAgent = bestAgents[Math.floor(Math.random() * bestAgents.length)];
-        }
-
-        if (!bestAgent) {
+        // Choose a random peer which we aren't sync'd with yet.
+        const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
+        if (!agent) {
             // We are synced with all connected peers.
             this._syncing = false;
 
@@ -112,21 +97,16 @@ class Consensus extends Observable {
             return;
         }
 
-        Log.v(Consensus, `Syncing blockchain with peer ${bestAgent.peer.peerAddress}`);
+        Log.v(Consensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
 
         this._syncing = true;
 
-        // If we expect this sync to change our blockchain height, tell listeners about it.
-        if (bestAgent.peer.startHeight > this._blockchain.height) {
-            this.fire('syncing', bestAgent.peer.startHeight);
-        }
-
-        bestAgent.on('sync', () => this._onPeerSynced());
-        bestAgent.on('close', () => {
-            this._onPeerLeft(bestAgent.peer);
+        agent.on('sync', () => this._onPeerSynced());
+        agent.on('close', () => {
+            this._onPeerLeft(agent.peer);
             this._onPeerSynced();
         });
-        bestAgent.syncBlockchain();
+        agent.syncBlockchain();
     }
 
     /**

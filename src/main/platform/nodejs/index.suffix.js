@@ -15,5 +15,5 @@ process.on('uncaughtException', (err) => {
         return;
     }
 
-    console.error(`Uncaught exception: ${err.message || err}`);
+    console.error(`Uncaught exception: ${err.message || err}`, err);
 });

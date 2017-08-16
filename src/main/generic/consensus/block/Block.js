@@ -171,10 +171,9 @@ class Block {
             return false;
         }
 
-        // Check that the interlink hash is correct.
+        // Check that the interlink is correct.
         const interlink = await predecessor.getNextInterlink(this.target);
-        const interlinkHash = await interlink.hash();
-        if (!this._header.interlinkHash.equals(interlinkHash)) {
+        if (!this._interlink.equals(interlink)) {
             return false;
         }
 

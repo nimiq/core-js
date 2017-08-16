@@ -9,7 +9,6 @@ if (!argv.host || !argv.port || !argv.key || !argv.cert) {
 const host = argv.host;
 const port = parseInt(argv.port);
 const miner = argv.miner;
-const minerSpeed = argv['miner-speed'] || 75;
 const passive = argv.passive;
 const key = argv.key;
 const cert = argv.cert;
@@ -46,10 +45,10 @@ const options = {
 
 try {
     (new Nimiq.Core(options)).then($ => {
-        console.log(`Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
+        Nimiq.Log.i(Nimiq.Core, `Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
         $.blockchain.on('head-changed', (head) => {
-            console.log(`Now at block: ${head.height}`);
+            Nimiq.Log.i(Nimiq.Core, `Now at block: ${head.height}`);
         });
 
         if (!passive) {
@@ -62,12 +61,12 @@ try {
         }
 
         $.consensus.on('established', () => {
-            console.log('Blockchain consensus established');
+            Nimiq.Log.i(Nimiq.Core, 'Blockchain consensus established');
             $.accounts.getBalance($.wallet.address).then(_balanceChanged);
         });
 
         $.miner.on('block-mined', (block) => {
-            console.log(`Block mined: ${block.header}`);
+            Nimiq.Log.i(Nimiq.Core, `Block mined: ${block.header}`);
         });
 
         $.accounts.on($.wallet.address, (account) => _balanceChanged(account._balance));

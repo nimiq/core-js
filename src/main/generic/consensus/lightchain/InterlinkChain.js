@@ -5,6 +5,7 @@ class InterlinkChain {
     constructor(blocks) {
         if (!blocks || !NumberUtils.isUint16(blocks.length) || blocks.length === 0
             || blocks.some(it => !(it instanceof Block) || !it.isLight())) throw new Error('Malformed blocks');
+
         /** @type {Array.<Block>} */
         this._blocks = blocks;
     }
@@ -47,7 +48,7 @@ class InterlinkChain {
     async verify() {
         // Check that all blocks in the interlink chain are valid interlink successors of one another.
         for (let i = this._blocks.length - 1; i >= 1; i--) {
-            if (!(await this._blocks[i].isInterlinkSuccessorOf(this._blocks[i - 1]))) { // eslint-disable-line no-await-in-loop
+            if (!(await this._blocks[i].isSuccessorOf(this._blocks[i - 1]))) { // eslint-disable-line no-await-in-loop
                 return false;
             }
         }
@@ -89,6 +90,13 @@ class InterlinkChain {
      */
     async isRooted() {
         return Block.GENESIS.HASH.equals(await this.tail.hash());
+    }
+
+    /**
+     * @returns {string}
+     */
+    toString() {
+        return `InterlinkChain{length=${this.length}}`;
     }
 
     /** @type {number} */

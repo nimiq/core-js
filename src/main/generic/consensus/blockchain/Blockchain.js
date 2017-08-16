@@ -76,19 +76,22 @@ class Blockchain extends Observable {
 
         // Load sparse chain.
         /** @type {InterlinkChain} */
-        const interlinkChain = await this.getInterlinkChain(head, Policy.M);
+        const interlinkChain = await this.getInterlinkChain(Policy.M, head);
         for (let i = 1; i < interlinkChain.length; i++) {
-            if (await this._sparse.append(interlinkChain.blocks[i]) !== SparseChain.OK_EXTENDED) { // eslint-disable-line no-await-in-loop
-                throw 'Failed to load interlink chain from storage';
+            const result = await this._sparse.append(interlinkChain.blocks[i]); // eslint-disable-line no-await-in-loop
+            if (result !== SparseChain.OK_EXTENDED) {
+                throw `Failed to load interlink chain from storage: append returned ${result}`;
             }
         }
 
         // Load dense chain.
         this._dense = await new DenseChain(this._store, head);
-        let block = head;
-        for (let i = 0; !Block.GENESIS.equals(block) && i < Policy.K; i++) {
-            block = await this.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
-            await this._dense._prepend(block); // eslint-disable-line no-await-in-loop
+        const headerChain = await this.getHeaderChain(Policy.K, head);
+        for (let i = 1; i < headerChain.length; i++) {
+            const result = await this._dense._prepend(headerChain.blocks[i]); // eslint-disable-line no-await-in-loop
+            if (result !== DenseChain.OK_PREPENDED) {
+                throw `Failed to load dense chain from storage: prepend returned ${result}`;
+            }
         }
 
         return this;
@@ -112,7 +115,13 @@ class Blockchain extends Observable {
      * @private
      */
     async _push(block) {
-        // Check if already known?
+        // TODO Check if already known?
+
+        // Always ignore the genesis block.
+        const hash = await block.hash();
+        if (Block.GENESIS.HASH.equals(hash)) {
+            return true;
+        }
 
         // Check all intrinsic block invariants.
         if (!(await block.verify())) {
@@ -129,13 +138,13 @@ class Blockchain extends Observable {
         let headChanged = false;
 
         // Check if the block can be attached to the dense chain.
-        if (this._dense.containsNeighborOf(block)) {
+        if (await this._dense.containsNeighborOf(block)) {
             // The blocks predecessor or successor is part of the dense chain.
             const result = await this._dense.add(block);
             switch (result) {
                 case DenseChain.ERR_INVALID:
                     // The block is invalid, reject.
-                    Log.w(Blockchain, `INVALID [dense]: hash=${await block.hash()}`);
+                    Log.w(Blockchain, `INVALID [dense]: hash=${hash}`);
                     return false;
 
                 case DenseChain.OK_EXTENDED: {
@@ -200,8 +209,8 @@ class Blockchain extends Observable {
         }
 
         // Otherwise, check if we can attach the block to the sparse chain.
-        else if (this._sparse.containsPredecessorOf(block)) {
-            const result = this._sparse.append(block);
+        else if (await this._sparse.containsPredecessorOf(block)) {
+            const result = await this._sparse.append(block);
             switch (result) {
                 case SparseChain.ERR_INVALID:
                     // The block is invalid, reject.
@@ -342,12 +351,12 @@ class Blockchain extends Observable {
     /**
      * The 'ConstructProof' algorithm from the PoPoW paper.
      * TODO Add support to request chains with a specific depth rooted at a specific block.
-     * @param {Block} head
      * @param {number} m Desired length of the interlink chain
+     * @param {Block} [head]
      * @param {Array.<Hash>} [locators] Return the interlink chain immediately if one of the hashes in locators is encountered during construction, irrespective of m.
      * @returns {Promise.<InterlinkChain>}
      */
-    async getInterlinkChain(head, m, locators) {
+    async getInterlinkChain(m, head, locators) {
         head = head || this.head;
 
         /** @type {HashSet.<Hash>} */
@@ -376,7 +385,8 @@ class Blockchain extends Observable {
 
             // If a locator was found, prepend the locator block and return.
             if (interlinkChain.locator) {
-                interlinkChain.prepend(await this.getBlock(interlinkChain.locator));
+                const block = await this.getBlock(interlinkChain.locator);
+                interlinkChain.prepend(block.toLight());
                 return interlinkChain;
             }
 
@@ -429,40 +439,25 @@ class Blockchain extends Observable {
     }
 
     /**
-     * Retrieves up to maxBlocks predecessors of the given block.
      * Returns an array of max k headers.
-     * @param {Block} head
-     * @param {Hash} stopHash
      * @param {number} k
-     * @param {Array.<Hash>} blockLocatorHashes
-     * @return {Promise.<HeaderChain>}
+     * @param {Block} [head]
+     * @returns {Promise.<HeaderChain>}
      */
-    async getHeaderChain(head, stopHash, k = 1000000, blockLocatorHashes = []) {
-        const knownBlocks = new HashSet();
-        knownBlocks.addAll(blockLocatorHashes);
+    async getHeaderChain(k, head) {
+        head = head || this.head;
 
-        const headers = [], interlink = head.interlink;
-        let curHash = await head.hash(), foundStopHash = false;
-
-        // Traverse tree until length k is reached and we found the stopHash
-        while (!Block.GENESIS.equals(head) && (headers.length < k || !foundStopHash)) {
-            // Check that we at least include the stopHash.
-            if (curHash.equals(stopHash)) {
-                foundStopHash = true;
-            }
-
-            // Shortcut: if we the current hash is within the knownBlocks, stop.
-            if (knownBlocks.contains(curHash)) {
-                break;
-            }
-
-            // Prepend header.
-            headers.unshift(head.header);
-            curHash = head.prevHash;
+        const blocks = [];
+        while (head && !Block.GENESIS.equals(head) && blocks.length < k) {
+            blocks.push(head.toLight());
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
         }
 
-        return new HeaderChain(headers, interlink);
+        if (blocks.length === 0) {
+            blocks.push(Block.GENESIS.toLight());
+        }
+
+        return new HeaderChain(blocks);
     }
 
     /**
@@ -477,13 +472,18 @@ class Blockchain extends Observable {
         for (let i = 0; block && i < 10; i++) {
             locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
             lastBlock = block;
-            block = this.getBlock(block.prevHash);
+            block = await this.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+        }
+
+        // If we are already at the genesis block, we are done.
+        if (Block.GENESIS.equals(lastBlock)) {
+            return locators;
         }
 
         // Interlink chain starting at the last block (m = 30).
         // TODO Improve this.
         /** @type {InterlinkChain} */
-        const interlinkChain = await this.getInterlinkChain(lastBlock, 30);
+        const interlinkChain = await this.getInterlinkChain(30, lastBlock);
         for (const interlinkBlock of interlinkChain.blocks) {
             locators.push(await interlinkBlock.hash()); // eslint-disable-line no-await-in-loop
         }

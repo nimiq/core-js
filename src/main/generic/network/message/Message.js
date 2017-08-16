@@ -4,7 +4,7 @@ class Message {
      * @param {Message.Type} type Message type
      */
     constructor(type) {
-        if (!type || !NumberUtils.isUint64(type)) throw 'Malformed type';
+        if (!NumberUtils.isUint64(type)) throw 'Malformed type';
         /** @type {Message.Type} */
         this._type = type;
     }
@@ -31,33 +31,11 @@ class Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @param {number} value
-     * @private
-     */
-    static _writeChecksum(buf, value) {
-        // Store current write position.
-        const pos = buf.writePos;
-
-        // Set write position past the magic, type, and length fields to the
-        // beginning of the checksum value.
-        buf.writePos = 4 + 12 + 4;
-
-        // Write the checksum value.
-        buf.writeUint32(value);
-
-        // Reset the write position to original.
-        buf.writePos = pos;
-    }
-
-    /**
-     * @param {SerialBuffer} buf
      * @returns {Message}
      */
     static unserialize(buf) {
         // XXX Direct buffer manipulation currently requires this.
-        if (buf.readPos !== 0) {
-            throw 'Message.unserialize() requires buf.readPos == 0';
-        }
+        assert(buf.readPos === 0, 'Message.unserialize() requires buf.readPos == 0');
 
         const magic = buf.readUint32();
         const type = buf.readVarUint();
@@ -68,21 +46,11 @@ class Message {
         if (magic !== Message.MAGIC) throw 'Malformed magic';
 
         // Validate checksum.
-        Message._writeChecksum(buf, 0);
+        Message._writeChecksum(type, buf, 0);
         const calculatedChecksum = CRC32.compute(buf);
         if (checksum !== calculatedChecksum) throw 'Invalid checksum';
 
         return new Message(type);
-    }
-
-    /**
-     * @param {SerialBuffer} buf
-     * @returns {void}
-     * @protected
-     */
-    _setChecksum(buf) {
-        const checksum = CRC32.compute(buf);
-        Message._writeChecksum(buf, checksum);
     }
 
     /**
@@ -92,9 +60,7 @@ class Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         // XXX Direct buffer manipulation currently requires this.
-        if (buf.writePos !== 0) {
-            throw 'Message.serialize() requires buf.writePos == 0';
-        }
+        assert(buf.writePos === 0, 'Message.serialize() requires buf.writePos == 0');
 
         buf.writeUint32(Message.MAGIC);
         buf.writeVarUint(this._type);
@@ -110,6 +76,40 @@ class Message {
             + /*type*/ SerialBuffer.varUintSize(this._type)
             + /*length*/ 4
             + /*checksum*/ 4;
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {void}
+     * @protected
+     */
+    _setChecksum(buf) {
+        const checksum = CRC32.compute(buf);
+        Message._writeChecksum(this._type, buf, checksum);
+    }
+
+    /**
+     * @param {Message.Type} type
+     * @param {SerialBuffer} buf
+     * @param {number} value
+     * @returns {void}
+     * @private
+     */
+    static _writeChecksum(type, buf, value) {
+        // Store current write position.
+        const pos = buf.writePos;
+
+        // Set write position past the magic, type, and length fields to the
+        // beginning of the checksum value.
+        buf.writePos = /*magic*/ 4
+            + /*type*/ SerialBuffer.varUintSize(type)
+            + /*length*/ 4;
+
+        // Write the checksum value.
+        buf.writeUint32(value);
+
+        // Reset the write position to original.
+        buf.writePos = pos;
     }
 
     /** @type {Message.Type} */
@@ -141,8 +141,8 @@ Message.Type = {
     SIGNAL:     14,
 
     // Nimiq
-    GET_HEADERS:        15,
-    HEADERS:            16,
+    GET_HEADERS:         15,
+    HEADERS:             16,
     GET_INTERLINK_CHAIN: 17,
     INTERLINK_CHAIN:     18,
     GET_ACCOUNTS_PROOF:  19,

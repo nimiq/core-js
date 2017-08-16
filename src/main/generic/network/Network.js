@@ -387,7 +387,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, startHeight=${peer.startHeight}, totalWork=${peer.totalWork})`);
+        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, headHash=${peer.headHash.toBase64()})`);
     }
 
     /**
@@ -448,7 +448,7 @@ class Network extends Observable {
                 const kbTransferred = ((channel.connection.bytesSent
                     + channel.connection.bytesReceived) / 1000).toFixed(2);
                 Log.d(Network, `[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
-                    + `(version=${peer.version}, startHeight=${peer.startHeight}, `
+                    + `(version=${peer.version}, headHash=${peer.headHash.toBase64()}, `
                     + `transferred=${kbTransferred} kB)`);
             } else {
                 // Treat connections closed pre-handshake as failed attempts.

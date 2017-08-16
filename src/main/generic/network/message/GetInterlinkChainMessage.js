@@ -1,19 +1,19 @@
 class GetInterlinkChainMessage extends Message {
     /**
-     * @param {Hash} headHash
      * @param {number} m
+     * @param {Hash} headHash
      * @param {Array.<Hash>} locators
      */
-    constructor(headHash, m, locators) {
+    constructor(m, headHash, locators) {
         super(Message.Type.GET_INTERLINK_CHAIN);
-        if (!Hash.isHash(headHash)) throw 'Malformed headHash';
         if (!NumberUtils.isUint16(m)) throw 'Malformed m';
+        if (!Hash.isHash(headHash)) throw 'Malformed headHash';
         if (!locators || !NumberUtils.isUint16(locators.length)
             || locators.some(it => !(it instanceof Hash))) throw 'Malformed hashes';
-        /** @type {Hash} */
-        this._headHash = headHash;
         /** @type {number} */
         this._m = m;
+        /** @type {Hash} */
+        this._headHash = headHash;
         /** @type {Array.<Hash>} */
         this._locators = locators;
     }
@@ -24,14 +24,14 @@ class GetInterlinkChainMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const headHash = Hash.unserialize(buf);
         const m = buf.readUint16();
+        const headHash = Hash.unserialize(buf);
         const count = buf.readUint16();
         const locators = [];
         for (let i = 0; i < count; i++) {
             locators.push(Hash.unserialize(buf));
         }
-        return new GetInterlinkChainMessage(headHash, m, locators);
+        return new GetInterlinkChainMessage(m, headHash, locators);
     }
 
     /**
@@ -41,8 +41,8 @@ class GetInterlinkChainMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        this._headHash.serialize(buf);
         buf.writeUint16(this._m);
+        this._headHash.serialize(buf);
         buf.writeUint16(this._locators.length);
         for (const hash of this._locators) {
             hash.serialize(buf);
@@ -54,20 +54,20 @@ class GetInterlinkChainMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + this._headHash.serializedSize
             + /*m*/ 2
+            + this._headHash.serializedSize
             + /*count*/ 2
             + this._locators.reduce((sum, hash) => sum + hash.serializedSize, 0);
-    }
-
-    /** @type {Hash} */
-    get headHash() {
-        return this._headHash;
     }
 
     /** @type {number} */
     get m() {
         return this._m;
+    }
+
+    /** @type {Hash} */
+    get headHash() {
+        return this._headHash;
     }
 
     /** @type {Array.<Hash>} */

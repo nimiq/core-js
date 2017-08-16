@@ -133,8 +133,7 @@ class SparseChain extends Observable {
         });
         blockData.onMainChain = onMainChain;
         if (onMainChain && !succeedsMainChain) {
-            // XXX DEV Assertions
-            if (prevData.onMainChain) throw 'Illegal state';
+            assert(!prevData.onMainChain);
 
             /** @type {BlockData} */
             let data = prevData;
@@ -151,9 +150,9 @@ class SparseChain extends Observable {
         // 1. Successor of the current main head
         if (prevHash.equals(this._headHash)) {
             // XXX DEV Assertions
-            if (maxChain.head) throw 'Illegal state';
-            if (onMainChain) throw 'Illegal state';
-            if (!succeedsMainChain) throw 'Illegal state';
+            assert(!maxChain.head);
+            assert(!onMainChain);
+            assert(succeedsMainChain);
 
             // Append new block to the main chain.
             await this._extend(block);
@@ -166,8 +165,7 @@ class SparseChain extends Observable {
 
         // 2. Inner block of the main chain
         else if (onMainChain) {
-            // XXX DEV Assertions
-            if (!this._head.equals(maxChain.head)) throw 'Illegal state';
+            assert(this._head.equals(maxChain.head));
 
             return SparseChain.OK_ACCEPTED;
         }
@@ -490,7 +488,7 @@ class SparseChain extends Observable {
         let predecessor = null;
         let i = 1;
         do {
-            const hash = block.interlink[i++];
+            const hash = block.interlink.hashes[i++];
             if (!this._blockData.contains(hash)) {
                 continue;
             }

@@ -14,7 +14,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_TIME() {
-        return 30; // Seconds
+        return 5; // Seconds
     }
 
     /**

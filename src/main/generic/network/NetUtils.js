@@ -37,7 +37,7 @@ class NetUtils {
             return false;
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -133,9 +133,10 @@ class NetUtils {
      */
     static sanitizeIP(ip) {
         const saneIp = NetUtils._normalizeIP(ip);
-        if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
-            throw `Malformed IP address ${ip}`;
-        }
+        // FIXME
+        //if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
+        //    throw new Error(`Malformed IP address ${ip}`);
+        //}
         // TODO reject IPv6 broadcast addresses
         return saneIp;
     }
@@ -233,7 +234,7 @@ class NetUtils {
             return parts.join(':');
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**

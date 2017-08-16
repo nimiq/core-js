@@ -65,7 +65,7 @@ class NetworkAgent extends Observable {
         // Listen to network/control messages from the peer.
         channel.on('version', msg => this._onVersion(msg));
         channel.on('addr', msg => this._onAddr(msg));
-        channel.on('getAddr', msg => this._onGetAddr(msg));
+        channel.on('get-addr', msg => this._onGetAddr(msg));
         channel.on('ping', msg => this._onPing(msg));
         channel.on('pong', msg => this._onPong(msg));
 
@@ -149,6 +149,8 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
+        Log.d(NetworkAgent, `[VERSION] ${msg.peerAddress} ${msg.headHash.toBase64()}`);
+
         const now = Date.now();
 
         // Make sure this is a valid message in our current state.

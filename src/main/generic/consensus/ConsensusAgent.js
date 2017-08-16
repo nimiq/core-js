@@ -513,9 +513,8 @@ class ConsensusAgent extends Observable {
      */
     async _onGetInterlinkChain(msg) {
         const head = await this._blockchain.getBlock(msg.headHash);
-
         if (head) {
-            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.m, msg.locators);
+            const interlinkChain = await this._blockchain.getInterlinkChain(msg.m, head, msg.locators);
             this._peer.channel.interlinkChain(interlinkChain);
         }
 

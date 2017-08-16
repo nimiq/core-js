@@ -36,7 +36,7 @@ class PeerChannel extends Observable {
         if (!msg) return;
 
         try {
-            this.fire(msg.type, msg, this);
+            this.fire(PeerChannel.Event[msg.type], msg, this);
         } catch (e) {
             Log.w(PeerChannel, `Error while processing ${msg.type} message from ${this.peerAddress || this.netAddress}: ${e}`);
         }
@@ -207,13 +207,12 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Array.<Hash>} hashes
-     * @param {Hash} mustIncludeHash
      * @param {number} k
+     * @param {Hash} headHash
      * @return {boolean}
      */
-    getHeaders(hashes, mustIncludeHash, k) {
-        return this._send(new GetHeadersMessage(hashes, mustIncludeHash, k));
+    getHeaders(k, headHash) {
+        return this._send(new GetHeadersMessage(k, headHash));
     }
 
     /**
@@ -225,13 +224,13 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Hash} headHash
      * @param {number} m
+     * @param {Hash} headHash
      * @param {Array.<Hash>} locators
      * @return {boolean}
      */
-    getInterlinkChain(headHash, m, locators) {
-        return this._send(new GetInterlinkChainMessage(headHash, m, locators));
+    getInterlinkChain(m, headHash, locators) {
+        return this._send(new GetInterlinkChainMessage(m, headHash, locators));
     }
 
     /**
@@ -303,3 +302,24 @@ class PeerChannel extends Observable {
     }
 }
 Class.register(PeerChannel);
+
+PeerChannel.Event = {};
+PeerChannel.Event[Message.Type.VERSION] = 'version';
+PeerChannel.Event[Message.Type.INV] = 'inv';
+PeerChannel.Event[Message.Type.GET_DATA] = 'get-data';
+PeerChannel.Event[Message.Type.NOT_FOUND] = 'not-found';
+PeerChannel.Event[Message.Type.GET_BLOCKS] = 'get-blocks';
+PeerChannel.Event[Message.Type.BLOCK] = 'block';
+PeerChannel.Event[Message.Type.TX] = 'tx';
+PeerChannel.Event[Message.Type.REJECT] = 'reject';
+PeerChannel.Event[Message.Type.ADDR] = 'addr';
+PeerChannel.Event[Message.Type.GET_ADDR] = 'get-addr';
+PeerChannel.Event[Message.Type.PING] = 'ping';
+PeerChannel.Event[Message.Type.PONG] = 'pong';
+PeerChannel.Event[Message.Type.SIGNAL] = 'signal';
+PeerChannel.Event[Message.Type.GET_HEADERS] = 'get-headers';
+PeerChannel.Event[Message.Type.HEADERS] = 'headers';
+PeerChannel.Event[Message.Type.GET_INTERLINK_CHAIN] = 'get-interlink-chain';
+PeerChannel.Event[Message.Type.INTERLINK_CHAIN] = 'interlink-chain';
+PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
+PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
