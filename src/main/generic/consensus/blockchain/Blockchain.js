@@ -92,6 +92,9 @@ class Blockchain extends Observable {
             if (result !== DenseChain.OK_PREPENDED) {
                 throw `Failed to load dense chain from storage: prepend returned ${result}`;
             }
+
+            // XXX Test
+            await this._sparse.append(headerChain.blocks[i]);
         }
 
         return this;
@@ -152,10 +155,10 @@ class Blockchain extends Observable {
                     // Update the head of the sparse chain.
                     const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_EXTENDED) {
-                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_EXTENDED}`;
+                        throw `EXTENDED [dense]: Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_EXTENDED}`;
                     }
 
-                    Log.d(Blockchain, `EXTENDED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    Log.d(Blockchain, `EXTENDED [dense]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
                     headChanged = true;
                     break;
@@ -165,11 +168,11 @@ class Blockchain extends Observable {
                     // The block was prepended to the main chain.
                     // TODO what to do here?
                     const resultSparse = await this._sparse.append(block);
-                    if (resultSparse !== SparseChain.OK_ACCEPTED) {
-                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_ACCEPTED}`;
+                    if (resultSparse !== SparseChain.OK_ACCEPTED && resultSparse !== SparseChain.OK_KNOWN) {
+                        throw `PREPENDED [dense]: Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_ACCEPTED}|${SparseChain.OK_KNOWN}`;
                     }
 
-                    Log.d(Blockchain, `PREPENDED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, tail=${this._dense.tailHash}`);
+                    Log.d(Blockchain, `PREPENDED [dense]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, tail=${this._dense.tailHash}`);
 
                     break;
                 }
@@ -179,10 +182,10 @@ class Blockchain extends Observable {
                     // TODO what to do here?
                     const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_REBRANCHED) {
-                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_REBRANCHED}`;
+                        throw `REBRANCHED [dense]: Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_REBRANCHED}`;
                     }
 
-                    Log.d(Blockchain, `REBRANCHED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    Log.d(Blockchain, `REBRANCHED [dense]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
                     headChanged = true;
                     break;
@@ -193,13 +196,17 @@ class Blockchain extends Observable {
                     // TODO what to do here?
                     const resultSparse = await this._sparse.append(block);
                     if (resultSparse !== SparseChain.OK_PENDING) {
-                        throw `Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_PENDING}`;
+                        throw `FORKED [dense]: Unexpected result when adding to sparse chain: ${resultSparse}, expected ${SparseChain.OK_PENDING}`;
                     }
 
-                    Log.d(Blockchain, `FORKED [dense]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    Log.d(Blockchain, `FORKED [dense]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
                     break;
                 }
+
+                case DenseChain.OK_KNOWN:
+                    Log.d(Blockchain, `KNOWN [dense]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    return true;
 
                 case DenseChain.ERR_ORPHAN:
                 default:
@@ -221,7 +228,7 @@ class Blockchain extends Observable {
                     // Since the block does not attach to our current dense chain, scratch it and create a new one.
                     this._dense = await new DenseChain(this._store, this._sparse.head);
 
-                    Log.d(Blockchain, `EXTENDED [sparse]: height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    Log.d(Blockchain, `EXTENDED [sparse]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
 
                     headChanged = true;
                     break;
@@ -245,6 +252,13 @@ class Blockchain extends Observable {
                 // TODO forks
 
                 case SparseChain.OK_ACCEPTED:
+                    Log.d(Blockchain, `ACCEPTED [sparse]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    break;
+
+                case SparseChain.OK_KNOWN:
+                    Log.d(Blockchain, `KNOWN [sparse]: ${hash} height=${this.height}, denseLength=${this.denseLength}, sparseLength=${this.sparseLength}, head=${this.headHash}`);
+                    return true;
+
                 default:
                     throw `TODO: SparseChain.add() returned ${result}`;
             }
@@ -253,7 +267,7 @@ class Blockchain extends Observable {
 
         // TODO what to do here?
         else {
-            Log.w(Blockchain, `Block cannot be attached: ${await block.hash()}`, block);
+            Log.w(Blockchain, `Block cannot be attached: ${hash}`, block);
         }
 
 
@@ -365,11 +379,13 @@ class Blockchain extends Observable {
             locatorSet.addAll(locators);
         }
 
+        /** @type {InterlinkChain} */
+        let interlinkChain;
+
         // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
         const maxDepth = BlockUtils.getTargetDepth(head.target) + head.interlink.length - 1;
         if (maxDepth > 0) {
-            /** @type {InterlinkChain} */
-            let interlinkChain = await this._getInnerChain(head, maxDepth, locatorSet);
+            interlinkChain = await this._getInnerChain(head, maxDepth, locatorSet);
 
             // XXX Hack: If a locator hash was found, return the chain immediately.
             if (interlinkChain.locator) {
@@ -399,7 +415,7 @@ class Blockchain extends Observable {
 
         // An interlink chain with the desired length m could not be constructed.
         // Return the whole header chain.
-        const interlinkChain = new InterlinkChain([head.toLight()]);
+        interlinkChain = new InterlinkChain([head.toLight()]);
         while (!Block.GENESIS.equals(head) && !locatorSet.contains(head.prevHash)) {
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
             interlinkChain.prepend(head.toLight());

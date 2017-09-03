@@ -224,7 +224,7 @@ class LightConsensusAgent extends Observable {
 
             // If not all blocks were pushed successfully, drop the peer.
             const results = await Promise.all(promises);
-            Log.d(LightConsensusAgent, `Added ${interlinkChain.length} blocks to blockchain: ${results}`);
+            Log.d(LightConsensusAgent, `Added ${interlinkChain.length} blocks to blockchain`);
 
             if (results.some(result => !result)) {
                 this._peer.channel.close('invalid interlink received - push failed');
@@ -310,7 +310,7 @@ class LightConsensusAgent extends Observable {
 
         // If not all blocks were pushed successfully, drop the peer.
         const results = await Promise.all(promises);
-        Log.d(LightConsensusAgent, `Added ${headerChain.length} blocks to blockchain: ${results}`);
+        Log.d(LightConsensusAgent, `Added ${headerChain.length} blocks to blockchain`);
 
         if (results.some(result => !result)) {
             this._peer.channel.close('invalid headers received - push failed');
@@ -331,7 +331,7 @@ class LightConsensusAgent extends Observable {
      */
     async _onGetHeaders(msg) {
         Log.d(LightConsensusAgent, `[GET-HEADERS] Received from ${this._peer.peerAddress}: headHash=${msg.headHash}, k=${msg.k}`);
-        
+
         const head = await this._blockchain.getBlock(msg.headHash);
         if (head) {
             const headerChain = await this._blockchain.getHeaderChain(msg.k, head);

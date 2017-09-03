@@ -241,7 +241,7 @@ class DenseChain extends Observable {
             // XXX Assert that the referenced block is there.
             if (!refBlock) throw 'Failed to retrieve interlink reference from store';
 
-            if (!(await refBlock.isInterlinkSuccessorOf(block))) { // eslint-disable-line no-await-in-loop
+            if (!(await refBlock.isSuccessorOf(block))) { // eslint-disable-line no-await-in-loop
                 // We found a block with an inconsistent interlink that looked good when we added it to the chain
                 // because we didn't know the referenced (given) interlink block at that time. Cut off the bad block
                 // and all its successors.
@@ -586,6 +586,7 @@ class DenseChain extends Observable {
             let set = this._interlinkIndex.get(reference);
             if (!set) {
                 set = new HashSet();
+                this._interlinkIndex.put(reference, set);
             }
             set.add(hash);
         }

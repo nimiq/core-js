@@ -70,8 +70,8 @@ class SparseChain extends Observable {
         for (const hash of [block.prevHash, ...block.interlink.hashes.slice(1)]) {
             const data = this._blockData.get(hash);
             if (data) {
-                metMainChain |= data.onMainChain;
-                succeedsMainChain &= data.onMainChain;
+                metMainChain = metMainChain || data.onMainChain;
+                succeedsMainChain = succeedsMainChain && data.onMainChain;
 
                 if (metMainChain && !data.onMainChain) {
                     // An earlier interlink predecessor was on the main chain, this one isn't. Something is wrong with this block.
@@ -84,14 +84,14 @@ class SparseChain extends Observable {
         // The block looks valid. Make sure that the chain is consistent with it.
         await this._truncateInconsistentBlocks(block);
 
-        // Create BlockData for the block. We might be inserting the block, so we need to fix the
-        // BlockData predecessor/successor pointers.
+        // Create new BlockData for the block. We might be inserting the block, so we need to fix the BlockData predecessor/successors.
         const prevHash = await predecessor.hash();
         /** @type {SparseBlockData} */
         const prevData = this._blockData.get(prevHash);
         const totalWork = prevData.totalWork + BlockUtils.realDifficulty(hash);
         const length = prevData.length + 1;
         const blockData = new SparseBlockData(prevHash, totalWork, length);
+        this._blockData.put(hash, blockData);
 
         // Check if the predecessor already has successors. If so, the new block will contribute work to any successor
         // that is also a successor of the new block. Note that two successors might be on the same chain. Update all
@@ -104,13 +104,13 @@ class SparseChain extends Observable {
             // XXX Assert that the block is there.
             if (!successor) throw 'Corrupted store';
 
-            if (successor.isInterlinkSuccessorOf(block)) {
+            if (successor.isSuccessorOf(block)) {
                 // Insert new blockData between prevData and succData.
                 /** @type {BlockData} */
                 const succData = this._blockData.get(succHash);
                 succData.predecessor = hash;
-                prevData.successors.remove(successor);
-                blockData.successors.add(successor);
+                prevData.successors.remove(succHash);
+                blockData.successors.add(succHash);
 
                 const result = this._updateTotalWork(succHash);
                 if (result && result.totalWork > maxChain.totalWork) {
@@ -119,9 +119,8 @@ class SparseChain extends Observable {
             }
         }
 
-        // Link & store new BlockData.
+        // Link new BlockData to predecessor.
         prevData.successors.add(hash);
-        this._blockData.put(hash, blockData);
 
         // Check if the block is succeeded by a block on the main chain. If it is, the block and its predecessors must
         // be on the main chain as well. This closes holes in main chain: Blocks that were not referenced by any main
@@ -165,7 +164,7 @@ class SparseChain extends Observable {
 
         // 2. Inner block of the main chain
         else if (onMainChain) {
-            assert(this._head.equals(maxChain.head));
+            assert(this._headHash.equals(maxChain.head));
 
             return SparseChain.OK_ACCEPTED;
         }
@@ -213,15 +212,14 @@ class SparseChain extends Observable {
             return Promise.resolve();
         }
 
-        // Check that all blocks in this chain that reference the given block in their interlink
-        // are valid interlink successors to the given block.
+        // Check that all blocks in this chain that reference the given block are valid successors to the given block.
         for (const refHash of references.values()) {
             /** @type {Block} */
             const refBlock = await this._store.get(refHash.toBase64()); // eslint-disable-line no-await-in-loop
             // XXX Assert that the referenced block is there.
             if (!refBlock) throw 'Failed to retrieve interlink reference from store';
 
-            if (!(await refBlock.isInterlinkSuccessorOf(block))) { // eslint-disable-line no-await-in-loop
+            if (!(await refBlock.isSuccessorOf(block))) { // eslint-disable-line no-await-in-loop
                 Log.w(SparseChain, `Inconsistent interlink found, truncating ${refHash}`);
 
                 // We found a block with an inconsistent interlink that looked good when we added it to the chain
@@ -516,6 +514,7 @@ class SparseChain extends Observable {
             let set = this._interlinkIndex.get(reference);
             if (!set) {
                 set = new HashSet();
+                this._interlinkIndex.put(reference, set);
             }
             set.add(hash);
         }
