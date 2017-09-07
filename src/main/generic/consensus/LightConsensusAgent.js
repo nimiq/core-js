@@ -160,7 +160,7 @@ class LightConsensusAgent extends Observable {
 
         // Request interlink chain from peer.
         const locators = await this._blockchain.getLocators();
-        this._peer.channel.getInterlinkChain(Policy.M, this._peer.headHash, locators);
+        this._peer.channel.getInterlinkChain(this._peer.headHash, locators, Policy.M);
 
         // Drop the peer if it doesn't send the interlink chain within the timeout.
         // TODO should we ban here instead?
@@ -255,7 +255,7 @@ class LightConsensusAgent extends Observable {
 
         const head = await this._blockchain.getBlock(msg.headHash);
         if (head) {
-            const interlinkChain = await this._blockchain.getInterlinkChain(msg.m, head, msg.locators);
+            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.locators, msg.m);
             this._peer.channel.interlinkChain(interlinkChain);
         } else {
             // TODO what to do if we do not know the requested head?

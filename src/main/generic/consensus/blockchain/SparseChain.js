@@ -171,6 +171,8 @@ class SparseChain extends Observable {
 
         // 3. On a fork: Inner or successor block. Check if we need to rebranch.
         else if (maxChain.totalWork > this._headData.totalWork) {
+            assert(!this._headHash.equals(maxChain.head));
+
             // A fork has become the hardest chain, rebranch to it.
             // TODO await this._rebranch(block);
             throw 'TODO rebranch';

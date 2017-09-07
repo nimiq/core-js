@@ -76,7 +76,7 @@ class Blockchain extends Observable {
 
         // Load sparse chain.
         /** @type {InterlinkChain} */
-        const interlinkChain = await this.getInterlinkChain(Policy.M, head);
+        const interlinkChain = await this.getInterlinkChain(head, [], Policy.M);
         for (let i = 1; i < interlinkChain.length; i++) {
             const result = await this._sparse.append(interlinkChain.blocks[i]); // eslint-disable-line no-await-in-loop
             if (result !== SparseChain.OK_EXTENDED) {
@@ -94,7 +94,7 @@ class Blockchain extends Observable {
             }
 
             // XXX Test
-            await this._sparse.append(headerChain.blocks[i]);
+            //await this._sparse.append(headerChain.blocks[i]);
         }
 
         return this;
@@ -365,84 +365,97 @@ class Blockchain extends Observable {
     /**
      * The 'ConstructProof' algorithm from the PoPoW paper.
      * TODO Add support to request chains with a specific depth rooted at a specific block.
-     * @param {number} m Desired length of the interlink chain
-     * @param {Block} [head]
-     * @param {Array.<Hash>} [locators] Return the interlink chain immediately if one of the hashes in locators is encountered during construction, irrespective of m.
+     * @param {Block} head
+     * @param {Array.<Hash>} locators
+     * @param {number} m Desired minimum length of the interlink chain
      * @returns {Promise.<InterlinkChain>}
      */
-    async getInterlinkChain(m, head, locators) {
+    async getInterlinkChain(head, locators, m) {
         head = head || this.head;
-
-        /** @type {HashSet.<Hash>} */
-        const locatorSet = new HashSet();
-        if (locators) {
-            locatorSet.addAll(locators);
+        if (!locators || locators.length < 1) {
+            locators = [Block.GENESIS.HASH];
         }
 
         /** @type {InterlinkChain} */
         let interlinkChain;
-
-        // If we have an interlink depth > 0, try finding the maximal chain with length >= m.
         const maxDepth = BlockUtils.getTargetDepth(head.target) + head.interlink.length - 1;
-        if (maxDepth > 0) {
-            interlinkChain = await this._getInnerChain(head, maxDepth, locatorSet);
 
-            // XXX Hack: If a locator hash was found, return the chain immediately.
-            if (interlinkChain.locator) {
-                return interlinkChain;
+        outer:
+        for (const hash of locators) {
+            // Skip all locators that we don't know.
+            /** @type {Block} */
+            const locator = await this.getBlock(hash); // eslint-disable-line no-await-in-loop
+            if (!locator) {
+                continue;
             }
 
-            // Check if length >= m and, if not, decrease the depth and try again.
-            let depth = maxDepth;
-            while (interlinkChain.length < m && !interlinkChain.locator && depth > 1) {
+            // Shortcut: If the resulting chain will be dense, immediately use depth = 0.
+            // TODO can we find a tighter bound than maxDepth?
+            let depth = (head.height - locator.height <= m) ? 0 : maxDepth;
+            do {
+                interlinkChain = await this._getInterlinkChain(head, locator, hash, depth); // eslint-disable-line no-await-in-loop
+                if (!interlinkChain) {
+                    continue outer;
+                }
                 depth--;
-                interlinkChain = await this._getInnerChain(head, depth, locatorSet); // eslint-disable-line no-await-in-loop
-            }
+            } while (interlinkChain.length < m && depth >= 0);
 
-            // If a locator was found, prepend the locator block and return.
-            if (interlinkChain.locator) {
-                const block = await this.getBlock(interlinkChain.locator);
-                interlinkChain.prepend(block.toLight());
-                return interlinkChain;
-            }
-
-            // If the interlink chain is long enough, prepend the genesis block and return.
-            if (interlinkChain.length >= m) {
-                interlinkChain.prepend(Block.GENESIS.toLight());
-                return interlinkChain;
-            }
+            return interlinkChain;
         }
 
-        // An interlink chain with the desired length m could not be constructed.
-        // Return the whole header chain.
-        interlinkChain = new InterlinkChain([head.toLight()]);
-        while (!Block.GENESIS.equals(head) && !locatorSet.contains(head.prevHash)) {
-            head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
-            interlinkChain.prepend(head.toLight());
+        return null;
+    }
+
+    /**
+     * @param {Block} head
+     * @param {Block} locator
+     * @param {Hash} locatorHash
+     * @param {number} depth
+     * @returns {Promise.<InterlinkChain|null>}
+     * @private
+     */
+    async _getInterlinkChain(head, locator, locatorHash, depth) {
+        const blocks = [head.toLight()];
+        let block = head;
+        let references = [block.prevHash, ...block.interlink.hashes.slice(1)];
+
+        outer:
+        while (!references.some((it, index) => it.equals(locatorHash) && index <= depth)) {
+            // Move head to the deepest interlink block with block.depth <= depth (previous block if depth == 0) and height > locator.height.
+            for (let i = Math.min(depth, references.length - 1); i >= 0; i--) {
+                block = await this.getBlock(references[i]); // eslint-disable-line no-await-in-loop
+                if (block && block.height > locator.height) {
+                    blocks.push(block.toLight());
+                    references = [block.prevHash, ...block.interlink.hashes.slice(1)];
+                    continue outer;
+                }
+            }
+
+            // No such block exists, fail.
+            return null;
         }
-        return interlinkChain;
+
+        // TODO we don't actually need to include the locator block.
+        blocks.push(locator.toLight());
+
+        return new InterlinkChain(blocks.reverse());
     }
 
     /**
      * The 'ConstructInChain' algorithm from the PoPoW paper adapted for dynamic difficulty.
      * @param {Block} head
      * @param {number} depth
-     * @param {HashSet.<Hash>} locatorSet
      * @returns {Promise.<InterlinkChain>}
      * @private
+     * @deprecated
      */
-    async _getInnerChain(head, depth, locatorSet) {
+    async _getInnerChain(head, depth) {
         const interlinkChain = new InterlinkChain([head.toLight()]);
 
         let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 1);
         while (j < head.interlink.length) {
             // Stop early if we encounter a locator hash.
             const hash = head.interlink.hashes[j];
-            if (locatorSet.contains(hash)) {
-                // XXX Hack to let the caller know that a locator hash was encountered.
-                interlinkChain.locator = hash;
-                return interlinkChain;
-            }
 
             // TODO Omit loading of block body as we are only interested in light blocks.
             head = await this.getBlock(hash); // eslint-disable-line no-await-in-loop
@@ -453,6 +466,7 @@ class Blockchain extends Observable {
 
         return interlinkChain;
     }
+
 
     /**
      * Returns an array of max k headers.
@@ -496,10 +510,10 @@ class Blockchain extends Observable {
             return locators;
         }
 
-        // Interlink chain starting at the last block (m = 30).
+        // Interlink chain ending at the last block (m = 30).
         // TODO Improve this.
         /** @type {InterlinkChain} */
-        const interlinkChain = await this.getInterlinkChain(30, lastBlock);
+        const interlinkChain = await this.getInterlinkChain(lastBlock, [], 30);
         for (const interlinkBlock of interlinkChain.blocks) {
             locators.push(await interlinkBlock.hash()); // eslint-disable-line no-await-in-loop
         }

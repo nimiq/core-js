@@ -224,13 +224,13 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {number} m
      * @param {Hash} headHash
      * @param {Array.<Hash>} locators
+     * @param {number} m
      * @return {boolean}
      */
-    getInterlinkChain(m, headHash, locators) {
-        return this._send(new GetInterlinkChainMessage(m, headHash, locators));
+    getInterlinkChain(headHash, locators, m) {
+        return this._send(new GetInterlinkChainMessage(headHash, locators, m));
     }
 
     /**
