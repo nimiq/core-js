@@ -1,5 +1,21 @@
 class BlockHeader {
     /**
+     * @param {{_version, _prevHash, _interlinkHash, _bodyHash, _accountsHash, _nBits, _height, _timestamp, _nonce}} o
+     * @returns {BlockHeader}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const prevHash = Hash.copy(o._prevHash);
+        const interlinkHash = Hash.copy(o._interlinkHash);
+        const bodyHash = Hash.copy(o._bodyHash);
+        const accountsHash = Hash.copy(o._accountsHash);
+        return new BlockHeader(
+            prevHash, interlinkHash, bodyHash, accountsHash,
+            o._nBits, o._height, o._timestamp, o._nonce, o._version
+        );
+    }
+
+    /**
      * @param {Hash} prevHash
      * @param {Hash} interlinkHash
      * @param {Hash} bodyHash

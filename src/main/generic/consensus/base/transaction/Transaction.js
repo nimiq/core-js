@@ -1,6 +1,19 @@
 // TODO V2: Transactions may contain a payment reference such that the chain can prove existence of data
 // TODO V2: Copy 'serialized' to detach all outer references
 class Transaction {
+
+    /**
+     * @param {{_version, _senderPubKey, _recipientAddr, _value, _fee, _nonce, _signature}} o
+     * @returns {Transaction}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const senderPubKey = PublicKey.copy(o._senderPubKey);
+        const recipientAddr = Address.copy(o._recipientAddr);
+        const signature = Signature.copy(o._signature);
+        return new Transaction(senderPubKey, recipientAddr, o._value, o._fee, o._nonce, signature, o._version);
+    }
+
     /**
      * @param {PublicKey} senderPubKey
      * @param {Address} recipientAddr

@@ -1,59 +1,14 @@
-class AccountsTreeTransaction {
-    /**
-     * @param {AccountsTree} that
-     * @param {AccountsTreeStoreTransaction} tx
-     */
-    constructor(that, tx) {
-        /** @type {AccountsTree} */
-        this._that = that;
-        /** @type {AccountsTreeStoreTransaction|IAccountsTreeStore} */
-        this._tx = tx;
-    }
-    
-    /**
-     * @param {Address} address
-     * @returns {Promise.<Account>}
-     */
-    async get(address) {
-        return this._that.get(address, this._tx);
-    }
-
-    /**
-     * @param {Address} address
-     * @param {Account} account
-     * @returns {Promise}
-     */
-    async put(address, account) {
-        return this._that.put(address, account, this._tx);
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    async commit() {
-        return this._tx.commit();
-    }
-
-    /**
-     * @returns {Promise.<Hash>}
-     */
-    async root() {
-        const root = await this._tx.getRootKey();
-        return Hash.fromBase64(root);
-    }
-}
-
 class AccountsTree extends Observable {
     /**
-     * @returns {AccountsTree}
+     * @returns {Promise.<AccountsTree>}
      */
-    static getPersistent() {
-        const store = AccountsTreeStore.getPersistent();
+    static getPersistent(jdb) {
+        const store = AccountsTreeStore.getPersistent(jdb);
         return new AccountsTree(store);
     }
 
     /**
-     * @returns {AccountsTree}
+     * @returns {Promise.<AccountsTree>}
      */
     static createVolatile() {
         const store = AccountsTreeStore.createVolatile();
@@ -61,23 +16,14 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * @param {AccountsTree} backend
-     * @returns {AccountsTree}
-     */
-    static createTemporary(backend) {
-        const store = AccountsTreeStore.createTemporary(backend._store);
-        return new AccountsTree(store);
-    }
-
-    /**
      * @private
-     * @param {AccountsTreeStore} treeStore
-     * @returns {Promise<AccountsTree>}
+     * @param {AccountsTreeStore} store
+     * @returns {Promise.<AccountsTree>}
      */
-    constructor(treeStore) {
+    constructor(store) {
         super();
         /** @type {AccountsTreeStore} */
-        this._store = treeStore;
+        this._store = store;
         this._synchronizer = new Synchronizer();
 
         // Initialize root node.
@@ -101,45 +47,39 @@ class AccountsTree extends Observable {
     /**
      * @param {Address} address
      * @param {Account} account
-     * @param {IAccountsTreeStore} transaction
      * @returns {Promise}
      */
-    put(address, account, transaction) {
+    put(address, account) {
         return this._synchronizer.push(() => {
-            return this._put(address, account, transaction);
+            return this._put(address, account);
         });
     }
 
     /**
-     * 
      * @param {Address} address
      * @param {Account} account
-     * @param {IAccountsTreeStore} transaction
      * @returns {Promise}
      * @private
      */
-    async _put(address, account, transaction) {
-        transaction = transaction || this._store;
-
-        if (!(await this.get(address, transaction)) && Account.INITIAL.equals(account)) {
+    async _put(address, account) {
+        if (!(await this.get(address)) && Account.INITIAL.equals(account)) {
             return;
         }
 
-        // Fetch the root node. This should never fail.
-        const rootKey = await transaction.getRootKey();
-        const rootNode = await transaction.get(rootKey);
+        // Fetch the root node.
+        const rootKey = await this._store.getRootKey();
+        const rootNode = await this._store.get(rootKey);
+        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         // Insert account into the tree at address.
         const prefix = address.toHex();
-        await this._insert(transaction, rootNode, prefix, account, []);
+        await this._insert(rootNode, prefix, account, []);
 
         // Tell listeners that the account at address has changed.
-        this.fire(address, account, address);
+        this.fire(address.toBase64(), account, address);
     }
 
     /**
-     * 
-     * @param {IAccountsTreeStore} transaction
      * @param {AccountsTreeNode} node
      * @param {string} prefix
      * @param {Account} account
@@ -147,7 +87,7 @@ class AccountsTree extends Observable {
      * @returns {Promise}
      * @private
      */
-    async _insert(transaction, node, prefix, account, rootPath) {
+    async _insert(node, prefix, account, rootPath) {
         // Find common prefix between node and new address.
         const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
 
@@ -157,28 +97,28 @@ class AccountsTree extends Observable {
         // If the node prefix does not fully match the new address, split the node.
         if (commonPrefix.length !== node.prefix.length) {
             // Cut the common prefix off the existing node.
-            await transaction.remove(node);
+            await this._store.remove(node);
             node.prefix = node.prefix.substr(commonPrefix.length);
-            const nodeKey = await transaction.put(node);
+            const nodeKey = await this._store.put(node);
 
             // Insert the new account node.
             const newChild = AccountsTreeNode.terminalNode(prefix, account);
-            const newChildKey = await transaction.put(newChild);
+            const newChildKey = await this._store.put(newChild);
 
             // Insert the new parent node.
             const newParent = AccountsTreeNode.branchNode(commonPrefix, [])
                 .withChild(node.prefix, nodeKey)
                 .withChild(newChild.prefix, newChildKey);
-            const newParentKey = await transaction.put(newParent);
+            const newParentKey = await this._store.put(newParent);
 
-            return this._updateKeys(transaction, newParent.prefix, newParentKey, rootPath);
+            return this._updateKeys(newParent.prefix, newParentKey, rootPath);
         }
 
         // If the remaining address is empty, we have found an (existing) node
         // with the given address. Update the account.
         if (!prefix.length) {
             // Delete the existing node.
-            await transaction.remove(node);
+            await this._store.remove(node);
 
             // XXX How does this generalize to more than one account type?
             // Special case: If the new balance is the initial balance
@@ -186,76 +126,74 @@ class AccountsTree extends Observable {
             // in the first place. Delete the node in this case.
             if (Account.INITIAL.equals(account)) {
                 // We have already deleted the node, remove the subtree it was on.
-                return this._prune(transaction, node.prefix, rootPath);
+                return this._prune(node.prefix, rootPath);
             }
 
             // Update the account.
             node = node.withAccount(account);
-            const nodeKey = await transaction.put(node);
+            const nodeKey = await this._store.put(node);
 
-            return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+            return this._updateKeys(node.prefix, nodeKey, rootPath);
         }
 
         // If the node prefix matches and there are address bytes left, descend into
         // the matching child node if one exists.
         const childKey = node.getChild(prefix);
         if (childKey) {
-            const childNode = await transaction.get(childKey);
+            const childNode = await this._store.get(childKey);
             rootPath.push(node);
-            return this._insert(transaction, childNode, prefix, account, rootPath);
+            return this._insert(childNode, prefix, account, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
         const newChild = AccountsTreeNode.terminalNode(prefix, account);
-        const newChildKey = await transaction.put(newChild);
+        const newChildKey = await this._store.put(newChild);
 
-        await transaction.remove(node);
+        await this._store.remove(node);
         node = node.withChild(newChild.prefix, newChildKey);
-        const nodeKey = await transaction.put(node);
+        const nodeKey = await this._store.put(node);
 
-        return this._updateKeys(transaction, node.prefix, nodeKey, rootPath);
+        return this._updateKeys(node.prefix, nodeKey, rootPath);
     }
 
     /**
-     * 
-     * @param {IAccountsTreeStore} transaction
      * @param {string} prefix
      * @param {Array.<AccountsTreeNode>} rootPath
      * @returns {Promise}
      * @private
      */
-    async _prune(transaction, prefix, rootPath) {
-        const rootKey = await transaction.getRootKey();
+    async _prune(prefix, rootPath) {
+        const rootKey = await this._store.getRootKey();
 
         // Walk along the rootPath towards the root node starting with the
         // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             let node = rootPath[i];
-            let nodeKey = await transaction.remove(node); // eslint-disable-line no-await-in-loop
+            let nodeKey = await this._store.remove(node); // eslint-disable-line no-await-in-loop
 
             node = node.withoutChild(prefix);
 
             // If the node has only a single child, merge it with the next node.
             if (node.hasSingleChild() && nodeKey !== rootKey) {
                 const childKey = node.getFirstChild();
-                const childNode = await transaction.get(childKey); // eslint-disable-line no-await-in-loop
+                const childNode = await this._store.get(childKey); // eslint-disable-line no-await-in-loop
 
                 // Remove the current child node.
-                await transaction.remove(childNode); // eslint-disable-line no-await-in-loop
+                await this._store.remove(childNode); // eslint-disable-line no-await-in-loop
 
                 // Merge prefixes.
                 childNode.prefix = node.prefix + childNode.prefix;
 
-                nodeKey = await transaction.put(childNode); // eslint-disable-line no-await-in-loop
-                return this._updateKeys(transaction, childNode.prefix, nodeKey, rootPath.slice(0, i));
+                nodeKey = await this._store.put(childNode); // eslint-disable-line no-await-in-loop
+                return this._updateKeys(childNode.prefix, nodeKey, rootPath.slice(0, i));
             }
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
             else if (node.hasChildren() || nodeKey === rootKey) {
-                nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
-                return this._updateKeys(transaction, node.prefix, nodeKey, rootPath.slice(0, i));
+                nodeKey = await this._store.put(node); // eslint-disable-line no-await-in-loop
+                return this._updateKeys(node.prefix, nodeKey, rootPath.slice(0, i));
             }
 
             // The node has no children left, continue pruning.
@@ -267,57 +205,51 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * 
-     * @param {IAccountsTreeStore} transaction
      * @param {string} prefix
-     * @param {string} nodeKey
+     * @param {Hash} nodeKey
      * @param {Array.<AccountsTreeNode>} rootPath
      * @returns {Promise}
      * @private
      */
-    async _updateKeys(transaction, prefix, nodeKey, rootPath) {
+    async _updateKeys(prefix, nodeKey, rootPath) {
         // Walk along the rootPath towards the root node starting with the
         // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             let node = rootPath[i];
-            await transaction.remove(node); // eslint-disable-line no-await-in-loop
+            await this._store.remove(node); // eslint-disable-line no-await-in-loop
 
             node = node.withChild(prefix, nodeKey);
 
-            nodeKey = await transaction.put(node); // eslint-disable-line no-await-in-loop
+            nodeKey = await this._store.put(node); // eslint-disable-line no-await-in-loop
             prefix = node.prefix;
         }
 
-        await transaction.setRootKey(nodeKey);
+        await this._store.setRootKey(nodeKey);
         return nodeKey;
     }
 
     /**
      * @param {Address} address
-     * @param {?IAccountsTreeStore} [transaction]
      * @returns {Promise.<Account>}
      */
-    async get(address, transaction) {
-        transaction = transaction || this._store;
-
-        // Fetch the root node. This should never fail.
-        const rootKey = await transaction.getRootKey();
-        const rootNode = await transaction.get(rootKey);
+    async get(address) {
+        // Fetch the root node.
+        const rootKey = await this._store.getRootKey();
+        const rootNode = await this._store.get(rootKey);
+        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         const prefix = address.toHex();
-        return this._retrieve(transaction, rootNode, prefix);
+        return this._retrieve(rootNode, prefix);
     }
 
     /**
-     * 
-     * @param {IAccountsTreeStore} transaction
      * @param {AccountsTreeNode} node
      * @param {string} prefix
      * @returns {Promise.<(Account|boolean)>}
      * @private
      */
-    async _retrieve(transaction, node, prefix) {
+    async _retrieve(node, prefix) {
         // Find common prefix between node and requested address.
         const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
 
@@ -334,8 +266,8 @@ class AccountsTree extends Observable {
         // Descend into the matching child node if one exists.
         const childKey = node.getChild(prefix);
         if (childKey) {
-            const childNode = await transaction.get(childKey);
-            return this._retrieve(transaction, childNode, prefix);
+            const childNode = await this._store.get(childKey);
+            return this._retrieve(childNode, prefix);
         }
 
         // No matching child exists, the requested address is not part of this node.
@@ -344,45 +276,38 @@ class AccountsTree extends Observable {
 
     /**
      * @param {Array.<AccountsTreeNode>} nodes
-     * @param {IAccountsTreeStore} transaction
      * @returns {Promise}
      */
-    async populate(nodes, transaction) {
-        transaction = transaction || this._store;
-
+    async populate(nodes) {
         const rootNode = nodes[0];
         const rootKey = (await rootNode.hash()).toBase64();
 
         for (const node of nodes) {
-            await transaction.put(node);
+            await this._store.put(node); // eslint-disable-line no-await-in-loop
         }
 
-        await transaction.setRootKey(rootKey);
+        await this._store.setRootKey(rootKey);
     }
 
     /**
-     * @param {?IAccountsTreeStore} [transaction]
      * @returns {Promise.<boolean>}
      */
-    async verify(transaction) {
-        transaction = transaction || this._store;
-
-        // Fetch the root node. This should never fail.
-        const rootKey = await transaction.getRootKey();
-        const rootNode = await transaction.get(rootKey);
-        return this._verify(rootNode, transaction);
+    async verify() {
+        // Fetch the root node.
+        const rootKey = await this._store.getRootKey();
+        const rootNode = await this._store.get(rootKey);
+        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+        return this._verify(rootNode);
     }
 
     /**
      * 
      * @param {AccountsTreeNode} node
-     * @param {IAccountsTreeStore} transaction
      * @returns {Promise.<boolean>}
      * @private
      */
-    async _verify(node, transaction) {
+    async _verify(node) {
         if (!node) return true;
-        transaction = transaction || this._store;
 
         // well-formed node type
         if (!node.isBranch() && !node.isTerminal()) {
@@ -395,7 +320,7 @@ class AccountsTree extends Observable {
                 const nibble = i.toString(16);
                 const subhash = node.getChild(nibble);
                 if (!subhash) continue;
-                const subnode = await transaction.get(subhash);
+                const subnode = await this._store.get(subhash);
 
                 // no dangling references
                 if (!subnode) {
@@ -404,7 +329,7 @@ class AccountsTree extends Observable {
                 }
 
                 // no verification fails in the subnode
-                if (!(await this._verify(subnode, transaction))) {
+                if (!(await this._verify(subnode))) {
                     Log.e(`Verification of child ${i} failed`);
                     return false;
                 }
@@ -430,7 +355,7 @@ class AccountsTree extends Observable {
 
     /**
      * 
-     * @param {string} nodeKey
+     * @param {Hash} nodeKey
      * @returns {Promise.<void>}
      * @private
      */
@@ -456,7 +381,7 @@ class AccountsTree extends Observable {
 
     /**
      * 
-     * @param {string} nodeKey
+     * @param {Hash} nodeKey
      * @param {Array.<string>} arr
      * @returns {Promise}
      * @private
@@ -475,13 +400,12 @@ class AccountsTree extends Observable {
 
     /**
      * @param {Array.<Address>} addresses
-     * @param {?IAccountsTreeStore} [transaction]
      * @returns {Promise.<AccountsProof>}
      */
-    async constructAccountsProof(addresses, transaction) {
-        transaction = transaction || this._store;
-        const rootKey = await transaction.getRootKey();
-        const rootNode = await transaction.get(rootKey);
+    async constructAccountsProof(addresses) {
+        const rootKey = await this._store.getRootKey();
+        const rootNode = await this._store.get(rootKey);
+        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         const prefixes = [];
         for (const address of addresses) {
@@ -491,20 +415,19 @@ class AccountsTree extends Observable {
         prefixes.sort();
 
         const nodes = [];
-        await this._constructAccountsProof(transaction, rootNode, prefixes, nodes);
+        await this._constructAccountsProof(rootNode, prefixes, nodes);
         return new AccountsProof(nodes);
     }
 
     /**
      * Constructs the accounts proof in post-order.
-     * @param {IAccountsTreeStore} transaction
      * @param {AccountsTreeNode} node
      * @param {Array.<string>} prefixes
      * @param {Array.<AccountsTreeNode>} nodes
      * @returns {Promise.<*>}
      * @private
      */
-    async _constructAccountsProof(transaction, node, prefixes, nodes) {
+    async _constructAccountsProof(node, prefixes, nodes) {
         // For each prefix, descend the tree individually.
         let numAccounts = 0, i = 0;
         while (i < prefixes.length) {
@@ -546,8 +469,8 @@ class AccountsTree extends Observable {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = await transaction.get(childKey);
-                numAccounts += this._constructAccountsProof(transaction, childNode, subPrefixes, nodes);
+                const childNode = await this._store.get(childKey);
+                numAccounts += this._constructAccountsProof(childNode, subPrefixes, nodes);
             }
         }
 
@@ -559,13 +482,24 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * @returns {Promise.<AccountsTreeTransaction>}
+     * @returns {Promise.<AccountsTree>}
      */
-    async transaction() {
-        // FIXME Firefox apparently has problems with transactions!
-        // const tx = await this._store.transaction();
-        const tx = await AccountsTreeStore.createTemporaryTransaction(this._store);
-        return new AccountsTreeTransaction(this, tx);
+    transaction() {
+        return new AccountsTree(this._store.transaction());
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    commit() {
+        return this._store.commit();
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    abort() {
+        return this._store.abort();
     }
 
     /**
@@ -585,9 +519,8 @@ class AccountsTree extends Observable {
     /**
      * @returns {Promise.<Hash>}
      */
-    async root() {
-        const rootKey = await this._store.getRootKey();
-        return Hash.fromBase64(rootKey);
+    root() {
+        return this._store.getRootKey();
     }
 }
 Class.register(AccountsTree);

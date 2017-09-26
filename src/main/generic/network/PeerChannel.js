@@ -116,12 +116,11 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Array.<Hash>} hashes
-     * @param {Hash} hashStop
+     * @param {Array.<Hash>} locators
      * @return {boolean}
      */
-    getBlocks(hashes, hashStop = new Hash(null)) {
-        return this._send(new GetBlocksMessage(hashes, hashStop));
+    getBlocks(locators) {
+        return this._send(new GetBlocksMessage(locators));
     }
 
     /**

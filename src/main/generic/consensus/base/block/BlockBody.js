@@ -1,5 +1,16 @@
 class BlockBody {
     /**
+     * @param {{_minerAddr, _transactions}} o
+     * @returns {BlockBody}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const minerAddr = Address.copy(o._minerAddr);
+        const transactions = o._transactions.map(it => Transaction.copy(it));
+        return new BlockBody(minerAddr, transactions);
+    }
+
+    /**
      * @param {Address} minerAddr
      * @param {Array.<Transaction>} transactions
      */

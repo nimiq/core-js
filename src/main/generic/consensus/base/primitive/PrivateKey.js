@@ -1,5 +1,15 @@
 class PrivateKey extends Primitive {
     /**
+     * @param {{_obj}} o
+     * @returns {PrivateKey}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const obj = new Uint8Array(o._obj);
+        return new PrivateKey(obj);
+    }
+
+    /**
      * @param arg
      * @private
      */

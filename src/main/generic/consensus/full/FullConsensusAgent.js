@@ -1,12 +1,12 @@
-class ConsensusAgent extends Observable {
+class FullConsensusAgent extends Observable {
     /**
-     * @param {Blockchain} blockchain
+     * @param {FullChain} blockchain
      * @param {Mempool} mempool
      * @param {Peer} peer
      */
     constructor(blockchain, mempool, peer) {
         super();
-        /** @type {Blockchain} */
+        /** @type {FullChain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
@@ -47,16 +47,16 @@ class ConsensusAgent extends Observable {
 
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
-        peer.channel.on('getData', msg => this._onGetData(msg));
-        peer.channel.on('notFound', msg => this._onNotFound(msg));
+        peer.channel.on('get-data', msg => this._onGetData(msg));
+        peer.channel.on('not-found', msg => this._onNotFound(msg));
         peer.channel.on('block', msg => this._onBlock(msg));
         peer.channel.on('tx', msg => this._onTx(msg));
-        peer.channel.on('getBlocks', msg => this._onGetBlocks(msg));
+        peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
 
-        peer.channel.on('getInterlinkChain', msg => this._onGetInterlinkChain(msg));
-        peer.channel.on('getAccountsProof', msg => this._onGetAccountsProof(msg));
-        peer.channel.on('getHeaders', msg => this._onGetHeaders(msg));
+        peer.channel.on('get-interlink-chain', msg => this._onGetInterlinkChain(msg));
+        peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
+        peer.channel.on('get-headers', msg => this._onGetHeaders(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -118,82 +118,79 @@ class ConsensusAgent extends Observable {
         this._knownObjects.add(vector);
     }
 
-    syncBlockchain() {
+    async syncBlockchain() {
         this._syncing = true;
 
         // If the blockchain is still busy processing blocks, wait for it to catch up.
         if (this._blockchain.busy) {
-            Log.v(ConsensusAgent, 'Blockchain busy, waiting ...');
+            Log.v(FullConsensusAgent, 'Blockchain busy, waiting ...');
+            return;
         }
+
+        // If we know the peer's head block, there is nothing more to be learned from this peer.
+        const head = await this._blockchain.getBlock(this._peer.headHash, /*includeForks*/ true);
+        if (head) {
+            this._syncing = false;
+            this._synced = true;
+            this.fire('sync');
+            return;
+        }
+
         // If we already requested blocks from the peer but it didn't give us any
         // good ones, retry or drop the peer.
-        else if (this._lastChainHeight === this._blockchain.height) {
+        if (this._lastChainHeight === this._blockchain.height) {
             this._failedSyncs++;
-            if (this._failedSyncs < ConsensusAgent.MAX_SYNC_ATTEMPTS) {
+            if (this._failedSyncs < FullConsensusAgent.MAX_SYNC_ATTEMPTS) {
                 this._requestBlocks();
             } else {
                 this._peer.channel.ban('blockchain sync failed');
             }
+            return;
         }
-        // If the peer has a longer chain than us, request blocks from it.
-        else if (this._blockchain.height < this._peer.startHeight) {
-            this._lastChainHeight = this._blockchain.height;
-            this._requestBlocks();
-        }
-        // The peer has a shorter chain than us.
-        // TODO what do we do here?
-        else if (this._blockchain.height > this._peer.startHeight) {
-            Log.v(ConsensusAgent, `Peer ${this._peer.peerAddress} has a shorter chain (${this._peer.startHeight}) than us`);
 
-            // XXX assume consensus state?
-            this._syncing = false;
-            this._synced = true;
-            this.fire('sync');
-        }
-        // We have the same chain height as the peer.
-        // TODO Do we need to check that we have the same head???
-        else {
-            // Consensus established.
-            this._syncing = false;
-            this._synced = true;
-            this.fire('sync');
-        }
+        // We don't know the peer's head block, request blocks from it.
+        this._lastChainHeight = this._blockchain.height;
+        this._requestBlocks();
     }
 
-    _requestBlocks() {
+    async _requestBlocks() {
         // XXX Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
-            Log.e(ConsensusAgent, 'Duplicate _requestBlocks()');
+            Log.e(FullConsensusAgent, 'Duplicate _requestBlocks()');
             return;
         }
 
         // Request blocks starting from our hardest chain head going back to
-        // the genesis block. Space out blocks more when getting closer to the
-        // genesis block.
-        const hashes = [];
-        let step = 1;
-        for (let i = this._blockchain.path.length - 1; i >= 0; i -= step) {
-            // Push top 10 hashes first, then back off exponentially.
-            if (hashes.length >= 10) {
-                step *= 2;
-            }
-            hashes.push(this._blockchain.path[i]);
+        // the genesis block. Push top 10 hashes first, then back off exponentially.
+        /** @type {Array.<Hash>} */
+        const locators = [this._blockchain.headHash];
+        let block = this._blockchain.head;
+        for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
+            locators.push(block.prevHash);
+            block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+        }
+
+        let step = 2;
+        for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
+            block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
+            locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
+            step *= 2;
         }
 
         // Push the genesis block hash.
-        if (hashes.length === 0 || !hashes[hashes.length-1].equals(Block.GENESIS.HASH)) {
-            hashes.push(Block.GENESIS.HASH);
+        if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
+            locators.push(Block.GENESIS.HASH);
         }
 
         // Request blocks from peer.
-        this._peer.channel.getBlocks(hashes);
+        this._peer.channel.getBlocks(locators);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
         this._timers.setTimeout('getBlocks', () => {
             this._timers.clearTimeout('getBlocks');
             this._peer.channel.close('getBlocks timeout');
-        }, ConsensusAgent.REQUEST_TIMEOUT);
+        }, FullConsensusAgent.REQUEST_TIMEOUT);
     }
 
     /**
@@ -216,14 +213,14 @@ class ConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
-                    const block = await this._blockchain.getBlock(vector.hash);
+                    const block = await this._blockchain.getBlock(vector.hash, /*includeForks*/ true); // eslint-disable-line no-await-in-loop
                     if (!block) {
                         unknownObjects.push(vector);
                     }
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    const tx = await this._mempool.getTransaction(vector.hash);
+                    const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
                     if (!tx) {
                         unknownObjects.push(vector);
                     }
@@ -234,7 +231,7 @@ class ConsensusAgent extends Observable {
             }
         }
 
-        Log.v(ConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
+        Log.v(FullConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         if (unknownObjects.length > 0) {
             // Store unknown vectors in objectsToRequest array.
@@ -246,12 +243,12 @@ class ConsensusAgent extends Observable {
             this._timers.clearTimeout('inv');
 
             // If there are enough objects queued up, send out a getData request.
-            if (this._objectsToRequest.length >= ConsensusAgent.REQUEST_THRESHOLD) {
+            if (this._objectsToRequest.length >= FullConsensusAgent.REQUEST_THRESHOLD) {
                 this._requestData();
             }
             // Otherwise, wait a short time for more inv messages to arrive, then request.
             else {
-                this._timers.setTimeout('inv', () => this._requestData(), ConsensusAgent.REQUEST_THROTTLE);
+                this._timers.setTimeout('inv', () => this._requestData(), FullConsensusAgent.REQUEST_THROTTLE);
             }
         } else {
             // XXX The peer is weird. Give him another chance.
@@ -278,7 +275,7 @@ class ConsensusAgent extends Observable {
         this._objectsToRequest = new IndexedArray([], true);
 
         // Set timer to detect end of request / missing objects
-        this._timers.setTimeout('getData', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
+        this._timers.setTimeout('getData', () => this._noMoreData(), FullConsensusAgent.REQUEST_TIMEOUT);
     }
 
     _noMoreData() {
@@ -309,7 +306,7 @@ class ConsensusAgent extends Observable {
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-            Log.w(ConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
+            Log.w(FullConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
             return;
@@ -322,7 +319,7 @@ class ConsensusAgent extends Observable {
         const status = await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
-        if (status === Blockchain.PUSH_ERR_INVALID_BLOCK) {
+        if (status === FullChain.ERR_INVALID) {
             this._peer.channel.ban('received invalid block');
         }
     }
@@ -334,12 +331,12 @@ class ConsensusAgent extends Observable {
      */
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        Log.i(ConsensusAgent, `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
+        Log.i(FullConsensusAgent, `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
         if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-            Log.w(ConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
+            Log.w(FullConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
 
@@ -358,12 +355,12 @@ class ConsensusAgent extends Observable {
      * @private
      */
     _onNotFound(msg) {
-        Log.d(ConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
+        Log.d(FullConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
             if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-                Log.w(ConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
+                Log.w(FullConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
 
@@ -383,7 +380,7 @@ class ConsensusAgent extends Observable {
 
         // Reset the request timeout if we expect more objects to come.
         if (!this._objectsInFlight.isEmpty()) {
-            this._timers.resetTimeout('getData', () => this._noMoreData(), ConsensusAgent.REQUEST_TIMEOUT);
+            this._timers.resetTimeout('getData', () => this._noMoreData(), FullConsensusAgent.REQUEST_TIMEOUT);
         } else {
             this._noMoreData();
         }
@@ -410,7 +407,7 @@ class ConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
-                    const block = await this._blockchain.getBlock(vector.hash);
+                    const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
                     if (block) {
                         // We have found a requested block, send it back to the sender.
                         this._peer.channel.block(block);
@@ -421,7 +418,7 @@ class ConsensusAgent extends Observable {
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    const tx = await this._mempool.getTransaction(vector.hash);
+                    const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
                         this._peer.channel.tx(tx);
@@ -448,59 +445,30 @@ class ConsensusAgent extends Observable {
      * @private
      */
     async _onGetBlocks(msg) {
-        Log.v(ConsensusAgent, `[GETBLOCKS] ${msg.hashes.length} block locators received from ${this._peer.peerAddress}`);
+        Log.v(FullConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators received from ${this._peer.peerAddress}`);
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main
         // chain, ignore the rest. If none of the requested hashes is found,
         // pick the genesis block hash. Send the main chain starting from the
         // picked hash back to the peer.
-        // TODO honor hashStop argument
-        const mainPath = this._blockchain.path;
-        let startIndex = -1;
-
-        for (const hash of msg.hashes) {
-            // Shortcut for genesis block which will be the only block sent by
-            // fresh peers.
-            if (Block.GENESIS.HASH.equals(hash)) {
-                startIndex = 0;
+        let startBlock = Block.GENESIS;
+        for (const locator of msg.locators) {
+            const block = await this._blockchain.getBlock(locator);
+            if (block) {
+                // We found a block, ignore remaining block locator hashes.
+                startBlock = block;
                 break;
             }
-
-            // Check if we know the requested block.
-            const block = await this._blockchain.getBlock(hash);
-
-            // If we don't know the block, try the next one.
-            if (!block) continue;
-
-            // If the block is not on our main chain, try the next one.
-            // mainPath is an IndexedArray with constant-time .indexOf()
-            startIndex = mainPath.indexOf(hash);
-            if (startIndex < 0) continue;
-
-            // We found a block, ignore remaining block locator hashes.
-            break;
-        }
-
-        // If we found none of the requested blocks on our main chain,
-        // start with the genesis block.
-        if (startIndex < 0) {
-            // XXX Assert that the full path back to genesis is available in
-            // blockchain.path. When the chain grows very long, it makes no
-            // sense to keep the full path in memory.
-            if (this._blockchain.path.length !== this._blockchain.height) {
-                throw 'Blockchain.path.length != Blockchain.height';
-            }
-
-            startIndex = 0;
         }
 
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const stopIndex = Math.min(mainPath.length - 1, startIndex + ConsensusAgent.GETBLOCKS_VECTORS_MAX);
+        const blocks = await this._blockchain.getBlocks(startBlock.height + 1, FullConsensusAgent.GETBLOCKS_VECTORS_MAX);
         const vectors = [];
-        for (let i = startIndex + 1; i <= stopIndex; ++i) {
-            vectors.push(new InvVector(InvVector.Type.BLOCK, mainPath[i]));
+        for (const block of blocks) {
+            const hash = await block.hash();
+            vectors.push(new InvVector(InvVector.Type.BLOCK, hash));
         }
 
         // Send the vectors back to the requesting peer.
@@ -588,17 +556,17 @@ class ConsensusAgent extends Observable {
  * Number of InvVectors in invToRequest pool to automatically trigger a getData request.
  * @type {number}
  */
-ConsensusAgent.REQUEST_THRESHOLD = 50;
+FullConsensusAgent.REQUEST_THRESHOLD = 50;
 /**
  * Time (ms) to wait after the last received inv message before sending getData.
  * @type {number}
  */
-ConsensusAgent.REQUEST_THROTTLE = 500;
+FullConsensusAgent.REQUEST_THROTTLE = 500;
 /**
  * Maximum time (ms) to wait after sending out getData or receiving the last object for this request.
  * @type {number}
  */
-ConsensusAgent.REQUEST_TIMEOUT = 5000; 
+FullConsensusAgent.REQUEST_TIMEOUT = 5000;
 /**
  * Maximum number of blockchain sync retries before closing the connection.
  * XXX If the peer is on a long fork, it will count as a failed sync attempt
@@ -606,10 +574,10 @@ ConsensusAgent.REQUEST_TIMEOUT = 5000;
  * blocks.
  * @type {number}
  */
-ConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+FullConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
 /**
  * Maximum number of inventory vectors to sent in the response for onGetBlocks.
  * @type {number}
  */
-ConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
-Class.register(ConsensusAgent);
+FullConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
+Class.register(FullConsensusAgent);

@@ -1,6 +1,6 @@
 class Mempool extends Observable {
     /**
-     * @param {Blockchain} blockchain
+     * @param {IBlockchain} blockchain
      * @param {Accounts} accounts
      */
     constructor(blockchain, accounts) {
@@ -58,9 +58,8 @@ class Mempool extends Observable {
         return true;
     }
 
-    // Currently not asynchronous, but might be in the future.
     /**
-     * @param {string} hash
+     * @param {Hash} hash
      * @returns {Transaction}
      */
     getTransaction(hash) {

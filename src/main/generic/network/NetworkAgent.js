@@ -1,6 +1,6 @@
 class NetworkAgent extends Observable {
     /**
-     * @param {Blockchain} blockchain
+     * @param {IBlockchain} blockchain
      * @param {PeerAddresses} addresses
      * @param {PeerChannel} channel
      *
@@ -13,7 +13,7 @@ class NetworkAgent extends Observable {
      */
     constructor(blockchain, addresses, channel) {
         super();
-        /** @type {Blockchain} */
+        /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {PeerAddresses} */
         this._addresses = addresses;

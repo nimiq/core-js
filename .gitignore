@@ -6,6 +6,7 @@
 /src/main/platform/nodejs/database/keys
 /clients/nodejs/node_modules
 /clients/nodejs/database
+/clients/nodejs/consensus
 /clients/nodejs/localhost.*
 /dist/nimiq*
 /dist/web*

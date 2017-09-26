@@ -127,11 +127,11 @@
 
             <div class="info-block">
                 <strong>Work</strong>
-                <span id="bcDenseWork"></span> <small>dense</small> / <span id="bcSparseWork"></span> <small>sparse</small>
+                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
             </div>
             <div class="info-block">
                 <strong>Height</strong>
-                <span id="bcHeight"></span> / <span id="bcDenseLength"></span> <small>dense</small> / <span id="bcSparseLength"></span> <small>sparse</small>
+                <span id="bcHeight"></span>
             </div>
             <div class="info-block">
                 <strong>Accounts Hash</strong>
@@ -260,6 +260,7 @@
             $.consensus.on('established', function() {
                 document.getElementById('blockchain-title').classList.add('consensus-established');
                 document.getElementById('txSubmitBtn').removeAttribute('disabled');
+                this._headChanged($.blockchain.head);
                 //document.getElementById('mnrStartBtn').removeAttribute('disabled');
             }.bind(this));
 
@@ -272,15 +273,11 @@
 
             // Blockchain
             /** @type {HTMLElement} */
-            this._bcDenseWork = document.querySelector('#bcDenseWork');
+            this._bcTotalDifficulty = document.querySelector('#bcTotalDifficulty');
             /** @type {HTMLElement} */
-            this._bcSparseWork = document.querySelector('#bcSparseWork');
+            this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
-            /** @type {HTMLElement} */
-            this._bcDenseLength = document.querySelector('#bcDenseLength');
-            /** @type {HTMLElement} */
-            this._bcSparseLength = document.querySelector('#bcSparseLength');
             /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
@@ -426,11 +423,9 @@
         }
 
         _headChanged(head) {
-            this._bcDenseWork.innerText = $.blockchain._dense.totalWork; // XXX
-            this._bcSparseWork.innerText = $.blockchain._sparse.realWork; // XXX
+            this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
+            this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
-            this._bcDenseLength.innerText = $.blockchain.denseLength;
-            this._bcSparseLength.innerText = $.blockchain.sparseLength;
             $.blockchain.accountsHash().then(function(accountsHash) {
                 this._bcAccountsHash.innerText = accountsHash.toBase64();
             }.bind(this));
@@ -452,7 +447,7 @@
                 + `difficulty=${head.difficulty} (${realDifficulty}), interlink=[${interlink}]</div>`;
 
             var txPromises = [];
-
+            /*
             head.transactions.forEach(function(tx) {
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
@@ -460,6 +455,7 @@
                     return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
             });
+            */
 
             Promise.all(txPromises).then(function(results) {
                 el.innerHTML = html + results.join('');
@@ -603,9 +599,6 @@
                     break;
                 case Nimiq.ERR_UNSUPPORTED:
                     alert('Browser not supported');
-                    break;
-                case Nimiq.Wallet.ERR_INVALID_WALLET_SEED:
-                    alert('Invalid wallet seed');
                     break;
                 default:
                     alert('Nimiq initialization error');

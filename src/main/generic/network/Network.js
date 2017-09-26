@@ -24,12 +24,12 @@ class Network extends Observable {
     }
 
     /**
-     * @param {Blockchain} blockchain
+     * @param {IBlockchain} blockchain
      * @return {Promise.<Network>}
      */
     constructor(blockchain) {
         super();
-        /** @type {Blockchain} */
+        /** @type {IBlockchain} */
         this._blockchain = blockchain;
         return this._init();
     }

@@ -1,5 +1,15 @@
 class BlockInterlink {
     /**
+     * @param {{_hashes}} o
+     * @returns {BlockInterlink}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const hashes = o._hashes.map(it => Hash.copy(it));
+        return new BlockInterlink(hashes);
+    }
+
+    /**
      * @param {Array.<Hash>} blockHashes
      */
     constructor(blockHashes) {

@@ -1,5 +1,18 @@
 class Block {
     /**
+     * @param {{_header, _interlink, _body}} o
+     * @returns {Block}
+     */
+    static copy(o) {
+        if (!o) return o;
+        return new Block(
+            BlockHeader.copy(o._header),
+            BlockInterlink.copy(o._interlink),
+            BlockBody.copy(o._body)
+        );
+    }
+
+    /**
      * @param {BlockHeader} header
      * @param {BlockInterlink} interlink
      * @param {BlockBody} [body]

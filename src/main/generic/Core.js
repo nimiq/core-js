@@ -1,43 +1,27 @@
+/**
+ * @deprecated
+ */
 class Core {
-
     /**
      * Initialize the Core object
-     * @param {{walletSeed: string}} options Options for Core initialization.
      * @return {Promise.<Core>} The created Core object.
      */
-    constructor(options) {
-        return this._init(options);
+    constructor() {
+        return this._init();
     }
 
-    async _init({walletSeed}) {
-        // Model    
-        /** @type {Accounts} */
-        this.accounts = await Accounts.getPersistent();
-        /** @type {Blockchain} */
-        this.blockchain = await Blockchain.getPersistent(this.accounts);
-        /** @type {Mempool} */
-        this.mempool = new Mempool(this.blockchain, this.accounts);
+    async _init() {
+        this.consensus = await Consensus.full();
 
-        // Network
-        /** @type {Network} */
-        this.network = await new Network(this.blockchain);
+        // XXX Legacy API
+        this.blockchain = this.consensus.blockchain;
+        this.accounts = this.blockchain.accounts;
+        this.mempool = this.consensus.mempool;
+        this.network = this.consensus.network;
 
-        // Consensus
-        /** @type {Consensus} */
-        this.consensus = new Consensus(this.blockchain, this.mempool, this.network);
-
-        // Wallet
-        if (walletSeed) {
-            /** @type {Wallet} */
-            this.wallet = await Wallet.load(walletSeed);
-        } else {
-            /** @type {Wallet} */
-            this.wallet = await Wallet.getPersistent();
-        }
-
-        // Miner
-        /** @type {Miner} */
-        this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);
+        // XXX Legacy components
+        this.wallet = await Wallet.getPersistent();
+        this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);;
 
         Object.freeze(this);
         return this;

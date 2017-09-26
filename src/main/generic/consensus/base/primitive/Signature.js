@@ -1,5 +1,15 @@
 class Signature extends Primitive {
     /**
+     * @param {{_obj}} o
+     * @returns {Signature}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const obj = new Uint8Array(o._obj);
+        return new Signature(obj);
+    }
+
+    /**
      * @param arg
      * @private
      */

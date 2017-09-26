@@ -1,9 +1,12 @@
 class Address extends Primitive {
     /**
-     * @return {number}
+     * @param {{_obj}} o
+     * @returns {Address}
      */
-    static get SERIALIZED_SIZE() {
-        return 20;
+    static copy(o) {
+        if (!o) return o;
+        const obj = new Uint8Array(o._obj);
+        return new Address(obj);
     }
 
     constructor(arg) {
@@ -66,4 +69,5 @@ class Address extends Primitive {
         return new Address(BufferUtils.fromHex(hex));
     }
 }
+Address.SERIALIZED_SIZE = 20;
 Class.register(Address);

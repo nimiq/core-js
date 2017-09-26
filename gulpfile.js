@@ -26,19 +26,18 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
-            './src/main/platform/browser/network/websocket/WebSocketConnector.js',
-            './src/main/platform/browser/WorkerBuilder.js'
+            './src/main/platform/browser/network/websocket/WebSocketConnector.js'
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/nodejs/database/TypedDB.js',
+            './src/main/platform/nodejs/database/JungleDB.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
             './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
-            './src/main/platform/nodejs/network/NetworkConfig.js',
-            './src/main/platform/nodejs/utils/WindowDetector.js'
+            './src/main/platform/nodejs/network/NetworkConfig.js'
         ]
     },
     generic: [
@@ -63,36 +62,42 @@ const sources = {
         './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/generic/utils/string/StringUtils.js',
         './src/main/generic/consensus/Policy.js',
-        './src/main/generic/consensus/primitive/Primitive.js',
-        './src/main/generic/consensus/primitive/Hash.js',
-        './src/main/generic/consensus/primitive/PrivateKey.js',
-        './src/main/generic/consensus/primitive/PublicKey.js',
-        './src/main/generic/consensus/primitive/KeyPair.js',
-        './src/main/generic/consensus/primitive/Signature.js',
-        './src/main/generic/consensus/account/Address.js',
-        './src/main/generic/consensus/account/Balance.js',
-        './src/main/generic/consensus/account/Account.js',
-        './src/main/generic/consensus/account/tree/AccountsTreeNode.js',
-        './src/main/generic/consensus/account/tree/AccountsTreeStore.js',
-        './src/main/generic/consensus/account/tree/AccountsProof.js',
-        './src/main/generic/consensus/account/tree/AccountsTree.js',
-        './src/main/generic/consensus/account/Accounts.js',
-        './src/main/generic/consensus/block/BlockHeader.js',
-        './src/main/generic/consensus/block/BlockInterlink.js',
-        './src/main/generic/consensus/block/BlockBody.js',
-        './src/main/generic/consensus/block/BlockUtils.js',
-        './src/main/generic/consensus/transaction/Transaction.js',
-        './src/main/generic/consensus/block/Block.js',
-        './src/main/generic/consensus/blockchain/Blockchain.js',
-        './src/main/generic/consensus/blockchain/BlockData.js',
-        './src/main/generic/consensus/blockchain/BlockStore.js',
-        './src/main/generic/consensus/blockchain/DenseChain.js',
-        './src/main/generic/consensus/blockchain/SparseChain.js',
+        './src/main/generic/consensus/base/primitive/Primitive.js',
+        './src/main/generic/consensus/base/primitive/Hash.js',
+        './src/main/generic/consensus/base/primitive/PrivateKey.js',
+        './src/main/generic/consensus/base/primitive/PublicKey.js',
+        './src/main/generic/consensus/base/primitive/KeyPair.js',
+        './src/main/generic/consensus/base/primitive/Signature.js',
+        './src/main/generic/consensus/base/account/Address.js',
+        './src/main/generic/consensus/base/account/Balance.js',
+        './src/main/generic/consensus/base/account/Account.js',
+        './src/main/generic/consensus/base/account/tree/AccountsTreeNode.js',
+        './src/main/generic/consensus/base/account/tree/AccountsTreeStore.js',
+        './src/main/generic/consensus/base/account/tree/AccountsProof.js',
+        './src/main/generic/consensus/base/account/tree/AccountsTree.js',
+        './src/main/generic/consensus/base/account/Accounts.js',
+        './src/main/generic/consensus/base/block/BlockHeader.js',
+        './src/main/generic/consensus/base/block/BlockInterlink.js',
+        './src/main/generic/consensus/base/block/BlockBody.js',
+        './src/main/generic/consensus/base/block/BlockUtils.js',
+        './src/main/generic/consensus/base/transaction/Transaction.js',
+        './src/main/generic/consensus/base/block/Block.js',
+        './src/main/generic/consensus/base/mempool/Mempool.js',
+        './src/main/generic/consensus/blockchain/IBlockchain.js',
+        //'./src/main/generic/consensus/base/blockchain/Blockchain.js',
+        //'./src/main/generic/consensus/base/blockchain/BlockStore.js',
+        //'./src/main/generic/consensus/base/blockchain/DenseChain.js',
+        //'./src/main/generic/consensus/base/blockchain/SparseChain.js',
         './src/main/generic/consensus/lightchain/HeaderChain.js',
         './src/main/generic/consensus/lightchain/InterlinkChain.js',
-        './src/main/generic/consensus/mempool/Mempool.js',
-        './src/main/generic/consensus/ConsensusAgent.js',
-        './src/main/generic/consensus/LightConsensusAgent.js',
+        './src/main/generic/consensus/full/blockchain/ChainData.js',
+        './src/main/generic/consensus/full/blockchain/FullChainStore.js',
+        './src/main/generic/consensus/full/blockchain/FullChain.js',
+        './src/main/generic/consensus/full/FullConsensusAgent.js',
+        './src/main/generic/consensus/full/FullConsensus.js',
+        './src/main/generic/consensus/nano/NanoConsensusAgent.js',
+        './src/main/generic/consensus/nano/NanoConsensus.js',
+        './src/main/generic/consensus/ConsensusDB.js',
         './src/main/generic/consensus/Consensus.js',
         './src/main/generic/network/Protocol.js',
         './src/main/generic/network/address/NetAddress.js',
@@ -143,6 +148,8 @@ const sources = {
     ]
 };
 
+const dependencies = ['./node_modules/jungle-db/dist/web.js']; // external dependencies
+
 const babel_config = {
     plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
     presets: ['es2016', 'es2017']
@@ -181,8 +188,9 @@ gulp.task('build-web-babel', function () {
             .pipe(source('babel.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
-            .pipe(sourcemaps.init())
+        gulp.src(dependencies // external dependencies
+            .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+            .pipe(sourcemaps.init({loadMaps: true}))
             .pipe(concat('web.js'))
             .pipe(babel(babel_config)))
         .pipe(sourcemaps.init())
@@ -202,8 +210,9 @@ gulp.task('build-web-crypto', function () {
             .pipe(source('crypto.js'))
             .pipe(buffer())
             .pipe(uglify()),
-        gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
-            .pipe(sourcemaps.init())
+        gulp.src(dependencies // external dependencies
+            .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+            .pipe(sourcemaps.init({loadMaps: true}))
             .pipe(concat('web.js')))
         .pipe(sourcemaps.init())
         .pipe(concat('web-crypto.js'))
@@ -212,8 +221,9 @@ gulp.task('build-web-crypto', function () {
 });
 
 gulp.task('build-web', function () {
-    return gulp.src(['./src/loader/prefix.js.template'].concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']))
-        .pipe(sourcemaps.init())
+    return gulp.src(dependencies // external dependencies
+        .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+        .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))

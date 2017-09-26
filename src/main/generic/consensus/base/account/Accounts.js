@@ -1,30 +1,19 @@
 class Accounts extends Observable {
     /**
      * Generate an Accounts object that is persisted to the local storage.
-     * @return {Promise.<Accounts>} Accounts object
+     * @returns {Promise.<Accounts>} Accounts object
      */
-    static async getPersistent() {
-        const tree = await AccountsTree.getPersistent();
+    static async getPersistent(jdb) {
+        const tree = await AccountsTree.getPersistent(jdb);
         return new Accounts(tree);
     }
 
     /**
      * Generate an Accounts object that loses it's data after usage.
-     * @return {Promise.<Accounts>} Accounts object
+     * @returns {Promise.<Accounts>} Accounts object
      */
     static async createVolatile() {
         const tree = await AccountsTree.createVolatile();
-        return new Accounts(tree);
-    }
-
-    /**
-     * Generate an Accounts object that provides Copy-on-write access with
-     * data being destroyed after usage.
-     * @param {Accounts} backend Accounts object to copy data from.
-     * @return {Promise.<Accounts>} Accounts object
-     */
-    static async createTemporary(backend) {
-        const tree = await AccountsTree.createTemporary(backend._tree);
         return new Accounts(tree);
     }
 
@@ -41,10 +30,10 @@ class Accounts extends Observable {
 
     async populate(nodes) {
         // To make sure we have a single transaction, we use a Temporary Tree during populate and commit that.
-        const treeTx = await AccountsTreeStore.createTemporaryTransaction(this._tree._store);
-        await this._tree.populate(nodes, treeTx);
-        if (await this._tree.verify(treeTx)) {
-            await treeTx.commit();
+        const tx = await this._tree.transaction();
+        await tx.populate(nodes);
+        if (await tx.verify()) {
+            await tx.commit();
             this.fire('populated');
             return true;
         } else {
@@ -69,13 +58,14 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async commitBlock(block) {
-        // TODO we should validate if the block is going to be applied correctly.
-
         const treeTx = await this._tree.transaction();
         await this._execute(treeTx, block.body, (a, b) => a + b);
 
         const hash = await treeTx.root();
-        if (!block.accountsHash.equals(hash)) throw 'AccountsHash mismatch';
+        if (!block.accountsHash.equals(hash)) {
+            await treeTx.abort();
+            throw new Error('Failed to commit block - AccountsHash mismatch');
+        }
         return treeTx.commit();
     }
 
@@ -84,9 +74,9 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async commitBlockBody(body) {
-        const treeTx = await this._tree.transaction();
-        await this._execute(treeTx, body, (a, b) => a + b);
-        return treeTx.commit();
+        const tree = await this._tree.transaction();
+        await this._execute(tree, body, (a, b) => a + b);
+        return tree.commit();
     }
 
     /**
@@ -94,6 +84,10 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async revertBlock(block) {
+        const hash = await this._tree.root();
+        if (!block.accountsHash.equals(hash)) {
+            throw new Error('Failed to revert block - AccountsHash mismatch');
+        }
         return this.revertBlockBody(block.body);
     }
 
@@ -102,21 +96,21 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async revertBlockBody(body) {
-        const treeTx = await this._tree.transaction();
-        await this._execute(treeTx, body, (a, b) => a - b);
-        return treeTx.commit();
+        const tree = await this._tree.transaction();
+        await this._execute(tree, body, (a, b) => a - b);
+        return tree.commit();
     }
 
     /**
-     * Gather the current balance of an account.
+     * Gets the current balance of an account.
      *
      * We only support basic accounts at this time.
      * @param {Address} address Address of the account to query.
-     * @param {?AccountsTree|?AccountsTreeTransaction} [treeTx] AccountsTree or transaction to read from.
+     * @param {AccountsTree} [tree] AccountsTree or transaction to read from.
      * @return {Promise.<Balance>} Current Balance of given user.
      */
-    async getBalance(address, treeTx = this._tree) {
-        const account = await treeTx.get(address);
+    async getBalance(address, tree = this._tree) {
+        const account = await tree.get(address);
         if (account) {
             return account.balance;
         } else {
@@ -125,58 +119,79 @@ class Accounts extends Observable {
     }
 
     /**
-     * @param {?AccountsTree|*} treeTx
+     * @returns {Promise.<Accounts>}
+     */
+    async transaction() {
+        return new Accounts(await this._tree.transaction());
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    commit() {
+        return this._tree.commit();
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    abort() {
+        return this._tree.abort();
+    }
+
+    /**
+     * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {Function} operator
      * @return {Promise.<void>}
      * @private
      */
-    async _execute(treeTx, body, operator) {
-        await this._executeTransactions(treeTx, body, operator);
-        await this._rewardMiner(treeTx, body, operator);
+    async _execute(tree, body, operator) {
+        await this._executeTransactions(tree, body, operator);
+        await this._rewardMiner(tree, body, operator);
     }
 
     /**
-     * @param {?AccountsTree|*} treeTx
+     * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {Function} op
      * @return {Promise.<void>}
      * @private
      */
-    async _rewardMiner(treeTx, body, op) {
+    async _rewardMiner(tree, body, op) {
         // Sum up transaction fees.
         const txFees = body.transactions.reduce((sum, tx) => sum + tx.fee, 0);
-        await this._updateBalance(treeTx, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+        await this._updateBalance(tree, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
     }
 
     /**
-     * @param {?AccountsTree|*} treeTx
+     * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {Function} op
      * @return {Promise.<void>}
      * @private
      */
-    async _executeTransactions(treeTx, body, op) {
+    async _executeTransactions(tree, body, op) {
         for (const tx of body.transactions) {
-            await this._executeTransaction(treeTx, tx, op); // eslint-disable-line no-await-in-loop
+            await this._executeTransaction(tree, tx, op); // eslint-disable-line no-await-in-loop
         }
     }
-    async _executeTransaction(treeTx, tx, op) {
-        await this._updateSender(treeTx, tx, op);
-        await this._updateRecipient(treeTx, tx, op);
+    async _executeTransaction(tree, tx, op) {
+        await this._updateSender(tree, tx, op);
+        await this._updateRecipient(tree, tx, op);
     }
 
-    async _updateSender(treeTx, tx, op) {
+    async _updateSender(tree, tx, op) {
         const addr = await tx.getSenderAddr();
-        await this._updateBalance(treeTx, addr, -tx.value - tx.fee, op);
+        await this._updateBalance(tree, addr, -tx.value - tx.fee, op);
     }
 
-    async _updateRecipient(treeTx, tx, op) {
-        await this._updateBalance(treeTx, tx.recipientAddr, tx.value, op);
+    async _updateRecipient(tree, tx, op) {
+        await this._updateBalance(tree, tx.recipientAddr, tx.value, op);
     }
 
-    async _updateBalance(treeTx, address, value, operator) {
-        const balance = await this.getBalance(address, treeTx);
+    async _updateBalance(tree, address, value, operator) {
+        const balance = await this.getBalance(address, tree);
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) {
@@ -190,13 +205,16 @@ class Accounts extends Observable {
 
         const newBalance = new Balance(newValue, newNonce);
         const newAccount = new Account(newBalance);
-        await treeTx.put(address, newAccount);
+        await tree.put(address, newAccount);
     }
 
     export() {
         return this._tree.export();
     }
 
+    /**
+     * @returns {Promise.<Hash>}
+     */
     hash() {
         return this._tree.root();
     }

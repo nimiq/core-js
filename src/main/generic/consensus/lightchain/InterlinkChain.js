@@ -46,7 +46,7 @@ class InterlinkChain {
      * @returns {Promise.<boolean>}
      */
     async verify() {
-        // Check that all blocks in the interlink chain are valid interlink successors of one another.
+        // Check that all blocks in the interlink chain are valid successors of one another.
         for (let i = this._blocks.length - 1; i >= 1; i--) {
             if (!(await this._blocks[i].isSuccessorOf(this._blocks[i - 1]))) { // eslint-disable-line no-await-in-loop
                 return false;

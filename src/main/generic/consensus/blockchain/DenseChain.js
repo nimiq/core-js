@@ -357,7 +357,7 @@ class DenseChain extends Observable {
      */
     async isOnMainChain(block) {
         const hash = await block.hash();
-        const data =this._blockData.get(hash);
+        const data = this._blockData.get(hash);
         return !!data && data.onMainChain;
     }
 

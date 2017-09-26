@@ -157,7 +157,7 @@ class Miner extends Observable {
             this.fire('block-mined', block, this);
 
             // Push block into blockchain.
-            this._blockchain.push(block);
+            this._blockchain.pushBlock(block);
         } else {
             // Increment nonce.
             block.header.nonce++;
@@ -172,32 +172,45 @@ class Miner extends Observable {
      * @private
      */
     async _getNextBlock() {
+        const nextTarget = await this._blockchain.getNextTarget();
+        const interlink = await this._getNextInterlink(nextTarget);
         const body = this._getNextBody();
-        const interlink = await this._blockchain.getNextInterlink();
-        const header = await this._getNextHeader(body, interlink);
+        const header = await this._getNextHeader(nextTarget, interlink, body);
         return new Block(header, interlink, body);
     }
 
     /**
-     * @param {BlockBody} body
+     * @param {number} nextTarget
      * @param {BlockInterlink} interlink
+     * @param {BlockBody} body
      * @return {Promise.<BlockHeader>}
      * @private
      */
-    async _getNextHeader(body, interlink) {
+    async _getNextHeader(nextTarget, interlink, body) {
         const prevHash = this._blockchain.headHash;
         const interlinkHash = await interlink.hash();
-        // TODO
-        //const accounts = await this._blockchain.createTemporaryAccounts();
-        //await accounts.commitBlockBody(body);
-        //const accountsHash = await accounts.hash();
-        const accountsHash = new Hash(null);
+
+        // Compute next accountsHash.
+        const accounts = await this._blockchain.accounts.transaction();
+        await accounts.commitBlockBody(body);
+        const accountsHash = await accounts.hash();
+        await accounts.abort();
+
         const bodyHash = await body.hash();
         const height = this._blockchain.height + 1;
         const timestamp = this._getNextTimestamp();
-        const nBits = BlockUtils.targetToCompact(await this._blockchain.getNextTarget());
+        const nBits = BlockUtils.targetToCompact(nextTarget);
         const nonce = Math.round(Math.random() * 100000);
         return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
+    }
+
+    /**
+     * @param {number} nextTarget
+     * @returns {Promise.<BlockInterlink>}
+     * @private
+     */
+    _getNextInterlink(nextTarget) {
+        return this._blockchain.head.getNextInterlink(nextTarget);
     }
 
     /**

@@ -1,5 +1,15 @@
 class PublicKey extends Primitive {
     /**
+     * @param {{_obj}} o
+     * @returns {PublicKey}
+     */
+    static copy(o) {
+        if (!o) return o;
+        const obj = new Uint8Array(o._obj);
+        return new PublicKey(obj);
+    }
+
+    /**
      * @param arg
      * @private
      */
