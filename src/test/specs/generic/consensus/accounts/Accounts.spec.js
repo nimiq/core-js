@@ -74,13 +74,11 @@ describe('Accounts', () => {
 
     it('correctly rewards miners', (done) => {
         (async function () {
-
             const user1 = testBlockchain.users[0];
             const user2 = testBlockchain.users[1];
             const user3 = testBlockchain.users[2];
             const user4 = testBlockchain.users[3];
             const accounts = testBlockchain.accounts;
-
 
             // initial setup: user1 mined genesis block with no transactions, user2 has a balance of 0
             let balance = (await accounts.getBalance(user2.address)).value;
@@ -94,7 +92,10 @@ describe('Accounts', () => {
                 await TestBlockchain.createTransaction(user1.publicKey, user3.address, amount1, fee1, 0, user1.privateKey),
                 await TestBlockchain.createTransaction(user1.publicKey, user4.address, amount2, fee2, 0, user1.privateKey)
             ];
-            const block = await testBlockchain.createBlock(transactions, undefined, undefined, undefined, user2);
+            const block = await testBlockchain.createBlock({
+                transactions: transactions,
+                minerAddr: user2.address
+            });
 
             await accounts.commitBlock(block);
 
@@ -122,7 +123,7 @@ describe('Accounts', () => {
                 await TestBlockchain.createTransaction(user2.publicKey, user3.address, amount2, fee, 0, user1.privateKey)
             ];
 
-            const block = await testBlockchain.createBlock(transactions);
+            const block = await testBlockchain.createBlock({transactions: transactions});
 
             const accounts = testBlockchain.accounts;
             // we expect rejection of block
@@ -158,7 +159,7 @@ describe('Accounts', () => {
                 transactions.push(await TestBlockchain.createTransaction(currentUser.publicKey, user0.address, Policy.BLOCK_REWARD, 0, 0, currentUser.privateKey));
             }
             await treeTx.commit();
-            const block = await testBlockchain.createBlock(transactions);
+            const block = await testBlockchain.createBlock({transactions: transactions});
             await accounts.commitBlock(block);
             done();
         })().then(done, done.fail);
@@ -174,7 +175,10 @@ describe('Accounts', () => {
 
             // sender balance not enough (amount + fee > block reward)
             const transaction = await TestBlockchain.createTransaction(user1.publicKey, user2.address, Policy.BLOCK_REWARD, 1, 0, user1.privateKey);
-            const block = await testBlockchain.createBlock([transaction], undefined, undefined, undefined, user3);
+            const block = await testBlockchain.createBlock({
+                transactions: [transaction],
+                minerAddr: user3.address
+            });
             let error = false;
             try {
                 await accounts.commitBlock(block);
@@ -185,7 +189,7 @@ describe('Accounts', () => {
             expect(error).toBe(true);
 
             // sender balance wil be enough AFTER block is mined -> make sender also miner (should still fail)
-            block.miner = user1.address;
+            block.body._minerAddr = user1.address;
             error = false;
             try {
                 await accounts.commitBlock(block);
@@ -204,7 +208,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
 
             const transaction = await TestBlockchain.createTransaction(user1.publicKey, user1.address, 50, 1, 0, user1.privateKey);
-            const block = await testBlockchain.createBlock([transaction]);
+            const block = await testBlockchain.createBlock({transactions: [transaction]});
             try {
                 await accounts.commitBlock(block);
             } catch(e) {

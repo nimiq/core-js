@@ -31,12 +31,14 @@ if (typeof global !== 'undefined') {
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
+        new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
         new Hash(BufferUtils.fromBase64('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE=')),
         new Hash(BufferUtils.fromBase64('V9adVnWYF9TDwq6YR3Tz8NlOEh8dQQfdUGMGf0Wa+B0=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
         0),
+    new BlockInterlink([]),
     new BlockBody(new Address(BufferUtils.fromBase64('ySpv9NQBK2YgycXIfMH8Mr+JfaM=')), [])
 );
 // Store hash for synchronous access

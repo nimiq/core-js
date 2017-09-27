@@ -15,10 +15,10 @@ describe('PeerChannel', () => {
                 const vMsg = VersionMessage.unserialize(msg);
                 expect(vMsg.version).toBe(1);
                 expect(vMsg.peerAddress.equals(addr)).toBe(true);
-                expect(vMsg.startHeight).toBe(42);
+                expect(vMsg.headHash.equals(hash)).toBe(true);
             });
             const client = new PeerChannel(spy);
-            client.version(addr, 42);
+            client.version(addr, hash);
         })().then(done, done.fail);
     });
 
@@ -51,7 +51,7 @@ describe('PeerChannel', () => {
             done();
         });
         const client = new PeerChannel(spy);
-        client.notfound([vec1]);
+        client.notFound([vec1]);
     });
 
     it('can send a GetDataMessage', (done) => {
@@ -62,7 +62,7 @@ describe('PeerChannel', () => {
             done();
         });
         const client = new PeerChannel(spy);
-        client.getdata([vec1]);
+        client.getData([vec1]);
     });
 
     it('can send a BlockMessage', (done) => {
@@ -97,7 +97,7 @@ describe('PeerChannel', () => {
         const spy = new SpyConnection();
         const client = new PeerChannel(spy);
 
-        client.on(message.type, invMsgTest => {
+        client.on('inv', invMsgTest => {
             expect(invMsgTest.vectors.length).toBe(count);
             expect(invMsgTest.vectors[0].equals(vec1)).toBe(true);
             done();
@@ -110,7 +110,7 @@ describe('PeerChannel', () => {
         const spy = new SpyConnection();
         const client = new PeerChannel(spy);
 
-        client.on(message.type, memPoolMsgTest => {
+        client.on('mempool', memPoolMsgTest => {
             expect(memPoolMsgTest.type).toBe(Message.Type.MEMPOOL);
             done();
         });
@@ -122,7 +122,7 @@ describe('PeerChannel', () => {
         const spy = new SpyConnection();
         const client = new PeerChannel(spy);
 
-        client.on(message.type, notfoundMsgTest => {
+        client.on('not-found', notfoundMsgTest => {
             expect(notfoundMsgTest.vectors.length).toBe(count);
             expect(notfoundMsgTest.vectors[0].equals(vec1)).toBe(true);
             done();
@@ -135,7 +135,7 @@ describe('PeerChannel', () => {
         const spy = new SpyConnection();
         const client = new PeerChannel(spy);
 
-        client.on(message.type, getDataMsgTest => {
+        client.on('get-data', getDataMsgTest => {
             expect(getDataMsgTest.vectors.length).toBe(count);
             expect(getDataMsgTest.vectors[0].equals(vec1)).toBe(true);
             done();
@@ -150,7 +150,7 @@ describe('PeerChannel', () => {
             const message = new BlockMessage(block);
             const spy = new SpyConnection();
             const client = new PeerChannel(spy);
-            client.on(message.type, blockMsgTest => {
+            client.on('block', blockMsgTest => {
                 expect(blockMsgTest.block.header.equals(block.header)).toBe(true);
                 expect(blockMsgTest.block.body.equals(block.body)).toBe(true);
             });
@@ -165,7 +165,7 @@ describe('PeerChannel', () => {
             const message = new TxMessage(block.transactions[0]);
             const spy = new SpyConnection();
             const client = new PeerChannel(spy);
-            client.on(message.type, txMsgTest => {
+            client.on('tx', txMsgTest => {
                 expect(txMsgTest.transaction.equals(block.transactions[0])).toBe(true);
             });
             spy.onmessage(message.serialize());

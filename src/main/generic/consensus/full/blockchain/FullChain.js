@@ -122,21 +122,21 @@ class FullChain extends IBlockchain {
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(block.prevHash);
         if (!prevData) {
-            Log.w(FullChain, 'Rejected block - unknown predecessor');
+            Log.w(FullChain, 'Rejecting block - unknown predecessor');
             return FullChain.ERR_ORPHAN;
         }
 
         // Check that the block is a valid successor of its immediate predecessor.
         const predecessor = prevData.head;
         if (!(await block.isImmediateSuccessorOf(predecessor))) {
-            Log.w(FullChain, 'Invalid block - not a valid immediate successor');
+            Log.w(FullChain, 'Rejecting block - not a valid immediate successor');
             return FullChain.ERR_INVALID;
         }
 
         // Check that the difficulty is correct.
         const nextTarget = await this.getNextTarget(predecessor);
         if (block.nBits !== BlockUtils.targetToCompact(nextTarget)) {
-            Log.w(FullChain, 'Invalid block - difficulty mismatch');
+            Log.w(FullChain, 'Rejecting block - difficulty mismatch');
             return FullChain.ERR_INVALID;
         }
 
@@ -207,7 +207,7 @@ class FullChain extends IBlockchain {
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
-            Log.w(Blockchain, 'Rejecting block - AccountsHash mismatch');
+            Log.w(FullChain, 'Rejecting block - AccountsHash mismatch');
             return false;
         }
 

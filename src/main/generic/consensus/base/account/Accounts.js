@@ -41,10 +41,6 @@ class Accounts extends Observable {
         }
     }
 
-    clear() {
-        return this._tree.clear();
-    }
-
     /**
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}

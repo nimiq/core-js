@@ -1,7 +1,7 @@
 describe('MessageFactory', () => {
 
     it('whitelists valid Message types', () => {
-        const maliciousType = '__proto__';
+        const maliciousType = 77;
         const maliciousMsg = new Message(maliciousType).serialize();
         expect(() => {
             MessageFactory.parse(maliciousMsg);

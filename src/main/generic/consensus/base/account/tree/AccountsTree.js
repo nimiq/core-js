@@ -38,8 +38,10 @@ class AccountsTree extends Observable {
         let rootKey = await this._store.getRootKey();
         if (!rootKey) {
             const rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*children*/ []);
-            rootKey = await this._store.put(rootNode);
-            await this._store.setRootKey(rootKey);
+            const tx = this._store.transaction();
+            rootKey = await tx.put(rootNode);
+            await tx.setRootKey(rootKey);
+            await tx.commit();
         }
         return this;
     }
@@ -175,7 +177,7 @@ class AccountsTree extends Observable {
             node = node.withoutChild(prefix);
 
             // If the node has only a single child, merge it with the next node.
-            if (node.hasSingleChild() && nodeKey !== rootKey) {
+            if (node.hasSingleChild() && !rootKey.equals(nodeKey)) {
                 const childKey = node.getFirstChild();
                 const childNode = await this._store.get(childKey); // eslint-disable-line no-await-in-loop
 
@@ -191,7 +193,7 @@ class AccountsTree extends Observable {
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
-            else if (node.hasChildren() || nodeKey === rootKey) {
+            else if (node.hasChildren() || rootKey.equals(nodeKey)) {
                 nodeKey = await this._store.put(node); // eslint-disable-line no-await-in-loop
                 return this._updateKeys(node.prefix, nodeKey, rootPath.slice(0, i));
             }
@@ -343,32 +345,6 @@ class AccountsTree extends Observable {
             }
         }
         return true;
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    async clear() {
-        const rootKey = await this._store.getRootKey();
-        return this._clear(rootKey);
-    }
-
-    /**
-     * 
-     * @param {Hash} nodeKey
-     * @returns {Promise.<void>}
-     * @private
-     */
-    async _clear(nodeKey) {
-        const node = await this._store.get(nodeKey);
-        if (!node) return;
-        await this._store.remove(node);
-
-        if (node.hasChildren()) {
-            for (const childNodeKey of node.getChildren()) {
-                await this._clear(childNodeKey);
-            }
-        }
     }
 
     async export() {

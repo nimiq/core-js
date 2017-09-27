@@ -6,9 +6,9 @@ describe('Mempool', () => {
         // Initial set-up of dependencies
         (async function () {
             accounts = await Accounts.createVolatile();
-            blockchain = await Blockchain.createVolatile(accounts);
+            blockchain = await FullChain.createVolatile(accounts);
             mempool = new Mempool(blockchain, accounts);
-            wallet = await Wallet.createVolatile(accounts, mempool);
+            wallet = await Wallet.createVolatile();
         })().then(done, done.fail);
     });
 

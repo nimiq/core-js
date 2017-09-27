@@ -9,7 +9,6 @@ describe('Balance', () => {
         }).toThrow('Malformed value');
 
         const value2 = Number.MAX_SAFE_INTEGER;
-        console.log('\n');
         new Balance(value2, nonce);
 
         // invalid value

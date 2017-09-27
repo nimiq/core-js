@@ -1,22 +1,6 @@
 describe('Message', () => {
+    /*
     const type = 'aaaaaaaaaaaa';
-
-    it('is 24 bytes long', () => {
-
-        /*
-             4 bytes magic
-            12 bytes type
-             4 bytes length
-             4 bytes checksum
-           ----------------------------
-            24 bytes
-        */
-
-        const msg1 = new Message(type);
-        const serialized = msg1.serialize();
-        expect(serialized.byteLength).toBe(24);
-        expect(msg1.serializedSize).toBe(24);
-    });
 
     it('must have a well defined type (12 bytes)', () => {
         expect( () => {
@@ -38,6 +22,7 @@ describe('Message', () => {
             const test7 = new Message('aaaaaaaaaaaaa'); // eslint-disable-line no-unused-vars
         }).toThrow('Malformed type');
     });
+    */
 
     /*
     it('must have a well defined length (4 bytes)', () => {

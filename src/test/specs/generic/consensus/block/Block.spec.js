@@ -32,31 +32,47 @@ describe('Block', () => {
         }).toThrow('Malformed header');
     });
 
-    it('must have a well defined body (variable size)', () => {
+    it('must have a well defined interlink', () => {
         const header = block.header;
         expect(() => {
             const test1 = new Block(header, undefined);
-        }).toThrow('Malformed body');
+        }).toThrow('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, null);
-        }).toThrow('Malformed body');
+        }).toThrow('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, 1);
-        }).toThrow('Malformed body');
+        }).toThrow('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, new Uint8Array(101));
-        }).toThrow('Malformed body');
+        }).toThrow('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, block);
+        }).toThrow('Malformed interlink');
+    });
+
+    it('must have a well defined body (optional)', () => {
+        const header = block.header;
+        const interlink = block.interlink;
+        expect(() => {
+            const test1 = new Block(header, interlink, 1);
+        }).toThrow('Malformed body');
+
+        expect(() => {
+            const test1 = new Block(header, interlink, new Uint8Array(101));
+        }).toThrow('Malformed body');
+
+        expect(() => {
+            const test1 = new Block(header, interlink, block);
         }).toThrow('Malformed body');
     });
 
     it('is serializable and unserializable', () => {
-        const size = block.header.serializedSize + block.body.serializedSize;
+        const size = block.header.serializedSize + block.interlink.serializedSize + block.body.serializedSize + 1 /*bodyPresent*/;
         const block2 = Block.unserialize(block.serialize());
 
         expect(block2.serializedSize).toBe(size);

@@ -71,7 +71,7 @@ class BlockBody {
         for (const tx of this._transactions) {
             // Check that there is only one transaction per sender.
             if (senderPubKeys[tx.senderPubKey]) {
-                Log.w(Block, 'Invalid block - more than one transaction per sender');
+                Log.w(BlockBody, 'Invalid block - more than one transaction per sender');
                 return false;
             }
             senderPubKeys[tx.senderPubKey] = true;
@@ -79,13 +79,13 @@ class BlockBody {
             // Check that there are no transactions to oneself.
             const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
             if (tx.recipientAddr.equals(txSenderAddr)) {
-                Log.w(Block, 'Invalid block - sender and recipient coincide');
+                Log.w(BlockBody, 'Invalid block - sender and recipient coincide');
                 return false;
             }
 
             // Check that all transaction signatures are valid.
             if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
-                Log.w(Blockchain, 'Invalid block - invalid transaction signature');
+                Log.w(BlockBody, 'Invalid block - invalid transaction signature');
                 return false;
             }
         }

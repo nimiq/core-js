@@ -310,6 +310,7 @@ PeerChannel.Event[Message.Type.NOT_FOUND] = 'not-found';
 PeerChannel.Event[Message.Type.GET_BLOCKS] = 'get-blocks';
 PeerChannel.Event[Message.Type.BLOCK] = 'block';
 PeerChannel.Event[Message.Type.TX] = 'tx';
+PeerChannel.Event[Message.Type.MEMPOOL] = 'mempool';
 PeerChannel.Event[Message.Type.REJECT] = 'reject';
 PeerChannel.Event[Message.Type.ADDR] = 'addr';
 PeerChannel.Event[Message.Type.GET_ADDR] = 'get-addr';
