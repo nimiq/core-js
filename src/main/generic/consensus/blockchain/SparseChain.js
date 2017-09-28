@@ -132,7 +132,7 @@ class SparseChain extends Observable {
         });
         blockData.onMainChain = onMainChain;
         if (onMainChain && !succeedsMainChain) {
-            assert(!prevData.onMainChain);
+            Assert.that(!prevData.onMainChain);
 
             /** @type {BlockData} */
             let data = prevData;
@@ -149,9 +149,9 @@ class SparseChain extends Observable {
         // 1. Successor of the current main head
         if (prevHash.equals(this._headHash)) {
             // XXX DEV Assertions
-            assert(!maxChain.head);
-            assert(!onMainChain);
-            assert(succeedsMainChain);
+            Assert.that(!maxChain.head);
+            Assert.that(!onMainChain);
+            Assert.that(succeedsMainChain);
 
             // Append new block to the main chain.
             await this._extend(block);
@@ -164,14 +164,14 @@ class SparseChain extends Observable {
 
         // 2. Inner block of the main chain
         else if (onMainChain) {
-            assert(this._headHash.equals(maxChain.head));
+            Assert.that(this._headHash.equals(maxChain.head));
 
             return SparseChain.OK_ACCEPTED;
         }
 
         // 3. On a fork: Inner or successor block. Check if we need to rebranch.
         else if (maxChain.totalWork > this._headData.totalWork) {
-            assert(!this._headHash.equals(maxChain.head));
+            Assert.that(!this._headHash.equals(maxChain.head));
 
             // A fork has become the hardest chain, rebranch to it.
             // TODO await this._rebranch(block);
@@ -343,12 +343,12 @@ class SparseChain extends Observable {
 
         // TODO clean up blocks from the sparse chain that are not referenced in any interlink or whose depth is too low (?)
 
-        assert(oldHeadHash.equals(this._headData.predecessor));
+        Assert.that(oldHeadHash.equals(this._headData.predecessor));
 
         // XXX If the previous head is not an interlink block, remove it from the sparse chain.
         if (!this._head.interlink.hashes.some(hash => oldHeadHash.equals(hash))) {
             const blockData = this._blockData.get(oldHeadHash);
-            assert(blockData.successors.length === 1);
+            Assert.that(blockData.successors.length === 1);
             this._headData.predecessor = blockData.predecessor;
 
             const prevData = this._blockData.get(blockData.predecessor);

@@ -71,7 +71,7 @@ class AccountsTree extends Observable {
         // Fetch the root node.
         const rootKey = await this._store.getRootKey();
         const rootNode = await this._store.get(rootKey);
-        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         // Insert account into the tree at address.
         const prefix = address.toHex();
@@ -239,7 +239,7 @@ class AccountsTree extends Observable {
         // Fetch the root node.
         const rootKey = await this._store.getRootKey();
         const rootNode = await this._store.get(rootKey);
-        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         const prefix = address.toHex();
         return this._retrieve(rootNode, prefix);
@@ -298,7 +298,7 @@ class AccountsTree extends Observable {
         // Fetch the root node.
         const rootKey = await this._store.getRootKey();
         const rootNode = await this._store.get(rootKey);
-        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
         return this._verify(rootNode);
     }
 
@@ -381,7 +381,7 @@ class AccountsTree extends Observable {
     async constructAccountsProof(addresses) {
         const rootKey = await this._store.getRootKey();
         const rootNode = await this._store.get(rootKey);
-        assert(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         const prefixes = [];
         for (const address of addresses) {

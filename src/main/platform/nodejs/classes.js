@@ -4,6 +4,7 @@ global.Class = {
     }
 };
 
+global.JDB = require('jungle-db');
 
 require('./utils/LogNative.js');
 require('../../generic/utils/Log.js');
@@ -20,6 +21,7 @@ require('../../generic/utils/array/HashMap.js');
 require('../../generic/utils/array/HashSet.js');
 require('../../generic/utils/array/Queue.js');
 require('../../generic/utils/array/ArrayUtils.js');
+require('../../generic/utils/assert/Assert.js');
 require('../../generic/utils/buffer/SerialBuffer.js');
 require('../../generic/utils/buffer/BufferUtils.js');
 require('./crypto/CryptoLib.js');
@@ -49,10 +51,16 @@ require('../../generic/consensus/base/block/BlockInterlink.js');
 require('../../generic/consensus/base/block/BlockHeader.js');
 require('../../generic/consensus/base/transaction/Transaction.js');
 require('../../generic/consensus/base/block/Block.js');
-require('../../generic/consensus/blockchain/Blockchain.js');
-require('../../generic/consensus/blockchain/BlockchainStore.js');
+require('../../generic/consensus/blockchain/IBlockchain.js');
 require('../../generic/consensus/base/mempool/Mempool.js');
+require('../../generic/consensus/lightchain/HeaderChain.js');
+require('../../generic/consensus/lightchain/InterlinkChain.js');
+require('../../generic/consensus/full/blockchain/ChainData.js');
+require('../../generic/consensus/full/blockchain/FullChainStore.js');
+require('../../generic/consensus/full/blockchain/FullChain.js');
 require('../../generic/consensus/full/FullConsensusAgent.js');
+require('../../generic/consensus/full/FullConsensus.js');
+require('../../generic/consensus/ConsensusDB.js');
 require('../../generic/consensus/Consensus.js');
 require('../../generic/network/Protocol.js');
 require('../../generic/network/address/NetAddress.js');
@@ -71,6 +79,12 @@ require('../../generic/network/message/RejectMessage.js');
 require('../../generic/network/message/SignalMessage.js');
 require('../../generic/network/message/TxMessage.js');
 require('../../generic/network/message/VersionMessage.js');
+require('../../generic/network/message/AccountsProofMessage.js');
+require('../../generic/network/message/GetAccountsProofMessage.js');
+require('../../generic/network/message/HeadersMessage.js');
+require('../../generic/network/message/GetHeadersMessage.js');
+require('../../generic/network/message/InterlinkChainMessage.js');
+require('../../generic/network/message/GetInterlinkChainMessage.js');
 require('../../generic/network/message/MessageFactory.js');
 require('./network/webrtc/WebRtcConnector.js');
 require('./network/websocket/WebSocketConnector.js');

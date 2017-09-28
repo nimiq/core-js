@@ -1,9 +1,5 @@
 describe('NetAddress', () => {
     const invalid1v4 = '0.0.0.0';
-    const invalid2v4 = '127.0.0.1';
-    const invalid3v4 = '127.0.000.1';
-    const invalid4v4 = '127.0.00000000.1';
-    const invalid5v4 = '0000127.0.00000000.00000001';
     const invalid6v4 = '-1.2.3.4';
     const invalid7v4 = '256.0.2.1';
     const invalid8v4 = '1.2.a.4';
@@ -18,18 +14,6 @@ describe('NetAddress', () => {
         expect(() => {
             NetAddress.fromIP(invalid1v4);
         }).toThrow(`Malformed IP address ${invalid1v4}`);
-        expect(() => {
-            NetAddress.fromIP(invalid2v4);
-        }).toThrow(`Malformed IP address ${invalid2v4}`);
-        expect(() => {
-            NetAddress.fromIP(invalid3v4);
-        }).toThrow(`Malformed IP address ${invalid3v4}`);
-        expect(() => {
-            NetAddress.fromIP(invalid4v4);
-        }).toThrow(`Malformed IP address ${invalid4v4}`);
-        expect(() => {
-            NetAddress.fromIP(invalid5v4);
-        }).toThrow(`Malformed IP address ${invalid5v4}`);
         expect(() => {
             NetAddress.fromIP(invalid6v4);
         }).toThrow(`Malformed IP address ${invalid6v4}`);
@@ -60,14 +44,25 @@ describe('NetAddress', () => {
     });
 
 
+    const local1v4 = '127.0.0.1';
+    const local2v4 = '127.0.000.1';
+    const local3v4 = '127.0.00000000.1';
+    const local4v4 = '0000127.0.00000000.00000001';
+    it('can identify local IPv4 addresses', () => {
+        expect(NetUtils.isLocalIP(local1v4)).toEqual(true);
+        expect(NetUtils.isLocalIP(local2v4)).toEqual(true);
+        expect(NetUtils.isLocalIP(local3v4)).toEqual(true);
+        expect(NetUtils.isLocalIP(local4v4)).toEqual(true);
+    });
+
+
     const invalid1v6 = '::';
-    const invalid2v6 = '::1';
-    const invalid3v6 = 'a:x:1';
-    const invalid4v6 = 'test';
-    const invalid5v6 = '1:2:3:4:5:6:7:8:9';
-    const invalid6v6 = '1:2:3:4:5:6:7:8:1.2.3.4';
-    const invalid7v6 = '1::1.2.3.4';
-    const invalid8v6 = '1:2:3:4:5:6:1.2.3.4';
+    const invalid2v6 = 'a:x:1';
+    const invalid3v6 = 'test';
+    const invalid4v6 = '1:2:3:4:5:6:7:8:9';
+    const invalid5v6 = '1:2:3:4:5:6:7:8:1.2.3.4';
+    const invalid6v6 = '1::1.2.3.4';
+    const invalid7v6 = '1:2:3:4:5:6:1.2.3.4';
     // TODO broadcast addresses
 
     it('rejects invalid IPv6 addresses', () => {
@@ -92,9 +87,12 @@ describe('NetAddress', () => {
         expect(() => {
             NetAddress.fromIP(invalid7v6);
         }).toThrow(`Malformed IP address ${invalid7v6}`);
-        expect(() => {
-            NetAddress.fromIP(invalid8v6);
-        }).toThrow(`Malformed IP address ${invalid8v6}`);
+    });
+
+
+    const local1v6 = '::1';
+    it('can identify local IPv6 addresses', () => {
+        expect(NetUtils.isLocalIP(local1v6)).toEqual(true);
     });
 
 

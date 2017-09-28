@@ -62,10 +62,7 @@ describe('Accounts', () => {
 
     xit('can handle larger chains', (done) => {
         async function test() {
-            console.log('START LONG TEST');
             await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
-
-            console.log('END LONG TEST');
             done();
         }
 
@@ -183,7 +180,7 @@ describe('Accounts', () => {
             try {
                 await accounts.commitBlock(block);
             } catch(e) {
-                expect(e.toLowerCase()).toContain('balance error!');
+                expect(e.message.toLowerCase()).toContain('balance error!');
                 error = true;
             }
             expect(error).toBe(true);
@@ -194,7 +191,7 @@ describe('Accounts', () => {
             try {
                 await accounts.commitBlock(block);
             } catch(e) {
-                expect(e.toLowerCase()).toContain('balance error!');
+                expect(e.message.toLowerCase()).toContain('balance error!');
                 error = true;
             }
             expect(error).toBe(true);
@@ -202,7 +199,7 @@ describe('Accounts', () => {
         })().then(done, done.fail);
     });
 
-    xit('rejects self-transmissions', (done) => {
+    xit('rejects self-transactions', (done) => {
         (async function () {
             const user1 = testBlockchain.users[0];
             const accounts = testBlockchain.accounts;

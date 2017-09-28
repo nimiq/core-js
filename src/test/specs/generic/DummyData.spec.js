@@ -37,7 +37,7 @@ Block.GENESIS = new Block(
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        0),
+        15790),
     new BlockInterlink([]),
     new BlockBody(new Address(BufferUtils.fromBase64('ySpv9NQBK2YgycXIfMH8Mr+JfaM=')), [])
 );

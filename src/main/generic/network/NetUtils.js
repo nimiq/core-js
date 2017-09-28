@@ -4,6 +4,10 @@ class NetUtils {
      * @return {boolean}
      */
     static isPrivateIP(ip) {
+        if (NetUtils.isLocalIP(ip)) {
+            return true;
+        }
+
         if (NetUtils.isIPv4Address(ip)) {
             for (const subnet of NetUtils.IPv4_PRIVATE_NETWORK) {
                 if (NetUtils.isIPv4inSubnet(ip, subnet)) {
@@ -37,7 +41,20 @@ class NetUtils {
             return false;
         }
 
-        throw new Error(`Malformed IP address ${ip}`);
+        throw `Malformed IP address ${ip}`;
+    }
+
+    /**
+     * @param {string} ip
+     * @returns {boolean}
+     */
+    static isLocalIP(ip) {
+        const saneIp = NetUtils._normalizeIP(ip);
+        if (NetUtils.isIPv4Address(ip)) {
+            return saneIp === '127.0.0.1';
+        } else {
+            return saneIp === '::1';
+        }
     }
 
     /**
@@ -134,9 +151,9 @@ class NetUtils {
     static sanitizeIP(ip) {
         const saneIp = NetUtils._normalizeIP(ip);
         // FIXME
-        //if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
-        //    throw new Error(`Malformed IP address ${ip}`);
-        //}
+        if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
+            throw `Malformed IP address ${ip}`;
+        }
         // TODO reject IPv6 broadcast addresses
         return saneIp;
     }
@@ -234,7 +251,7 @@ class NetUtils {
             return parts.join(':');
         }
 
-        throw new Error(`Malformed IP address ${ip}`);
+        throw `Malformed IP address ${ip}`;
     }
 
     /**
@@ -248,10 +265,8 @@ class NetUtils {
 }
 NetUtils.IP_BLACKLIST = [
     '0.0.0.0',
-    '127.0.0.1',
     '255.255.255.255',
     '::',
-    '::1'
 ];
 NetUtils.IPv4_PRIVATE_NETWORK = [
     '10.0.0.0/8',

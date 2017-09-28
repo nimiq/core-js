@@ -129,6 +129,13 @@ class FullChainStore {
     commit() {
         return this._store.commit();
     }
+
+    /**
+     * @returns {Promise}
+     */
+    abort() {
+        return this._store.abort();
+    }
 }
 Class.register(FullChainStore);
 

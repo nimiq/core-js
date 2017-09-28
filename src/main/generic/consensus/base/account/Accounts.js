@@ -37,6 +37,7 @@ class Accounts extends Observable {
             this.fire('populated');
             return true;
         } else {
+            await tx.abort();
             return false;
         }
     }
@@ -54,15 +55,20 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async commitBlock(block) {
-        const treeTx = await this._tree.transaction();
-        await this._execute(treeTx, block.body, (a, b) => a + b);
+        const tree = await this._tree.transaction();
+        try {
+            await this._execute(tree, block.body, (a, b) => a + b);
+        } catch (e) {
+            await tree.abort();
+            throw e;
+        }
 
-        const hash = await treeTx.root();
+        const hash = await tree.root();
         if (!block.accountsHash.equals(hash)) {
-            await treeTx.abort();
+            await tree.abort();
             throw new Error('Failed to commit block - AccountsHash mismatch');
         }
-        return treeTx.commit();
+        return tree.commit();
     }
 
     /**
@@ -71,7 +77,12 @@ class Accounts extends Observable {
      */
     async commitBlockBody(body) {
         const tree = await this._tree.transaction();
-        await this._execute(tree, body, (a, b) => a + b);
+        try {
+            await this._execute(tree, body, (a, b) => a + b);
+        } catch (e) {
+            await tree.abort();
+            throw e;
+        }
         return tree.commit();
     }
 
@@ -80,6 +91,8 @@ class Accounts extends Observable {
      * @return {Promise}
      */
     async revertBlock(block) {
+        if (!block) throw new Error('block undefined');
+
         const hash = await this._tree.root();
         if (!block.accountsHash.equals(hash)) {
             throw new Error('Failed to revert block - AccountsHash mismatch');
@@ -93,7 +106,12 @@ class Accounts extends Observable {
      */
     async revertBlockBody(body) {
         const tree = await this._tree.transaction();
-        await this._execute(tree, body, (a, b) => a - b);
+        try {
+            await this._execute(tree, body, (a, b) => a - b);
+        } catch (e) {
+            await tree.abort();
+            throw e;
+        }
         return tree.commit();
     }
 
@@ -191,12 +209,12 @@ class Accounts extends Observable {
 
         const newValue = operator(balance.value, value);
         if (newValue < 0) {
-            throw 'Balance Error!';
+            throw new Error('Balance Error!');
         }
 
         const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
         if (newNonce < 0) {
-            throw 'Nonce Error!';
+            throw new Error('Nonce Error!');
         }
 
         const newBalance = new Balance(newValue, newNonce);

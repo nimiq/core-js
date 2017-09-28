@@ -178,13 +178,17 @@ describe('Transaction', () => {
             });
     });
 
-    xit('can verify a valid signature', (done) => {
-        const tx1 = Transaction.unserialize(new SerialBuffer(BufferUtils.fromBase64(Dummy.validTransaction)));
-        tx1.verifySignature()
-            .then(isValid => {
-                expect(isValid).toBe(true);
-                done();
-            });
+    it('can verify a valid signature', (done) => {
+        (async function() {
+            const users = await TestBlockchain.getUsers(2);
+            const tx = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
+            tx.verifySignature()
+                .then(isValid => {
+                    expect(isValid).toBe(true);
+                    done();
+                });
+
+        })();
     });
 
 });

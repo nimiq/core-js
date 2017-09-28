@@ -156,7 +156,7 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _requestInterlinkChain() {
-        assert(!this._timers.timeoutExists('getInterlinkChain'));
+        Assert.that(!this._timers.timeoutExists('getInterlinkChain'));
 
         // Request interlink chain from peer.
         const locators = await this._blockchain.getLocators();
@@ -268,7 +268,7 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     _requestHeaderChain() {
-        assert(!this._timers.timeoutExists('getHeaderChain'));
+        Assert.that(!this._timers.timeoutExists('getHeaderChain'));
 
         // Request headers from peer.
         this._peer.channel.getHeaders(Policy.K, this._blockchain.headHash);

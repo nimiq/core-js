@@ -61,10 +61,10 @@ class FullChain extends IBlockchain {
         if (this._headHash) {
             // Load main chain from store.
             this._mainChain = await this._store.getChainData(this._headHash);
-            assert(!!this._mainChain, 'Failed to load main chain from storage');
+            Assert.that(!!this._mainChain, 'Failed to load main chain from storage');
 
             // TODO Check if chain/accounts state is consistent!
-            assert(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
+            Assert.that(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
         } else {
             // Initialize chain & accounts with Genesis block.
             this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
@@ -108,7 +108,7 @@ class FullChain extends IBlockchain {
 
         // Check all intrinsic block invariants.
         if (!(await block.verify())) {
-            Log.w(FullChain, 'Rejecting block - verification failed');
+            //Log.w(FullChain, 'Rejecting block - verification failed');
             return FullChain.ERR_INVALID;
         }
 
@@ -172,7 +172,7 @@ class FullChain extends IBlockchain {
         }
 
         // Otherwise, we are creating/extending a fork. Store chain data.
-        Log.v(FullChain, `Creating/extending fork with block ${hash}, height=${block.height}, totalWork=${chainData.totalWork}`);
+        Log.v(FullChain, `Creating/extending fork with block ${hash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
         await this._store.putChainData(hash, chainData);
 
         return FullChain.OK_FORKED;
@@ -247,21 +247,28 @@ class FullChain extends IBlockchain {
 
             curHash = curData.head.prevHash;
             curData = await this._store.getChainData(curHash); // eslint-disable-line no-await-in-loop
-            assert(!!curData, 'Corrupted store: Failed to find fork predecessor while rebranching');
+            Assert.that(!!curData, 'Corrupted store: Failed to find fork predecessor while rebranching');
         }
 
-        Log.v(Blockchain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
+        Log.v(FullChain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction();
         let headHash = this._headHash;
-        let head = this._head;
+        let head = this._mainChain.head;
         while (!headHash.equals(curHash)) {
-            await accountsTx.revertBlock(head);
+            try {
+                await accountsTx.revertBlock(head);
+            } catch (e) {
+                Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
+                await accountsTx.abort();
+                return false;
+            }
+
             headHash = head.prevHash;
             head = await this._store.getBlock(headHash);
-            assert(!!head, 'Corrupted store: Failed to find main chain predecessor while rebranching');
-            assert(head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
+            Assert.that(!!head, 'Corrupted store: Failed to find main chain predecessor while rebranching');
+            Assert.that(head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
         }
 
         // Try to apply all fork blocks.
@@ -271,6 +278,7 @@ class FullChain extends IBlockchain {
             } catch (e) {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
+                Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
                 await accountsTx.abort();
                 return false;
             }
@@ -286,7 +294,7 @@ class FullChain extends IBlockchain {
 
             headHash = headData.head.prevHash;
             headData = await chainTx.getChainData(headHash);
-            assert(!!headData, 'Corrupted store: Failed to find main chain predecessor while rebranching');
+            Assert.that(!!headData, 'Corrupted store: Failed to find main chain predecessor while rebranching');
         }
 
         // Set onMainChain flag on the fork.
@@ -346,7 +354,7 @@ class FullChain extends IBlockchain {
         if (block) {
             const hash = await block.hash();
             chainData = await this._store.getChainData(hash);
-            assert(!!chainData);
+            Assert.that(!!chainData);
         } else {
             block = this.head;
             chainData = this._mainChain;
@@ -373,7 +381,7 @@ class FullChain extends IBlockchain {
 
         // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
         // XXX Assert that the block is there.
-        assert(!!startBlock, 'Corrupted store: Failed to load start block when computing next target');
+        Assert.that(!!startBlock, 'Corrupted store: Failed to load start block when computing next target');
         let actualTime = block.timestamp - startBlock.timestamp;
 
         // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate

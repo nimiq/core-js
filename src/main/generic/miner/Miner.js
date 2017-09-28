@@ -192,9 +192,15 @@ class Miner extends Observable {
 
         // Compute next accountsHash.
         const accounts = await this._blockchain.accounts.transaction();
-        await accounts.commitBlockBody(body);
-        const accountsHash = await accounts.hash();
-        await accounts.abort();
+        let accountsHash;
+        try {
+            await accounts.commitBlockBody(body);
+            accountsHash = await accounts.hash();
+            await accounts.abort();
+        } catch (e) {
+            await accounts.abort();
+            throw new Error('Invalid block body');
+        }
 
         const bodyHash = await body.hash();
         const height = this._blockchain.height + 1;

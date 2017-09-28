@@ -35,7 +35,7 @@ class Message {
      */
     static unserialize(buf) {
         // XXX Direct buffer manipulation currently requires this.
-        assert(buf.readPos === 0, 'Message.unserialize() requires buf.readPos == 0');
+        Assert.that(buf.readPos === 0, 'Message.unserialize() requires buf.readPos == 0');
 
         const magic = buf.readUint32();
         const type = buf.readVarUint();
@@ -60,7 +60,7 @@ class Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         // XXX Direct buffer manipulation currently requires this.
-        assert(buf.writePos === 0, 'Message.serialize() requires buf.writePos == 0');
+        Assert.that(buf.writePos === 0, 'Message.serialize() requires buf.writePos == 0');
 
         buf.writeUint32(Message.MAGIC);
         buf.writeVarUint(this._type);

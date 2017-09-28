@@ -15,7 +15,7 @@ describe('Blockchain', () => {
         jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
     });
 
-    xit('will verify block transaction limit', (done) => {
+    it('will verify block transaction limit', (done) => {
         (async function () {
             // Now try to push a block which exceeds the maximum block size
             const numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS + 1;
@@ -111,7 +111,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can push and get a valid block, and get the next compact target', (done) => {
+    xit('can push and get a valid block, and get the next compact target', (done) => {
         (async function () {
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
@@ -162,93 +162,73 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can store a block that starts a fork and switch when the fork becomes more secure', (done) => {
+    it('can rebranch to a harder fork', (done) => {
         (async function () {
-            // This is needed to make sure pushBlock() went through successfully
-            // and wasn't ignored later in the process
-            spyOn(Log, 'v').and.callThrough();
-            spyOn(Log, 'w').and.callThrough();
+            // Create first chain (4 blocks)
+            let block = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
-            // note that we explicitly set all nonces to make sure blocks at the same position in different
-            // (test)blockchains have different hashes.
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
-            // We need to have two blockchains: the first one in which we're going to test
-            // everything and the second one with only the forked branch because we need
-            // the accountsHash of this second version to be able to push the block that
-            // changes the main chain of the first blockchain to the forked branch
-            const first = testBlockchain;
-            const second = await TestBlockchain.createVolatileTest(0);
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
-            // Push the first block and check that it went through successfully
-            let block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 10, 1);
-            let status = await first.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'first block pushed to first chain');
-            expect(Log.w).not.toHaveBeenCalled();
+            block = await testBlockchain.createBlock();
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            expect(testBlockchain.head).toBe(block);
 
+            // Create second chain (5 blocks)
+            const fork = await TestBlockchain.createVolatileTest(0, 2);
+            block = await fork.createBlock({
+                timestamp: Block.GENESIS.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_FORKED);
 
-            // Push that same block to our second blockchain
-            status = await second.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'first block pushed to second chain');
-            expect(Log.w).not.toHaveBeenCalled();
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_FORKED);
 
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_FORKED);
 
-            // Push another block to the first blockchain
-            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 20, 1);
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
-            let hash = await block.hash();
-            status = await first.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'second block pushed to first chain');
-            expect(Log.w).not.toHaveBeenCalled();
+            // Expect the chain to rebranch here.
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_REBRANCHED);
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.height).toBe(5);
 
-            // Push that same block to our second blockchain
-            status = await second.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'second block pushed to second chain');
-            expect(Log.w).not.toHaveBeenCalled();
-
-
-            // We need to save these values to start the forked branch later
-            const prevHash = hash;
-            let prevAccountsHash = await first._accounts.hash();
-
-            // Push another block, this one is not going to be part of the forked branch,
-            // so we don't want to push it to the second blockchain
-            block = await first.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 40, 1);
-            status = await first.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'third block pushed to first chain');
-            expect(Log.w).not.toHaveBeenCalled();
-
-
-            // Push the first block of the forked branch to our first blockchain
-            block = await second.createBlock(undefined, prevHash, undefined, undefined, undefined, undefined, 30, 2, true, 3);
-            hash = await block.hash();
-            let newChain = new Chain(block, first.totalWork, first.height);
-            status = await first.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'push first block of fork to first chain');
-            expect(Log.v).toHaveBeenCalledWith(Blockchain, `Creating/extending fork with block ${hash.toBase64()}, height=${newChain.height}, totalWork=${newChain.totalWork}`);
-
-
-            // Push it to the second blockchain (notice that in this blockchain we skipped
-            // one block, since that block is not part of the forked branch)
-            status = await second.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK, 'push fork to second chain');
-
-            // Get the accountsHash from the second blockchain where the forked branch
-            // is already the main chain (which means its accountsHash is the same
-            // that the first blockchain would have if it switched to the forked branch)
-            prevAccountsHash = await second._accounts.hash();
-
-            // Push another block to the forked branch (turning this fork into the chain
-            // with more effort put into it) and check that this becomes the main chain
-            block = await second.createBlock(undefined, hash, undefined, undefined, undefined, undefined, undefined, 2, true, 4);
-            hash = await block.hash();
-            status = await first.pushBlock(block);
-            newChain = new Chain(block, first.totalWork, first.height);
-            expect(status).toBe(Blockchain.PUSH_OK, 'push another block to fork');
-
-            // Also check that the first blockchain has the correct number of blocks and
-            // that head of the blockchain is the head of the forked branch
-            expect(first.height).toBe(5, 'ensure total height matches');
-            expect(first.head).toBe(block, 'ensure head matches');
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.height).toBe(6);
         })().then(done, done.fail);
     });
 
