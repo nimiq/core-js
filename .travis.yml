@@ -33,10 +33,7 @@ before_install:
 - if [ "$TO_TEST" = "chrome" ]; then export CHROME_BIN=/usr/bin/google-chrome; fi
 - if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then export DISPLAY=:99.0; fi
 - if [ "$TO_TEST" = "chrome" ] || [ "$TO_TEST" = "firefox" ]; then sh -e /etc/init.d/xvfb start; fi
-- echo $PATH
-- pwd
-- ls -al
-- ls -al node_modules
+- npm install gulp
 before_script:
 - node_modules/.bin/gulp build
 script:
