@@ -21,7 +21,7 @@ class Core {
 
         // XXX Legacy components
         this.wallet = await Wallet.getPersistent();
-        this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);;
+        this.miner = new Miner(this.blockchain, this.mempool, this.wallet.address);
 
         Object.freeze(this);
         return this;
