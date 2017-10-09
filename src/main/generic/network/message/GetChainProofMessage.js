@@ -1,15 +1,15 @@
-class MempoolMessage extends Message {
+class GetChainProofMessage extends Message {
     constructor() {
-        super(Message.Type.MEMPOOL);
+        super(Message.Type.GET_CHAIN_PROOF);
     }
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {MempoolMessage}
+     * @returns {GetChainProofMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        return new MempoolMessage();
+        return new GetChainProofMessage();
     }
 
     /**
@@ -28,4 +28,4 @@ class MempoolMessage extends Message {
         return super.serializedSize;
     }
 }
-Class.register(MempoolMessage);
+Class.register(GetChainProofMessage);

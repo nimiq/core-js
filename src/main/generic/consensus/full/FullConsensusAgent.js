@@ -54,9 +54,8 @@ class FullConsensusAgent extends Observable {
         peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
 
-        peer.channel.on('get-interlink-chain', msg => this._onGetInterlinkChain(msg));
+        peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
-        peer.channel.on('get-headers', msg => this._onGetHeaders(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -67,7 +66,6 @@ class FullConsensusAgent extends Observable {
         });
     }
 
-    /* Public API */
     /**
      * 
      * @param {Block} block
@@ -476,31 +474,12 @@ class FullConsensusAgent extends Observable {
     }
 
     /**
-     * @param {GetInterlinkChainMessage} msg
+     * @param {GetChainProofMessage} msg
      * @private
      */
-    async _onGetInterlinkChain(msg) {
-        const head = await this._blockchain.getBlock(msg.headHash);
-        if (head) {
-            const interlinkChain = await this._blockchain.getInterlinkChain(head, msg.locators, msg.m);
-            this._peer.channel.interlinkChain(interlinkChain);
-        }
-
-        // TODO what to do if we do not know the requested head?
-    }
-
-    /**
-     * @param {GetHeadersMessage} msg
-     * @private
-     */
-    async _onGetHeaders(msg) {
-        const head = await this._blockchain.getBlock(msg.blockHash);
-
-        if (head) {
-            const headerChain = await this._blockchain.getHeaderChain(head, msg.mustIncludeHash, msg.k, msg.hashes);
-            this._peer.channel.headers(headerChain);
-        }
-        // TODO what to do if we do not know the requested head?
+    async _onGetChainProof(msg) {
+        const proof = await this._blockchain.getChainProof();
+        this._peer.channel.chainProof(proof);
     }
 
     /**

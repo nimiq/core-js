@@ -61,11 +61,12 @@ class Nimiq {
 
     /**
      * Load the Nimiq library.
-     * @param {?string} path Path that contains the required files to load the library.
+     * @param {?string} [path] Path that contains the required files to load the library.
      * @returns {Promise} Promise that resolves once the library was loaded.
      */
     static load(path) {
         if (!Nimiq._hasNativePromise()) return Nimiq._unsupportedPromise();
+        if (Nimiq._loaded) return Promise.resolve();
         Nimiq._loadPromise = Nimiq._loadPromise ||
             new Promise(async (resolve, error) => {
                 let script = 'web.js';
@@ -165,18 +166,10 @@ class Nimiq {
 
     /**
      * Initialize the Nimiq client library and provide a {@link Core} object
-     * @param {function(core: Core)} ready Function to be called once the Core object is available.
+     * @param {function()} ready Function to be called once the Core object is available.
      * @param {function(errorCode: number)} error Function to be called when the initialization fails.
-     * @param {?object} options Options for the {@link Core}-constructor.
      */
-    static init(ready, error, options = {}) {
-        // Don't initialize core twice.
-        if (Nimiq._core) {
-            console.warn('Nimiq.init() called more than once.');
-            if (ready) ready(Nimiq._core);
-            return;
-        }
-
+    static init(ready, error) {
         if (!Nimiq._hasNativePromise() || !Nimiq._hasNativeGoodies()) {
             if (error) error(Nimiq.ERR_UNSUPPORTED);
             return;
@@ -187,8 +180,7 @@ class Nimiq {
             try {
                 await Nimiq.load();
                 console.log('Nimiq engine loaded.');
-                Nimiq._core = await new Nimiq.Core(options);
-                if (ready) ready(Nimiq._core);
+                if (ready) ready();
             } catch (e) {
                 if (Number.isInteger(e)) {
                     if (error) error(e);
@@ -206,10 +198,10 @@ if (!Nimiq._currentScript) {
     const scripts = document.getElementsByTagName('script');
     Nimiq._currentScript = scripts[scripts.length - 1];
 }
+
 Nimiq.ERR_WAIT = -1;
 Nimiq.ERR_UNSUPPORTED = -2;
 Nimiq.ERR_UNKNOWN = -3;
-Nimiq._core = null;
 Nimiq._onload = null;
 Nimiq._loaded = false;
 Nimiq._loadPromise = null;

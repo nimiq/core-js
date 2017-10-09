@@ -15,7 +15,14 @@ class Consensus {
     }
 
     static async nano() {
+        /** @type {NanoChain} */
+        const blockchain = new NanoChain();
+        /** @type {Mempool} */
+        const mempool = null; // TODO
+        /** @type {Network} */
+        const network = await new Network(blockchain);
 
+        return new NanoConsensus(blockchain, mempool, network);
     }
 }
 Class.register(Consensus);

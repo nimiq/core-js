@@ -109,8 +109,12 @@ class Block {
      * @private
      */
     async _verifyInterlink() {
+        // The genesis block has an empty interlink. Skip all interlink checks for it.
+        if (Block.GENESIS.HASH.equals(await this.hash())) {
+            return true;
+        }
+
         // Check that the interlink contains at least one block.
-        // This is not true for the genesis interlink, which is empty.
         if (this._interlink.length === 0) {
             Log.w(Block, 'Invalid block - empty interlink');
             return false;
@@ -308,7 +312,6 @@ class Block {
     }
 
     /**
-     * The 'InterlinkUpdate' algorithm from the PoPoW paper adapted for dynamic difficulty.
      * @param {number} nextTarget
      * @returns {Promise.<BlockInterlink>}
      */
@@ -357,7 +360,7 @@ class Block {
         return o instanceof Block
             && this._header.equals(o._header)
             && this._interlink.equals(o._interlink)
-            && this._body.equals(o._body);
+            && (this._body ? this._body.equals(o._body) : !o._body);
     }
 
     /**

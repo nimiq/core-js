@@ -138,14 +138,11 @@ Message.Type = {
     PING:       11,
     PONG:       12,
 
-    SIGNAL:     14,
+    SIGNAL:     13,
 
-    // Nimiq
-    GET_HEADERS:         15,
-    HEADERS:             16,
-    GET_INTERLINK_CHAIN: 17,
-    INTERLINK_CHAIN:     18,
-    GET_ACCOUNTS_PROOF:  19,
-    ACCOUNTS_PROOF:      20
+    GET_CHAIN_PROOF:    14,
+    CHAIN_PROOF:        15,
+    GET_ACCOUNTS_PROOF: 16,
+    ACCOUNTS_PROOF:     17
 };
 Class.register(Message);

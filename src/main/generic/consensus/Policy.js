@@ -1,5 +1,23 @@
 class Policy {
     /**
+     * Convert Nimiq decimal to Number of Satoshis.
+     * @param {number} coins Nimiq count in decimal
+     * @return {number} Number of Satoshis
+     */
+    static coinsToSatoshis(coins) {
+        return Math.round(coins * Policy.SATOSHIS_PER_COIN);
+    }
+
+    /**
+     * Convert Number of Satoshis to Nimiq decimal.
+     * @param {number} satoshis Number of Satoshis.
+     * @return {number} Nimiq count in decimal.
+     */
+    static satoshisToCoins(satoshis) {
+        return satoshis / Policy.SATOSHIS_PER_COIN;
+    }
+
+    /**
      * Number of Satoshis per Nimiq.
      * @type {number}
      * @constant
@@ -62,8 +80,11 @@ class Policy {
         return 2;
     }
 
+
+    /* NIPoPoW parameters */
+
     /**
-     * The minimum required length of the interlink chain.
+     * Security parameter M
      * FIXME naming
      * @type {number}
      * @constant
@@ -73,7 +94,7 @@ class Policy {
     }
 
     /**
-     * The desired length of the dense head portion of the chain.
+     * Security parameter K
      * FIXME naming
      * @type {number}
      * @constant
@@ -82,23 +103,14 @@ class Policy {
         return 200;
     }
 
-
     /**
-     * Convert Nimiq decimal to Number of Satoshis.
-     * @param {number} coins Nimiq count in decimal
-     * @return {number} Number of Satoshis
+     * Security parameter DELTA
+     * FIXME naming
+     * @type {number}
+     * @constant
      */
-    static coinsToSatoshis(coins) {
-        return Math.round(coins * Policy.SATOSHIS_PER_COIN);
-    }
-
-    /**
-     * Convert Number of Satoshis to Nimiq decimal.
-     * @param {number} satoshis Number of Satoshis.
-     * @return {number} Nimiq count in decimal.
-     */
-    static satoshisToCoins(satoshis) {
-        return satoshis / Policy.SATOSHIS_PER_COIN;
+    static get DELTA() {
+        return 0.01;
     }
 }
 Class.register(Policy);

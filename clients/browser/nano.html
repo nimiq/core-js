@@ -35,29 +35,6 @@
             <div class="info-title">Wallet</div>
             <hr/>
 
-            <div class="info-block init-wallet">
-
-                <div id="newWallet" >
-                    Nimiq Testnet stores your wallet in your browser<br/>
-                    Load an existing browser wallet or create a new wallet:
-                    <button class="greenbutton" start-button><strong>Create/Load Wallet</strong></button>
-                </div>
-                <div id="loadWalletFromSeed">
-                    <div class="f-left">Load wallet from: &nbsp;<input id="walletSeed" type="text" placeholder="wallet seed"></input>&nbsp;</div>
-                    <button class="f-left" start-button><strong>Load Wallet</strong></button>
-
-                    <div class="clr-both"></div>
-                    <small class="get-seed-hint">
-                        A wallet seed is a private key that governs access to a Nimiq address<br/>
-                        You can export your wallet seed once a wallet has been created<br/>
-                     </small>
-                 </div>
-
-            </div>
-            <div class="info-block copy-wallet-seed">
-              <button onclick="copyWalletSeed()">Copy wallet seed</button>
-            </div>
-
             <div class="info-block wallet-address">
                 <strong>Address</strong>
                 <span id="wltAddress"></span>
@@ -96,28 +73,6 @@
                 <hr/>
             </form>
         </div>
-
-        <div class="info">
-            <div class="info-title">Miner</div>
-            <hr/>
-
-            <div class="info-block">
-                <strong>Working</strong>
-                <span id="mnrWorking"></span>
-            </div>
-            <div class="info-block">
-                <strong>Hashrate</strong>
-                <span id="mnrHashrate"></span> H/s
-            </div>
-            <div class="info-block">
-                <strong>Last block mined at</strong>
-                <span id="mnrLastBlockTs"></span>
-            </div>
-            <div class="input-group">
-                <button id="mnrStartBtn">Start Mining</button>
-            </div>
-            <hr/>
-        </div>
     </div>
 
     <div class="right">
@@ -125,10 +80,6 @@
             <div class="info-title not-connected" id="blockchain-title">Blockchain</div>
             <hr/>
 
-            <div class="info-block">
-                <strong>Work</strong>
-                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
-            </div>
             <div class="info-block">
                 <strong>Height</strong>
                 <span id="bcHeight"></span>
@@ -197,18 +148,6 @@
         </div>
     </div>
 
-    <div class="info" style="clear: left;">
-        <div class="info-title">Mempool</div>
-        <hr/>
-
-        <div class="info-block">
-            <strong>Transaction Count</strong>
-            <span id="mplTransactionCount"></span>
-        </div>
-        <div class="info-block" id="mplTransactions"></div>
-        <hr/>
-    </div>
-
     <div class="info">
         <div class="info-title">Block History</div>
         <hr/>
@@ -221,7 +160,6 @@
 <script type="text/javascript">
 
     class MinerUI {
-
         constructor($) {
             $.blockchain.on('head-changed', function(head) {
                 this._headChanged(head);
@@ -231,51 +169,18 @@
                 this._networkChanged();
             }.bind(this));
 
-            $.accounts.on($.wallet.address, function(account) {
-                this._balanceChanged(account._balance);
-            }.bind(this));
-
-            $.mempool.on('*', function() {
-                this._mempoolChanged();
-            }.bind(this));
-
-            $.miner.on('start', function() {
-                this._minerChanged()
-            }.bind(this));
-
-            $.miner.on('stop', function() {
-                this._minerChanged()
-            }.bind(this));
-            $.miner.on('hashrate-changed', function() {
-                this._minerChanged()
-            }.bind(this));
-            $.miner.on('block-mined', function() {
-                this._blockMined()
-            }.bind(this));
-
-            $.consensus.on('syncing', function() {
-                document.getElementById('blockchain-title').classList.add('syncing');
-            }.bind(this));
-
             $.consensus.on('established', function() {
                 document.getElementById('blockchain-title').classList.add('consensus-established');
                 document.getElementById('txSubmitBtn').removeAttribute('disabled');
                 this._headChanged($.blockchain.head);
-                //document.getElementById('mnrStartBtn').removeAttribute('disabled');
             }.bind(this));
 
             $.consensus.on('lost', function() {
-                $.miner.stopWork();
                 document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
                 document.getElementById('txSubmitBtn').setAttribute('disabled', '');
-                //document.getElementById('mnrStartBtn').setAttribute('disabled', '');
             }.bind(this));
 
             // Blockchain
-            /** @type {HTMLElement} */
-            this._bcTotalDifficulty = document.querySelector('#bcTotalDifficulty');
-            /** @type {HTMLElement} */
-            this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
             /** @type {HTMLElement} */
@@ -321,11 +226,6 @@
 
             this._wltAddress.innerText = $.wallet.address.toBase64();
 
-            $.accounts.getBalance($.wallet.address).then(function(balance) {
-                this._balanceChanged(balance);
-                document.querySelector('#wltBalance').classList.add('icon-nimiq');
-            }.bind(this));
-
             var txSubmitBtn = document.querySelector('#txSubmitBtn');
             txSubmitBtn.onclick = function(e) {
                 this._submitTransaction(e);
@@ -337,18 +237,6 @@
             /** @type {HTMLElement} */
             this._mplTransactions = document.querySelector('#mplTransactions');
 
-            // Miner
-            /** @type {HTMLElement} */
-            this._mnrWorking = document.querySelector('#mnrWorking');
-            /** @type {HTMLElement} */
-            this._mnrHashrate = document.querySelector('#mnrHashrate');
-            /** @type {HTMLElement} */
-            this._mnrLastBlockTs = document.querySelector('#mnrLastBlockTs');
-
-            /** @type {HTMLElement} */
-            this._mnrStartBtn = document.querySelector('#mnrStartBtn');
-            this._mnrStartBtn.onclick = this._toggleMining.bind(this);
-
             // Block history
             /** @type {HTMLElement} */
             this._blockHistory = document.querySelector('#blockHistory');
@@ -356,15 +244,6 @@
             // Init values.
             this._headChanged($.blockchain.head);
             this._networkChanged();
-            this._minerChanged();
-            this._mempoolChanged();
-
-            // Check for miner auto start.
-            if (window.location.hash && window.location.hash === '#miner') {
-                $.consensus.on('established', function() {
-                    $.miner.startWork();
-                }.bind(this));
-            }
         }
 
         _submitTransaction(e) {
@@ -423,12 +302,8 @@
         }
 
         _headChanged(head) {
-            this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
-            this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
-            $.blockchain.accountsHash().then(function(accountsHash) {
-                this._bcAccountsHash.innerText = accountsHash.toBase64();
-            }.bind(this));
+            this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
 
             var realDifficulty = Nimiq.BlockUtils.realDifficulty($.blockchain.headHash);
             var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
@@ -467,19 +342,6 @@
             }.bind(this));
         }
 
-        _toggleMining() {
-            //if (!$.consensus.established) {
-            //    console.warn('Not starting miner - consensus not established');
-            //    return;
-            //}
-
-            if (!$.miner.working) {
-                $.miner.startWork();
-            } else {
-                $.miner.stopWork();
-            }
-        }
-
         _networkChanged() {
             this._netPeerCount.innerText = $.network.peerCount;
             this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
@@ -497,101 +359,34 @@
             }
             return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
         };
-
-        _minerChanged() {
-            this._mnrWorking.innerText = $.miner.working;
-            this._mnrHashrate.innerText = $.miner.hashrate;
-            this._mnrLastBlockTs.innerText = this._lastBlockMinedTs ?
-                new Date(this._lastBlockMinedTs) : '-';
-            if ($.miner.working) {
-                this._mnrStartBtn.innerText = 'Stop Mining';
-            } else {
-                this._mnrStartBtn.innerText = 'Start Mining';
-            }
-        }
-
-        _blockMined() {
-            this._lastBlockMinedTs = Date.now();
-            this._minerChanged();
-        }
-
-        _balanceChanged(balance) {
-            if (!balance) balance = Nimiq.Balance.INITIAL;
-            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
-            this._wltNonce.innerText = balance.nonce;
-        }
-
-        _mempoolChanged() {
-            // XXX inefficient
-            var txs = $.mempool.getTransactions();
-            this._mplTransactionCount.innerText = txs.length;
-
-            while (this._mplTransactions.firstChild) {
-                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-            }
-
-            txs.forEach(function(tx) {
-                tx.getSenderAddr().then(function(senderAddr) {
-                    var el = document.createElement('div');
-                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-                    this._mplTransactions.appendChild(el);
-                }.bind(this));
-            }.bind(this));
-        }
     }
 
     // Safari quirks: don't use the same var name in global scope as id of html element
     var overlay_ = document.querySelector('#overlay');
-    // Edge quirks: transform the Nodelist to an Array because NodeList doesn't have forEach in Edge
-    var startButtons = Array.prototype.map.call(document.querySelectorAll('[start-button]'), function(node) { return node });
-
-    function copyWalletSeed() {
-        if (typeof $ === 'undefined') {
-            return;
-        }
-
-        var mainContent = document.getElementById('content');
-        var input = document.createElement('INPUT');
-
-        input.setAttribute('type', 'text');
-        mainContent.appendChild(input);
-        input.value = $.wallet.dump();
-        input.select();
-        document.execCommand('copy');
-        mainContent.removeChild(input);
-        alert('Wallet seed copied to clipboard');
-    }
-
 
     function startNimiq() {
         document.getElementById('blockchain-title').classList.add('initializing');
         document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
 
-        startButtons.forEach(function(startButton) {
-            startButton.disabled = true;
-        });
-
-        var walletSeed = document.getElementById('walletSeed').value.trim();
-        var options = (walletSeed !== '') ? { walletSeed: walletSeed } : {};
-
-        Nimiq.init(function($) {
+        Nimiq.init(async function() {
+            var $ = {};
             window.$ = $;
+            $.consensus = await Nimiq.Consensus.nano();
+
+            // XXX Legacy API
+            $.blockchain = $.consensus.blockchain;
+            $.network = $.consensus.network;
+
+            // XXX Legacy components
+            $.wallet = await Nimiq.Wallet.getPersistent();
+
             $.network.connect();
 
             overlay_.style.display = 'none';
             window.ui = new MinerUI($);
-
-            document.querySelector('.info-block.init-wallet').style.display = 'none';
-            document.querySelector('.info-block.copy-wallet-seed').style.display = 'block';
         }, function(code) {
             document.getElementById('blockchain-title').classList.remove('initializing');
             document.querySelector('#wltAddress').innerText = '';
-
-            startButtons.forEach(function(startButton) {
-                startButton.disabled = false;
-            });
 
             switch (code) {
                 case Nimiq.ERR_WAIT:
@@ -604,13 +399,10 @@
                     alert('Nimiq initialization error');
                     break;
             }
-        },
-        options);
+        });
     }
 
-    startButtons.forEach(function(startButton) {
-        startButton.addEventListener('click', startNimiq);
-    });
+    startNimiq();
 </script>
 </body>
 </html>

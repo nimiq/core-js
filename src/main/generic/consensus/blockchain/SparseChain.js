@@ -1,5 +1,5 @@
 /**
- * A rooted, sparse chain of light blocks.
+ * An anchored, sparse chain of light blocks.
  * TODO Compress block tree Patricia-style for efficient totalWork updates.
  */
 class SparseChain extends Observable {

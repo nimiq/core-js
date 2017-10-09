@@ -206,38 +206,18 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {number} k
-     * @param {Hash} headHash
      * @return {boolean}
      */
-    getHeaders(k, headHash) {
-        return this._send(new GetHeadersMessage(k, headHash));
+    getChainProof() {
+        return this._send(new GetChainProofMessage());
     }
 
     /**
-     * @param {HeaderChain} headerChain
+     * @param {ChainProof} proof
      * @return {boolean}
      */
-    headers(headerChain) {
-        return this._send(new HeadersMessage(headerChain));
-    }
-
-    /**
-     * @param {Hash} headHash
-     * @param {Array.<Hash>} locators
-     * @param {number} m
-     * @return {boolean}
-     */
-    getInterlinkChain(headHash, locators, m) {
-        return this._send(new GetInterlinkChainMessage(headHash, locators, m));
-    }
-
-    /**
-     * @param {InterlinkChain} interlinkChain
-     * @return {boolean}
-     */
-    interlinkChain(interlinkChain) {
-        return this._send(new InterlinkChainMessage(interlinkChain));
+    chainProof(proof) {
+        return this._send(new ChainProofMessage(proof));
     }
 
     /**
@@ -317,9 +297,7 @@ PeerChannel.Event[Message.Type.GET_ADDR] = 'get-addr';
 PeerChannel.Event[Message.Type.PING] = 'ping';
 PeerChannel.Event[Message.Type.PONG] = 'pong';
 PeerChannel.Event[Message.Type.SIGNAL] = 'signal';
-PeerChannel.Event[Message.Type.GET_HEADERS] = 'get-headers';
-PeerChannel.Event[Message.Type.HEADERS] = 'headers';
-PeerChannel.Event[Message.Type.GET_INTERLINK_CHAIN] = 'get-interlink-chain';
-PeerChannel.Event[Message.Type.INTERLINK_CHAIN] = 'interlink-chain';
+PeerChannel.Event[Message.Type.GET_CHAIN_PROOF] = 'get-chain-proof';
+PeerChannel.Event[Message.Type.CHAIN_PROOF] = 'chain-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
 PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
