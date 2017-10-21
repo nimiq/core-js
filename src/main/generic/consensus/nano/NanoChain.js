@@ -111,6 +111,28 @@ class NanoChain extends IBlockchain {
     }
 
     /**
+     * @param {BlockHeader} header
+     * @returns {Promise.<number>}
+     */
+    pushHeader(header) {
+        return this._synchronizer.push(() => {
+            return this._pushHeader(header);
+        });
+    }
+
+    /**
+     * @param {BlockHeader} header
+     * @returns {Promise.<number>}
+     * @private
+     */
+    async _pushHeader(header) {
+        const hash = await header.hash();
+
+        // TODO ...
+        return NanoChain.OK_EXTENDED;
+    }
+
+    /**
      * @param {Hash} hash
      * @returns {?Block}
      */
@@ -133,4 +155,6 @@ class NanoChain extends IBlockchain {
         return this._proof.head.height;
     }
 }
+NanoChain.ERR_INVALID = -1;
+NanoChain.OK_EXTENDED = 1;
 Class.register(NanoChain);

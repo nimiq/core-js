@@ -126,23 +126,25 @@ Message.Type = {
     VERSION:    0,
     INV:        1,
     GET_DATA:   2,
-    NOT_FOUND:  3,
-    GET_BLOCKS: 4,
-    BLOCK:      5,
-    TX:         6,
-    MEMPOOL:    7,
-    REJECT:     8,
+    GET_HEADER: 3,
+    NOT_FOUND:  4,
+    GET_BLOCKS: 5,
+    BLOCK:      6,
+    HEADER:     7,
+    TX:         8,
+    MEMPOOL:    9,
+    REJECT:     10,
 
-    ADDR:       9,
-    GET_ADDR:   10,
-    PING:       11,
-    PONG:       12,
+    ADDR:       20,
+    GET_ADDR:   21,
+    PING:       22,
+    PONG:       23,
 
-    SIGNAL:     13,
+    SIGNAL:     30,
 
-    GET_CHAIN_PROOF:    14,
-    CHAIN_PROOF:        15,
-    GET_ACCOUNTS_PROOF: 16,
-    ACCOUNTS_PROOF:     17
+    GET_CHAIN_PROOF:    40,
+    CHAIN_PROOF:        41,
+    GET_ACCOUNTS_PROOF: 42,
+    ACCOUNTS_PROOF:     43
 };
 Class.register(Message);

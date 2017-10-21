@@ -29,11 +29,6 @@ if (argv['log-tag']) {
 
 console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!miner}, passive=${!!passive})`);
 
-function _balanceChanged(balance) {
-    if (!balance) balance = Nimiq.Balance.INITIAL;
-    console.log('Balance: ' + Nimiq.Policy.satoshisToCoins(balance.value));
-}
-
 // XXX Configure Core.
 // TODO Create config/options object and pass to Core.get()/init().
 Nimiq.NetworkConfig.configurePeerAddress(host, port);
@@ -56,21 +51,18 @@ try {
         }
 
         if (miner) {
-            $.consensus.on('established', () => $.miner.startWork());
-            $.consensus.on('lost', () => $.miner.stopWork());
+            //$.consensus.on('established', () => $.miner.startWork());
+            //$.consensus.on('lost', () => $.miner.stopWork());
+            $.miner.startWork();
         }
 
         $.consensus.on('established', () => {
             Nimiq.Log.i(Nimiq.Core, 'Blockchain consensus established');
-            $.accounts.getBalance($.wallet.address).then(_balanceChanged);
         });
 
         $.miner.on('block-mined', (block) => {
             Nimiq.Log.i(Nimiq.Core, `Block mined: ${block.header}`);
         });
-
-        $.accounts.on($.wallet.address, (account) => _balanceChanged(account._balance));
-
     });
 } catch (code) {
     switch (code) {

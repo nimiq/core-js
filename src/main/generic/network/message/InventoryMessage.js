@@ -199,8 +199,31 @@ class GetDataMessage extends BaseInventoryMessage {
         return new GetDataMessage(vectors);
     }
 }
-
 Class.register(GetDataMessage);
+
+class GetHeaderMessage extends BaseInventoryMessage {
+    /**
+     * @param {Array.<InvVector>} vectors
+     */
+    constructor(vectors) {
+        super(Message.Type.GET_HEADER, vectors);
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {GetHeaderMessage}
+     */
+    static unserialize(buf) {
+        Message.unserialize(buf);
+        const count = buf.readUint16();
+        const vectors = [];
+        for (let i = 0; i < count; ++i) {
+            vectors.push(InvVector.unserialize(buf));
+        }
+        return new GetHeaderMessage(vectors);
+    }
+}
+Class.register(GetHeaderMessage);
 
 class NotFoundMessage extends BaseInventoryMessage {
     /**

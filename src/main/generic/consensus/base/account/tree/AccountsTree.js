@@ -91,7 +91,7 @@ class AccountsTree extends Observable {
      */
     async _insert(node, prefix, account, rootPath) {
         // Find common prefix between node and new address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
+        const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
 
         // Cut common prefix off the new address.
         prefix = prefix.substr(commonPrefix.length);
@@ -233,7 +233,7 @@ class AccountsTree extends Observable {
 
     /**
      * @param {Address} address
-     * @returns {Promise.<Account>}
+     * @returns {Promise.<?Account>}
      */
     async get(address) {
         // Fetch the root node.
@@ -248,16 +248,16 @@ class AccountsTree extends Observable {
     /**
      * @param {AccountsTreeNode} node
      * @param {string} prefix
-     * @returns {Promise.<(Account|boolean)>}
+     * @returns {Promise.<?Account>}
      * @private
      */
     async _retrieve(node, prefix) {
         // Find common prefix between node and requested address.
-        const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
+        const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
 
         // If the prefix does not fully match, the requested address is not part
         // of this node.
-        if (commonPrefix.length !== node.prefix.length) return false;
+        if (commonPrefix.length !== node.prefix.length) return null;
 
         // Cut common prefix off the new address.
         prefix = prefix.substr(commonPrefix.length);
@@ -273,7 +273,7 @@ class AccountsTree extends Observable {
         }
 
         // No matching child exists, the requested address is not part of this node.
-        return false;
+        return null;
     }
 
     /**
@@ -378,7 +378,7 @@ class AccountsTree extends Observable {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}
      */
-    async constructAccountsProof(addresses) {
+    async getAccountsProof(addresses) {
         const rootKey = await this._store.getRootKey();
         const rootNode = await this._store.get(rootKey);
         Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
@@ -391,7 +391,7 @@ class AccountsTree extends Observable {
         prefixes.sort();
 
         const nodes = [];
-        await this._constructAccountsProof(rootNode, prefixes, nodes);
+        await this._getAccountsProof(rootNode, prefixes, nodes);
         return new AccountsProof(nodes);
     }
 
@@ -403,58 +403,64 @@ class AccountsTree extends Observable {
      * @returns {Promise.<*>}
      * @private
      */
-    async _constructAccountsProof(node, prefixes, nodes) {
+    async _getAccountsProof(node, prefixes, nodes) {
         // For each prefix, descend the tree individually.
-        let numAccounts = 0, i = 0;
-        while (i < prefixes.length) {
+        let includeNode = false;
+        for (let i = 0; i < prefixes.length; ) {
             let prefix = prefixes[i];
-            // Find common prefix between node and requested address.
-            const commonPrefix = AccountsTree._commonPrefix(node.prefix, prefix);
 
-            // If the prefix does not fully match, the requested address is not part
-            // of this node.
-            if (commonPrefix.length !== node.prefix.length) continue;
+            // Find common prefix between node and the current requested prefix.
+            const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
+
+            // If the prefix fully matches, we have found the requested node.
+            // If the prefix does not fully match, the requested address is not part of this node.
+            // Include the node in the proof nevertheless to prove that the account doesn't exist.
+            if (commonPrefix.length !== node.prefix.length || node.prefix === prefix) {
+                includeNode = true;
+                i++;
+                continue;
+            }
 
             // Cut common prefix off the new address.
             prefix = prefix.substr(commonPrefix.length);
 
-            // If the remaining address is empty, we have found the requested node.
-            if (!prefix.length) {
-                nodes.push(node);
-                numAccounts++;
-                continue;
-            }
-
-            // Group addresses with same prefix:
-            // Because of our ordering, they have to be located next to the current prefix.
-            // Hence, we iterate over the next prefixes, until we don't find commonalities anymore.
-            // In the next main iteration we can skip those we already requested here.
-            const subPrefixes = [prefix];
-            // Find other prefixes to descend into this tree as well.
-            let j = i+1;
-            for (; j < prefixes.length; ++j) {
-                // Since we ordered prefixes, there can't be any other prefixes with commonalities.
-                if (!prefixes[j].startsWith(commonPrefix)) break;
-                // But if there is a commonality, add it to the list.
-                subPrefixes.push(prefixes[j].substr(commonPrefix.length));
-            }
-            // Now j is the last index which doesn't have commonalities,
-            // we continue from there in the next iteration.
-            i = j;
-
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = await this._store.get(childKey);
-                numAccounts += this._constructAccountsProof(childNode, subPrefixes, nodes);
+                const childNode = await this._store.get(childKey); // eslint-disable-line no-await-in-loop
+
+                // Group addresses with same prefix:
+                // Because of our ordering, they have to be located next to the current prefix.
+                // Hence, we iterate over the next prefixes, until we don't find commonalities anymore.
+                // In the next main iteration we can skip those we already requested here.
+                const subPrefixes = [prefix];
+                // Find other prefixes to descend into this tree as well.
+                let j = i + 1;
+                for (; j < prefixes.length; ++j) {
+                    // Since we ordered prefixes, there can't be any other prefixes with commonalities.
+                    if (!prefixes[j].startsWith(commonPrefix + childNode.prefix)) break;
+                    // But if there is a commonality, add it to the list.
+                    subPrefixes.push(prefixes[j].substr(commonPrefix.length));
+                }
+                // Now j is the last index which doesn't have commonalities,
+                // we continue from there in the next iteration.
+                i = j;
+
+                includeNode = (await this._getAccountsProof(childNode, subPrefixes, nodes)) || includeNode; // eslint-disable-line no-await-in-loop
+            }
+            // No child node exists with the requested prefix. Include the current node to prove the absence of the requested account.
+            else {
+                includeNode = true;
+                i++;
             }
         }
 
         // If this branch contained at least one account, we add this node.
-        if (numAccounts > 0) {
+        if (includeNode) {
             nodes.push(node);
         }
-        return numAccounts;
+
+        return includeNode;
     }
 
     /**
@@ -476,20 +482,6 @@ class AccountsTree extends Observable {
      */
     abort() {
         return this._store.abort();
-    }
-
-    /**
-     * @param {string} prefix1
-     * @param {string} prefix2
-     * @returns {string}
-     * @private
-     */
-    static _commonPrefix(prefix1, prefix2) {
-        let i = 0;
-        for (; i < prefix1.length; ++i) {
-            if (prefix1[i] !== prefix2[i]) break;
-        }
-        return prefix1.substr(0, i);
     }
 
     /**

@@ -9,6 +9,13 @@ class Services {
     static myServiceMask() {
         return 0xffffffff;
     }
+
+    static isFullNode(services) {
+        // TODO
+        //return services & Services.FULL !== 0;
+        return true;
+    }
 }
 Services.DEFAULT = 1;
+Services.FULL = 2;
 Class.register(Services);

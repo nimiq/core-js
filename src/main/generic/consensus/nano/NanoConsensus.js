@@ -58,7 +58,7 @@ class NanoConsensus extends Observable {
         this._agents.put(peer.id, agent);
 
         // If no more peers connect within the specified timeout, start syncing.
-        this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), FullConsensus.SYNC_THROTTLE);
+        this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), NanoConsensus.SYNC_THROTTLE);
     }
 
     /**
@@ -86,8 +86,8 @@ class NanoConsensus extends Observable {
 
             if (this._agents.length > 0) {
                 // Report consensus-established if we have at least one connected peer.
-                Log.d(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-                Log.d(Consensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
+                Log.d(NanoConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                Log.d(NanoConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
                 this._established = true;
                 this.fire('established');
@@ -100,7 +100,7 @@ class NanoConsensus extends Observable {
             return;
         }
 
-        Log.v(Consensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
+        Log.v(NanoConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
 
         this._syncing = true;
 
@@ -118,6 +118,36 @@ class NanoConsensus extends Observable {
     _onPeerSynced() {
         this._syncing = false;
         this._syncBlockchain();
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Account>}
+     */
+    async getAccount(address) {
+        return (await this.getAccounts([address]))[0];
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array<Account>>}
+     */
+    async getAccounts(addresses) {
+        const syncedFullNodes = this._agents.values()
+            .filter(agent => agent.synced && Services.isFullNode(agent.peer.peerAddress.services));
+
+        for (const agent of syncedFullNodes) {
+            try {
+                // TODO empty accounts
+                return await agent.getAccounts(addresses); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}`, e);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested account, fail.
+        throw new Error(`Failed to retrieve accounts ${addresses}`);
     }
 
     /** @type {boolean} */
@@ -142,5 +172,5 @@ class NanoConsensus extends Observable {
         return this._network;
     }
 }
-FullConsensus.SYNC_THROTTLE = 1500; // ms
-Class.register(FullConsensus);
+NanoConsensus.SYNC_THROTTLE = 1000; // ms
+Class.register(NanoConsensus);

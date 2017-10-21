@@ -46,8 +46,8 @@ class Accounts extends Observable {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}
      */
-    constructAccountsProof(addresses) {
-        return this._tree.constructAccountsProof(addresses);
+    getAccountsProof(addresses) {
+        return this._tree.getAccountsProof(addresses);
     }
 
     /**
@@ -121,7 +121,7 @@ class Accounts extends Observable {
      * We only support basic accounts at this time.
      * @param {Address} address Address of the account to query.
      * @param {AccountsTree} [tree] AccountsTree or transaction to read from.
-     * @return {Promise.<Balance>} Current Balance of given user.
+     * @return {Promise.<Balance>} Current Balance of given address.
      */
     async getBalance(address, tree = this._tree) {
         const account = await tree.get(address);

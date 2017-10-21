@@ -48,6 +48,7 @@ class FullConsensusAgent extends Observable {
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
         peer.channel.on('get-data', msg => this._onGetData(msg));
+        peer.channel.on('get-header', msg => this._onGetHeader(msg));
         peer.channel.on('not-found', msg => this._onNotFound(msg));
         peer.channel.on('block', msg => this._onBlock(msg));
         peer.channel.on('tx', msg => this._onTx(msg));
@@ -438,6 +439,46 @@ class FullConsensusAgent extends Observable {
     }
 
     /**
+     * @param {GetHeaderMessage} msg
+     * @return {Promise}
+     * @private
+     */
+    async _onGetHeader(msg) {
+        // Keep track of the objects the peer knows.
+        for (const vector of msg.vectors) {
+            this._knownObjects.add(vector);
+        }
+
+        // Check which of the requested objects we know.
+        // Send back all known objects.
+        // Send notFound for unknown objects.
+        const unknownObjects = [];
+        for (const vector of msg.vectors) {
+            switch (vector.type) {
+                case InvVector.Type.BLOCK: {
+                    const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
+                    if (block) {
+                        // We have found a requested block, send it back to the sender.
+                        this._peer.channel.header(block.header);
+                    } else {
+                        // Requested block is unknown.
+                        unknownObjects.push(vector);
+                    }
+                    break;
+                }
+                case InvVector.Type.TRANSACTION:
+                default:
+                    throw `Invalid inventory type: ${vector.type}`;
+            }
+        }
+
+        // Report any unknown objects back to the sender.
+        if (unknownObjects.length) {
+            this._peer.channel.notFound(unknownObjects);
+        }
+    }
+
+    /**
      * @param {GetBlocksMessage} msg
      * @return {Promise}
      * @private
@@ -487,16 +528,8 @@ class FullConsensusAgent extends Observable {
      * @private
      */
     async _onGetAccountsProof(msg) {
-        let accounts;
-        try {
-            accounts = await this._blockchain.getAccounts(msg.blockHash);
-        } catch(e) {
-            // TODO what should we do here?
-            return;
-        }
-
-        const proof = await accounts.constructAccountsProof(msg.addresses);
-        this._peer.channel.accountsProof(msg.blockHash, proof);
+        const proof = await this._blockchain.accounts.getAccountsProof(msg.addresses);
+        this._peer.channel.accountsProof(this._blockchain.headHash, proof);
     }
 
     /**
@@ -514,6 +547,10 @@ class FullConsensusAgent extends Observable {
         }
     }
 
+    /**
+     * @private
+     * @returns {void}
+     */
     _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
