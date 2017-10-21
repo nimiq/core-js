@@ -172,7 +172,7 @@
             $.consensus.on('established', function() {
                 document.getElementById('blockchain-title').classList.add('consensus-established');
                 document.getElementById('txSubmitBtn').removeAttribute('disabled');
-                this._headChanged($.blockchain.head);
+                this._updateBalance();
             }.bind(this));
 
             $.consensus.on('lost', function() {
@@ -242,7 +242,6 @@
             this._blockHistory = document.querySelector('#blockHistory');
 
             // Init values.
-            this._headChanged($.blockchain.head);
             this._networkChanged();
         }
 
@@ -340,17 +339,28 @@
                 }
                 this._blockHistory.appendChild(el);
             }.bind(this));
+
+            this._updateBalance();
         }
 
         _networkChanged() {
             this._netPeerCount.innerText = $.network.peerCount;
             this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
             this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
-            this._netBytesReceived.innerText = this._humanBytes($.network.bytesReceived);
-            this._netBytesSent.innerText = this._humanBytes($.network.bytesSent);
+            this._netBytesReceived.innerText = MinerUI._humanBytes($.network.bytesReceived);
+            this._netBytesSent.innerText = MinerUI._humanBytes($.network.bytesSent);
         }
 
-        _humanBytes(bytes) {
+        _updateBalance() {
+            if ($.consensus.established) {
+                $.consensus.getAccount($.wallet.address).then(function(account) {
+                    this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance.value).toFixed(8);
+                    this._wltNonce.innerText = account.balance.nonce;
+                }.bind(this));
+            }
+        }
+
+        static _humanBytes(bytes) {
             var i = 0;
             var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
             while (bytes > 1024) {

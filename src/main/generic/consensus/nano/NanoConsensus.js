@@ -138,7 +138,6 @@ class NanoConsensus extends Observable {
 
         for (const agent of syncedFullNodes) {
             try {
-                // TODO empty accounts
                 return await agent.getAccounts(addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}`, e);

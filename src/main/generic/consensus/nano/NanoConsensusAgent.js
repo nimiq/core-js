@@ -361,7 +361,6 @@ class NanoConsensusAgent extends Observable {
             this._peer.channel.getAccountsProof(addresses);
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
-            // TODO should we ban here instead?
             this._timers.setTimeout('getAccountsProof', () => {
                 this._peer.channel.close('getAccountsProof timeout');
                 reject(new Error('timeout')); // TODO error handling

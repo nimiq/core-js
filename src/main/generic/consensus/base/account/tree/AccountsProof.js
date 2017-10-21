@@ -81,7 +81,7 @@ class AccountsProof {
 
     /**
      * @param {Address} address
-     * @returns {?Account}
+     * @returns {Account}
      */
     getAccount(address) {
         Assert.that(!!this._index, 'AccountsProof must be verified before retrieving accounts. Call verify() first.');
@@ -94,7 +94,7 @@ class AccountsProof {
     /**
      * @param {AccountsTreeNode} node
      * @param {string} prefix
-     * @returns {?Account}
+     * @returns {Account}
      * @private
      */
     _getAccount(node, prefix) {
@@ -102,7 +102,7 @@ class AccountsProof {
         const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
 
         // If the prefix does not fully match, the requested address is not part of this node.
-        if (commonPrefix.length !== node.prefix.length) return null;
+        if (commonPrefix.length !== node.prefix.length) return Account.INITIAL;
 
         // Cut common prefix off the new address.
         prefix = prefix.substr(commonPrefix.length);
@@ -124,7 +124,7 @@ class AccountsProof {
         }
 
         // No matching child exists, the requested address is not part of this node.
-        return null;
+        return Account.INITIAL;
     }
 
     /**
