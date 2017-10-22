@@ -74,6 +74,7 @@ require('../../generic/network/message/AddrMessage.js');
 require('../../generic/network/message/BlockMessage.js');
 require('../../generic/network/message/GetAddrMessage.js');
 require('../../generic/network/message/GetBlocksMessage.js');
+require('../../generic/network/message/HeaderMessage.js');
 require('../../generic/network/message/InventoryMessage.js');
 require('../../generic/network/message/MempoolMessage.js');
 require('../../generic/network/message/PingMessage.js');

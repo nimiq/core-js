@@ -1,22 +1,21 @@
-class BlockMessage extends Message {
+class HeaderMessage extends Message {
     /**
-     * @param {Block} block
+     * @param {BlockHeader} header
      */
-    constructor(block) {
-        super(Message.Type.BLOCK);
-        // TODO Bitcoin block messages start with a block version
-        /** @type {Block} */
-        this._header = block;
+    constructor(header) {
+        super(Message.Type.HEADER);
+        /** @type {BlockHeader} */
+        this._header = header;
     }
 
     /**
      * @param {SerialBuffer} buf
-     * @return {BlockMessage}
+     * @return {HeaderMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const block = Block.unserialize(buf);
-        return new BlockMessage(block);
+        const header = BlockHeader.unserialize(buf);
+        return new HeaderMessage(header);
     }
 
     /**
@@ -37,9 +36,9 @@ class BlockMessage extends Message {
             + this._header.serializedSize;
     }
 
-    /** @type {Block} */
-    get block() {
+    /** @type {BlockHeader} */
+    get header() {
         return this._header;
     }
 }
-Class.register(BlockMessage);
+Class.register(HeaderMessage);

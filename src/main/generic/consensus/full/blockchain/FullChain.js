@@ -106,9 +106,14 @@ class FullChain extends IBlockchain {
             return FullChain.OK_KNOWN;
         }
 
+        // Check that the given block is a full block (includes block body).
+        if (!block.isFull()) {
+            Log.w(FullChain, 'Rejecting block - body missing');
+            return FullChain.ERR_INVALID;
+        }
+
         // Check all intrinsic block invariants.
         if (!(await block.verify())) {
-            //Log.w(FullChain, 'Rejecting block - verification failed');
             return FullChain.ERR_INVALID;
         }
 

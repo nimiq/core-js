@@ -12,12 +12,23 @@ class Synchronizer extends Observable {
      * @returns {Promise.<T>}
      */
     push(fn) {
-        return new Promise((resolve, error) => {
-            this._queue.push({fn: fn, resolve: resolve, error: error});
+        return new Promise((resolve, reject) => {
+            this._queue.push({fn: fn, resolve: resolve, reject: reject});
             if (!this._working) {
                 this._doWork();
             }
         });
+    }
+
+    /**
+     * Reject all jobs in the queue and clear it.
+     * @returns {void}
+     */
+    clear() {
+        for (const job of this._queue) {
+            if (job.reject) job.reject();
+        }
+        this._queue = [];
     }
 
     async _doWork() {
@@ -30,7 +41,7 @@ class Synchronizer extends Observable {
                 const result = await job.fn();
                 job.resolve(result);
             } catch (e) {
-                if (job.error) job.error(e);
+                if (job.reject) job.reject(e);
             }
         }
 

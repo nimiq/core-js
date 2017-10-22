@@ -99,11 +99,27 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Array.<InvVector>} vectors
+     * @return {boolean}
+     */
+    getHeader(vectors) {
+        return this._send(new GetHeaderMessage(vectors));
+    }
+
+    /**
      * @param {Block} block
      * @return {boolean}
      */
     block(block) {
         return this._send(new BlockMessage(block));
+    }
+
+    /**
+     * @param {BlockHeader} header
+     * @return {boolean}
+     */
+    header(header) {
+        return this._send(new HeaderMessage(header));
     }
 
     /**
@@ -188,21 +204,20 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @return {boolean}
      */
-    getAccountsProof(blockHash, addresses) {
-        return this._send(new GetAccountsProofMessage(blockHash, addresses));
+    getAccountsProof(addresses) {
+        return this._send(new GetAccountsProofMessage(addresses));
     }
 
     /**
      * @param {Hash} blockHash
-     * @param {AccountsProof} accountsProof
+     * @param {AccountsProof} proof
      * @return {boolean}
      */
-    accountsProof(blockHash, accountsProof) {
-        return this._send(new AccountsProofMessage(blockHash, accountsProof));
+    accountsProof(blockHash, proof) {
+        return this._send(new AccountsProofMessage(blockHash, proof));
     }
 
     /**
@@ -286,9 +301,11 @@ PeerChannel.Event = {};
 PeerChannel.Event[Message.Type.VERSION] = 'version';
 PeerChannel.Event[Message.Type.INV] = 'inv';
 PeerChannel.Event[Message.Type.GET_DATA] = 'get-data';
+PeerChannel.Event[Message.Type.GET_HEADER] = 'get-header';
 PeerChannel.Event[Message.Type.NOT_FOUND] = 'not-found';
 PeerChannel.Event[Message.Type.GET_BLOCKS] = 'get-blocks';
 PeerChannel.Event[Message.Type.BLOCK] = 'block';
+PeerChannel.Event[Message.Type.HEADER] = 'header';
 PeerChannel.Event[Message.Type.TX] = 'tx';
 PeerChannel.Event[Message.Type.MEMPOOL] = 'mempool';
 PeerChannel.Event[Message.Type.REJECT] = 'reject';

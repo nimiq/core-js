@@ -4,9 +4,9 @@ class AccountsProofMessage extends Message {
      * @param {AccountsProof} accountsProof
      */
     constructor(blockHash, accountsProof) {
-        super(Message.Type.GET_ACCOUNTS_PROOF);
-        if (!blockHash|| !(blockHash instanceof Hash)) throw 'Malformed blockHash';
-        if (!accountsProof || !(accountsProof instanceof AccountsProof)) throw 'Malformed proof';
+        super(Message.Type.ACCOUNTS_PROOF);
+        if (!(blockHash instanceof Hash)) throw 'Malformed blockHash';
+        if (!(accountsProof instanceof AccountsProof)) throw 'Malformed proof';
         /** @type {Hash} */
         this._blockHash = blockHash;
         /** @type {AccountsProof} */
@@ -50,7 +50,7 @@ class AccountsProofMessage extends Message {
     }
 
     /** @type {AccountsProof} */
-    get accountsProof() {
+    get proof() {
         return this._accountsProof;
     }
 }
