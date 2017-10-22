@@ -31,49 +31,48 @@ class AccountsTreeStore {
 
     /**
      * @override
-     * @param {?Hash} key
+     * @param {string} key
      * @returns {Promise.<AccountsTreeNode>}
      */
     get(key) {
-        return this._store.get(key.toBase64());
+        return this._store.get(key);
+    }
+
+    /**
+     * @param {string} prefix
+     * @returns {Promise.<AccountsTreeNode>}
+     */
+    getChild(prefix) {
+        return this._store.minValue(JDB.KeyRange.lowerBound(prefix));
     }
 
     /**
      * @override
      * @param {AccountsTreeNode} node
-     * @returns {Promise.<Hash>}
+     * @returns {Promise.<string>}
      */
     async put(node) {
-        const key = await node.hash();
-        await this._store.put(key.toBase64(), node);
+        const key = node.prefix;
+        await this._store.put(key, node);
         return key;
     }
 
     /**
      * @override
      * @param {AccountsTreeNode} node
-     * @returns {Promise.<Hash>}
+     * @returns {Promise.<string>}
      */
     async remove(node) {
-        const key = await node.hash();
-        await this._store.remove(key.toBase64());
+        const key = node.prefix;
+        await this._store.remove(key);
         return key;
     }
 
     /**
-     * @returns {Promise.<?Hash>}
+     * @returns {Promise.<AccountsTreeNode>}
      */
-    async getRootKey() {
-        const key = await this._store.get('root');
-        return key ? Hash.fromBase64(key) : undefined;
-    }
-
-    /**
-     * @param {Hash} rootKey
-     * @returns {Promise.<void>}
-     */
-    setRootKey(rootKey) {
-        return this._store.put('root', rootKey.toBase64());
+    getRootNode() {
+        return this.get('');
     }
 
     /**
@@ -112,15 +111,21 @@ class AccountsTreeStoreCodec {
         // XXX FIXME This changes the passed object!
         // Strip _hash from persisted object.
         delete obj._hash;
+        delete obj._prefix;
         return obj;
     }
 
     /**
      * @param {*} obj The object to decode.
+     * @param {string} key The object's primary key.
      * @returns {*} Decoded object.
      */
-    decode(obj) {
-        return typeof obj === 'string' ? obj : AccountsTreeNode.copy(obj);
+    decode(obj, key) {
+        if (typeof obj === 'string') {
+            return obj;
+        }
+        obj._prefix = key; // Restore prefix.
+        return AccountsTreeNode.copy(obj);
     }
 
     /**

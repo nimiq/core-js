@@ -27,7 +27,7 @@ class AccountsProof {
                 for (const child of children) {
                     const hash = await child.hash();
                     // If the child is not valid, return false.
-                    if (node.getChild(child.prefix) !== hash.toBase64()) {
+                    if (node.getChildHash(child.prefix) !== hash.toBase64()) {
                         return false;
                     }
                 }

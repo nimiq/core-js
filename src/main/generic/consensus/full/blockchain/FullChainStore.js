@@ -153,9 +153,10 @@ class FullChainStoreCodec {
 
     /**
      * @param {*} obj The object to decode.
+     * @param {string} key The object's primary key.
      * @returns {*} Decoded object.
      */
-    decode(obj) {
+    decode(obj, key) {
         return typeof obj === 'string' ? obj : ChainData.copy(obj);
     }
 

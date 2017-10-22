@@ -138,8 +138,19 @@ class AccountsTreeNode {
      * @param {string} prefix
      * @returns {Hash}
      */
-    getChild(prefix) {
+    getChildHash(prefix) {
         return this._children && this._children[this._getChildIndex(prefix)];
+    }
+
+    /**
+     * @param {string} prefix
+     * @returns {string|boolean}
+     */
+    getChild(prefix) {
+        if (this._children && this._children[this._getChildIndex(prefix)]) {
+            return prefix.substr(0, this.prefix.length + 1);
+        }
+        return false;
     }
 
     /**
@@ -178,23 +189,24 @@ class AccountsTreeNode {
     }
 
     /**
-     * @returns {?Hash}
+     * @returns {?string}
      */
     getFirstChild() {
         if (!this._children) {
             return undefined;
         }
-        return this._children.find(child => !!child);
+        return this.prefix + this._children.findIndex(child => !!child).toString(16);
     }
 
     /**
-     * @returns {?Array.<Hash>}
+     * @returns {?Array.<string>}
      */
     getChildren() {
         if (!this._children) {
             return undefined;
         }
-        return this._children.filter(child => !!child);
+        return this._children.map((child, index) => !!child ? this.prefix + index.toString(16) : undefined)
+            .filter(child => !!child);
     }
 
     /** @type {Account} */
@@ -251,7 +263,8 @@ class AccountsTreeNode {
      * @private
      */
     _getChildIndex(prefix) {
-        return parseInt(prefix[0], 16);
+        Assert.that(prefix.substr(0, this.prefix.length) === this.prefix, 'Prefix is not a child of the current node');
+        return parseInt(prefix[this.prefix.length], 16);
     }
 
     /**
