@@ -278,6 +278,7 @@ class AccountsTreeNode {
             return o.isTerminal() && o._account.equals(this._account);
         } else {
             if (!o.isBranch()) return false;
+            if (this._children.length !== o._children.length) return false;
             for (let i = 0; i < this._children.length; ++i) {
                 // hashes of child nodes
                 const ourChild = this._children[i];

@@ -219,8 +219,8 @@ class AccountsTree extends Observable {
      * @returns {Promise.<?Account>}
      */
     async get(address) {
-        const account = await this._store.get(address.toHex());
-        return account !== undefined ? account : null;
+        const node = await this._store.get(address.toHex());
+        return node !== undefined ? node.account : null;
     }
 
     /**
