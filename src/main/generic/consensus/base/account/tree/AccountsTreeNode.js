@@ -205,7 +205,7 @@ class AccountsTreeNode {
         if (!this._children) {
             return undefined;
         }
-        return this._children.map((child, index) => !!child ? this.prefix + index.toString(16) : undefined)
+        return this._children.map((child, index) => child ? this.prefix + index.toString(16) : undefined)
             .filter(child => !!child);
     }
 
