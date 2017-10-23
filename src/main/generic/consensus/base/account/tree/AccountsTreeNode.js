@@ -299,6 +299,23 @@ class AccountsTreeNode {
     clone() {
         return AccountsTreeNode.unserialize(this.serialize());
     }
+
+    /**
+     * @returns {{_type: *}}
+     */
+    stripDown() {
+        const obj = {
+            _type: this._type
+        };
+
+        if (this.isBranch()) {
+            obj._children = this._children;
+        } else {
+            obj._account = this._account;
+        }
+
+        return obj;
+    }
 }
 AccountsTreeNode.BRANCH = 0x00;
 AccountsTreeNode.TERMINAL = 0xff;

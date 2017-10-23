@@ -108,11 +108,7 @@ class AccountsTreeStoreCodec {
      * @returns {*} Encoded object.
      */
     encode(obj) {
-        // XXX FIXME This changes the passed object!
-        // Strip _hash from persisted object.
-        delete obj._hash;
-        delete obj._prefix;
-        return obj;
+        return obj.stripDown();
     }
 
     /**
@@ -121,9 +117,6 @@ class AccountsTreeStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        if (typeof obj === 'string') {
-            return obj;
-        }
         obj._prefix = key; // Restore prefix.
         return AccountsTreeNode.copy(obj);
     }

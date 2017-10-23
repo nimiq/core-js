@@ -26,7 +26,7 @@ class AccountsProof {
     }
 
     /**
-     * @param {?SerialBuffer} [buf]
+     * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
     serialize(buf) {
@@ -101,7 +101,7 @@ class AccountsProof {
         // Find common prefix between node and requested address.
         const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
 
-        // If the prefix does not fully match, the requested address is not part of this node.
+        // If the prefix does not fully match, the requested account does not exist.
         if (commonPrefix.length !== node.prefix.length) return Account.INITIAL;
 
         // If the remaining address is empty, we have found the requested node.
@@ -120,7 +120,7 @@ class AccountsProof {
             return this._getAccount(childNode, prefix);
         }
 
-        // No matching child exists, the requested address is not part of this node.
+        // No matching child exists, the requested account does not exist.
         return Account.INITIAL;
     }
 

@@ -151,8 +151,6 @@ class Miner extends Observable {
 
         // Check if we have found a block.
         if (isPoW) {
-            Log.i(Miner, 'Mined block', block);
-
             // Tell listeners that we've mined a block.
             this.fire('block-mined', block, this);
 
