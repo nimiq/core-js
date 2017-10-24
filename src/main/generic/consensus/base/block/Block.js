@@ -516,13 +516,13 @@ Block.GENESIS = new Block(
         new Hash(null),
         new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
         new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
-        new Hash(BufferUtils.fromBase64('3OXA29ZLjMiwzb52dseSuRH4Reha9lAh4qfPLm6SF28=')),
+        new Hash(BufferUtils.fromBase64('wkaeMLzQ6UmY25ypNseX94rbfiHou3fiK8bPzQJj/tA=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        74046),
+        111633),
     new BlockInterlink([]),
     new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('AACseN3e0V1v8EKnuYGX1YN6nCJAsDxKBD3QOWSF32Y=');
+Block.GENESIS.HASH = Hash.fromBase64('AADBmeOOWahd2/WOWYPmxXXJnjl4kc+oLoKm8K7V1Yc=');

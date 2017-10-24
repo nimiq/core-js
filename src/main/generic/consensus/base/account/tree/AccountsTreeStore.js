@@ -39,14 +39,6 @@ class AccountsTreeStore {
     }
 
     /**
-     * @param {string} prefix
-     * @returns {Promise.<AccountsTreeNode>}
-     */
-    getChild(prefix) {
-        return this._store.minValue(JDB.KeyRange.lowerBound(prefix));
-    }
-
-    /**
      * @override
      * @param {AccountsTreeNode} node
      * @returns {Promise.<string>}

@@ -10,39 +10,47 @@ class AccountsTreeNode {
 
     /**
      * @param {string} prefix
-     * @param {Array.<Hash>} children
+     * @param {Array.<string>} childrenSuffixes
+     * @param {Array.<Hash>} childrenHashes
      * @returns {AccountsTreeNode}
      */
-    static branchNode(prefix, children) {
-        return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, children);
+    static branchNode(prefix, childrenSuffixes = [], childrenHashes = []) {
+        if (childrenSuffixes.length !== childrenHashes.length) {
+            throw new Error('Invalid list of children for branch node');
+        }
+        return new AccountsTreeNode(AccountsTreeNode.BRANCH, prefix, childrenSuffixes, childrenHashes);
     }
 
     /**
-     * @param {{_type, _prefix, ?_children, ?_account}} o
+     * @param {{_type, _prefix, ?_childrenSuffixes, ?_childrenHashes, ?_account}} o
      * @returns {AccountsTreeNode}
      */
     static copy(o) {
         if (!o) return o;
-        let arg;
+        let arg, arg2;
         if (AccountsTreeNode.isBranchType(o._type)) {
-            arg = o._children.map(it => Hash.copy(it));
+            arg = o._childrenSuffixes;
+            arg2 = o._childrenHashes.map(it => Hash.copy(it));
         } else {
             arg = Account.copy(o._account);
         }
-        return new AccountsTreeNode(o._type, o._prefix, arg);
+        return new AccountsTreeNode(o._type, o._prefix, arg, arg2);
     }
 
     /**
      * @param type
      * @param {string} prefix
-     * @param {Account|Array.<Hash>} arg
+     * @param {Account|Array.<string>} arg
+     * @param {Array.<Hash>} [arg2]
      */
-    constructor(type, prefix = '', arg) {
+    constructor(type, prefix = '', arg, arg2 = []) {
         this._type = type;
         this._prefix = prefix;
         if (this.isBranch()) {
+            /** @type {Array.<string>} */
+            this._childrenSuffixes = arg;
             /** @type {Array.<Hash>} */
-            this._children = arg;
+            this._childrenHashes = arg2;
         } else if (this.isTerminal()) {
             /** @type {Account} */
             this._account = arg;
@@ -82,14 +90,16 @@ class AccountsTreeNode {
             return AccountsTreeNode.terminalNode(prefix, account);
         } else if (AccountsTreeNode.isBranchType(type)) {
             // Branch node
-            const children = [];
+            const childrenSuffixes = [], childrenHashes = [];
             const childCount = buf.readUint8();
             for (let i = 0; i < childCount; ++i) {
-                const childIndex = buf.readUint8();
-                const child = Hash.unserialize(buf);
-                children[childIndex] = child;
+                const childSuffix = buf.readVarLengthString();
+                const childHash = Hash.unserialize(buf);
+                const childIndex = parseInt(childSuffix[0], 16);
+                childrenSuffixes[childIndex] = childSuffix;
+                childrenHashes[childIndex] = childHash;
             }
-            return AccountsTreeNode.branchNode(prefix, children);
+            return AccountsTreeNode.branchNode(prefix, childrenSuffixes, childrenHashes);
         } else {
             throw `Invalid AccountsTreeNode type: ${type}`;
         }
@@ -104,12 +114,12 @@ class AccountsTreeNode {
             this._account.serialize(buf);
         } else {
             // Branch node
-            const childCount = this._children.reduce((count, child) => count + !!child, 0);
+            const childCount = this._childrenSuffixes.reduce((count, child) => count + !!child, 0);
             buf.writeUint8(childCount);
-            for (let i = 0; i < this._children.length; ++i) {
-                if (this._children[i]) {
-                    buf.writeUint8(i);
-                    this._children[i].serialize(buf);
+            for (let i = 0; i < this._childrenSuffixes.length; ++i) {
+                if (this._childrenHashes[i]) {
+                    buf.writeVarLengthString(this._childrenSuffixes[i]);
+                    this._childrenHashes[i].serialize(buf);
                 }
             }
         }
@@ -124,7 +134,7 @@ class AccountsTreeNode {
         } else {
             // The children array contains undefined values for non existing children.
             // Only count existing ones.
-            const childrenSize = this._children.reduce((sum, child) => sum + (child ? child.serializedSize + /*childIndex*/ 1 : 0), 0);
+            const childrenSize = this._childrenHashes.reduce((sum, child, i) => sum + (child ? child.serializedSize + this._childrenSuffixes[i].length + /*suffix varLengthString*/ 1 : 0), 0);
             payloadSize = /*childCount*/ 1 + childrenSize;
         }
 
@@ -139,7 +149,7 @@ class AccountsTreeNode {
      * @returns {Hash}
      */
     getChildHash(prefix) {
-        return this._children && this._children[this._getChildIndex(prefix)];
+        return this._childrenHashes && this._childrenHashes[this._getChildIndex(prefix)];
     }
 
     /**
@@ -147,21 +157,24 @@ class AccountsTreeNode {
      * @returns {string|boolean}
      */
     getChild(prefix) {
-        if (this._children && this._children[this._getChildIndex(prefix)]) {
-            return prefix.substr(0, this.prefix.length + 1);
+        const suffix = this._childrenSuffixes && this._childrenSuffixes[this._getChildIndex(prefix)];
+        if (suffix) {
+            return this.prefix + suffix;
         }
-        return false;
+        return suffix;
     }
 
     /**
      * @param {string} prefix
-     * @param {Hash} child
+     * @param {Hash} childHash
      * @returns {AccountsTreeNode}
      */
-    withChild(prefix, child) {
-        const children = this._children.slice() || [];
-        children[this._getChildIndex(prefix)] = child;
-        return AccountsTreeNode.branchNode(this._prefix, children);
+    withChild(prefix, childHash) {
+        const childrenSuffixes = this._childrenSuffixes.slice() || [];
+        const childrenHashes = this._childrenHashes.slice() || [];
+        childrenSuffixes[this._getChildIndex(prefix)] = prefix.substr(this.prefix.length);
+        childrenHashes[this._getChildIndex(prefix)] = childHash;
+        return AccountsTreeNode.branchNode(this._prefix, childrenSuffixes, childrenHashes);
     }
 
     /**
@@ -169,44 +182,45 @@ class AccountsTreeNode {
      * @returns {AccountsTreeNode}
      */
     withoutChild(prefix) {
-        const children = this._children.slice() || [];
-        delete children[this._getChildIndex(prefix)];
-        return AccountsTreeNode.branchNode(this._prefix, children);
+        const childrenSuffixes = this._childrenSuffixes.slice() || [];
+        const childrenHashes = this._childrenHashes.slice() || [];
+        delete childrenSuffixes[this._getChildIndex(prefix)];
+        delete childrenHashes[this._getChildIndex(prefix)];
+        return AccountsTreeNode.branchNode(this._prefix, childrenSuffixes, childrenHashes);
     }
 
     /**
      * @returns {boolean}
      */
     hasChildren() {
-        return this._children && this._children.some(child => !!child);
+        return this._childrenSuffixes && this._childrenSuffixes.some(child => !!child);
     }
 
     /**
      * @returns {boolean}
      */
     hasSingleChild() {
-        return this._children && this._children.reduce((count, child) => count + !!child, 0) === 1;
+        return this._childrenSuffixes && this._childrenSuffixes.reduce((count, child) => count + !!child, 0) === 1;
     }
 
     /**
      * @returns {?string}
      */
     getFirstChild() {
-        if (!this._children) {
+        if (!this._childrenSuffixes) {
             return undefined;
         }
-        return this.prefix + this._children.findIndex(child => !!child).toString(16);
+        return this.prefix + this._childrenSuffixes.find(child => !!child);
     }
 
     /**
      * @returns {?Array.<string>}
      */
     getChildren() {
-        if (!this._children) {
+        if (!this._childrenSuffixes) {
             return undefined;
         }
-        return this._children.map((child, index) => child ? this.prefix + index.toString(16) : undefined)
-            .filter(child => !!child);
+        return this._childrenSuffixes.filter(child => !!child).map(child => this.prefix + child);
     }
 
     /** @type {Account} */
@@ -278,16 +292,18 @@ class AccountsTreeNode {
             return o.isTerminal() && o._account.equals(this._account);
         } else {
             if (!o.isBranch()) return false;
-            if (this._children.length !== o._children.length) return false;
-            for (let i = 0; i < this._children.length; ++i) {
+            if (this._childrenSuffixes.length !== o._childrenSuffixes.length) return false;
+            if (o._childrenSuffixes.length !== o._childrenHashes.length) return false;
+            for (let i = 0; i < this._childrenSuffixes.length; ++i) {
                 // hashes of child nodes
-                const ourChild = this._children[i];
-                const otherChild = o._children[i];
+                const ourChild = this._childrenHashes[i];
+                const otherChild = o._childrenHashes[i];
                 if (ourChild) {
                     if (!otherChild || !ourChild.equals(otherChild)) return false;
                 } else {
                     if (otherChild) return false;
                 }
+                if (this._childrenSuffixes[i] !== o._childrenSuffixes[i]) return false;
             }
         }
         return true;
@@ -309,7 +325,8 @@ class AccountsTreeNode {
         };
 
         if (this.isBranch()) {
-            obj._children = this._children;
+            obj._childrenSuffixes = this._childrenSuffixes;
+            obj._childrenHashes = this._childrenHashes;
         } else {
             obj._account = this._account;
         }

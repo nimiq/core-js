@@ -37,7 +37,7 @@ class AccountsTree extends Observable {
     async _initRoot() {
         let rootNode = await this._store.getRootNode();
         if (!rootNode) {
-            rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*children*/ []);
+            rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*childrenSuffixes*/ [], /*childrenHashes*/ []);
             await this._store.put(rootNode);
         }
         return this;
@@ -97,7 +97,7 @@ class AccountsTree extends Observable {
             await this._store.put(newChild);
 
             // Insert the new parent node.
-            const newParent = AccountsTreeNode.branchNode(commonPrefix, [])
+            const newParent = AccountsTreeNode.branchNode(commonPrefix)
                 .withChild(node.prefix, await node.hash())
                 .withChild(newChild.prefix, newChildHash);
             const newParentHash = await newParent.hash();
@@ -131,7 +131,7 @@ class AccountsTree extends Observable {
         // the matching child node if one exists.
         const childPrefix = node.getChild(prefix);
         if (childPrefix) {
-            const childNode = await this._store.getChild(childPrefix);
+            const childNode = await this._store.get(childPrefix);
             rootPath.push(node);
             return this._insert(childNode, prefix, account, rootPath);
         }
@@ -168,7 +168,7 @@ class AccountsTree extends Observable {
                 await this._store.remove(node); // eslint-disable-line no-await-in-loop
 
                 const childPrefix = node.getFirstChild();
-                const childNode = await this._store.getChild(childPrefix); // eslint-disable-line no-await-in-loop
+                const childNode = await this._store.get(childPrefix); // eslint-disable-line no-await-in-loop
 
                 await this._store.put(childNode); // eslint-disable-line no-await-in-loop
                 const childHash = await childNode.hash();
@@ -262,8 +262,9 @@ class AccountsTree extends Observable {
             for (let i = 0; i < 16; i++) {
                 const nibble = i.toString(16);
                 const subHash = node.getChildHash(node.prefix + nibble);
+                const subPrefix = node.getChild(node.prefix + nibble);
                 if (!subHash) continue;
-                const subNode = await this._store.getChild(node.prefix + nibble);
+                const subNode = await this._store.get(subPrefix);
 
                 // no dangling references
                 if (!subNode) {
@@ -302,7 +303,7 @@ class AccountsTree extends Observable {
      * @private
      */
     async _export(nodeKey, arr) {
-        const node = await this._store.getChild(nodeKey);
+        const node = await this._store.get(nodeKey);
 
         arr.push(BufferUtils.toBase64(node.serialize()));
 
@@ -362,7 +363,7 @@ class AccountsTree extends Observable {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = await this._store.getChild(childKey); // eslint-disable-line no-await-in-loop
+                const childNode = await this._store.get(childKey); // eslint-disable-line no-await-in-loop
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -396,6 +397,27 @@ class AccountsTree extends Observable {
         }
 
         return includeNode;
+    }
+
+    /**
+     * @param {string} startPrefix The prefix to start with.
+     * @param {number} size The maximum number of terminal nodes to include.
+     * @returns {Promise.<AccountsTreeChunk>}
+     */
+    async getChunk(startPrefix, size) {
+        const rootNode = await this._store.getRootNode();
+        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
+
+        const prefixes = [];
+        for (const address of addresses) {
+            prefixes.push(address.toHex());
+        }
+        // We sort the addresses to simplify traversal in post order (leftmost addresses first).
+        prefixes.sort();
+
+        const nodes = [];
+        await this._getAccountsProof(rootNode, prefixes, nodes);
+        return new AccountsProof(nodes);
     }
 
     /**

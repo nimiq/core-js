@@ -629,7 +629,7 @@ describe('AccountsTree', () => {
                 // This is checked after each change of the tree.
                 const undefinedNodes = [];
 
-                const R1 = AccountsTreeNode.branchNode('', []);
+                const R1 = AccountsTreeNode.branchNode('', [], []);
                 await expectDefined([R1], 'Empty tree.');
 
                 /* current tree:
@@ -659,7 +659,7 @@ describe('AccountsTree', () => {
                 // and recreate node that should be stored
                 const T1 = AccountsTreeNode.terminalNode(prefixT1.join(''), account1);
                 const T1Hash = await T1.hash();
-                const R2 = AccountsTreeNode.branchNode('', [T1Hash]);
+                const R2 = AccountsTreeNode.branchNode('', [prefixT1.join('')], [T1Hash]);
 
                 await expectDefined([T1, R2], 'One address.');
 
@@ -690,9 +690,9 @@ describe('AccountsTree', () => {
                 const T2Hash = await T2.hash();
                 const T3 = AccountsTreeNode.terminalNode(prefixT3.join(''), account2);
                 const T3Hash = await T3.hash();
-                const B1 = AccountsTreeNode.branchNode(prefixB1.join(''), [T2Hash, T3Hash]);
+                const B1 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T2Hash, T3Hash]);
                 const B1Hash = await B1.hash();
-                const R3 = AccountsTreeNode.branchNode('', [B1Hash]);
+                const R3 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B1Hash]);
 
                 await expectDefined([T2, T3, B1, R3], 'Second address added.');
 
@@ -719,9 +719,9 @@ describe('AccountsTree', () => {
                 // recreate new root, branch and terminal nodes for checking
                 const T4 = T3.withAccount(account3);
                 const T4Hash = await T4.hash();
-                const B2 = AccountsTreeNode.branchNode(prefixB1.join(''), [T2Hash, T4Hash]);
+                const B2 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T2Hash, T4Hash]);
                 const B2Hash = await B2.hash();
-                const R4 = AccountsTreeNode.branchNode('', [B2Hash]);
+                const R4 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B2Hash]);
 
                 await expectDefined([T2, T4, B2, R4], 'Second address updated.');
 
@@ -752,9 +752,9 @@ describe('AccountsTree', () => {
                 const T5 = AccountsTreeNode.terminalNode(prefixT1.join(''), account4);
                 const T5Hash = await T5.hash();
                 // updated branch node
-                const B3 = AccountsTreeNode.branchNode(prefixB1.join(''), [T5Hash, T4Hash]);
+                const B3 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T5Hash, T4Hash]);
                 const B3Hash = await B3.hash();
-                const R5 = AccountsTreeNode.branchNode('', [B3Hash]);
+                const R5 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B3Hash]);
 
                 await expectDefined([T5, T4, B3, R5], 'Zero balance.');
 
@@ -782,7 +782,7 @@ describe('AccountsTree', () => {
                 const T6 = AccountsTreeNode.terminalNode(address2.toHex(), account3);
                 const T6Hash = await T6.hash();
                 // and the new root
-                const R6 = AccountsTreeNode.branchNode('', [T6Hash]);
+                const R6 = AccountsTreeNode.branchNode('', [address2.toHex()], [T6Hash]);
 
 
                 await expectDefined([T6, R6], 'Prune node.');
@@ -832,9 +832,9 @@ describe('AccountsTree', () => {
                 const T8Hash = await T8.hash();
                 const T9 = AccountsTreeNode.terminalNode(prefixT9.join(''), account8);
                 const T9Hash = await T9.hash();
-                const B4 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, T7Hash, T8Hash, T9Hash]);
+                const B4 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, prefixT7.join('').substr(prefixB4.length), prefixT8.join('').substr(prefixB4.length), prefixT9.join('').substr(prefixB4.length)], [undefined, T7Hash, T8Hash, T9Hash]);
                 const B4Hash = await B4.hash();
-                const R7 = AccountsTreeNode.branchNode('', [B4Hash]);
+                const R7 = AccountsTreeNode.branchNode('', [prefixB4.join('')], [B4Hash]);
                 await expectDefined([T7, T8, T9, B4, R7], 'Three addresses.');
 
                 // now add address 002^{38}
@@ -866,11 +866,11 @@ describe('AccountsTree', () => {
                 const T10Hash = await T10.hash();
                 const T11 = AccountsTreeNode.terminalNode(prefixT11.join(''), account9);
                 const T11Hash = await T11.hash();
-                const B6 = AccountsTreeNode.branchNode(prefixB6.join(''), [T10Hash, undefined, T11Hash]);
+                const B6 = AccountsTreeNode.branchNode(prefixB6.join(''), [prefixT10.join('').substr(prefixB6.length), undefined, prefixT11.join('').substr(prefixB6.length)], [T10Hash, undefined, T11Hash]);
                 const B6Hash = await B6.hash();
-                const B5 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, T7Hash, B6Hash, T9Hash]);
+                const B5 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, prefixT7.join('').substr(prefixB4.length), prefixB6.join('').substr(prefixB4.length), prefixT9.join('').substr(prefixB4.length)], [undefined, T7Hash, B6Hash, T9Hash]);
                 const B5Hash = await B5.hash();
-                const R8 = AccountsTreeNode.branchNode('', [B5Hash]);
+                const R8 = AccountsTreeNode.branchNode('', [prefixB4.join('')], [B5Hash]);
 
                 await expectDefined([T10, T11, T7, B6, T9, B5, R8], 'Four addresses.');
             })().then(done, done.fail);
