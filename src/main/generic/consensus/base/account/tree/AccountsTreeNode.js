@@ -310,13 +310,6 @@ class AccountsTreeNode {
     }
 
     /**
-     * @return {AccountsTreeNode}
-     */
-    clone() {
-        return AccountsTreeNode.unserialize(this.serialize());
-    }
-
-    /**
      * @returns {{_type: *}}
      */
     stripDown() {

@@ -441,7 +441,7 @@ class FullChain extends IBlockchain {
     async _prove(m, k, delta) {
         Assert.that(m >= 1, 'm must be >= 1');
         Assert.that(delta > 0, 'delta must be > 0');
-        let prefix = new Chain([]);
+        let prefix = new BlockChain([]);
 
         // B <- C[0]
         let startHeight = 1;
@@ -453,7 +453,7 @@ class FullChain extends IBlockchain {
             // alpha = C[:-k]{B:}|^mu
             const alpha = await this._getSuperChain(depth, head, startHeight); // eslint-disable-line no-await-in-loop
             // pi = pi (union) alpha
-            prefix = Chain.merge(prefix, alpha);
+            prefix = BlockChain.merge(prefix, alpha);
 
             // if good_(delta,m)(C, alpha, mu) then
             if (FullChain._isGoodSuperChain(alpha, depth, m, delta)) {
@@ -476,7 +476,7 @@ class FullChain extends IBlockchain {
      * @param {number} depth
      * @param {Block} [head]
      * @param {number} [tailHeight]
-     * @returns {Promise.<Chain>}
+     * @returns {Promise.<BlockChain>}
      * @private
      */
     async _getSuperChain(depth, head = this.head, tailHeight = 1) {
@@ -506,11 +506,11 @@ class FullChain extends IBlockchain {
             blocks.push(Block.GENESIS.toLight());
         }
 
-        return new Chain(blocks.reverse());
+        return new BlockChain(blocks.reverse());
     }
 
     /**
-     * @param {Chain} superchain
+     * @param {BlockChain} superchain
      * @param {number} depth
      * @param {number} m
      * @param {number} delta
@@ -523,7 +523,7 @@ class FullChain extends IBlockchain {
     }
 
     /**
-     * @param {Chain} superchain
+     * @param {BlockChain} superchain
      * @param {number} depth
      * @param {number} m
      * @param {number} delta
@@ -562,18 +562,17 @@ class FullChain extends IBlockchain {
     /**
      * @param {number} length
      * @param {Block} [head]
-     * @returns {Promise.<Chain>}
+     * @returns {Promise.<HeaderChain>}
      * @private
      */
     async _getHeaderChain(length, head = this.head) {
-        const blocks = [];
-        while (head && blocks.length < length) {
-            blocks.push(head.toLight());
+        const headers = [];
+        while (head && headers.length < length) {
+            headers.push(head.header);
             head = await this.getBlock(head.prevHash); // eslint-disable-line no-await-in-loop
         }
-        return new Chain(blocks.reverse());
+        return new HeaderChain(headers.reverse());
     }
-
 
     /** @type {Block} */
     get head() {

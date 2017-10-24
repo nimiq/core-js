@@ -1,17 +1,21 @@
 class ChainProof {
+    /**
+     * @param {BlockChain} prefix
+     * @param {HeaderChain} suffix
+     */
     constructor(prefix, suffix) {
-        if (!(prefix instanceof Chain) || !prefix.length) throw new Error('Malformed prefix');
-        if (!(suffix instanceof Chain)) throw new Error('Malformed suffix');
+        if (!(prefix instanceof BlockChain) || !prefix.length) throw new Error('Malformed prefix');
+        if (!(suffix instanceof HeaderChain)) throw new Error('Malformed suffix');
 
-        /** @type {Chain} */
+        /** @type {BlockChain} */
         this._prefix = prefix;
-        /** @type {Chain} */
+        /** @type {HeaderChain} */
         this._suffix = suffix;
     }
 
     static unserialize(buf) {
-        const prefix = Chain.unserialize(buf);
-        const suffix = Chain.unserialize(buf);
+        const prefix = BlockChain.unserialize(buf);
+        const suffix = HeaderChain.unserialize(buf);
         return new ChainProof(prefix, suffix);
     }
 
@@ -41,13 +45,8 @@ class ChainProof {
             return false;
         }
 
-        // Check that the suffix is dense.
-        if (!(await this._suffix.isDense())) {
-            return false;
-        }
-
         // Check that the suffix connects to the prefix.
-        if (this._suffix.length > 0 && !(await this._suffix.tail.isImmediateSuccessorOf(this._prefix.head))) {
+        if (this._suffix.length > 0 && !(await this._suffix.tail.isImmediateSuccessorOf(this._prefix.head.header))) {
             return false;
         }
 
@@ -62,23 +61,18 @@ class ChainProof {
         return `ChainProof{prefix=${this._prefix.length}, suffix=${this._suffix.length}, height=${this.head.height}}`;
     }
 
-    /** @type {Chain} */
+    /** @type {BlockChain} */
     get prefix() {
         return this._prefix;
     }
 
-    /** @type {Chain} */
+    /** @type {HeaderChain} */
     get suffix() {
         return this._suffix;
     }
 
-    /** @type {Block} */
+    /** @type {BlockHeader} */
     get head() {
-        return this._suffix.length > 0 ? this._suffix.head : this._prefix.head;
-    }
-
-    /** @type {Block} */
-    get tail() {
-        return this._prefix.tail;
+        return this._suffix.length > 0 ? this._suffix.head : this._prefix.head.header;
     }
 }

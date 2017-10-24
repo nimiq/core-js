@@ -133,8 +133,11 @@ class NanoConsensus extends Observable {
      * @returns {Promise.<Array<Account>>}
      */
     async getAccounts(addresses) {
-        const syncedFullNodes = this._agents.values()
-            .filter(agent => agent.synced && Services.isFullNode(agent.peer.peerAddress.services));
+        const syncedFullNodes = this._agents.values().filter(
+            agent => agent.synced
+                && agent.knowsBlock(this._blockchain.headHash)
+                && Services.isFullNode(agent.peer.peerAddress.services)
+        );
 
         for (const agent of syncedFullNodes) {
             try {

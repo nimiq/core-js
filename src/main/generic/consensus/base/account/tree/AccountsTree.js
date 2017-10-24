@@ -61,7 +61,7 @@ class AccountsTree extends Observable {
      * @private
      */
     async _put(address, account) {
-        if (!(await this.get(address)) && Account.INITIAL.equals(account)) {
+        if (Account.INITIAL.equals(account) && !(await this.get(address))) {
             return;
         }
 

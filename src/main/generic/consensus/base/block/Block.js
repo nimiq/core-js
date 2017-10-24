@@ -172,32 +172,14 @@ class Block {
      * @returns {Promise.<boolean>}
      */
     async isImmediateSuccessorOf(predecessor) {
-        // Check that the height is one higher than the previous height.
-        if (this._header.height !== predecessor.header.height + 1) {
-            return false;
-        }
-
-        // Check that the timestamp is greater or equal to the predecessor's timestamp.
-        if (this._header.timestamp < predecessor.header.timestamp) {
-            return false;
-        }
-
-        // Check that the hash of the predecessor block equals prevHash.
-        const prevHash = await predecessor.hash();
-        if (!this._header.prevHash.equals(prevHash)) {
+        // Check the header.
+        if (!(await this._header.isImmediateSuccessorOf(predecessor.header))) {
             return false;
         }
 
         // Check that the interlink is correct.
         const interlink = await predecessor.getNextInterlink(this.target);
         if (!this._interlink.equals(interlink)) {
-            return false;
-        }
-
-        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
-        const adjustmentFactor = this._header.target / predecessor.header.target;
-        if (adjustmentFactor > Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR
-            || adjustmentFactor < 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR) {
             return false;
         }
 

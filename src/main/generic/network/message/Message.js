@@ -48,7 +48,7 @@ class Message {
         // Validate checksum.
         Message._writeChecksum(type, buf, 0);
         const calculatedChecksum = CRC32.compute(buf);
-        if (checksum !== calculatedChecksum) throw 'Invalid checksum';
+        if (checksum !== calculatedChecksum) throw new Error('Invalid checksum');
 
         return new Message(type);
     }

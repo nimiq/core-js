@@ -107,6 +107,37 @@ class BlockHeader {
         return BlockUtils.isProofOfWork(pow, this.target);
     }
 
+    /**
+     * @param {BlockHeader} prevHeader
+     * @returns {Promise.<boolean>}
+     */
+    async isImmediateSuccessorOf(prevHeader) {
+        // Check that the height is one higher than the previous height.
+        if (this.height !== prevHeader.height + 1) {
+            return false;
+        }
+
+        // Check that the timestamp is greater or equal to the predecessor's timestamp.
+        if (this.timestamp < prevHeader.timestamp) {
+            return false;
+        }
+
+        // Check that the hash of the predecessor block equals prevHash.
+        const prevHash = await prevHeader.hash();
+        if (!this.prevHash.equals(prevHash)) {
+            return false;
+        }
+
+        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
+        const adjustmentFactor = this.target / prevHeader.target;
+        if (adjustmentFactor > Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR
+            || adjustmentFactor < 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR) {
+            return false;
+        }
+
+        // Everything checks out.
+        return true;
+    }
 
     /**
      * @param {SerialBuffer} [buf]

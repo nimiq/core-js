@@ -17,11 +17,12 @@ class PeerChannel extends Observable {
      * @private
      */
     _onMessage(rawMsg) {
+        Log.v(PeerChannel, `Received message of length ${rawMsg.byteLength} from ${this.peerAddress || this.netAddress}`);
         let msg;
         try {
             msg = MessageFactory.parse(rawMsg);
         } catch(e) {
-            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}: ${e}`);
+            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}`, e);
 
             // Ban peer if it sends junk.
             // TODO We should probably be more lenient here. Bitcoin sends a

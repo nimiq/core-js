@@ -1,8 +1,8 @@
-class Chain {
+class BlockChain {
     /**
-     * @param {Chain} chain1
-     * @param {Chain} chain2
-     * @returns {Chain}
+     * @param {BlockChain} chain1
+     * @param {BlockChain} chain2
+     * @returns {BlockChain}
      */
     static merge(chain1, chain2) {
         const merged = [];
@@ -32,12 +32,12 @@ class Chain {
             merged.push(chain2.blocks[i2]);
         }
 
-        return new Chain(merged);
+        return new BlockChain(merged);
     }
 
     /**
-     * @param {Chain} chain1
-     * @param {Chain} chain2
+     * @param {BlockChain} chain1
+     * @param {BlockChain} chain2
      * @returns {?Block}
      */
     static lowestCommonAncestor(chain1, chain2) {
@@ -71,7 +71,7 @@ class Chain {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {Chain}
+     * @returns {BlockChain}
      */
     static unserialize(buf) {
         const count = buf.readUint16();
@@ -79,7 +79,7 @@ class Chain {
         for (let i = 0; i < count; i++) {
             blocks.push(Block.unserialize(buf));
         }
-        return new Chain(blocks);
+        return new BlockChain(blocks);
     }
 
     /**
@@ -177,4 +177,4 @@ class Chain {
         return this._blocks.reduce((sum, block) => sum + BlockUtils.targetToDifficulty(block.target), 0);
     }
 }
-Class.register(Chain);
+Class.register(BlockChain);

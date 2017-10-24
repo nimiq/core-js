@@ -109,6 +109,7 @@ class NanoConsensusAgent extends Observable {
         this._timers.clearTimeout('getChainProof');
 
         // Check that chain proof ends with the peer's head block.
+        // FIXME race condition: the peer's head might change between VERSION and GET-CHAIN-PROOF message.
         const headHash = await msg.proof.head.hash();
         if (!this._peer.headHash.equals(headHash)) {
             Log.w(NanoConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - unexpected head`);
@@ -124,6 +125,9 @@ class NanoConsensusAgent extends Observable {
             this._peer.channel.close('invalid chain proof');
             return;
         }
+
+        // TODO add all blocks from the chain proof to knownObjects.
+        this._knownObjects.add(new InvVector(InvVector.Type.BLOCK, headHash));
 
         this._syncFinished();
     }
@@ -204,7 +208,7 @@ class NanoConsensusAgent extends Observable {
         // TODO cleanup!
         const blocks = [];
         const transactions = [];
-        for (const obj of this._objectsToRequest) {
+        for (const obj of this._objectsToRequest.array) {
             if (obj.type === InvVector.Type.BLOCK) {
                 blocks.push(obj);
             } else {
@@ -455,6 +459,16 @@ class NanoConsensusAgent extends Observable {
         this._synchronizer.clear();
 
         this.fire('close', this);
+    }
+
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {boolean}
+     */
+    knowsBlock(blockHash) {
+        const vector = new InvVector(InvVector.Type.BLOCK, blockHash);
+        return this._knownObjects.contains(vector);
     }
 
     /** @type {Peer} */
