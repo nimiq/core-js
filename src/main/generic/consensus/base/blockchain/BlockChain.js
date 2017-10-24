@@ -147,7 +147,7 @@ class BlockChain {
      * @returns {string}
      */
     toString() {
-        return `Chain{length=${this.length}}`;
+        return `BlockChain{length=${this.length}}`;
     }
 
     /** @type {number} */

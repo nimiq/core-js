@@ -31,7 +31,7 @@ class NanoConsensus extends Observable {
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                //agent.relayBlock(head);
+                agent.relayBlock(head);
             }
         });
 

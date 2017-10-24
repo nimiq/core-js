@@ -1,20 +1,24 @@
-class NanoChain extends IBlockchain {
+class NanoChain extends BaseChain {
+    /**
+     * @returns {Promise.<NanoChain>}
+     */
     constructor() {
-        super();
+        super(ChainDataStore.createVolatile());
 
         this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
 
         this._headHash = Block.GENESIS.HASH;
 
-        this._blockIndex = new HashMap();
-        this._blockIndex.put(Block.GENESIS.HASH, Block.GENESIS.toLight());
-
         this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
 
-        this._chainData = new HashMap();
-        this._chainData.put(Block.GENESIS.HASH, this._mainChain);
-
         this._synchronizer = new Synchronizer();
+
+        return this._init();
+    }
+
+    async _init() {
+        await this._store.putChainData(Block.GENESIS.HASH, this._mainChain);
+        return this;
     }
 
     /**
@@ -62,19 +66,9 @@ class NanoChain extends IBlockchain {
             suffixBlocks.push(head);
         }
 
-        // Add proof blocks to index.
-        for (const block of proof.prefix.blocks) {
-            const hash = await block.hash(); // eslint-disable-line no-await-in-loop
-            this._blockIndex.put(hash, block);
-        }
-        for (const block of suffixBlocks) {
-            const hash = await block.hash(); // eslint-disable-line no-await-in-loop
-            this._blockIndex.put(hash, block);
-        }
-
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
         if (await NanoChain._isBetterProof(proof, this._proof, Policy.M)) {
-            await this._acceptProof(suffixBlocks);
+            await this._acceptProof(proof, suffixBlocks);
         }
 
         return true;
@@ -129,20 +123,34 @@ class NanoChain extends IBlockchain {
     }
 
     /**
+     * @param {ChainProof} proof
      * @param {Array.<Block>} suffix
      * @returns {Promise.<void>}
      * @private
      */
-    async _acceptProof(suffix) {
-        // If the proof suffix tail is not part of our current chain suffix, reset our current chain suffix.
-        const tail = suffix[0];
-        const tailHash = await tail.hash();
-        if (!this._chainData.contains(tailHash) && !this._chainData.contains(tail.prevHash)) {
-            this._chainData.clear();
+    async _acceptProof(proof, suffix) {
+        // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
+        // TODO use a store transaction here?
+        const head = proof.prefix.head;
+        const headHash = await head.hash();
+        const headData = await this._store.getChainData(headHash);
+        if (!headData || headData.totalDifficulty <= 0) {
+            // Delete our current chain.
+            await this._store.truncate();
 
-            this._headHash = tailHash;
-            this._mainChain = new ChainData(tail, tail.difficulty, BlockUtils.realDifficulty(tailHash), true);
-            this._chainData.put(tailHash, this._mainChain);
+            // Set the prefix head as the new chain head.
+            this._headHash = headHash;
+            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(headHash), true);
+            await this._store.putChainData(headHash, this._mainChain);
+
+            // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
+            // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
+            for (let i = 0; i < proof.prefix.length - 1; i++) {
+                const block = proof.prefix.blocks[i];
+                const hash = await block.hash();
+                const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
+                await this._store.putChainData(hash, data);
+            }
         }
 
         // Push all suffix blocks.
@@ -168,23 +176,26 @@ class NanoChain extends IBlockchain {
      * @private
      */
     async _pushHeader(header) {
+        // Check if we already know this header/block.
         const hash = await header.hash();
-
-        // Check if we already know this header.
-        if (this._chainData.contains(hash)) {
+        const knownBlock = await this._store.getBlock(hash);
+        if (knownBlock) {
             return NanoChain.OK_KNOWN;
         }
 
         // Verify proof of work.
         if (!(await header.verifyProofOfWork())) {
+            Log.w(NanoChain, 'Rejecting header - PoW verification failed');
             return NanoChain.ERR_INVALID;
         }
 
         // TODO Verify difficulty
 
         // Retrieve the immediate predecessor.
-        const prevData = this._chainData.get(header.prevHash);
-        if (!prevData) {
+        /** @type {ChainData} */
+        const prevData = await this._store.getChainData(header.prevHash);
+        if (!prevData || prevData.totalDifficulty <= 0) {
+            Log.w(NanoChain, 'Rejecting header - unknown predecessor');
             return NanoChain.ERR_ORPHAN;
         }
 
@@ -192,6 +203,7 @@ class NanoChain extends IBlockchain {
         /** @type {Block} */
         const predecessor = prevData.head;
         if (!(await header.isImmediateSuccessorOf(predecessor.header))) {
+            Log.w(NanoChain, 'Rejecting header - not a valid successor');
             return NanoChain.ERR_INVALID;
         }
 
@@ -199,29 +211,28 @@ class NanoChain extends IBlockchain {
         const interlink = await predecessor.getNextInterlink(header.target);
         const interlinkHash = await interlink.hash();
         if (!interlinkHash.equals(header.interlinkHash)) {
+            Log.w(NanoChain, 'Rejecting header - interlink verification failed');
             return NanoChain.ERR_INVALID;
         }
 
-        // Add to block index.
         const block = new Block(header, interlink);
-        this._blockIndex.put(hash, block);
-
         return this._pushBlockInternal(block, hash, prevData);
     }
 
     async _pushBlock(block) {
+        // Check if we already know this header/block.
         const hash = await block.hash();
-
-        // Check if we already know this block.
-        if (this._chainData.contains(hash)) {
+        const knownBlock = await this._store.getBlock(hash);
+        if (knownBlock) {
             return NanoChain.OK_KNOWN;
         }
 
         // TODO Verify difficulty
 
         // Retrieve the immediate predecessor.
-        const prevData = this._chainData.get(block.prevHash);
-        if (!prevData) {
+        /** @type {ChainData} */
+        const prevData = await this._store.getChainData(block.prevHash);
+        if (!prevData || prevData.totalDifficulty <= 0) {
             return NanoChain.ERR_ORPHAN;
         }
 
@@ -233,12 +244,12 @@ class NanoChain extends IBlockchain {
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
         const totalWork = prevData.totalWork + BlockUtils.realDifficulty(blockHash);
         const chainData = new ChainData(block, totalDifficulty, totalWork);
-        this._chainData.put(blockHash, chainData);
 
         // Check if the block extends our current main chain.
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
             chainData.onMainChain = true;
+            await this._store.putChainData(blockHash, chainData);
 
             this._mainChain = chainData;
             this._headHash = blockHash;
@@ -262,6 +273,8 @@ class NanoChain extends IBlockchain {
 
         // Otherwise, we are creating/extending a fork. Store chain data.
         Log.v(NanoChain, `Creating/extending fork with block ${blockHash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
+        await this._store.putChainData(blockHash, chainData);
+
         return NanoChain.OK_FORKED;
     }
 
@@ -278,14 +291,16 @@ class NanoChain extends IBlockchain {
         // Walk up the fork chain until we find a block that is part of the main chain.
         // Store the chain along the way.
         const forkChain = [];
+        const forkHashes = [];
 
         let curData = chainData;
         let curHash = blockHash;
         while (!curData.onMainChain) {
             forkChain.push(curData);
+            forkHashes.push(curHash);
 
             curHash = curData.head.prevHash;
-            curData = await this._chainData.get(curHash); // eslint-disable-line no-await-in-loop
+            curData = await this._store.getChainData(curHash); // eslint-disable-line no-await-in-loop
             Assert.that(!!curData, 'Failed to find fork predecessor while rebranching');
         }
 
@@ -296,27 +311,22 @@ class NanoChain extends IBlockchain {
         let headData = this._mainChain;
         while (!headHash.equals(curHash)) {
             headData.onMainChain = false;
+            await this._store.putChainData(headHash, headData);
 
             headHash = headData.head.prevHash;
-            headData = this._chainData.get(headHash);
+            headData = await this._store.getChainData(headHash);
             Assert.that(!!headData, 'Failed to find main chain predecessor while rebranching');
         }
 
         // Set onMainChain flag on the fork.
-        for (const forkData of forkChain) {
+        for (let i = forkChain.length - 1; i >= 0; i--) {
+            const forkData = forkChain[i];
             forkData.onMainChain = true;
+            await this._store.putChainData(forkHashes[i], forkData);
         }
 
         this._mainChain = chainData;
         this._headHash = blockHash;
-    }
-
-    /**
-     * @param {Hash} hash
-     * @returns {?Block}
-     */
-    getBlock(hash) {
-        return this._blockIndex.get(hash);
     }
 
     /** @type {Block} */

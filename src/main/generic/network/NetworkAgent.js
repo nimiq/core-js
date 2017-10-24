@@ -149,7 +149,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
-        Log.d(NetworkAgent, `[VERSION] ${msg.peerAddress} ${msg.headHash.toBase64()}`);
+        Log.d(NetworkAgent, `[VERSION] address=${msg.peerAddress}, headHash=${msg.headHash.toBase64()}, services=${msg.peerAddress.services}`);
 
         const now = Date.now();
 

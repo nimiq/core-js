@@ -137,7 +137,7 @@ class TestBlockchain extends FullChain {
 
     static async createVolatileTest(numBlocks, numUsers = 2) {
         const accounts = await Accounts.createVolatile();
-        const store = FullChainStore.createVolatile();
+        const store = ChainDataStore.createVolatile();
         const users = await TestBlockchain.getUsers(numUsers);
         const testBlockchain = await new TestBlockchain(store, accounts, users);
 

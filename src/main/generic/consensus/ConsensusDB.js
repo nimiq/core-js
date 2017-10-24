@@ -24,7 +24,7 @@ class ConsensusDB extends JDB.JungleDB {
     async _init() {
         // Initialize object stores.
         AccountsTreeStore.initPersistent(this);
-        FullChainStore.initPersistent(this);
+        ChainDataStore.initPersistent(this);
 
         // Establish connection to database.
         await this.connect();

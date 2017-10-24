@@ -68,7 +68,6 @@ class FullConsensusAgent extends Observable {
     }
 
     /**
-     * 
      * @param {Block} block
      * @return {Promise}
      */
@@ -126,12 +125,16 @@ class FullConsensusAgent extends Observable {
             return;
         }
 
+        // We only sync with other full nodes.
+        if (!Services.isFullNode(this._peer.peerAddress.services)) {
+            this._syncFinished();
+            return;
+        }
+
         // If we know the peer's head block, there is nothing more to be learned from this peer.
         const head = await this._blockchain.getBlock(this._peer.headHash, /*includeForks*/ true);
         if (head) {
-            this._syncing = false;
-            this._synced = true;
-            this.fire('sync');
+            this._syncFinished();
             return;
         }
 
@@ -150,6 +153,12 @@ class FullConsensusAgent extends Observable {
         // We don't know the peer's head block, request blocks from it.
         this._lastChainHeight = this._blockchain.height;
         this._requestBlocks();
+    }
+
+    _syncFinished() {
+        this._syncing = false;
+        this._synced = true;
+        this.fire('sync');
     }
 
     async _requestBlocks() {

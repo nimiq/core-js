@@ -1,27 +1,27 @@
-class FullChainStore {
+class ChainDataStore {
     /**
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const store = jdb.createObjectStore('FullChain', new FullChainStoreCodec());
-        FullChainStore._createIndexes(store);
+        const store = jdb.createObjectStore('FullChain', new ChainDataStoreCodec());
+        ChainDataStore._createIndexes(store);
     }
 
     /**
      * @param {JungleDB} jdb
-     * @returns {FullChainStore}
+     * @returns {ChainDataStore}
      */
     static getPersistent(jdb) {
-        return new FullChainStore(jdb.getObjectStore('FullChain'));
+        return new ChainDataStore(jdb.getObjectStore('FullChain'));
     }
 
     /**
-     * @returns {FullChainStore}
+     * @returns {ChainDataStore}
      */
     static createVolatile() {
         const store = JDB.JungleDB.createVolatileObjectStore();
-        FullChainStore._createIndexes(store);
-        return new FullChainStore(store);
+        ChainDataStore._createIndexes(store);
+        return new ChainDataStore(store);
     }
 
     /**
@@ -116,11 +116,11 @@ class FullChainStore {
     }
 
     /**
-     * @returns {FullChainStore}
+     * @returns {ChainDataStore}
      */
     transaction() {
         const tx = this._store.transaction();
-        return new FullChainStore(tx);
+        return new ChainDataStore(tx);
     }
 
     /**
@@ -136,13 +136,20 @@ class FullChainStore {
     abort() {
         return this._store.abort();
     }
+
+    /**
+     * @returns {Promise}
+     */
+    truncate() {
+        return this._store.truncate();
+    }
 }
-Class.register(FullChainStore);
+Class.register(ChainDataStore);
 
 /**
  * @implements {ICodec}
  */
-class FullChainStoreCodec {
+class ChainDataStoreCodec {
     /**
      * @param {*} obj The object to encode before storing it.
      * @returns {*} Encoded object.

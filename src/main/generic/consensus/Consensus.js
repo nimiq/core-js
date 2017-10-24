@@ -1,5 +1,8 @@
 class Consensus {
     static async full() {
+        Services.configureServices(Services.FULL);
+        Services.configureServiceMask(Services.FULL);
+
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.get();
         /** @type {Accounts} */
@@ -15,8 +18,11 @@ class Consensus {
     }
 
     static async nano() {
+        Services.configureServices(Services.NANO);
+        Services.configureServiceMask(Services.NANO | Services.LIGHT | Services.FULL);
+
         /** @type {NanoChain} */
-        const blockchain = new NanoChain();
+        const blockchain = await new NanoChain();
         /** @type {Mempool} */
         const mempool = null; // TODO
         /** @type {Network} */

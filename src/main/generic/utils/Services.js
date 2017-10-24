@@ -1,21 +1,29 @@
 class Services {
-    // XXX Temporary stub, needs to be configurable later on.
     static myServices() {
-        // Needs to be != 0 in order to be discoverable by peers.
-        return Services.DEFAULT;
+        if (!Services._myServices) throw new Error('Services are not configured');
+        return Services._myServices;
     }
 
     // Used for filtering peer addresses by services.
     static myServiceMask() {
-        return 0xffffffff;
+        if (!Services._myServiceMask) throw new Error('ServiceMask is not configured');
+        return Services._myServiceMask;
+    }
+
+    static configureServices(services) {
+        Services._myServices = services;
+    }
+
+    static configureServiceMask(serviceMask) {
+        Services._myServiceMask = serviceMask;
     }
 
     static isFullNode(services) {
-        // TODO
-        //return services & Services.FULL !== 0;
-        return true;
+        return (services & Services.FULL) !== 0;
     }
 }
-Services.DEFAULT = 1;
-Services.FULL = 2;
+Services.NANO   = 1;
+Services.LIGHT  = 2;
+Services.FULL   = 4;
+Services.INDEX  = 8;
 Class.register(Services);
