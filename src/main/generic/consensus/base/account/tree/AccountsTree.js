@@ -405,19 +405,10 @@ class AccountsTree extends Observable {
      * @returns {Promise.<AccountsTreeChunk>}
      */
     async getChunk(startPrefix, size) {
-        const rootNode = await this._store.getRootNode();
-        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
-
-        const prefixes = [];
-        for (const address of addresses) {
-            prefixes.push(address.toHex());
-        }
-        // We sort the addresses to simplify traversal in post order (leftmost addresses first).
-        prefixes.sort();
-
-        const nodes = [];
-        await this._getAccountsProof(rootNode, prefixes, nodes);
-        return new AccountsProof(nodes);
+        const chunk = await this._store.getTerminalNodes(startPrefix, size);
+        const lastNode = chunk.pop();
+        const proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
+        return new AccountsTreeChunk(nodes, proof);
     }
 
     /**

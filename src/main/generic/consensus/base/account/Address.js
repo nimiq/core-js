@@ -70,4 +70,5 @@ class Address extends Primitive {
     }
 }
 Address.SERIALIZED_SIZE = 20;
+Address.HEX_SIZE = 40;
 Class.register(Address);

@@ -68,6 +68,29 @@ class AccountsTreeStore {
     }
 
     /**
+     * @param startPrefix This prefix will *not* be included.
+     * @param size
+     * @returns {Promise.<Array.<AccountsTreeNode>>}
+     */
+    async getTerminalNodes(startPrefix, size) {
+        const relevantKeys = [];
+        await this._store.keyStream(key => {
+            if (key.length === Address.HEX_SIZE) {
+                relevantKeys.push(key);
+                if (relevantKeys.length === size) {
+                    return false;
+                }
+            }
+            return true;
+        }, true, JDB.KeyRange.lowerBound(startPrefix, true));
+        const nodes = [];
+        for (const key of relevantKeys) {
+            nodes.push(this._store.get(key));
+        }
+        return Promise.all(nodes);
+    }
+
+    /**
      * @returns {AccountsTreeStore}
      */
     transaction() {
