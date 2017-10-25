@@ -1,4 +1,6 @@
 # Nimiq Core API documentation
+**This documentation describes the API of the [Betanet](https://github.com/nimiq-network/core/tree/betanet) branch.**
+
 All Nimiq Core classes reside in the `Nimiq.` namespace.
 
 ## Nimiq
