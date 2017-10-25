@@ -42,18 +42,20 @@ class Nimiq {
         if (Nimiq._loaded) return Promise.resolve();
         Nimiq._loadPromise = Nimiq._loadPromise ||
             new Promise(async (resolve, error) => {
-                let script = 'web.js';
-
-                if (!Nimiq._hasNativeClassSupport() || !Nimiq._hasProperScoping()) {
-                    console.error('Unsupported browser');
-                    error(Nimiq.ERR_UNSUPPORTED);
-                    return;
-                } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                    script = 'web-babel.js';
-                    console.warn('Client lacks native support for async');
-                } else if (!Nimiq._hasProperCryptoApi() || !(await Nimiq._hasSupportForP256())) {
-                    script = 'web-crypto.js';
-                    console.warn('Client lacks native support for crypto routines');
+                if (!Nimiq._script) {
+                    if (!Nimiq._hasNativeClassSupport() || !Nimiq._hasProperScoping()) {
+                        console.error('Unsupported browser');
+                        error(Nimiq.ERR_UNSUPPORTED);
+                        return;
+                    } else if (!Nimiq._hasAsyncAwaitSupport()) {
+                        Nimiq.script = 'web-babel.js';
+                        console.warn('Client lacks native support for async');
+                    } else if (!Nimiq._hasProperCryptoApi() || !(await Nimiq._hasSupportForP256())) {
+                        Nimiq.script = 'web-crypto.js';
+                        console.warn('Client lacks native support for crypto routines');
+                    } else {
+                        Nimiq._script = 'web.js';
+                    }
                 }
 
                 if (!path) {
@@ -64,6 +66,9 @@ class Nimiq {
                         path = './';
                     }
                 }
+                
+                Nimiq._path = path;
+                Nimiq._fullScript = Nimiq._path + Nimiq._script;
 
                 Nimiq._onload = () => {
                     if (!Nimiq._loaded) {
@@ -72,7 +77,7 @@ class Nimiq {
                         resolve();
                     }
                 };
-                Nimiq._loadScript(path + script, Nimiq._onload);
+                Nimiq._loadScript(Nimiq._fullScript, Nimiq._onload);
             });
         return Nimiq._loadPromise;
     }
@@ -94,6 +99,18 @@ class Nimiq {
         // Fire the loading
         head.appendChild(script);
     }
+
+    /**
+     * Load classes into scope (so you don't need to prefix them with `Nimiq.`).
+     * @param {Array.<string>} classes Array of class names to load in global scope
+     * @returns {Promise.<void>}
+     */
+    static async loadToScope(...classes) {
+        await Nimiq.load();
+        for(let clazz of classes) {
+            self[clazz] = Nimiq[clazz];
+        }
+    } 
 
     static _hasNativeClassSupport() {
         try {
@@ -193,6 +210,9 @@ if (!Nimiq._currentScript) {
 Nimiq.ERR_WAIT = -1;
 Nimiq.ERR_UNSUPPORTED = -2;
 Nimiq.ERR_UNKNOWN = -3;
+Nimiq._script = null;
+Nimiq._path = null;
+Nimiq._fullScript = null;
 Nimiq._onload = null;
 Nimiq._loaded = false;
 Nimiq._loadPromise = null;

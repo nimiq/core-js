@@ -1,8 +1,8 @@
 const Dummy = {};
 
-Dummy.hash1 = 'LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ='; // "hello"
-Dummy.hash2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V6YvaycThUE6hb0huQ='; // "hello2"
-Dummy.hash3 = 'R+pwzwiHK9tK+tNDKwHZY6x9Fl9rV1zXLvR0mPRFmpA='; // "hello3"
+Dummy.hash1 = 'Mk3PAn3UowqTLEQfNlol6GsXPe+kuOWJSCU0cbgbcs8='; // "hello"
+Dummy.hash2 = 'uLN8HQNONxx6O4NPlHanRutiJZ/5VYq3FbS/956/WOE='; // "hello2"
+Dummy.hash3 = '+CP2a6ECbn9xHqWqRxmDe7N4/GFbUFFrjava/3joFo4='; // "hello3"
 
 Dummy.publicKey1 = 'jzCk2TjUEw0aM5be3hUFxyt/dayfm4DRrX42iznzsQUXN0opCANPARUmEQ9iqKE4D/rTkY3EfT1ffEYisrA/rw==';
 Dummy.publicKey2 = 'cz/rSo+0DVR8U76kmDLUBORFQQ5PuHRt0BT6Zliiq0MkYUALY9mWCDPGSbuli4vORAdz7ALjTl8dXVbmMNfpAA==';
@@ -35,15 +35,15 @@ if (Block.GENESIS) {
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
-        new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
-        new Hash(BufferUtils.fromBase64('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE=')),
-        new Hash(BufferUtils.fromBase64('veUGZ9x69nRXrAYW7TbSb/JdqddRIpwWHZaJJJeRNM8=')),
+        new Hash(BufferUtils.fromBase64('DldRwCblQ7Loqy6wYJnaodHl30d3j3eH+qtFzfEv46g=')),
+        new Hash(BufferUtils.fromBase64('k4AUHqAUJqWw4q6vBfjd33+vYKQ3V1A207xjLsVM4Y0=')),
+        new Hash(BufferUtils.fromBase64('/+31rj1svG+aD6G3jfC5eSck2xPGMKNaY4MV8WIJ7wQ=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        162767),
+        16535),
     new BlockInterlink([]),
-    new BlockBody(new Address(BufferUtils.fromBase64('ySpv9NQBK2YgycXIfMH8Mr+JfaM=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('byB0sDmlEREv7D1XbfuPm+ThcHg=')), [])
 );
 // Store hash for synchronous access
 Block.GENESIS.hash().then(hash => {

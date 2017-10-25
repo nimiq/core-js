@@ -17,7 +17,8 @@ module.exports = function (config) {
         files: [
             'dist/web-crypto.js',
             'src/test/specs/**/Dummy.spec.js',
-            'src/test/specs/**/*.spec.js'
+            'src/test/specs/**/*.spec.js',
+            { pattern: 'dist/worker*', included: false }
         ],
 
 

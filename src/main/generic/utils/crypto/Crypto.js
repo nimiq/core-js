@@ -268,9 +268,38 @@ class Crypto {
     //     }
     // }
 
-    // Light hash implementation using SHA-256 with WebCrypto API
+    /**
+     * @returns {Promise.<CryptoWorker>}
+     * @private
+     */
+    static async _cryptoWorker() {
+        if (Crypto._cryptoWorkerInstance) {
+            return Crypto._cryptoWorkerInstance;
+        }
+        const tempInstance = await IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+        if (Crypto._cryptoWorkerInstance) {
+            tempInstance.destroy();
+        } else {
+            Crypto._cryptoWorkerInstance = tempInstance;
+        }
+        return Crypto._cryptoWorkerInstance;
+    }
+
+    // Light hash implementation using blake2b via WebAssembly WebWorker
     static async hashLight(arr) {
-        return new Uint8Array(await Crypto.lib.digest('SHA-256', arr));
+        const worker = await Crypto._cryptoWorker();
+        return worker.computeLightHash(arr);
+    }
+
+    // Light hash implementation using SHA-256 with WebCrypto API
+    // static async hashLight(arr) {
+    //     return new Uint8Array(await Crypto.lib.digest('SHA-256', arr));
+    // }
+
+    // Hard hash implementation using Argon2 via WebAssembly WebWorker
+    static async hashHard(arr) {
+        const worker = await Crypto._cryptoWorker();
+        return worker.computeHardHash(arr);
     }
 
     // Hard hash implementation using double light hash
@@ -279,17 +308,17 @@ class Crypto {
     //}
 
     // Hard hash implementation using light hash
-    static async hashHard(arr) {
-        if (Crypto.lib._nimiq_callDigestDelayedWhenMining) {
-            return await new Promise((resolve, error) => {
-                window.setTimeout(() => {
-                    Crypto.hashLight(arr).then(resolve);
-                });
-            });
-        } else {
-            return Crypto.hashLight(arr);
-        }
-    }
+    // static async hashHard(arr) {
+    //     if (Crypto.lib._nimiq_callDigestDelayedWhenMining) {
+    //         return await new Promise((resolve, error) => {
+    //             window.setTimeout(() => {
+    //                 Crypto.hashLight(arr).then(resolve);
+    //             });
+    //         });
+    //     } else {
+    //         return Crypto.hashLight(arr);
+    //     }
+    // }
 
     static get hashSize() {
         return 32;
@@ -299,4 +328,7 @@ class Crypto {
         return Uint8Array;
     }
 }
+
+/** @type {CryptoWorker} */
+Crypto._cryptoWorkerInstance = null;
 Class.register(Crypto);

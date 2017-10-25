@@ -276,6 +276,7 @@ class TestBlockchain extends FullChain {
     }
 
 }
+
 Class.register(TestBlockchain);
 TestBlockchain.MINE_ON_DEMAND = false;
 
@@ -535,4 +536,26 @@ TestBlockchain.NONCES = {
     'eq1Oxb7C1WV0uzwTXuX1w4fX7cuqZrpw9otEDBHc8ps=': 50155,
     'TmzuKXLWNrXD0D1kKHV926c65O+PPhgJunf1D51I0WQ=': 56571,
     'jTKL/OEyJ8Fa0juEJTagas2/Xv2hct1p1TDlm5vo5b0=': 3301
+    'OyXbu0DX1PVtNpShtMyEdbtY6Y4tcOWMyv5SwOkqniE=': 79733,
+    'KmL8AWsRRepRCnUEnbjn5E5Iofv903qcWIkM64RTS88=': 29523,
+    '9wltPuUDhlztlDcAjjoJxiVpljpATQGSC9YpL7xlAnU=': 8203,
+    'mw9Je3VRjPA3ubr3BmDagBGlcGjpIXiZ3OBV23wE+3w=': 21449,
+    'xhNghjr1zHSXltKZWL9eOU9xcudJgiYOIPQPVXC+3TU=': 111849,
+    '1Y2I1GlpKMlTtSlFssgFwL7zESSjI2JVNLgD4TzCok8=': 188880,
+    'iwT0XaqwPDhilk4rz2uA0woaPjdubXe/VgVfVnzHxAA=': 48075,
+    'nvASY3piKFM/i24mVVi2Tw0OeFqq4utI/XRNDP0sf+I=': 318801,
+    'HYAM6iZNCIFIr03q2c9yZiUZNUChatpZN4+u8cVgHK4=': 84127,
+    'LoIf/uIb9LEzueYBGRFVB1/NoZD8QcmeI3+mj6kyuio=': 10722,
+    'A/H2NznezBG4T4hAHZTFr28yCLhvUidAaD6eOhVJLo0=': 79733,
+    '0BGIfk8gBtYkSeYcbz4WMr++YeVZvjqPL+Gp1epYWgQ=': 7973,
+    'bFRLOIx3T60yqyZJk1MK6n2RI5s8f1tVLUdpCmJ+g+w=': 34971,
+    'H5nVrK3wHzNpWqQOK5rcF7hqVRM60nlbsl38gwKLDPA=': 89178,
+    'u+UtjU09ewOYDPltjCiPTUsSxb6fXR8b8UIgsiIIw+U=': 95517,
+    'kOvIM6q1RuAXf/Eczj2io0bA8CbW/t2m6mUR6XN57+s=': 65581,
+    'V/cfVULCXoLpOdf/8X0Mv6ZMAS3siRpHypRsu/3F3Y8=': 5333,
+    '6iGVy37VC9gP2bvLZ4fGepJ8yeZx74vbv/sabqRl8q4=': 5997,
+    'rg/rCyaxb7CDumUaKflXJ4KXg/ilHSeNOW8dwjom4Z8=': 5699,
+    'EwreX4jirBsjuH0uxQeyhdh/EUq3LIsG2zdiGOylhrA=': 39493,
+    '5ytwUl8C4xMqr5TdJjTXaEUquLS1g5OczKBlLhKWLmc=': 50743,
+    '2EC91Zm9zcglcDHd0YDccSJjxqNIL7DPQd3d8fNXHkc=': 28235
 };

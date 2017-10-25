@@ -5,8 +5,7 @@ describe('Crypto', () => {
             const keyPair = await Crypto.keyPairGenerate();
             expect(Crypto.publicKeySerialize(Crypto.keyPairPublic(keyPair)).byteLength).toEqual(Crypto.publicKeySize);
             expect(Crypto.privateKeySerialize(Crypto.keyPairPrivate(keyPair)).byteLength).toEqual(Crypto.privateKeySize);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can serialize, unserialize keys and use them afterwards', (done) => {
@@ -31,9 +30,7 @@ describe('Crypto', () => {
 
             const sign2 = await Crypto.signatureCreate(privateUnserialized, data);
             expect(sign2.length).toBe(sign.length);
-
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can derive a functional key pair from private key', (done) => {
@@ -42,25 +39,18 @@ describe('Crypto', () => {
             const data = new Uint8Array([1, 2, 3]);
             const keyPair2 = Crypto.keyPairDerive(Crypto.keyPairPrivate(keyPair));
 
-            try {
-                const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), data);
-                const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
-                expect(verify).toBe(true, 'can verify original with original key');
-                const verify2 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign);
-                expect(verify2).toBe(true, 'can verify original with derived key');
+            const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), data);
+            const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
+            expect(verify).toBe(true, 'can verify original with original key');
+            const verify2 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign);
+            expect(verify2).toBe(true, 'can verify original with derived key');
 
-                const sign2 = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair2), data);
-                const verify3 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign2);
-                expect(verify3).toBe(true, 'can verify derived with original key');
-                const verify4 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign2);
-                expect(verify4).toBe(true, 'can verify derived with derived key');
-            } catch (e) {
-                console.log(e);
-                expect(false).toBeTruthy();
-            }
-
-            done();
-        })();
+            const sign2 = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair2), data);
+            const verify3 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign2);
+            expect(verify3).toBe(true, 'can verify derived with original key');
+            const verify4 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign2);
+            expect(verify4).toBe(true, 'can verify derived with derived key');
+        })().then(done, done.fail);
     });
 
     it('can verify RFC 6979 test vectors', (done) => {
@@ -112,9 +102,7 @@ describe('Crypto', () => {
                 const s = deHex('019F4113742A2B14BD25926B49C649155F267E60D3814B4C0CC84250E46F0083');
                 await test(message, k, r, s);
             }
-
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can verify custom signature set', (done) => {
@@ -135,8 +123,7 @@ describe('Crypto', () => {
             for (const entry of testData) {
                 expect(await Crypto.signatureVerify(Crypto.publicKeyUnserialize(BufferUtils.fromBase64(entry[1])), BufferUtils.fromBase64(entry[2]), Crypto.signatureUnserialize(BufferUtils.fromBase64(entry[0])))).toBeTruthy();
             }
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can sign and verify data', (done) => {
@@ -147,8 +134,7 @@ describe('Crypto', () => {
             const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), dataToSign);
             const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), dataToSign, signature);
             expect(proof).toEqual(true);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can verify serialized signature', (done) => {
@@ -158,8 +144,7 @@ describe('Crypto', () => {
             const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), dataToSign);
             const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), dataToSign, Crypto.signatureUnserialize(Crypto.signatureSerialize(signature)));
             expect(proof).toEqual(true);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('can detect wrong signatures', (done) => {
@@ -170,17 +155,15 @@ describe('Crypto', () => {
             const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), dataToSign);
             const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), wrongData, signature);
             expect(proof).toEqual(false);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
-    it('can hash data with sha256', (done) => {
+    it('can hash data with blake2b', (done) => {
         (async function () {
             const dataToHash = BufferUtils.fromAscii('hello');
             const expectedHash = Dummy.hash1;
             const hash = await Crypto.hashLight(dataToHash);
             expect(BufferUtils.toBase64(hash)).toBe(expectedHash);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 });

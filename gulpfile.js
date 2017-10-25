@@ -8,7 +8,7 @@ const jasmine = require('gulp-jasmine-livereload-task');
 const merge = require('merge2');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
-const uglify = require('gulp-uglify');
+const uglify = require('gulp-uglify-es').default;
 const util = require('gulp-util');
 
 const sources = {
@@ -136,16 +136,33 @@ const sources = {
         './src/main/generic/miner/Miner.js',
         './src/main/generic/wallet/WalletStore.js',
         './src/main/generic/wallet/Wallet.js',
-        './src/main/generic/Core.js'
+        './src/main/generic/Core.js',
+        './src/main/generic/utils/IWorker.js',
+        './src/main/generic/utils/crypto/CryptoWorker.js',
+        './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
+        './src/main/generic/miner/MinerWorker.js',
+        './src/main/generic/miner/MinerWorkerImpl.js'
     ],
     test: [
         'src/test/specs/**/*.spec.js'
+    ],
+    worker: [
+        './src/main/platform/browser/Class.js',
+        './src/main/platform/browser/utils/LogNative.js',
+        './src/main/generic/utils/Log.js',
+        './src/main/generic/utils/IWorker.js',
+        './src/main/generic/utils/crypto/*.js',
+        './src/main/generic/utils/number/*.js',
+        './src/main/generic/utils/buffer/*.js',
+        './src/main/generic/miner/MinerWorker*.js'
     ],
     sectest: [
         'sectests/**/*.sectest.js'
     ],
     all: [
         './src/main/**/*.js',
+        '!./src/main/platform/browser/index.prefix.js',
+        '!./src/main/platform/browser/index.suffix.js',
         './src/test/**/*.js',
         '!./src/**/node_modules/**/*.js'
     ]
@@ -163,6 +180,28 @@ const babel_loader = {
         'polyfill': false
     }]],
     presets: ['env']
+};
+
+const uglify_config = {
+    ie8: true,
+    keep_fnames: true,
+    ecma: 8,
+    mangle: {
+        keep_classnames: true,
+        keep_fnames: true,
+        safari10: true
+    }
+};
+
+const uglify_babel = {
+    ie8: true,
+    keep_fnames: true,
+    ecma: 5,
+    mangle: {
+        keep_classnames: true,
+        keep_fnames: true,
+        safari10: true
+    }
 };
 
 gulp.task('build-web-babel', function () {
@@ -189,15 +228,15 @@ gulp.task('build-web-babel', function () {
             ]
         }).bundle()
             .pipe(source('babel.js'))
-            .pipe(buffer())
-            .pipe(uglify()),
+            .pipe(buffer()),
         gulp.src(dependencies // external dependencies
-            .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+            .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
             .pipe(sourcemaps.init({loadMaps: true}))
             .pipe(concat('web.js'))
             .pipe(babel(babel_config)))
         .pipe(sourcemaps.init())
         .pipe(concat('web-babel.js'))
+        .pipe(uglify(uglify_babel))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
@@ -211,23 +250,34 @@ gulp.task('build-web-crypto', function () {
             ]
         }).bundle()
             .pipe(source('crypto.js'))
-            .pipe(buffer())
-            .pipe(uglify()),
+            .pipe(buffer()),
         gulp.src(dependencies // external dependencies
-            .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+            .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
             .pipe(sourcemaps.init({loadMaps: true}))
             .pipe(concat('web.js')))
         .pipe(sourcemaps.init())
         .pipe(concat('web-crypto.js'))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-web', function () {
+gulp.task('build-worker', function () {
+    return gulp.src(sources.worker)
+        .pipe(sourcemaps.init())
+        .pipe(concat('worker.js'))
+        .pipe(uglify())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'))
+        .pipe(connect.reload());
+});
+
+gulp.task('build-web', ['build-worker'], function () {
     return gulp.src(dependencies // external dependencies
-        .concat(['./src/loader/prefix.js.template']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/loader/suffix.js.template']), { base: '.' })
+        .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
@@ -245,12 +295,12 @@ gulp.task('build-loader', function () {
         }).bundle()
             .pipe(source('babel-runtime.js'))
             .pipe(buffer())
-            .pipe(sourcemaps.init())
-            .pipe(uglify()),
+            .pipe(sourcemaps.init()),
         gulp.src(['./src/main/platform/browser/utils/WindowDetector.js', './src/main/platform/browser/Nimiq.js'])
             .pipe(sourcemaps.init())
             .pipe(babel(babel_loader)))
         .pipe(concat('nimiq.js'))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
@@ -259,6 +309,7 @@ gulp.task('build-node', function () {
     return gulp.src(['./src/main/platform/nodejs/index.prefix.js'].concat(sources.platform.node).concat(sources.generic).concat(['./src/main/platform/nodejs/index.suffix.js']))
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });

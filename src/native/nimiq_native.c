@@ -1,0 +1,94 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <byteswap.h>
+#include "nimiq_native.h"
+
+typedef uint64_t* uint256;
+
+uint256 uint256_new() {
+    uint256 out = malloc(32);
+    memset(out, 0, 32);
+    return out;
+}
+
+void uint256_shift_left(uint256 value, uint8_t shift) {
+    while (shift > 64) {
+        for(int i = 0; i < 3; ++i) value[i] = value[i+1];
+        value[3] = 0;
+        shift -= 64;
+    }
+    if (shift == 0) return;
+    for(int i = 0; i < 3; ++i) {
+        value[i] <<= shift;
+        value[i] |= value[i+1] >> (64-shift);
+    }
+    value[3] <<= shift;
+    return;
+}
+
+void uint256_set(uint256 out, uint64_t value) {
+    out[3] = value;
+}
+
+void uint256_set_compact(uint256 out, uint32_t compact) {
+    uint256_set(out, compact & 0xffffff);
+    uint256_shift_left(out, (8 * ((compact >> 24) - 3)));
+}
+
+uint64_t htonll_test = 42;
+uint64_t htonll(uint64_t in) {
+    if(*(uint8_t*)&htonll_test == 42) {
+        return bswap_64(in);
+    }
+    return in;
+}
+
+void uint256_set_bytes(uint256 out, uint8_t* bytes) {
+    uint64_t* in = (uint64_t*)bytes;
+    for(int i = 0; i < 4; ++i) out[i] = htonll(in[i]);
+}
+
+int8_t uint256_compare(uint256 left, uint256 right) {
+    for(int i = 0; i < 4; ++i) {
+        if (left[i] < right[i]) return -1;
+        if (left[i] > right[i]) return 1;
+    }
+    return 0;
+}
+
+int nimiq_light_hash(void *out, const void *in, const size_t inlen) {
+    return blake2b(out, 32, in, inlen, NULL, 0);
+}
+
+int nimiq_hard_hash(void *out, const void *in, const size_t inlen, const uint32_t m_cost) {
+    return argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32);
+}
+
+uint32_t nimiq_hard_hash_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost) {
+    uint32_t* noncer = (uint32_t*)(((uint8_t*)in)+inlen-4);
+    uint256 target = uint256_new(), hash = uint256_new();
+    uint256_set_compact(target, compact);
+    for(noncer[0] = min_nonce; noncer[0] < max_nonce; noncer[0]++) {
+        nimiq_hard_hash(out, in, inlen, m_cost);
+        uint256_set_bytes(hash, out);
+        if (hash[0] < 0xffffffffffffll) {
+            printf("Temp:   %.16llx%.16llx%.16llx%.16llx\n", hash[0], hash[1], hash[2], hash[3]);
+        }
+        if (uint256_compare(target, hash) > 0) {
+            printf("Result: %.16llx%.16llx%.16llx%.16llx\n", hash[0], hash[1], hash[2], hash[3]);
+            break;
+        }
+    }
+    free(hash);
+    free(target);
+    return noncer[0];
+}
+
+int nimiq_hard_verify(const void *hash, const void *in, const size_t inlen, const uint32_t m_cost) {
+    void* out = malloc(32);
+    nimiq_hard_hash(out, in, inlen, m_cost);
+    int res = memcmp(hash, out, 32);
+    free(out);
+    return res;
+}
