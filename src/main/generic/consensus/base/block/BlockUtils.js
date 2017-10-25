@@ -121,5 +121,46 @@ class BlockUtils {
     static isValidTarget(target) {
         return target >= 1 && target <= Policy.BLOCK_TARGET_MAX;
     }
+
+    /**
+     * @param {BlockHeader} headBlock
+     * @param {BlockHeader} tailBlock
+     * @returns {number}
+     */
+    static getNextTarget(headBlock, tailBlock) {
+        Assert.that((headBlock.height - tailBlock.height === Policy.DIFFICULTY_BLOCK_WINDOW)
+            || (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW && tailBlock.height === 1),
+            `Tail and head block must be ${Policy.DIFFICULTY_BLOCK_WINDOW} blocks apart`);
+
+        let actualTime = headBlock.timestamp - tailBlock.timestamp;
+
+        // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate
+        // a sliding window that starts before the genesis block.
+        if (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
+            actualTime += (Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1) * Policy.BLOCK_TIME;
+        }
+
+        // Compute the target adjustment factor.
+        const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
+        let adjustment = actualTime / expectedTime;
+
+        // Dampen the adjustment.
+        adjustment = (adjustment - 1) * 0.5 + 1;
+
+        // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
+        adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+        adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
+
+        // Compute the next target.
+        const currentTarget = headBlock.target;
+        let nextTarget = currentTarget * adjustment;
+
+        // Make sure the target is below or equal the maximum allowed target (difficulty 1).
+        // Also enforce a minimum target of 1.
+        nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+        nextTarget = Math.max(nextTarget, 1);
+
+        return nextTarget;
+    }
 }
 Class.register(BlockUtils);

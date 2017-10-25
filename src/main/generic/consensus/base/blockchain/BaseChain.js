@@ -47,6 +47,7 @@ class BaseChain extends IBlockchain {
         // Retrieve the timestamp of the block that appears DIFFICULTY_BLOCK_WINDOW blocks before the given block in the chain.
         // The block might not be on the main chain.
         const startHeight = Math.max(block.height - Policy.DIFFICULTY_BLOCK_WINDOW, 1);
+        /** @type {Block} */
         let startBlock;
         if (chainData.onMainChain) {
             startBlock = await this._store.getBlockAt(startHeight);
@@ -54,6 +55,10 @@ class BaseChain extends IBlockchain {
             let prevData = chainData;
             for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW && !prevData.onMainChain; i++) {
                 prevData = await this._store.getChainData(prevData.head.prevHash);
+                if (!prevData) {
+                    // Not enough blocks are available to compute the next target, fail.
+                    return -1;
+                }
             }
 
             if (prevData.onMainChain && prevData.head.height > startHeight) {
@@ -63,38 +68,12 @@ class BaseChain extends IBlockchain {
             }
         }
 
-        // Compute the actual time it took to mine the last DIFFICULTY_BLOCK_WINDOW blocks.
-        // XXX Assert that the block is there.
-        Assert.that(!!startBlock, 'Corrupted store: Failed to load start block when computing next target');
-        let actualTime = block.timestamp - startBlock.timestamp;
-
-        // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate
-        // a sliding window that starts before the genesis block.
-        if (block.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
-            actualTime += (Policy.DIFFICULTY_BLOCK_WINDOW - block.height + 1) * Policy.BLOCK_TIME;
+        if (!startBlock) {
+            // Not enough blocks are available to compute the next target, fail.
+            return -1;
         }
 
-        // Compute the target adjustment factor.
-        const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
-        let adjustment = actualTime / expectedTime;
-
-        // Dampen the adjustment.
-        adjustment = (adjustment - 1) * 0.5 + 1;
-
-        // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
-        adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
-        adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
-
-        // Compute the next target.
-        const currentTarget = block.target;
-        let nextTarget = currentTarget * adjustment;
-
-        // Make sure the target is below or equal the maximum allowed target (difficulty 1).
-        // Also enforce a minimum target of 1.
-        nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
-        nextTarget = Math.max(nextTarget, 1);
-
-        return nextTarget;
+        return BlockUtils.getNextTarget(block.header, startBlock.header);
     }
 
 

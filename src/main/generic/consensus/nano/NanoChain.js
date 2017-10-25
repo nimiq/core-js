@@ -37,8 +37,6 @@ class NanoChain extends BaseChain {
      * @private
      */
     async _pushProof(proof) {
-        // TODO !!! verify difficulty !!!
-
         // Check that the proof is valid.
         if (!(await proof.verify())) {
             Log.w(NanoChain, 'Rejecting proof - verification failed');
@@ -139,6 +137,7 @@ class NanoChain extends BaseChain {
             await this._store.truncate();
 
             // Set the prefix head as the new chain head.
+            // TODO use the tail end of the dense suffix of the prefix instead.
             this._headHash = headHash;
             this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(headHash), true);
             await this._store.putChainData(headHash, this._mainChain);
@@ -158,6 +157,24 @@ class NanoChain extends BaseChain {
             const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
+    }
+
+    async _pushBlock(block) {
+        // Check if we already know this header/block.
+        const hash = await block.hash();
+        const knownBlock = await this._store.getBlock(hash);
+        if (knownBlock) {
+            return NanoChain.OK_KNOWN;
+        }
+
+        // Retrieve the immediate predecessor.
+        /** @type {ChainData} */
+        const prevData = await this._store.getChainData(block.prevHash);
+        if (!prevData || prevData.totalDifficulty <= 0) {
+            return NanoChain.ERR_ORPHAN;
+        }
+
+        return this._pushBlockInternal(block, hash, prevData);
     }
 
     /**
@@ -189,8 +206,6 @@ class NanoChain extends BaseChain {
             return NanoChain.ERR_INVALID;
         }
 
-        // TODO Verify difficulty
-
         // Retrieve the immediate predecessor.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(header.prevHash);
@@ -207,6 +222,17 @@ class NanoChain extends BaseChain {
             return NanoChain.ERR_INVALID;
         }
 
+        // Check that the difficulty is correct (if we can compute the next target)
+        const nextTarget = await this.getNextTarget(predecessor);
+        if (BlockUtils.isValidTarget(nextTarget)) {
+            if (header.nBits !== BlockUtils.targetToCompact(nextTarget)) {
+                Log.w(NanoChain, 'Rejecting header - difficulty mismatch');
+                return NanoChain.ERR_INVALID;
+            }
+        } else {
+            Log.w(NanoChain, 'Skipping difficulty verification - not enough blocks available');
+        }
+
         // Compute and verify interlink.
         const interlink = await predecessor.getNextInterlink(header.target);
         const interlinkHash = await interlink.hash();
@@ -216,26 +242,6 @@ class NanoChain extends BaseChain {
         }
 
         const block = new Block(header, interlink);
-        return this._pushBlockInternal(block, hash, prevData);
-    }
-
-    async _pushBlock(block) {
-        // Check if we already know this header/block.
-        const hash = await block.hash();
-        const knownBlock = await this._store.getBlock(hash);
-        if (knownBlock) {
-            return NanoChain.OK_KNOWN;
-        }
-
-        // TODO Verify difficulty
-
-        // Retrieve the immediate predecessor.
-        /** @type {ChainData} */
-        const prevData = await this._store.getChainData(block.prevHash);
-        if (!prevData || prevData.totalDifficulty <= 0) {
-            return NanoChain.ERR_ORPHAN;
-        }
-
         return this._pushBlockInternal(block, hash, prevData);
     }
 

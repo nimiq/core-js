@@ -140,6 +140,7 @@ class FullChain extends BaseChain {
 
         // Check that the difficulty is correct.
         const nextTarget = await this.getNextTarget(predecessor);
+        Assert.that(BlockUtils.isValidTarget(nextTarget), 'Failed to compute next target in FullChain');
         if (block.nBits !== BlockUtils.targetToCompact(nextTarget)) {
             Log.w(FullChain, 'Rejecting block - difficulty mismatch');
             return FullChain.ERR_INVALID;

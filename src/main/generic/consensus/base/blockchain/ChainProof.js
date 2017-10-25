@@ -50,7 +50,59 @@ class ChainProof {
             return false;
         }
 
+        // Verify the block targets where possible.
+        if (!(await this._verifyDifficulty())) {
+            return false;
+        }
+
         // Everything checks out.
+        return true;
+    }
+
+    /**
+     * @returns {Promise.<boolean>}
+     * @private
+     */
+    async _verifyDifficulty() {
+        // Extract the dense suffix of the prefix.
+        const denseSuffix = [this.prefix.head.header];
+        let head = this.prefix.head;
+        for (let i = this.prefix.length - 2; i >= 0; i--) {
+            const block = this.prefix.blocks[i];
+            const hash = await block.hash();
+            if (!hash.equals(head.prevHash)) {
+                break;
+            }
+
+            denseSuffix.push(block.header);
+            head = block;
+        }
+        denseSuffix.reverse();
+
+        /** Array.<BlockHeader> */
+        const denseChain = denseSuffix.concat(this.suffix.headers);
+        let headIndex = denseChain.length - 2;
+        let tailIndex = headIndex - Policy.DIFFICULTY_BLOCK_WINDOW;
+
+        while (tailIndex >= 0 && headIndex >= 0) {
+            const headBlock = denseChain[headIndex];
+            const tailBlock = denseChain[tailIndex];
+            const target = BlockUtils.getNextTarget(headBlock, tailBlock);
+            const nBits = BlockUtils.targetToCompact(target);
+
+            /** @type {BlockHeader} */
+            const checkBlock = denseChain[headIndex + 1];
+            if (checkBlock.nBits !== nBits) {
+                Log.w(ChainProof, `Block target mismatch: expected=${nBits}, got=${checkBlock.nBits}`);
+                return false;
+            }
+
+            --headIndex;
+            if (tailIndex !== 0 || tailBlock.height !== 1) {
+                --tailIndex;
+            }
+        }
+
         return true;
     }
 
