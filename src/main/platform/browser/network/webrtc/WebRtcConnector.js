@@ -191,7 +191,7 @@ class PeerConnector extends Observable {
     }
 
     _onDataChannel(event) {
-        const channel = event.channel || event.target;
+        const channel = new WebRtcDataChannel(event.channel || event.target);
 
         // There is no API to get the remote IP address. As a crude heuristic, we parse the IP address
         // from the last ICE candidate seen before the connection was established.

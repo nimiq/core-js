@@ -86,11 +86,14 @@ class NanoConsensus extends Observable {
 
             if (this._agents.length > 0) {
                 // Report consensus-established if we have at least one connected peer.
-                Log.d(NanoConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-                Log.d(NanoConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
+                // TODO !!! Check peer types (at least one full node, etc.) !!!
+                if (!this._established) {
+                    Log.d(NanoConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                    Log.d(NanoConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
-                this._established = true;
-                this.fire('established');
+                    this._established = true;
+                    this.fire('established');
+                }
             } else {
                 // We are not connected to any peers anymore. Report consensus-lost.
                 this._established = false;

@@ -131,10 +131,14 @@
             <hr/>
 
             <div class="info-block">
+                <strong>Peer address</strong>
+                <span id="netPeerAddress"></span>
+            </div>
+            <div class="info-block">
                 <strong>Peers</strong>
-                <span id="netPeerCount"></span>&nbsp;&nbsp;<small>(<span id="netPeerCountWs"></span> WS / <span
-                    id="netPeerCountRtc"></span> RTC)
-            </small>
+                <span id="netPeerCount"></span>
+                &nbsp;
+                <small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
             </div>
             <div class="info-block">
                 <strong>Received</strong>
@@ -203,6 +207,8 @@
             this._hdInterlink = document.querySelector('#hdInterlink');
 
             // Network
+            /** @type {HTMLElement} */
+            this._netPeerAddress = document.querySelector('#netPeerAddress');
             /** @type {HTMLElement} */
             this._netPeerCount = document.querySelector('#netPeerCount');
             /** @type {HTMLElement} */
@@ -344,6 +350,7 @@
         }
 
         _networkChanged() {
+            this._netPeerAddress.innerText = Nimiq.NetworkConfig.myPeerAddress();
             this._netPeerCount.innerText = $.network.peerCount;
             this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
             this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;

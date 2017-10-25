@@ -125,7 +125,7 @@ class NanoConsensusAgent extends Observable {
      * @private
      */
     async _onChainProof(msg) {
-        Log.d(NanoConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
+        Log.d(NanoConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof} (${msg.proof.serializedSize} bytes)`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
         if (!this._timers.timeoutExists('getChainProof')) {

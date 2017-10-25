@@ -84,11 +84,14 @@ class FullConsensus extends Observable {
 
             if (this._agents.length > 0) {
                 // Report consensus-established if we have at least one connected peer.
-                Log.d(Consensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-                Log.d(Consensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
+                // TODO !!! Check peer types (at least one full node, etc.) !!!
+                if (!this._established) {
+                    Log.d(FullConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                    Log.d(FullConsensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
 
-                this._established = true;
-                this.fire('established');
+                    this._established = true;
+                    this.fire('established');
+                }
             } else {
                 // We are not connected to any peers anymore. Report consensus-lost.
                 this._established = false;
@@ -98,7 +101,7 @@ class FullConsensus extends Observable {
             return;
         }
 
-        Log.v(Consensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
+        Log.v(FullConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
 
         this._syncing = true;
 

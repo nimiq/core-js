@@ -17,7 +17,6 @@ class PeerChannel extends Observable {
      * @private
      */
     _onMessage(rawMsg) {
-        Log.v(PeerChannel, `Received message of length ${rawMsg.byteLength} from ${this.peerAddress || this.netAddress}`);
         let msg;
         try {
             msg = MessageFactory.parse(rawMsg);

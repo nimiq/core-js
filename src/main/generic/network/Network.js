@@ -387,7 +387,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, headHash=${peer.headHash.toBase64()})`);
+        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
     }
 
     /**

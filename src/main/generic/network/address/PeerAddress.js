@@ -365,7 +365,7 @@ class DumbPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `${this._id}`;
+        return `dumb://${this._id}`;
     }
 
     /** @type {number} */

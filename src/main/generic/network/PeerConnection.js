@@ -58,7 +58,7 @@ class PeerConnection extends Observable {
             // Browser only
             // TODO FileReader is slow and this is ugly anyways. Improve!
             const reader = new FileReader();
-            reader.onloadend = () => this._onMessage(new Uint8Array(reader.result));
+            reader.onloadend = () => this._onMessage(reader.result);
             reader.readAsArrayBuffer(msg);
         }
     }

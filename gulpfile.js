@@ -24,8 +24,9 @@ const sources = {
             './src/main/platform/browser/network/NetworkConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcCertificate.js',
             './src/main/platform/browser/network/webrtc/WebRtcConfig.js',
-            './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
+            './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
+            './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
             './src/main/platform/browser/network/websocket/WebSocketConnector.js'
         ],
         node: [
