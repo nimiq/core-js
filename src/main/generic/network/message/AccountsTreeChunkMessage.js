@@ -1,4 +1,4 @@
-]class AccountsTreeChunkMessage extends Message {
+class AccountsTreeChunkMessage extends Message {
     /**
      * @param {Hash} blockHash
      * @param {AccountsTreeChunk} accountsTreeChunk
