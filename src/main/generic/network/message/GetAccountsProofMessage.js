@@ -1,11 +1,14 @@
 class GetAccountsProofMessage extends Message {
     /**
+     * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      */
-    constructor(addresses) {
+    constructor(blockHash, addresses) {
         super(Message.Type.GET_ACCOUNTS_PROOF);
+        if (!blockHash || !(blockHash instanceof Hash)) throw 'Malformed block hash';
         if (!addresses || !NumberUtils.isUint16(addresses.length)
             || addresses.some(it => !(it instanceof Address))) throw 'Malformed addresses';
+        this._blockHash = blockHash;
         /** @type {Array.<Address>} */
         this._addresses = addresses;
     }
@@ -16,12 +19,13 @@ class GetAccountsProofMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
+        const blockHash = Hash.unserialize(buf);
         const count = buf.readUint16();
         const addresses = [];
         for (let i = 0; i < count; i++) {
             addresses.push(Address.unserialize(buf));
         }
-        return new GetAccountsProofMessage(addresses);
+        return new GetAccountsProofMessage(blockHash, addresses);
     }
 
     /**
@@ -31,6 +35,7 @@ class GetAccountsProofMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
+        this._blockHash.serialize(buf);
         buf.writeUint16(this._addresses.length);
         for (const address of this._addresses) {
             address.serialize(buf);
@@ -42,6 +47,7 @@ class GetAccountsProofMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
+            + this._blockHash.serializedSize
             + /*count*/ 2
             + this._addresses.reduce((sum, address) => sum + address.serializedSize, 0);
     }
@@ -49,6 +55,11 @@ class GetAccountsProofMessage extends Message {
     /** @type {Array.<Address>} */
     get addresses() {
         return this._addresses;
+    }
+
+    /** @type {Hash} */
+    get blockHash() {
+        return this._blockHash;
     }
 }
 Class.register(GetAccountsProofMessage);

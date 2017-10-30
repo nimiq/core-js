@@ -48,6 +48,7 @@ class NanoConsensusAgent extends Observable {
 
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
+        peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
@@ -371,21 +372,23 @@ class NanoConsensusAgent extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Account>>}
      */
-    getAccounts(addresses) {
+    getAccounts(blockHash, addresses) {
         return this._synchronizer.push(() => {
-            return this._getAccounts(addresses);
+            return this._getAccounts(blockHash, addresses);
         });
     }
 
     /**
+     * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array<Account>>}
      * @private
      */
-    _getAccounts(addresses) {
+    _getAccounts(blockHash, addresses) {
         Assert.that(this._accountsRequest === null);
 
         Log.d(NanoConsensusAgent, `Requesting AccountsProof for ${addresses} from ${this._peer.peerAddress}`);
@@ -393,12 +396,13 @@ class NanoConsensusAgent extends Observable {
         return new Promise((resolve, reject) => {
             this._accountsRequest = {
                 addresses: addresses,
+                blockHash: blockHash,
                 resolve: resolve,
                 reject: reject
             };
 
             // Request AccountsProof from peer.
-            this._peer.channel.getAccountsProof(addresses);
+            this._peer.channel.getAccountsProof(blockHash, addresses);
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._timers.setTimeout('getAccountsProof', () => {
@@ -427,6 +431,7 @@ class NanoConsensusAgent extends Observable {
         this._timers.clearTimeout('getAccountsProof');
 
         const addresses = this._accountsRequest.addresses;
+        const blockHash = this._accountsRequest.blockHash;
         const resolve = this._accountsRequest.resolve;
         const reject = this._accountsRequest.reject;
 
@@ -436,7 +441,7 @@ class NanoConsensusAgent extends Observable {
         // Check that we know the reference block.
         // TODO Which blocks should be accept here?
         // XXX For now, we ONLY accept our head block. This will not work well in face of block propagation delays.
-        if (!this._blockchain.headHash.equals(msg.blockHash)) {
+        if (!blockHash.equals(msg.blockHash)) {
             Log.w(NanoConsensusAgent, `Received AccountsProof for block != head from ${this._peer.peerAddress}`);
             reject(new Error('Invalid reference block'));
             return;
@@ -454,7 +459,8 @@ class NanoConsensusAgent extends Observable {
 
         // Check that the proof root hash matches the accountsHash in the reference block.
         const rootHash = await proof.root();
-        if (!this._blockchain.head.accountsHash.equals(rootHash)) {
+        const block = await this._blockchain.getBlock(blockHash);
+        if (!block.accountsHash.equals(rootHash)) {
             Log.w(NanoConsensusAgent, `Invalid AccountsProof (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('AccountsProof root hash mismatch');
@@ -480,6 +486,32 @@ class NanoConsensusAgent extends Observable {
 
         // Return the retrieved accounts.
         resolve(accounts);
+    }
+
+    /**
+     * @param {AccountsRejectedMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onAccountsRejected(msg) {
+        Log.d(NanoConsensusAgent, `[ACCOUNTS-REJECTED] Received from ${this._peer.peerAddress}`);
+
+        // Check if we have requested an accounts proof, reject unsolicited ones.
+        if (!this._accountsRequest) {
+            Log.w(NanoConsensusAgent, `Unsolicited accounts rejected received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear the request timeout.
+        this._timers.clearTimeout('getAccountsProof');
+        const reject = this._accountsRequest.reject;
+
+        // Reset accountsRequest.
+        this._accountsRequest = null;
+
+
+        reject(new Error('Accounts request was rejected'));
     }
 
     /**

@@ -31,6 +31,11 @@ class FullChain extends BaseChain {
         this._store = store;
         this._accounts = accounts;
 
+        /** @type {HashMap.<Hash,Accounts>} */
+        this._snapshots = new HashMap();
+        /** @type {Array.<Hash>} */
+        this._snapshotOrder = [];
+
         /** @type {number} */
         this._totalDifficulty = 0;
         /** @type {number} */
@@ -45,6 +50,10 @@ class FullChain extends BaseChain {
         /**
          * @type {Synchronizer}
          * @private
+         *]
+         * i
+         *
+         * i
          */
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
@@ -203,6 +212,85 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<boolean|AccountsTreeChunk>}
+     */
+    async getAccountsTreeChunk(blockHash, startPrefix) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsTreeChunk(startPrefix);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<boolean|AccountsProof>}
+     */
+    async getAccountsProof(blockHash, addresses) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsProof(addresses);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<boolean|Accounts>}
+     */
+    async _getSnapshot(blockHash) {
+        const block = await this.getBlock(blockHash);
+        // Check if blockHash is a block on the main chain within the allowed window.
+        if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
+            return false;
+        }
+
+        // Check if there already is a snapshot, otherwise create it.
+        let snapshot = null;
+        if (!this._snapshots.contains(blockHash)) {
+            const tx = await this._accounts.transaction();
+            let currentHash = this._headHash;
+            // Save all snapshots up to blockHash (and stop when its predecessor would be next).
+            while (!block.prevHash.equals(currentHash)) {
+                const currentBlock = await this.getBlock(currentHash);
+
+                if (!this._snapshots.contains(currentHash)) {
+                    snapshot = await tx.snapshot();
+                    this._snapshotOrder.unshift(currentHash);
+                    this._snapshots.put(currentHash, snapshot);
+                }
+
+                await tx.revertBlock(currentBlock);
+                currentHash = currentBlock.prevHash;
+            }
+            await tx.abort();
+        } else {
+            snapshot = this._snapshots.get(blockHash);
+        }
+
+        return snapshot;
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _saveSnapshot(blockHash) {
+        // Replace oldest snapshot if possible.
+        // This ensures snapshots are only created lazily.
+        if (this._snapshotOrder.length > 0) {
+            const oldestHash = this._snapshotOrder.shift();
+            // If the hash is not reused, remove it.
+            const oldestSnapshot = this._snapshots.get(oldestHash);
+            await oldestSnapshot.abort();
+            this._snapshots.remove(oldestHash);
+
+            // Add new snapshot.
+            this._snapshotOrder.push(blockHash);
+            const snapshot = await this._accounts.snapshot();
+            this._snapshots.put(blockHash, snapshot);
+        }
+    }
+
+    /**
+     * @param {Hash} blockHash
      * @param {ChainData} chainData
      * @returns {Promise.<boolean>}
      * @private
@@ -216,6 +304,9 @@ class FullChain extends BaseChain {
             Log.w(FullChain, 'Rejecting block - AccountsHash mismatch');
             return false;
         }
+
+        // New block on main chain, so store a new snapshot.
+        await this._saveSnapshot(blockHash);
 
         chainData.onMainChain = true;
 
@@ -238,6 +329,15 @@ class FullChain extends BaseChain {
      */
     async _rebranch(blockHash, chainData) {
         Log.v(FullChain, `Rebranching to fork ${blockHash}, height=${chainData.head.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
+
+        // Drop all snapshots.
+        for (const blockHash of this._snapshotOrder) {
+            const snapshot = this._snapshots.get(blockHash);
+            snapshot.abort(); // We do not need to wait for the abortion as long as it has been triggered.
+        }
+        this._snapshots.clear();
+        this._snapshotOrder = [];
+
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.

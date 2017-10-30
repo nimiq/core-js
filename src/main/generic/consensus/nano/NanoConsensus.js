@@ -125,26 +125,29 @@ class NanoConsensus extends Observable {
 
     /**
      * @param {Address} address
+     * @param {Hash} [blockHash]
      * @returns {Promise.<Account>}
      */
-    async getAccount(address) {
-        return (await this.getAccounts([address]))[0];
+    async getAccount(address, blockHash=null) {
+        return (await this.getAccounts([address], blockHash))[0];
     }
 
     /**
      * @param {Array.<Address>} addresses
+     * @param {Hash} [blockHash]
      * @returns {Promise.<Array<Account>>}
      */
-    async getAccounts(addresses) {
+    async getAccounts(addresses, blockHash=null) {
+        blockHash = blockHash ? blockHash : this._blockchain.headHash;
         const syncedFullNodes = this._agents.values().filter(
             agent => agent.synced
-                && agent.knowsBlock(this._blockchain.headHash)
-                && Services.isFullNode(agent.peer.peerAddress.services)
+            && agent.knowsBlock(blockHash)
+            && Services.isFullNode(agent.peer.peerAddress.services)
         );
 
         for (const agent of syncedFullNodes) {
             try {
-                return await agent.getAccounts(addresses); // eslint-disable-line no-await-in-loop
+                return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}`, e);
                 // Try the next peer.

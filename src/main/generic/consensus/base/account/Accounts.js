@@ -51,6 +51,15 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<AccountsTreeChunk>}
+     */
+    async getAccountsTreeChunk(startPrefix) {
+        return this._tree.getChunk(startPrefix, AccountsTreeChunk.SIZE_MAX);
+    }
+
+    /**
      * @param {Block} block
      * @return {Promise}
      */

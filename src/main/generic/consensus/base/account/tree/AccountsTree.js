@@ -408,7 +408,7 @@ class AccountsTree extends Observable {
         const chunk = await this._store.getTerminalNodes(startPrefix, size);
         const lastNode = chunk.pop();
         const proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
-        return new AccountsTreeChunk(nodes, proof);
+        return new AccountsTreeChunk(chunk, proof);
     }
 
     /**

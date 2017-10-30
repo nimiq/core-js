@@ -57,6 +57,7 @@ class FullConsensusAgent extends Observable {
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
+        peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -537,8 +538,25 @@ class FullConsensusAgent extends Observable {
      * @private
      */
     async _onGetAccountsProof(msg) {
-        const proof = await this._blockchain.accounts.getAccountsProof(msg.addresses);
-        this._peer.channel.accountsProof(this._blockchain.headHash, proof);
+        const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
+        if (!proof) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsProof(msg.blockHash, proof);
+        }
+    }
+
+    /**
+     * @param {GetAccountsTreeChunkMessage} msg
+     * @private
+     */
+    async _onGetAccountsTreeChunk(msg) {
+        const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
+        if (!chunk) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
+        }
     }
 
     /**

@@ -360,7 +360,7 @@
 
         _updateBalance() {
             if ($.consensus.established) {
-                $.consensus.getAccount($.wallet.address).then(function(account) {
+                $.consensus.getAccount($.wallet.address, $.blockchain.headHash).then(function(account) {
                     this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance.value).toFixed(8);
                     this._wltNonce.innerText = account.balance.nonce;
                 }.bind(this));

@@ -76,4 +76,5 @@ class AccountsTreeChunk {
         return this._nodes.length + 1;
     }
 }
+AccountsTreeChunk.SIZE_MAX = 100;
 Class.register(AccountsProof);

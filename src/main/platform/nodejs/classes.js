@@ -91,6 +91,7 @@ require('../../generic/network/message/ChainProofMessage.js');
 require('../../generic/network/message/GetChainProofMessage.js');
 require('../../generic/network/message/AccountsTreeChunkMessage.js');
 require('../../generic/network/message/GetAccountsTreeChunkMessage.js');
+require('../../generic/network/message/AccountsRejectedMessage.js');
 require('../../generic/network/message/MessageFactory.js');
 require('./network/webrtc/WebRtcConnector.js');
 require('./network/websocket/WebSocketConnector.js');
