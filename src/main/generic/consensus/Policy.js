@@ -112,5 +112,15 @@ class Policy {
     static get DELTA() {
         return 0.01;
     }
+
+    /* Snapshot Parameters */
+    /**
+     * Maximum number of snapshots.
+     * @type {number}
+     * @constant
+     */
+    static get NUM_SNAPSHOTS_MAX() {
+        return 20;
+    }
 }
 Class.register(Policy);

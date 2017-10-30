@@ -140,6 +140,13 @@ class Accounts extends Observable {
     }
 
     /**
+     * @returns {Promise.<Accounts>}
+     */
+    async snapshot() {
+        return new Accounts(await this._tree.snapshot());
+    }
+
+    /**
      * @returns {Promise}
      */
     commit() {

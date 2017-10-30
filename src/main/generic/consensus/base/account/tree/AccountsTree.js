@@ -419,6 +419,13 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @returns {Promise.<AccountsTree>}
+     */
+    snapshot() {
+        return new AccountsTree(this._store.snapshot());
+    }
+
+    /**
      * @returns {Promise}
      */
     commit() {

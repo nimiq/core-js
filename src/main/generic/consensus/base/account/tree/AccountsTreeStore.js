@@ -90,6 +90,11 @@ class AccountsTreeStore {
         return Promise.all(nodes);
     }
 
+    snapshot() {
+        const snapshot = this._store.snapshot();
+        return new AccountsTreeStore(snapshot);
+    }
+
     /**
      * @returns {AccountsTreeStore}
      */

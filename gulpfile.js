@@ -123,6 +123,8 @@ const sources = {
         './src/main/generic/network/message/GetAccountsProofMessage.js',
         './src/main/generic/network/message/ChainProofMessage.js',
         './src/main/generic/network/message/GetChainProofMessage.js',
+        './src/main/generic/network/message/AccountsTreeChunkMessage.js',
+        './src/main/generic/network/message/GetAccountsTreeChunkMessage.js',
         './src/main/generic/network/message/MessageFactory.js',
         './src/main/generic/network/NetworkAgent.js',
         './src/main/generic/network/Network.js',

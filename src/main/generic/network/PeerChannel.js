@@ -236,6 +236,24 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @return {boolean}
+     */
+    getAccountsTreeChunk(blockHash, startPrefix) {
+        return this._send(new GetAccountsTreeChunkMessage(blockHash, startPrefix));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {AccountsTreeChunk} chunk
+     * @return {boolean}
+     */
+    accountsTreeChunk(blockHash, chunk) {
+        return this._send(new AccountsTreeChunkMessage(blockHash, chunk));
+    }
+
+    /**
      * @param {PeerChannel} o
      * @return {boolean}
      */

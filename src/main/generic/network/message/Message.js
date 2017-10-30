@@ -142,9 +142,11 @@ Message.Type = {
 
     SIGNAL:     30,
 
-    GET_CHAIN_PROOF:    40,
-    CHAIN_PROOF:        41,
-    GET_ACCOUNTS_PROOF: 42,
-    ACCOUNTS_PROOF:     43
+    GET_CHAIN_PROOF:            40,
+    CHAIN_PROOF:                41,
+    GET_ACCOUNTS_PROOF:         42,
+    ACCOUNTS_PROOF:             43,
+    GET_ACCOUNTS_TREE_CHUNK:    44,
+    ACCOUNTS_TREE_CHUNK:        45
 };
 Class.register(Message);
