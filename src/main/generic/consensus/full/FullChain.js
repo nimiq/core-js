@@ -331,8 +331,8 @@ class FullChain extends BaseChain {
         Log.v(FullChain, `Rebranching to fork ${blockHash}, height=${chainData.head.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
 
         // Drop all snapshots.
-        for (const blockHash of this._snapshotOrder) {
-            const snapshot = this._snapshots.get(blockHash);
+        for (const hash of this._snapshotOrder) {
+            const snapshot = this._snapshots.get(hash);
             snapshot.abort(); // We do not need to wait for the abortion as long as it has been triggered.
         }
         this._snapshots.clear();
