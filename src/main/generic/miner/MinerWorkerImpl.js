@@ -11,17 +11,21 @@ class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
 
     async multiMine(input, compact, minNonce, maxNonce) {
         const hash = new Uint8Array(32);
-        const wasmOut = Module._malloc(hash.length);
-        const wasmIn = Module._malloc(input.length);
+        let wasmOut, wasmIn;
         try {
+            wasmOut = Module._malloc(hash.length);
+            wasmIn = Module._malloc(input.length);
             Module.HEAPU8.set(input, wasmIn);
             const nonce = Module._nimiq_hard_hash_target(wasmOut, wasmIn, input.length, compact, minNonce, maxNonce, 512);
             if (nonce === maxNonce) return false;
             hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
             return {hash, nonce};
+        } catch (e) {
+            Log.w(MinerWorkerImpl, e);
+            throw e;
         } finally {
-            Module._free(wasmOut);
-            Module._free(wasmIn);
+            if (wasmOut !== undefined) Module._free(wasmOut);
+            if (wasmIn !== undefined) Module._free(wasmIn);
         }
     }
 }

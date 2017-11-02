@@ -9,7 +9,7 @@ class IWorker {
             return IWorker._workerImplementation[clazz.name];
         } else {
             if (!workerScript) {
-                workerScript = `${Nimiq._path  }worker.js`;
+                workerScript = `${Nimiq._path}worker.js`;
             }
             return IWorker.createProxy(clazz, name, new Worker(workerScript));
         }
@@ -168,7 +168,28 @@ class IWorker {
             importScript(script, module = 'Module') {
                 try {
                     if (typeof importScripts === 'function') {
-                        importScripts(script);
+                        if (!module) {
+                            importScripts(script);
+                            return true;
+                        }
+                        const test = performance.now();
+                        return new Promise((resolve) => {
+                            IWorker._global[module] = IWorker._global[module] || {};
+                            switch (typeof IWorker._global[module].preRun) {
+                                case 'undefined':
+                                    IWorker._global[module].preRun = resolve;
+                                    break;
+                                case 'function':
+                                    IWorker._global[module].preRun = [IWorker._global[module].preRun, resolve];
+                                    break;
+                                case 'object':
+                                    IWorker._global[module].preRun.push(resolve);
+                            }
+                            importScripts(script);
+                        }).then(() => {
+                            console.log(`Loaded ${script} in ${performance.now() - test}ms`);
+                            return true;
+                        });
                     } else if (typeof require === 'function') {
                         let wasm = IWorker._global[module].wasmBinary;
                         IWorker._global[module] = require(script);

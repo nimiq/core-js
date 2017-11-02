@@ -14,20 +14,24 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Promise.<Uint8Array>}
      */
     async computeLightHash(input) {
-        const output = new Uint8Array(32);
-        const wasmOut = Module._malloc(output.length);
-        const wasmIn = Module._malloc(input.length);
+        const hash = new Uint8Array(32);
+        let wasmOut, wasmIn;
         try {
+            wasmOut = Module._malloc(hash.length);
+            wasmIn = Module._malloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_light_hash(wasmOut, wasmIn, input.length);
             if (res !== 0) {
                 throw res;
             }
-            output.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, output.length));
-            return output;
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
+            return hash;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
         } finally {
-            Module._free(wasmOut);
-            Module._free(wasmIn);
+            if (wasmOut !== undefined) Module._free(wasmOut);
+            if (wasmIn !== undefined) Module._free(wasmIn);
         }
     }
 
@@ -36,20 +40,24 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Promise.<Uint8Array>}
      */
     async computeHardHash(input) {
-        const output = new Uint8Array(32);
-        const wasmOut = Module._malloc(output.length);
-        const wasmIn = Module._malloc(input.length);
+        const hash = new Uint8Array(32);
+        let wasmOut, wasmIn;
         try {
+            wasmOut = Module._malloc(hash.length);
+            wasmIn = Module._malloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_hard_hash(wasmOut, wasmIn, input.length, 512);
             if (res !== 0) {
                 throw res;
             }
-            output.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, output.length));
-            return output;
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
+            return hash;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
         } finally {
-            Module._free(wasmOut);
-            Module._free(wasmIn);
+            if (wasmOut !== undefined) Module._free(wasmOut);
+            if (wasmIn !== undefined) Module._free(wasmIn);
         }
     }
 }
