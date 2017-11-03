@@ -186,10 +186,15 @@ const uglify_config = {
     ie8: true,
     keep_fnames: true,
     ecma: 8,
+    warnings: true,
     mangle: {
         keep_classnames: true,
-        keep_fnames: true,
         safari10: true
+    },
+    compress: {
+        sequences: false,
+        typeofs: false,
+        keep_infinity: true
     }
 };
 
@@ -197,10 +202,15 @@ const uglify_babel = {
     ie8: true,
     keep_fnames: true,
     ecma: 5,
+    warnings: true,
     mangle: {
         keep_classnames: true,
-        keep_fnames: true,
         safari10: true
+    },
+    compress: {
+        sequences: false,
+        typeofs: false,
+        keep_infinity: true
     }
 };
 
@@ -257,7 +267,7 @@ gulp.task('build-web-crypto', function () {
             .pipe(concat('web.js')))
         .pipe(sourcemaps.init())
         .pipe(concat('web-crypto.js'))
-        .pipe(uglify(uglify_config))
+//        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
@@ -277,7 +287,7 @@ gulp.task('build-web', ['build-worker'], function () {
         .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
-        .pipe(uglify(uglify_config))
+//        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
