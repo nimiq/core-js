@@ -23,8 +23,8 @@ class Consensus {
 
         /** @type {NanoChain} */
         const blockchain = await new NanoChain();
-        /** @type {Mempool} */
-        const mempool = null; // TODO
+        /** @type {NanoMempool} */
+        const mempool = new NanoMempool();
         /** @type {Network} */
         const network = await new Network(blockchain);
 

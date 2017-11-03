@@ -73,6 +73,18 @@
                 <hr/>
             </form>
         </div>
+
+        <div class="info">
+            <div class="info-title">Mempool</div>
+            <hr/>
+
+            <div class="info-block">
+                <strong>Transaction Count</strong>
+                <span id="mplTransactionCount"></span>
+            </div>
+            <div class="info-block" id="mplTransactions"></div>
+            <hr/>
+        </div>
     </div>
 
     <div class="right">
@@ -151,14 +163,6 @@
             <hr/>
         </div>
     </div>
-
-    <div class="info">
-        <div class="info-title">Block History</div>
-        <hr/>
-
-        <div class="info-block" id="blockHistory"></div>
-        <hr/>
-    </div>
 </div>
 
 <script type="text/javascript">
@@ -182,6 +186,10 @@
             $.consensus.on('lost', function() {
                 document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
                 document.getElementById('txSubmitBtn').setAttribute('disabled', '');
+            }.bind(this));
+
+            $.mempool.on('transaction-added', function() {
+                this._mempoolChanged();
             }.bind(this));
 
             // Blockchain
@@ -230,7 +238,7 @@
             /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address.toBase64();
+            this._wltAddress.innerText = $.wallet.address.toHex();
 
             var txSubmitBtn = document.querySelector('#txSubmitBtn');
             txSubmitBtn.onclick = function(e) {
@@ -243,12 +251,9 @@
             /** @type {HTMLElement} */
             this._mplTransactions = document.querySelector('#mplTransactions');
 
-            // Block history
-            /** @type {HTMLElement} */
-            this._blockHistory = document.querySelector('#blockHistory');
-
             // Init values.
             this._networkChanged();
+            this._mempoolChanged();
         }
 
         _submitTransaction(e) {
@@ -272,7 +277,7 @@
             }
             var address;
             try {
-                address = new Nimiq.Address(Nimiq.BufferUtils.fromHex(recipientAddr));
+                address = Nimiq.Address.fromHex(recipientAddr);
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -288,17 +293,17 @@
                 return;
             }
 
-            $.accounts.getBalance($.wallet.address).then(function(balance) {
+            $.consensus.getAccount($.wallet.address).then(function(account) {
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-                if (balance.value < value + fee) {
+                if (account.balance.value < value + fee) {
                     elValue.className = 'error';
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, balance.nonce).then(function(tx) {
-                    $.mempool.pushTransaction(tx);
+                $.wallet.createTransaction(address, value, fee, account.balance.nonce).then(function(tx) {
+                    $.consensus.relayTransaction(tx);
                 });
             });
 
@@ -321,31 +326,6 @@
             this._hdNonce.innerText = $.blockchain.head.nonce;
             this._hdInterlink.innerHTML = interlink;
 
-            var el = document.createElement('div');
-            var date = new Date(head.timestamp * 1000);
-            var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
-                + `difficulty=${head.difficulty} (${realDifficulty}), interlink=[${interlink}]</div>`;
-
-            var txPromises = [];
-            /*
-            head.transactions.forEach(function(tx) {
-                txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
-                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
-                }));
-            });
-            */
-
-            Promise.all(txPromises).then(function(results) {
-                el.innerHTML = html + results.join('');
-
-                if (this._blockHistory.childNodes.length > 24) {
-                    this._blockHistory.removeChild(this._blockHistory.firstChild);
-                }
-                this._blockHistory.appendChild(el);
-            }.bind(this));
-
             this._updateBalance();
         }
 
@@ -365,6 +345,28 @@
                     this._wltNonce.innerText = account.balance.nonce;
                 }.bind(this));
             }
+        }
+
+        _mempoolChanged() {
+            // XXX inefficient
+            var txs = $.mempool.getTransactions();
+            this._mplTransactionCount.innerText = txs.length;
+
+            while (this._mplTransactions.firstChild) {
+                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
+            }
+
+            txs.forEach(function(tx) {
+                tx.getSenderAddr().then(function(senderAddr) {
+                    if ($.wallet.address.equals(senderAddr) || $.wallet.address.equals(tx.recipientAddr)) {
+                        var el = document.createElement('div');
+                        var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                        var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                        el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                        this._mplTransactions.appendChild(el);
+                    }
+                }.bind(this));
+            }.bind(this));
         }
 
         static _humanBytes(bytes) {
@@ -392,6 +394,7 @@
 
             // XXX Legacy API
             $.blockchain = $.consensus.blockchain;
+            $.mempool = $.consensus.mempool;
             $.network = $.consensus.network;
 
             // XXX Legacy components

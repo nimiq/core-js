@@ -245,6 +245,8 @@ class TestBlockchain extends FullChain {
     static async mineBlocksJSON() {
         const nonces = await TestBlockchain.mineBlocks();
         const json = JSON.stringify(nonces);
+        TestBlockchain.NONCES = nonces;
+
         // XXX Crude JSON pretty printer
         return json
             .replace(/"/g, '\'')
@@ -306,5 +308,5 @@ TestBlockchain.NONCES = {
     'eq1Oxb7C1WV0uzwTXuX1w4fX7cuqZrpw9otEDBHc8ps=': 50155,
     'TmzuKXLWNrXD0D1kKHV926c65O+PPhgJunf1D51I0WQ=': 56571,
     'jTKL/OEyJ8Fa0juEJTagas2/Xv2hct1p1TDlm5vo5b0=': 3301,
-    'bRWKEL6o7npDauXZzS/nRW2NqKnJMH69R1z3ms+RURA=': 24909
+    'dSxyWx/Pp4hCI9LKOaZEDZ4BkF2OHkJzQOW0a9t1fdY=': 148705
 };

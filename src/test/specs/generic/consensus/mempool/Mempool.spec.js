@@ -1,19 +1,11 @@
-
 describe('Mempool', () => {
-    let accounts, blockchain, mempool, wallet;
-
-    beforeEach(function(done) {
-        // Initial set-up of dependencies
-        (async function () {
-            accounts = await Accounts.createVolatile();
-            blockchain = await FullChain.createVolatile(accounts);
-            mempool = new Mempool(blockchain, accounts);
-            wallet = await Wallet.createVolatile();
-        })().then(done, done.fail);
-    });
-
     it('will not push the same transaction twice', (done) => {
         (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+            const wallet = await Wallet.createVolatile();
+
             // Create a transaction
             const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543,42,23);
 
@@ -27,12 +19,16 @@ describe('Mempool', () => {
             // Push the transaction for a second time, and expect the result to be false
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-
         })().then(done, done.fail);
     });
 
     it('will always verify a transaction before accepting it', (done) => {
         (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+            const wallet = await Wallet.createVolatile();
+
             // This is needed to check which reason caused pushTransaction() to fail
             spyOn(Log, 'w');
 
@@ -77,6 +73,11 @@ describe('Mempool', () => {
 
     it('can push and get a valid transaction', (done) => {
         (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+            const wallet = await Wallet.createVolatile();
+
             // Create a transaction
             const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,42);
 
@@ -91,12 +92,15 @@ describe('Mempool', () => {
             const hash = await referenceTransaction.hash();
             const transaction = await mempool.getTransaction(hash);
             expect(transaction).toBe(referenceTransaction);
-
         })().then(done, done.fail);
     });
 
     it('can get a list of its transactions and can evict them', (done) => {
         (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
             // How many transactions should be used in this test
             const numberOfTransactions = 5;
 
@@ -136,7 +140,6 @@ describe('Mempool', () => {
                 transactions = await mempool.getTransactions();
                 expect(transactions.length).toEqual(0);
             });
-
         })().then(done, done.fail);
     });
 });

@@ -98,6 +98,7 @@ const sources = {
         './src/main/generic/consensus/nano/NanoChain.js',
         './src/main/generic/consensus/nano/NanoConsensusAgent.js',
         './src/main/generic/consensus/nano/NanoConsensus.js',
+        './src/main/generic/consensus/nano/NanoMempool.js',
         './src/main/generic/consensus/ConsensusDB.js',
         './src/main/generic/consensus/Consensus.js',
         './src/main/generic/network/Protocol.js',

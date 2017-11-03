@@ -221,6 +221,11 @@ class FullConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
+                    // Ignore block announcements from nano clients as they will ignore our getData requests anyways (they only know headers).
+                    if (Services.isNanoNode(this._peer.peerAddress.services)) {
+                        continue;
+                    }
+
                     const block = await this._blockchain.getBlock(vector.hash, /*includeForks*/ true); // eslint-disable-line no-await-in-loop
                     if (!block) {
                         unknownObjects.push(vector);
@@ -426,7 +431,7 @@ class FullConsensusAgent extends Observable {
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
+                    const tx = this._mempool.getTransaction(vector.hash);
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
                         this._peer.channel.tx(tx);

@@ -61,10 +61,24 @@ class HashMap {
     }
 
     /**
+     * @returns {Iterator.<K|*>}
+     */
+    keyIterator() {
+        return this._map.keys();
+    }
+
+    /**
      * @returns {Array.<V|*>}
      */
     values() {
         return Array.from(this._map.values());
+    }
+
+    /**
+     * @returns {Iterator.<V|*>}
+     */
+    valueIterator() {
+        return this._map.values();
     }
 
     /**

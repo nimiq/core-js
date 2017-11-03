@@ -65,6 +65,7 @@ require('../../generic/consensus/full/FullConsensus.js');
 require('../../generic/consensus/nano/NanoChain.js');
 require('../../generic/consensus/nano/NanoConsensusAgent.js');
 require('../../generic/consensus/nano/NanoConsensus.js');
+require('../../generic/consensus/nano/NanoMempool.js');
 require('../../generic/consensus/ConsensusDB.js');
 require('../../generic/consensus/Consensus.js');
 require('../../generic/network/Protocol.js');

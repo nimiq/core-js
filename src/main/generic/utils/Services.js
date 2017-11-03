@@ -21,6 +21,10 @@ class Services {
     static isFullNode(services) {
         return (services & Services.FULL) !== 0;
     }
+
+    static isNanoNode(services) {
+        return services === Services.NANO;
+    }
 }
 Services.NANO   = 1;
 Services.LIGHT  = 2;

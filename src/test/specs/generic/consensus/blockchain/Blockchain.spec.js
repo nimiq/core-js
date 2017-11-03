@@ -1,23 +1,9 @@
 describe('Blockchain', () => {
-    let testBlockchain;
-    let originalTimeout;
-
-    beforeEach(function (done) {
-        originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
-        (async function () {
-            // create testing blockchain with only genesis and dummy users
-            testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
-        })().then(done, done.fail);
-    });
-
-    afterEach(function() {
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
-    });
 
     it('will verify block transaction limit', (done) => {
         (async function () {
             // Now try to push a block which exceeds the maximum block size
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
             const numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS + 1;
             const transactions = await testBlockchain.generateTransactions(numTransactions, false, false);
             const block = await testBlockchain.createBlock({transactions: transactions});
@@ -28,8 +14,9 @@ describe('Blockchain', () => {
 
     it('will always verify a block before accepting it', (done) => {
         (async function () {
-            // Try to push a block with an invalid prevHash and check that it fails
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
+            // Try to push a block with an invalid prevHash and check that it fails
             // hash that does NOT match the one from Genesis
             const zeroHash = new Hash(BufferUtils.fromBase64('0000000000000000000000000000000000000000000'));
             // create block with invalid prevHash
@@ -113,6 +100,8 @@ describe('Blockchain', () => {
 
     xit('can push and get a valid block, and get the next compact target', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(Log, 'd').and.callThrough();
@@ -165,6 +154,7 @@ describe('Blockchain', () => {
     it('can rebranch to a harder fork', (done) => {
         (async function () {
             // Create first chain (4 blocks)
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
             let block = await testBlockchain.createBlock();
             let status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
@@ -234,6 +224,8 @@ describe('Blockchain', () => {
 
     it('has getters that return correct values for its properties', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(Log, 'w').and.callThrough();

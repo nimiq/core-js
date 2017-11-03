@@ -33,33 +33,6 @@
  */
 class Nimiq {
     /**
-     * Get the loaded instance of the Nimiq {@link Core}. {@link Nimiq.init} must be invoked before.
-     * @returns {Core}
-     */
-    static get() {
-        if (!Nimiq._core) throw 'Nimiq.get() failed - not initialized yet. Call Nimiq.init() first.';
-        return Nimiq._core;
-    }
-
-    static _loadScript(url, resolve) {
-        // Adding the script tag to the head as suggested before
-        const head = document.getElementsByTagName('head')[0];
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = url;
-
-        // Then bind the event to the callback function.
-        // There are several events for cross browser compatibility.
-        // These events might occur before processing, so delay them a bit.
-        const ret = () => window.setTimeout(resolve, 1000);
-        script.onreadystatechange = ret;
-        script.onload = ret;
-
-        // Fire the loading
-        head.appendChild(script);
-    }
-
-    /**
      * Load the Nimiq library.
      * @param {?string} [path] Path that contains the required files to load the library.
      * @returns {Promise} Promise that resolves once the library was loaded.
@@ -102,6 +75,24 @@ class Nimiq {
                 Nimiq._loadScript(path + script, Nimiq._onload);
             });
         return Nimiq._loadPromise;
+    }
+
+    static _loadScript(url, resolve) {
+        // Adding the script tag to the head as suggested before
+        const head = document.getElementsByTagName('head')[0];
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+
+        // Then bind the event to the callback function.
+        // There are several events for cross browser compatibility.
+        // These events might occur before processing, so delay them a bit.
+        const ret = () => window.setTimeout(resolve, 1000);
+        script.onreadystatechange = ret;
+        script.onload = ret;
+
+        // Fire the loading
+        head.appendChild(script);
     }
 
     static _hasNativeClassSupport() {
