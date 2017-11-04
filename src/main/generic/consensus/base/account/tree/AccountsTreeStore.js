@@ -103,6 +103,10 @@ class AccountsTreeStore {
         return new AccountsTreeStore(tx);
     }
 
+    truncate() {
+        return this._store.truncate();
+    }
+
     /**
      * @returns {Promise}
      */
