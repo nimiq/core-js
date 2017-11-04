@@ -52,5 +52,5 @@ Block.GENESIS.hash().then(hash => {
 });
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
 }
