@@ -166,6 +166,9 @@ class PartialAccountsTree extends AccountsTree {
     }
 
     /**
+     * This is basically a version of the standard insert method
+     * that uses empty hashes instead of hashing the nodes.
+     * Hashes are only done once at the end.
      * @param {AccountsTreeNode} node
      * @param {string} prefix
      * @param {Account} account
@@ -222,6 +225,7 @@ class PartialAccountsTree extends AccountsTree {
     }
 
     /**
+     * This is a modified version that does not hash nodes.
      * @param {string} prefix
      * @param {Array.<AccountsTreeNode>} rootPath
      * @returns {Promise}
@@ -241,6 +245,7 @@ class PartialAccountsTree extends AccountsTree {
     }
 
     /**
+     * This method updates all empty hashes (and only such).
      * @param {AccountsTreeNode} node
      * @private
      */

@@ -328,6 +328,14 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @returns {Promise.<PartialAccountsTree>}
+     */
+    partialTree() {
+        const tree = new PartialAccountsTree(this._store.transaction());
+        return tree._init();
+    }
+
+    /**
      * @returns {Promise.<AccountsTree>}
      */
     snapshot() {

@@ -9,6 +9,15 @@ class InvVector {
     }
 
     /**
+     * @param {BlockHeader} header
+     * @returns {Promise.<InvVector>}
+     */
+    static async fromHeader(header) {
+        const hash = await header.hash();
+        return new InvVector(InvVector.Type.BLOCK, hash);
+    }
+
+    /**
      * @param {Transaction} tx
      * @returns {Promise.<InvVector>}
      */

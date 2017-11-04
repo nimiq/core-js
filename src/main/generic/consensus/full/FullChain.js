@@ -27,8 +27,7 @@ class FullChain extends BaseChain {
      * @returns {Promise.<FullChain>}
      */
     constructor(store, accounts) {
-        super();
-        this._store = store;
+        super(store);
         this._accounts = accounts;
 
         /** @type {HashMap.<Hash,Accounts>} */
