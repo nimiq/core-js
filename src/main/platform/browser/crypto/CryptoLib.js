@@ -16,7 +16,7 @@ class CryptoLib {
 
         instance.getRandomValues = window.crypto.getRandomValues.bind(window.crypto);
 
-        // We can use Webkit's SHA-256
+        // We can use Webkit's SHA-256 // TODO not required anymore
         const subtle = typeof window !== 'undefined' ? (window.crypto.subtle) : (self.crypto.subtle);
         const wk = typeof window !== 'undefined' ? (window.crypto.webkitSubtle) : (self.crypto.webkitSubtle);
         if (subtle) {
@@ -34,9 +34,6 @@ class CryptoLib {
             };
         }
 
-        instance.sign = ED25519.sign.bind(ED25519);
-        instance.verify = ED25519.verify.bind(ED25519);
-        instance.derivePublicKey = ED25519.derivePublicKey.bind(ED25519);
         return instance;
     }
 }

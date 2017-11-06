@@ -1,6 +1,18 @@
 class Crypto {
     static get lib() { return CryptoLib.instance; }
 
+    /**
+     * @returns {Promise.<CryptoWorker>}
+     * @private
+     */
+    static async _cryptoWorker() {
+        if (!Crypto._cryptoWorkerPromise) {
+            Crypto._cryptoWorkerPromise = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+        }
+        return Crypto._cryptoWorkerPromise;
+    }
+
+
     // Signature implementation using ED25519 through WebAssembly
     static get publicKeySize() {
         return 32;
@@ -20,9 +32,8 @@ class Crypto {
     }
 
     static async publicKeyDerive(privateKey) {
-        const publicKey = new Uint8Array(Crypto.publicKeySize);
-        await Crypto.lib.derivePublicKey(publicKey, privateKey);
-        return publicKey;
+        const worker = await Crypto._cryptoWorker();
+        return worker.publicKeyDerive(privateKey);
     }
 
     static get privateKeySize() {
@@ -76,13 +87,13 @@ class Crypto {
     }
 
     static async signatureCreate(privateKey, publicKey, data) {
-        const signature = new Uint8Array(Crypto.signatureSize);
-        await Crypto.lib.sign(signature, data, publicKey, privateKey);
-        return signature;
+        const worker = await Crypto._cryptoWorker();
+        return worker.signatureCreate(privateKey, publicKey, data);
     }
 
     static async signatureVerify(publicKey, data, signature) {
-        return await Crypto.lib.verify(signature, data, publicKey);
+        const worker = await Crypto._cryptoWorker();
+        return worker.signatureVerify(publicKey, data, signature);
     }
 
     static signatureSerialize(obj) {
@@ -118,22 +129,6 @@ class Crypto {
     //     }
     // }
 
-    /**
-     * @returns {Promise.<CryptoWorker>}
-     * @private
-     */
-    static async _cryptoWorker() {
-        if (Crypto._cryptoWorkerInstance) {
-            return Crypto._cryptoWorkerInstance;
-        }
-        const tempInstance = await IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
-        if (Crypto._cryptoWorkerInstance) {
-            tempInstance.destroy();
-        } else {
-            Crypto._cryptoWorkerInstance = tempInstance;
-        }
-        return Crypto._cryptoWorkerInstance;
-    }
 
     // Light hash implementation using blake2b via WebAssembly WebWorker
     static async hashLight(arr) {
@@ -180,5 +175,5 @@ class Crypto {
 }
 
 /** @type {CryptoWorker} */
-Crypto._cryptoWorkerInstance = null;
+Crypto._cryptoWorkerPromise = null;
 Class.register(Crypto);

@@ -124,7 +124,7 @@ describe('Crypto', () => {
 
                 // try whether a manipulated signature verifies the original message
                 // change a single bit of a single byte
-                computedSignature[Math.floor(Math.random() * ED25519.SIGNATURE_SIZE)] ^= 1 << (Math.floor(Math.random() * 8));
+                computedSignature[Math.floor(Math.random() * Crypto.signatureSize)] ^= 1 << (Math.floor(Math.random() * 8));
                 expect(await Crypto.signatureVerify(referencePublicKey, forgedMessage, referenceSignature)).toBe(false, 'Accepted wrong signature');
                 /* eslint-enable no-await-in-loop */
             }
