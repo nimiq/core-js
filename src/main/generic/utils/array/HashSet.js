@@ -78,10 +78,31 @@ class HashSet {
     }
 
     /**
+     * @returns {Iterator.<V|*>}
+     */
+    valueIterator() {
+        return this._map.values();
+    }
+
+    /**
+     * @returns {Iterator.<V|*>}
+     */
+    [Symbol.iterator]() {
+        return this.valueIterator();
+    }
+
+    /**
      * @returns {number}
      */
     get length() {
         return this._map.size;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this._map.size === 0;
     }
 }
 Class.register(HashSet);

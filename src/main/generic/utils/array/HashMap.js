@@ -87,5 +87,12 @@ class HashMap {
     get length() {
         return this._map.size;
     }
+
+    /**
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this._map.size === 0;
+    }
 }
 Class.register(HashMap);

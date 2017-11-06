@@ -24,10 +24,11 @@ class NanoConsensusAgent extends Observable {
 
         // InvVectors we want to request via getData are collected here and
         // periodically requested.
-        /** @type {IndexedArray} */
-        this._objectsToRequest = new IndexedArray([], true);
+        /** @type {HashSet.<InvVector>} */
+        this._objectsToRequest = new HashSet();
 
         // Objects that are currently being requested from the peer.
+        /** @type {HashSet.<InvVector>} */
         this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
@@ -232,10 +233,8 @@ class NanoConsensusAgent extends Observable {
         Log.v(NanoConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         if (unknownObjects.length > 0) {
-            // Store unknown vectors in objectsToRequest array.
-            for (const obj of unknownObjects) {
-                this._objectsToRequest.push(obj);
-            }
+            // Store unknown vectors in objectsToRequest.
+            this._objectsToRequest.addAll(unknownObjects);
 
             // Clear the request throttle timeout.
             this._timers.clearTimeout('inv');
@@ -261,26 +260,32 @@ class NanoConsensusAgent extends Observable {
         // Don't do anything if there are no objects queued to request.
         if (this._objectsToRequest.isEmpty()) return;
 
-        // Mark the requested objects as in-flight.
-        this._objectsInFlight = this._objectsToRequest;
+        this._objectsInFlight = new HashSet();
 
-        // Request all queued objects from the peer.
-        // TODO cleanup!
+        // Request queued objects from the peer. Only request up to VECTORS_MAX_COUNT objects at a time.
+        const vectorsMaxCount = BaseInventoryMessage.VECTORS_MAX_COUNT;
+        /** @type {Array.<InvVector>} */
         const blocks = [];
+        /** @type {Array.<InvVector>} */
         const transactions = [];
-        for (const obj of this._objectsToRequest.array) {
-            if (obj.type === InvVector.Type.BLOCK) {
-                blocks.push(obj);
+        for (const vector of this._objectsToRequest) {
+            if (vector.type === InvVector.Type.BLOCK) {
+                blocks.push(vector);
             } else {
-                transactions.push(obj);
+                transactions.push(vector);
+            }
+
+            this._objectsInFlight.add(vector);
+            this._objectsToRequest.remove(vector);
+
+            if (blocks.length >= vectorsMaxCount || transactions.length >= vectorsMaxCount) {
+                break;
             }
         }
 
+        // Request headers and transactions from peer.
         this._peer.channel.getHeader(blocks);
         this._peer.channel.getData(transactions);
-
-        // Reset the queue.
-        this._objectsToRequest = new IndexedArray([], true);
 
         // Set timer to detect end of request / missing objects
         this._timers.setTimeout('getData', () => this._noMoreData(), NanoConsensusAgent.REQUEST_TIMEOUT);
@@ -312,7 +317,7 @@ class NanoConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(NanoConsensusAgent, `Unsolicited header ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
@@ -342,7 +347,7 @@ class NanoConsensusAgent extends Observable {
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(NanoConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -366,7 +371,7 @@ class NanoConsensusAgent extends Observable {
 
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
-            if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+            if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
                 Log.w(NanoConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
