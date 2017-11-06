@@ -35,15 +35,15 @@ if (Block.GENESIS) {
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
-        new Hash(BufferUtils.fromBase64('DldRwCblQ7Loqy6wYJnaodHl30d3j3eH+qtFzfEv46g=')),
-        new Hash(BufferUtils.fromBase64('k4AUHqAUJqWw4q6vBfjd33+vYKQ3V1A207xjLsVM4Y0=')),
-        new Hash(BufferUtils.fromBase64('/+31rj1svG+aD6G3jfC5eSck2xPGMKNaY4MV8WIJ7wQ=')),
+        new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
+        new Hash(BufferUtils.fromBase64('9PuZ3Po378rQ1TBOQuvJo/YmuXumdCxPoGK1N6FKo+s=')),
+        new Hash(BufferUtils.fromBase64('Pn3M9RWmOniFkizV+KZdOptQOAcyX57lZ8G+DdjlZ6k=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        68390),
+        54619),
     new BlockInterlink([]),
-    new BlockBody(new Address(BufferUtils.fromBase64('byB0sDmlEREv7D1XbfuPm+ThcHg=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('rME3sBOsF+4q6YwmnYawLKgtC2E=')), [])
 );
 // Store hash for synchronous access
 Block.GENESIS.hash().then(hash => {

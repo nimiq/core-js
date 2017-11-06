@@ -54,6 +54,7 @@ const sources = {
         './src/main/generic/utils/assert/Assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
+        './node_modules/ed25519/ed25519.js',
         './src/main/generic/utils/crypto/Crypto.js',
         './src/main/generic/utils/crc/CRC32.js',
         './src/main/generic/utils/database/ObjectDB.js',
@@ -234,8 +235,7 @@ gulp.task('build-web-babel', function () {
                 'babel-runtime/core-js/get-iterator',
                 'babel-runtime/regenerator',
                 'babel-runtime/helpers/asyncToGenerator',
-                'fast-sha256',
-                'elliptic'
+                'fast-sha256'
             ]
         }).bundle()
             .pipe(source('babel.js'))
@@ -256,8 +256,7 @@ gulp.task('build-web-crypto', function () {
     return merge(
         browserify([], {
             require: [
-                'fast-sha256',
-                'elliptic'
+                'fast-sha256'
             ]
         }).bundle()
             .pipe(source('crypto.js'))

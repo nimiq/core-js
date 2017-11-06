@@ -1,193 +1,51 @@
 class Crypto {
     static get lib() { return CryptoLib.instance; }
 
-    // Signature implementation using Ed25519 via tweetnacl
-    // tweetnacl is rather slow, so not using this for now
-    //
-    // static get curve() { return require('tweetnacl'); }
-    //
-    // static get publicKeySize() {
-    //     return Crypto.curve.sign.publicKeyLength;
-    // }
-    //
-    // static get publicKeyType() {
-    //     return Uint8Array;
-    // }
-    //
-    // static publicKeySerialize(obj) {
-    //     return obj;
-    // }
-    //
-    // static publicKeyUnserialize(arr) {
-    //     return arr;
-    // }
-    //
-    // static publicKeyDerive(privateKey) {
-    //     return Crypto.keyPairPublic(Crypto.keyPairDerive(privateKey));
-    // }
-    //
-    // static get privateKeySize() {
-    //     return Crypto.curve.sign.secretKeyLength;
-    // }
-    //
-    // static get privateKeyType() {
-    //     return Uint8Array;
-    // }
-    //
-    // static privateKeySerialize(obj) {
-    //     return obj;
-    // }
-    //
-    // static privateKeyUnserialize(arr) {
-    //     return arr;
-    // }
-    //
-    // static privateKeyGenerate() {
-    //     return Crypto.keyPairPrivate(Crypto.keyPairGenerate());
-    // }
-    //
-    // static get keyPairType() {
-    //     return Object;
-    // }
-    //
-    // static keyPairGenerate() {
-    //     return Crypto.curve.sign.keyPair();
-    // }
-    //
-    // static keyPairDerive(privateKey) {
-    //     return Crypto.curve.sign.keyPair.fromSecretKey(privateKey);
-    // }
-    //
-    // static keyPairPrivate(obj) {
-    //     return obj.secretKey;
-    // }
-    //
-    // static keyPairPublic(obj) {
-    //     return obj.publicKey;
-    // }
-    //
-    // static signatureCreate(privateKey, data) {
-    //     return Crypto.curve.sign.detached(data, privateKey);
-    // }
-    //
-    // static signatureVerify(publicKey, data, signature) {
-    //     return Crypto.curve.sign.detached.verify(data, signature, publicKey);
-    // }
-    //
-    // static signatureSerialize(obj) {
-    //     return obj;
-    // }
-    //
-    // static signatureUnserialize(arr) {
-    //     return arr;
-    // }
-    //
-    // static get signatureSize() {
-    //     return Crypto.curve.sign.signatureLength;
-    // }
-    //
-    // static get signatureType() {
-    //     return Uint8Array;
-    // }
-
-    // Signature implementation using P-256/SHA-256 with WebCrypto API
-    static get _keyConfig() {
-        return {name: 'ECDSA', namedCurve: 'P-256'};
-    }
-
-    static get _signConfig() {
-        return {name: 'ECDSA', hash: 'SHA-256'};
-    }
-
+    // Signature implementation using ED25519 through WebAssembly
     static get publicKeySize() {
-        return 64;
+        return 32;
     }
 
     static get publicKeyType() {
-        return Object;
+        return Uint8Array;
     }
 
-    static publicKeySerialize(obj) {
-        if (obj.raw.length === 64) {
-            return obj.raw;
-        }  else {
-            return obj.raw.slice(1);
-        }
+    static publicKeySerialize(key) {
+        // key is already a Uint8Array
+        return key;
     }
 
-    static publicKeyUnserialize(arr) {
-        return {raw: arr};
-    }
-
-    static async _publicKeyNative(obj) {
-        if (!obj._native) {
-            let arr;
-            if (obj.raw.length === 64) {
-                arr = new Uint8Array(65);
-                arr[0] = 4;
-                arr.set(obj.raw, 1);
-            } else {
-                arr = obj.raw;
-            }
-            obj._native = await Crypto.lib.importKey('raw', arr, Crypto._keyConfig, true, ['verify']);
-        }
-        return obj._native;
+    static publicKeyUnserialize(key) {
+        return key;
     }
 
     static async publicKeyDerive(privateKey) {
-        const derived = await Crypto.keyPairDerive(privateKey);
-        return Crypto.keyPairPublic(derived);
+        const publicKey = new Uint8Array(Crypto.publicKeySize);
+        await Crypto.lib.derivePublicKey(publicKey, privateKey);
+        return publicKey;
     }
 
     static get privateKeySize() {
-        return 96;
+        return 32;
     }
 
     static get privateKeyType() {
-        return Object;
+        return Uint8Array;
     }
 
-    static _jwk_serialize(jwk) {
-        const fromUri64 = function (u64) {
-            return Array.from(atob(u64.replace(/-/g, '+').replace(/_/g, '/') + '='), c => c.charCodeAt(0));
-        };
-        return new Uint8Array(fromUri64(jwk.d).concat(fromUri64(jwk.x)).concat(fromUri64(jwk.y)));
+    static privateKeySerialize(key) {
+        // already a Uint8Array
+        return key;
     }
 
-    static _jwk_unserialize(arr) {
-        const toUri64 = function (arr) {
-            return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        };
-
-        return {
-            crv: 'P-256',
-            d: toUri64(Array.prototype.slice.call(arr, 0, 32)),
-            ext: true,
-            key_ops: ['sign'],
-            kty: 'EC',
-            x: toUri64(Array.prototype.slice.call(arr, 32, 64)),
-            y: toUri64(Array.prototype.slice.call(arr, 64)),
-        };
+    static privateKeyUnserialize(key) {
+        return key;
     }
 
-    static privateKeySerialize(obj) {
-        return Crypto._jwk_serialize(obj.jwk);
-    }
-
-    static privateKeyUnserialize(arr) {
-        return {jwk: Crypto._jwk_unserialize(arr)};
-    }
-
-    static async _privateKeyNative(obj) {
-        if (!obj._native) {
-            obj._native = await Crypto.lib.importKey('jwk', obj.jwk, Crypto._keyConfig, true, ['sign']);
-        }
-        return obj._native;
-    }
-
-    static async privateKeyGenerate() {
-        const generate = await Crypto.keyPairGenerate();
-        return Crypto.keyPairPrivate(generate);
+    static privateKeyGenerate() {
+        const privateKey = new Uint8Array(Crypto.privateKeySize);
+        Crypto.lib.getRandomValues(privateKey);
+        return privateKey;
     }
 
     static get keyPairType() {
@@ -195,44 +53,36 @@ class Crypto {
     }
 
     static async keyPairGenerate() {
-        const key = await Crypto.lib.generateKey(Crypto._keyConfig, true, ['sign', 'verify']);
-        const exportedJwk = await Crypto.lib.exportKey('jwk', key.privateKey);
-        const exportedRaw = await Crypto.lib.exportKey('raw', key.publicKey);
-        return {
-            secretKey: {
-                _native: key.privateKey,
-                jwk: exportedJwk
-            },
-            publicKey: {
-                _native: key.publicKey,
-                raw: new Uint8Array(exportedRaw).subarray(1)
-            }
-        };
+        return Crypto.keyPairDerive(Crypto.privateKeyGenerate());
     }
 
-    static keyPairDerive(privateKey) {
+    static async keyPairDerive(privateKey) {
         return {
-            secretKey: privateKey,
-            publicKey: Crypto.publicKeyUnserialize(new Uint8Array(Array.prototype.slice.call(Crypto.privateKeySerialize(privateKey), 32)))
+            privateKey,
+            publicKey: await Crypto.publicKeyDerive(privateKey)
         };
     }
 
     static keyPairPrivate(obj) {
-        return obj.secretKey;
+        return obj.privateKey;
     }
 
     static keyPairPublic(obj) {
         return obj.publicKey;
     }
 
-    static async signatureCreate(privateKey, data) {
-        const priv = await Crypto._privateKeyNative(privateKey);
-        return new Uint8Array(await Crypto.lib.sign(Crypto._signConfig, priv, data));
+    static keyPairFromKeys(privateKey, publicKey) {
+        return { privateKey, publicKey };
+    }
+
+    static async signatureCreate(privateKey, publicKey, data) {
+        const signature = new Uint8Array(Crypto.signatureSize);
+        await Crypto.lib.sign(signature, data, publicKey, privateKey);
+        return signature;
     }
 
     static async signatureVerify(publicKey, data, signature) {
-        const pub = await Crypto._publicKeyNative(publicKey);
-        return Crypto.lib.verify(Crypto._signConfig, pub, signature, data);
+        return await Crypto.lib.verify(signature, data, publicKey);
     }
 
     static signatureSerialize(obj) {

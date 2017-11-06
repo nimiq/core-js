@@ -68,7 +68,8 @@ class Wallet {
      * @private
      */
     async _signTransaction(transaction) {
-        transaction.signature = await Signature.create(this._keyPair.privateKey, transaction.serializeContent());
+        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey,
+            transaction.serializeContent());
         return transaction;
     }
 

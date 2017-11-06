@@ -64,7 +64,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block with an invalid transaction signature
             const data = new Uint8Array(32);
-            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, data);
+            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, testBlockchain._users[0].publicKey, data);
             transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, undefined, wrongSignature)];
             block = await testBlockchain.createBlock({transactions: transactions});
             status = await testBlockchain.pushBlock(block);
