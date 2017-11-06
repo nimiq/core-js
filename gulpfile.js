@@ -141,7 +141,8 @@ const sources = {
         './src/main/generic/utils/crypto/CryptoWorker.js',
         './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
         './src/main/generic/miner/MinerWorker.js',
-        './src/main/generic/miner/MinerWorkerImpl.js'
+        './src/main/generic/miner/MinerWorkerImpl.js',
+        './src/main/generic/miner/MinerWorkerPool.js'
     ],
     test: [
         'src/test/specs/**/*.spec.js'

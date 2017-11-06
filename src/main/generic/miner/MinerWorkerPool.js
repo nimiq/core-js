@@ -3,7 +3,7 @@
  */
 class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
     constructor(size = 1) {
-        super((name) => IWorker.startWorkerForProxy(MinerWorker, name, 'worker.js'), 'miner', size);
+        super((name) => IWorker.startWorkerForProxy(MinerWorker, name), 'miner', size);
         /** @type {boolean} */
         this._miningEnabled = false;
         /** @type {Array.<{minNonce: number, maxNonce: number}>} */
@@ -47,6 +47,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         this._blockHeader = blockHeader;
         this._shareCompact = shareCompact;
         if (!this._miningEnabled) {
+            this._activeNonces = [];
             this._miningEnabled = true;
             for (let i = 0; i < this.poolSize; ++i) {
                 this._startMiner();
