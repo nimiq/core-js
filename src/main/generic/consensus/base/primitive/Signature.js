@@ -19,11 +19,12 @@ class Signature extends Primitive {
 
     /**
      * @param {PrivateKey} privateKey
+     * @param {PublicKey} publicKey
      * @param {Uint8Array} data
      * @return {Promise.<Signature>}
      */
-    static async create(privateKey, data) {
-        return new Signature(await Crypto.signatureCreate(privateKey._obj, data));
+    static async create(privateKey, publicKey, data) {
+        return new Signature(await Crypto.signatureCreate(privateKey._obj, publicKey._obj, data));
     }
 
     /**

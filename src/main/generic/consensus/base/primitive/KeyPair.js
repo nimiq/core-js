@@ -37,7 +37,9 @@ class KeyPair extends Primitive {
      * @return {KeyPair}
      */
     static unserialize(buf) {
-        return new KeyPair(Crypto.keyPairDerive(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize))));
+        const privateKey = PrivateKey.unserialize(buf);
+        const publicKey = PublicKey.unserialize(buf);
+        return new KeyPair(Crypto.keyPairFromKeys(privateKey._obj, publicKey._obj));
     }
 
     /**
@@ -53,7 +55,10 @@ class KeyPair extends Primitive {
      * @return {SerialBuffer}
      */
     serialize(buf) {
-        return this.privateKey.serialize(buf);
+        buf = buf || new SerialBuffer(this.serializedSize);
+        this.privateKey.serialize(buf);
+        this.publicKey.serialize(buf);
+        return buf;
     }
 
     /** @type {PrivateKey} */
@@ -68,7 +73,7 @@ class KeyPair extends Primitive {
 
     /** @type {number} */
     get serializedSize() {
-        return this.privateKey.serializedSize;
+        return this.privateKey.serializedSize + this.publicKey.serializedSize;
     }
 
     /**

@@ -33,7 +33,7 @@ class TestBlockchain extends FullChain {
             if (!senderPrivKey) {
                 throw 'Signature computation requested, but no sender private key provided';
             }
-            signature = await Signature.create(senderPrivKey, transaction.serializeContent());
+            signature = await Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
         }
         transaction.signature = signature;
 
@@ -172,12 +172,12 @@ class TestBlockchain extends FullChain {
         const users = [];
 
         // First user, it needs to be known beforehand because the
-        // genesis block will send the first miner reward to it
-        const keys = KeyPair.unserialize(BufferUtils.fromBase64(('Lc7h0L4wncJ3DiNapeGlwURfpbGvyPbuBEpJemzzQW1ng6LQ+/C8AXXbc87dX/VNBrrgAGD1Rc+nXDM7QNFPggYlb56BE4czyOwmIFYPoMmiTRFmz4p/WKhl7hMSBo6N')));
+        // genesis block will send the first miner reward to it.
+        // This keypair is the one that the miner address of the test genesis block in DummyData.spec.js belongs to.
+        const keys = KeyPair.unserialize(TestBlockchain.USERS[0]);
         const address = await keys.publicKey.toAddress();
         users.push(TestBlockchain.generateUser(
-          keys.privateKey,
-          keys.publicKey,
+          key,
           address
         ));
 
@@ -257,54 +257,54 @@ class TestBlockchain extends FullChain {
 Class.register(TestBlockchain);
 
 TestBlockchain.BLOCKS = {};
-TestBlockchain.USERS = [
-    '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'
+TestBlockchain.USERS = [ // ed25519 keypairs
+    'Mmu0+Ql691CyuqACL0IW9DMYIdxAQXCWUQV1/+Yi/KHbtdCeGGSaS+0SPOflF9EgfGx5S+ISSOhGHv1HOT3WbA==', // This keypair is the one that the miner address of the test genesis block in DummyData.spec.js belongs to.
+    'HJ3XZfRDoPMpyEOZFQiETJSPxCTQ97Okyq8bSTIw4em1zS3x9PdeWBYwYcgBCl05/sni79TX9eu8FiZ9hWSruA==',
+    'xSYRx3GM0DPFi9icVtzodvnjck/7qcc/92YTRVXcqALVtCnpK7PZYIYb2ZUp2Y+tW3DHg12Vk/FI1oLUIny8RA==',
+    'dNxnxlHjOrthMRIFpWmaNMCccqjXrlO/eaD2g+1jvh8grFl7ZN/P102AYogOWBGZayH74Fcf2KSfy1/rDlFMrg==',
+    'JDfN8h0RHx51lMyY29UQcLjQR7ig9URcPPdxhRclhk/Wht9pnUIRXtzYWw742hlaOhJzkuOqqLg2oEM33hIV3Q==',
+    'OBZNFtzBjrJwaYq3A+sB0zpGscmYaIHrULfP36LT+5+sF/roKPCiXMcqT7OcAfnNCfzo+x7cxaqcoNEm2+VDVA==',
+    'LkC2ULxwljHcM4sFe6yA1eaYHPoPl4j2kh+5qtzPNr1vR95be3os01XpsINXwDHNucuevBGmzyJYbwgcUsFRiA==',
+    '2r62ml0RiVd+Wxb/Ef3QsNuCkElNgit6+VQpiPg5Vo8jLY4WEX/L1OL/pJOvLfsnIvb+HTOmCA6M4vpOJRb59g==',
+    'kVuy+yezfkkaTRxT47bLMID+JzvyTD3LzQEJTKk8X/RMJaaGSYsDiz68fxtS6m+SSdv1MUSogYz07K3wdr+nng==',
+    '8+P/0UlVK/jlFVQBK9Lr4cv4sLXVLiL8T/ahU0wXOYD9hAwqH2/GX7ghf8pO+0AcyBPbBBh+Wy7GgKxFLZ1YdA==',
+    'vR8sgRd+wa+n7ymTHB77h2TS91JTvp8pJSH7/c/dZlL91+BMMuXbSr7MBjEPw1rf7qULOts+/zAvnfY/IYsnJA==',
+    '1R/x+Mb9PtWkyv3nZpyL1QT19hGj6QaH7cHd0yArZWhl7aiwZ4exu9uX96/TsxgXRX4LA5tZ895IXswXZvnDBg==',
+    'aRBGIzF50FEWQoStq/hwKl/50YqvqjSxkBUu9BJ4HVYEZEQdbKu1JDr6/DX8gIT9mC2TQZriK7VNMUVXfSEhPQ==',
+    'Uub9Wb4pzoX2cEKwJErP5LoqELtRFeF5BRnW4Y9lZRJNQwmIYnUr6uFb50o2aN4iYlq1s1GsAE8c9gZyTsO6IA==',
+    'GfC3EOtTnlMM0z7A8dnwKuA4y1DSIQuwCs8FFRYrhL6lVs4r5QQSJlnuhYjGFSE5m+3392ELkvYNmEQL28u9Mg==',
+    'lxFSrIseX4bGZYJY/FrWjEtFZ4coJucoIjab9jc8675mTwkPuB7t7BCmaPPN67WxQFD0Qj5vw1NUQ66q1SrtdA==',
+    'zGLx8jnMMGP5T7enK/BQTPc47vuzl+yy07Wcs161wGK0Q5uSlGK6IfF50MRgs1Wn0sNeLqbILEk/KIZUy07erA==',
+    'I+zEE/RCxbLOtRA90bVu+zrqFg7nS6MUTn+2f5fbQ3O9jio9dwuFTkrgVLEGe9QbvVGC7NP3bIsjwNvgx3q2eQ==',
+    '1Oz7m7esArq2k0AXqHxUwjFcI8DGfR63MUUMuGuvcG+GP7VA5dw5NlR3i2uF5kHEy9wWB64iz/hP9RxXItJAnA==',
+    'X/06OWBfaMkHRPjtbzSXx2A1BcrJy6mUl7ndXiqAjK/FHSMI64mJ0VpPR3d8QwphDDUfaHHKt8in26vvUKCUIA==',
+    '6krkaWJRA/BrSXjU+dAzRGq9DtNjEEGR45gF0Obyv5elzSSGnO5+VgGItN2StcKfdpmkLFSFm91Na34FEywIsA==',
+    'rUjEeM4Hj1xI/GKenLd335fIn4/+wYTqTQB0G6W+AxIzp1fnNY5AMusg8+fab3f6j5DVJDy9OCif5ZiP4RjaBA==',
+    'RqaLfBj53rhPWZggf9l7OGyf1QvYazUoHCrep9lKNcn82XSH1cQbTuaGo0YRkpJlSp029uG70LOm//whFGSiag==',
+    'YhnMyCfXwdIRcul1TAZbBU7IsASMlC/2Vhmr/gwFjiMi1OlO3DNdnzd70aOHzoYyXSxdtqWGKcEGOn/AtgUSaw==',
+    'g2/wZc1CCHBZAajOs0yHBiIj+YTBKf2kFqg4feCj6qNy5yilcUR752g6MC3pV0scZbEzqLzK1kZ5tnxOjbZYJw=='
 ];
-TestBlockchain.NONCES = {
-    '3KykjQbceGx5M0TP0ldvtp0Iv7leb1HsIsmsG0DsEVE=': 53169,
-    'dcl3hufWlm5YwWmyMv3ZZmTpTZvy0D5r7WFuwqa5o8k=': 101053,
-    'Ej2mlBAX8Cbvf0mYf8vgZ6zej1S1annW5kK5YlxsQmQ=': 136083,
-    'miNdns4fbUifrK/Uj3VAlI//jhbKm5bIGpG2Pg5Vwyo=': 14766,
-    'W8xTIL1YgPKYBu6T+1vcU57r2AST8sHCzFllwMr6kPY=': 9404,
-    'AHZtXVg0CRduUbn9b+Dc4MnCiEbUZNGN3SW+v1BQoEA=': 628,
-    'gD57h4V3H5pdxqFrlhviCgT8WhBsWyEryLadqwTOAIE=': 20621,
-    'Z66c38S459s0MFYJi1pnJgiY9motvwDmRuQ4KRJg4b4=': 13861,
-    'jAsaWzG7qbZXjAjQYnKllJdrx3C1y4qxxOHy6+1N6bo=': 116221,
-    'lC4S0B+ZYO9YBCc03SCsw0fPZdi1E+3lnCBZRgb/ehg=': 165276,
-    'JoR1asPdKaQfE7pffjgZDLt8nuSDxm0ArAbUoCtoLwk=': 53169,
-    'JPFVpa5ZXCuuR9LIv+aDxEFgL60rA5P3S5rI/n4zo9k=': 23611,
-    'nCDGEpSowtm4COIvrFHxmlnnjujzmn3O9Bz3cM5PP8I=': 15884,
-    '3zHSRDkMj91fId67mHhpJ6JUm6NO/dVhIOghCvVWpU0=': 49853,
-    'Hrbj3T9hZ0yEaFzsWKODXs5E1t/RkQqkzhgyetFHDM4=': 37652,
-    '6Q3Tquz0ZJNNJRzDpM3pRsLbcxygu1BkPpzjpqFM5xo=': 59798,
-    'SufsV5AkhX5XPucvCUS9ytaAAEAwTXXSHNDwG6sto5Q=': 107248,
-    'QOwYdX+fshh1ktz99393Wuy6vt4NbLuFMy4VMTMF0X8=': 68392,
-    'eq1Oxb7C1WV0uzwTXuX1w4fX7cuqZrpw9otEDBHc8ps=': 50155,
-    'TmzuKXLWNrXD0D1kKHV926c65O+PPhgJunf1D51I0WQ=': 56571,
-    'jTKL/OEyJ8Fa0juEJTagas2/Xv2hct1p1TDlm5vo5b0=': 3301,
-    'bRWKEL6o7npDauXZzS/nRW2NqKnJMH69R1z3ms+RURA=': 24909
+TestBlockchain.NONCES = { // generated using mineBlocksJSON in the console
+    '0WONemvTdOwvTGn3dw8RE0LEJ/2Mht2JtG9/4RBCbro=': 52549,
+    'Z6pc0kuu+7j0rm5JCWPsncBy0NWecvlY1aCuojhGr3o=': 89506,
+    'AKlQB7xQdS9lryPkMpCCqCZUFtiMIJqmn2srm9oAIKY=': 84192,
+    'uo9JzW4IaoVpSJdgXFilFl5P4zpkoVNcP7sjoDMpgJc=': 23236,
+    'lZzoXelEw2d16Lr4Eus/nUDsu2Z/uUVBFinSuLYwe7U=': 81916,
+    'pxPmQVySx7TQHHen9ZLkrtQbhMr7HvV429ZqiVyoTOs=': 49132,
+    'NSTlRYvmPwoxnDksgnsvti6XSiXcCXO/gk8Vces0dwY=': 5059,
+    'gZyYbxZPmqGQB9V5ASNb/F3VYgahnaNlZsK1Pe/L3tg=': 137486,
+    'jGmPJCrlCC7v4Rx8ihaDLrfcxjytYLGlwaYpCvMA4vA=': 18497,
+    'VOD/6DlUAB0dfDYmsqgBwFZ8kJ3cVffs4kPNGw+ql8Y=': 16808,
+    '0b+JjEusDvSuvPIj5HdfLiMma/k07qX6FcyvsCsZcNE=': 52549,
+    'iarGMqWJexSq0UFVvPxTk91yDjq1rp52dNO2su4Zhr0=': 75505,
+    'AgO+eSY1n4Z4BbubC1+fWGDtPzf6DDOI5V5DN+PltvU=': 6018,
+    '2KDwJuWgkyxK1yDAolV2MwHvaxrFCaKi6EJkcq1suJk=': 166857,
+    'FGcAsMTyX1PzjS4Zvsr4TwsgrAE1IIN/SRU9pTm7DxI=': 54613,
+    '/tDYcYFVX+xe+abX4f6yct1knY2wYvLCXpHuUYdtMy0=': 29858,
+    '90pUhdwKQ6u2uZJ/Un2HUw/xIPYJR6OdLXziUXQaUOU=': 56940,
+    'V/JVCXktmbsksLbPUWwrcWFoGuNDlsJBBK2wPuhBiIU=': 18807,
+    'OUfeIgHXoUP0bkXOZsmFfktO+ovl5Y1iLU0aRKtiUzE=': 182254,
+    'QfJU36JTJY8omlCYklIkM/73FOk5q0YdNZ00rQl4HUQ=': 31619,
+    'nSyu/HAeH3Vu5MS9vHnsRY6Jussi5Rg0vqS20VMfMkE=': 19889,
+    '2BRuHbPzs0uYkmngY55ocJ1tObbQioJziOLxUY7ZSpU=': 63966
 };

@@ -36,14 +36,14 @@ Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
         new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
-        new Hash(BufferUtils.fromBase64('b/JHHIpQ1pV0PO+38ep0q8xH1jHdPduqJhSzQOd8BUE=')),
-        new Hash(BufferUtils.fromBase64('veUGZ9x69nRXrAYW7TbSb/JdqddRIpwWHZaJJJeRNM8=')),
+        new Hash(BufferUtils.fromBase64('9PuZ3Po378rQ1TBOQuvJo/YmuXumdCxPoGK1N6FKo+s=')),
+        new Hash(BufferUtils.fromBase64('Pn3M9RWmOniFkizV+KZdOptQOAcyX57lZ8G+DdjlZ6k=')),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        162767),
+        54619),
     new BlockInterlink([]),
-    new BlockBody(new Address(BufferUtils.fromBase64('ySpv9NQBK2YgycXIfMH8Mr+JfaM=')), [])
+    new BlockBody(new Address(BufferUtils.fromBase64('rME3sBOsF+4q6YwmnYawLKgtC2E=')), [])
 );
 // Store hash for synchronous access
 Block.GENESIS.hash().then(hash => {

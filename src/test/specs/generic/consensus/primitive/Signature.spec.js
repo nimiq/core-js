@@ -42,7 +42,7 @@ describe('Signature', () => {
         (async function () {
             const keyPair = await KeyPair.generate();
             const data = new Uint8Array([1, 2, 3, 4, 5, 6]);
-            const signature = await Signature.create(keyPair.privateKey, data);
+            const signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, data);
             expect(await signature.verify(keyPair.publicKey, data)).toBe(true);
             done();
         })();

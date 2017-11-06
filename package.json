@@ -33,7 +33,7 @@
     "atob": "^2.0.3",
     "btoa": "^1.1.2",
     "chalk": "^1.1.3",
-    "elliptic": "^6.4.0",
+    "ed25519": "danimoh/ed25519",
     "fast-sha256": "^1.0.0",
     "jsonquery-engine": "^1.0.2",
     "jungle-db": "nimiq-network/jungle-db",
