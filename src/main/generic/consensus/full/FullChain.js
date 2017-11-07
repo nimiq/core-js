@@ -9,7 +9,8 @@ class FullChain extends BaseChain {
      */
     static getPersistent(jdb, accounts) {
         const store = ChainDataStore.getPersistent(jdb);
-        return new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts);
+        return chain._init();
     }
 
     /**
@@ -18,13 +19,14 @@ class FullChain extends BaseChain {
      */
     static createVolatile(accounts) {
         const store = ChainDataStore.createVolatile();
-        return new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts);
+        return chain._init();
     }
 
     /**
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
-     * @returns {Promise.<FullChain>}
+     * @returns {FullChain}
      */
     constructor(store, accounts) {
         super(store);
@@ -56,13 +58,11 @@ class FullChain extends BaseChain {
          */
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
-
-        return this._init();
     }
 
     /**
      * @returns {Promise.<FullChain>}
-     * @private
+     * @protected
      */
     async _init() {
         this._headHash = await this._store.getHead();
@@ -195,7 +195,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Block} block
      * @returns {Promise.<boolean>}
-     * @private
+     * @protected
      */
     async _verifyInterlink(block) {
         // Check that all blocks referenced in the interlink of the given block are valid predecessors of that block.

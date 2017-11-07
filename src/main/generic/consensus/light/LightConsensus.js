@@ -35,17 +35,15 @@ class LightConsensus extends Observable {
             }
         });
 
-        /*
         // Relay new (verified) transactions to peers.
         mempool.on('transaction-added', tx => {
             // Don't relay transactions if we are not synced yet.
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                //agent.relayTransaction(tx);
+                agent.relayTransaction(tx);
             }
         });
-        */
     }
 
     /**
@@ -121,38 +119,6 @@ class LightConsensus extends Observable {
     _onPeerSynced() {
         this._syncing = false;
         this._syncBlockchain();
-    }
-
-    /**
-     * @param {Address} address
-     * @returns {Promise.<Account>}
-     */
-    async getAccount(address) {
-        return (await this.getAccounts([address]))[0];
-    }
-
-    /**
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<Array<Account>>}
-     */
-    async getAccounts(addresses) {
-        const syncedFullNodes = this._agents.values().filter(
-            agent => agent.synced
-                && agent.knowsBlock(this._blockchain.headHash)
-                && Services.isFullNode(agent.peer.peerAddress.services)
-        );
-
-        for (const agent of syncedFullNodes) {
-            try {
-                return await agent.getAccounts(addresses); // eslint-disable-line no-await-in-loop
-            } catch (e) {
-                Log.w(LightConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}`, e);
-                // Try the next peer.
-            }
-        }
-
-        // No peer supplied the requested account, fail.
-        throw new Error(`Failed to retrieve accounts ${addresses}`);
     }
 
     /** @type {boolean} */

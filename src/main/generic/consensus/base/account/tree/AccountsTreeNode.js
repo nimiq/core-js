@@ -221,7 +221,7 @@ class AccountsTreeNode {
         if (!this._childrenSuffixes) {
             return undefined;
         }
-        for (let i = this._childrenSuffixes.length-1; i>0; --i) {
+        for (let i = this._childrenSuffixes.length-1; i>=0; --i) {
             if (this._childrenSuffixes[i]) {
                 return this.prefix + this._childrenSuffixes[i];
             }

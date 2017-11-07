@@ -9,11 +9,9 @@ class TestBlockchain extends FullChain {
     }
 
     constructor(store, accounts, users) {
-        const thisPromise = super(store, accounts);
-        return thisPromise.then((superThis) => {
-            superThis._users = users;
-            return superThis;
-        });
+        super(store, accounts);
+        this._users = users;
+        return this._init();
     }
 
     get accounts() {

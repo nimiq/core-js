@@ -97,6 +97,7 @@ const sources = {
         './src/main/generic/consensus/full/FullConsensusAgent.js',
         './src/main/generic/consensus/full/FullConsensus.js',
         './src/main/generic/consensus/light/LightChain.js',
+        './src/main/generic/consensus/light/PartialChain.js',
         './src/main/generic/consensus/light/LightConsensusAgent.js',
         './src/main/generic/consensus/light/LightConsensus.js',
         './src/main/generic/consensus/nano/NanoChain.js',

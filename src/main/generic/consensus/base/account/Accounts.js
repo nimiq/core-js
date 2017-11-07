@@ -156,6 +156,13 @@ class Accounts extends Observable {
     }
 
     /**
+     * @returns {Promise.<PartialAccountsTree>}
+     */
+    async partialAccountsTree() {
+        return this._tree.partialTree();
+    }
+
+    /**
      * @returns {Promise}
      */
     commit() {
@@ -236,10 +243,6 @@ class Accounts extends Observable {
         const newBalance = new Balance(newValue, newNonce);
         const newAccount = new Account(newBalance);
         await tree.put(address, newAccount);
-    }
-
-    export() {
-        return this._tree.export();
     }
 
     /**

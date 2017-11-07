@@ -83,6 +83,30 @@ class ChainDataStore {
         }
 
         // TODO handle corrupted storage
+        return undefined;
+    }
+
+    /**
+     * @param {number} height
+     * @returns {Promise.<?Block>}
+     */
+    async getNearestBlockAt(height, lower=true) {
+        const index = this._store.index('height');
+        /** @type {Array.<ChainData>} */
+        const candidates = lower ?
+            await index.maxValues(JDB.KeyRange.upperBound(height)) :
+            await index.minValues(JDB.KeyRange.lowerBound(height));
+        if (!candidates || !candidates.length) {
+            return undefined;
+        }
+
+        for (const chainData of candidates) {
+            if (chainData.onMainChain) {
+                return chainData.head;
+            }
+        }
+
+        // TODO handle corrupted storage
         throw new Error(`Failed to find main chain block at height ${height}`);
     }
 

@@ -426,11 +426,6 @@ describe('AccountsTree', () => {
                     await tree.put(raw2address(current), new Account(new Balance(1, 0)));
                 }
 
-                // the tree should have 80 nodes now: 1 root, 1 for the first address and for each new address 2
-                // additional nodes are added
-                const nodes = await tree.export();
-                expect(nodes.length).toBe(80);
-
 
                 // check two balances
                 const address1 = raw2address(new Array(40).fill(0));
@@ -466,10 +461,6 @@ describe('AccountsTree', () => {
                     }
                 }
 
-                // check that the tree looks like expected
-                const nodes = await tree.export();
-                expect(nodes.length).toBe(273);
-
                 // check two balances
                 const address1 = raw2address(new Array(40).fill(0));
                 const address2 = raw2address([15].concat(new Array(39).fill(0)));
@@ -487,106 +478,6 @@ describe('AccountsTree', () => {
 
             })().then(done, done.fail);
 
-        });
-
-        /* Unfortunately, there is no import function at the time of this writing
-         * (cf. issue #172: https://github.com/nimiq-network/core/issues/172).
-         * Hence, without making assumptions about the implementation of the export function, we can only check
-         * if it outputs the correct amount of nodes.
-        */
-        it(`exports the correct number of nodes (${  treeBuilder.type  })`, (done) => {
-            (async function () {
-                const tree = await treeBuilder.builder();
-
-                // check empty tree
-                let nodes = await tree.export();
-                expect(nodes.length).toBe(1);
-
-                // now add nodes and check the number of exported nodes
-
-                const value1 = 1;
-                const nonce1 = 1;
-                const account1 = new Account(new Balance(value1, nonce1));
-                const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
-                await tree.put(address1, account1);
-
-                nodes = await tree.export();
-                expect(nodes.length).toBe(2);
-
-                const value2 = 2;
-                const nonce2 = 2;
-                const account2 = new Account(new Balance(value2, nonce2));
-                const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
-                await tree.put(address2, account2);
-
-                nodes = await tree.export();
-                expect(nodes.length).toBe(3);
-
-                const value3 = 3;
-                const nonce3 = 3;
-                const account3 = new Account(new Balance(value3, nonce3));
-                const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
-                await tree.put(address3, account3);
-
-                nodes = await tree.export();
-                expect(nodes.length).toBe(4);
-
-            })().then(done, done.fail);
-        });
-
-        it(`is invariant to exports (${  treeBuilder.type  })`, (done) => {
-            (async function () {
-                const tree = await treeBuilder.builder();
-                let oldHash = await tree.hash;
-                tree.export();
-                let newHash = tree.hash;
-                expect(oldHash).toEqual(newHash);
-
-                const value = 1;
-                const nonce = 1;
-                const account = new Account(new Balance(value, nonce));
-                const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
-                await tree.put(address, account);
-
-                oldHash = await tree.hash;
-                tree.export();
-                newHash = await tree.hash;
-                expect(oldHash).toEqual(newHash);
-
-            })().then(done, done.fail);
-        });
-
-        it(`can verify the consistency of its state (${  treeBuilder.type  })`, (done) => {
-            (async function () {
-                const tree = await treeBuilder.builder();
-
-                // empty tree should verify
-                expect(await tree.verify()).toBe(true);
-
-                // add a few entries and check again
-
-                // address 1 and 2 are picked to enforce the creation of a branch node on first level (after root) and 2
-                // terminal nodes in the second level.
-                const address1 = new Address(BufferUtils.fromHex(new Array(40).fill(0).join('')));
-                const account1 = new Account(new Balance(12, 9));
-                await tree.put(address1, account1);
-                expect(await tree.verify()).toBe(true);
-
-                const address2 = new Address(BufferUtils.fromHex([0,0,0,0,1].concat(new Array(35).fill(0)).join('')));
-                const account2 = new Account(new Balance(642, 31));
-                await tree.put(address2, account2);
-                expect(await tree.verify()).toBe(true);
-
-                const address3 = new Address(BufferUtils.fromBase64(Dummy.address3));
-                let account3 = new Account(new Balance(374, 937));
-                await tree.put(address3, account3);
-                expect(await tree.verify()).toBe(true);
-
-                // now update an entry
-                account3 = new Account(new Balance(77, 122));
-                await tree.put(address3, account3);
-                expect(await tree.verify()).toBe(true);
-            })().then(done, done.fail);
         });
 
         it(`correctly adds and removes nodes to and from the underlying store (${  treeBuilder.type  })`, (done) => {
@@ -613,10 +504,6 @@ describe('AccountsTree', () => {
                     }
                 }
 
-                async function expectTreeSize(size) {
-                    expect((await tree.export()).length).toBe(size);
-                }
-
 
                 /*
                  * Tree ascii art:
@@ -635,7 +522,7 @@ describe('AccountsTree', () => {
                 /* current tree:
                  *            R1
                  */
-                await expectTreeSize(1);
+                // await expectTreeSize(1);
 
                 // address 1 and 2 are picked to enforce the creation of a branch node on first level (after root) and 2
                 // terminal nodes in the second level.
@@ -650,7 +537,7 @@ describe('AccountsTree', () => {
                  *            |
                  *            T1
                  */
-                await expectTreeSize(2);
+                // await expectTreeSize(2);
 
                 undefinedNodes.push(R1);
                 await expectUndefined(undefinedNodes, 'Empty tree should be gone.');
@@ -679,7 +566,7 @@ describe('AccountsTree', () => {
                  *           /\
                  *         T2  T3
                  */
-                await expectTreeSize(4);
+                // await expectTreeSize(4);
 
                 // old root and terminal nodes vanished
                 undefinedNodes.push(R2);
@@ -708,7 +595,7 @@ describe('AccountsTree', () => {
                  *           /\
                  *         T2  T4
                  */
-                await expectTreeSize(4);
+                // await expectTreeSize(4);
 
                 // root, branch and third terminal changed, so the nodes should have vanished
                 undefinedNodes.push(T3);
@@ -739,7 +626,7 @@ describe('AccountsTree', () => {
                  *           /\
                  *         T5  T4
                  */
-                await expectTreeSize(4);
+                // await expectTreeSize(4);
 
                 // branch node and second terminal node changed
                 undefinedNodes.push(T2);
@@ -770,7 +657,7 @@ describe('AccountsTree', () => {
                  *            |
                  *            T6
                  */
-                await expectTreeSize(2);
+                // await expectTreeSize(2);
 
                 // root changed, branch node and fifth terminal node vanished, fourth turned into sixth
                 undefinedNodes.push(T5);
@@ -822,7 +709,7 @@ describe('AccountsTree', () => {
                  *          / |  \
                  *         T7 T8 T9
                  */
-                await expectTreeSize(5);
+                // await expectTreeSize(5);
                 await expectUndefined(undefinedNodes, 'Three addresses.');
 
                 // create nodes for checking
@@ -856,7 +743,7 @@ describe('AccountsTree', () => {
                  *           / \
                  *          T10 T11
                  */
-                await expectTreeSize(7);
+                // await expectTreeSize(7);
                 undefinedNodes.push(R7);
                 undefinedNodes.push(B4);
                 await expectUndefined(undefinedNodes, 'Four addresses.');

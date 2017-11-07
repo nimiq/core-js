@@ -66,6 +66,7 @@ require('../../generic/consensus/full/FullConsensus.js');
 require('../../generic/consensus/light/LightChain.js');
 require('../../generic/consensus/light/LightConsensusAgent.js');
 require('../../generic/consensus/light/LightConsensus.js');
+require('../../generic/consensus/light/PartialLightChain.js');
 require('../../generic/consensus/nano/NanoChain.js');
 require('../../generic/consensus/nano/NanoConsensusAgent.js');
 require('../../generic/consensus/nano/NanoConsensus.js');

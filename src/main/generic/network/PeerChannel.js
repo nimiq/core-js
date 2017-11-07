@@ -133,10 +133,11 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Array.<Hash>} locators
+     * @param {boolean} [ascending]
      * @return {boolean}
      */
-    getBlocks(locators) {
-        return this._send(new GetBlocksMessage(locators));
+    getBlocks(locators, ascending=true) {
+        return this._send(new GetBlocksMessage(locators, ascending ? GetBlocksMessage.Direction.ASCENDING : GetBlocksMessage.Direction.DESCENDING));
     }
 
     /**

@@ -1,24 +1,32 @@
-class LightChain extends BaseChain {
+class LightChain extends FullChain {
     /**
-     * @returns {Promise.<LightChain>}
-     */
-    constructor() {
-        super(ChainDataStore.createVolatile());
-
-        this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
-
-        this._headHash = Block.GENESIS.HASH;
-
-        this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
-
-        this._synchronizer = new Synchronizer();
-
-        return this._init();
+    * @param {JungleDB} jdb
+    * @param {Accounts} accounts
+    * @returns {Promise.<LightChain>}
+    */
+    static getPersistent(jdb, accounts) {
+        const store = ChainDataStore.getPersistent(jdb);
+        const chain = new LightChain(store, accounts);
+        return chain._init();
     }
 
-    async _init() {
-        await this._store.putChainData(Block.GENESIS.HASH, this._mainChain);
-        return this;
+    /**
+     * @param {Accounts} accounts
+     * @returns {Promise.<LightChain>}
+     */
+    static createVolatile(accounts) {
+        const store = ChainDataStore.createVolatile();
+        const chain = new LightChain(store, accounts);
+        return chain._init();
+    }
+
+    /**
+     * @returns {PartialLightChain}
+     */
+    constructor(store, accounts) {
+        super(store, accounts);
+
+        this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
     }
 
     /**
@@ -39,13 +47,13 @@ class LightChain extends BaseChain {
     async _pushProof(proof) {
         // Check that the proof is valid.
         if (!(await proof.verify())) {
-            Log.w(LightChain, 'Rejecting proof - verification failed');
+            Log.w(PartialLightChain, 'Rejecting proof - verification failed');
             return false;
         }
 
         // Check that the suffix is long enough.
         if (proof.suffix.length !== Policy.K && proof.suffix.length !== proof.head.height - 1) {
-            Log.w(LightChain, 'Rejecting proof - invalid suffix length');
+            Log.w(PartialLightChain, 'Rejecting proof - invalid suffix length');
             return false;
         }
 
@@ -56,7 +64,7 @@ class LightChain extends BaseChain {
             const interlink = await head.getNextInterlink(header.target);
             const interlinkHash = await interlink.hash();
             if (!header.interlinkHash.equals(interlinkHash)) {
-                Log.w(LightChain, 'Rejecting proof - invalid interlink hash in proof suffix');
+                Log.w(PartialLightChain, 'Rejecting proof - invalid interlink hash in proof suffix');
                 return false;
             }
 
@@ -65,7 +73,7 @@ class LightChain extends BaseChain {
         }
 
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
-        if (await LightChain._isBetterProof(proof, this._proof, Policy.M)) {
+        if (await PartialLightChain._isBetterProof(proof, this._proof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         }
 
@@ -81,8 +89,8 @@ class LightChain extends BaseChain {
      */
     static async _isBetterProof(proof1, proof2, m) {
         const lca = BlockChain.lowestCommonAncestor(proof1.prefix, proof2.prefix);
-        const score1 = await LightChain._getProofScore(proof1.prefix, lca, m);
-        const score2 = await LightChain._getProofScore(proof2.prefix, lca, m);
+        const score1 = await PartialLightChain._getProofScore(proof1.prefix, lca, m);
+        const score2 = await PartialLightChain._getProofScore(proof2.prefix, lca, m);
         return score1 === score2
             ? proof1.suffix.totalDifficulty() >= proof2.suffix.totalDifficulty()
             : score1 > score2;
@@ -124,7 +132,7 @@ class LightChain extends BaseChain {
      * @param {ChainProof} proof
      * @param {Array.<Block>} suffix
      * @returns {Promise.<void>}
-     * @private
+     * @protected
      */
     async _acceptProof(proof, suffix) {
         // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
@@ -154,94 +162,26 @@ class LightChain extends BaseChain {
 
         // Push all suffix blocks.
         for (const block of suffix) {
-            const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
+            const result = await this._pushLightBlock(block, false); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
     }
 
-    async _pushBlock(block) {
+    async _pushLightBlock(block) {
         // Check if we already know this header/block.
         const hash = await block.hash();
         const knownBlock = await this._store.getBlock(hash);
         if (knownBlock) {
-            return LightChain.OK_KNOWN;
+            return NanoChain.OK_KNOWN;
         }
 
         // Retrieve the immediate predecessor.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(block.prevHash);
         if (!prevData || prevData.totalDifficulty <= 0) {
-            return LightChain.ERR_ORPHAN;
+            return NanoChain.ERR_ORPHAN;
         }
 
-        return this._pushBlockInternal(block, hash, prevData);
-    }
-
-    /**
-     * @param {BlockHeader} header
-     * @returns {Promise.<number>}
-     */
-    pushHeader(header) {
-        return this._synchronizer.push(() => {
-            return this._pushHeader(header);
-        });
-    }
-
-    /**
-     * @param {BlockHeader} header
-     * @returns {Promise.<number>}
-     * @private
-     */
-    async _pushHeader(header) {
-        // Check if we already know this header/block.
-        const hash = await header.hash();
-        const knownBlock = await this._store.getBlock(hash);
-        if (knownBlock) {
-            return LightChain.OK_KNOWN;
-        }
-
-        // Verify proof of work.
-        if (!(await header.verifyProofOfWork())) {
-            Log.w(LightChain, 'Rejecting header - PoW verification failed');
-            return LightChain.ERR_INVALID;
-        }
-
-        // Retrieve the immediate predecessor.
-        /** @type {ChainData} */
-        const prevData = await this._store.getChainData(header.prevHash);
-        if (!prevData || prevData.totalDifficulty <= 0) {
-            Log.w(LightChain, 'Rejecting header - unknown predecessor');
-            return LightChain.ERR_ORPHAN;
-        }
-
-        // Check that the block is valid successor to its predecessor.
-        /** @type {Block} */
-        const predecessor = prevData.head;
-        if (!(await header.isImmediateSuccessorOf(predecessor.header))) {
-            Log.w(LightChain, 'Rejecting header - not a valid successor');
-            return LightChain.ERR_INVALID;
-        }
-
-        // Check that the difficulty is correct (if we can compute the next target)
-        const nextTarget = await this.getNextTarget(predecessor);
-        if (BlockUtils.isValidTarget(nextTarget)) {
-            if (header.nBits !== BlockUtils.targetToCompact(nextTarget)) {
-                Log.w(LightChain, 'Rejecting header - difficulty mismatch');
-                return LightChain.ERR_INVALID;
-            }
-        } else {
-            Log.w(LightChain, 'Skipping difficulty verification - not enough blocks available');
-        }
-
-        // Compute and verify interlink.
-        const interlink = await predecessor.getNextInterlink(header.target);
-        const interlinkHash = await interlink.hash();
-        if (!interlinkHash.equals(header.interlinkHash)) {
-            Log.w(LightChain, 'Rejecting header - interlink verification failed');
-            return LightChain.ERR_INVALID;
-        }
-
-        const block = new Block(header, interlink);
         return this._pushBlockInternal(block, hash, prevData);
     }
 
@@ -263,7 +203,7 @@ class LightChain extends BaseChain {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return LightChain.OK_EXTENDED;
+            return NanoChain.OK_EXTENDED;
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
@@ -274,86 +214,18 @@ class LightChain extends BaseChain {
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
-            return LightChain.OK_REBRANCHED;
+            return NanoChain.OK_REBRANCHED;
         }
 
         // Otherwise, we are creating/extending a fork. Store chain data.
-        Log.v(LightChain, `Creating/extending fork with block ${blockHash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
+        Log.v(NanoChain, `Creating/extending fork with block ${blockHash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
         await this._store.putChainData(blockHash, chainData);
 
-        return LightChain.OK_FORKED;
+        return NanoChain.OK_FORKED;
     }
 
-    /**
-     * @param {Hash} blockHash
-     * @param {ChainData} chainData
-     * @returns {Promise}
-     * @private
-     */
-    async _rebranch(blockHash, chainData) {
-        Log.v(LightChain, `Rebranching to fork ${blockHash}, height=${chainData.head.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
-
-        // Find the common ancestor between our current main chain and the fork chain.
-        // Walk up the fork chain until we find a block that is part of the main chain.
-        // Store the chain along the way.
-        const forkChain = [];
-        const forkHashes = [];
-
-        let curData = chainData;
-        let curHash = blockHash;
-        while (!curData.onMainChain) {
-            forkChain.push(curData);
-            forkHashes.push(curHash);
-
-            curHash = curData.head.prevHash;
-            curData = await this._store.getChainData(curHash); // eslint-disable-line no-await-in-loop
-            Assert.that(!!curData, 'Failed to find fork predecessor while rebranching');
-        }
-
-        Log.v(LightChain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
-
-        // Unset onMainChain flag on the current main chain up to (excluding) the common ancestor.
-        let headHash = this._headHash;
-        let headData = this._mainChain;
-        while (!headHash.equals(curHash)) {
-            headData.onMainChain = false;
-            await this._store.putChainData(headHash, headData);
-
-            headHash = headData.head.prevHash;
-            headData = await this._store.getChainData(headHash);
-            Assert.that(!!headData, 'Failed to find main chain predecessor while rebranching');
-        }
-
-        // Set onMainChain flag on the fork.
-        for (let i = forkChain.length - 1; i >= 0; i--) {
-            const forkData = forkChain[i];
-            forkData.onMainChain = true;
-            await this._store.putChainData(forkHashes[i], forkData);
-        }
-
-        this._mainChain = chainData;
-        this._headHash = blockHash;
-    }
-
-    /** @type {Block} */
-    get head() {
-        return this._mainChain.head;
-    }
-
-    /** @type {Hash} */
-    get headHash() {
-        return this._headHash;
-    }
-
-    /** @type {number} */
-    get height() {
-        return this._mainChain.head.height;
+    partialChain() {
+        return new PartialLightChain(this._store, this._accounts);
     }
 }
-LightChain.ERR_ORPHAN = -2;
-LightChain.ERR_INVALID = -1;
-LightChain.OK_KNOWN = 0;
-LightChain.OK_EXTENDED = 1;
-LightChain.OK_REBRANCHED = 2;
-LightChain.OK_FORKED = 3;
 Class.register(LightChain);

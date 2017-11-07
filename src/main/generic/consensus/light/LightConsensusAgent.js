@@ -8,6 +8,8 @@ class LightConsensusAgent extends Observable {
         super();
         /** @type {LightChain} */
         this._blockchain = blockchain;
+        /** @type {PartialLightChain} */
+        this._partialChain = null;
         /** @type {Mempool} */
         this._mempool = mempool;
         /** @type {Peer} */
@@ -42,14 +44,21 @@ class LightConsensusAgent extends Observable {
 
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
+        peer.channel.on('get-data', msg => this._onGetData(msg));
+        peer.channel.on('get-header', msg => this._onGetHeader(msg));
         peer.channel.on('not-found', msg => this._onNotFound(msg));
-        peer.channel.on('header', msg => this._onHeader(msg));
+        peer.channel.on('block', msg => this._onBlock(msg));
         peer.channel.on('tx', msg => this._onTx(msg));
+        peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
+        peer.channel.on('mempool', msg => this._onMempool(msg));
 
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
-        peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
+        peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
+        peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
+        peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
+        peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -82,15 +91,118 @@ class LightConsensusAgent extends Observable {
     }
 
     /**
+     * @param {Transaction} transaction
+     * @return {Promise}
+     */
+    async relayTransaction(transaction) {
+        // TODO Don't relay if no consensus established yet ???
+
+        // Create InvVector.
+        const hash = await transaction.hash();
+        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+
+        // Don't relay transaction to this peer if it already knows it.
+        if (this._knownObjects.contains(vector)) {
+            return;
+        }
+
+        // Relay transaction to peer.
+        this._peer.channel.inv([vector]);
+
+        // Assume that the peer knows this transaction now.
+        this._knownObjects.add(vector);
+    }
+
+    /**
      * @returns {Promise.<void>}
      */
     async syncBlockchain() {
-        const headBlock = await this._blockchain.getBlock(this._peer.headHash);
-        if (!headBlock) {
-            this._requestChainProof();
-        } else {
-            this._syncFinished();
+        // Phase 1: sync proof
+        const knowsHead = await this._blockchain.knowsBlock(this._peer.headHash);
+        if (!knowsHead && !this._partialChain) {
+            this._partialChain = this._blockchain.partialChain();
         }
+
+        if (this._partialChain) {
+            switch (this._partialChain.state) {
+                case PartialLightChain.State.PROVE_CHAIN:
+                    this._requestChainProof();
+                    break;
+                case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
+                    this._requestAccountsTree();
+                    break;
+                case PartialLightChain.State.PROVE_BLOCKS:
+                    this._requestProofBlocks();
+                    break;
+                case PartialLightChain.State.COMPLETE:
+                    if (!knowsHead) {
+                        this._requestBlocks();
+                    } else {
+                        this._syncFinished();
+                    }
+                    break;
+            }
+        }
+    }
+    
+    async _requestProofBlocks() {
+        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
+
+        // XXX Only one getBlocks request at a time.
+        if (this._timers.timeoutExists('getBlocks')) {
+            Log.e(LightConsensusAgent, 'Duplicate _requestProoflocks()');
+            return;
+        }
+
+        // Request blocks from peer.
+        this._peer.channel.getBlocks(await this._partialChain.getBlockLocators(), false);
+
+        // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
+        // TODO should we ban here instead?
+        this._timers.setTimeout('getBlocks', () => {
+            this._timers.clearTimeout('getBlocks');
+            this._peer.channel.close('getBlocks timeout');
+        }, LightConsensusAgent.REQUEST_TIMEOUT);
+    }
+
+    async _requestBlocks() {
+        // XXX Only one getBlocks request at a time.
+        if (this._timers.timeoutExists('getBlocks')) {
+            Log.e(LightConsensusAgent, 'Duplicate _requestBlocks()');
+            return;
+        }
+
+        // Request blocks starting from our hardest chain head going back to
+        // the genesis block. Push top 10 hashes first, then back off exponentially.
+        /** @type {Array.<Hash>} */
+        const locators = [this._blockchain.headHash];
+        let block = this._blockchain.head;
+        for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
+            locators.push(block.prevHash);
+            block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+        }
+
+        let step = 2;
+        for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
+            block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
+            locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
+            step *= 2;
+        }
+
+        // Push the genesis block hash.
+        if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
+            locators.push(Block.GENESIS.HASH);
+        }
+
+        // Request blocks from peer.
+        this._peer.channel.getBlocks(locators);
+
+        // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
+        // TODO should we ban here instead?
+        this._timers.setTimeout('getBlocks', () => {
+            this._timers.clearTimeout('getBlocks');
+            this._peer.channel.close('getBlocks timeout');
+        }, LightConsensusAgent.REQUEST_TIMEOUT);
     }
 
     /**
@@ -98,8 +210,54 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     _syncFinished() {
+        Assert.that(!!this._partialChain);
+
+        this._partialChain = null;
+
         this._synced = true;
         this.fire('sync');
+    }
+
+    async _requestAccountsTree() {
+        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
+
+        const chunk = await this._requestAccountsTreeChunk(this._partialChain.getMissingAccountsPrefix(), this._partialChain.headHash);
+        const result = await this._partialChain.pushAccountsTreeChunk(chunk);
+
+        // Something went wrong!
+        if (result !== PartialAccountsTree.OK_UNFINISHED && result !== PartialAccountsTree.OK_COMPLETE) {
+            // TODO maybe ban?
+            Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
+        }
+
+        this.syncBlockchain();
+    }
+
+    /**
+     * @param {string} startPrefix
+     * @param {Hash} headHash
+     * @private
+     */
+    _requestAccountsTreeChunk(startPrefix, headHash) {
+        Assert.that(!this._timers.timeoutExists('getAccountsTree'));
+
+        Log.d(NanoConsensusAgent, `Requesting AccountsTreeChunk starting at ${startPrefix} from ${this._peer.peerAddress}`);
+
+        this._accountsRequest = {
+            startPrefix: startPrefix,
+            headHash: headHash,
+            resolve: resolve,
+            reject: reject
+        };
+
+        // Request AccountsProof from peer.
+        this._peer.channel.getAccountsTreeChunk(headHash, startPrefix);
+
+        // Drop the peer if it doesn't send the accounts proof within the timeout.
+        this._timers.setTimeout('getAccountsTree', () => {
+            this._peer.channel.close('getAccountsTree timeout');
+            reject(new Error('timeout')); // TODO error handling
+        }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
 
     /**
@@ -107,6 +265,7 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     _requestChainProof() {
+        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
         Assert.that(!this._timers.timeoutExists('getChainProof'));
 
         // Request ChainProof from peer.
@@ -156,7 +315,7 @@ class LightConsensusAgent extends Observable {
         }
 
         // Push the proof into the LightChain.
-        if (!(await this._blockchain.pushProof(msg.proof))) {
+        if (!(await this._partialChain.pushProof(msg.proof))) {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
             // TODO ban instead?
             this._peer.channel.close('invalid chain proof');
@@ -165,7 +324,7 @@ class LightConsensusAgent extends Observable {
 
         // TODO add all blocks from the chain proof to knownObjects.
 
-        this._syncFinished();
+        this.syncBlockchain();
     }
 
 
@@ -175,6 +334,9 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _onInv(msg) {
+        // Clear the getBlocks timeout.
+        this._timers.clearTimeout('getBlocks');
+
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
@@ -193,11 +355,10 @@ class LightConsensusAgent extends Observable {
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    // TODO
-                    //const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
-                    //if (!tx) {
-                    //    unknownObjects.push(vector);
-                    //}
+                    const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
+                    if (!tx) {
+                        unknownObjects.push(vector);
+                    }
                     break;
                 }
                 default:
@@ -241,19 +402,9 @@ class LightConsensusAgent extends Observable {
         this._objectsInFlight = this._objectsToRequest;
 
         // Request all queued objects from the peer.
-        // TODO cleanup!
-        const blocks = [];
-        const transactions = [];
-        for (const obj of this._objectsToRequest.array) {
-            if (obj.type === InvVector.Type.BLOCK) {
-                blocks.push(obj);
-            } else {
-                transactions.push(obj);
-            }
-        }
-
-        this._peer.channel.getHeader(blocks);
-        this._peer.channel.getData(transactions);
+        // TODO depending in the REQUEST_THRESHOLD, we might need to split up
+        // the getData request into multiple ones.
+        this._peer.channel.getData(this._objectsToRequest.array);
 
         // Reset the queue.
         this._objectsToRequest = new IndexedArray([], true);
@@ -276,20 +427,24 @@ class LightConsensusAgent extends Observable {
         if (!this._objectsToRequest.isEmpty()) {
             this._requestData();
         }
+        // Otherwise, request more blocks if we are still syncing the blockchain.
+        else if (this._syncing) {
+            this.syncBlockchain();
+        }
     }
 
     /**
-     * @param {HeaderMessage} msg
+     * @param {BlockMessage} msg
      * @return {Promise}
      * @private
      */
-    async _onHeader(msg) {
-        const hash = await msg.header.hash();
+    async _onBlock(msg) {
+        const hash = await msg.block.hash();
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
-            Log.w(LightConsensusAgent, `Unsolicited header ${hash} received from ${this._peer.peerAddress}, discarding`);
+            Log.w(LightConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
             return;
@@ -299,11 +454,11 @@ class LightConsensusAgent extends Observable {
         this._onObjectReceived(vector);
 
         // Put block into blockchain.
-        const status = await this._blockchain.pushHeader(msg.header);
+        const status = await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
         if (status === LightChain.ERR_INVALID) {
-            this._peer.channel.ban('received invalid header');
+            this._peer.channel.ban('received invalid block');
         }
     }
 
@@ -327,8 +482,7 @@ class LightConsensusAgent extends Observable {
         this._onObjectReceived(vector);
 
         // Put transaction into mempool.
-        // TODO
-        // this._mempool.pushTransaction(msg.transaction);
+        this._mempool.pushTransaction(msg.transaction);
 
         // TODO send reject message if we don't like the transaction
         // TODO what to do if the peer keeps sending invalid transactions?
@@ -370,63 +524,225 @@ class LightConsensusAgent extends Observable {
         }
     }
 
+    /* Request endpoints */
+
     /**
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<Array.<Account>>}
+     * @param {GetDataMessage} msg
+     * @return {Promise}
+     * @private
      */
-    getAccounts(addresses) {
-        return this._synchronizer.push(() => {
-            return this._getAccounts(addresses);
-        });
+    async _onGetData(msg) {
+        // Keep track of the objects the peer knows.
+        for (const vector of msg.vectors) {
+            this._knownObjects.add(vector);
+        }
+
+        // Check which of the requested objects we know.
+        // Send back all known objects.
+        // Send notFound for unknown objects.
+        const unknownObjects = [];
+        for (const vector of msg.vectors) {
+            switch (vector.type) {
+                case InvVector.Type.BLOCK: {
+                    const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
+                    if (block) {
+                        // We have found a requested block, send it back to the sender.
+                        this._peer.channel.block(block);
+                    } else {
+                        // Requested block is unknown.
+                        unknownObjects.push(vector);
+                    }
+                    break;
+                }
+                case InvVector.Type.TRANSACTION: {
+                    const tx = await this._mempool.getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
+                    if (tx) {
+                        // We have found a requested transaction, send it back to the sender.
+                        this._peer.channel.tx(tx);
+                    } else {
+                        // Requested transaction is unknown.
+                        unknownObjects.push(vector);
+                    }
+                    break;
+                }
+                default:
+                    throw `Invalid inventory type: ${vector.type}`;
+            }
+        }
+
+        // Report any unknown objects back to the sender.
+        if (unknownObjects.length) {
+            this._peer.channel.notFound(unknownObjects);
+        }
     }
 
     /**
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<Array<Account>>}
+     * @param {GetHeaderMessage} msg
+     * @return {Promise}
      * @private
      */
-    _getAccounts(addresses) {
+    async _onGetHeader(msg) {
+        // Keep track of the objects the peer knows.
+        for (const vector of msg.vectors) {
+            this._knownObjects.add(vector);
+        }
+
+        // Check which of the requested objects we know.
+        // Send back all known objects.
+        // Send notFound for unknown objects.
+        const unknownObjects = [];
+        for (const vector of msg.vectors) {
+            switch (vector.type) {
+                case InvVector.Type.BLOCK: {
+                    const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
+                    if (block) {
+                        // We have found a requested block, send it back to the sender.
+                        this._peer.channel.header(block.header);
+                    } else {
+                        // Requested block is unknown.
+                        unknownObjects.push(vector);
+                    }
+                    break;
+                }
+                case InvVector.Type.TRANSACTION:
+                default:
+                    throw `Invalid inventory type: ${vector.type}`;
+            }
+        }
+
+        // Report any unknown objects back to the sender.
+        if (unknownObjects.length) {
+            this._peer.channel.notFound(unknownObjects);
+        }
+    }
+
+    /**
+     * @param {GetBlocksMessage} msg
+     * @return {Promise}
+     * @private
+     */
+    async _onGetBlocks(msg) {
+        Log.v(LightConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators received from ${this._peer.peerAddress}`);
+
+        // A peer has requested blocks. Check all requested block locator hashes
+        // in the given order and pick the first hash that is found on our main
+        // chain, ignore the rest. If none of the requested hashes is found,
+        // pick the genesis block hash. Send the main chain starting from the
+        // picked hash back to the peer.
+        let startBlock = Block.GENESIS;
+        for (const locator of msg.locators) {
+            const block = await this._blockchain.getBlock(locator);
+            if (block) {
+                // We found a block, ignore remaining block locator hashes.
+                startBlock = block;
+                break;
+            }
+        }
+
+        // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
+        // after the identified block on the main chain.
+        const blocks = await this._blockchain.getBlocks(startBlock.height + 1, LightConsensusAgent.GETBLOCKS_VECTORS_MAX);
+        const vectors = [];
+        for (const block of blocks) {
+            const hash = await block.hash();
+            vectors.push(new InvVector(InvVector.Type.BLOCK, hash));
+        }
+
+        // Send the vectors back to the requesting peer.
+        this._peer.channel.inv(vectors);
+    }
+
+    /**
+     * @param {GetAccountsProofMessage} msg
+     * @private
+     */
+    async _onGetAccountsProof(msg) {
+        const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
+        if (!proof) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsProof(msg.blockHash, proof);
+        }
+    }
+
+    /**
+     * @param {GetAccountsTreeChunkMessage} msg
+     * @private
+     */
+    async _onGetAccountsTreeChunk(msg) {
+        const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
+        if (!chunk) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
+        }
+    }
+
+    /**
+     * @param {MempoolMessage} msg
+     * @return {Promise}
+     * @private
+     */
+    async _onMempool(msg) {
+        // Query mempool for transactions
+        const transactions = await this._mempool.getTransactions();
+
+        // Send transactions back to sender.
+        for (const tx of transactions) {
+            this._peer.channel.tx(tx);
+        }
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<AccountsTreeChunk>}
+     * @private
+     */
+    _getAccounts(blockHash, startPrefix) {
         Assert.that(this._accountsRequest === null);
 
-        Log.d(LightConsensusAgent, `Requesting AccountsProof for ${addresses} from ${this._peer.peerAddress}`);
+        Log.d(LightConsensusAgent, `Requesting AccountsTreeChunk starting at "${startPrefix}" from ${this._peer.peerAddress}`);
 
         return new Promise((resolve, reject) => {
             this._accountsRequest = {
-                addresses: addresses,
+                startPrefix: startPrefix,
+                blockHash: blockHash,
                 resolve: resolve,
                 reject: reject
             };
 
             // Request AccountsProof from peer.
-            this._peer.channel.getAccountsProof(addresses);
+            this._peer.channel.getAccountsTreeChunk(blockHash, startPrefix);
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
-            this._timers.setTimeout('getAccountsProof', () => {
-                this._peer.channel.close('getAccountsProof timeout');
+            this._timers.setTimeout('getAccountsTreeChunk', () => {
+                this._peer.channel.close('getAccountsTreeChunk timeout');
                 reject(new Error('timeout')); // TODO error handling
-            }, LightConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT);
+            }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
         });
     }
 
     /**
-     * @param {AccountsProofMessage} msg
+     * @param {AccountsTreeChunkMessage} msg
      * @returns {Promise.<void>}
      * @private
      */
-    async _onAccountsProof(msg) {
-        Log.d(LightConsensusAgent, `[ACCOUNTS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof}`);
+    async _onAccountsTreeChunk(msg) {
+        Log.d(LightConsensusAgent, `[ACCOUNTS-TREE-CHUNK] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.chunk}`);
 
         // Check if we have requested an accounts proof, reject unsolicited ones.
         if (!this._accountsRequest) {
-            Log.w(LightConsensusAgent, `Unsolicited accounts proof received from ${this._peer.peerAddress}`);
+            Log.w(LightConsensusAgent, `Unsolicited accounts tree chunk received from ${this._peer.peerAddress}`);
             // TODO close/ban?
             return;
         }
 
         // Clear the request timeout.
-        this._timers.clearTimeout('getAccountsProof');
+        this._timers.clearTimeout('getAccountsTreeChunk');
 
-        const addresses = this._accountsRequest.addresses;
+        const startPrefix = this._accountsRequest.startPrefix;
+        const blockHash = this._accountsRequest.blockHash;
         const resolve = this._accountsRequest.resolve;
         const reject = this._accountsRequest.reject;
 
@@ -436,50 +752,61 @@ class LightConsensusAgent extends Observable {
         // Check that we know the reference block.
         // TODO Which blocks should be accept here?
         // XXX For now, we ONLY accept our head block. This will not work well in face of block propagation delays.
-        if (!this._blockchain.headHash.equals(msg.blockHash)) {
-            Log.w(LightConsensusAgent, `Received AccountsProof for block != head from ${this._peer.peerAddress}`);
+        if (!blockHash.equals(msg.blockHash) || msg.chunk.head.prefix <= startPrefix) {
+            Log.w(LightConsensusAgent, `Received AccountsTreeChunk for block != head or wrong start prefix from ${this._peer.peerAddress}`);
             reject(new Error('Invalid reference block'));
             return;
         }
 
         // Verify the proof.
-        const proof = msg.proof;
-        if (!(await proof.verify())) {
-            Log.w(LightConsensusAgent, `Invalid AccountsProof received from ${this._peer.peerAddress}`);
+        const chunk = msg.chunk;
+        if (!(await chunk.verify())) {
+            Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close('Invalid AccountsProof');
-            reject(new Error('Invalid AccountsProof'));
+            this._peer.channel.close('Invalid AccountsTreeChunk');
+            reject(new Error('Invalid AccountsTreeChunk'));
             return;
         }
 
         // Check that the proof root hash matches the accountsHash in the reference block.
-        const rootHash = await proof.root();
-        if (!this._blockchain.head.accountsHash.equals(rootHash)) {
-            Log.w(LightConsensusAgent, `Invalid AccountsProof (root hash) received from ${this._peer.peerAddress}`);
+        const rootHash = await chunk.root();
+        const block = await this._blockchain.getBlock(blockHash);
+        if (!block.accountsHash.equals(rootHash)) {
+            Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close('AccountsProof root hash mismatch');
-            reject(new Error('AccountsProof root hash mismatch'));
+            this._peer.channel.close('AccountsTreeChunk root hash mismatch');
+            reject(new Error('AccountsTreeChunk root hash mismatch'));
             return;
         }
 
-        // Check that all requested accounts are part of this proof.
-        // XXX return a map address -> account instead?
-        const accounts = [];
-        for (const address of addresses) {
-            try {
-                const account = proof.getAccount(address);
-                accounts.push(account);
-            } catch (e) {
-                Log.w(LightConsensusAgent, `Incomplete AccountsProof received from ${this._peer.peerAddress}`);
-                // TODO ban instead?
-                this._peer.channel.close('Incomplete AccountsProof');
-                reject(new Error('Incomplete AccountsProof'));
-                return;
-            }
+        // Return the retrieved accounts.
+        resolve(chunk);
+    }
+
+    /**
+     * @param {AccountsRejectedMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onAccountsRejected(msg) {
+        Log.d(LightConsensusAgent, `[ACCOUNTS-REJECTED] Received from ${this._peer.peerAddress}`);
+
+        // Check if we have requested an accounts proof, reject unsolicited ones.
+        if (!this._accountsRequest) {
+            Log.w(LightConsensusAgent, `Unsolicited accounts rejected received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
         }
 
-        // Return the retrieved accounts.
-        resolve(accounts);
+        // Clear the request timeout.
+        this._timers.clearTimeout('getAccountsTreeChunk');
+        const reject = this._accountsRequest.reject;
+
+        // Reset accountsRequest.
+        this._accountsRequest = null;
+
+
+        reject(new Error('Accounts request was rejected'));
     }
 
     /**
@@ -548,5 +875,5 @@ LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 10;
  * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
  * @type {number}
  */
-LightConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
+LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 5;
 Class.register(LightConsensusAgent);

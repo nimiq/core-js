@@ -17,7 +17,6 @@ class PartialAccountsTree extends AccountsTree {
     async pushChunk(chunk) {
         // First verify the proof.
         if (!(await chunk.verify())) {
-            await this.abort();
             return PartialAccountsTree.ERR_INCORRECT_PROOF;
         }
 
@@ -28,6 +27,7 @@ class PartialAccountsTree extends AccountsTree {
 
         // Check if proof can be merged.
         if (!(await tx._mergeProof(chunk.proof, chunk.tail.prefix))) {
+            await tx.abort();
             return PartialAccountsTree.ERR_UNMERGEABLE;
         }
         this._complete = tx.complete;
