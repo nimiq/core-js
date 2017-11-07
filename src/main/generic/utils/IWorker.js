@@ -57,15 +57,28 @@ class IWorker {
         IWorker._workerImplementation[baseClazz.name] = impl;
     }
 
-    static get _moduleLoadedCallbacks() {
-        return {}; // maps module name to callback
+    static fireModuleLoaded(module = 'Module') {
+        if (typeof IWorker._moduleLoadedCallbacks[module] === 'function') {
+            IWorker._moduleLoadedCallbacks[module]();
+        }
     }
 
-    static fireModuleLoaded(module = 'Module') {
-        const callback = IWorker._moduleLoadedCallbacks[module];
-        if (callback) {
-            callback();
-        }
+    static _loadBrowserScript(url, resolve) {
+        // Adding the script tag to the head as suggested before
+        const head = document.getElementsByTagName('head')[0];
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+
+        // Then bind the event to the callback function.
+        // There are several events for cross browser compatibility.
+        // These events might occur before processing, so delay them a bit.
+        const ret = () => window.setTimeout(resolve, 100);
+        script.onreadystatechange = ret;
+        script.onload = ret;
+
+        // Fire the loading
+        head.appendChild(script);
     }
 
     static Proxy(clazz) {
@@ -177,54 +190,46 @@ class IWorker {
             }
 
             async importScript(script, module = 'Module') {
-                if (IWorker._global[module]) {
-                    // module already loading or loaded
-                    return false;
-                }
+                if (typeof Nimiq === 'object' && Nimiq._path) script = `${Nimiq._path}${script}`;
+                if (typeof __dirname === 'string' && script.indexOf('/') === -1) script = `${__dirname}/${script}`;
+
                 try {
-                    const moduleSettings = IWorker._global[module] || {};
-
-                    await new Promise(resolve => {
+                    const moduleSettings = IWorker._global[module];
+                    return new Promise(async (resolve) => {
                         if (module) {
-                            IWorker._moduleLoadedCallbacks[module] = resolve;
-                        }
-                        // loads the module constructor into IWorker._global[module];
-                        if (typeof importScripts === 'function') {
-                            importScripts(script); //
-                        } else if (typeof require === 'function') {
-                            const imported = require(script);
-                            if (module) {
-                                IWorker._global[module] = imported;
-                            }
-                        }
-                        if (module) {
-                            IWorker._moduleLoadedCallbacks[module] = null;
-                        } else {
-                            resolve();
-                        }
-                    });
-
-                    if (module) {
-                        await new Promise(resolve => {
-                            switch (moduleSettings.preRun) {
+                            switch (typeof moduleSettings.preRun) {
                                 case 'undefined':
-                                    moduleSettings.preRun = resolve;
+                                    moduleSettings.preRun = () => resolve(true);
                                     break;
                                 case 'function':
-                                    moduleSettings.preRun = [moduleSettings.preRun, resolve];
+                                    moduleSettings.preRun = [moduleSettings, () => resolve(true)];
                                     break;
                                 case 'object':
-                                    moduleSettings.preRun.push(resolve);
+                                    moduleSettings.push(() => resolve(true));
                             }
-                            // Instantiate the module. IWorker._global[module] is afterwards the module itself.
+                        }
+                        if (typeof importScripts === 'function') {
+                            await new Promise((resolve) => {
+                                IWorker._moduleLoadedCallbacks[module] = resolve;
+                                importScripts(script);
+                            });
                             IWorker._global[module] = IWorker._global[module](moduleSettings);
-                        });
-                    }
-
-                    console.log(`Loaded ${script}.`);
-                    return true;
-                } catch(e) {
-                    console.error(e);
+                            if (!module) resolve(true);
+                        } else if (typeof window === 'object') {
+                            await new Promise((resolve) => {
+                                IWorker._loadBrowserScript(script, resolve);
+                            });
+                            IWorker._global[module] = IWorker._global[module](moduleSettings);
+                            if (!module) resolve(true);
+                        } else if (typeof require === 'function') {
+                            IWorker._global[module] = require(script)(moduleSettings);
+                            if (!module) resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                    });
+                } catch (e) {
+                    console.log(e);
                     return false;
                 }
             }
@@ -235,6 +240,8 @@ class IWorker {
              * @returns {Promise.<boolean>}
              */
             importWasm(wasm, module = 'Module') {
+                if (typeof Nimiq === 'object' && Nimiq._path) wasm = `${Nimiq._path}${wasm}`;
+                if (typeof __dirname === 'string' && wasm.indexOf('/') === -1) wasm = `${__dirname}/${wasm}`;
                 if (!IWorker._global.WebAssembly) {
                     console.log('No support for WebAssembly available.');
                     return Promise.resolve(false);
@@ -421,5 +428,6 @@ class IWorker {
     }
 }
 
+IWorker._moduleLoadedCallbacks = {};
 IWorker._workerImplementation = {};
 Class.register(IWorker);

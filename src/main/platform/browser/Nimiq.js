@@ -41,7 +41,7 @@ class Nimiq {
         if (!Nimiq._hasNativePromise()) return Nimiq._unsupportedPromise();
         if (Nimiq._loaded) return Promise.resolve();
         Nimiq._loadPromise = Nimiq._loadPromise ||
-            new Promise(async (resolve, error) => {
+            new Promise((resolve, error) => {
                 if (!Nimiq._script) {
                     if (!Nimiq._hasNativeClassSupport() || !Nimiq._hasProperScoping()) {
                         console.error('Unsupported browser');
@@ -50,9 +50,6 @@ class Nimiq {
                     } else if (!Nimiq._hasAsyncAwaitSupport()) {
                         Nimiq.script = 'web-babel.js';
                         console.warn('Client lacks native support for async');
-                    } else if (!Nimiq._hasProperCryptoApi() || !(await Nimiq._hasSupportForP256())) {
-                        Nimiq.script = 'web-crypto.js';
-                        console.warn('Client lacks native support for crypto routines');
                     } else {
                         Nimiq._script = 'web.js';
                     }
@@ -126,19 +123,6 @@ class Nimiq {
             eval('"use strict"; (async function() { await {}; })()'); // eslint-disable-line no-eval
             return true;
         } catch (err) {
-            return false;
-        }
-    }
-
-    static _hasProperCryptoApi() {
-        return window.crypto && window.crypto.subtle;
-    }
-
-    static async _hasSupportForP256() {
-        try {
-            await window.crypto.subtle.generateKey({name: 'ECDSA', namedCurve: 'P-256'}, true, ['sign', 'verify']);
-            return true;
-        } catch (e) {
             return false;
         }
     }

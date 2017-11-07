@@ -54,7 +54,6 @@ const sources = {
         './src/main/generic/utils/assert/Assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
-        './node_modules/ed25519/ed25519.js',
         './src/main/generic/utils/crypto/Crypto.js',
         './src/main/generic/utils/crc/CRC32.js',
         './src/main/generic/utils/database/ObjectDB.js',
@@ -216,7 +215,17 @@ const uglify_babel = {
     }
 };
 
-gulp.task('build-web-babel', function () {
+gulp.task('build-worker', function () {
+    return gulp.src(sources.worker)
+        .pipe(sourcemaps.init())
+        .pipe(concat('worker.js'))
+        .pipe(uglify())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'))
+        .pipe(connect.reload());
+});
+
+gulp.task('build-web-babel', ['build-worker'], function () {
     return merge(
         browserify([], {
             require: [
@@ -250,36 +259,6 @@ gulp.task('build-web-babel', function () {
         .pipe(uglify(uglify_babel))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
-});
-
-gulp.task('build-web-crypto', function () {
-    return merge(
-        browserify([], {
-            require: [
-                'fast-sha256'
-            ]
-        }).bundle()
-            .pipe(source('crypto.js'))
-            .pipe(buffer()),
-        gulp.src(dependencies // external dependencies
-            .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
-            .pipe(sourcemaps.init({loadMaps: true}))
-            .pipe(concat('web.js')))
-        .pipe(sourcemaps.init())
-        .pipe(concat('web-crypto.js'))
-//        .pipe(uglify(uglify_config))
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'));
-});
-
-gulp.task('build-worker', function () {
-    return gulp.src(sources.worker)
-        .pipe(sourcemaps.init())
-        .pipe(concat('worker.js'))
-        .pipe(uglify())
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'))
-        .pipe(connect.reload());
 });
 
 gulp.task('build-web', ['build-worker'], function () {
@@ -369,6 +348,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-crypto', 'build-web-babel', 'build-loader', 'build-node']);
+gulp.task('build', ['build-web', 'build-web-babel', 'build-loader', 'build-node']);
 
 gulp.task('default', ['build', 'serve']);

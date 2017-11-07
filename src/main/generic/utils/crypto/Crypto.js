@@ -7,7 +7,12 @@ class Crypto {
      */
     static async _cryptoWorker() {
         if (!Crypto._cryptoWorkerPromise) {
-            Crypto._cryptoWorkerPromise = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+            //Crypto._cryptoWorkerPromise = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+            Crypto._cryptoWorkerPromise = new Promise(async (resolve) => {
+                const impl = IWorker._workerImplementation[CryptoWorker.name];
+                await impl.init('crypto');
+                resolve(impl);
+            });
         }
         return Crypto._cryptoWorkerPromise;
     }

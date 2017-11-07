@@ -8,7 +8,7 @@ class TestBlockchain extends FullChain {
 
     }
 
-    constructor(store, accounts, users) {
+    constructor(store, accounts, users, ignorePoW = false) {
         // XXX Set a large timeout when mining on demand.
         if (TestBlockchain.MINE_ON_DEMAND && jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
             jasmine.DEFAULT_TIMEOUT_INTERVAL = 1200000;
@@ -17,6 +17,7 @@ class TestBlockchain extends FullChain {
         const thisPromise = super(store, accounts);
         return thisPromise.then((superThis) => {
             superThis._users = users;
+            superThis._invalidNonce = ignorePoW;
             return superThis;
         });
     }
@@ -138,6 +139,8 @@ class TestBlockchain extends FullChain {
                 console.log(`No nonce available for block ${hash.toHex()}, will start mining at height ${block.height} following ${block.prevHash.toHex()}.`);
                 await TestBlockchain.mineBlock(block);
                 TestBlockchain.NONCES[hash.toBase64()] = block.header.nonce;
+            } else if (this._invalidNonce) {
+                console.log(`No nonce available for block ${hash.toHex()}, but accepting invalid nonce.`);
             } else {
                 throw new Error(`No nonce available for block ${hash}: ${block}`);
             }
@@ -146,11 +149,11 @@ class TestBlockchain extends FullChain {
         return block;
     }
 
-    static async createVolatileTest(numBlocks, numUsers = 2) {
+    static async createVolatileTest(numBlocks, numUsers = 2, ignorePoW = false) {
         const accounts = await Accounts.createVolatile();
         const store = ChainDataStore.createVolatile();
         const users = await TestBlockchain.getUsers(numUsers);
-        const testBlockchain = await new TestBlockchain(store, accounts, users);
+        const testBlockchain = await new TestBlockchain(store, accounts, users, ignorePoW);
 
         // populating the blockchain
         for (let i = 0; i < numBlocks; i++) {
@@ -185,10 +188,10 @@ class TestBlockchain extends FullChain {
         // First user, it needs to be known beforehand because the
         // genesis block will send the first miner reward to it.
         // This keypair is the one that the miner address of the test genesis block in DummyData.spec.js belongs to.
-        const keys = KeyPair.unserialize(TestBlockchain.USERS[0]);
+        const keys = KeyPair.unserialize(BufferUtils.fromBase64(TestBlockchain.USERS[0]));
         const address = await keys.publicKey.toAddress();
         users.push(TestBlockchain.generateUser(
-          key,
+          keys,
           address
         ));
 
