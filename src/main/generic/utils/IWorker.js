@@ -57,6 +57,17 @@ class IWorker {
         IWorker._workerImplementation[baseClazz.name] = impl;
     }
 
+    static get _moduleLoadedCallbacks() {
+        return {}; // maps module name to callback
+    }
+
+    static fireModuleLoaded(module = 'Module') {
+        const callback = IWorker._moduleLoadedCallbacks[module];
+        if (callback) {
+            callback();
+        }
+    }
+
     static Proxy(clazz) {
         const proxyClass = class extends clazz {
             /**
@@ -165,39 +176,55 @@ class IWorker {
                 return eval(code);
             }
 
-            importScript(script, module = 'Module') {
+            async importScript(script, module = 'Module') {
+                if (IWorker._global[module]) {
+                    // module already loading or loaded
+                    return false;
+                }
                 try {
-                    if (typeof importScripts === 'function') {
-                        if (!module) {
-                            importScripts(script);
-                            return true;
+                    const moduleSettings = IWorker._global[module] || {};
+
+                    await new Promise(resolve => {
+                        if (module) {
+                            IWorker._moduleLoadedCallbacks[module] = resolve;
                         }
-                        const test = performance.now();
-                        return new Promise((resolve) => {
-                            IWorker._global[module] = IWorker._global[module] || {};
-                            switch (typeof IWorker._global[module].preRun) {
+                        // loads the module constructor into IWorker._global[module];
+                        if (typeof importScripts === 'function') {
+                            importScripts(script); //
+                        } else if (typeof require === 'function') {
+                            const imported = require(script);
+                            if (module) {
+                                IWorker._global[module] = imported;
+                            }
+                        }
+                        if (module) {
+                            IWorker._moduleLoadedCallbacks[module] = null;
+                        } else {
+                            resolve();
+                        }
+                    });
+
+                    if (module) {
+                        await new Promise(resolve => {
+                            switch (moduleSettings.preRun) {
                                 case 'undefined':
-                                    IWorker._global[module].preRun = resolve;
+                                    moduleSettings.preRun = resolve;
                                     break;
                                 case 'function':
-                                    IWorker._global[module].preRun = [IWorker._global[module].preRun, resolve];
+                                    moduleSettings.preRun = [moduleSettings.preRun, resolve];
                                     break;
                                 case 'object':
-                                    IWorker._global[module].preRun.push(resolve);
+                                    moduleSettings.preRun.push(resolve);
                             }
-                            importScripts(script);
-                        }).then(() => {
-                            console.log(`Loaded ${script} in ${performance.now() - test}ms`);
-                            return true;
+                            // Instantiate the module. IWorker._global[module] is afterwards the module itself.
+                            IWorker._global[module] = IWorker._global[module](moduleSettings);
                         });
-                    } else if (typeof require === 'function') {
-                        let wasm = IWorker._global[module].wasmBinary;
-                        IWorker._global[module] = require(script);
-                        IWorker._global[module].wasmBinary = IWorker._global[module].wasmBinary || wasm;
                     }
+
+                    console.log(`Loaded ${script}.`);
                     return true;
-                } catch (e) {
-                    console.log(e);
+                } catch(e) {
+                    console.error(e);
                     return false;
                 }
             }
