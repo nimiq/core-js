@@ -51,10 +51,11 @@ class LightConsensusAgent extends Observable {
 
         // InvVectors we want to request via getData are collected here and
         // periodically requested.
-        /** @type {IndexedArray} */
-        this._objectsToRequest = new IndexedArray([], true);
+        /** @type {HashSet.<InvVector>} */
+        this._objectsToRequest = new HashSet();
 
         // Objects that are currently being requested from the peer.
+        /** @type {HashSet.<InvVector>} */
         this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
@@ -523,10 +524,8 @@ class LightConsensusAgent extends Observable {
         Log.v(LightConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         if (unknownObjects.length > 0) {
-            // Store unknown vectors in objectsToRequest array.
-            for (const obj of unknownObjects) {
-                this._objectsToRequest.push(obj);
-            }
+            // Store unknown vectors in objectsToRequest.
+            this._objectsToRequest.addAll(unknownObjects);
 
             // Clear the request throttle timeout.
             this._timers.clearTimeout('inv');
@@ -552,16 +551,31 @@ class LightConsensusAgent extends Observable {
         // Don't do anything if there are no objects queued to request.
         if (this._objectsToRequest.isEmpty()) return;
 
-        // Mark the requested objects as in-flight.
-        this._objectsInFlight = this._objectsToRequest;
+        // Request queued objects from the peer. Only request up to VECTORS_MAX_COUNT objects at a time.
+        const vectorsMaxCount = BaseInventoryMessage.VECTORS_MAX_COUNT;
+        /** @type {Array.<InvVector>} */
+        let vectors;
+        if (this._objectsToRequest.length > vectorsMaxCount) {
+            vectors = Array.from(new LimitIterable(this._objectsToRequest.valueIterator(), vectorsMaxCount));
 
-        // Request all queued objects from the peer.
-        // TODO depending in the REQUEST_THRESHOLD, we might need to split up
-        // the getData request into multiple ones.
-        this._peer.channel.getData(this._objectsToRequest.array);
+            // Mark the requested objects as in-flight.
+            this._objectsInFlight = new HashSet();
+            this._objectsInFlight.addAll(vectors);
 
-        // Reset the queue.
-        this._objectsToRequest = new IndexedArray([], true);
+            // Remove requested objects from queue.
+            this._objectsToRequest.removeAll(vectors);
+        } else {
+            vectors = Array.from(this._objectsToRequest.valueIterator());
+
+            // Mark the requested objects as in-flight.
+            this._objectsInFlight = this._objectsToRequest;
+
+            // Reset the queue.
+            this._objectsToRequest = new HashSet();
+        }
+
+        // Send getData request to peer.
+        this._peer.channel.getData(vectors);
 
         // Set timer to detect end of request / missing objects
         this._timers.setTimeout('getData', () => this._noMoreData(), LightConsensusAgent.REQUEST_TIMEOUT);
@@ -597,7 +611,7 @@ class LightConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(LightConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
@@ -644,7 +658,7 @@ class LightConsensusAgent extends Observable {
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(LightConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -727,7 +741,7 @@ class LightConsensusAgent extends Observable {
 
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
-            if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+            if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
                 Log.w(LightConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
