@@ -139,6 +139,12 @@ class LightConsensusAgent extends Observable {
         const block = this._partialChain
             ? await this._partialChain.getBlock(this._peer.headHash)
             : await this._blockchain.getBlock(this._peer.headHash);
+
+        if (block && !this._partialChain) {
+            this._syncFinished();
+            return;
+        }
+
         if (!block && !this._partialChain) {
             this._syncing = true;
             this._partialChain = this._blockchain.partialChain();

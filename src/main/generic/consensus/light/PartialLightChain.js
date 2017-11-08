@@ -437,7 +437,7 @@ class PartialLightChain extends LightChain {
         if (this._accountsTx) {
             await this._accountsTx.abort();
         }
-        this.fire('complete', this._proof);
+        this.fire('complete', this._proof, this._headHash, this._mainChain);
     }
 
     /**
@@ -445,7 +445,7 @@ class PartialLightChain extends LightChain {
      */
     async commit() {
         const result = await this._store.commit();
-        this.fire('committed', this._proof);
+        this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;
     }
 

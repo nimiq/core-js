@@ -31,17 +31,13 @@ class LightChain extends FullChain {
         this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
     }
 
-    async _updateHead() {
-        this._headHash = await this._store.getHead();
-        this._mainChain = await this._store.getChainData(this._headHash);
-        this.fire('head-changed', this.head);
-    }
-
     partialChain() {
         const partialChain = new PartialLightChain(this._store, this._accounts, this._proof);
-        partialChain.on('committed', (proof) => {
+        partialChain.on('committed', async (proof, headHash, mainChain) => {
             this._proof = proof;
-            this._updateHead();
+            this._headHash = headHash;
+            this._mainChain = mainChain;
+            this.fire('head-changed', this.head);
         });
         return partialChain;
     }
