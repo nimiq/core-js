@@ -451,7 +451,6 @@ class PartialLightChain extends LightChain {
 
     /**
      * @returns {Promise.<void>}
-     * @private
      */
     async abort() {
         this._state = PartialLightChain.State.ABORTED;
@@ -495,6 +494,11 @@ class PartialLightChain extends LightChain {
     /** @type {PartialLightChain.State} */
     get state() {
         return this._state;
+    }
+
+    /** @type {number} */
+    get proofHeadHeight() {
+        return this._proofHead.head.height;
     }
 }
 /**

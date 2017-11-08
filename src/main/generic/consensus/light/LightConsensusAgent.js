@@ -22,6 +22,14 @@ class LightConsensusAgent extends Observable {
         /** @type {boolean} */
         this._synced = false;
 
+        // The height of our blockchain when we last attempted to sync the chain.
+        /** @type {number} */
+        this._lastChainHeight = 0;
+
+        // The number of failed blockchain sync attempts.
+        /** @type {number} */
+        this._failedSyncs = 0;
+
         // Set of all objects (InvVectors) that we think the remote peer knows.
         /** @type {HashSet.<InvVector>} */
         this._knownObjects = new HashSet();
@@ -120,6 +128,13 @@ class LightConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      */
     async syncBlockchain() {
+        if (this._failedSyncs >= LightConsensusAgent.MAX_SYNC_ATTEMPTS) {
+            this._peer.channel.ban('blockchain sync failed');
+            if (this._partialChain) {
+                await this._partialChain.abort();
+            }
+        }
+
         // Phase 1: sync proof
         const block = this._partialChain
             ? await this._partialChain.getBlock(this._peer.headHash)
@@ -171,6 +186,12 @@ class LightConsensusAgent extends Observable {
     
     async _requestProofBlocks() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
+
+        // If nothing happend since the last request, increase failed syncs.
+        if (this._lastChainHeight === this._partialChain.proofHeadHeight) {
+            this._failedSyncs++;
+        }
+        this._lastChainHeight = this._partialChain.proofHeadHeight;
 
         // XXX Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
@@ -238,6 +259,7 @@ class LightConsensusAgent extends Observable {
             this._partialChain = null;
         }
         this._syncing = false;
+        this._failedSyncs = 0;
 
         this._synced = true;
         this.fire('sync');
@@ -324,6 +346,7 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - unexpected head`);
             // TODO ban instead?
             this._peer.channel.close('invalid chain proof');
+            await this._partialChain.abort();
             return;
         }
 
@@ -332,6 +355,7 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
             // TODO ban instead?
             this._peer.channel.close('invalid chain proof');
+            await this._partialChain.abort();
             return;
         }
 
@@ -734,11 +758,10 @@ class LightConsensusAgent extends Observable {
         this._accountsRequest = null;
 
         // Check that we know the reference block.
-        // TODO Which blocks should be accept here?
-        // XXX For now, we ONLY accept our head block. This will not work well in face of block propagation delays.
         if (!blockHash.equals(msg.blockHash) || msg.chunk.head.prefix <= startPrefix) {
             Log.w(LightConsensusAgent, `Received AccountsTreeChunk for block != head or wrong start prefix from ${this._peer.peerAddress}`);
-            reject(new Error('Invalid reference block'));
+            this._peer.channel.close('Invalid AccountsTreeChunk');
+            await this._partialChain.abort();
             return;
         }
 
@@ -748,7 +771,7 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('Invalid AccountsTreeChunk');
-            reject(new Error('Invalid AccountsTreeChunk'));
+            await this._partialChain.abort();
             return;
         }
 
@@ -759,7 +782,7 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('AccountsTreeChunk root hash mismatch');
-            reject(new Error('AccountsTreeChunk root hash mismatch'));
+            await this._partialChain.abort();
             return;
         }
 
@@ -770,6 +793,8 @@ class LightConsensusAgent extends Observable {
         if (result !== PartialAccountsTree.OK_UNFINISHED && result !== PartialAccountsTree.OK_COMPLETE) {
             // TODO maybe ban?
             Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
+            this._peer.channel.close('AccountsTreeChunk root hash mismatch');
+            await this._partialChain.abort();
         }
 
         this.syncBlockchain();
@@ -796,8 +821,11 @@ class LightConsensusAgent extends Observable {
         // Reset accountsRequest.
         this._accountsRequest = null;
 
-
-        throw new Error('Accounts request was rejected');
+        // Restart syncing.
+        await this._partialChain.abort();
+        this._partialChain = null;
+        this._syncing = false;
+        this._failedSyncs++;
     }
 
     /**
@@ -867,4 +895,12 @@ LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 5;
+/**
+ * Maximum number of blockchain sync retries before closing the connection.
+ * XXX If the peer is on a long fork, it will count as a failed sync attempt
+ * if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getBlocks)
+ * blocks.
+ * @type {number}
+ */
+LightConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
 Class.register(LightConsensusAgent);
