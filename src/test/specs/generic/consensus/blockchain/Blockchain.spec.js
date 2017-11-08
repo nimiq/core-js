@@ -1,23 +1,9 @@
 describe('Blockchain', () => {
-    let testBlockchain;
-    let originalTimeout;
-
-    beforeEach(function (done) {
-        originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
-        (async function () {
-            // create testing blockchain with only genesis and dummy users
-            testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
-        })().then(done, done.fail);
-    });
-
-    afterEach(function() {
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
-    });
 
     it('will verify block transaction limit', (done) => {
         (async function () {
             // Now try to push a block which exceeds the maximum block size
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
             const numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS + 1;
             const transactions = await testBlockchain.generateTransactions(numTransactions, false, false);
             const block = await testBlockchain.createBlock({transactions: transactions});
@@ -28,8 +14,9 @@ describe('Blockchain', () => {
 
     it('will always verify a block before accepting it', (done) => {
         (async function () {
-            // Try to push a block with an invalid prevHash and check that it fails
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
+            // Try to push a block with an invalid prevHash and check that it fails
             // hash that does NOT match the one from Genesis
             const zeroHash = new Hash(BufferUtils.fromBase64('0000000000000000000000000000000000000000000'));
             // create block with invalid prevHash
@@ -111,41 +98,71 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    xit('can push and get a valid block, and get the next compact target', (done) => {
+    it('can push 100 blocks with constant difficulty, then increase the difficulty over 10 more blocks', (done) => {
         (async function () {
-            // This is needed to make sure pushBlock() went through successfully
-            // and wasn't ignored later in the process
-            spyOn(Log, 'd').and.callThrough();
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
-            // all timestamps are explicitly set to trigger an increase in difficulty after the last block
+            let nextTarget = await testBlockchain.getNextTarget();
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1));
 
-            for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW - 2; ++i) {
-                const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, 1);
+            let timestamp;
+            for (let i = 0; i < 100; ++i) {
+                timestamp = testBlockchain.height * Policy.BLOCK_TIME;
+                const block = await testBlockchain.createBlock({timestamp: timestamp});
                 const hash = await block.hash();
                 const status = await testBlockchain.pushBlock(block);
-                expect(status).toBe(Blockchain.PUSH_OK);
-                expect(Log.d).not.toHaveBeenCalled();
+                expect(status).toBe(FullChain.OK_EXTENDED);
 
                 // Get that same block and check that they're the same
                 const resultBlock = await testBlockchain.getBlock(hash);
                 expect(resultBlock).toBe(block);
             }
 
-            // Check the compact target before reaching Policy.DIFFICULTY_ADJUSTMENT_BLOCKS
-            // it should still be the initial difficulty 1
-            let nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(1).toString(16));
+            nextTarget = await testBlockchain.getNextTarget();
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1));
 
-            // Push one last block (this one should reach Policy.DIFFICULTY_ADJUSTMENT_BLOCKS)
-            const block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined, Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME / 2);
-            const status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_OK);
-            expect(Log.d).not.toHaveBeenCalled();
+            // all timestamps are explicitly set to trigger an increase in difficulty after the last block
+            for (let i = 0; i < 10; ++i) {
+                const block = await testBlockchain.createBlock({timestamp: 100 * Policy.BLOCK_TIME + i});
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(FullChain.OK_EXTENDED);
 
-            // Check that the difficulty was increased to 2,
-            // since the timestamps in the blocks were crafted to double the difficulty
-            nextCompactTarget = await testBlockchain.getNextCompactTarget();
-            expect(nextCompactTarget.toString(16)).toBe(BlockUtils.difficultyToCompact(2).toString(16));
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+            }
+
+            nextTarget = await testBlockchain.getNextTarget();
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.262947183947684));
+        })().then(done, done.fail);
+    });
+
+    it('can push 100 blocks and keep difficulty increasing over each block', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
+            let nextTarget = await testBlockchain.getNextTarget();
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1));
+
+            let difficulty = 0;
+            for (let i = 0; i < 100; ++i) {
+                let timestamp = testBlockchain.height * Policy.BLOCK_TIME - 2;
+                const block = await testBlockchain.createBlock({timestamp: timestamp});
+                const hash = await block.hash();
+                const status = await testBlockchain.pushBlock(block);
+                expect(status).toBe(FullChain.OK_EXTENDED);
+
+                // Get that same block and check that they're the same
+                const resultBlock = await testBlockchain.getBlock(hash);
+                expect(resultBlock).toBe(block);
+
+                expect(block.difficulty > difficulty).toBe(true);
+                difficulty = block.difficulty;
+            }
+
+            nextTarget = await testBlockchain.getNextTarget();
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.222654588987314));
         })().then(done, done.fail);
     });
 
@@ -165,6 +182,7 @@ describe('Blockchain', () => {
     it('can rebranch to a harder fork', (done) => {
         (async function () {
             // Create first chain (4 blocks)
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
             let block = await testBlockchain.createBlock();
             let status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
@@ -234,6 +252,8 @@ describe('Blockchain', () => {
 
     it('has getters that return correct values for its properties', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
             // This is needed to make sure pushBlock() went through successfully
             // and wasn't ignored later in the process
             spyOn(Log, 'w').and.callThrough();

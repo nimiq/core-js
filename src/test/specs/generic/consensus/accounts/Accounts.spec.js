@@ -1,17 +1,9 @@
 
 describe('Accounts', () => {
 
-    let testBlockchain;
-
-    beforeEach(function (done) {
-        (async function () {
-            // create testing blockchain with only genesis and dummy users
-            testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
-        })().then(done, done.fail);
-    });
-
     it('cannot commit a wrong block', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const block = await testBlockchain.createBlock();
             const accounts = await Accounts.createVolatile();
             let error_thrown = false;
@@ -27,6 +19,7 @@ describe('Accounts', () => {
     it('can apply and revert a block', (done) => {
         // prepare everything and serialize accountstree
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
 
             const accountsHash1 = await accounts.hash();
@@ -71,6 +64,7 @@ describe('Accounts', () => {
 
     it('correctly rewards miners', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const user1 = testBlockchain.users[0];
             const user2 = testBlockchain.users[1];
             const user3 = testBlockchain.users[2];
@@ -105,6 +99,7 @@ describe('Accounts', () => {
 
     it('can safely roll-back an invalid block', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const user1 = testBlockchain.users[0];  // sender tx 1
             const user2 = testBlockchain.users[1];  // sender tx 2
             const user3 = testBlockchain.users[2];  // receiver tx 1 + 2
@@ -143,6 +138,7 @@ describe('Accounts', () => {
     // Deactivated since it takes up too much time during the travis build (firefox fails).
     xit('can handle a large amount of block transactions', (done) => {
         (async function test() {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
             const numTransactions = Math.floor(TestBlockchain.MAX_NUM_TRANSACTIONS / 20);
             const users = await TestBlockchain.generateUsers(numTransactions);
@@ -165,6 +161,7 @@ describe('Accounts', () => {
     // note that a lot of possible errors are already tested in the blockchain, transaction and block specs.
     it('rejects invalid transactions', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const user1 = testBlockchain.users[0];
             const user2 = testBlockchain.users[1];
             const user3 = testBlockchain.users[2];
@@ -201,6 +198,7 @@ describe('Accounts', () => {
 
     xit('rejects self-transactions', (done) => {
         (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const user1 = testBlockchain.users[0];
             const accounts = testBlockchain.accounts;
 

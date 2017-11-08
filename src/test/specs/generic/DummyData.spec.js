@@ -51,3 +51,6 @@ Block.GENESIS.hash().then(hash => {
     Object.freeze(Block.GENESIS);
 });
 
+if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
+}

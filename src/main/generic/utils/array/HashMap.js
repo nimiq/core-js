@@ -61,6 +61,13 @@ class HashMap {
     }
 
     /**
+     * @returns {Iterator.<K|*>}
+     */
+    keyIterator() {
+        return this._map.keys();
+    }
+
+    /**
      * @returns {Array.<V|*>}
      */
     values() {
@@ -68,10 +75,24 @@ class HashMap {
     }
 
     /**
+     * @returns {Iterator.<V|*>}
+     */
+    valueIterator() {
+        return this._map.values();
+    }
+
+    /**
      * @returns {number}
      */
     get length() {
         return this._map.size;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this._map.size === 0;
     }
 }
 Class.register(HashMap);

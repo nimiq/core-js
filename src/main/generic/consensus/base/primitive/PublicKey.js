@@ -5,7 +5,8 @@ class PublicKey extends Primitive {
      */
     static copy(o) {
         if (!o) return o;
-        const obj = new Uint8Array(o._obj);
+        // FIXME Move this to Crypto class.
+        const obj = {raw: new Uint8Array(o._obj.raw)};
         return new PublicKey(obj);
     }
 

@@ -11,12 +11,12 @@ class Mempool extends Observable {
         this._accounts = accounts;
 
         // Our pool of transactions.
-        /** @type {object} */
-        this._transactions = {};
+        /** @type {HashMap.<Hash, Transaction>} */
+        this._transactions = new HashMap();
 
         // All public keys of transaction senders currently in the pool.
-        /** @type {object} */
-        this._senderPubKeys = {};
+        /** @type {HashSet.<PublicKey>} */
+        this._senderPubKeys = new HashSet();
 
         // Listen for changes in the blockchain head to evict transactions that
         // have become invalid.
@@ -31,7 +31,7 @@ class Mempool extends Observable {
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
-        if (this._transactions[hash]) {
+        if (this._transactions.contains(hash)) {
             Log.v(Mempool, `Ignoring known transaction ${hash.toBase64()}`);
             return false;
         }
@@ -43,14 +43,14 @@ class Mempool extends Observable {
 
         // Only allow one transaction per senderPubKey at a time.
         // TODO This is a major limitation!
-        if (this._senderPubKeys[transaction.senderPubKey]) {
+        if (this._senderPubKeys.contains(transaction.senderPubKey)) {
             Log.w(Mempool, 'Rejecting transaction - duplicate sender public key');
             return false;
         }
-        this._senderPubKeys[transaction.senderPubKey] = true;
+        this._senderPubKeys.add(transaction.senderPubKey);
 
         // Transaction is valid, add it to the mempool.
-        this._transactions[hash] = transaction;
+        this._transactions.put(hash, transaction);
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
@@ -63,10 +63,9 @@ class Mempool extends Observable {
      * @returns {Transaction}
      */
     getTransaction(hash) {
-        return this._transactions[hash];
+        return this._transactions.get(hash);
     }
 
-    // Currently not asynchronous, but might be in the future.
     /**
      * @param {number} maxCount
      * @returns {Array.<Transaction>}
@@ -74,9 +73,9 @@ class Mempool extends Observable {
     getTransactions(maxCount = 5000) {
         // TODO Add logic here to pick the "best" transactions.
         const transactions = [];
-        for (const hash in this._transactions) {
+        for (const transaction of this._transactions.values()) {
             if (transactions.length >= maxCount) break;
-            transactions.push(this._transactions[hash]);
+            transactions.push(transaction);
         }
         return transactions;
     }
@@ -140,12 +139,12 @@ class Mempool extends Observable {
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
         const promises = [];
-        for (const hash in this._transactions) {
-            const transaction = this._transactions[hash];
+        for (const hash of this._transactions.keys()) {
+            const transaction = this._transactions.get(hash);
             promises.push(this._verifyTransactionBalance(transaction, true).then(isValid => {
                 if (!isValid) {
-                    delete this._transactions[hash];
-                    delete this._senderPubKeys[transaction.senderPubKey];
+                    this._transactions.remove(hash);
+                    this._senderPubKeys.remove(transaction.senderPubKey);
                 }
             }));
         }

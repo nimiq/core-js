@@ -10,25 +10,25 @@ describe('Block', () => {
     });
 
     it('must have a well defined header (116 bytes)', () => {
-        const body = block.body;
+        const interlink = block.interlink;
         expect(() => {
-            const test1 = new Block(undefined, body);
+            const test1 = new Block(undefined, interlink);
         }).toThrow('Malformed header');
 
         expect(() => {
-            const test1 = new Block(null, body);
+            const test1 = new Block(null, interlink);
         }).toThrow('Malformed header');
 
         expect(() => {
-            const test1 = new Block(1, body);
+            const test1 = new Block(1, interlink);
         }).toThrow('Malformed header');
 
         expect(() => {
-            const test1 = new Block(new Uint8Array(101), body);
+            const test1 = new Block(new Uint8Array(101), interlink);
         }).toThrow('Malformed header');
 
         expect(() => {
-            const test1 = new Block(block, body);
+            const test1 = new Block(block, interlink);
         }).toThrow('Malformed header');
     });
 

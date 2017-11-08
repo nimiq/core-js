@@ -1,14 +1,14 @@
 class NanoConsensus extends Observable {
     /**
      * @param {NanoChain} blockchain
-     * @param {Mempool} mempool
+     * @param {NanoMempool} mempool
      * @param {Network} network
      */
     constructor(blockchain, mempool, network) {
         super();
         /** @type {NanoChain} */
         this._blockchain = blockchain;
-        /** @type {Mempool} */
+        /** @type {NanoMempool} */
         this._mempool = mempool;
         /** @type {Network} */
         this._network = network;
@@ -34,18 +34,6 @@ class NanoConsensus extends Observable {
                 agent.relayBlock(head);
             }
         });
-
-        /*
-        // Relay new (verified) transactions to peers.
-        mempool.on('transaction-added', tx => {
-            // Don't relay transactions if we are not synced yet.
-            if (!this._established) return;
-
-            for (const agent of this._agents.values()) {
-                //agent.relayTransaction(tx);
-            }
-        });
-        */
     }
 
     /**
@@ -158,6 +146,17 @@ class NanoConsensus extends Observable {
         throw new Error(`Failed to retrieve accounts ${addresses}`);
     }
 
+    /**
+     * @param {Transaction} transaction
+     */
+    async relayTransaction(transaction) {
+        await this._mempool.pushTransaction(transaction);
+
+        for (const agent of this._agents.values()) {
+            agent.relayTransaction(transaction);
+        }
+    }
+
     /** @type {boolean} */
     get established() {
         return this._established;
@@ -170,7 +169,7 @@ class NanoConsensus extends Observable {
         return this._blockchain;
     }
 
-    /** @type {Mempool} */
+    /** @type {NanoMempool} */
     get mempool() {
         return this._mempool;
     }

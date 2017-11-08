@@ -211,10 +211,6 @@
                 this._networkChanged();
             }.bind(this));
 
-            $.accounts.on($.wallet.address, function(account) {
-                this._balanceChanged(account._balance);
-            }.bind(this));
-
             $.mempool.on('*', function() {
                 this._mempoolChanged();
             }.bind(this));
@@ -301,7 +297,7 @@
             /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address.toBase64();
+            this._wltAddress.innerText = $.wallet.address.toHex();
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
@@ -370,7 +366,7 @@
             }
             var address;
             try {
-                address = new Nimiq.Address(Nimiq.BufferUtils.fromHex(recipientAddr));
+                address = Nimiq.Address.fromHex(recipientAddr);
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -447,6 +443,10 @@
                 }
                 this._blockHistory.appendChild(el);
             }.bind(this));
+
+            $.accounts.getBalance($.wallet.address).then(function(balance) {
+                this._balanceChanged(balance);
+            }.bind(this));
         }
 
         _toggleMining() {
@@ -518,7 +518,7 @@
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }.bind(this));

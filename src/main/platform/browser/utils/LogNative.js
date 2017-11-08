@@ -2,14 +2,18 @@ class LogNative {
     constructor() {
         this._global_level = Log.TRACE;
         this._tag_levels = {};
-        if (window.localStorage) {
-            try {
-                let c = window.localStorage.getItem('log_tag_levels');
-                if (c && typeof c === 'string') c = JSON.parse(c);
-                if (c && typeof c === 'object') this._tag_levels = c;
-            } catch (e) {
-                console.warn('Failed to load log configuration from local storage.');
+        try {
+            if (window.localStorage) {
+                try {
+                    let c = window.localStorage.getItem('log_tag_levels');
+                    if (c && typeof c === 'string') c = JSON.parse(c);
+                    if (c && typeof c === 'object') this._tag_levels = c;
+                } catch (e) {
+                    console.warn('Failed to load log configuration from local storage.');
+                }
             }
+        } catch (e) {
+            // ignore
         }
     }
 
