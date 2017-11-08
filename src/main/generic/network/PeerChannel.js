@@ -137,7 +137,7 @@ class PeerChannel extends Observable {
      * @param {boolean} [ascending]
      * @return {boolean}
      */
-    getBlocks(locators, maxInvSize=BaseInventoryMessage.LENGTH_MAX, ascending=true) {
+    getBlocks(locators, maxInvSize=BaseInventoryMessage.VECTORS_MAX_COUNT, ascending=true) {
         return this._send(new GetBlocksMessage(locators, maxInvSize, ascending ? GetBlocksMessage.Direction.FORWARD : GetBlocksMessage.Direction.BACKWARD));
     }
 

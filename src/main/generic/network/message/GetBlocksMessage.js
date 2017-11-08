@@ -4,7 +4,7 @@ class GetBlocksMessage extends Message {
      * @param {number} maxInvSize
      * @param {GetBlocksMessage.Direction} direction
      */
-    constructor(locators, maxInvSize=BaseInventoryMessage.LENGTH_MAX, direction=GetBlocksMessage.Direction.FORWARD) {
+    constructor(locators, maxInvSize=BaseInventoryMessage.VECTORS_MAX_COUNT, direction=GetBlocksMessage.Direction.FORWARD) {
         super(Message.Type.GET_BLOCKS);
         if (!locators || !NumberUtils.isUint16(locators.length)
             || locators.some(it => !Hash.isHash(it))) throw 'Malformed locators';
