@@ -494,7 +494,7 @@ class FullConsensusAgent extends Observable {
      * @private
      */
     async _onGetBlocks(msg) {
-        Log.v(FullConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators received from ${this._peer.peerAddress}`);
+        Log.v(FullConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators maxInvSize ${msg.maxInvSize} received from ${this._peer.peerAddress}`);
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main
@@ -514,7 +514,8 @@ class FullConsensusAgent extends Observable {
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
         const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
-            FullConsensusAgent.GETBLOCKS_VECTORS_MAX, msg.direction === GetBlocksMessage.Direction.FORWARD);
+            Math.min(msg.maxInvSize, FullConsensusAgent.GETBLOCKS_VECTORS_MAX),
+            msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];
         for (const block of blocks) {
             const hash = await block.hash();

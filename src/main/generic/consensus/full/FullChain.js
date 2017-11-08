@@ -126,10 +126,10 @@ class FullChain extends BaseChain {
         }
 
         // Check that all known interlink blocks are valid predecessors of the given block.
-        if (!(await this._verifyInterlink(block))) {
-            Log.w(FullChain, 'Rejecting block - interlink verification failed');
-            return FullChain.ERR_INVALID;
-        }
+        // if (!(await this._verifyInterlink(block))) {
+        //     Log.w(FullChain, 'Rejecting block - interlink verification failed');
+        //     return FullChain.ERR_INVALID;
+        // }
 
         // Check if the block's immediate predecessor is part of the chain.
         /** @type {ChainData} */

@@ -31,7 +31,7 @@ class LightChain extends FullChain {
         this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
     }
 
-    partialChain() {
+    async partialChain() {
         const partialChain = new PartialLightChain(this._store, this._accounts, this._proof);
         partialChain.on('committed', async (proof, headHash, mainChain) => {
             this._proof = proof;
@@ -39,6 +39,7 @@ class LightChain extends FullChain {
             this._mainChain = mainChain;
             this.fire('head-changed', this.head);
         });
+        await partialChain._init();
         return partialChain;
     }
 }

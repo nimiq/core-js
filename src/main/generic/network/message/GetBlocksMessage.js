@@ -1,15 +1,18 @@
 class GetBlocksMessage extends Message {
     /**
      * @param {Array.<Hash>} locators
+     * @param {number} maxInvSize
      * @param {GetBlocksMessage.Direction} direction
      */
-    constructor(locators, direction=GetBlocksMessage.Direction.FORWARD) {
+    constructor(locators, maxInvSize=BaseInventoryMessage.LENGTH_MAX, direction=GetBlocksMessage.Direction.FORWARD) {
         super(Message.Type.GET_BLOCKS);
         if (!locators || !NumberUtils.isUint16(locators.length)
             || locators.some(it => !Hash.isHash(it))) throw 'Malformed locators';
+        if (!NumberUtils.isUint16(maxInvSize)) throw 'Malformed maxInvSize';
         if (!NumberUtils.isUint8(direction)) throw 'Malformed direction';
         /** @type {Array.<Hash>} */
         this._locators = locators;
+        this._maxInvSize = maxInvSize;
         this._direction = direction;
     }
 
@@ -24,8 +27,9 @@ class GetBlocksMessage extends Message {
         for (let i = 0; i < count; i++) {
             locators.push(Hash.unserialize(buf));
         }
+        const maxInvSize = buf.readUint16();
         const direction = buf.readUint8();
-        return new GetBlocksMessage(locators, direction);
+        return new GetBlocksMessage(locators, maxInvSize, direction);
     }
 
     /**
@@ -39,6 +43,7 @@ class GetBlocksMessage extends Message {
         for (const locator of this._locators) {
             locator.serialize(buf);
         }
+        buf.writeUint16(this._maxInvSize);
         buf.writeUint8(this._direction);
         super._setChecksum(buf);
         return buf;
@@ -48,7 +53,8 @@ class GetBlocksMessage extends Message {
     get serializedSize() {
         let size = super.serializedSize
             + /*count*/ 2
-            + /*direction*/ 1;
+            + /*direction*/ 1
+            + /*maxInvSize*/ 2;
         for (const locator of this._locators) {
             size += locator.serializedSize;
         }
@@ -63,6 +69,11 @@ class GetBlocksMessage extends Message {
     /** @type {GetBlocksMessage.Direction} */
     get direction() {
         return this._direction;
+    }
+
+    /** @type {number} */
+    get maxInvSize() {
+        return this._maxInvSize;
     }
 }
 /**

@@ -15,10 +15,18 @@ class LightConsensusAgent extends Observable {
         /** @type {Peer} */
         this._peer = peer;
 
-        // Flag indicating that have synced our blockchain with the peer's.
         /** @type {boolean} */
         this._syncing = false;
 
+        // Flag indicating whether we do a full catchup or request a proof.
+        /** @type {boolean} */
+        this._catchup = false;
+
+        // Flag indicating whether we believe to be on the main chain of the client.
+        /** @type {boolean} */
+        this._onMainChain = false;
+
+        // Flag indicating that have synced our blockchain with the peer's.
         /** @type {boolean} */
         this._synced = false;
 
@@ -62,6 +70,7 @@ class LightConsensusAgent extends Observable {
         peer.channel.on('tx', msg => this._onTx(msg));
         peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
+        peer.channel.on('header', msg => this._onHeader(msg));
 
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
@@ -128,6 +137,7 @@ class LightConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      */
     async syncBlockchain() {
+        // Ban peer if the sync failed more often than allowed.
         if (this._failedSyncs >= LightConsensusAgent.MAX_SYNC_ATTEMPTS) {
             this._peer.channel.ban('blockchain sync failed');
             if (this._partialChain) {
@@ -135,59 +145,128 @@ class LightConsensusAgent extends Observable {
             }
         }
 
-        // Phase 1: sync proof
+        // Check if we know head block.
         const block = this._partialChain
             ? await this._partialChain.getBlock(this._peer.headHash)
             : await this._blockchain.getBlock(this._peer.headHash);
 
-        if (block && !this._partialChain) {
+        /*
+         * Three cases:
+         * 1) We know block and are not yet syncing: All is done.
+         * 2) We don't know the block and are not yet syncing: Start syncing.
+         *    and determine sync mode (full catchup or not).
+         * 3) We are syncing. Behave differently based on sync mode.
+         *    Note that we can switch from catchup to proof if we notice that
+         *    we're on a fork and get an INV vector starting from the genesis block.
+         */
+
+        // Case 1: We're up to date.
+        if (block && !this._syncing) {
             this._syncFinished();
             return;
         }
 
-        if (!block && !this._partialChain) {
+        // Case 2: Check header.
+        if (!block && !this._syncing) {
             this._syncing = true;
-            this._partialChain = this._blockchain.partialChain();
-            // Wait for the blockchain to processes queued blocks before requesting more.
-            this._partialChain.on('ready', () => {
-                if (this._syncing && (this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS
-                    || this._partialChain.state === PartialLightChain.State.COMPLETE)) {
-                    this.syncBlockchain();
-                }
-            });
-        }
 
-        if (this._partialChain) {
-            // If the blockchain is still busy processing blocks, wait for it to catch up.
-            if (this._partialChain.busy) {
-                Log.v(FullConsensusAgent, 'Blockchain busy, waiting ...');
+            let header;
+            try {
+                header = await this.getHeader(this._peer.headHash);
+            } catch(err) {
+                this._peer.channel.close('Did not get requested header');
                 return;
             }
 
-            switch (this._partialChain.state) {
-                case PartialLightChain.State.PROVE_CHAIN:
-                    this._requestChainProof();
-                    break;
-                case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
-                    this._requestAccountsTree();
-                    break;
-                case PartialLightChain.State.PROVE_BLOCKS:
-                    this._requestProofBlocks();
-                    break;
-                case PartialLightChain.State.COMPLETE:
-                    if (!block) {
-                        this._requestBlocks();
-                    } else {
-                        // Commit state on success.
-                        await this._partialChain.commit();
-                        this._syncFinished();
-                    }
-                    break;
-                case PartialLightChain.State.ABORTED:
+            // Check how to sync:
+            this._catchup = header.height - this._blockchain.height <= Policy.NUM_BLOCKS_VERIFICATION;
+            Log.d(LightConsensusAgent, `Start syncing, catchup mode: ${this._catchup}`);
+        }
+
+        // Case 3: We are are syncing.
+        if (this._syncing) {
+            if (this._catchup) {
+                if (block) {
                     this._syncFinished();
-                    break;
+                } else {
+                    this._requestBlocks();
+                }
+            } else {
+                // Initialize partial chain on first call.
+                if (!this._partialChain) {
+                    await this._initChainProofSync();
+                }
+
+                // If the blockchain is still busy processing blocks, wait for it to catch up.
+                if (this._partialChain.busy) {
+                    Log.v(FullConsensusAgent, 'Blockchain busy, waiting ...');
+                    return;
+                }
+
+                switch (this._partialChain.state) {
+                    case PartialLightChain.State.PROVE_CHAIN:
+                        this._requestChainProof();
+                        this._onMainChain = true;
+                        break;
+                    case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
+                        this._requestAccountsTree();
+                        break;
+                    case PartialLightChain.State.PROVE_BLOCKS:
+                        this._requestProofBlocks();
+                        break;
+                    case PartialLightChain.State.COMPLETE:
+                        if (!block) {
+                            this._requestBlocks();
+                        } else {
+                            // Commit state on success.
+                            await this._partialChain.commit();
+                            this._syncFinished();
+                        }
+                        break;
+                    case PartialLightChain.State.ABORTED:
+                        this._syncFinished();
+                        break;
+                }
             }
         }
+    }
+
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _initChainProofSync() {
+        this._syncing = true;
+        this._synced = false;
+        this._catchup = false;
+
+        if (this._partialChain) {
+            await this._partialChain.abort();
+        }
+
+        this._partialChain = await this._blockchain.partialChain();
+        // Wait for the blockchain to processes queued blocks before requesting more.
+        this._partialChain.on('ready', () => {
+            if (this._syncing && (this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS
+                || this._partialChain.state === PartialLightChain.State.COMPLETE)) {
+                this.syncBlockchain();
+            }
+        });
+    }
+
+    /**
+     * @returns {void}
+     * @private
+     */
+    _syncFinished() {
+        if (this._partialChain) {
+            this._partialChain = null;
+        }
+        this._syncing = false;
+        this._failedSyncs = 0;
+
+        this._synced = true;
+        this.fire('sync');
     }
     
     async _requestProofBlocks() {
@@ -206,7 +285,7 @@ class LightConsensusAgent extends Observable {
         }
 
         // Request blocks from peer.
-        this._peer.channel.getBlocks(await this._partialChain.getBlockLocators(), false);
+        this._peer.channel.getBlocks(await this._partialChain.getBlockLocators(), Policy.NUM_BLOCKS_VERIFICATION, false);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
@@ -246,7 +325,7 @@ class LightConsensusAgent extends Observable {
         }
 
         // Request blocks from peer.
-        this._peer.channel.getBlocks(locators);
+        this._peer.channel.getBlocks(locators, this._onMainChain ? LightConsensusAgent.GETBLOCKS_VECTORS_MAX : 1);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
@@ -254,21 +333,6 @@ class LightConsensusAgent extends Observable {
             this._timers.clearTimeout('getBlocks');
             this._peer.channel.close('getBlocks timeout');
         }, LightConsensusAgent.REQUEST_TIMEOUT);
-    }
-
-    /**
-     * @returns {void}
-     * @private
-     */
-    _syncFinished() {
-        if (this._partialChain) {
-            this._partialChain = null;
-        }
-        this._syncing = false;
-        this._failedSyncs = 0;
-
-        this._synced = true;
-        this.fire('sync');
     }
 
     async _requestAccountsTree() {
@@ -325,6 +389,7 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _onChainProof(msg) {
+        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
         Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof} (${msg.proof.serializedSize} bytes)`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
@@ -496,8 +561,19 @@ class LightConsensusAgent extends Observable {
         // Mark object as received.
         this._onObjectReceived(vector);
 
+        // If we find that we are on a fork far away from our chain, resync.
+        if (msg.block.height < this._chain.height - Policy.NUM_BLOCKS_VERIFICATION
+            && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
+            this._onMainChain = false;
+            await this._initChainProofSync();
+            this.syncBlockchain();
+            return;
+        } else {
+            this._onMainChain = true;
+        }
+
         // Put block into blockchain.
-        const status = this._partialChain ? await this._partialChain.pushBlock(msg.block) : await this._blockchain.pushBlock(msg.block);
+        const status = await this._chain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
         if (status === LightChain.ERR_INVALID) {
@@ -529,6 +605,65 @@ class LightConsensusAgent extends Observable {
 
         // TODO send reject message if we don't like the transaction
         // TODO what to do if the peer keeps sending invalid transactions?
+    }
+
+    /**
+     * @param {Hash} hash
+     * @return {Promise.<BlockHeader>}
+     */
+    getHeader(hash) {
+        Assert.that(!this._headerRequest);
+
+        return new Promise((resolve, reject) => {
+            const vector = new InvVector(InvVector.Type.BLOCK, hash);
+            this._headerRequest = {
+                hash: hash,
+                resolve: resolve,
+                reject: reject
+            };
+
+            this._peer.channel.getHeader([vector]);
+
+            // Drop the peer if it doesn't send the accounts proof within the timeout.
+            this._timers.setTimeout('getHeader', () => {
+                this._headerRequest = null;
+                this._peer.channel.close('getHeader timeout');
+                reject(new Error('timeout')); // TODO error handling
+            }, LightConsensusAgent.REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {HeaderMessage} msg
+     * @return {Promise}
+     * @private
+     */
+    async _onHeader(msg) {
+        const hash = await msg.header.hash();
+
+        // Check if we have requested this block.
+        if (!this._headerRequest) {
+            Log.w(NanoConsensusAgent, `Unsolicited header ${hash} received from ${this._peer.peerAddress}, discarding`);
+            // TODO What should happen here? ban? drop connection?
+            return;
+        }
+
+        // Clear the request timeout.
+        this._timers.clearTimeout('getHeader');
+
+        const requestedHash = this._headerRequest.hash;
+        const resolve = this._headerRequest.resolve;
+        const reject = this._headerRequest.reject;
+
+        // Check that it is the correct hash.
+        if (!requestedHash.equals(hash)) {
+            Log.w(LightConsensusAgent, `Received wrong header from ${this._peer.peerAddress}`);
+            this._peer.channel.close('Received wrong header');
+            reject(new Error('Received wrong header'));
+            return;
+        }
+
+        resolve(msg.header);
     }
 
     /**
@@ -685,7 +820,8 @@ class LightConsensusAgent extends Observable {
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
         const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
-            LightConsensusAgent.GETBLOCKS_VECTORS_MAX, msg.direction === GetBlocksMessage.Direction.FORWARD);
+            Math.min(msg.maxInvSize, LightConsensusAgent.GETBLOCKS_VECTORS_MAX),
+            msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];
         for (const block of blocks) {
             const hash = await block.hash();
@@ -875,6 +1011,15 @@ class LightConsensusAgent extends Observable {
     get synced() {
         return this._synced;
     }
+
+    /** @type {LightChain} */
+    get _chain() {
+        if (this._syncing && !this._catchup) {
+            Assert.that(!!this._partialChain);
+            return this._partialChain;
+        }
+        return this._blockchain;
+    }
 }
 /**
  * Number of InvVectors in invToRequest pool to automatically trigger a getData request.
@@ -909,4 +1054,9 @@ LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 5;
  * @type {number}
  */
 LightConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+/**
+ * Maximum number of inventory vectors to sent in the response for onGetBlocks.
+ * @type {number}
+ */
+LightConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
 Class.register(LightConsensusAgent);
