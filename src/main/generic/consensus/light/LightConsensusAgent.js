@@ -88,6 +88,11 @@ class LightConsensusAgent extends Observable {
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
+
+        // Wait for the blockchain to processes queued blocks before requesting more.
+        this._blockchain.on('ready', () => {
+            if (this._syncing && this._catchup) this.syncBlockchain();
+        });
     }
 
     /**
@@ -195,6 +200,12 @@ class LightConsensusAgent extends Observable {
                 if (block) {
                     this._syncFinished();
                 } else {
+                    // If the blockchain is still busy processing blocks, wait for it to catch up.
+                    if (this._blockchain.busy) {
+                        Log.v(FullConsensusAgent, 'Blockchain busy, waiting ...');
+                        return;
+                    }
+
                     this._requestBlocks();
                 }
             } else {
