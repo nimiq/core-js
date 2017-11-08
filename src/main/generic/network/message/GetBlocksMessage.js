@@ -3,7 +3,7 @@ class GetBlocksMessage extends Message {
      * @param {Array.<Hash>} locators
      * @param {GetBlocksMessage.Direction} direction
      */
-    constructor(locators, direction=GetBlocksMessage.Direction.ASCENDING) {
+    constructor(locators, direction=GetBlocksMessage.Direction.FORWARD) {
         super(Message.Type.GET_BLOCKS);
         if (!locators || !NumberUtils.isUint16(locators.length)
             || locators.some(it => !Hash.isHash(it))) throw 'Malformed locators';
@@ -69,7 +69,7 @@ class GetBlocksMessage extends Message {
  * @enum {number}
  */
 GetBlocksMessage.Direction = {
-    ASCENDING: 0x1,
-    DESCENDING: 0x2
+    FORWARD: 0x1,
+    BACKWARD: 0x2
 };
 Class.register(GetBlocksMessage);

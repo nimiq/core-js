@@ -24,9 +24,9 @@ class Consensus {
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.get();
         /** @type {Accounts} */
-        const accounts = await Accounts.getPersistent(db);
+        const accounts = await Accounts.createVolatile(); //Accounts.getPersistent(db);
         /** @type {FullChain} */
-        const blockchain = await LightChain.getPersistent(db, accounts);
+        const blockchain = await LightChain.createVolatile(accounts); //LightChain.getPersistent(db, accounts);
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */

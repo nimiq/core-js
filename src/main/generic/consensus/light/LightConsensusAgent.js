@@ -17,6 +17,9 @@ class LightConsensusAgent extends Observable {
 
         // Flag indicating that have synced our blockchain with the peer's.
         /** @type {boolean} */
+        this._syncing = false;
+
+        /** @type {boolean} */
         this._synced = false;
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
@@ -118,12 +121,28 @@ class LightConsensusAgent extends Observable {
      */
     async syncBlockchain() {
         // Phase 1: sync proof
-        const knowsHead = await this._blockchain.knowsBlock(this._peer.headHash);
-        if (!knowsHead && !this._partialChain) {
+        const block = this._partialChain
+            ? await this._partialChain.getBlock(this._peer.headHash)
+            : await this._blockchain.getBlock(this._peer.headHash);
+        if (!block && !this._partialChain) {
+            this._syncing = true;
             this._partialChain = this._blockchain.partialChain();
+            // Wait for the blockchain to processes queued blocks before requesting more.
+            this._partialChain.on('ready', () => {
+                if (this._syncing && (this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS
+                    || this._partialChain.state === PartialLightChain.State.COMPLETE)) {
+                    this.syncBlockchain();
+                }
+            });
         }
 
         if (this._partialChain) {
+            // If the blockchain is still busy processing blocks, wait for it to catch up.
+            if (this._partialChain.busy) {
+                Log.v(FullConsensusAgent, 'Blockchain busy, waiting ...');
+                return;
+            }
+
             switch (this._partialChain.state) {
                 case PartialLightChain.State.PROVE_CHAIN:
                     this._requestChainProof();
@@ -135,11 +154,16 @@ class LightConsensusAgent extends Observable {
                     this._requestProofBlocks();
                     break;
                 case PartialLightChain.State.COMPLETE:
-                    if (!knowsHead) {
+                    if (!block) {
                         this._requestBlocks();
                     } else {
+                        // Commit state on success.
+                        await this._partialChain.commit();
                         this._syncFinished();
                     }
+                    break;
+                case PartialLightChain.State.ABORTED:
+                    this._syncFinished();
                     break;
             }
         }
@@ -150,7 +174,7 @@ class LightConsensusAgent extends Observable {
 
         // XXX Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
-            Log.e(LightConsensusAgent, 'Duplicate _requestProoflocks()');
+            Log.e(LightConsensusAgent, 'Duplicate _requestProofBlocks()');
             return;
         }
 
@@ -210,9 +234,10 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     _syncFinished() {
-        Assert.that(!!this._partialChain);
-
-        this._partialChain = null;
+        if (this._partialChain) {
+            this._partialChain = null;
+        }
+        this._syncing = false;
 
         this._synced = true;
         this.fire('sync');
@@ -221,16 +246,7 @@ class LightConsensusAgent extends Observable {
     async _requestAccountsTree() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
 
-        const chunk = await this._requestAccountsTreeChunk(this._partialChain.getMissingAccountsPrefix(), this._partialChain.headHash);
-        const result = await this._partialChain.pushAccountsTreeChunk(chunk);
-
-        // Something went wrong!
-        if (result !== PartialAccountsTree.OK_UNFINISHED && result !== PartialAccountsTree.OK_COMPLETE) {
-            // TODO maybe ban?
-            Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
-        }
-
-        this.syncBlockchain();
+        this._requestAccountsTreeChunk(this._partialChain.getMissingAccountsPrefix(), this._partialChain.headHash);
     }
 
     /**
@@ -239,24 +255,21 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     _requestAccountsTreeChunk(startPrefix, headHash) {
-        Assert.that(!this._timers.timeoutExists('getAccountsTree'));
+        Assert.that(!this._timers.timeoutExists('getAccountsTreeChunk'));
 
-        Log.d(NanoConsensusAgent, `Requesting AccountsTreeChunk starting at ${startPrefix} from ${this._peer.peerAddress}`);
+        Log.d(LightConsensusAgent, `Requesting AccountsTreeChunk starting at ${startPrefix} from ${this._peer.peerAddress}`);
 
         this._accountsRequest = {
             startPrefix: startPrefix,
-            headHash: headHash,
-            resolve: resolve,
-            reject: reject
+            blockHash: headHash
         };
 
         // Request AccountsProof from peer.
         this._peer.channel.getAccountsTreeChunk(headHash, startPrefix);
 
         // Drop the peer if it doesn't send the accounts proof within the timeout.
-        this._timers.setTimeout('getAccountsTree', () => {
-            this._peer.channel.close('getAccountsTree timeout');
-            reject(new Error('timeout')); // TODO error handling
+        this._timers.setTimeout('getAccountsTreeChunk', () => {
+            this._peer.channel.close('getAccountsTreeChunk timeout');
         }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
 
@@ -349,7 +362,7 @@ class LightConsensusAgent extends Observable {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
                     const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
-                    if (!block) {
+                    if (!block || !block.isFull()) {
                         unknownObjects.push(vector);
                     }
                     break;
@@ -454,7 +467,7 @@ class LightConsensusAgent extends Observable {
         this._onObjectReceived(vector);
 
         // Put block into blockchain.
-        const status = await this._blockchain.pushBlock(msg.block);
+        const status = this._partialChain ? await this._partialChain.pushBlock(msg.block) : await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
         if (status === LightChain.ERR_INVALID) {
@@ -641,7 +654,8 @@ class LightConsensusAgent extends Observable {
 
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const blocks = await this._blockchain.getBlocks(startBlock.height + 1, LightConsensusAgent.GETBLOCKS_VECTORS_MAX);
+        const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
+            LightConsensusAgent.GETBLOCKS_VECTORS_MAX, msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];
         for (const block of blocks) {
             const hash = await block.hash();
@@ -694,41 +708,13 @@ class LightConsensusAgent extends Observable {
     }
 
     /**
-     * @param {Hash} blockHash
-     * @param {string} startPrefix
-     * @returns {Promise.<AccountsTreeChunk>}
-     * @private
-     */
-    _getAccounts(blockHash, startPrefix) {
-        Assert.that(this._accountsRequest === null);
-
-        Log.d(LightConsensusAgent, `Requesting AccountsTreeChunk starting at "${startPrefix}" from ${this._peer.peerAddress}`);
-
-        return new Promise((resolve, reject) => {
-            this._accountsRequest = {
-                startPrefix: startPrefix,
-                blockHash: blockHash,
-                resolve: resolve,
-                reject: reject
-            };
-
-            // Request AccountsProof from peer.
-            this._peer.channel.getAccountsTreeChunk(blockHash, startPrefix);
-
-            // Drop the peer if it doesn't send the accounts proof within the timeout.
-            this._timers.setTimeout('getAccountsTreeChunk', () => {
-                this._peer.channel.close('getAccountsTreeChunk timeout');
-                reject(new Error('timeout')); // TODO error handling
-            }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
-        });
-    }
-
-    /**
      * @param {AccountsTreeChunkMessage} msg
      * @returns {Promise.<void>}
      * @private
      */
     async _onAccountsTreeChunk(msg) {
+        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
+        
         Log.d(LightConsensusAgent, `[ACCOUNTS-TREE-CHUNK] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.chunk}`);
 
         // Check if we have requested an accounts proof, reject unsolicited ones.
@@ -743,8 +729,6 @@ class LightConsensusAgent extends Observable {
 
         const startPrefix = this._accountsRequest.startPrefix;
         const blockHash = this._accountsRequest.blockHash;
-        const resolve = this._accountsRequest.resolve;
-        const reject = this._accountsRequest.reject;
 
         // Reset accountsRequest.
         this._accountsRequest = null;
@@ -770,7 +754,7 @@ class LightConsensusAgent extends Observable {
 
         // Check that the proof root hash matches the accountsHash in the reference block.
         const rootHash = await chunk.root();
-        const block = await this._blockchain.getBlock(blockHash);
+        const block = await this._partialChain.getBlock(blockHash);
         if (!block.accountsHash.equals(rootHash)) {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
@@ -780,7 +764,15 @@ class LightConsensusAgent extends Observable {
         }
 
         // Return the retrieved accounts.
-        resolve(chunk);
+        const result = await this._partialChain.pushAccountsTreeChunk(chunk);
+
+        // Something went wrong!
+        if (result !== PartialAccountsTree.OK_UNFINISHED && result !== PartialAccountsTree.OK_COMPLETE) {
+            // TODO maybe ban?
+            Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
+        }
+
+        this.syncBlockchain();
     }
 
     /**
@@ -800,13 +792,12 @@ class LightConsensusAgent extends Observable {
 
         // Clear the request timeout.
         this._timers.clearTimeout('getAccountsTreeChunk');
-        const reject = this._accountsRequest.reject;
 
         // Reset accountsRequest.
         this._accountsRequest = null;
 
 
-        reject(new Error('Accounts request was rejected'));
+        throw new Error('Accounts request was rejected');
     }
 
     /**

@@ -320,10 +320,11 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @param {boolean} [enableWatchdog}
      * @returns {Promise.<AccountsTree>}
      */
-    transaction() {
-        const tree = new AccountsTree(this._store.transaction());
+    transaction(enableWatchdog = true) {
+        const tree = new AccountsTree(this._store.transaction(enableWatchdog));
         return tree._init();
     }
 

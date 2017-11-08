@@ -1,6 +1,6 @@
 class AccountsRejectedMessage extends Message {
     constructor() {
-        super(Message.Type.BLOCK_HASH_REJECTED);
+        super(Message.Type.ACCOUNTS_REJECTED);
     }
 
     /**

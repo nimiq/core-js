@@ -103,7 +103,7 @@ class FullChain extends BaseChain {
      * @param {Block} block
      * @returns {Promise.<number>}
      * @fires FullChain#head-changed
-     * @private
+     * @protected
      */
     async _pushBlock(block) {
         // Check if we already know this block.
@@ -426,10 +426,11 @@ class FullChain extends BaseChain {
      *
      * @param {number} startHeight
      * @param {number} count
+     * @param {boolean} forward
      * @returns {Promise.<Array.<Block>>}
      */
-    getBlocks(startHeight, count = 500) {
-        return this._store.getBlocks(startHeight, count);
+    getBlocks(startHeight, count = 500, forward = true) {
+        return this._store.getBlocks(startHeight, count, forward);
     }
 
     /** @type {Block} */

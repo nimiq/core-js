@@ -513,7 +513,8 @@ class FullConsensusAgent extends Observable {
 
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const blocks = await this._blockchain.getBlocks(startBlock.height + 1, FullConsensusAgent.GETBLOCKS_VECTORS_MAX);
+        const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
+            FullConsensusAgent.GETBLOCKS_VECTORS_MAX, msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];
         for (const block of blocks) {
             const hash = await block.hash();

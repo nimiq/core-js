@@ -6,8 +6,8 @@ class GetAccountsTreeChunkMessage extends Message {
     constructor(blockHash, startPrefix) {
         super(Message.Type.GET_ACCOUNTS_TREE_CHUNK);
         if (!blockHash || !(blockHash instanceof Hash)) throw 'Malformed block hash';
-        if (!StringUtils.isMultibyte(startPrefix)
-            || NumberUtils.isUint8(startPrefix.length)) throw 'Malformed start prefix';
+        if (StringUtils.isMultibyte(startPrefix)
+            || !NumberUtils.isUint8(startPrefix.length)) throw 'Malformed start prefix';
         /** @type {Hash} */
         this._blockHash = blockHash;
         this._startPrefix = startPrefix;

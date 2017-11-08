@@ -142,10 +142,11 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {boolean} [enableWatchdog}
      * @returns {Promise.<Accounts>}
      */
-    async transaction() {
-        return new Accounts(await this._tree.transaction());
+    async transaction(enableWatchdog = true) {
+        return new Accounts(await this._tree.transaction(enableWatchdog));
     }
 
     /**

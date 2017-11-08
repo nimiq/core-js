@@ -240,7 +240,6 @@
             $.consensus.on('established', function() {
                 document.getElementById('blockchain-title').classList.add('consensus-established');
                 document.getElementById('txSubmitBtn').removeAttribute('disabled');
-                this._updateBalance();
             }.bind(this));
 
             $.consensus.on('lost', function() {

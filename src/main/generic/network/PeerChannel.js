@@ -137,7 +137,7 @@ class PeerChannel extends Observable {
      * @return {boolean}
      */
     getBlocks(locators, ascending=true) {
-        return this._send(new GetBlocksMessage(locators, ascending ? GetBlocksMessage.Direction.ASCENDING : GetBlocksMessage.Direction.DESCENDING));
+        return this._send(new GetBlocksMessage(locators, ascending ? GetBlocksMessage.Direction.FORWARD : GetBlocksMessage.Direction.BACKWARD));
     }
 
     /**

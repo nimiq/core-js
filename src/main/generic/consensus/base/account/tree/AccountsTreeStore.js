@@ -96,10 +96,11 @@ class AccountsTreeStore {
     }
 
     /**
+     * @param {boolean} [enableWatchdog}
      * @returns {AccountsTreeStore}
      */
-    transaction() {
-        const tx = this._store.transaction();
+    transaction(enableWatchdog = true) {
+        const tx = this._store.transaction(enableWatchdog);
         return new AccountsTreeStore(tx);
     }
 

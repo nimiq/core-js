@@ -113,14 +113,21 @@ class ChainDataStore {
     /**
      * @param {number} startHeight
      * @param {number} [count]
+     * @param {boolean} [forward]
      * @returns {Promise.<Array.<Block>>}
      */
-    async getBlocks(startHeight, count = 500) {
+    async getBlocks(startHeight, count = 500, forward = true) {
+        if (!forward) {
+            startHeight = startHeight - count;
+        }
         /** @type {Array.<ChainData>} */
-        const candidates = await this._store.values(JDB.Query.within('height', startHeight, startHeight + count - 1));
-        return candidates
+        let candidates = await this._store.values(JDB.Query.within('height', startHeight, startHeight + count - 1));
+        candidates = candidates
             .filter(chainData => chainData.onMainChain)
             .map(chainData => chainData.head);
+        const sortNumber = forward ? ((a, b) => a.height - b.height) : ((a, b) => b.height - a.height);
+        candidates.sort(sortNumber);
+        return candidates;
     }
 
     /**
@@ -140,10 +147,11 @@ class ChainDataStore {
     }
 
     /**
+     * @param {boolean} [enableWatchdog]
      * @returns {ChainDataStore}
      */
-    transaction() {
-        const tx = this._store.transaction();
+    transaction(enableWatchdog = true) {
+        const tx = this._store.transaction(enableWatchdog);
         return new ChainDataStore(tx);
     }
 
