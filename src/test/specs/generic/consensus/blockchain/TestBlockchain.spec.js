@@ -532,7 +532,19 @@ TestBlockchain.NONCES = { // generated using mineBlocksJSON in the console
     'kgJi5DerP+ihmVTfzC8IkdK3kcFJYOz3T3he0VtYTjU=': 71504,
     'jJYsCPVxBRIuDmULjT7tVYdUSm5LK7fszKxaCmchcCg=': 73755,
     '+l2lAT1PYMgHJP+VVvWFjHflpnPK62iep7mI/AbkQwQ=': 267760,
-    'y89dYdAzKOhlUzZSGhmDCVifN7eb5BJ0eaxFzwQ9n1M=': 138861
+    'y89dYdAzKOhlUzZSGhmDCVifN7eb5BJ0eaxFzwQ9n1M=': 138861,
+    'cQIU9M/ZN1WLdyPVJLAFFhghuOo1uPoh4A12+ZR1SmI=': 10387,
+    'TaBJ0WtIY0thYdIfKcaBtH6tDZQw4F/s55LTz1SXtZw=': 52380,
+    'cjEsI0oij0fERR4WacSoyT8j66P3kfynFe9/uOc1ej4=': 200635,
+    'XwpBjWiL426XZ37+En/bCD9PsPmVu7BzYCdbcZ21Mto=': 4235,
+    'o4BHxDgspqlUziiHD8BgP9YV/Fn5ReLQnBLIL3fEmCw=': 93770,
+    '9yFH++BXhSqRSyPK/S1Njc7qr+SVLu0d57eIJd/U9Ss=': 25185,
+    'yVEadgVrSIcmZi+kHY7hr/dHyu2KdDFVc4POJs9Ilt4=': 42447,
+    '1MoSZadTiNoxXQ87VIpuaIDMXziwQf6QUzYRaU+Y+Ec=': 141437,
+    'mwNrvTcWJPTQ3loRYTU5kaoSg3ftEoVy4DLOKXnXbUo=': 49386,
+    '6cOFehf9TomkbozGu4oN9ZmYUVAgZ+GX/lEor9Piu4I=': 44166,
+    'Hi9M/GSUaurEjCxpKOWI7iwez926QODFtUBSM1i0Y6Y=': 21558,
+    '5ZbS45J+bhrSVz0QJmPNWeQKPxEbsM/qU0KYK6iWKxg=': 65591
 };
 
 Class.register(TestBlockchain);

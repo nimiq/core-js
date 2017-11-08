@@ -243,8 +243,7 @@ gulp.task('build-web-babel', ['build-worker'], function () {
                 'babel-runtime/core-js/promise',
                 'babel-runtime/core-js/get-iterator',
                 'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator',
-                'fast-sha256'
+                'babel-runtime/helpers/asyncToGenerator'
             ]
         }).bundle()
             .pipe(source('babel.js'))

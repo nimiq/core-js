@@ -166,6 +166,13 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
+    it('can handle larger chains', (done) => {
+        (async function() {
+            const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
+            expect(testBlockchain).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
     it('cannot push blocks with transactions to oneself', (done) => {
         (async function () {
             const first = await TestBlockchain.createVolatileTest(0);

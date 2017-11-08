@@ -53,14 +53,6 @@ describe('Accounts', () => {
         })().then(done, done.fail);
     });
 
-    it('can handle larger chains', (done) => {
-        spyOn(BlockHeader.prototype, 'verifyProofOfWork').and.returnValue(true);
-        (async function() {
-            await TestBlockchain.createVolatileTest(20, 20, true); // eslint-disable-line no-unused-vars
-            expect(true).toBe(true);
-        })().then(done, done.fail);
-    });
-
     it('correctly rewards miners', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
@@ -155,7 +147,6 @@ describe('Accounts', () => {
             expect(await treeTx.commit()).toBe(true);
             const block = await testBlockchain.createBlock({transactions: transactions});
             await accounts.commitBlock(block);
-            expect(true).toBe(true);
         })().then(done, done.fail);
     });
 

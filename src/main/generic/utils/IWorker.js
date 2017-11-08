@@ -60,6 +60,7 @@ class IWorker {
     static fireModuleLoaded(module = 'Module') {
         if (typeof IWorker._moduleLoadedCallbacks[module] === 'function') {
             IWorker._moduleLoadedCallbacks[module]();
+            IWorker._moduleLoadedCallbacks[module] = null;
         }
     }
 
@@ -193,45 +194,40 @@ class IWorker {
                 if (typeof Nimiq === 'object' && Nimiq._path) script = `${Nimiq._path}${script}`;
                 if (typeof __dirname === 'string' && script.indexOf('/') === -1) script = `${__dirname}/${script}`;
 
-                try {
-                    const moduleSettings = IWorker._global[module];
-                    return new Promise(async (resolve) => {
-                        if (module) {
-                            switch (typeof moduleSettings.preRun) {
-                                case 'undefined':
-                                    moduleSettings.preRun = () => resolve(true);
-                                    break;
-                                case 'function':
-                                    moduleSettings.preRun = [moduleSettings, () => resolve(true)];
-                                    break;
-                                case 'object':
-                                    moduleSettings.push(() => resolve(true));
-                            }
+                const moduleSettings = IWorker._global[module] || {};
+                return new Promise(async (resolve, reject) => {
+                    if (module) {
+                        switch (typeof moduleSettings.preRun) {
+                            case 'undefined':
+                                moduleSettings.preRun = () => resolve(true);
+                                break;
+                            case 'function':
+                                moduleSettings.preRun = [moduleSettings, () => resolve(true)];
+                                break;
+                            case 'object':
+                                moduleSettings.push(() => resolve(true));
                         }
-                        if (typeof importScripts === 'function') {
-                            await new Promise((resolve) => {
-                                IWorker._moduleLoadedCallbacks[module] = resolve;
-                                importScripts(script);
-                            });
-                            IWorker._global[module] = IWorker._global[module](moduleSettings);
-                            if (!module) resolve(true);
-                        } else if (typeof window === 'object') {
-                            await new Promise((resolve) => {
-                                IWorker._loadBrowserScript(script, resolve);
-                            });
-                            IWorker._global[module] = IWorker._global[module](moduleSettings);
-                            if (!module) resolve(true);
-                        } else if (typeof require === 'function') {
-                            IWorker._global[module] = require(script)(moduleSettings);
-                            if (!module) resolve(true);
-                        } else {
-                            resolve(false);
-                        }
-                    });
-                } catch (e) {
-                    console.log(e);
-                    return false;
-                }
+                    }
+                    if (typeof importScripts === 'function') {
+                        await new Promise((resolve) => {
+                            IWorker._moduleLoadedCallbacks[module] = resolve;
+                            importScripts(script);
+                        });
+                        IWorker._global[module] = IWorker._global[module](moduleSettings);
+                        if (!module) resolve(true);
+                    } else if (typeof window === 'object') {
+                        await new Promise((resolve) => {
+                            IWorker._loadBrowserScript(script, resolve);
+                        });
+                        IWorker._global[module] = IWorker._global[module](moduleSettings);
+                        if (!module) resolve(true);
+                    } else if (typeof require === 'function') {
+                        IWorker._global[module] = require(script)(moduleSettings);
+                        if (!module) resolve(true);
+                    } else {
+                        reject('No way to load scripts.');
+                    }
+                });
             }
 
             /**

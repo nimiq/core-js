@@ -2484,10 +2484,6 @@ fast-levenshtein@~2.0.4:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
 
-fast-sha256@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/fast-sha256/-/fast-sha256-1.0.0.tgz#217edc0ffc36c117a37c55b87e5381d99b44d1dd"
-
 faye-websocket@~0.10.0:
   version "0.10.0"
   resolved "https://registry.yarnpkg.com/faye-websocket/-/faye-websocket-0.10.0.tgz#4e492f8d04dfb6f89003507f6edbf2d501e7c6f4"
@@ -4605,16 +4601,6 @@ node-pre-gyp@^0.6.36:
     semver "^5.3.0"
     tar "^2.2.1"
     tar-pack "^3.4.0"
-
-node-webcrypto-ossl@^1.0.21:
-  version "1.0.30"
-  resolved "https://registry.yarnpkg.com/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.30.tgz#a43567f66ebd7ab41d94f73edb2346bde9297d28"
-  dependencies:
-    "@types/node" "^6"
-    mkdirp "^0.5.1"
-    nan "^2.5.1"
-    tslib "^1.7.1"
-    webcrypto-core "^0.1.16"
 
 node.extend@^1.0.10:
   version "1.1.6"
