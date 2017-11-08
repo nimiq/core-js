@@ -239,10 +239,6 @@ class PartialLightChain extends LightChain {
             }
         }
 
-        if (this._state === PartialLightChain.State.COMPLETE) {
-            return super._pushBlock(block);
-        }
-
         return FullChain.ERR_ORPHAN;
     }
 
@@ -309,6 +305,7 @@ class PartialLightChain extends LightChain {
         }
 
         this._mainChain = chainData;
+        this._proofHead = chainData; // So now it is a full block.
         this._headHash = hash;
 
         // Check whether we're complete.
@@ -482,13 +479,25 @@ class PartialLightChain extends LightChain {
     }
 
     /**
+     * @returns {number}
+     */
+    numBlocksNeeded() {
+        if (!this._proofHead) {
+            return Policy.NUM_BLOCKS_VERIFICATION;
+        }
+        let numBlocks = Policy.NUM_BLOCKS_VERIFICATION - (this.height - this._proofHead.head.height + 1);
+        // If we begin syncing, we need one block additionally.
+        if (!this._proofHead.head.isFull()) {
+            numBlocks++;
+        }
+        return numBlocks;
+    }
+
+    /**
      * @returns {boolean}
      */
     needsMoreBlocks() {
-        if (!this._proofHead) {
-            return true;
-        }
-        return this.height - this._proofHead.head.height < Policy.NUM_BLOCKS_VERIFICATION;
+        return this.numBlocksNeeded() > 0;
     }
 
     /** @type {PartialLightChain.State} */

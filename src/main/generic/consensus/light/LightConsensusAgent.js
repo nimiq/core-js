@@ -26,9 +26,15 @@ class LightConsensusAgent extends Observable {
         /** @type {boolean} */
         this._onMainChain = false;
 
+        /** @type {Array.<Block>} */
+        this._orphanedBlocks = [];
+
         // Flag indicating that have synced our blockchain with the peer's.
         /** @type {boolean} */
         this._synced = false;
+
+        /** @type {boolean} */
+        this._busy = false;
 
         // The height of our blockchain when we last attempted to sync the chain.
         /** @type {number} */
@@ -184,7 +190,7 @@ class LightConsensusAgent extends Observable {
         }
 
         // Case 3: We are are syncing.
-        if (this._syncing) {
+        if (this._syncing && !this._busy) {
             if (this._catchup) {
                 if (block) {
                     this._syncFinished();
@@ -215,13 +221,11 @@ class LightConsensusAgent extends Observable {
                         this._requestProofBlocks();
                         break;
                     case PartialLightChain.State.COMPLETE:
-                        if (!block) {
-                            this._requestBlocks();
-                        } else {
-                            // Commit state on success.
-                            await this._partialChain.commit();
-                            this._syncFinished();
-                        }
+                        // Commit state on success.
+                        this._busy = true;
+                        await this._partialChain.commit();
+                        await this._applyOrphanedBlocks();
+                        this._syncFinished();
                         break;
                     case PartialLightChain.State.ABORTED:
                         this._syncFinished();
@@ -262,13 +266,34 @@ class LightConsensusAgent extends Observable {
         if (this._partialChain) {
             this._partialChain = null;
         }
+        this._busy = false;
         this._syncing = false;
         this._failedSyncs = 0;
 
         this._synced = true;
         this.fire('sync');
     }
-    
+
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _applyOrphanedBlocks() {
+        const len = this._orphanedBlocks.length;
+        for (let i = 0; i < len; ++i) {
+            const block = this._orphanedBlocks.shift();
+            const status = await this._blockchain.pushBlock(block);
+            if (status === LightChain.ERR_INVALID) {
+                this._peer.channel.ban('received invalid block');
+                break;
+            }
+        }
+    }
+
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _requestProofBlocks() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
 
@@ -285,7 +310,7 @@ class LightConsensusAgent extends Observable {
         }
 
         // Request blocks from peer.
-        this._peer.channel.getBlocks(await this._partialChain.getBlockLocators(), Policy.NUM_BLOCKS_VERIFICATION, false);
+        this._peer.channel.getBlocks(await this._partialChain.getBlockLocators(), this._partialChain.numBlocksNeeded(), false);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
@@ -295,6 +320,10 @@ class LightConsensusAgent extends Observable {
         }, LightConsensusAgent.REQUEST_TIMEOUT);
     }
 
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _requestBlocks() {
         // XXX Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
@@ -315,6 +344,9 @@ class LightConsensusAgent extends Observable {
         let step = 2;
         for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
             block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
+            if (!block) {
+                break;
+            }
             locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
             step *= 2;
         }
@@ -335,8 +367,12 @@ class LightConsensusAgent extends Observable {
         }, LightConsensusAgent.REQUEST_TIMEOUT);
     }
 
-    async _requestAccountsTree() {
+    /**
+     * @private
+     */
+    _requestAccountsTree() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
+        this._busy = true;
 
         this._requestAccountsTreeChunk(this._partialChain.getMissingAccountsPrefix(), this._partialChain.headHash);
     }
@@ -372,6 +408,7 @@ class LightConsensusAgent extends Observable {
     _requestChainProof() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
         Assert.that(!this._timers.timeoutExists('getChainProof'));
+        this._busy = true;
 
         // Request ChainProof from peer.
         this._peer.channel.getChainProof();
@@ -417,7 +454,6 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - unexpected head`);
             // TODO ban instead?
             this._peer.channel.close('invalid chain proof');
-            await this._partialChain.abort();
             return;
         }
 
@@ -426,12 +462,11 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
             // TODO ban instead?
             this._peer.channel.close('invalid chain proof');
-            await this._partialChain.abort();
             return;
         }
 
         // TODO add all blocks from the chain proof to knownObjects.
-
+        this._busy = false;
         this.syncBlockchain();
     }
 
@@ -574,6 +609,12 @@ class LightConsensusAgent extends Observable {
 
         // Put block into blockchain.
         const status = await this._chain.pushBlock(msg.block);
+
+        // Queue orphaned blocks.
+        if (status === LightChain.ERR_ORPHAN
+            && this._partialChain) {
+            this._orphanedBlocks.push(msg.block);
+        }
 
         // TODO send reject message if we don't like the block
         if (status === LightChain.ERR_INVALID) {
@@ -903,7 +944,6 @@ class LightConsensusAgent extends Observable {
         if (!blockHash.equals(msg.blockHash) || msg.chunk.head.prefix <= startPrefix) {
             Log.w(LightConsensusAgent, `Received AccountsTreeChunk for block != head or wrong start prefix from ${this._peer.peerAddress}`);
             this._peer.channel.close('Invalid AccountsTreeChunk');
-            await this._partialChain.abort();
             return;
         }
 
@@ -913,7 +953,6 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('Invalid AccountsTreeChunk');
-            await this._partialChain.abort();
             return;
         }
 
@@ -924,7 +963,6 @@ class LightConsensusAgent extends Observable {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('AccountsTreeChunk root hash mismatch');
-            await this._partialChain.abort();
             return;
         }
 
@@ -936,9 +974,9 @@ class LightConsensusAgent extends Observable {
             // TODO maybe ban?
             Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
             this._peer.channel.close('AccountsTreeChunk root hash mismatch');
-            await this._partialChain.abort();
         }
 
+        this._busy = false;
         this.syncBlockchain();
     }
 
@@ -989,6 +1027,10 @@ class LightConsensusAgent extends Observable {
 
         // Clear the synchronizer queue.
         this._synchronizer.clear();
+
+        if (this._partialChain) {
+            this._partialChain.abort();
+        }
 
         this.fire('close', this);
     }
