@@ -1,2 +1,3 @@
 if (typeof module !== 'undefined') module.exports = Module;
-IWorker.fireModuleLoaded();
+if (typeof IWorker !== 'undefined') IWorker.fireModuleLoaded();
+else if (typeof Nimiq !== 'undefined' && Nimiq.IWorker) Nimiq.IWorker.fireModuleLoaded();

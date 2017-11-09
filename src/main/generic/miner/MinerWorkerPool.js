@@ -43,16 +43,21 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
      * @param {BlockHeader} blockHeader
      * @param {number} shareCompact target of a share, in compact format.
      */
-    startMiningOnBlock(blockHeader, shareCompact = blockHeader.nBits) {
+    async startMiningOnBlock(blockHeader, shareCompact = blockHeader.nBits) {
         this._blockHeader = blockHeader;
         this._shareCompact = shareCompact;
         if (!this._miningEnabled) {
+            await this._updateToSize();
             this._activeNonces = [];
             this._miningEnabled = true;
             for (let i = 0; i < this.poolSize; ++i) {
                 this._startMiner();
             }
         }
+    }
+    
+    stop() {
+        this._miningEnabled = false;
     }
 
     async _updateToSize() {
@@ -76,7 +81,9 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
      * @private
      */
     async _singleMiner(nonceRange) {
-        while (this._miningEnabled) {
+        let i = 0;
+        while (this._miningEnabled && (IWorker._insideWebWorker || i === 0)) {
+            i++;
             const blockHeader = BlockHeader.copy(this._blockHeader);
             const result = await this.multiMine(blockHeader.serialize(), this._shareCompact, nonceRange.minNonce, nonceRange.maxNonce);
             if (result) {
@@ -86,10 +93,6 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
                     nonce: result.nonce,
                     hash
                 });
-                if (BlockUtils.isProofOfWork(hash, this._blockHeader.target)) {
-                    this._miningEnabled = false;
-                    return;
-                }
             } else {
                 this._observable.fire('no-share', {
                     nonce: nonceRange.maxNonce
@@ -104,6 +107,9 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
                 this._activeNonces.splice(this._activeNonces.indexOf(nonceRange), 1, newRange);
                 nonceRange = newRange;
             }
+        }
+        if (this._miningEnabled) {
+            setTimeout(() => this._singleMiner(nonceRange), 0);
         }
     }
 }

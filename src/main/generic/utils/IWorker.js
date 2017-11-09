@@ -191,7 +191,8 @@ class IWorker {
             }
 
             async importScript(script, module = 'Module') {
-                if (typeof Nimiq === 'object' && Nimiq._path) script = `${Nimiq._path}${script}`;
+                if (module && IWorker._global[module] && IWorker._global[module].asm) return false;
+                if (typeof Nimiq !== 'undefined' && Nimiq._path) script = `${Nimiq._path}${script}`;
                 if (typeof __dirname === 'string' && script.indexOf('/') === -1) script = `${__dirname}/${script}`;
 
                 const moduleSettings = IWorker._global[module] || {};
@@ -205,7 +206,7 @@ class IWorker {
                                 moduleSettings.preRun = [moduleSettings, () => resolve(true)];
                                 break;
                             case 'object':
-                                moduleSettings.push(() => resolve(true));
+                                moduleSettings.preRun.push(() => resolve(true));
                         }
                     }
                     if (typeof importScripts === 'function') {
@@ -236,7 +237,7 @@ class IWorker {
              * @returns {Promise.<boolean>}
              */
             importWasm(wasm, module = 'Module') {
-                if (typeof Nimiq === 'object' && Nimiq._path) wasm = `${Nimiq._path}${wasm}`;
+                if (typeof Nimiq !== 'undefined' && Nimiq._path) wasm = `${Nimiq._path}${wasm}`;
                 if (typeof __dirname === 'string' && wasm.indexOf('/') === -1) wasm = `${__dirname}/${wasm}`;
                 if (!IWorker._global.WebAssembly) {
                     console.log('No support for WebAssembly available.');

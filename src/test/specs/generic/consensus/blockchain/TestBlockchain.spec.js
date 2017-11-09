@@ -226,6 +226,7 @@ class TestBlockchain extends FullChain {
             temp.id = TestBlockchain._miningPool.on('share', temp);
             TestBlockchain._miningPool.startMiningOnBlock(block.header);
         });
+        TestBlockchain._miningPool.stop();
         block.header.nonce = share.nonce;
         if (!(await block.header.verifyProofOfWork())) {
             throw 'While mining the block was succesful, it is still considered invalid.';
