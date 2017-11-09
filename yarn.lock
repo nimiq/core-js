@@ -19,7 +19,7 @@
     normalize-path "^2.0.1"
     through2 "^2.0.3"
 
-"@types/node@^6", "@types/node@^6.0.46":
+"@types/node@^6.0.46":
   version "6.0.83"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.83.tgz#dd022db01ac2c01c1057775e88ccffce96d1d6fe"
 
@@ -2025,10 +2025,6 @@ ecc-jsbn@~0.1.1:
   resolved "https://registry.yarnpkg.com/ecc-jsbn/-/ecc-jsbn-0.1.1.tgz#0fc73a9ed5f0d53c38193398523ef7e543777505"
   dependencies:
     jsbn "~0.1.0"
-
-ed25519@danimoh/ed25519:
-  version "1.0.5"
-  resolved "https://codeload.github.com/danimoh/ed25519/tar.gz/21e8d92f786711514ca3b70f2c04a01981021f0e"
 
 ee-first@1.0.5:
   version "1.0.5"
@@ -4560,9 +4556,13 @@ mute-stream@0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.5.tgz#8fbfabb0a98a253d3184331f9e8deb7372fac6c0"
 
-nan@^2.3.0, nan@^2.5.1, nan@~2.6.1:
+nan@^2.3.0, nan@~2.6.1:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.6.2.tgz#e4ff34e6c95fdfb5aecc08de6596f43605a7db45"
+
+nan@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
 natives@^1.1.0:
   version "1.1.0"
@@ -6177,10 +6177,6 @@ tryit@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/tryit/-/tryit-1.0.3.tgz#393be730a9446fd1ead6da59a014308f36c289cb"
 
-tslib@^1.5.0, tslib@^1.7.1:
-  version "1.7.1"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.7.1.tgz#bc8004164691923a79fe8378bbeb3da2017538ec"
-
 tsscmp@1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/tsscmp/-/tsscmp-1.0.5.tgz#7dc4a33af71581ab4337da91d85ca5427ebd9a97"
@@ -6469,13 +6465,6 @@ void-elements@^2.0.0:
 watch@^0.11.0:
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/watch/-/watch-0.11.0.tgz#e8dba091b7456799a3af57978b986e77e1320406"
-
-webcrypto-core@^0.1.16:
-  version "0.1.16"
-  resolved "https://registry.yarnpkg.com/webcrypto-core/-/webcrypto-core-0.1.16.tgz#de4914b59148db73287bc4f8e61cf4fb2f56f020"
-  dependencies:
-    "@types/node" "^6"
-    tslib "^1.5.0"
 
 webidl-conversions@^2.0.0:
   version "2.0.1"

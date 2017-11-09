@@ -19,7 +19,12 @@
                 "src/native/ed25519/verify.c",
                 "src/native/nimiq_node.cc"
             ],
-            "include_dirs": ["<!(node -e \"require('nan')\")"]
+            "include_dirs": [
+                "<!(node -e \"require('nan')\")"
+            ],
+            "cflags_c": [
+                "-std=c99"
+            ]
         }
     ]
 }
