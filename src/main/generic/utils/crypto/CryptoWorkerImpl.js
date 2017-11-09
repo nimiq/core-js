@@ -25,6 +25,8 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         byteOffset += CryptoWorker.SIGNATURE_SIZE;
         this._messagePointer = byteOffset;
         this._messageBuffer = new Uint8Array(Module.HEAP8.buffer, byteOffset, (memoryStart + memorySize) - byteOffset);
+
+        this._stack = Module._getStack();
     }
 
     /**
@@ -33,10 +35,11 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      */
     async computeLightHash(input) {
         const hash = new Uint8Array(32);
-        let wasmOut, wasmIn;
+        let stackPtr;
         try {
-            wasmOut = Module._malloc(hash.length);
-            wasmIn = Module._malloc(input.length);
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(hash.length);
+            const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_light_hash(wasmOut, wasmIn, input.length);
             if (res !== 0) {
@@ -48,8 +51,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             Log.w(CryptoWorkerImpl, e);
             throw e;
         } finally {
-            if (wasmOut !== undefined) Module._free(wasmOut);
-            if (wasmIn !== undefined) Module._free(wasmIn);
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
         }
     }
 
@@ -59,10 +61,11 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      */
     async computeHardHash(input) {
         const hash = new Uint8Array(32);
-        let wasmOut, wasmIn;
+        let stackPtr;
         try {
-            wasmOut = Module._malloc(hash.length);
-            wasmIn = Module._malloc(input.length);
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(hash.length);
+            const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_hard_hash(wasmOut, wasmIn, input.length, 512);
             if (res !== 0) {
@@ -74,8 +77,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             Log.w(CryptoWorkerImpl, e);
             throw e;
         } finally {
-            if (wasmOut !== undefined) Module._free(wasmOut);
-            if (wasmIn !== undefined) Module._free(wasmIn);
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
         }
     }
 
@@ -90,8 +92,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         }
         this._privKeyBuffer.set(privateKey);
         Module._ed25519_public_key_derive(this._pubKeyPointer, this._privKeyPointer);
-        publicKey.set(this._pubKeyBuffer);
         this._privKeyBuffer.fill(0);
+        this._stack.fill(0);
+        publicKey.set(this._pubKeyBuffer);
         return publicKey;
     }
 
@@ -114,8 +117,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         this._privKeyBuffer.set(privateKey);
         Module._ed25519_sign(this._signaturePointer, this._messagePointer, messageLength,
             this._pubKeyPointer, this._privKeyPointer);
-        signature.set(this._signatureBuffer);
         this._privKeyBuffer.fill(0);
+        this._stack.fill(0);
+        signature.set(this._signatureBuffer);
         return signature;
     }
 
