@@ -133,10 +133,12 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Array.<Hash>} locators
+     * @param {number} maxInvSize
+     * @param {boolean} [ascending]
      * @return {boolean}
      */
-    getBlocks(locators) {
-        return this._send(new GetBlocksMessage(locators));
+    getBlocks(locators, maxInvSize=BaseInventoryMessage.VECTORS_MAX_COUNT, ascending=true) {
+        return this._send(new GetBlocksMessage(locators, maxInvSize, ascending ? GetBlocksMessage.Direction.FORWARD : GetBlocksMessage.Direction.BACKWARD));
     }
 
     /**
@@ -204,11 +206,12 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @return {boolean}
      */
-    getAccountsProof(addresses) {
-        return this._send(new GetAccountsProofMessage(addresses));
+    getAccountsProof(blockHash, addresses) {
+        return this._send(new GetAccountsProofMessage(blockHash, addresses));
     }
 
     /**
@@ -251,6 +254,13 @@ class PeerChannel extends Observable {
      */
     accountsTreeChunk(blockHash, chunk) {
         return this._send(new AccountsTreeChunkMessage(blockHash, chunk));
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    rejectAccounts() {
+        return this._send(new AccountsRejectedMessage());
     }
 
     /**
@@ -336,3 +346,6 @@ PeerChannel.Event[Message.Type.GET_CHAIN_PROOF] = 'get-chain-proof';
 PeerChannel.Event[Message.Type.CHAIN_PROOF] = 'chain-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
 PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
+PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chunk';
+PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
+PeerChannel.Event[Message.Type.ACCOUNTS_REJECTED] = 'accounts-rejected';

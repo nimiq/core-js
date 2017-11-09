@@ -4,8 +4,8 @@ class AccountsTreeChunk {
      * @param {AccountsProof} proof
      */
     constructor(nodes, proof) {
-        if (!nodes || !NumberUtils.isUint16(nodes.length) || nodes.length === 0
-            || nodes.some(it => !(it instanceof AccountsTreeNode))) throw 'Malformed nodes';
+        if (!nodes || !NumberUtils.isUint16(nodes.length)
+            || nodes.some(it => !(it instanceof AccountsTreeNode) || !it.isTerminal())) throw 'Malformed nodes';
 
         /** @type {Array.<AccountsTreeNode>} */
         this._nodes = nodes;
@@ -54,7 +54,18 @@ class AccountsTreeChunk {
      * @returns {Promise.<boolean>}
      */
     async verify() {
-        // TODO Build up the tree...
+        if (!(await this._proof.verify())) {
+            return false;
+        }
+        let lastPrefix = null;
+        for (let i=0; i<=this._nodes.length; ++i) {
+            const node = i < this._nodes.length ? this._nodes[i] : this.tail;
+            if (lastPrefix && lastPrefix >= node.prefix) {
+                return false;
+            }
+            lastPrefix = node.prefix;
+        }
+        return true;
     }
 
     /**
@@ -71,9 +82,36 @@ class AccountsTreeChunk {
         return this._proof.root();
     }
 
+    /** @type {Array.<AccountsTreeNode>} */
+    get terminalNodes() {
+        return this._nodes.concat([this.tail]);
+    }
+
+    /** @type {AccountsProof} */
+    get proof() {
+        return this._proof;
+    }
+
+    /** @type {AccountsTreeNode} */
+    get head() {
+        return this._nodes[0];
+    }
+
+    /** @type {AccountsTreeNode} */
+    get tail() {
+        return this._proof.nodes[0];
+    }
+
     /** @type {number} */
     get length() {
         return this._nodes.length + 1;
     }
+
+    /** @type {boolean} */
+    get empty() {
+        return this._nodes.length === 0 && this._proof.length === 0;
+    }
 }
+AccountsTreeChunk.SIZE_MAX = 1000;
+AccountsTreeChunk.EMPTY = new AccountsTreeChunk([], new AccountsProof([]));
 Class.register(AccountsProof);

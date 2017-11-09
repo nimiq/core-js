@@ -9,7 +9,8 @@ class FullChain extends BaseChain {
      */
     static getPersistent(jdb, accounts) {
         const store = ChainDataStore.getPersistent(jdb);
-        return new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts);
+        return chain._init();
     }
 
     /**
@@ -18,18 +19,23 @@ class FullChain extends BaseChain {
      */
     static createVolatile(accounts) {
         const store = ChainDataStore.createVolatile();
-        return new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts);
+        return chain._init();
     }
 
     /**
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
-     * @returns {Promise.<FullChain>}
+     * @returns {FullChain}
      */
     constructor(store, accounts) {
-        super();
-        this._store = store;
+        super(store);
         this._accounts = accounts;
+
+        /** @type {HashMap.<Hash,Accounts>} */
+        this._snapshots = new HashMap();
+        /** @type {Array.<Hash>} */
+        this._snapshotOrder = [];
 
         /** @type {number} */
         this._totalDifficulty = 0;
@@ -45,16 +51,18 @@ class FullChain extends BaseChain {
         /**
          * @type {Synchronizer}
          * @private
+         *]
+         * i
+         *
+         * i
          */
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
-
-        return this._init();
     }
 
     /**
      * @returns {Promise.<FullChain>}
-     * @private
+     * @protected
      */
     async _init() {
         this._headHash = await this._store.getHead();
@@ -95,7 +103,7 @@ class FullChain extends BaseChain {
      * @param {Block} block
      * @returns {Promise.<number>}
      * @fires FullChain#head-changed
-     * @private
+     * @protected
      */
     async _pushBlock(block) {
         // Check if we already know this block.
@@ -118,10 +126,10 @@ class FullChain extends BaseChain {
         }
 
         // Check that all known interlink blocks are valid predecessors of the given block.
-        if (!(await this._verifyInterlink(block))) {
-            Log.w(FullChain, 'Rejecting block - interlink verification failed');
-            return FullChain.ERR_INVALID;
-        }
+        // if (!(await this._verifyInterlink(block))) {
+        //     Log.w(FullChain, 'Rejecting block - interlink verification failed');
+        //     return FullChain.ERR_INVALID;
+        // }
 
         // Check if the block's immediate predecessor is part of the chain.
         /** @type {ChainData} */
@@ -187,7 +195,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Block} block
      * @returns {Promise.<boolean>}
-     * @private
+     * @protected
      */
     async _verifyInterlink(block) {
         // Check that all blocks referenced in the interlink of the given block are valid predecessors of that block.
@@ -199,6 +207,85 @@ class FullChain extends BaseChain {
             }
         }
         return true;
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<boolean|AccountsTreeChunk>}
+     */
+    async getAccountsTreeChunk(blockHash, startPrefix) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsTreeChunk(startPrefix);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<boolean|AccountsProof>}
+     */
+    async getAccountsProof(blockHash, addresses) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsProof(addresses);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<boolean|Accounts>}
+     */
+    async _getSnapshot(blockHash) {
+        const block = await this.getBlock(blockHash);
+        // Check if blockHash is a block on the main chain within the allowed window.
+        if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
+            return false;
+        }
+
+        // Check if there already is a snapshot, otherwise create it.
+        let snapshot = null;
+        if (!this._snapshots.contains(blockHash)) {
+            const tx = await this._accounts.transaction();
+            let currentHash = this._headHash;
+            // Save all snapshots up to blockHash (and stop when its predecessor would be next).
+            while (!block.prevHash.equals(currentHash)) {
+                const currentBlock = await this.getBlock(currentHash);
+
+                if (!this._snapshots.contains(currentHash)) {
+                    snapshot = await tx.snapshot();
+                    this._snapshotOrder.unshift(currentHash);
+                    this._snapshots.put(currentHash, snapshot);
+                }
+
+                await tx.revertBlock(currentBlock);
+                currentHash = currentBlock.prevHash;
+            }
+            await tx.abort();
+        } else {
+            snapshot = this._snapshots.get(blockHash);
+        }
+
+        return snapshot;
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _saveSnapshot(blockHash) {
+        // Replace oldest snapshot if possible.
+        // This ensures snapshots are only created lazily.
+        if (this._snapshotOrder.length > 0) {
+            const oldestHash = this._snapshotOrder.shift();
+            // If the hash is not reused, remove it.
+            const oldestSnapshot = this._snapshots.get(oldestHash);
+            await oldestSnapshot.abort();
+            this._snapshots.remove(oldestHash);
+
+            // Add new snapshot.
+            this._snapshotOrder.push(blockHash);
+            const snapshot = await this._accounts.snapshot();
+            this._snapshots.put(blockHash, snapshot);
+        }
     }
 
     /**
@@ -216,6 +303,9 @@ class FullChain extends BaseChain {
             Log.w(FullChain, 'Rejecting block - AccountsHash mismatch');
             return false;
         }
+
+        // New block on main chain, so store a new snapshot.
+        await this._saveSnapshot(blockHash);
 
         chainData.onMainChain = true;
 
@@ -238,6 +328,15 @@ class FullChain extends BaseChain {
      */
     async _rebranch(blockHash, chainData) {
         Log.v(FullChain, `Rebranching to fork ${blockHash}, height=${chainData.head.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
+
+        // Drop all snapshots.
+        for (const hash of this._snapshotOrder) {
+            const snapshot = this._snapshots.get(hash);
+            snapshot.abort(); // We do not need to wait for the abortion as long as it has been triggered.
+        }
+        this._snapshots.clear();
+        this._snapshotOrder = [];
+
 
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
@@ -327,10 +426,11 @@ class FullChain extends BaseChain {
      *
      * @param {number} startHeight
      * @param {number} count
+     * @param {boolean} forward
      * @returns {Promise.<Array.<Block>>}
      */
-    getBlocks(startHeight, count = 500) {
-        return this._store.getBlocks(startHeight, count);
+    getBlocks(startHeight, count = 500, forward = true) {
+        return this._store.getBlocks(startHeight, count, forward);
     }
 
     /** @type {Block} */

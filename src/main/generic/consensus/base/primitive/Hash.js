@@ -5,6 +5,7 @@ class Hash extends Primitive {
      */
     static copy(o) {
         if (!o) return o;
+        // FIXME Move this to Crypto class.
         const obj = new Uint8Array(o._obj);
         return new Hash(obj);
     }

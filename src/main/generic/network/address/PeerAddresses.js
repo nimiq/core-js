@@ -734,8 +734,8 @@ PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
 PeerAddresses.SEED_PEERS = [
-    //WsPeerAddress.seed('dev.nimiq-network.com', 8080)
-    WsPeerAddress.seed('localhost', 8080)
+    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
+    // WsPeerAddress.seed('localhost', 8080)
 ];
 Class.register(PeerAddresses);
 

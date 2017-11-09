@@ -9,6 +9,15 @@ class InvVector {
     }
 
     /**
+     * @param {BlockHeader} header
+     * @returns {Promise.<InvVector>}
+     */
+    static async fromHeader(header) {
+        const hash = await header.hash();
+        return new InvVector(InvVector.Type.BLOCK, hash);
+    }
+
+    /**
      * @param {Transaction} tx
      * @returns {Promise.<InvVector>}
      */
@@ -115,7 +124,7 @@ class BaseInventoryMessage extends Message {
         super(type);
         if (!vectors || !NumberUtils.isUint16(vectors.length)
             || vectors.some(it => !(it instanceof InvVector))
-            || vectors.length > BaseInventoryMessage.LENGTH_MAX) throw 'Malformed vectors';
+            || vectors.length > BaseInventoryMessage.VECTORS_MAX_COUNT) throw 'Malformed vectors';
         /** @type {Array.<InvVector>} */
         this._vectors = vectors;
     }
@@ -150,7 +159,7 @@ class BaseInventoryMessage extends Message {
         return this._vectors;
     }
 }
-BaseInventoryMessage.LENGTH_MAX = 1000;
+BaseInventoryMessage.VECTORS_MAX_COUNT = 1000;
 Class.register(BaseInventoryMessage);
 
 class InvMessage extends BaseInventoryMessage {

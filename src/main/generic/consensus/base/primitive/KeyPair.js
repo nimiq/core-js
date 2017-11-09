@@ -1,15 +1,5 @@
 class KeyPair extends Primitive {
     /**
-     * @param {{_obj}} o
-     * @returns {KeyPair}
-     */
-    static copy(o) {
-        if (!o) return o;
-        const obj = new Uint8Array(o._obj);
-        return new KeyPair(obj);
-    }
-
-    /**
      * @param arg
      * @private
      */

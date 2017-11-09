@@ -51,6 +51,15 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<AccountsTreeChunk>}
+     */
+    async getAccountsTreeChunk(startPrefix) {
+        return this._tree.getChunk(startPrefix, AccountsTreeChunk.SIZE_MAX);
+    }
+
+    /**
      * @param {Block} block
      * @return {Promise}
      */
@@ -133,10 +142,11 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {boolean} [enableWatchdog}
      * @returns {Promise.<Accounts>}
      */
-    async transaction() {
-        return new Accounts(await this._tree.transaction());
+    async transaction(enableWatchdog = true) {
+        return new Accounts(await this._tree.transaction(enableWatchdog));
     }
 
     /**
@@ -144,6 +154,13 @@ class Accounts extends Observable {
      */
     async snapshot() {
         return new Accounts(await this._tree.snapshot());
+    }
+
+    /**
+     * @returns {Promise.<PartialAccountsTree>}
+     */
+    async partialAccountsTree() {
+        return this._tree.partialTree();
     }
 
     /**
@@ -227,10 +244,6 @@ class Accounts extends Observable {
         const newBalance = new Balance(newValue, newNonce);
         const newAccount = new Account(newBalance);
         await tree.put(address, newAccount);
-    }
-
-    export() {
-        return this._tree.export();
     }
 
     /**

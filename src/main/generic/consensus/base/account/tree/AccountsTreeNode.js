@@ -210,7 +210,23 @@ class AccountsTreeNode {
         if (!this._childrenSuffixes) {
             return undefined;
         }
-        return this.prefix + this._childrenSuffixes.find(child => !!child);
+        const suffix = this._childrenSuffixes.find(child => !!child);
+        return suffix ? this.prefix + suffix : undefined;
+    }
+
+    /**
+     * @returns {?string}
+     */
+    getLastChild() {
+        if (!this._childrenSuffixes) {
+            return undefined;
+        }
+        for (let i = this._childrenSuffixes.length-1; i>=0; --i) {
+            if (this._childrenSuffixes[i]) {
+                return this.prefix + this._childrenSuffixes[i];
+            }
+        }
+        return undefined;
     }
 
     /**

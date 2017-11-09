@@ -2,39 +2,38 @@ class AccountsTree extends Observable {
     /**
      * @returns {Promise.<AccountsTree>}
      */
-    static getPersistent(jdb) {
+    static async getPersistent(jdb) {
         const store = AccountsTreeStore.getPersistent(jdb);
-        return new AccountsTree(store);
+        const tree = new AccountsTree(store);
+        return tree._init();
     }
 
     /**
      * @returns {Promise.<AccountsTree>}
      */
-    static createVolatile() {
+    static async createVolatile() {
         const store = AccountsTreeStore.createVolatile();
-        return new AccountsTree(store);
+        const tree = new AccountsTree(store);
+        return tree._init();
     }
 
     /**
      * @private
      * @param {AccountsTreeStore} store
-     * @returns {Promise.<AccountsTree>}
+     * @returns {AccountsTree}
      */
     constructor(store) {
         super();
         /** @type {AccountsTreeStore} */
         this._store = store;
         this._synchronizer = new Synchronizer();
-
-        // Initialize root node.
-        return this._initRoot();
     }
 
     /**
      * @returns {Promise.<AccountsTree>}
-     * @private
+     * @protected
      */
-    async _initRoot() {
+    async _init() {
         let rootNode = await this._store.getRootNode();
         if (!rootNode) {
             rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*childrenSuffixes*/ [], /*childrenHashes*/ []);
@@ -224,97 +223,6 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * @param {Array.<AccountsTreeNode>} nodes
-     * @returns {Promise}
-     */
-    async populate(nodes) {
-        for (const node of nodes) {
-            await this._store.put(node); // eslint-disable-line no-await-in-loop
-        }
-    }
-
-    /**
-     * @returns {Promise.<boolean>}
-     */
-    async verify() {
-        // Fetch the root node.
-        const rootNode = await this._store.getRootNode();
-        Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
-        return this._verify(rootNode);
-    }
-
-    /**
-     * 
-     * @param {AccountsTreeNode} node
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    async _verify(node) {
-        if (!node) return true;
-
-        // well-formed node type
-        if (!node.isBranch() && !node.isTerminal()) {
-            Log.e(`Unrecognized node type ${node._type}`);
-            return false;
-        }
-
-        if (node.hasChildren()) {
-            for (let i = 0; i < 16; i++) {
-                const nibble = i.toString(16);
-                const subHash = node.getChildHash(node.prefix + nibble);
-                const subPrefix = node.getChild(node.prefix + nibble);
-                if (!subHash) continue;
-                const subNode = await this._store.get(subPrefix);
-
-                // no dangling references
-                if (!subNode) {
-                    Log.e(`No subnode for hash ${subHash}`);
-                    return false;
-                }
-
-                // no verification fails in the subnode
-                if (!(await this._verify(subNode))) {
-                    Log.e(`Verification of child ${i} failed`);
-                    return false;
-                }
-
-                // position in children list is correct
-                if (!subNode.prefix[node.prefix.length] === nibble) {
-                    Log.e(`First nibble of child node does not match its position in the parent branch node: 
-                    ${subNode.prefix[0]} vs ${nibble}`);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    async export() {
-        const nodes = [];
-        await this._export('', nodes);
-        return nodes;
-    }
-
-    /**
-     * 
-     * @param {string} nodeKey
-     * @param {Array.<string>} arr
-     * @returns {Promise}
-     * @private
-     */
-    async _export(nodeKey, arr) {
-        const node = await this._store.get(nodeKey);
-
-        arr.push(BufferUtils.toBase64(node.serialize()));
-
-        if (node.hasChildren()) {
-            for (const childNodePrefix of node.getChildren()) {
-                await this._export(childNodePrefix, arr);
-            }
-        }
-    }
-
-    /**
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}
      */
@@ -408,21 +316,34 @@ class AccountsTree extends Observable {
         const chunk = await this._store.getTerminalNodes(startPrefix, size);
         const lastNode = chunk.pop();
         const proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
-        return new AccountsTreeChunk(nodes, proof);
+        return new AccountsTreeChunk(chunk, proof);
     }
 
     /**
+     * @param {boolean} [enableWatchdog}
      * @returns {Promise.<AccountsTree>}
      */
-    transaction() {
-        return new AccountsTree(this._store.transaction());
+    transaction(enableWatchdog = true) {
+        const tree = new AccountsTree(this._store.transaction(enableWatchdog));
+        return tree._init();
+    }
+
+    /**
+     * @returns {Promise.<PartialAccountsTree>}
+     */
+    async partialTree() {
+        const tx = this._store.transaction();
+        await tx.truncate();
+        const tree = new PartialAccountsTree(tx);
+        return tree._init();
     }
 
     /**
      * @returns {Promise.<AccountsTree>}
      */
     snapshot() {
-        return new AccountsTree(this._store.snapshot());
+        const tree = new AccountsTree(this._store.snapshot());
+        return tree._init();
     }
 
     /**
@@ -444,7 +365,7 @@ class AccountsTree extends Observable {
      */
     async root() {
         const rootNode = await this._store.getRootNode();
-        return rootNode.hash();
+        return rootNode && rootNode.hash();
     }
 }
 Class.register(AccountsTree);

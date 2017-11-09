@@ -17,6 +17,24 @@ class Consensus {
         return new FullConsensus(blockchain, mempool, network);
     }
 
+    static async light() {
+        Services.configureServices(Services.LIGHT);
+        Services.configureServiceMask(Services.LIGHT | Services.FULL);
+
+        /** @type {ConsensusDB} */
+        const db = await ConsensusDB.get();
+        /** @type {Accounts} */
+        const accounts = await Accounts.getPersistent(db);
+        /** @type {FullChain} */
+        const blockchain = await LightChain.getPersistent(db, accounts);
+        /** @type {Mempool} */
+        const mempool = new Mempool(blockchain, accounts);
+        /** @type {Network} */
+        const network = await new Network(blockchain);
+
+        return new LightConsensus(blockchain, mempool, network);
+    }
+
     static async nano() {
         Services.configureServices(Services.NANO);
         Services.configureServiceMask(Services.NANO | Services.LIGHT | Services.FULL);

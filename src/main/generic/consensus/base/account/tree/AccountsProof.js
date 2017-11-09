@@ -3,7 +3,7 @@ class AccountsProof {
      * @param {Array.<AccountsTreeNode>} nodes
      */
     constructor(nodes) {
-        if (!nodes || !NumberUtils.isUint16(nodes.length) || nodes.length === 0
+        if (!nodes || !NumberUtils.isUint16(nodes.length)
             || nodes.some(it => !(it instanceof AccountsTreeNode))) throw 'Malformed nodes';
 
         /** @type {Array.<AccountsTreeNode>} */
@@ -63,7 +63,7 @@ class AccountsProof {
                 for (const child of children) {
                     const hash = await child.hash(); // eslint-disable-line no-await-in-loop
                     // If the child is not valid, return false.
-                    if (!node.getChildHash(child.prefix).equals(hash)) {
+                    if (!node.getChildHash(child.prefix).equals(hash) || node.getChild(child.prefix) !== child.prefix) {
                         return false;
                     }
                     this._index.put(hash, child);
@@ -141,6 +141,10 @@ class AccountsProof {
     /** @type {number} */
     get length() {
         return this._nodes.length;
+    }
+
+    get nodes() {
+        return this._nodes;
     }
 }
 Class.register(AccountsProof);

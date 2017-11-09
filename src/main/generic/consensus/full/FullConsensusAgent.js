@@ -35,10 +35,11 @@ class FullConsensusAgent extends Observable {
 
         // InvVectors we want to request via getData are collected here and
         // periodically requested.
-        /** @type {IndexedArray} */
-        this._objectsToRequest = new IndexedArray([], true);
+        /** @type {HashSet.<InvVector>} */
+        this._objectsToRequest = new HashSet();
 
         // Objects that are currently being requested from the peer.
+        /** @type {HashSet.<InvVector>} */
         this._objectsInFlight = null;
 
         // Helper object to keep track of timeouts & intervals.
@@ -57,6 +58,7 @@ class FullConsensusAgent extends Observable {
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
+        peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -194,7 +196,6 @@ class FullConsensusAgent extends Observable {
         this._peer.channel.getBlocks(locators);
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
-        // TODO should we ban here instead?
         this._timers.setTimeout('getBlocks', () => {
             this._timers.clearTimeout('getBlocks');
             this._peer.channel.close('getBlocks timeout');
@@ -247,10 +248,8 @@ class FullConsensusAgent extends Observable {
         Log.v(FullConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownObjects.length} new) received from ${this._peer.peerAddress}`);
 
         if (unknownObjects.length > 0) {
-            // Store unknown vectors in objectsToRequest array.
-            for (const obj of unknownObjects) {
-                this._objectsToRequest.push(obj);
-            }
+            // Store unknown vectors in objectsToRequest.
+            this._objectsToRequest.addAll(unknownObjects);
 
             // Clear the request throttle timeout.
             this._timers.clearTimeout('inv');
@@ -276,16 +275,31 @@ class FullConsensusAgent extends Observable {
         // Don't do anything if there are no objects queued to request.
         if (this._objectsToRequest.isEmpty()) return;
 
-        // Mark the requested objects as in-flight.
-        this._objectsInFlight = this._objectsToRequest;
+        // Request queued objects from the peer. Only request up to VECTORS_MAX_COUNT objects at a time.
+        const vectorsMaxCount = BaseInventoryMessage.VECTORS_MAX_COUNT;
+        /** @type {Array.<InvVector>} */
+        let vectors;
+        if (this._objectsToRequest.length > vectorsMaxCount) {
+            vectors = Array.from(new LimitIterable(this._objectsToRequest.valueIterator(), vectorsMaxCount));
 
-        // Request all queued objects from the peer.
-        // TODO depending in the REQUEST_THRESHOLD, we might need to split up
-        // the getData request into multiple ones.
-        this._peer.channel.getData(this._objectsToRequest.array);
+            // Mark the requested objects as in-flight.
+            this._objectsInFlight = new HashSet();
+            this._objectsInFlight.addAll(vectors);
 
-        // Reset the queue.
-        this._objectsToRequest = new IndexedArray([], true);
+            // Remove requested objects from queue.
+            this._objectsToRequest.removeAll(vectors);
+        } else {
+            vectors = Array.from(this._objectsToRequest.valueIterator());
+
+            // Mark the requested objects as in-flight.
+            this._objectsInFlight = this._objectsToRequest;
+
+            // Reset the queue.
+            this._objectsToRequest = new HashSet();
+        }
+
+        // Send getData request to peer.
+        this._peer.channel.getData(vectors);
 
         // Set timer to detect end of request / missing objects
         this._timers.setTimeout('getData', () => this._noMoreData(), FullConsensusAgent.REQUEST_TIMEOUT);
@@ -318,7 +332,7 @@ class FullConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(FullConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             // TODO What should happen here? ban? drop connection?
             // Might not be unsolicited but just arrive after our timeout has triggered.
@@ -348,7 +362,7 @@ class FullConsensusAgent extends Observable {
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+        if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
             Log.w(FullConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -372,7 +386,7 @@ class FullConsensusAgent extends Observable {
 
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
-            if (!this._objectsInFlight || this._objectsInFlight.indexOf(vector) < 0) {
+            if (!this._objectsInFlight || !this._objectsInFlight.contains(vector)) {
                 Log.w(FullConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
@@ -498,7 +512,7 @@ class FullConsensusAgent extends Observable {
      * @private
      */
     async _onGetBlocks(msg) {
-        Log.v(FullConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators received from ${this._peer.peerAddress}`);
+        Log.v(FullConsensusAgent, `[GETBLOCKS] ${msg.locators.length} block locators maxInvSize ${msg.maxInvSize} received from ${this._peer.peerAddress}`);
 
         // A peer has requested blocks. Check all requested block locator hashes
         // in the given order and pick the first hash that is found on our main
@@ -517,7 +531,9 @@ class FullConsensusAgent extends Observable {
 
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const blocks = await this._blockchain.getBlocks(startBlock.height + 1, FullConsensusAgent.GETBLOCKS_VECTORS_MAX);
+        const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
+            Math.min(msg.maxInvSize, FullConsensusAgent.GETBLOCKS_VECTORS_MAX),
+            msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];
         for (const block of blocks) {
             const hash = await block.hash();
@@ -542,8 +558,25 @@ class FullConsensusAgent extends Observable {
      * @private
      */
     async _onGetAccountsProof(msg) {
-        const proof = await this._blockchain.accounts.getAccountsProof(msg.addresses);
-        this._peer.channel.accountsProof(this._blockchain.headHash, proof);
+        const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
+        if (!proof) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsProof(msg.blockHash, proof);
+        }
+    }
+
+    /**
+     * @param {GetAccountsTreeChunkMessage} msg
+     * @private
+     */
+    async _onGetAccountsTreeChunk(msg) {
+        const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
+        if (!chunk) {
+            this._peer.channel.rejectAccounts();
+        } else {
+            this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
+        }
     }
 
     /**

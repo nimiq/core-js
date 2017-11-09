@@ -14,12 +14,10 @@ class TestBlockchain extends FullChain {
             jasmine.DEFAULT_TIMEOUT_INTERVAL = 1200000;
         }
 
-        const thisPromise = super(store, accounts);
-        return thisPromise.then((superThis) => {
-            superThis._users = users;
-            superThis._invalidNonce = ignorePoW;
-            return superThis;
-        });
+        super(store, accounts);
+        this._users = users;
+        this._invalidNonce = ignorePoW;
+        return this._init();
     }
 
     get accounts() {

@@ -122,5 +122,15 @@ class Policy {
     static get NUM_SNAPSHOTS_MAX() {
         return 20;
     }
+
+    /**
+     * Security parameter M
+     * FIXME naming
+     * @type {number}
+     * @constant
+     */
+    static get NUM_BLOCKS_VERIFICATION() {
+        return 250;
+    }
 }
 Class.register(Policy);

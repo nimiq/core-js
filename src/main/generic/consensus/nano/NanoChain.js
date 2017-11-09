@@ -157,6 +157,8 @@ class NanoChain extends BaseChain {
             const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
+
+        this._proof = proof;
     }
 
     async _pushBlock(block) {
