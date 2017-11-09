@@ -1,9 +1,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <byteswap.h>
 #include <arpa/inet.h>
 #include "nimiq_native.h"
+
+static inline uint16_t bswap_16(uint16_t x) {
+  return (x>>8) | (x<<8);
+}
+
+static inline uint32_t bswap_32(uint32_t x) {
+  return (bswap_16(x&0xffff)<<16) | (bswap_16(x>>16));
+}
+
+static inline uint64_t bswap_64(uint64_t x) {
+  return (((uint64_t)bswap_32(x&0xffffffffull))<<32) | (bswap_32(x>>32));
+}
+
+uint64_t htonll_test = 42;
+uint64_t htonll(uint64_t in) {
+    if(*(uint8_t*)&htonll_test == 42) {
+        return bswap_64(in);
+    }
+    return in;
+}
 
 typedef uint64_t* uint256;
 
@@ -35,14 +54,6 @@ void uint256_set(uint256 out, uint64_t value) {
 void uint256_set_compact(uint256 out, uint32_t compact) {
     uint256_set(out, compact & 0xffffff);
     uint256_shift_left(out, (8 * ((compact >> 24) - 3)));
-}
-
-uint64_t htonll_test = 42;
-uint64_t htonll(uint64_t in) {
-    if(*(uint8_t*)&htonll_test == 42) {
-        return bswap_64(in);
-    }
-    return in;
 }
 
 void uint256_set_bytes(uint256 out, uint8_t* bytes) {
