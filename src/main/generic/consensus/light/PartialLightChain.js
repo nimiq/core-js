@@ -164,6 +164,8 @@ class PartialLightChain extends LightChain {
         this._partialTree = await this._accounts.partialAccountsTree();
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
+
+        this._proof = proof;
     }
 
     async _pushLightBlock(block) {
