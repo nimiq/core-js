@@ -76,6 +76,8 @@ class Miner extends Observable {
 
         if (typeof navigator === 'object' && navigator.hardwareConcurrency) {
             this._workerPool.poolSize = navigator.hardwareConcurrency / 2;
+        } else {
+            this._workerPool.poolSize = 4;
         }
         this._workerPool.on('share', (obj) => this._onWorkerShare(obj));
         this._workerPool.on('no-share', (obj) => this._onWorkerShare(obj));
@@ -89,6 +91,9 @@ class Miner extends Observable {
          * @private
          */
         this._mempoolChanged = false;
+
+        /** @type {boolean} */
+        this._submittingBlock = false;
 
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
@@ -145,17 +150,25 @@ class Miner extends Observable {
     async _onWorkerShare(obj) {
         this._hashCount += this._workerPool.noncesPerRun;
         const block = this._currentBlock;
-        if (obj.hash && obj.blockHeader.bodyHash.equals(this._currentBlock.bodyHash) && obj.blockHeader.prevHash.equals(this._blockchain.headHash)) {
+        if (obj.blockHeader && obj.blockHeader.bodyHash.equals(this._currentBlock.bodyHash) && obj.blockHeader.prevHash.equals(this._blockchain.headHash)) {
             Log.d(Miner, `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
-            block.header.nonce = obj.nonce;
-            if (block.header.verifyProofOfWork()) {
-                // Tell listeners that we've mined a block.
-                this.fire('block-mined', block, this);
+            if (BlockUtils.isProofOfWork(obj.hash, block.target) && !this._submittingBlock) {
+                block.header.nonce = obj.nonce;
+                this._submittingBlock = true;
+                if (block.header.verifyProofOfWork()) {
+                    // Tell listeners that we've mined a block.
+                    this.fire('block-mined', block, this);
 
-                // Push block into blockchain.
-                this._blockchain.pushBlock(block);
-            } else {
-                Log.d(Miner, `Ignoring invalid share: ${await block.header.pow()}`);
+                    // Push block into blockchain.
+                    if ((await this._blockchain.pushBlock(block)) < 0) {
+                        this._submittingBlock = false;
+                        this._startWork();
+                    } else {
+                        this._submittingBlock = false;
+                    }
+                } else {
+                    Log.d(Miner, `Ignoring invalid share: ${await block.header.pow()}`);
+                }
             }
         }
         if (this._mempoolChanged) {

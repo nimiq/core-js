@@ -36,6 +36,10 @@ class IWorker {
         }
     }
 
+    static get areWorkersAsync() {
+        return typeof Worker !== 'undefined';
+    }
+
     static get _insideWebWorker() {
         return typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
     }

@@ -93,25 +93,25 @@ describe('Transaction', () => {
     it('must have a well defined value (8 bytes)', () => {
         expect(() => {
             const test1 = new Transaction(senderPubKey, recipientAddr, undefined, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test2 = new Transaction(senderPubKey, recipientAddr, null, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test3 = new Transaction(senderPubKey, recipientAddr, true, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test4 = new Transaction(senderPubKey, recipientAddr, -20, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test5 = new Transaction(senderPubKey, recipientAddr, 0, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test5 = new Transaction(senderPubKey, recipientAddr, new Uint8Array(20), fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
         expect(() => {
             const test5 = new Transaction(senderPubKey, recipientAddr, Number.MAX_SAFE_INTEGER + 1, fee, nonce, signature);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
     });
 
     it('must have a well defined fee (8 bytes)', () => {

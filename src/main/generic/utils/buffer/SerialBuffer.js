@@ -120,7 +120,7 @@ class SerialBuffer extends Uint8Array {
      */
     readUint64() {
         const value = this._view.getFloat64(this._readPos);
-        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         this._readPos += 8;
         return value;
     }
@@ -129,7 +129,7 @@ class SerialBuffer extends Uint8Array {
      * @param {number} value
      */
     writeUint64(value) {
-        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         this._view.setFloat64(this._writePos, value);
         this._writePos += 8;
     }
@@ -154,7 +154,7 @@ class SerialBuffer extends Uint8Array {
      * @param {number} value
      */
     writeVarUint(value) {
-        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         if (value < 0xFD) {
             this.writeUint8(value);
         } else if (value <= 0xFFFF) {
@@ -174,7 +174,7 @@ class SerialBuffer extends Uint8Array {
      * @returns {number}
      */
     static varUintSize(value) {
-        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         if (value < 0xFD) {
             return 1;
         } else if (value <= 0xFFFF) {
@@ -260,7 +260,7 @@ class SerialBuffer extends Uint8Array {
      * @param {string} value
      */
     writeVarLengthString(value) {
-        if (StringUtils.isMultibyte(value) || !NumberUtils.isUint8(value.length)) throw 'Malformed value';
+        if (StringUtils.isMultibyte(value) || !NumberUtils.isUint8(value.length)) throw new Error('Malformed value');
         const bytes = BufferUtils.fromAscii(value);
         this.writeUint8(bytes.byteLength);
         this.write(bytes);

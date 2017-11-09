@@ -300,6 +300,7 @@ gulp.task('build-loader', function () {
 });
 
 gulp.task('build-node', function () {
+    gulp.src(['build/Release/nimiq_node.node']).pipe(gulp.dest('dist'));
     return gulp.src(['./src/main/platform/nodejs/index.prefix.js'].concat(sources.platform.node).concat(sources.generic).concat(['./src/main/platform/nodejs/index.suffix.js']))
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
