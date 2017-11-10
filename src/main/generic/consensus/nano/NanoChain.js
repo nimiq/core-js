@@ -110,14 +110,19 @@ class NanoChain extends BaseChain {
 
         let sum = 0;
         let depth;
-        for (depth = counts.length - 1; depth >= 0; depth--) {
+        for (depth = counts.length - 1; sum < m && depth >= 0; depth--) {
             sum += counts[depth] ? counts[depth] : 0;
-            if (sum >= m) {
-                break;
-            }
         }
 
-        return Math.pow(2, Math.max(depth, 0)) * sum;
+        let maxScore = Math.pow(2, depth + 1) * sum;
+        let length = sum;
+        for (let i = depth; i >= 0; i--) {
+            length += counts[i] ? counts[i] : 0;
+            const score = Math.pow(2, i) * length;
+            maxScore = Math.max(maxScore, score);
+        }
+
+        return maxScore;
     }
 
     /**
@@ -127,6 +132,8 @@ class NanoChain extends BaseChain {
      * @private
      */
     async _acceptProof(proof, suffix) {
+        this._proof = proof;
+
         // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
         // TODO use a store transaction here?
         const head = proof.prefix.head;
@@ -157,8 +164,6 @@ class NanoChain extends BaseChain {
             const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
-
-        this._proof = proof;
     }
 
     async _pushBlock(block) {
@@ -262,6 +267,11 @@ class NanoChain extends BaseChain {
             this._mainChain = chainData;
             this._headHash = blockHash;
 
+            const proofHeadHash = await this._proof.head.hash();
+            if (block.prevHash.equals(proofHeadHash)) {
+                await this._proof.extend(block);
+            }
+
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
 
@@ -272,6 +282,8 @@ class NanoChain extends BaseChain {
         if (totalDifficulty > this._mainChain.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
+
+            this._proof = await this._getChainProof();
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -335,6 +347,22 @@ class NanoChain extends BaseChain {
 
         this._mainChain = chainData;
         this._headHash = blockHash;
+    }
+
+    /**
+     * @returns {Promise.<?ChainProof>}
+     * @override
+     */
+    getChainProof() {
+        return this._synchronizer.push(async () => {
+            const proof = await this._getChainProof();
+            if (!proof) {
+                // If we cannot construct a chain proof, superquality of the chain is harmed.
+                // Return the last know proof.
+                return this._proof;
+            }
+            return proof;
+        });
     }
 
     /** @type {Block} */

@@ -107,6 +107,79 @@ class ChainProof {
     }
 
     /**
+     * @param {BlockHeader} header
+     * @returns {Promise.<void>}
+     */
+    async extend(header) {
+        const suffixTail = this._suffix.headers.shift();
+        this._suffix.headers.push(header);
+
+        const interlink = await this._prefix.head.getNextInterlink(suffixTail.target);
+        const prefixHead = new Block(suffixTail, interlink);
+        this._prefix.blocks.push(prefixHead);
+
+        // TODO prune unnecessary blocks from proof
+
+        /*
+        const target = BlockUtils.hashToTarget(await prefixHead.hash());
+        const depth = BlockUtils.getTargetDepth(target);
+
+        this._chains = this._chains || this._getSuperChains();
+        for (let i = depth; i >= 0; i++) {
+            if (this._chains[i]) {
+                this._chains[i].blocks.push(prefixHead);
+            } else {
+                this._chains[i] = {blocks: [prefixHead], start: this._prefix.length - 1};
+            }
+        }
+
+        if (depth - BlockUtils.getTargetDepth(prefixHead.target) <= 0) {
+            return;
+        }
+
+        for (let i = depth; i>= 0; i++) {
+            const superchain = new BlockChain(this._chains[i].blocks);
+            if (BaseChain.isGoodSuperChain(superchain, i, Policy.M, Policy.DELTA)) {
+
+            }
+        }
+        */
+    }
+
+    /**
+     * @returns {Promise.<Array<{blocks: Array.<Block>, start: number}>>}
+     * @private
+     */
+    async _getSuperChains() {
+        const chains = [];
+        for (let i = 0; i < this._prefix.length; i++) {
+            const block = this._prefix.blocks[i];
+            const target = BlockUtils.hashToTarget(await block.hash());
+            const depth = BlockUtils.getTargetDepth(target);
+
+            if (chains[depth]) {
+                if (chains[depth].start < 0) {
+                    chains[depth].start = i;
+                }
+                chains[depth].blocks.push(block);
+            } else if (!chains[depth]) {
+                chains[depth] = {blocks: [block], start: i};
+            }
+
+            for (let j = depth - 1; j >= 0; j--) {
+                if (chains[j]) {
+                    chains[j].blocks.push(block);
+                } else {
+                    chains[j] = {blocks: [block], start: -1};
+                }
+            }
+        }
+        return chains;
+    }
+
+
+
+    /**
      * @returns {string}
      */
     toString() {
