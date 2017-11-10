@@ -21,9 +21,15 @@ class FullConsensusAgent extends Observable {
         /** @type {boolean} */
         this._synced = false;
 
-        // The height of our blockchain when we last attempted to sync the chain.
+        // The number of blocks that extended our blockchain since the last requestBlocks().
         /** @type {number} */
-        this._lastChainHeight = 0;
+        this._numBlocksExtending = -1;
+        // The number of blocks that forked our blockchain since the last requestBlocks().
+        /** @type {number} */
+        this._numBlocksForking = -1;
+        // The last fork block the peer has sent us.
+        /** @type {Block} */
+        this._forkHead = null;
 
         // The number of failed blockchain sync attempts.
         /** @type {number} */
@@ -140,26 +146,26 @@ class FullConsensusAgent extends Observable {
             return;
         }
 
-        // If we already requested blocks from the peer but it didn't give us any
-        // good ones, retry or drop the peer.
-        if (this._lastChainHeight === this._blockchain.height) {
-            this._failedSyncs++;
-            if (this._failedSyncs < FullConsensusAgent.MAX_SYNC_ATTEMPTS) {
-                this._requestBlocks();
-            } else {
-                this._peer.channel.ban('blockchain sync failed');
-            }
+        // If the peer didn't send us any blocks that extended our chain, count it as a failed sync attempt.
+        // This sets a maximum length for forks that the full client will accept:
+        //   FullConsensusAgent.MAX_SYNC_ATTEMPTS * BaseInvectoryMessage.VECTORS_MAX_COUNT
+        if (this._numBlocksExtending === 0 && ++this._failedSyncs >= FullConsensusAgent.MAX_SYNC_ATTEMPTS) {
+            this._peer.channel.ban('blockchain sync failed');
             return;
         }
 
         // We don't know the peer's head block, request blocks from it.
-        this._lastChainHeight = this._blockchain.height;
         this._requestBlocks();
     }
 
     _syncFinished() {
         this._syncing = false;
         this._synced = true;
+
+        this._numBlocksExtending = 0;
+        this._numBlocksForking = 0;
+        this._forkHead = null;
+
         this.fire('sync');
     }
 
@@ -170,27 +176,41 @@ class FullConsensusAgent extends Observable {
             return;
         }
 
-        // Request blocks starting from our hardest chain head going back to
-        // the genesis block. Push top 10 hashes first, then back off exponentially.
+        // Check if the peer is sending us a fork.
+        const onFork = this._forkHead && this._numBlocksExtending === 0 && this._numBlocksForking > 0;
+
         /** @type {Array.<Hash>} */
-        const locators = [this._blockchain.headHash];
-        let block = this._blockchain.head;
-        for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
-            locators.push(block.prevHash);
-            block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+        const locators = [];
+        if (onFork) {
+            // Only send the fork head as locator if the peer is sending us a fork.
+            locators.push(await this._forkHead.hash());
+        } else {
+            // Request blocks starting from our hardest chain head going back to
+            // the genesis block. Push top 10 hashes first, then back off exponentially.
+            locators.push(this._blockchain.headHash);
+
+            let block = this._blockchain.head;
+            for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
+                locators.push(block.prevHash);
+                block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+            }
+
+            let step = 2;
+            for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
+                block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
+                locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
+                step *= 2;
+            }
+
+            // Push the genesis block hash.
+            if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
+                locators.push(Block.GENESIS.HASH);
+            }
         }
 
-        let step = 2;
-        for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
-            block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
-            locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
-            step *= 2;
-        }
-
-        // Push the genesis block hash.
-        if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
-            locators.push(Block.GENESIS.HASH);
-        }
+        // Reset block counters.
+        this._numBlocksExtending = 0;
+        this._numBlocksForking = 0;
 
         // Request blocks from peer.
         this._peer.channel.getBlocks(locators);
@@ -230,6 +250,18 @@ class FullConsensusAgent extends Observable {
                     const block = await this._blockchain.getBlock(vector.hash, /*includeForks*/ true); // eslint-disable-line no-await-in-loop
                     if (!block) {
                         unknownObjects.push(vector);
+                    } else if (this._syncing) {
+                        // Check if this block is on a fork.
+                        const onFork = !(await this._blockchain.getBlock(vector.hash, /*includeForks*/ false));
+                        if (onFork) {
+                            this._numBlocksForking++;
+                            if (this._forkHead && !(await block.isImmediateSuccessorOf(this._forkHead))) {
+                                // The peer is sending fork blocks, but they are not forming a chain. Drop peer.
+                                this._peer.channel.close('conspicuous fork');
+                                return;
+                            }
+                            this._forkHead = block;
+                        }
                     }
                     break;
                 }
@@ -346,8 +378,27 @@ class FullConsensusAgent extends Observable {
         const status = await this._blockchain.pushBlock(msg.block);
 
         // TODO send reject message if we don't like the block
-        if (status === FullChain.ERR_INVALID) {
-            this._peer.channel.ban('received invalid block');
+        switch (status) {
+            case FullChain.ERR_INVALID:
+                this._peer.channel.ban('received invalid block');
+                break;
+
+            case FullChain.OK_EXTENDED:
+            case FullChain.OK_REBRANCHED:
+                if (this._syncing) this._numBlocksExtending++;
+                break;
+
+            case FullChain.OK_FORKED:
+                if (this._syncing) {
+                    this._numBlocksForking++;
+                    if (this._forkHead && !(await msg.block.isImmediateSuccessorOf(this._forkHead))) {
+                        // The peer is sending fork blocks, but they are not forming a chain. Drop peer.
+                        this._peer.channel.close('conspicuous fork');
+                        return;
+                    }
+                    this._forkHead = msg.block;
+                }
+                break;
         }
     }
 
@@ -637,7 +688,7 @@ FullConsensusAgent.REQUEST_TIMEOUT = 5000;
  * blocks.
  * @type {number}
  */
-FullConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+FullConsensusAgent.MAX_SYNC_ATTEMPTS = 10;
 /**
  * Maximum number of inventory vectors to sent in the response for onGetBlocks.
  * @type {number}

@@ -51,10 +51,6 @@ class FullChain extends BaseChain {
         /**
          * @type {Synchronizer}
          * @private
-         *]
-         * i
-         *
-         * i
          */
         this._synchronizer = new Synchronizer();
         this._synchronizer.on('work-end', () => this.fire('ready', this));
@@ -431,6 +427,16 @@ class FullChain extends BaseChain {
      */
     getBlocks(startHeight, count = 500, forward = true) {
         return this._store.getBlocks(startHeight, count, forward);
+    }
+
+    /**
+     * @returns {Promise.<ChainProof>}
+     * @override
+     */
+    async getChainProof() {
+        const proof = await BaseChain.prototype.getChainProof.call(this);
+        Assert(!!proof, 'Corrupted store: Failed to construct chain proof');
+        return proof;
     }
 
     /** @type {Block} */

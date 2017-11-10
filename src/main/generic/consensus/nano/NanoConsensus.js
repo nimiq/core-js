@@ -35,7 +35,7 @@ class NanoConsensus extends Observable {
             }
         });
     }
-
+    
     /**
      * @param {Peer} peer
      * @private
@@ -127,13 +127,13 @@ class NanoConsensus extends Observable {
      */
     async getAccounts(addresses, blockHash=null) {
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
-        const syncedFullNodes = this._agents.values().filter(
+        const agents = this._agents.values().filter(
             agent => agent.synced
             && agent.knowsBlock(blockHash)
-            && Services.isFullNode(agent.peer.peerAddress.services)
+            && !Services.isNanoNode(agent.peer.peerAddress.services)
         );
 
-        for (const agent of syncedFullNodes) {
+        for (const agent of agents) {
             try {
                 return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {

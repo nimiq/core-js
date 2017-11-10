@@ -155,6 +155,7 @@ class LightConsensusAgent extends Observable {
             if (this._partialChain) {
                 await this._partialChain.abort();
             }
+            return;
         }
 
         // Check if we know head block.
@@ -291,15 +292,14 @@ class LightConsensusAgent extends Observable {
      * @private
      */
     async _applyOrphanedBlocks() {
-        const len = this._orphanedBlocks.length;
-        for (let i = 0; i < len; ++i) {
-            const block = this._orphanedBlocks.shift();
+        for (const block of this._orphanedBlocks) {
             const status = await this._blockchain.pushBlock(block);
             if (status === LightChain.ERR_INVALID) {
                 this._peer.channel.ban('received invalid block');
                 break;
             }
         }
+        this._orphanedBlocks = [];
     }
 
     /**
@@ -451,24 +451,6 @@ class LightConsensusAgent extends Observable {
         // Clear timeout.
         this._timers.clearTimeout('getChainProof');
 
-        // Check that the peer's head block is contained in the proof suffix.
-        let headFound = false;
-        const suffix = msg.proof.suffix;
-        for (let i = suffix.length - 1; i >= 0; i--) {
-            const header = suffix.headers[i];
-            const hash = await header.hash();
-            if (hash.equals(this._peer.headHash)) {
-                headFound = true;
-                break;
-            }
-        }
-        if (!headFound) {
-            Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - unexpected head`);
-            // TODO ban instead?
-            this._peer.channel.close('invalid chain proof');
-            return;
-        }
-
         // Push the proof into the LightChain.
         if (!(await this._partialChain.pushProof(msg.proof))) {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
@@ -503,6 +485,11 @@ class LightConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
+                    // Ignore block announcements from nano clients as they will ignore our getData requests anyways (they only know headers).
+                    if (Services.isNanoNode(this._peer.peerAddress.services)) {
+                        continue;
+                    }
+
                     const block = await this._blockchain.getBlock(vector.hash); // eslint-disable-line no-await-in-loop
                     if (!block || !block.isFull()) {
                         unknownObjects.push(vector);

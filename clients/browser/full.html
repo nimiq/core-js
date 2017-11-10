@@ -189,14 +189,6 @@
         <div class="info-block" id="mplTransactions"></div>
         <hr/>
     </div>
-
-    <div class="info">
-        <div class="info-title">Block History</div>
-        <hr/>
-
-        <div class="info-block" id="blockHistory"></div>
-        <hr/>
-    </div>
 </div>
 
 <script type="text/javascript">
@@ -327,10 +319,6 @@
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
 
-            // Block history
-            /** @type {HTMLElement} */
-            this._blockHistory = document.querySelector('#blockHistory');
-
             // Init values.
             this._headChanged($.blockchain.head);
             this._networkChanged();
@@ -419,13 +407,13 @@
             this._hdNonce.innerText = $.blockchain.head.nonce;
             this._hdInterlink.innerHTML = interlink;
 
+            /*
             var el = document.createElement('div');
             var date = new Date(head.timestamp * 1000);
             var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
                 + `difficulty=${head.difficulty} (${realDifficulty}), interlink=[${interlink}]</div>`;
 
             var txPromises = [];
-            /*
             head.transactions.forEach(function(tx) {
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
@@ -433,7 +421,6 @@
                     return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
             });
-            */
 
             Promise.all(txPromises).then(function(results) {
                 el.innerHTML = html + results.join('');
@@ -443,6 +430,7 @@
                 }
                 this._blockHistory.appendChild(el);
             }.bind(this));
+            */
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
