@@ -16,9 +16,9 @@ static inline uint64_t bswap_64(uint64_t x) {
   return (((uint64_t)bswap_32(x&0xffffffffull))<<32) | (bswap_32(x>>32));
 }
 
-uint64_t htonll_test = 42;
-uint64_t htonll(uint64_t in) {
-    if(*(uint8_t*)&htonll_test == 42) {
+uint64_t nimiq_htonll_test = 42;
+uint64_t nimiq_htonll(uint64_t in) {
+    if(*(uint8_t*)&nimiq_htonll_test == 42) {
         return bswap_64(in);
     }
     return in;
@@ -58,7 +58,7 @@ void uint256_set_compact(uint256 out, uint32_t compact) {
 
 void uint256_set_bytes(uint256 out, uint8_t* bytes) {
     uint64_t* in = (uint64_t*)bytes;
-    for(int i = 0; i < 4; ++i) out[i] = htonll(in[i]);
+    for(int i = 0; i < 4; ++i) out[i] = nimiq_htonll(in[i]);
 }
 
 int8_t uint256_compare(uint256 left, uint256 right) {
