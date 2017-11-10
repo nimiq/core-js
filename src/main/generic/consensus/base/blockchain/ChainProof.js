@@ -116,7 +116,7 @@ class ChainProof {
 
         const interlink = await this._prefix.head.getNextInterlink(suffixTail.target);
         const prefixHead = new Block(suffixTail, interlink);
-        this._prefix.push(prefixHead);
+        this._prefix.blocks.push(prefixHead);
 
         // TODO prune unnecessary blocks from proof
 
