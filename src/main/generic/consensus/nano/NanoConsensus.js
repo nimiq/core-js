@@ -35,7 +35,7 @@ class NanoConsensus extends Observable {
             }
         });
     }
-    
+
     /**
      * @param {Peer} peer
      * @private

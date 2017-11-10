@@ -333,7 +333,6 @@ class FullChain extends BaseChain {
         this._snapshots.clear();
         this._snapshotOrder = [];
 
-
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
         // Store the chain along the way.
@@ -354,7 +353,7 @@ class FullChain extends BaseChain {
         Log.v(FullChain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
-        const accountsTx = await this._accounts.transaction();
+        const accountsTx = await this._accounts.transaction(false);
         let headHash = this._headHash;
         let head = this._mainChain.head;
         while (!headHash.equals(curHash)) {
@@ -386,7 +385,7 @@ class FullChain extends BaseChain {
         }
 
         // Fork looks good. Unset onMainChain flag on the current main chain up to (excluding) the common ancestor.
-        const chainTx = this._store.transaction();
+        const chainTx = this._store.transaction(false);
         headHash = this._headHash;
         let headData = this._mainChain;
         while (!headHash.equals(curHash)) {
@@ -435,7 +434,7 @@ class FullChain extends BaseChain {
      */
     async getChainProof() {
         const proof = await BaseChain.prototype.getChainProof.call(this);
-        Assert(!!proof, 'Corrupted store: Failed to construct chain proof');
+        Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
         return proof;
     }
 
