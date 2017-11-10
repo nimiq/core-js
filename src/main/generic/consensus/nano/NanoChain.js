@@ -283,7 +283,7 @@ class NanoChain extends BaseChain {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
 
-            this._proof = await this.getChainProof();
+            this._proof = await this._getChainProof();
 
             // Tell listeners that the head of the chain has changed.
             this.fire('head-changed', this.head);
@@ -353,14 +353,16 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<?ChainProof>}
      * @override
      */
-    async getChainProof() {
-        const proof = await BaseChain.prototype.getChainProof.call(this);
-        if (!proof) {
-            // If we cannot construct a chain proof, superquality of the chain is harmed.
-            // Return the last know proof.
-            return this._proof;
-        }
-        return proof;
+    getChainProof() {
+        return this._synchronizer.push(async () => {
+            const proof = await this._getChainProof();
+            if (!proof) {
+                // If we cannot construct a chain proof, superquality of the chain is harmed.
+                // Return the last know proof.
+                return this._proof;
+            }
+            return proof;
+        });
     }
 
     /** @type {Block} */

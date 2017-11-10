@@ -82,8 +82,9 @@ class BaseChain extends IBlockchain {
 
     /**
      * @returns {Promise.<?ChainProof>}
+     * @protected
      */
-    getChainProof() {
+    _getChainProof() {
         return this._prove(Policy.M, Policy.K, Policy.DELTA);
     }
 

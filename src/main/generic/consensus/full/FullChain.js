@@ -432,10 +432,12 @@ class FullChain extends BaseChain {
      * @returns {Promise.<ChainProof>}
      * @override
      */
-    async getChainProof() {
-        const proof = await BaseChain.prototype.getChainProof.call(this);
-        Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
-        return proof;
+    getChainProof() {
+        return this._synchronizer.push(async () => {
+            const proof = await this._getChainProof();
+            Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
+            return proof;
+        });
     }
 
     /** @type {Block} */
