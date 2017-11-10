@@ -25,8 +25,6 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         byteOffset += CryptoWorker.SIGNATURE_SIZE;
         this._messagePointer = byteOffset;
         this._messageBuffer = new Uint8Array(Module.HEAP8.buffer, byteOffset, (memoryStart + memorySize) - byteOffset);
-
-        this._stack = Module._getStack();
     }
 
     /**
@@ -93,7 +91,6 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         this._privKeyBuffer.set(privateKey);
         Module._ed25519_public_key_derive(this._pubKeyPointer, this._privKeyPointer);
         this._privKeyBuffer.fill(0);
-        this._stack.fill(0);
         publicKey.set(this._pubKeyBuffer);
         return publicKey;
     }
@@ -118,7 +115,6 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         Module._ed25519_sign(this._signaturePointer, this._messagePointer, messageLength,
             this._pubKeyPointer, this._privKeyPointer);
         this._privKeyBuffer.fill(0);
-        this._stack.fill(0);
         signature.set(this._signatureBuffer);
         return signature;
     }
