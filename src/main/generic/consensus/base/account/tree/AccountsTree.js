@@ -548,8 +548,7 @@ class AccountsTree extends Observable {
      * @returns {Promise}
      */
     async commit() {
-        const rootHash = await this.root();
-        Assert.that(!rootHash.equals(new Hash(null)));
+        Assert.that(!(await this.root()).equals(new Hash(null)));
         return this._store.commit();
     }
 
