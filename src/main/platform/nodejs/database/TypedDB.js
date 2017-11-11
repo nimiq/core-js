@@ -1,11 +1,14 @@
-var levelup = require('levelup');
+const levelup = require('levelup');
 
 class TypedDB {
     constructor(tableName, type) {
         if (!type || !type.unserialize) throw 'NodeJS TypedDB requires type with .unserialize()';
-        this._db = levelup('./database/' + tableName, {
-            keyEncoding: 'ascii'
-        });
+        if (!TypedDB._dbConnections[tableName]) {
+            TypedDB._dbConnections[tableName] = levelup(`./database/${tableName}`, {
+                keyEncoding: 'ascii'
+            });
+        }
+        this._db = TypedDB._dbConnections[tableName];
         this._type = type;
     }
 
@@ -62,6 +65,7 @@ class TypedDB {
         return new TypedDBTransaction(this);
     }
 }
+TypedDB._dbConnections = {};
 Class.register(TypedDB);
 
 class NativeDBTransaction extends Observable {
