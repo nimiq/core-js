@@ -28,20 +28,6 @@ class Accounts extends Observable {
         this.bubble(this._tree, '*');
     }
 
-    async populate(nodes) {
-        // To make sure we have a single transaction, we use a Temporary Tree during populate and commit that.
-        const tx = await this._tree.transaction();
-        await tx.populate(nodes);
-        if (await tx.verify()) {
-            await tx.commit();
-            this.fire('populated');
-            return true;
-        } else {
-            await tx.abort();
-            return false;
-        }
-    }
-
     /**
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}
@@ -72,6 +58,8 @@ class Accounts extends Observable {
             throw e;
         }
 
+        await tree.finalizeBatch();
+
         const hash = await tree.root();
         if (!block.accountsHash.equals(hash)) {
             await tree.abort();
@@ -92,6 +80,7 @@ class Accounts extends Observable {
             await tree.abort();
             throw e;
         }
+        await tree.finalizeBatch();
         return tree.commit();
     }
 
@@ -121,6 +110,7 @@ class Accounts extends Observable {
             await tree.abort();
             throw e;
         }
+        await tree.finalizeBatch();
         return tree.commit();
     }
 
@@ -243,7 +233,7 @@ class Accounts extends Observable {
 
         const newBalance = new Balance(newValue, newNonce);
         const newAccount = new Account(newBalance);
-        await tree.put(address, newAccount);
+        await tree.putBatch(address, newAccount);
     }
 
     /**
