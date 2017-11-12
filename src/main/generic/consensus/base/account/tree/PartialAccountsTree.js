@@ -158,117 +158,11 @@ class PartialAccountsTree extends AccountsTree {
 
         // TODO: Bulk insertion instead of sequential insertion!
         for (const node of nodes) {
-            await this._insertLight(rootNode, node.prefix, node.account, []);
+            await this._insertBatch(rootNode, node.prefix, node.account, []);
             rootNode = await this._store.getRootNode();
             Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
         }
         await this._updateHashes(rootNode);
-    }
-
-    /**
-     * This is basically a version of the standard insert method
-     * that uses empty hashes instead of hashing the nodes.
-     * Hashes are only done once at the end.
-     * @param {AccountsTreeNode} node
-     * @param {string} prefix
-     * @param {Account} account
-     * @param {Array.<AccountsTreeNode>} rootPath
-     * @returns {Promise}
-     * @private
-     */
-    async _insertLight(node, prefix, account, rootPath) {
-        // Find common prefix between node and new address.
-        const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
-
-        // If the node prefix does not fully match the new address, split the node.
-        if (commonPrefix.length !== node.prefix.length) {
-            // Insert the new account node.
-            const newChild = AccountsTreeNode.terminalNode(prefix, account);
-            await this._store.put(newChild);
-
-            // Insert the new parent node.
-            const newParent = AccountsTreeNode.branchNode(commonPrefix)
-                .withChild(node.prefix, new Hash(null))
-                .withChild(newChild.prefix, new Hash(null));
-            await this._store.put(newParent);
-
-            return this._updateKeysLight(newParent.prefix, rootPath);
-        }
-
-        // If the commonPrefix is the specified address, we have found an (existing) node
-        // with the given address. Update the account.
-        if (commonPrefix === prefix) {
-            // Update the account.
-            node = node.withAccount(account);
-            await this._store.put(node);
-
-            return this._updateKeysLight(node.prefix, rootPath);
-        }
-
-        // If the node prefix matches and there are address bytes left, descend into
-        // the matching child node if one exists.
-        const childPrefix = node.getChild(prefix);
-        if (childPrefix) {
-            const childNode = await this._store.get(childPrefix);
-            rootPath.push(node);
-            return this._insertLight(childNode, prefix, account, rootPath);
-        }
-
-        // If no matching child exists, add a new child account node to the current node.
-        const newChild = AccountsTreeNode.terminalNode(prefix, account);
-        await this._store.put(newChild);
-
-        node = node.withChild(newChild.prefix, new Hash(null));
-        await this._store.put(node);
-
-        return this._updateKeysLight(node.prefix, rootPath);
-    }
-
-    /**
-     * This is a modified version that does not hash nodes.
-     * @param {string} prefix
-     * @param {Array.<AccountsTreeNode>} rootPath
-     * @returns {Promise}
-     * @private
-     */
-    async _updateKeysLight(prefix, rootPath) {
-        // Walk along the rootPath towards the root node starting with the
-        // immediate predecessor of the node specified by 'prefix'.
-        let i = rootPath.length - 1;
-        for (; i >= 0; --i) {
-            let node = rootPath[i];
-
-            node = node.withChild(prefix, new Hash(null));
-            await this._store.put(node); // eslint-disable-line no-await-in-loop
-            prefix = node.prefix;
-        }
-    }
-
-    /**
-     * This method updates all empty hashes (and only such).
-     * @param {AccountsTreeNode} node
-     * @private
-     */
-    async _updateHashes(node) {
-        if (node.isTerminal()) {
-            return node.hash();
-        }
-        // Compute sub hashes if necessary.
-        const subHashes = await Promise.all(node.getChildren().map(async child => {
-            const currentHash = node.getChildHash(child);
-            if (!currentHash.equals(new Hash(null))) {
-                return currentHash;
-            }
-            const childNode = await this._store.get(child);
-            return this._updateHashes(childNode);
-        }));
-        // Then prepare new node and update.
-        let newNode = node;
-        node.getChildren().forEach((child, i) => {
-            newNode = newNode.withChild(child, subHashes[i]);
-        });
-        await this._store.put(newNode);
-        return newNode.hash();
     }
 
     /** @type {boolean} */
