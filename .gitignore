@@ -16,3 +16,4 @@
 .idea
 *.iml
 /database
+/build

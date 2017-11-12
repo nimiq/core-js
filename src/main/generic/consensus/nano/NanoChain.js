@@ -9,15 +9,15 @@ class NanoChain extends BaseChain {
 
         this._headHash = Block.GENESIS.HASH;
 
-        this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
-
         this._synchronizer = new Synchronizer();
 
         return this._init();
     }
 
     async _init() {
+        this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(await Block.GENESIS.pow()), true);
         await this._store.putChainData(Block.GENESIS.HASH, this._mainChain);
+
         return this;
     }
 
@@ -103,7 +103,7 @@ class NanoChain extends BaseChain {
                 continue;
             }
 
-            const target = BlockUtils.hashToTarget(await block.hash()); // eslint-disable-line no-await-in-loop
+            const target = BlockUtils.hashToTarget(await block.pow()); // eslint-disable-line no-await-in-loop
             const depth = BlockUtils.getTargetDepth(target);
             counts[depth] = counts[depth] ? counts[depth] + 1 : 1;
         }
@@ -146,7 +146,7 @@ class NanoChain extends BaseChain {
             // Set the prefix head as the new chain head.
             // TODO use the tail end of the dense suffix of the prefix instead.
             this._headHash = headHash;
-            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(headHash), true);
+            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(await head.pow()), true);
             await this._store.putChainData(headHash, this._mainChain);
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
@@ -252,10 +252,17 @@ class NanoChain extends BaseChain {
         return this._pushBlockInternal(block, hash, prevData);
     }
 
+    /**
+     * @param {Block} block
+     * @param {Hash} blockHash
+     * @param {ChainData} prevData
+     * @returns {Promise.<number>}
+     * @private
+     */
     async _pushBlockInternal(block, blockHash, prevData) {
         // Block looks good, create ChainData.
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
-        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(blockHash);
+        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(await block.pow());
         const chainData = new ChainData(block, totalDifficulty, totalWork);
 
         // Check if the block extends our current main chain.

@@ -71,7 +71,7 @@ class FullChain extends BaseChain {
             Assert.that(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
         } else {
             // Initialize chain & accounts with Genesis block.
-            this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(Block.GENESIS.HASH), true);
+            this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(await Block.GENESIS.pow()), true);
             this._headHash = Block.GENESIS.HASH;
 
             const tx = this._store.transaction();
@@ -152,7 +152,7 @@ class FullChain extends BaseChain {
 
         // Block looks good, create ChainData.
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
-        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(hash);
+        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(await block.pow());
         const chainData = new ChainData(block, totalDifficulty, totalWork);
 
         // Check if the block extends our current main chain.

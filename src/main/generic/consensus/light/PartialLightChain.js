@@ -105,7 +105,7 @@ class PartialLightChain extends LightChain {
                 continue;
             }
 
-            const target = BlockUtils.hashToTarget(await block.hash()); // eslint-disable-line no-await-in-loop
+            const target = BlockUtils.hashToTarget(await block.pow()); // eslint-disable-line no-await-in-loop
             const depth = BlockUtils.getTargetDepth(target);
             counts[depth] = counts[depth] ? counts[depth] + 1 : 1;
         }
@@ -141,7 +141,7 @@ class PartialLightChain extends LightChain {
             // Set the prefix head as the new chain head.
             // TODO use the tail end of the dense suffix of the prefix instead.
             this._headHash = headHash;
-            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(headHash), true);
+            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(await head.pow()), true);
             await this._store.putChainData(headHash, this._mainChain);
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
@@ -189,7 +189,7 @@ class PartialLightChain extends LightChain {
     async _pushBlockInternal(block, blockHash, prevData) {
         // Block looks good, create ChainData.
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
-        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(blockHash);
+        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(await block.pow());
         const chainData = new ChainData(block, totalDifficulty, totalWork);
 
         // Check if the block extends our current main chain.
@@ -298,7 +298,7 @@ class PartialLightChain extends LightChain {
 
         // Block looks good, create ChainData.
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
-        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(hash);
+        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(await block.pow());
         const chainData = new ChainData(block, totalDifficulty, totalWork);
 
         // Prepend new block to the main chain.
@@ -364,7 +364,7 @@ class PartialLightChain extends LightChain {
 
         // Block looks good, create ChainData.
         const totalDifficulty = this._proofHead.totalDifficulty - this._proofHead.head.difficulty;
-        const totalWork = this._proofHead.totalWork - BlockUtils.realDifficulty(await this._proofHead.head.hash());
+        const totalWork = this._proofHead.totalWork - BlockUtils.realDifficulty(await this._proofHead.head.pow());
         const chainData = new ChainData(block, totalDifficulty, totalWork);
 
         // Prepend new block to the main chain.

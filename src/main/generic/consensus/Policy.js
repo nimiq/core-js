@@ -41,7 +41,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_REWARD() {
-        return Policy.coinsToSatoshis(50);
+        return Policy.coinsToSatoshis(5);
     }
 
     /**
