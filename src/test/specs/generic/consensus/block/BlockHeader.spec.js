@@ -17,15 +17,15 @@ describe('BlockHeader', () => {
         //   4 bytes difficulty
         //   4 bytes height
         //   4 bytes timestamp
-        //   8 bytes nonce
+        //   4 bytes nonce
         // ----------------------------
-        // 150 bytes
+        // 146 bytes
 
         const blockHeader1 = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, difficulty, 1, timestamp, nonce);
 
         const serialized = blockHeader1.serialize();
 
-        expect(serialized.byteLength).toBe(150);
+        expect(serialized.byteLength).toBe(146);
     });
 
 
@@ -113,8 +113,8 @@ describe('BlockHeader', () => {
         }).toThrow('Malformed accountsHash');
     });
 
-    it('must have a well defined nonce (8 bytes)', () => {
-        const nonce1 = NumberUtils.UINT64_MAX;
+    it('must have a well defined nonce (4 bytes)', () => {
+        const nonce1 = NumberUtils.UINT32_MAX;
         const blockHeader1 = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce1);
         const blockHeader2 = BlockHeader.unserialize(blockHeader1.serialize());
         const nonce2 = blockHeader2.nonce;

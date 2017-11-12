@@ -315,16 +315,19 @@
             this._bcHeight.innerText = $.blockchain.height;
             this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
 
-            var realDifficulty = Nimiq.BlockUtils.realDifficulty($.blockchain.headHash);
-            var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
-
             this._hdHash.innerText = $.blockchain.headHash.toBase64();
             this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
             this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
-            this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
+
+            var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
             this._hdInterlink.innerHTML = interlink;
+
+            $.blockchain.head.pow().then(function(pow) {
+                var realDifficulty = Nimiq.BlockUtils.realDifficulty(pow);
+                this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
+            }.bind(this));
 
             this._updateBalance();
         }

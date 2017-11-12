@@ -21,6 +21,8 @@ class BlockBody {
         this._minerAddr = minerAddr;
         /** @type {Array.<Transaction>} */
         this._transactions = transactions;
+        /** @type {Hash} */
+        this._hash = null;
     }
 
     /**
@@ -97,10 +99,13 @@ class BlockBody {
     /**
      * @return {Promise.<Hash>}
      */
-    hash() {
-        const fnHash = value => value.hash ?
-            /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
-        return MerkleTree.computeRoot([this._minerAddr, ...this._transactions], fnHash);
+    async hash() {
+        if (!this._hash) {
+            const fnHash = value => value.hash ?
+                /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
+            this._hash = await MerkleTree.computeRoot([this._minerAddr, ...this._transactions], fnHash);
+        }
+        return this._hash;
     }
 
     equals(o) {

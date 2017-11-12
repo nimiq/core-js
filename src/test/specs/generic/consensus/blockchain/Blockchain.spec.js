@@ -64,7 +64,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block with an invalid transaction signature
             const data = new Uint8Array(32);
-            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, data);
+            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, testBlockchain._users[0].publicKey, data);
             transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, undefined, wrongSignature)];
             block = await testBlockchain.createBlock({transactions: transactions});
             status = await testBlockchain.pushBlock(block);
@@ -163,6 +163,13 @@ describe('Blockchain', () => {
 
             nextTarget = await testBlockchain.getNextTarget();
             expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.222654588987314));
+        })().then(done, done.fail);
+    });
+
+    it('can handle larger chains', (done) => {
+        (async function() {
+            const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
+            expect(testBlockchain).toBeTruthy();
         })().then(done, done.fail);
     });
 

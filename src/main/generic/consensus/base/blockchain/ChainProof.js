@@ -154,7 +154,7 @@ class ChainProof {
         const chains = [];
         for (let i = 0; i < this._prefix.length; i++) {
             const block = this._prefix.blocks[i];
-            const target = BlockUtils.hashToTarget(await block.hash());
+            const target = BlockUtils.hashToTarget(await block.pow());
             const depth = BlockUtils.getTargetDepth(target);
 
             if (chains[depth]) {

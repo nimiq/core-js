@@ -35,7 +35,7 @@ class BlockHeader {
         if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
         if (!NumberUtils.isUint32(height)) throw 'Invalid height';
         if (!NumberUtils.isUint32(timestamp)) throw 'Malformed timestamp';
-        if (!NumberUtils.isUint64(nonce)) throw 'Malformed nonce';
+        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
 
         /** @type {number} */
         this._version = version;
@@ -67,7 +67,7 @@ class BlockHeader {
         const nBits = buf.readUint32();
         const height = buf.readUint32();
         const timestamp = buf.readUint32();
-        const nonce = buf.readUint64();
+        const nonce = buf.readUint32();
         return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version);
     }
 
@@ -81,7 +81,7 @@ class BlockHeader {
         buf.writeUint32(this._nBits);
         buf.writeUint32(this._height);
         buf.writeUint32(this._timestamp);
-        buf.writeUint64(this._nonce);
+        buf.writeUint32(this._nonce);
         return buf;
     }
 
@@ -95,7 +95,7 @@ class BlockHeader {
             + /*nBits*/ 4
             + /*height*/ 4
             + /*timestamp*/ 4
-            + /*nonce*/ 8;
+            + /*nonce*/ 4;
     }
 
     /**

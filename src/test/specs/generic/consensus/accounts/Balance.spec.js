@@ -6,7 +6,7 @@ describe('Balance', () => {
 
         expect(() => {
             const balance = new Balance(value1, nonce);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
 
         const value2 = Number.MAX_SAFE_INTEGER;
         new Balance(value2, nonce);
@@ -15,22 +15,22 @@ describe('Balance', () => {
         const value3 = value2 + 1;
         expect(() => {
             const balance = new Balance(value3, nonce);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
 
         const value4 = NaN;
         expect(() => {
             const balance = new Balance(value4, nonce);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
 
         const value5 = null;
         expect(() => {
             const balance = new Balance(value5, nonce);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
 
         const value6 = 'string';
         expect(() => {
             const balance = new Balance(value6, nonce);
-        }).toThrow('Malformed value');
+        }).toThrowError('Malformed value');
 
     });
 

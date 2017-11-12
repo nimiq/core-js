@@ -146,8 +146,8 @@ class BaseChain extends IBlockchain {
         const blocks = [];
 
         // Include head if it is at the requested depth or below.
-        const headHash = await head.hash();
-        const headDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(headHash));
+        const headPow = await head.pow();
+        const headDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(headPow));
         if (headDepth >= depth) {
             blocks.push(head.toLight());
         }
@@ -167,7 +167,7 @@ class BaseChain extends IBlockchain {
             j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 0);
         }
 
-        if (blocks[blocks.length - 1].height > 1 && tailHeight === 1) {
+        if ((blocks.length === 0 || blocks[blocks.length - 1].height > 1) && tailHeight === 1) {
             blocks.push(Block.GENESIS.toLight());
         }
 

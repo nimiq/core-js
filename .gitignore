@@ -9,9 +9,11 @@
 /clients/nodejs/consensus
 /clients/nodejs/localhost.*
 /dist/nimiq*
+/dist/worker.js*
 /dist/web*
 /dist/node*
 /dist/doc/
 .idea
 *.iml
 /database
+/build
