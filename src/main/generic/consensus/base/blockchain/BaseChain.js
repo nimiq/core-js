@@ -81,9 +81,10 @@ class BaseChain extends IBlockchain {
     /* NIPoPoW functions */
 
     /**
-     * @returns {Promise.<ChainProof>}
+     * @returns {Promise.<?ChainProof>}
+     * @protected
      */
-    getChainProof() {
+    _getChainProof() {
         return this._prove(Policy.M, Policy.K, Policy.DELTA);
     }
 
@@ -92,7 +93,7 @@ class BaseChain extends IBlockchain {
      * @param {number} m
      * @param {number} k
      * @param {number} delta
-     * @returns {Promise.<ChainProof>}
+     * @returns {Promise.<?ChainProof>}
      * @private
      */
     async _prove(m, k, delta) {
@@ -109,11 +110,15 @@ class BaseChain extends IBlockchain {
         for (let depth = maxDepth; depth >= 0; depth--) {
             // alpha = C[:-k]{B:}|^mu
             const alpha = await this._getSuperChain(depth, head, startHeight); // eslint-disable-line no-await-in-loop
+            if (!alpha) {
+                return null;
+            }
+
             // pi = pi (union) alpha
             prefix = BlockChain.merge(prefix, alpha);
 
             // if good_(delta,m)(C, alpha, mu) then
-            if (BaseChain._isGoodSuperChain(alpha, depth, m, delta)) {
+            if (BaseChain.isGoodSuperChain(alpha, depth, m, delta)) {
                 Assert.that(alpha.length >= m, `Good superchain expected to be at least ${m} long`);
                 Log.v(BaseChain, `Found good superchain at depth ${depth} with length ${alpha.length} (#${startHeight} - #${head.height})`);
                 // B <- alpha[-m]
@@ -133,7 +138,7 @@ class BaseChain extends IBlockchain {
      * @param {number} depth
      * @param {Block} [head]
      * @param {number} [tailHeight]
-     * @returns {Promise.<BlockChain>}
+     * @returns {Promise.<?BlockChain>}
      * @private
      */
     async _getSuperChain(depth, head = this.head, tailHeight = 1) {
@@ -141,8 +146,8 @@ class BaseChain extends IBlockchain {
         const blocks = [];
 
         // Include head if it is at the requested depth or below.
-        const headHash = await head.hash();
-        const headDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(headHash));
+        const headPow = await head.pow();
+        const headDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(headPow));
         if (headDepth >= depth) {
             blocks.push(head.toLight());
         }
@@ -152,14 +157,17 @@ class BaseChain extends IBlockchain {
         let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 0);
         while (j < references.length && head.height > tailHeight) {
             head = await this.getBlock(references[j]); // eslint-disable-line no-await-in-loop
-            Assert.that(!!head, `Corrupted store: Failed to load block ${references[j]} while constructing SuperChain`);
+            if (!head) {
+                Log.w(BaseChain, `Failed to find block ${references[j]} while constructing SuperChain`);
+                return null;
+            }
             blocks.push(head.toLight());
 
             references = [head.prevHash, ...head.interlink.hashes.slice(1)];
             j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 0);
         }
 
-        if (blocks[blocks.length - 1].height > 1 && tailHeight === 1) {
+        if ((blocks.length === 0 || blocks[blocks.length - 1].height > 1) && tailHeight === 1) {
             blocks.push(Block.GENESIS.toLight());
         }
 
@@ -172,9 +180,8 @@ class BaseChain extends IBlockchain {
      * @param {number} m
      * @param {number} delta
      * @returns {boolean}
-     * @private
      */
-    static _isGoodSuperChain(superchain, depth, m, delta) {
+    static isGoodSuperChain(superchain, depth, m, delta) {
         // TODO multilevel quality
         return BaseChain._hasSuperQuality(superchain, depth, m, delta);
     }

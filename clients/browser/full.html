@@ -126,6 +126,10 @@
                 <hash id="hdHash"></hash>
             </div>
             <div class="info-block">
+                <strong>PoW Hash</strong>
+                <hash id="hdPoW"></hash>
+            </div>
+            <div class="info-block">
                 <strong>Prev Hash</strong>
                 <hash id="hdPrevHash"></hash>
             </div>
@@ -187,14 +191,6 @@
             <span id="mplTransactionCount"></span>
         </div>
         <div class="info-block" id="mplTransactions"></div>
-        <hr/>
-    </div>
-
-    <div class="info">
-        <div class="info-title">Block History</div>
-        <hr/>
-
-        <div class="info-block" id="blockHistory"></div>
         <hr/>
     </div>
 </div>
@@ -261,6 +257,8 @@
             /** @type {HTMLElement} */
             this._hdHash = document.querySelector('#hdHash');
             /** @type {HTMLElement} */
+            this._hdPoW = document.querySelector('#hdPoW');
+            /** @type {HTMLElement} */
             this._hdPrevHash = document.querySelector('#hdPrevHash');
             /** @type {HTMLElement} */
             this._hdAccountsHash = document.querySelector('#hdAccountsHash');
@@ -326,10 +324,6 @@
             /** @type {HTMLElement} */
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
-
-            // Block history
-            /** @type {HTMLElement} */
-            this._blockHistory = document.querySelector('#blockHistory');
 
             // Init values.
             this._headChanged($.blockchain.head);
@@ -408,24 +402,28 @@
                 this._bcAccountsHash.innerText = accountsHash.toBase64();
             }.bind(this));
 
-            var realDifficulty = Nimiq.BlockUtils.realDifficulty($.blockchain.headHash);
-            var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
-
             this._hdHash.innerText = $.blockchain.headHash.toBase64();
             this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
             this._hdAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
-            this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
+
+            var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
             this._hdInterlink.innerHTML = interlink;
 
+            $.blockchain.head.pow().then(function(pow) {
+                var realDifficulty = Nimiq.BlockUtils.realDifficulty(pow);
+                this._hdPoW.innerText = pow.toBase64();
+                this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
+            }.bind(this));
+
+            /*
             var el = document.createElement('div');
             var date = new Date(head.timestamp * 1000);
             var html = `<div><b>${date}</b> hash=<hash>${$.blockchain.headHash.toBase64()}</hash>, `
                 + `difficulty=${head.difficulty} (${realDifficulty}), interlink=[${interlink}]</div>`;
 
             var txPromises = [];
-            /*
             head.transactions.forEach(function(tx) {
                 txPromises.push(tx.getSenderAddr().then(function(senderAddr) {
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
@@ -433,7 +431,6 @@
                     return `<div>&nbsp;-&gt; from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
                 }));
             });
-            */
 
             Promise.all(txPromises).then(function(results) {
                 el.innerHTML = html + results.join('');
@@ -443,6 +440,7 @@
                 }
                 this._blockHistory.appendChild(el);
             }.bind(this));
+            */
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);

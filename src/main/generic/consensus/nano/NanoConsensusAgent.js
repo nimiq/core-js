@@ -13,9 +13,16 @@ class NanoConsensusAgent extends Observable {
         /** @type {Peer} */
         this._peer = peer;
 
+        // Flag indicating that we are currently syncing our blockchain with the peer's.
+        /** @type {boolean} */
+        this._syncing = false;
+
         // Flag indicating that have synced our blockchain with the peer's.
         /** @type {boolean} */
         this._synced = false;
+
+        /** @type {Array.<BlockHeader>} */
+        this._orphanedBlocks = [];
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
         /** @type {HashSet.<InvVector>} */
@@ -112,6 +119,8 @@ class NanoConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      */
     async syncBlockchain() {
+        this._syncing = true;
+
         const headBlock = await this._blockchain.getBlock(this._peer.headHash);
         if (!headBlock) {
             this._requestChainProof();
@@ -125,6 +134,7 @@ class NanoConsensusAgent extends Observable {
      * @private
      */
     _syncFinished() {
+        this._syncing = false;
         this._synced = true;
         this.fire('sync');
     }
@@ -134,7 +144,10 @@ class NanoConsensusAgent extends Observable {
      * @private
      */
     _requestChainProof() {
-        Assert.that(!this._timers.timeoutExists('getChainProof'));
+        // Only one chain proof request at a time.
+        if (this._timers.timeoutExists('getChainProof')) {
+            return;
+        }
 
         // Request ChainProof from peer.
         this._peer.channel.getChainProof();
@@ -164,24 +177,6 @@ class NanoConsensusAgent extends Observable {
         // Clear timeout.
         this._timers.clearTimeout('getChainProof');
 
-        // Check that the peer's head block is contained in the proof suffix.
-        let headFound = false;
-        const suffix = msg.proof.suffix;
-        for (let i = suffix.length - 1; i >= 0; i--) {
-            const header = suffix.headers[i];
-            const hash = await header.hash();
-            if (hash.equals(this._peer.headHash)) {
-                headFound = true;
-                break;
-            }
-        }
-        if (!headFound) {
-            Log.w(NanoConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - unexpected head`);
-            // TODO ban instead?
-            this._peer.channel.close('invalid chain proof');
-            return;
-        }
-
         // Push the proof into the NanoChain.
         if (!(await this._blockchain.pushProof(msg.proof))) {
             Log.w(NanoConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
@@ -192,9 +187,28 @@ class NanoConsensusAgent extends Observable {
 
         // TODO add all blocks from the chain proof to knownObjects.
 
-        this._syncFinished();
+        // Apply any orphaned blocks we received while waiting for the chain proof.
+        await this._applyOrphanedBlocks();
+
+        if (this._syncing) {
+            this._syncFinished();
+        }
     }
 
+    /**
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _applyOrphanedBlocks() {
+        for (const header of this._orphanedBlocks) {
+            const status = await this._blockchain.pushHeader(header);
+            if (status === NanoChain.ERR_INVALID) {
+                this._peer.channel.ban('received invalid block');
+                break;
+            }
+        }
+        this._orphanedBlocks = [];
+    }
 
     /**
      * @param {InvMessage} msg
@@ -335,6 +349,13 @@ class NanoConsensusAgent extends Observable {
         if (status === NanoChain.ERR_INVALID) {
             this._peer.channel.ban('received invalid header');
         }
+        // Re-sync with this peer if it starts sending orphan blocks after the initial sync.
+        else if (status === NanoChain.ERR_ORPHAN) {
+            this._orphanedBlocks.push(msg.header);
+            if (this._synced) {
+                this._requestChainProof();
+            }
+        }
     }
 
     /**
@@ -404,7 +425,7 @@ class NanoConsensusAgent extends Observable {
      * @return {Promise}
      * @private
      */
-    async _onGetData(msg) {
+    _onGetData(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
@@ -607,7 +628,7 @@ class NanoConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      * @private
      */
-    async _onAccountsRejected(msg) {
+    _onAccountsRejected(msg) {
         Log.d(NanoConsensusAgent, `[ACCOUNTS-REJECTED] Received from ${this._peer.peerAddress}`);
 
         // Check if we have requested an accounts proof, reject unsolicited ones.
@@ -634,7 +655,9 @@ class NanoConsensusAgent extends Observable {
      */
     async _onGetChainProof(msg) {
         const proof = await this._blockchain.getChainProof();
-        this._peer.channel.chainProof(proof);
+        if (proof) {
+            this._peer.channel.chainProof(proof);
+        }
     }
 
     /**

@@ -9,7 +9,7 @@ class Balance {
     }
 
     constructor(value = 0, nonce = 0) {
-        if (!NumberUtils.isUint64(value)) throw 'Malformed value';
+        if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
 
         this._value = value;

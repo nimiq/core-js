@@ -5,9 +5,7 @@ class PublicKey extends Primitive {
      */
     static copy(o) {
         if (!o) return o;
-        // FIXME Move this to Crypto class.
-        const obj = {raw: new Uint8Array(o._obj.raw)};
-        return new PublicKey(obj);
+        return new PublicKey(new Uint8Array(o._obj));
     }
 
     /**
@@ -64,4 +62,5 @@ class PublicKey extends Primitive {
         return new Address((await Hash.light(this.serialize())).subarray(0, 20));
     }
 }
+
 Class.register(PublicKey);

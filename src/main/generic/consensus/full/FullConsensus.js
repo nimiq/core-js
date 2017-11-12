@@ -87,7 +87,7 @@ class FullConsensus extends Observable {
                 // TODO !!! Check peer types (at least one full node, etc.) !!!
                 if (!this._established) {
                     Log.d(FullConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-                    Log.d(FullConsensus, `Blockchain: height=${this._blockchain.height}, totalWork=${this._blockchain.totalWork}, headHash=${this._blockchain.headHash}`);
+                    Log.d(FullConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
                     this._established = true;
                     this.fire('established');

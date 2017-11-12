@@ -71,8 +71,29 @@ class Miner extends Observable {
          */
         this._totalElapsed = 0;
 
-        // Flag indicating that the mempool has changed since we started mining the current block.
+        /** @type {MinerWorkerPool} */
+        this._workerPool = new MinerWorkerPool();
+
+        if (typeof navigator === 'object' && navigator.hardwareConcurrency) {
+            this._workerPool.poolSize = navigator.hardwareConcurrency / 2;
+        } else {
+            this._workerPool.poolSize = 4;
+        }
+        this._workerPool.on('share', (obj) => this._onWorkerShare(obj));
+        this._workerPool.on('no-share', (obj) => this._onWorkerShare(obj));
+
+        /** @type {Block} */
+        this._currentBlock = null;
+
+        /**
+         * Flag indicating that the mempool has changed since we started mining the current block.
+         * @type {boolean}
+         * @private
+         */
         this._mempoolChanged = false;
+
+        /** @type {boolean} */
+        this._submittingBlock = false;
 
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
@@ -113,55 +134,45 @@ class Miner extends Observable {
 
         // Construct next block.
         const block = await this._getNextBlock();
+        this._currentBlock = block;
         const buffer = block.header.serialize();
         this._mempoolChanged = false;
 
         Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
-        // Start hashing.
-        this._mine(block, buffer);
+        this._workerPool.startMiningOnBlock(block.header);
     }
 
+    /**
+     * @param {{hash: Hash, nonce: number, blockHeader: BlockHeader}} obj
+     * @private
+     */
+    async _onWorkerShare(obj) {
+        this._hashCount += this._workerPool.noncesPerRun;
+        const block = this._currentBlock;
+        if (obj.blockHeader && obj.blockHeader.bodyHash.equals(this._currentBlock.bodyHash) && obj.blockHeader.prevHash.equals(this._blockchain.headHash)) {
+            Log.d(Miner, `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
+            if (BlockUtils.isProofOfWork(obj.hash, block.target) && !this._submittingBlock) {
+                block.header.nonce = obj.nonce;
+                this._submittingBlock = true;
+                if (block.header.verifyProofOfWork()) {
+                    // Tell listeners that we've mined a block.
+                    this.fire('block-mined', block, this);
 
-    async _mine(block, buffer) {
-        // If the mempool has changed, restart work with the changed transactions.
+                    // Push block into blockchain.
+                    if ((await this._blockchain.pushBlock(block)) < 0) {
+                        this._submittingBlock = false;
+                        this._startWork();
+                    } else {
+                        this._submittingBlock = false;
+                    }
+                } else {
+                    Log.d(Miner, `Ignoring invalid share: ${await block.header.pow()}`);
+                }
+            }
+        }
         if (this._mempoolChanged) {
             this._startWork();
-            return;
-        }
-
-        // Abort mining if the blockchain head changed.
-        if (!this._blockchain.headHash.equals(block.prevHash)) {
-            return;
-        }
-
-        // Abort mining if the user stopped the miner.
-        if (!this.working) {
-            return;
-        }
-
-        // Reset the write position of the buffer before re-using it.
-        buffer.writePos = 0;
-
-        // Compute hash and check if it meets the proof of work condition.
-        const isPoW = await block.header.verifyProofOfWork(buffer);
-
-        // Keep track of how many hashes we have computed.
-        this._hashCount++;
-
-        // Check if we have found a block.
-        if (isPoW) {
-            // Tell listeners that we've mined a block.
-            this.fire('block-mined', block, this);
-
-            // Push block into blockchain.
-            this._blockchain.pushBlock(block);
-        } else {
-            // Increment nonce.
-            block.header.nonce++;
-
-            // Continue mining.
-            this._mine(block, buffer);
         }
     }
 
@@ -255,6 +266,7 @@ class Miner extends Observable {
         this._totalElapsed = 0;
 
         // Tell listeners that we've stopped working.
+        this._workerPool.stop();
         this.fire('stop', this);
 
         Log.i(Miner, 'Stopped work');
@@ -305,5 +317,6 @@ class Miner extends Observable {
         return this._hashrate;
     }
 }
+
 Miner.MOVING_AVERAGE_MAX_SIZE = 10;
 Class.register(Miner);

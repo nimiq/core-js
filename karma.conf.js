@@ -15,9 +15,11 @@ module.exports = function (config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'dist/web-crypto.js',
+            'dist/web.js',
             'src/test/specs/**/Dummy.spec.js',
-            'src/test/specs/**/*.spec.js'
+            'src/test/specs/**/*.spec.js',
+            { pattern: 'dist/worker*', included: false },
+            { pattern: 'dist/*.map', included: false }
         ],
 
 

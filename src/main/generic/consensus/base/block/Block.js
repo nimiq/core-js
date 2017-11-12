@@ -126,6 +126,8 @@ class Block {
             return false;
         }
 
+        /*
+        // Disabled since Block.hash() != Block.pow()
         // Check that all hashes in the interlink are hard enough for their respective depth.
         const targetHeight = BlockUtils.getTargetHeight(this.target);
         for (let depth = 1; depth < this._interlink.length; depth++) {
@@ -134,6 +136,7 @@ class Block {
                 return false;
             }
         }
+        */
 
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
         const interlinkHash = await this._interlink.hash();
@@ -204,11 +207,25 @@ class Block {
             return false;
         }
 
-        // Check that the hash of the predecessor block is part of the block's interlink.
+        // Check that the predecessor is contained in this block's interlink and verify its position.
         const prevHash = await predecessor.hash();
-        if (!this._interlink.hashes.some(hash => prevHash.equals(hash))) {
-            Log.v(Block, 'No interlink predecessor - not in interlink');
-            return false;
+        if (!Block.GENESIS.HASH.equals(prevHash)) {
+            const prevPow = await predecessor.pow();
+            const targetHeight = BlockUtils.getTargetHeight(this.target);
+            let blockFound = false;
+            for (let depth = 1; depth < this._interlink.length; depth++) {
+                if (prevHash.equals(this._interlink.hashes[depth])) {
+                    blockFound = true;
+                    if (!BlockUtils.isProofOfWork(prevPow, Math.pow(2, targetHeight - depth))) {
+                        Log.v(Block, 'No interlink predecessor - invalid position in interlink');
+                        return false;
+                    }
+                }
+            }
+            if (!blockFound) {
+                Log.v(Block, 'No interlink predecessor - not in interlink');
+                return false;
+            }
         }
 
         // If the predecessor happens to be the immediate predecessor, check additionally:
@@ -299,10 +316,10 @@ class Block {
      */
     async getNextInterlink(nextTarget) {
         // Compute how much harder the block hash is than the next target.
-        const hash = await this.hash();
+        const pow = await this.pow();
         const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
         let i = 1, depth = 0;
-        while (BlockUtils.isProofOfWork(hash, Math.pow(2, nextTargetHeight - i))) {
+        while (BlockUtils.isProofOfWork(pow, Math.pow(2, nextTargetHeight - i))) {
             depth = i;
             i++;
         }
@@ -319,6 +336,7 @@ class Block {
         const hashes = [Block.GENESIS.HASH];
 
         // Push the current block hash up to depth times onto the new interlink. If depth == 0, it won't be pushed.
+        const hash = await this.hash();
         for (let i = 0; i < depth; i++) {
             hashes.push(hash);
         }
@@ -489,6 +507,15 @@ class Block {
     hash(buf) {
         return this._header.hash(buf);
     }
+
+    /**
+     * @param {SerialBuffer} [buf]
+     * @returns {Promise.<Hash>}
+     */
+    pow(buf) {
+        return this._header.pow(buf);
+    }
+
 }
 Class.register(Block);
 
@@ -496,15 +523,15 @@ Class.register(Block);
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
-        new Hash(BufferUtils.fromBase64('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')),
-        new Hash(BufferUtils.fromBase64('Xmju8G32zjPl4m6U/ULB3Nyozs2BkVgX2k9fy5/HeEg=')),
-        new Hash(BufferUtils.fromBase64('wkaeMLzQ6UmY25ypNseX94rbfiHou3fiK8bPzQJj/tA=')),
+        Hash.fromBase64('DldRwCblQ7Loqy6wYJnaodHl30d3j3eH+qtFzfEv46g='),
+        Hash.fromBase64('dkSEqAmKLwRsgBECDSF6ogVPHFoHvdWX8YigTlV6Fm0='),
+        Hash.fromBase64('kOLoEJXYHiciZb/QkswXk0GPhhg7pmHy+L1NmTbilPM='),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        111633),
+        141372),
     new BlockInterlink([]),
-    new BlockBody(new Address(BufferUtils.fromBase64('kekkD0FSI5gu3DRVMmMHEOlKf1I')), [])
+    new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('AADBmeOOWahd2/WOWYPmxXXJnjl4kc+oLoKm8K7V1Yc=');
+Block.GENESIS.HASH = Hash.fromBase64('KuuKbY78KS1IzXxzQfjU0y62rTj4A70ajsqldSyCKgg=');
