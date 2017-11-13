@@ -45,15 +45,11 @@ class FullChain extends BaseChain {
         /** @type {ChainData} */
         this._mainChain = null;
 
-        // Blocks arriving fast over the network will create a backlog of blocks
-        // in the synchronizer queue. Tell listeners when the blockchain is
-        // ready to accept blocks again.
         /**
          * @type {Synchronizer}
          * @private
          */
         this._synchronizer = new Synchronizer();
-        this._synchronizer.on('work-end', () => this.fire('ready', this));
     }
 
     /**
@@ -432,12 +428,10 @@ class FullChain extends BaseChain {
      * @returns {Promise.<ChainProof>}
      * @override
      */
-    getChainProof() {
-        return this._synchronizer.push(async () => {
-            const proof = await this._getChainProof();
-            Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
-            return proof;
-        });
+    async getChainProof() {
+        const proof = await this._getChainProof();
+        Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
+        return proof;
     }
 
     /** @type {Block} */
@@ -462,11 +456,6 @@ class FullChain extends BaseChain {
     /** @type {number} */
     get totalWork() {
         return this._mainChain.totalWork;
-    }
-
-    /** @type {boolean} */
-    get busy() {
-        return this._synchronizer.working;
     }
 
     /** @type {Accounts} */

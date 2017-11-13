@@ -36,6 +36,7 @@ class ChainDataStore {
      * @param {IObjectStore} store
      */
     constructor(store) {
+        /** @type {IObjectStore} */
         this._store = store;
     }
 
@@ -167,6 +168,14 @@ class ChainDataStore {
      */
     abort() {
         return this._store.abort();
+    }
+
+    /**
+     * @returns {ChainDataStore}
+     */
+    snapshot() {
+        const snapshot = this._store.snapshot();
+        return new ChainDataStore(snapshot);
     }
 
     /**

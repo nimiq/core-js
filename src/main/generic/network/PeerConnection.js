@@ -120,8 +120,6 @@ class PeerConnection extends Observable {
     send(msg) {
         const logAddress = this._peerAddress || this._netAddress;
         if (this._closed) {
-            // XXX Debug, spammy!!!
-            Log.e(PeerConnection, `Tried to send data over closed connection to ${logAddress}`, MessageFactory.parse(msg));
             return false;
         }
 

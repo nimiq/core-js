@@ -360,16 +360,14 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<?ChainProof>}
      * @override
      */
-    getChainProof() {
-        return this._synchronizer.push(async () => {
-            const proof = await this._getChainProof();
-            if (!proof) {
-                // If we cannot construct a chain proof, superquality of the chain is harmed.
-                // Return the last know proof.
-                return this._proof;
-            }
-            return proof;
-        });
+    async getChainProof() {
+        const proof = await this._getChainProof();
+        if (!proof) {
+            // If we cannot construct a chain proof, superquality of the chain is harmed.
+            // Return the last know proof.
+            return this._proof;
+        }
+        return proof;
     }
 
     /** @type {Block} */

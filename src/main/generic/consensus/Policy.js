@@ -110,7 +110,7 @@ class Policy {
      * @constant
      */
     static get DELTA() {
-        return 0.01;
+        return 0.1;
     }
 
     /* Snapshot Parameters */

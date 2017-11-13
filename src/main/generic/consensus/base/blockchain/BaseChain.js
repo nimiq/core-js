@@ -84,8 +84,12 @@ class BaseChain extends IBlockchain {
      * @returns {Promise.<?ChainProof>}
      * @protected
      */
-    _getChainProof() {
-        return this._prove(Policy.M, Policy.K, Policy.DELTA);
+    async _getChainProof() {
+        const snapshot = this._store.snapshot();
+        const chain = new BaseChainSnapshot(snapshot, this.head);
+        const proof = await chain._prove(Policy.M, Policy.K, Policy.DELTA);
+        snapshot.abort();
+        return proof;
     }
 
     /**
@@ -239,3 +243,25 @@ class BaseChain extends IBlockchain {
     }
 }
 Class.register(BaseChain);
+
+class BaseChainSnapshot extends BaseChain {
+    /**
+     * @param {ChainDataStore} store
+     * @param {Block} head
+     */
+    constructor(store, head) {
+        super(store);
+        this._head = head;
+    }
+
+    /** @type {Block} */
+    get head() {
+        return this._head;
+    }
+
+    /** @type {number} */
+    get height() {
+        return this._head.height;
+    }
+}
+Class.register(BaseChainSnapshot);
