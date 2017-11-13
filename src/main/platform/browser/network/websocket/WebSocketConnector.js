@@ -14,6 +14,7 @@ class WebSocketConnector extends Observable {
         }
 
         const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
+        ws.binaryType = 'arraybuffer';
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 

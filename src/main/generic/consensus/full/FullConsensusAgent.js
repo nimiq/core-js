@@ -257,7 +257,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             case FullChain.OK_FORKED:
                 if (this._syncing) {
                     this._numBlocksForking++;
-                    if (this._forkHead && !(await msg.block.isImmediateSuccessorOf(this._forkHead))) {
+                    if (this._forkHead && !(await block.isImmediateSuccessorOf(this._forkHead))) {
                         // The peer is sending fork blocks, but they are not forming a chain. Drop peer.
                         this._peer.channel.close('conspicuous fork');
                         break;
