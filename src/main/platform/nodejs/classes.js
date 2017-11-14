@@ -13,6 +13,7 @@ require('../../generic/utils/Services.js');
 require('../../generic/utils/Synchronizer.js');
 require('../../generic/utils/Timers.js');
 require('../../generic/utils/Version.js');
+require('../../generic/utils/Time.js');
 require('../../generic/utils/IWorker.js');
 require('../../generic/utils/database/TypedDBTransaction.js');
 require('./database/TypedDB.js');

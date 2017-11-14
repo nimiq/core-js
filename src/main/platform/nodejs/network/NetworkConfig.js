@@ -5,7 +5,7 @@ class NetworkConfig {
         }
 
         return new WsPeerAddress(
-            Services.myServices(), Date.now(), NetAddress.UNSPECIFIED,
+            Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
             NetworkConfig._myHost, NetworkConfig._myPort);
     }
 

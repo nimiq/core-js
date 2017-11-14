@@ -78,6 +78,12 @@ class Block {
      * @returns {Promise.<boolean>}
      */
     async verify() {
+        // Check that the timestamp is not too far into the future.
+        if (this._header.timestamp * 1000 > Time.now() + Block.TIMESTAMP_DRIFT_MAX) {
+            Log.w(Block, 'Invalid block - timestamp too far in the future');
+            return false;
+        }
+
         // Check that the header hash matches the difficulty.
         if (!(await this._header.verifyProofOfWork())) {
             Log.w(Block, 'Invalid block - PoW verification failed');
@@ -518,6 +524,8 @@ class Block {
 
 }
 Class.register(Block);
+
+Block.TIMESTAMP_DRIFT_MAX = 600 /*seconds*/; // 10 minutes
 
 /* Genesis Block */
 Block.GENESIS = new Block(

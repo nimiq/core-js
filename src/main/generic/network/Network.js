@@ -118,9 +118,6 @@ class Network extends Observable {
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
 
-        /** @type {number} */
-        this._timeOffset = 0;
-
         return this;
     }
 
@@ -151,13 +148,6 @@ class Network extends Observable {
     isOnline() {
         // If in doubt, return true.
         return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
-    }
-
-    /**
-     * @return {number}
-     */
-    getTime() {
-        return Date.now() + this._timeOffset;
     }
 
     _onOnline() {
@@ -533,9 +523,9 @@ class Network extends Observable {
         offsets.sort((a, b) => a - b);
 
         if ((offsetsLength % 2) === 0) {
-            this._timeOffset = (offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2;
+            Time.timeOffset = (offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2;
         } else {
-            this._timeOffset = offsets[(offsetsLength - 1) / 2];
+            Time.timeOffset = offsets[(offsetsLength - 1) / 2];
         }
     }
 

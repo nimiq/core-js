@@ -38,17 +38,14 @@ describe('Blockchain', () => {
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
 
-            /*
-            TODO
             // Now try to push a block with a timestamp that's more than
-            // Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX milliseconds into the future
-            const timestamp = Math.floor((Date.now() + Blockchain.BLOCK_TIMESTAMP_DRIFT_MAX) / 1000) + 100;
-            block = await testBlockchain.createBlock(undefined, undefined, undefined, undefined, undefined, undefined,
-                timestamp);
+            // Block.TIMESTAMP_DRIFT_MAX seconds into the future
+            const spyObj = spyOn(Time,'now').and.returnValue(0);
+            const timestamp = Block.TIMESTAMP_DRIFT_MAX + 1;
+            block = await testBlockchain.createBlock({timestamp: timestamp});
             status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(Blockchain.PUSH_ERR_INVALID_BLOCK);
-            expect(Log.w).toHaveBeenCalledWith(Blockchain, 'Rejected block - timestamp too far in the future');
-            */
+            expect(status).toBe(FullChain.ERR_INVALID);
+            spyObj.and.callThrough();
 
             // Now try to push a block with the wrong difficulty
             const correctDifficulty = BlockUtils.targetToDifficulty(await testBlockchain.getNextTarget());

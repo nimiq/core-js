@@ -543,6 +543,7 @@ TestBlockchain.NONCES = {
     'N6NxkpBBZuHs6xz+NVRtxZmikyllrp3TQSNKvqodu4A=': 5098,
     'kffbJOrWZRynRsRxteMerMnx9WITnXVUokBdGhK2pAk=': 146544,
     'hjcnNo52aQBwde7Gs45PsXLm3cuP7SF3uPY3wxX1VvM=': 94777,
-    'sIPmTwd3EFy41LYqfnEHaZnB3FnrLgxjJtCAsgru8yg=': 150374
+    'sIPmTwd3EFy41LYqfnEHaZnB3FnrLgxjJtCAsgru8yg=': 150374,
+    'Z68Mu7xGdNGn0lK6Zdz2Hhgm6/mlZl2dgyG61Po6Gx4=': 28652
 };
 Class.register(TestBlockchain);
