@@ -54,12 +54,12 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Block} block
-     * @returns {Promise.<void>}
+     * @returns {Promise.<boolean>}
      */
     async relayBlock(block) {
         // Only relay block if it matches the peer's subscription.
         if (!this._subscription.matchesBlock(block)) {
-            return;
+            return false;
         }
 
         // Create InvVector.
@@ -68,7 +68,7 @@ class BaseConsensusAgent extends Observable {
 
         // Don't relay block to this peer if it already knows it.
         if (this._knownObjects.contains(vector)) {
-            return;
+            return false;
         }
 
         // Relay block to peer.
@@ -76,16 +76,18 @@ class BaseConsensusAgent extends Observable {
 
         // Assume that the peer knows this block now.
         this._knownObjects.add(vector);
+
+        return true;
     }
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise}
+     * @return {Promise.<boolean>}
      */
     async relayTransaction(transaction) {
         // Only relay transaction if it matches the peer's subscription.
         if (!this._subscription.matchesTransaction(transaction)) {
-            return;
+            return false;
         }
 
         // Create InvVector.
@@ -94,7 +96,7 @@ class BaseConsensusAgent extends Observable {
 
         // Don't relay transaction to this peer if it already knows it.
         if (this._knownObjects.contains(vector)) {
-            return;
+            return false;
         }
 
         // Relay transaction to peer.
@@ -102,6 +104,8 @@ class BaseConsensusAgent extends Observable {
 
         // Assume that the peer knows this transaction now.
         this._knownObjects.add(vector);
+
+        return true;
     }
 
     /**

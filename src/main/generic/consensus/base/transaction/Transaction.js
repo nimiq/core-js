@@ -125,11 +125,12 @@ class Transaction {
     /**
      * @return {Promise.<Hash>}
      */
-    hash() {
+    async hash() {
         // Exclude the signature, we don't want transactions to be malleable.
         // TODO Think about this! This means that the signatures will not be
         // captured by the proof of work!
-        return Hash.light(this.serializeContent());
+        this._hash = this._hash || await Hash.light(this.serializeContent());
+        return this._hash;
     }
 
     /**

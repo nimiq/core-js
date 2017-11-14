@@ -43,7 +43,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
     /**
      * @param {Block} block
-     * @returns {Promise.<void>}
+     * @returns {Promise.<boolean>}
      * @override
      */
     relayBlock(block) {

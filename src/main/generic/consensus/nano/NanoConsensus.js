@@ -127,8 +127,8 @@ class NanoConsensus extends Observable {
      */
     async getAccounts(addresses, blockHash=null) {
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
-        const agents = this._agents.values().filter(
-            agent => agent.synced
+        const agents = this._agents.values().filter(agent =>
+            agent.synced
             && agent.knowsBlock(blockHash)
             && !Services.isNanoNode(agent.peer.peerAddress.services)
         );
@@ -148,13 +148,29 @@ class NanoConsensus extends Observable {
 
     /**
      * @param {Transaction} transaction
+     * @returns {Promise.<boolean>}
      */
     async relayTransaction(transaction) {
+        // Fail if we are not connected to at least one full/light node.
+        if (!this._agents.values().some(agent => !Services.isNanoNode(agent.peer.peerAddress.services))) {
+            throw new Error('Failed to relay transaction');
+        }
+
+        // Store transaction in mempool.
         await this._mempool.pushTransaction(transaction);
 
+        // Relay transaction to all connected peers.
+        const promises = [];
         for (const agent of this._agents.values()) {
-            agent.relayTransaction(transaction);
+            promises.push(agent.relayTransaction(transaction));
         }
+
+        // Fail if the transaction was not relayed.
+        return Promise.all(promises).then(results => {
+            if (!results.some(it => !!it)) {
+                throw new Error('Failed to relay transaction');
+            }
+        });
     }
 
     /** @type {boolean} */
