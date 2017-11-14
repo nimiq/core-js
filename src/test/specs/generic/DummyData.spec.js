@@ -36,12 +36,12 @@ Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
         Hash.fromBase64('DldRwCblQ7Loqy6wYJnaodHl30d3j3eH+qtFzfEv46g='),
-        Hash.fromBase64('BMPIfNF/m7AP1Ximp7bMF9Q+SraXUNmbhjmPTt1lTWQ='),
+        Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
         Hash.fromBase64('7E/ZbeqHFj4u5IiMelOEchIneFnZPD6bcb3PPK9/0lw='),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        38444),
+        8232),
     new BlockInterlink([]),
     new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
 );

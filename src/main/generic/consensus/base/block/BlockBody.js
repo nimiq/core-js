@@ -13,14 +13,17 @@ class BlockBody {
     /**
      * @param {Address} minerAddr
      * @param {Array.<Transaction>} transactions
+     * @param {Uint8Array} [extraData]
      */
-    constructor(minerAddr, transactions) {
+    constructor(minerAddr, transactions, extraData = new Uint8Array(0)) {
         if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
         if (!transactions || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
         /** @type {Address} */
         this._minerAddr = minerAddr;
         /** @type {Array.<Transaction>} */
         this._transactions = transactions;
+        /** @type {Uint8Array} */
+        this._extraData = new Uint8Array(0);
         /** @type {Hash} */
         this._hash = null;
     }
@@ -31,12 +34,14 @@ class BlockBody {
      */
     static unserialize(buf) {
         const minerAddr = Address.unserialize(buf);
+        const extraDataLength = buf.readVarUint();
+        const extraData = buf.read(extraDataLength);
         const numTransactions = buf.readUint16();
         const transactions = new Array(numTransactions);
         for (let i = 0; i < numTransactions; i++) {
             transactions[i] = Transaction.unserialize(buf);
         }
-        return new BlockBody(minerAddr, transactions);
+        return new BlockBody(minerAddr, transactions, extraData);
     }
 
     /**
@@ -46,6 +51,8 @@ class BlockBody {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._minerAddr.serialize(buf);
+        buf.writeVarUint(this._extraData.length);
+        buf.write(this._extraData);
         buf.writeUint16(this._transactions.length);
         for (let tx of this._transactions) {
             tx.serialize(buf);
@@ -58,6 +65,8 @@ class BlockBody {
      */
     get serializedSize() {
         let size = this._minerAddr.serializedSize
+            + SerialBuffer.varUintSize(this._extraData.length)
+            + this._extraData.byteLength
             + /*transactionsLength*/ 2;
         for (const tx of this._transactions) {
             size += tx.serializedSize;
@@ -103,7 +112,7 @@ class BlockBody {
         if (!this._hash) {
             const fnHash = value => value.hash ?
                 /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
-            this._hash = await MerkleTree.computeRoot([this._minerAddr, ...this._transactions], fnHash);
+            this._hash = await MerkleTree.computeRoot([this._minerAddr, {serialize: () => this._extraData}, ...this._transactions], fnHash);
         }
         return this._hash;
     }
@@ -112,6 +121,11 @@ class BlockBody {
         return o instanceof BlockBody
             && this._minerAddr.equals(o.minerAddr)
             && this._transactions.every((tx, i) => tx.equals(o.transactions[i]));
+    }
+
+    /** @type {Uint8Array} */
+    get extraData() {
+        return this._extraData;
     }
 
     /** @type {Address} */
