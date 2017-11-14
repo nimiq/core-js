@@ -16,6 +16,10 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         this._observable = new Observable();
         /** @type {number} */
         this._shareCompact = Policy.BLOCK_TARGET_MAX;
+        /** @type {number} */
+        this._runsPerCycle = 16;
+        /** @type {number} */
+        this._cycleWait = 1;
 
         if (IWorker._insideNodeJs) {
             const nimiq_node = require(`${__dirname}/nimiq_node`);
@@ -47,12 +51,46 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         }
     }
 
+    /**
+     * @type {number}
+     */
     get noncesPerRun() {
         return this._noncesPerRun;
     }
 
+    /**
+     * @param {number} nonces
+     */
     set noncesPerRun(nonces) {
         this._noncesPerRun = nonces;
+    }
+
+    /**
+     * @type {number}
+     */
+    get runsPerCycle() {
+        return this._runsPerCycle;
+    }
+
+    /**
+     * @param {number} runsPerCycle
+     */
+    set runsPerCycle(runsPerCycle) {
+        this._runsPerCycle = runsPerCycle;
+    }
+
+    /**
+     * @type {number}
+     */
+    get cycleWait() {
+        return this._cycleWait;
+    }
+
+    /**
+     * @param {number} cycleWait
+     */
+    set cycleWait(cycleWait) {
+        this._cycleWait = cycleWait;
     }
 
     /**
@@ -116,7 +154,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
      */
     async _singleMiner(nonceRange) {
         let i = 0;
-        while (this._miningEnabled && (IWorker.areWorkersAsync || IWorker._insideNodeJs || i === 0)) {
+        while (this._miningEnabled && (IWorker.areWorkersAsync || IWorker._insideNodeJs || i === 0) && i < this._runsPerCycle) {
             i++;
             const blockHeader = BlockHeader.copy(this._blockHeader);
             const result = await this.multiMine(blockHeader.serialize(), this._shareCompact, nonceRange.minNonce, nonceRange.maxNonce);
@@ -143,7 +181,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
             }
         }
         if (this._miningEnabled) {
-            setTimeout(() => this._singleMiner(nonceRange), 0);
+            setTimeout(() => this._singleMiner(nonceRange), this._cycleWait);
         }
     }
 }
