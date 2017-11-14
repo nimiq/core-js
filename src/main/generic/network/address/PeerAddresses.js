@@ -639,7 +639,7 @@ class PeerAddresses extends Observable {
         for (/** @type {PeerAddressState} */ const peerAddressState of this._store.values()) {
             const addr = peerAddressState.peerAddress;
 
-            switch (peerAddressState) {
+            switch (peerAddressState.state) {
                 case PeerAddressState.NEW:
                 case PeerAddressState.TRIED:
                 case PeerAddressState.FAILED:
