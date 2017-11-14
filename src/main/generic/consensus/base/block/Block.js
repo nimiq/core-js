@@ -79,7 +79,7 @@ class Block {
      */
     async verify() {
         // Check that the timestamp is not too far into the future.
-        if (this._header.timestamp * 1000 > Time.now() + Block.TIMESTAMP_DRIFT_MAX) {
+        if (this._header.timestamp * 1000 > Time.now() + Block.TIMESTAMP_DRIFT_MAX * 1000) {
             Log.w(Block, 'Invalid block - timestamp too far in the future');
             return false;
         }
@@ -523,9 +523,8 @@ class Block {
     }
 
 }
+Block.TIMESTAMP_DRIFT_MAX = 600 /* seconds */; // 10 minutes
 Class.register(Block);
-
-Block.TIMESTAMP_DRIFT_MAX = 600 /*seconds*/; // 10 minutes
 
 /* Genesis Block */
 Block.GENESIS = new Block(
