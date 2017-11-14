@@ -64,7 +64,8 @@ class BufferUtils {
      * @return {SerialBuffer}
      */
     static fromHex(hex) {
-        if (hex.length % 2 !== 0) return null;
+        hex = hex.trim();
+        if (!StringUtils.isHexBytes(hex)) return null;
         return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g), byte => parseInt(byte, 16)));
     }
 
@@ -94,6 +95,21 @@ class BufferUtils {
             if (viewA[i] !== viewB[i]) return false;
         }
         return true;
+    }
+
+    /**
+     * @param {*} a
+     * @param {*} b
+     * @return {number} -1 if a is smaller than b, 1 if a is larger than b, 0 if a equals b.
+     */
+    static compare(a, b) {
+        if (a.length < b.length) return -1;
+        if (a.length > b.length) return 1;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] < b[i]) return -1;
+            if (a[i] > b[i]) return 1;
+        }
+        return 0;
     }
 }
 Class.register(BufferUtils);

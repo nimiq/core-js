@@ -23,8 +23,7 @@ class Wallet {
     }
 
     static load(hexBuf) {
-        const hexMatch = hexBuf.match(/[0-9A-Fa-f]*/);
-        if (hexBuf.length / 2 !== Crypto.privateKeySize || hexMatch[0] !== hexBuf) {
+        if (!StringUtils.isHexBytes(hexBuf, KeyPair.SERIALIZED_SIZE)) {
             throw Wallet.ERR_INVALID_WALLET_SEED;
         }
 

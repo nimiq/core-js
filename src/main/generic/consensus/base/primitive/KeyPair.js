@@ -74,4 +74,5 @@ class KeyPair extends Primitive {
         return o instanceof KeyPair && super.equals(o);
     }
 }
+KeyPair.SERIALIZED_SIZE = Crypto.privateKeySize + Crypto.publicKeySize;
 Class.register(KeyPair);
