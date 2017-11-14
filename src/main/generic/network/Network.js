@@ -523,7 +523,7 @@ class Network extends Observable {
         offsets.sort((a, b) => a - b);
 
         if ((offsetsLength % 2) === 0) {
-            Time.timeOffset = Math.round(offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
+            Time.timeOffset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
         } else {
             Time.timeOffset = offsets[(offsetsLength - 1) / 2];
         }
