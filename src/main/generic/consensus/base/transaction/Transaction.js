@@ -148,6 +148,21 @@ class Transaction {
     }
 
     /**
+     * @param {Transaction} o
+     */
+    compare(o) {
+        const recCompare = this.recipientAddr.compare(o.recipientAddr);
+        if (recCompare !== 0) return recCompare;
+        if (this.nonce < o.nonce) return -1;
+        if (this.nonce > o.nonce) return 1;
+        if (this.fee > o.fee) return -1;
+        if (this.fee < o.fee) return 1;
+        if (this.value > o.value) return -1;
+        if (this.value < o.value) return 1;
+        return this.senderPubKey.compare(o.senderPubKey);
+    }
+
+    /**
      * @return {string}
      */
     toString() {

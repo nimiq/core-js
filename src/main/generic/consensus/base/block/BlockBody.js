@@ -69,14 +69,14 @@ class BlockBody {
      * @returns {Promise.<boolean>}
      */
     async verify() {
-        const senderPubKeys = {};
+        let previousTx = null;
         for (const tx of this._transactions) {
-            // Check that there is only one transaction per sender.
-            if (senderPubKeys[tx.senderPubKey]) {
-                Log.w(BlockBody, 'Invalid block - more than one transaction per sender');
+            // Ensure transactions are ordered.
+            if (previousTx && previousTx.compare(tx) > 0) {
+                Log.w(BlockBody, 'Invalid block - transactions not ordered.');
                 return false;
             }
-            senderPubKeys[tx.senderPubKey] = true;
+            previousTx = tx;
 
             // Check that there are no transactions to oneself.
             const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop

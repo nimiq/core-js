@@ -80,7 +80,7 @@ class TestBlockchain extends FullChain {
             transactions.push(transaction);
         }
 
-        return transactions;
+        return transactions.sort((a, b) => a.compare(b));
     }
 
     /**
@@ -188,10 +188,7 @@ class TestBlockchain extends FullChain {
         // This keypair is the one that the miner address of the test genesis block in DummyData.spec.js belongs to.
         const keys = KeyPair.unserialize(BufferUtils.fromBase64(TestBlockchain.USERS[0]));
         const address = await keys.publicKey.toAddress();
-        users.push(TestBlockchain.generateUser(
-          keys,
-          address
-        ));
+        users.push(TestBlockchain.generateUser(keys, address));
 
         for (let i = 1; i < count; i++) {
             const keyPair = await KeyPair.generate(); //eslint-disable-line no-await-in-loop

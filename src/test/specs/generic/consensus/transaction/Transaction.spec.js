@@ -179,7 +179,7 @@ describe('Transaction', () => {
     });
 
     it('can verify a valid signature', (done) => {
-        (async function() {
+        (async function () {
             const users = await TestBlockchain.getUsers(2);
             const tx = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
             tx.verifySignature()
@@ -189,6 +189,29 @@ describe('Transaction', () => {
                 });
 
         })();
+    });
+
+    it('is well-ordered', () => {
+        const nonce = 2;
+        const tx1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
+
+        let tx2 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
+        expect(tx1.compare(tx2)).toBe(0);
+
+        tx2 = new Transaction(senderPubKey, recipientAddr, value, fee + 1, nonce, signature);
+        expect(tx1.compare(tx2)).toBeGreaterThan(0);
+        expect(tx2.compare(tx1)).toBeLessThan(0);
+
+        tx2 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce - 1, signature);
+        expect(tx1.compare(tx2)).toBeGreaterThan(0);
+        expect(tx2.compare(tx1)).toBeLessThan(0);
+
+        tx2 = new Transaction(senderPubKey, recipientAddr, value + 1, fee, nonce, signature);
+        expect(tx1.compare(tx2)).toBeGreaterThan(0);
+        expect(tx2.compare(tx1)).toBeLessThan(0);
+
+        tx2 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2)), recipientAddr, value, fee, nonce, signature);
+        expect(tx1.compare(tx2)).not.toBe(0);
     });
 
 });
