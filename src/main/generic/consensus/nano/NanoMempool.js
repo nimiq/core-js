@@ -88,12 +88,12 @@ class NanoMempool extends Observable {
      */
     _evictTransactions() {
         const keyIterator = this._transactions.keyIterator();
-        let {hash, done} = keyIterator.next();
+        let {value:hash, done} = keyIterator.next();
         for (let i = 0; !done && i < NanoMempool.TRANSACTIONS_EVICT_COUNT; i++) {
             /** @type {Transaction} */
             this._transactions.remove(hash);
 
-            ({hash, done} = keyIterator.next());
+            ({value:hash, done} = keyIterator.next());
         }
     }
 }
