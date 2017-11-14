@@ -13,5 +13,12 @@ class PlatformUtils {
         let RTCPeerConnection = (window.RTCPeerConnection || window.webkitRTCPeerConnection);
         return PlatformUtils.isBrowser() && !!RTCPeerConnection && !!RTCPeerConnection.generateCertificate;
     }
+
+    /**
+     * @returns {boolean}
+     */
+    static isOnline() {
+        return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
+    }
 }
 Class.register(PlatformUtils);

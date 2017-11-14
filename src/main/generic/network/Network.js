@@ -51,12 +51,20 @@ class Network extends Observable {
          * @private
          */
         this._autoConnect = false;
+
         /**
-         * Save the old state when going offline, to restore it when going online again.
+         * Backoff for peer count check in seconds.
+         * @type {number}
+         * @private
+         */
+        this._backoff = Network.CONNECT_BACKOFF_INITIAL;
+
+        /**
+         * Flag indicating whether we already triggered a backoff.
          * @type {boolean}
          * @private
          */
-        this._savedAutoConnect = false;
+        this._backedOff = false;
 
         /**
          * Number of ongoing outbound connection attempts.
@@ -109,12 +117,6 @@ class Network extends Observable {
             this._checkPeerCount();
         });
 
-        // If in browser, add event listener for online/offline detection.
-        if (PlatformUtils.isBrowser()) {
-            window.addEventListener('online', () => this._onOnline());
-            window.addEventListener('offline', () => this._onOffline());
-        }
-
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
 
@@ -123,7 +125,6 @@ class Network extends Observable {
 
     connect() {
         this._autoConnect = true;
-        this._savedAutoConnect = true;
 
         // Start connecting to peers.
         this._checkPeerCount();
@@ -134,33 +135,11 @@ class Network extends Observable {
      */
     disconnect(reason) {
         this._autoConnect = false;
-        this._savedAutoConnect = false;
 
         // Close all active connections.
         for (const agent of this._agents.values()) {
             agent.channel.close(reason || 'manual network disconnect');
         }
-    }
-
-    /**
-     * @return {boolean}
-     */
-    isOnline() {
-        // If in doubt, return true.
-        return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
-    }
-
-    _onOnline() {
-        this._autoConnect = this._savedAutoConnect;
-
-        if (this._autoConnect) {
-            this._checkPeerCount();
-        }
-    }
-
-    _onOffline() {
-        this._savedAutoConnect = this._autoConnect;
-        this.disconnect('network disconnect');
     }
 
     // XXX For testing
@@ -202,7 +181,7 @@ class Network extends Observable {
     }
 
     _checkPeerCount() {
-        if (this._autoConnect // && this.isOnline() Do we need this? Not really if _onOnline/_onOffline is working.
+        if (this._autoConnect
             && this.peerCount + this._connectingCount < Network.PEER_COUNT_DESIRED
             && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
 
@@ -211,12 +190,24 @@ class Network extends Observable {
 
             // We can't connect if we don't know any more addresses.
             if (!peerAddress) {
+                // If no backoff has been triggered, trigger one.
+                // This helps us to check back whether we need more connections.
+                if (!this._backedOff) {
+                    this._backedOff = true;
+                    const oldBackoff = this._backoff;
+                    this._backoff = Math.min(Network.CONNECT_BACKOFF_MAX, oldBackoff * 2);
+                    setTimeout(() => {
+                        this._backedOff = false;
+                        this._checkPeerCount();
+                    }, oldBackoff);
+                }
                 return;
             }
 
             // Connect to this address.
             this._connect(peerAddress);
         }
+        this._backoff = Network.CONNECT_BACKOFF_INITIAL;
     }
 
     /**
@@ -652,6 +643,8 @@ Network.PEER_COUNT_RELAY = 4;
 Network.CONNECTING_COUNT_MAX = 2;
 Network.SIGNAL_TTL_INITIAL = 3;
 Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
+Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
+Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
 Class.register(Network);
 
 class SignalStore {
