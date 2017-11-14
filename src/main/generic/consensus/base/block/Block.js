@@ -116,7 +116,7 @@ class Block {
      */
     async _verifyInterlink() {
         // The genesis block has an empty interlink. Skip all interlink checks for it.
-        if (Block.GENESIS.HASH.equals(await this.hash())) {
+        if (this.height === 1) {
             return true;
         }
 
@@ -541,4 +541,4 @@ Block.GENESIS = new Block(
     new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('KuuKbY78KS1IzXxzQfjU0y62rTj4A70ajsqldSyCKgg=');
+Block.GENESIS.HASH = Hash.fromBase64('K3Id+E/rgqR8SB8pV0X9Fxv4FxkC5eePu/oXVaj6ZO4=');

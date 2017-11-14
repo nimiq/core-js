@@ -78,4 +78,28 @@ describe('Block', () => {
         expect(block2.serializedSize).toBe(size);
         expect(BufferUtils.equals(block, block2)).toBe(true);
     });
+
+    it('GENESIS is valid (testing)', (done) => {
+        (async () => {
+            expect(await Block.GENESIS.verify()).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('GENESIS.HASH matches GENESIS.hash() (testing)', (done) => {
+        (async () => {
+            expect(Block.GENESIS.HASH.equals(await Block.GENESIS.hash())).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('GENESIS is valid (real)', (done) => {
+        (async () => {
+            expect(await Block.OLD_GENESIS.verify()).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('GENESIS.HASH matches GENESIS.hash() (real)', (done) => {
+        (async () => {
+            expect(Block.OLD_GENESIS.HASH.equals(await Block.OLD_GENESIS.hash())).toBeTruthy();
+        })().then(done, done.fail);
+    });
 });

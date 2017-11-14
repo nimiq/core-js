@@ -46,7 +46,7 @@ Block.GENESIS = new Block(
     new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('TWiUEUZfYElYEbvNV+Juhm+9Lp6vIfD8T9FPTlwmU6g=');
+Block.GENESIS.HASH = Hash.fromBase64('EENgVNvNkOH7rYLnvuaf0j3sYP7xFPItS3yLKymrKXA=');
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
