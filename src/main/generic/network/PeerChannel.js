@@ -160,6 +160,14 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Subscription} subscription
+     * @returns {boolean}
+     */
+    subscribe(subscription) {
+        return this._send(new SubscribeMessage(subscription));
+    }
+
+    /**
      * @param {Array.<PeerAddress>} addresses
      * @return {boolean}
      */
@@ -337,6 +345,7 @@ PeerChannel.Event[Message.Type.HEADER] = 'header';
 PeerChannel.Event[Message.Type.TX] = 'tx';
 PeerChannel.Event[Message.Type.MEMPOOL] = 'mempool';
 PeerChannel.Event[Message.Type.REJECT] = 'reject';
+PeerChannel.Event[Message.Type.SUBSCRIBE] = 'subscribe';
 PeerChannel.Event[Message.Type.ADDR] = 'addr';
 PeerChannel.Event[Message.Type.GET_ADDR] = 'get-addr';
 PeerChannel.Event[Message.Type.PING] = 'ping';

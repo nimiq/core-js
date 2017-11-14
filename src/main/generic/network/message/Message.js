@@ -134,6 +134,7 @@ Message.Type = {
     TX:         8,
     MEMPOOL:    9,
     REJECT:     10,
+    SUBSCRIBE:  11,
 
     ADDR:       20,
     GET_ADDR:   21,

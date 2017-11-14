@@ -6,7 +6,7 @@ class BlockMessage extends Message {
         super(Message.Type.BLOCK);
         // TODO Bitcoin block messages start with a block version
         /** @type {Block} */
-        this._header = block;
+        this._block = block;
     }
 
     /**
@@ -26,7 +26,7 @@ class BlockMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        this._header.serialize(buf);
+        this._block.serialize(buf);
         super._setChecksum(buf);
         return buf;
     }
@@ -34,12 +34,12 @@ class BlockMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + this._header.serializedSize;
+            + this._block.serializedSize;
     }
 
     /** @type {Block} */
     get block() {
-        return this._header;
+        return this._block;
     }
 }
 Class.register(BlockMessage);

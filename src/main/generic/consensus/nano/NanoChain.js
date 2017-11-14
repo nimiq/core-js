@@ -276,7 +276,7 @@ class NanoChain extends BaseChain {
 
             const proofHeadHash = await this._proof.head.hash();
             if (block.prevHash.equals(proofHeadHash)) {
-                await this._proof.extend(block);
+                await this._proof.extend(block.header);
             }
 
             // Tell listeners that the head of the chain has changed.

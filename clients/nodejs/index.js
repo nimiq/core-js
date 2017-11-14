@@ -23,7 +23,7 @@ if (argv['log-tag']) {
     }
     argv['log-tag'].forEach((lt) => {
         const s = lt.split(':');
-        Nimiq.Log.instance.setLoggable(s[0], s.length == 1 ? 2 : s[1]);
+        Nimiq.Log.instance.setLoggable(s[0], s.length === 1 ? 2 : s[1]);
     });
 }
 
@@ -51,9 +51,8 @@ try {
         }
 
         if (miner) {
-            //$.consensus.on('established', () => $.miner.startWork());
-            //$.consensus.on('lost', () => $.miner.stopWork());
-            $.miner.startWork();
+            $.consensus.on('established', () => $.miner.startWork());
+            $.consensus.on('lost', () => $.miner.stopWork());
         }
 
         $.consensus.on('established', () => {

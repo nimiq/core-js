@@ -28,6 +28,11 @@ class BaseConsensusAgent extends Observable {
         /** @type {HashSet.<InvVector>} */
         this._objectsProcessing = new HashSet();
 
+        // A Subscription object specifying which objects should be announced to the peer.
+        // Initially, we don't announce anything to the peer until it tells us otherwise.
+        /** @type {Subscription} */
+        this._subscription = Subscription.NONE;
+
         // Helper object to keep track of timeouts & intervals.
         /** @type {Timers} */
         this._timers = new Timers();
@@ -39,6 +44,7 @@ class BaseConsensusAgent extends Observable {
         peer.channel.on('tx', msg => this._onTx(msg));
         peer.channel.on('not-found', msg => this._onNotFound(msg));
 
+        peer.channel.on('subscribe', msg => this._onSubscribe(msg));
         peer.channel.on('get-data', msg => this._onGetData(msg));
         peer.channel.on('get-header', msg => this._onGetHeader(msg));
 
@@ -51,6 +57,11 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      */
     async relayBlock(block) {
+        // Only relay block if it matches the peer's subscription.
+        if (!this._subscription.matchesBlock(block)) {
+            return;
+        }
+
         // Create InvVector.
         const hash = await block.hash();
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
@@ -72,6 +83,11 @@ class BaseConsensusAgent extends Observable {
      * @return {Promise}
      */
     async relayTransaction(transaction) {
+        // Only relay transaction if it matches the peer's subscription.
+        if (!this._subscription.matchesTransaction(transaction)) {
+            return;
+        }
+
         // Create InvVector.
         const hash = await transaction.hash();
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
@@ -95,6 +111,14 @@ class BaseConsensusAgent extends Observable {
     knowsBlock(blockHash) {
         const vector = new InvVector(InvVector.Type.BLOCK, blockHash);
         return this._knownObjects.contains(vector);
+    }
+
+    /**
+     * @param {SubscribeMessage} msg
+     * @protected
+     */
+    _onSubscribe(msg) {
+        this._subscription = msg.subscription;
     }
 
     /**

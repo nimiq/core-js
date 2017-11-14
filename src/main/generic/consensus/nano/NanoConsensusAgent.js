@@ -34,6 +34,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
+
+        // Subscribe to all announcements from the peer.
+        this._peer.channel.subscribe(Subscription.ANY);
     }
 
     /**

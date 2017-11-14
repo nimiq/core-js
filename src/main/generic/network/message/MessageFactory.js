@@ -23,6 +23,7 @@ MessageFactory.CLASSES[Message.Type.TX] = TxMessage;
 MessageFactory.CLASSES[Message.Type.GET_BLOCKS] = GetBlocksMessage;
 MessageFactory.CLASSES[Message.Type.MEMPOOL] = MempoolMessage;
 MessageFactory.CLASSES[Message.Type.REJECT] = RejectMessage;
+MessageFactory.CLASSES[Message.Type.SUBSCRIBE] = SubscribeMessage;
 MessageFactory.CLASSES[Message.Type.ADDR] = AddrMessage;
 MessageFactory.CLASSES[Message.Type.GET_ADDR] = GetAddrMessage;
 MessageFactory.CLASSES[Message.Type.PING] = PingMessage;

@@ -94,6 +94,9 @@ class LightConsensusAgent extends Observable {
         this._blockchain.on('ready', () => {
             if (this._syncing && this._catchup) this.syncBlockchain();
         });
+
+        // Subscribe to all announcements from the peer.
+        this._peer.channel.subscribe(Subscription.ANY);
     }
 
     /**
@@ -279,6 +282,7 @@ class LightConsensusAgent extends Observable {
         if (this._partialChain) {
             this._partialChain = null;
         }
+
         this._busy = false;
         this._syncing = false;
         this._failedSyncs = 0;

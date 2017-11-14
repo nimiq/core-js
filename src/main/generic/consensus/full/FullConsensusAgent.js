@@ -93,6 +93,9 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     _syncFinished() {
+        // Subscribe to all announcements from the peer.
+        this._peer.channel.subscribe(Subscription.ANY);
+
         this._syncing = false;
         this._synced = true;
 
