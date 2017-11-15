@@ -7,11 +7,18 @@ class PlatformUtils {
     }
 
     /**
+     * @return {boolean}
+     */
+    static isNodeJs() {
+        return !PlatformUtils.isBrowser() && typeof process === 'object' && typeof require === 'function';
+    }
+
+    /**
      * @returns {boolean}
      */
     static supportsWebRTC() {
-        let RTCPeerConnection = (window.RTCPeerConnection || window.webkitRTCPeerConnection);
-        return PlatformUtils.isBrowser() && !!RTCPeerConnection && !!RTCPeerConnection.generateCertificate;
+        let RTCPeerConnection = PlatformUtils.isBrowser() ? (window.RTCPeerConnection || window.webkitRTCPeerConnection) : null;
+        return !!RTCPeerConnection && !!RTCPeerConnection.generateCertificate;
     }
 }
 Class.register(PlatformUtils);

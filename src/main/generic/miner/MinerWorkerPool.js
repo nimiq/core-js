@@ -17,11 +17,11 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         /** @type {number} */
         this._shareCompact = Policy.BLOCK_TARGET_MAX;
         /** @type {number} */
-        this._runsPerCycle = 16;
+        this._runsPerCycle = Infinity;
         /** @type {number} */
-        this._cycleWait = 1;
+        this._cycleWait = 100;
 
-        if (IWorker._insideNodeJs) {
+        if (PlatformUtils.isNodeJs()) {
             const nimiq_node = require(`${__dirname}/nimiq_node`);
             /**
              * @param {SerialBuffer} blockHeader
@@ -130,7 +130,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
     }
 
     async _updateToSize() {
-        if (!IWorker._insideNodeJs) {
+        if (!PlatformUtils.isNodeJs()) {
             await super._updateToSize();
         }
 
@@ -154,7 +154,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
      */
     async _singleMiner(nonceRange) {
         let i = 0;
-        while (this._miningEnabled && (IWorker.areWorkersAsync || IWorker._insideNodeJs || i === 0) && i < this._runsPerCycle) {
+        while (this._miningEnabled && (IWorker.areWorkersAsync || PlatformUtils.isNodeJs() || i === 0) && i < this._runsPerCycle) {
             i++;
             const blockHeader = BlockHeader.copy(this._blockHeader);
             const result = await this.multiMine(blockHeader.serialize(), this._shareCompact, nonceRange.minNonce, nonceRange.maxNonce);

@@ -2,7 +2,7 @@ const Nimiq = require('../../dist/node.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--wallet-seed=<wallet-seed>] [--miner] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
+    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--wallet-seed=<wallet-seed>] [--miner[=<thread-num>[:<throttle-after>[:<throttle-wait>]]]] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
     process.exit();
 }
 
@@ -53,6 +53,17 @@ try {
         if (miner) {
             $.consensus.on('established', () => $.miner.startWork());
             $.consensus.on('lost', () => $.miner.stopWork());
+            if (typeof miner === 'number') {
+                $.miner.threads = miner;
+            } else if (typeof miner === 'string') {
+                const margs = miner.split(':');
+                $.miner.threads = parseInt(margs[0]);
+                if (margs.length >= 2) { $.miner.throttleAfter = parseInt(margs[1]) * $.miner.threads; }
+                if (margs.length >= 3) { $.miner.throttleWait = parseInt(margs[2]); }
+            }
+            if (passive) {
+                $.miner.startWork();
+            }
         }
 
         $.consensus.on('established', () => {

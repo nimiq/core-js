@@ -75,9 +75,13 @@ class Miner extends Observable {
         this._workerPool = new MinerWorkerPool();
 
         if (typeof navigator === 'object' && navigator.hardwareConcurrency) {
-            this._workerPool.poolSize = navigator.hardwareConcurrency / 2;
+            this.threads = Math.ceil(navigator.hardwareConcurrency / 2);
+        } else if (PlatformUtils.isNodeJs()) {
+            const cores = require('os').cpus().length;
+            this.threads = Math.ceil(cores / 2);
+            if (cores === 1) this.throttleAfter = 2;
         } else {
-            this._workerPool.poolSize = 4;
+            this.threads = 1;
         }
         this._workerPool.on('share', (obj) => this._onWorkerShare(obj));
         this._workerPool.on('no-share', (obj) => this._onWorkerShare(obj));
@@ -315,6 +319,42 @@ class Miner extends Observable {
     /** @type {number} */
     get hashrate() {
         return this._hashrate;
+    }
+
+    /** @type {number} */
+    get threads() {
+        return this._workerPool.poolSize;
+    }
+
+    /**
+     * @param {number} threads
+     */
+    set threads(threads) {
+        this._workerPool.poolSize = threads;
+    }
+
+    /** @type {number} */
+    get throttleWait() {
+        return this._workerPool.cycleWait;
+    }
+
+    /**
+     * @param {number} throttleWait
+     */
+    set throttleWait(throttleWait) {
+        this._workerPool.cycleWait = throttleWait;
+    }
+
+    /** @type {number} */
+    get throttleAfter() {
+        return this._workerPool.runsPerCycle;
+    }
+
+    /**
+     * @param {number} throttleAfter
+     */
+    set throttleAfter(throttleAfter) {
+        this._workerPool.runsPerCycle = throttleAfter;
     }
 }
 
