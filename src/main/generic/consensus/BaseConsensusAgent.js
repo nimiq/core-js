@@ -410,7 +410,6 @@ class BaseConsensusAgent extends Observable {
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
             if (!this._objectsInFlight.contains(vector)) {
-                Log.w(BaseConsensusAgent, `Unsolicited notfound vector received from ${this._peer.peerAddress}, discarding`);
                 continue;
             }
 

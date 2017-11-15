@@ -137,7 +137,7 @@ class NanoConsensus extends Observable {
             try {
                 return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}`, e);
+                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e.message}`);
                 // Try the next peer.
             }
         }
@@ -171,6 +171,29 @@ class NanoConsensus extends Observable {
                 throw new Error('Failed to relay transaction');
             }
         });
+    }
+
+    /**
+     * @param {Hash} hash
+     * @returns {Promise.<Block>}
+     */
+    async getFullBlock(hash) {
+        const agents = this._agents.values().filter(agent =>
+            agent.synced
+            && !Services.isNanoNode(agent.peer.peerAddress.services)
+        );
+
+        for (const agent of agents) {
+            try {
+                return await agent.getFullBlock(hash); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(NanoConsensus, `Failed to retrieve full block ${hash} from ${agent.peer.peerAddress}: ${e.message}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested block, fail.
+        throw new Error(`Failed to retrieve block ${hash}`);
     }
 
     /** @type {boolean} */
