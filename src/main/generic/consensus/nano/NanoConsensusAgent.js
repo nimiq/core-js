@@ -28,6 +28,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
 
+        // Helper object to keep track of full blocks we're requesting from the peer.
+        this._blockRequest = null;
+
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
@@ -41,7 +44,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
     /**
      * @param {Block} block
-     * @returns {Promise.<void>}
+     * @returns {Promise.<boolean>}
      * @override
      */
     relayBlock(block) {
@@ -191,17 +194,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {BlockMessage} msg
-     * @return {Promise.<void>}
-     * @protected
-     * @override
-     */
-    _onBlock(msg) {
-        // Ignore block messages.
-        Log.w(NanoConsensusAgent, `Unsolicited block message received from ${this._peer.peerAddress}, discarding`);
-    }
-
-    /**
      * @param {BlockHeader} header
      * @returns {Promise.<void>}
      * @protected
@@ -231,6 +223,17 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     _processTransaction(transaction) {
         // TODO send reject message if we don't like the transaction
         return this._mempool.pushTransaction(transaction);
+    }
+
+    /**
+     * @param {GetChainProofMessage} msg
+     * @private
+     */
+    async _onGetChainProof(msg) {
+        const proof = await this._blockchain.getChainProof();
+        if (proof) {
+            this._peer.channel.chainProof(proof);
+        }
     }
 
     /**
@@ -280,7 +283,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onAccountsProof(msg) {
-        Log.d(NanoConsensusAgent, `[ACCOUNTS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof}`);
+        Log.d(NanoConsensusAgent, `[ACCOUNTS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
         // Check if we have requested an accounts proof, reject unsolicited ones.
         if (!this._accountsRequest) {
@@ -300,11 +303,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Reset accountsRequest.
         this._accountsRequest = null;
 
-        // Check that we know the reference block.
-        // TODO Which blocks should be accept here?
-        // XXX For now, we ONLY accept our head block. This will not work well in face of block propagation delays.
+        // Check that the reference block corresponds to the one we requested.
         if (!blockHash.equals(msg.blockHash)) {
-            Log.w(NanoConsensusAgent, `Received AccountsProof for block != head from ${this._peer.peerAddress}`);
+            Log.w(NanoConsensusAgent, `Received AccountsProof for invalid reference block from ${this._peer.peerAddress}`);
             reject(new Error('Invalid reference block'));
             return;
         }
@@ -352,7 +353,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
     /**
      * @param {AccountsRejectedMessage} msg
-     * @returns {Promise.<void>}
+     * @returns {void}
      * @private
      */
     _onAccountsRejected(msg) {
@@ -377,17 +378,113 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {GetChainProofMessage} msg
-     * @private
+     * @param {Hash} hash
+     * @returns {Promise.<Block>}
      */
-    async _onGetChainProof(msg) {
-        const proof = await this._blockchain.getChainProof();
-        if (proof) {
-            this._peer.channel.chainProof(proof);
-        }
+    getFullBlock(hash) {
+        // TODO we can use a different synchronizer here, no need to synchronize with getAccounts().
+        return this._synchronizer.push(() => {
+            return this._getFullBlock(hash);
+        });
     }
 
     /**
+     * @param {Hash} hash
+     * @returns {Promise.<Block>}
+     * @private
+     */
+    _getFullBlock(hash) {
+        Assert.that(this._blockRequest === null);
+
+        Log.d(NanoConsensusAgent, `Requesting full block ${hash} from ${this._peer.peerAddress}`);
+
+        return new Promise((resolve, reject) => {
+            this._blockRequest = {
+                hash: hash,
+                resolve: resolve,
+                reject: reject
+            };
+
+            // Request full block from peer.
+            const vector = new InvVector(InvVector.Type.BLOCK, hash);
+            this._peer.channel.getData([vector]);
+
+            // Drop the peer if it doesn't send the block within the timeout.
+            this._timers.setTimeout('getBlock', () => {
+                this._peer.channel.close('getBlock timeout');
+                reject(new Error('timeout')); // TODO error handling
+            }, BaseConsensusAgent.REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {BlockMessage} msg
+     * @return {Promise.<void>}
+     * @protected
+     * @override
+     */
+    async _onBlock(msg) {
+        // Ignore all block messages that we didn't request.
+        if (!this._blockRequest) {
+            Log.w(NanoConsensusAgent, `Unsolicited block message received from ${this._peer.peerAddress}, discarding`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear the request timeout.
+        this._timers.clearTimeout('getBlock');
+
+        const blockHash = this._blockRequest.hash;
+        const resolve = this._blockRequest.resolve;
+        const reject = this._blockRequest.reject;
+
+        // Reset blockRequest.
+        this._blockRequest = null;
+
+        // Check if we asked for this specific block.
+        const hash = await msg.block.hash();
+        if (!hash.equals(blockHash)) {
+            Log.w(NanoConsensusAgent, `Unexpected block received from ${this._peer.peerAddress}, discarding`);
+            // TODO close/ban?
+            reject(new Error('Unexpected block'));
+            return;
+        }
+
+        // Verify block.
+        // TODO should we let the caller do that instead?
+        if (!(await msg.block.verify())) {
+            Log.w(NanoConsensusAgent, `Invalid block received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close('Invalid block');
+            reject(new Error('Invalid block'));
+            return;
+        }
+
+        // Return the retrieved block.
+        resolve(msg.block);
+    }
+
+    /**
+     * @param {NotFoundMessage} msg
+     * @returns {void}
+     * @protected
+     * @override
+     */
+    _onNotFound(msg) {
+        // Check if this notfound message corresponds to our block request.
+        if (this._blockRequest && msg.vectors.length === 1 && msg.vectors[0].hash.equals(this._blockRequest.hash)) {
+            this._timers.clearTimeout('getBlock');
+
+            const reject = this._blockRequest.reject;
+            this._blockRequest = null;
+
+            reject(new Error('Block not found'));
+        }
+
+        super._onNotFound(msg);
+    }
+
+        /**
      * @returns {void}
      * @protected
      * @override
