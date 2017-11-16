@@ -477,7 +477,7 @@ class PeerAddresses extends Observable {
                 this._remove(peerAddress);
             } else {
                 this.ban(peerAddress, peerAddressState.banBackoff);
-                peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff*2);
+                peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
             }
         }
     }
@@ -575,7 +575,7 @@ class PeerAddresses extends Observable {
             return;
         }
 
-        // Never delete seed addresses, ban them instead for 5 minutes.
+        // Never delete seed addresses, ban them instead for a couple of minutes.
         if (peerAddressState.peerAddress.isSeed()) {
             this.ban(peerAddress, peerAddressState.banBackoff);
             return;
@@ -740,7 +740,7 @@ PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
 PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
+PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddresses.MAX_FAILED_BACKOFF = 10; // 10 minutes
 PeerAddresses.INITIAL_FAILED_BACKOFF = 1; // 1 minute
 PeerAddresses.SEED_PEERS = [

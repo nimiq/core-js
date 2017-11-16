@@ -452,7 +452,7 @@ class Network extends Observable {
      * @private
      */
     _onBan(channel, reason) {
-        // TODO If this is an inbound connection, the peerAddres might not be set yet.
+        // TODO If this is an inbound connection, the peerAddress might not be set yet.
         // Ban the netAddress in this case.
         // XXX We should probably always ban the netAddress as well.
         if (channel.peerAddress) {
