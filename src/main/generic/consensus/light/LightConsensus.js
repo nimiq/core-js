@@ -22,6 +22,9 @@ class LightConsensus extends Observable {
         /** @type {boolean} */
         this._established = false;
 
+        /** @type {Synchronizer} */
+        this._synchronizer = new Synchronizer();
+
         network.on('peer-joined', peer => this._onPeerJoined(peer));
         network.on('peer-left', peer => this._onPeerLeft(peer));
 
@@ -71,46 +74,48 @@ class LightConsensus extends Observable {
      * @private
      */
     _syncBlockchain() {
-        // Wait for ongoing sync to finish.
-        if (this._syncing) {
-            return;
-        }
-
-        // Choose a random peer which we aren't sync'd with yet.
-        const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
-        if (!agent) {
-            // We are synced with all connected peers.
-            this._syncing = false;
-
-            if (this._agents.length > 0) {
-                // Report consensus-established if we have at least one connected peer.
-                // TODO !!! Check peer types (at least one full node, etc.) !!!
-                if (!this._established) {
-                    Log.d(LightConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
-                    Log.d(LightConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
-
-                    this._established = true;
-                    this.fire('established');
-                }
-            } else {
-                // We are not connected to any peers anymore. Report consensus-lost.
-                this._established = false;
-                this.fire('lost');
+        return this._synchronizer.push(() => {
+            // Wait for ongoing sync to finish.
+            if (this._syncing) {
+                return;
             }
 
-            return;
-        }
+            // Choose a random peer which we aren't sync'd with yet.
+            const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
+            if (!agent) {
+                // We are synced with all connected peers.
+                this._syncing = false;
 
-        Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
+                if (this._agents.length > 0) {
+                    // Report consensus-established if we have at least one connected peer.
+                    // TODO !!! Check peer types (at least one full node, etc.) !!!
+                    if (!this._established) {
+                        Log.d(LightConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                        Log.d(LightConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
-        this._syncing = true;
+                        this._established = true;
+                        this.fire('established');
+                    }
+                } else {
+                    // We are not connected to any peers anymore. Report consensus-lost.
+                    this._established = false;
+                    this.fire('lost');
+                }
 
-        agent.on('sync', () => this._onPeerSynced());
-        agent.on('close', () => {
-            this._onPeerLeft(agent.peer);
-            this._onPeerSynced();
+                return;
+            }
+
+            Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
+
+            this._syncing = true;
+
+            agent.on('sync', () => this._onPeerSynced());
+            agent.on('close', () => {
+                this._onPeerLeft(agent.peer);
+                this._onPeerSynced();
+            });
+            agent.syncBlockchain();
         });
-        agent.syncBlockchain();
     }
 
     /**

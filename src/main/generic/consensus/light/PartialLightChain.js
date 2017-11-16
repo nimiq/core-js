@@ -419,9 +419,7 @@ class PartialLightChain extends LightChain {
         // If we're done, prepare next phase.
         if (result === PartialAccountsTree.OK_COMPLETE) {
             this._state = PartialLightChain.State.PROVE_BLOCKS;
-            await this._partialTree.commit();
-            this._partialTree = null;
-            this._accountsTx = await this._accounts.transaction(false);
+            this._accountsTx = new Accounts(await this._partialTree.transaction(false));
         }
 
         return result;
@@ -435,6 +433,7 @@ class PartialLightChain extends LightChain {
         this._state = PartialLightChain.State.COMPLETE;
         if (this._accountsTx) {
             await this._accountsTx.abort();
+            this._accountsTx = null;
         }
         this.fire('complete', this._proof, this._headHash, this._mainChain);
     }
@@ -443,7 +442,13 @@ class PartialLightChain extends LightChain {
      * @returns {Promise.<boolean>}
      */
     async commit() {
+        if (this._accountsTx) {
+            await this._accountsTx.abort();
+        }
+        //const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
+        await this._partialTree.commit();
         const result = await this._store.commit();
+        this._partialTree = null;
         this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;
     }
@@ -453,11 +458,11 @@ class PartialLightChain extends LightChain {
      */
     async abort() {
         this._state = PartialLightChain.State.ABORTED;
-        if (this._partialTree) {
-            await this._partialTree.abort();
-        }
         if (this._accountsTx) {
             await this._accountsTx.abort();
+        }
+        if (this._partialTree) {
+            await this._partialTree.abort();
         }
         await this._store.abort();
         this.fire('aborted');

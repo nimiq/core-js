@@ -530,7 +530,7 @@ class AccountsTree extends Observable {
      * @returns {Promise.<PartialAccountsTree>}
      */
     async partialTree() {
-        const tx = this._store.transaction();
+        const tx = this._store.transaction(false);
         await tx.truncate();
         const tree = new PartialAccountsTree(tx);
         return tree._init();

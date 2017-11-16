@@ -121,6 +121,14 @@ class AccountsTreeStore {
     abort() {
         return this._store.abort();
     }
+
+    /** @type {Transaction} */
+    get tx() {
+        if (this._store instanceof JDB.Transaction) {
+            return this._store;
+        }
+        return undefined;
+    }
 }
 Class.register(AccountsTreeStore);
 

@@ -585,6 +585,11 @@ class BaseConsensusAgent extends Observable {
         // Notify listeners that the peer has disconnected.
         this.fire('close', this);
     }
+
+    /** @type {Peer} */
+    get peer() {
+        return this._peer;
+    }
 }
 /**
  * Number of InvVectors in invToRequest pool to automatically trigger a getData request.

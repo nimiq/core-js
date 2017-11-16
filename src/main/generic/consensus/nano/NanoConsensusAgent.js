@@ -495,11 +495,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         super._onClose();
     }
 
-    /** @type {Peer} */
-    get peer() {
-        return this._peer;
-    }
-
     /** @type {boolean} */
     get synced() {
         return this._synced;

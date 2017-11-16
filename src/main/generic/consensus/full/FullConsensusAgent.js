@@ -106,7 +106,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this.fire('sync');
     }
 
-    async _requestBlocks() {
+    async _requestBlocks(maxInvSize) {
         // Only one getBlocks request at a time.
         if (this._timers.timeoutExists('getBlocks')) {
             Log.e(FullConsensusAgent, 'Duplicate _requestBlocks()');
@@ -157,7 +157,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._numBlocksForking = 0;
 
         // Request blocks from peer.
-        this._peer.channel.getBlocks(locators);
+        if (maxInvSize) {
+            this._peer.channel.getBlocks(locators);
+        } else {
+            this._peer.channel.getBlocks(locators, maxInvSize);
+        }
     }
 
     /**
@@ -382,11 +386,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
         for (const tx of transactions) {
             this._peer.channel.tx(tx);
         }
-    }
-
-    /** @type {Peer} */
-    get peer() {
-        return this._peer;
     }
 
     /** @type {boolean} */

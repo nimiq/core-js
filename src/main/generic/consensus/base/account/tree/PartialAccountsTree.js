@@ -176,10 +176,13 @@ class PartialAccountsTree extends AccountsTree {
     }
 
     /**
+     * @param {boolean} [enableWatchdog]
      * @returns {Promise.<PartialAccountsTree>}
      */
-    transaction() {
-        const tree = new PartialAccountsTree(this._store.transaction());
+    transaction(enableWatchdog=true) {
+        const tree = new PartialAccountsTree(this._store.transaction(enableWatchdog));
+        tree._complete = this._complete;
+        tree._lastPrefix = this._lastPrefix;
         return tree._init();
     }
 
@@ -195,6 +198,11 @@ class PartialAccountsTree extends AccountsTree {
      */
     abort() {
         return this._store.abort();
+    }
+
+    /** @type {Transaction} */
+    get tx() {
+        return this._store.tx;
     }
 }
 PartialAccountsTree.ERR_HASH_MISMATCH = -3;
