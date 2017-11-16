@@ -56,7 +56,7 @@
             <form>
                 <div class="input-group">
                   <label for="txRecipientAddr">Recipient</label>
-                  <input id="txRecipientAddr" name="recipientAddr" maxlength="40" size="42">
+                  <input id="txRecipientAddr" name="recipientAddr" maxlength="45" size="42">
                 </div>
                 <div class="input-group">
                     <label for="txValue">Value</label>
@@ -295,7 +295,7 @@
             /** @type {HTMLElement} */
             this._wltNonce = document.querySelector('#wltNonce');
 
-            this._wltAddress.innerText = $.wallet.address.toHex();
+            this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
 
             $.accounts.getBalance($.wallet.address).then(function(balance) {
                 this._balanceChanged(balance);
@@ -360,7 +360,7 @@
             }
             var address;
             try {
-                address = Nimiq.Address.fromHex(recipientAddr);
+                address = Nimiq.Address.fromUserFriendlyAddress(recipientAddr);
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -516,7 +516,7 @@
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr.toHex()}</hash>, to=<hash>${tx.recipientAddr.toHex()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    el.innerHTML = `from=<hash>${senderAddr.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipientAddr.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }.bind(this));
