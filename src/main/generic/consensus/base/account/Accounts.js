@@ -242,6 +242,11 @@ class Accounts extends Observable {
     hash() {
         return this._tree.root();
     }
+
+    /** @type {Transaction} */
+    get tx() {
+        return this._tree.tx;
+    }
 }
 Accounts.EMPTY_TREE_HASH = Hash.fromBase64('qynm3BZ1XQBx66NJ69oiXRXk+RDLR0VJxH6Vy4XsxNY=');
 Class.register(Accounts);

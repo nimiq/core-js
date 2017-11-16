@@ -445,9 +445,9 @@ class PartialLightChain extends LightChain {
         if (this._accountsTx) {
             await this._accountsTx.abort();
         }
-        //const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
-        await this._partialTree.commit();
-        const result = await this._store.commit();
+        const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
+        // await this._partialTree.commit();
+        // const result = await this._store.commit();
         this._partialTree = null;
         this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;

@@ -199,11 +199,6 @@ class PartialAccountsTree extends AccountsTree {
     abort() {
         return this._store.abort();
     }
-
-    /** @type {Transaction} */
-    get tx() {
-        return this._store.tx;
-    }
 }
 PartialAccountsTree.ERR_HASH_MISMATCH = -3;
 PartialAccountsTree.ERR_INCORRECT_PROOF = -2;

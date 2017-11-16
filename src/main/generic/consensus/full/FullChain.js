@@ -287,12 +287,14 @@ class FullChain extends BaseChain {
      * @private
      */
     async _extend(blockHash, chainData) {
+        const accountsTx = await this._accounts.transaction();
         try {
-            await this._accounts.commitBlock(chainData.head);
+            await accountsTx.commitBlock(chainData.head);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
             Log.w(FullChain, 'Rejecting block - AccountsHash mismatch');
+            accountsTx.abort();
             return false;
         }
 
@@ -304,7 +306,7 @@ class FullChain extends BaseChain {
         const tx = await this._store.transaction();
         await tx.putChainData(blockHash, chainData);
         await tx.setHead(blockHash);
-        await tx.commit();
+        await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
 
         this._mainChain = chainData;
         this._headHash = blockHash;
@@ -357,7 +359,7 @@ class FullChain extends BaseChain {
                 await accountsTx.revertBlock(head);
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
-                await accountsTx.abort();
+                accountsTx.abort();
                 return false;
             }
 
@@ -375,7 +377,7 @@ class FullChain extends BaseChain {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
                 Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
-                await accountsTx.abort();
+                accountsTx.abort();
                 return false;
             }
         }
@@ -403,9 +405,7 @@ class FullChain extends BaseChain {
         // Update head & commit transactions.
         // TODO commit both transactions atomically.
         await chainTx.setHead(blockHash);
-        // await JDB.JungleDB.commitCombined(chainTx, accountsTx);
-        await chainTx.commit();
-        await accountsTx.commit();
+        await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
 
         this._mainChain = chainData;
         this._headHash = blockHash;

@@ -566,6 +566,11 @@ class AccountsTree extends Observable {
         const rootNode = await this._store.getRootNode();
         return rootNode && rootNode.hash();
     }
+
+    /** @type {Transaction} */
+    get tx() {
+        return this._store.tx;
+    }
 }
 Class.register(AccountsTree);
 
