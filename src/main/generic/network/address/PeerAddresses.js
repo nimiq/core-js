@@ -407,6 +407,7 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.CONNECTED;
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
+        peerAddressState.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
 
         peerAddressState.peerAddress = peerAddress;
         peerAddressState.peerAddress.timestamp = Date.now();
@@ -448,7 +449,7 @@ class PeerAddresses extends Observable {
 
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
-        if (closedByRemote || peerAddress.protocol === Protocol.DUMB) {
+        if ((closedByRemote && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
             this._remove(peerAddress);
         }
     }
@@ -471,7 +472,13 @@ class PeerAddresses extends Observable {
         peerAddressState.failedAttempts++;
 
         if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
-            this._remove(peerAddress);
+            // Remove address only if we have tried the maximum number of backoffs.
+            if (peerAddressState.banBackoff >= PeerAddresses.MAX_FAILED_BACKOFF) {
+                this._remove(peerAddress);
+            } else {
+                this.ban(peerAddress, peerAddressState.banBackoff);
+                peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
+            }
         }
     }
 
@@ -568,9 +575,9 @@ class PeerAddresses extends Observable {
             return;
         }
 
-        // Never delete seed addresses, ban them instead for 5 minutes.
+        // Never delete seed addresses, ban them instead for a couple of minutes.
         if (peerAddressState.peerAddress.isSeed()) {
-            this.ban(peerAddress, 5);
+            this.ban(peerAddress, peerAddressState.banBackoff);
             return;
         }
 
@@ -652,7 +659,8 @@ class PeerAddresses extends Observable {
 
                 case PeerAddressState.BANNED:
                     if (peerAddressState.bannedUntil <= now) {
-                        if (addr.isSeed()) {
+                        // If we banned because of failed attempts or it is a seed node, try again.
+                        if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts || addr.isSeed()) {
                             // Restore banned seed addresses to the NEW state.
                             peerAddressState.state = PeerAddressState.NEW;
                             peerAddressState.failedAttempts = 0;
@@ -732,7 +740,9 @@ PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
 PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60 * 3; // 3 minutes
+PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
+PeerAddresses.MAX_FAILED_BACKOFF = 10; // 10 minutes
+PeerAddresses.INITIAL_FAILED_BACKOFF = 1; // 1 minute
 PeerAddresses.SEED_PEERS = [
     WsPeerAddress.seed('dev.nimiq-network.com', 8080)
     // WsPeerAddress.seed('localhost', 8080)
@@ -753,6 +763,8 @@ class PeerAddressState {
         this.lastConnected = -1;
         /** @type {number} */
         this.bannedUntil = -1;
+        /** @type {number} */
+        this.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
 
         /** @type {SignalRoute} */
         this._bestRoute = null;
