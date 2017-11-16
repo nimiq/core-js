@@ -31,6 +31,20 @@ class LightChain extends FullChain {
         this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
     }
 
+    /**
+     * @returns {Promise.<?ChainProof>}
+     * @override
+     */
+    async getChainProof() {
+        const proof = await this._getChainProof();
+        if (!proof) {
+            // If we cannot construct a chain proof, superquality of the chain is harmed.
+            // Return the last know proof.
+            return this._proof;
+        }
+        return proof;
+    }
+
     async partialChain() {
         const partialChain = new PartialLightChain(this._store, this._accounts, this._proof);
         partialChain.on('committed', async (proof, headHash, mainChain) => {

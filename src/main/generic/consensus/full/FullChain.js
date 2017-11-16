@@ -243,8 +243,8 @@ class FullChain extends BaseChain {
 
                 if (!this._snapshots.contains(currentHash)) {
                     snapshot = await tx.snapshot();
-                    this._snapshotOrder.unshift(currentHash);
                     this._snapshots.put(currentHash, snapshot);
+                    this._snapshotOrder.unshift(currentHash);
                 }
 
                 await tx.revertBlock(currentBlock);
@@ -274,9 +274,9 @@ class FullChain extends BaseChain {
             this._snapshots.remove(oldestHash);
 
             // Add new snapshot.
-            this._snapshotOrder.push(blockHash);
             const snapshot = await this._accounts.snapshot();
             this._snapshots.put(blockHash, snapshot);
+            this._snapshotOrder.push(blockHash);
         }
     }
 
@@ -298,15 +298,15 @@ class FullChain extends BaseChain {
             return false;
         }
 
-        // New block on main chain, so store a new snapshot.
-        await this._saveSnapshot(blockHash);
-
         chainData.onMainChain = true;
 
         const tx = await this._store.transaction();
         await tx.putChainData(blockHash, chainData);
         await tx.setHead(blockHash);
         await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
+
+        // New block on main chain, so store a new snapshot.
+        await this._saveSnapshot(blockHash);
 
         this._mainChain = chainData;
         this._headHash = blockHash;
