@@ -15,10 +15,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         /** @type {boolean} */
         this._syncing = false;
 
-        // Flag indicating that have synced our blockchain with the peer's.
-        /** @type {boolean} */
-        this._synced = false;
-
         /** @type {Array.<BlockHeader>} */
         this._orphanedBlocks = [];
 
@@ -40,17 +36,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Subscribe to all announcements from the peer.
         this._peer.channel.subscribe(Subscription.ANY);
-    }
-
-    /**
-     * @param {Block} block
-     * @returns {Promise.<boolean>}
-     * @override
-     */
-    relayBlock(block) {
-        // Don't relay if no consensus established yet.
-        if (!this._synced) return Promise.resolve();
-        return super.relayBlock(block);
     }
 
     /**
@@ -194,12 +179,13 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @param {Hash} hash
      * @param {BlockHeader} header
      * @returns {Promise.<void>}
      * @protected
      * @override
      */
-    async _processHeader(header) {
+    async _processHeader(hash, header) {
         // TODO send reject message if we don't like the block
         const status = await this._blockchain.pushHeader(header);
         if (status === NanoChain.ERR_INVALID) {
@@ -215,12 +201,13 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @param {Hash} hash
      * @param {Transaction} transaction
      * @returns {Promise.<void>}
      * @protected
      * @override
      */
-    _processTransaction(transaction) {
+    _processTransaction(hash, transaction) {
         // TODO send reject message if we don't like the transaction
         return this._mempool.pushTransaction(transaction);
     }
@@ -484,7 +471,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         super._onNotFound(msg);
     }
 
-        /**
+    /**
      * @returns {void}
      * @protected
      * @override
@@ -494,13 +481,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         this._synchronizer.clear();
         super._onClose();
     }
-
-    /** @type {boolean} */
-    get synced() {
-        return this._synced;
-    }
 }
-/**
 /**
  * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
  * @type {number}

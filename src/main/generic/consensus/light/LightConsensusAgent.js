@@ -416,12 +416,13 @@ class LightConsensusAgent extends FullConsensusAgent {
     }
 
     /**
+     * @param {Hash} hash
      * @param {Block} block
      * @returns {Promise.<void>}
      * @protected
      * @override
      */
-    async _processBlock(block) {
+    async _processBlock(hash, block) {
         // If we find that we are on a fork far away from our chain, resync.
         if (block.height < this._chain.height - Policy.NUM_BLOCKS_VERIFICATION
             && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {

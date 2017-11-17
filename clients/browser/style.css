@@ -282,6 +282,16 @@ hash {
     opacity: 0.6;
 }
 
+.connecting::after {
+    content: "Connecting...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+
 .syncing {
     background: orange;
     opacity: 0.8;

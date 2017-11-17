@@ -89,7 +89,7 @@
 
     <div class="right">
         <div class="info">
-            <div class="info-title not-connected" id="blockchain-title">Blockchain</div>
+            <div class="info-title not-connected" id="bcTitle">Blockchain</div>
             <hr/>
 
             <div class="info-block">
@@ -169,23 +169,33 @@
 
     class MinerUI {
         constructor($) {
-            $.blockchain.on('head-changed', function(head) {
-                this._headChanged(head);
+            $.blockchain.on('head-changed', function(head, rebranching) {
+                this._headChanged(head, rebranching);
             }.bind(this));
 
             $.network.on('peers-changed', function() {
                 this._networkChanged();
             }.bind(this));
 
+            const bcTitle = document.querySelector('#bcTitle');
+            const txSubmitBtn = document.querySelector('#txSubmitBtn');
+            txSubmitBtn.onclick = function(e) {
+                this._submitTransaction(e);
+            }.bind(this);
+
+            $.consensus.on('syncing', function() {
+                bcTitle.classList.add('syncing');
+            }.bind(this));
+
             $.consensus.on('established', function() {
-                document.getElementById('blockchain-title').classList.add('consensus-established');
-                document.getElementById('txSubmitBtn').removeAttribute('disabled');
+                bcTitle.classList.add('consensus-established');
+                txSubmitBtn.removeAttribute('disabled');
                 this._updateBalance();
             }.bind(this));
 
             $.consensus.on('lost', function() {
-                document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
-                document.getElementById('txSubmitBtn').setAttribute('disabled', '');
+                bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'consensus-established');
+                txSubmitBtn.setAttribute('disabled', '');
             }.bind(this));
 
             $.mempool.on('transaction-added', function() {
@@ -239,11 +249,6 @@
             this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
-
-            var txSubmitBtn = document.querySelector('#txSubmitBtn');
-            txSubmitBtn.onclick = function(e) {
-                this._submitTransaction(e);
-            }.bind(this);
 
             // Mempool
             /** @type {HTMLElement} */
@@ -311,7 +316,7 @@
             return false;
         }
 
-        _headChanged(head) {
+        _headChanged(head, rebranching) {
             this._bcHeight.innerText = $.blockchain.height;
             this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
 
@@ -321,15 +326,17 @@
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
 
-            var interlink = `<hash>${head.interlink.hashes.map((it,i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
+            var interlink = `<hash>${head.interlink.hashes.map((it, i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
             this._hdInterlink.innerHTML = interlink;
 
-            $.blockchain.head.pow().then(function(pow) {
+            $.blockchain.head.pow().then(function (pow) {
                 var realDifficulty = Nimiq.BlockUtils.realDifficulty(pow);
                 this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
             }.bind(this));
 
-            this._updateBalance();
+            if (!rebranching) {
+                this._updateBalance();
+            }
         }
 
         _networkChanged() {
@@ -387,8 +394,8 @@
     var overlay_ = document.querySelector('#overlay');
 
     function startNimiq() {
-        document.getElementById('blockchain-title').classList.add('initializing');
-        document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
+        const bcTitle = document.querySelector('#bcTitle');
+        bcTitle.classList.add('initializing');
 
         Nimiq.init(async function() {
             var $ = {};
@@ -403,13 +410,13 @@
             // XXX Legacy components
             $.wallet = await Nimiq.Wallet.getPersistent();
 
+            bcTitle.classList.add('connecting');
             $.network.connect();
 
             overlay_.style.display = 'none';
             window.ui = new MinerUI($);
         }, function(code) {
-            document.getElementById('blockchain-title').classList.remove('initializing');
-            document.querySelector('#wltAddress').innerText = '';
+            bcTitle.classList.remove('initializing');
 
             switch (code) {
                 case Nimiq.ERR_WAIT:

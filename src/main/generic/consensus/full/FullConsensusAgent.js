@@ -15,10 +15,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
         /** @type {boolean} */
         this._syncing = false;
 
-        // Flag indicating that have synced our blockchain with the peer's.
-        /** @type {boolean} */
-        this._synced = false;
-
         // The number of blocks that extended our blockchain since the last requestBlocks().
         /** @type {number} */
         this._numBlocksExtending = -1;
@@ -33,23 +29,16 @@ class FullConsensusAgent extends BaseConsensusAgent {
         /** @type {number} */
         this._failedSyncs = 0;
 
+        // The block hash that we want to learn to consider the sync complete.
+        /** @type {Hash} */
+        this._syncTarget = peer.headHash;
+
         // Listen to consensus messages from the peer.
         peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
         peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
-    }
-
-    /**
-     * @param {Block} block
-     * @returns {Promise.<boolean>}
-     * @override
-     */
-    relayBlock(block) {
-        // Don't relay if no consensus established yet.
-        if (!this._synced) return Promise.resolve();
-        return super.relayBlock(block);
     }
 
     async syncBlockchain() {
@@ -73,8 +62,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
             return;
         }
 
-        // If we know the peer's head block, there is nothing more to be learned from this peer.
-        const head = await this._blockchain.getBlock(this._peer.headHash, /*includeForks*/ true);
+        // If we know our sync target block, the sync process is finished.
+        const head = await this._blockchain.getBlock(this._syncTarget, /*includeForks*/ true);
         if (head) {
             this._syncFinished();
             return;
@@ -82,8 +71,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
         // If the peer didn't send us any blocks that extended our chain, count it as a failed sync attempt.
         // This sets a maximum length for forks that the full client will accept:
-        //   FullConsensusAgent.MAX_SYNC_ATTEMPTS * BaseInvectoryMessage.VECTORS_MAX_COUNT
-        if (this._numBlocksExtending === 0 && ++this._failedSyncs >= FullConsensusAgent.MAX_SYNC_ATTEMPTS) {
+        //   FullConsensusAgent.SYNC_ATTEMPTS_MAX * BaseInvectoryMessage.VECTORS_MAX_COUNT
+        if (this._numBlocksExtending === 0 && ++this._failedSyncs >= FullConsensusAgent.SYNC_ATTEMPTS_MAX) {
             this._peer.channel.ban('blockchain sync failed');
             return;
         }
@@ -102,6 +91,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._numBlocksExtending = 0;
         this._numBlocksForking = 0;
         this._forkHead = null;
+        this._failedSyncs = 0;
 
         this.fire('sync');
     }
@@ -161,11 +151,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._numBlocksForking = 0;
 
         // Request blocks from peer.
-        if (maxInvSize) {
-            this._peer.channel.getBlocks(locators);
-        } else {
-            this._peer.channel.getBlocks(locators, maxInvSize);
-        }
+        this._peer.channel.getBlocks(locators, maxInvSize);
     }
 
     /**
@@ -247,12 +233,13 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @param {Hash} hash
      * @param {Block} block
      * @returns {Promise.<void>}
      * @protected
      * @override
      */
-    async _processBlock(block) {
+    async _processBlock(hash, block) {
         // TODO send reject message if we don't like the block
         const status = await this._blockchain.pushBlock(block);
         switch (status) {
@@ -276,16 +263,65 @@ class FullConsensusAgent extends BaseConsensusAgent {
                     this._forkHead = block;
                 }
                 break;
+
+            case FullChain.ERR_ORPHAN:
+                this._onOrphanBlock(hash, block);
+                break;
+
+            case FullChain.OK_KNOWN:
+                Log.v(FullConsensusAgent, `Received known block ${hash} (height=${block.height}, prevHash=${block.prevHash}) from ${this._peer.peerAddress}`);
+                break;
         }
     }
 
     /**
+     * @param {Hash} hash
+     * @param {Block} block
+     * @private
+     */
+    _onOrphanBlock(hash, block) {
+        // Ignore orphan blocks if we're not synced yet. This shouldn't happen.
+        if (!this._synced) {
+            Log.w(FullConsensusAgent, `Received orphan block ${hash} (height=${block.height}, prevHash=${block.prevHash}) while syncing`);
+            return;
+        }
+
+        // The peer has announced an orphaned block after the initial sync. We're probably out of sync.
+        Log.d(FullConsensusAgent, `Received orphan block ${hash} (height=${block.height}, prevHash=${block.prevHash}) from ${this._peer.peerAddress}`);
+
+        // Disable announcements from the peer once.
+        if (!this._timers.timeoutExists('outOfSync')) {
+            this._peer.channel.subscribe(Subscription.NONE);
+        }
+
+        // Set the orphaned block as the new sync target.
+        this._syncTarget = hash;
+
+        // Wait a short time for:
+        // - our (un-)subscribe message to be sent
+        // - potentially more orphaned blocks to arrive
+        this._timers.resetTimeout('outOfSync', () => this._outOfSync(), FullConsensusAgent.RESYNC_THROTTLE);
+    }
+
+    /**
+     * @private
+     */
+    _outOfSync() {
+        this._timers.clearTimeout('outOfSync');
+
+        this._synced = false;
+
+        this.fire('out-of-sync');
+    }
+
+    /**
+     * @param {Hash} hash
      * @param {Transaction} transaction
      * @returns {Promise.<boolean>}
      * @protected
      * @override
      */
-    _processTransaction(transaction) {
+    _processTransaction(hash, transaction) {
         // TODO send reject message if we don't like the transaction
         return this._mempool.pushTransaction(transaction);
     }
@@ -391,11 +427,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
             this._peer.channel.tx(tx);
         }
     }
-
-    /** @type {boolean} */
-    get synced() {
-        return this._synced;
-    }
 }
 /**
  * Maximum number of blockchain sync retries before closing the connection.
@@ -404,10 +435,15 @@ class FullConsensusAgent extends BaseConsensusAgent {
  * blocks.
  * @type {number}
  */
-FullConsensusAgent.MAX_SYNC_ATTEMPTS = 10;
+FullConsensusAgent.SYNC_ATTEMPTS_MAX = 10;
 /**
  * Maximum number of inventory vectors to sent in the response for onGetBlocks.
  * @type {number}
  */
 FullConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
+/**
+ * Time {ms} to wait before triggering a blockchain re-sync with the peer.
+ * @type {number}
+ */
+FullConsensusAgent.RESYNC_THROTTLE = 1000 * 3; // 3 seconds
 Class.register(FullConsensusAgent);

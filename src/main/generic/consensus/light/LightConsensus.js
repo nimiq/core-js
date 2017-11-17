@@ -106,8 +106,12 @@ class LightConsensus extends Observable {
             }
 
             Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-
             this._syncing = true;
+
+            // Notify listeners when we start syncing and have not established consensus yet.
+            if (!this._established) {
+                this.fire('syncing');
+            }
 
             agent.on('sync', () => this._onPeerSynced());
             agent.on('close', () => {

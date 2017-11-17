@@ -202,7 +202,7 @@ class PartialLightChain extends LightChain {
             this._headHash = blockHash;
 
             // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
+            this.fire('head-changed', this.head, /*rebranching*/ false);
 
             return NanoChain.OK_EXTENDED;
         }
@@ -211,9 +211,6 @@ class PartialLightChain extends LightChain {
         if (totalDifficulty > this._mainChain.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
 
             return NanoChain.OK_REBRANCHED;
         }

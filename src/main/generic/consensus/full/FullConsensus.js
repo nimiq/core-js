@@ -15,12 +15,15 @@ class FullConsensus extends Observable {
 
         /** @type {HashMap.<Peer, FullConsensusAgent>} */
         this._agents = new HashMap();
+
         /** @type {Timers} */
         this._timers = new Timers();
-        /** @type {boolean} */
-        this._syncing = false;
+
         /** @type {boolean} */
         this._established = false;
+
+        /** @type {Peer} */
+        this._syncPeer = null;
 
         network.on('peer-joined', peer => this._onPeerJoined(peer));
         network.on('peer-left', peer => this._onPeerLeft(peer));
@@ -55,6 +58,11 @@ class FullConsensus extends Observable {
         const agent = new FullConsensusAgent(this._blockchain, this._mempool, peer);
         this._agents.put(peer.id, agent);
 
+        // Register agent event listeners.
+        agent.on('close', () => this._onPeerLeft(agent.peer));
+        agent.on('sync', () => this._onPeerSynced(agent.peer));
+        agent.on('out-of-sync', () => this._onPeerOutOfSync(agent.peer));
+
         // If no more peers connect within the specified timeout, start syncing.
         this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), FullConsensus.SYNC_THROTTLE);
     }
@@ -64,7 +72,14 @@ class FullConsensus extends Observable {
      * @private
      */
     _onPeerLeft(peer) {
+        // Reset syncPeer if it left during the sync.
+        if (peer.equals(this._syncPeer)) {
+            Log.w(FullConsensus, `Peer ${peer.peerAddress} left during sync`);
+            this._syncPeer = null;
+        }
+
         this._agents.remove(peer.id);
+        this._syncBlockchain();
     }
 
     /**
@@ -72,7 +87,7 @@ class FullConsensus extends Observable {
      */
     _syncBlockchain() {
         // Wait for ongoing sync to finish.
-        if (this._syncing) {
+        if (this._syncPeer) {
             return;
         }
 
@@ -80,8 +95,6 @@ class FullConsensus extends Observable {
         const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
         if (!agent) {
             // We are synced with all connected peers.
-            this._syncing = false;
-
             if (this._agents.length > 0) {
                 // Report consensus-established if we have at least one connected peer.
                 // TODO !!! Check peer types (at least one full node, etc.) !!!
@@ -101,23 +114,36 @@ class FullConsensus extends Observable {
             return;
         }
 
+        this._syncPeer = agent.peer;
+
+        // Notify listeners when we start syncing and have not established consensus yet.
+        if (!this._established) {
+            this.fire('syncing');
+        }
+
         Log.v(FullConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-
-        this._syncing = true;
-
-        agent.on('sync', () => this._onPeerSynced());
-        agent.on('close', () => {
-            this._onPeerLeft(agent.peer);
-            this._onPeerSynced();
-        });
         agent.syncBlockchain();
     }
 
     /**
+     * @param {Peer} peer
      * @private
      */
-    _onPeerSynced() {
-        this._syncing = false;
+    _onPeerSynced(peer) {
+        // Reset syncPeer if we finished syncing with it.
+        if (peer.equals(this._syncPeer)) {
+            Log.v(FullConsensus, `Finished sync with peer ${peer.peerAddress}`);
+            this._syncPeer = null;
+        }
+        this._syncBlockchain();
+    }
+
+    /**
+     * @param {Peer} peer
+     * @private
+     */
+    _onPeerOutOfSync(peer) {
+        Log.w(FullConsensus, `Peer ${peer.peerAddress} out of sync, resyncing`);
         this._syncBlockchain();
     }
 
@@ -125,8 +151,6 @@ class FullConsensus extends Observable {
     get established() {
         return this._established;
     }
-
-    // TODO confidence level?
 
     /** @type {IBlockchain} */
     get blockchain() {

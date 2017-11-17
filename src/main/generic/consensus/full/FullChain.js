@@ -94,7 +94,6 @@ class FullChain extends BaseChain {
     /**
      * @param {Block} block
      * @returns {Promise.<number>}
-     * @fires FullChain#head-changed
      * @protected
      */
     async _pushBlock(block) {
@@ -157,10 +156,6 @@ class FullChain extends BaseChain {
             if (!(await this._extend(hash, chainData))) {
                 return FullChain.ERR_INVALID;
             }
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
-
             return FullChain.OK_EXTENDED;
         }
 
@@ -170,10 +165,6 @@ class FullChain extends BaseChain {
             if (!(await this._rebranch(hash, chainData))) {
                 return FullChain.ERR_INVALID;
             }
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
-
             return FullChain.OK_REBRANCHED;
         }
 
@@ -201,89 +192,12 @@ class FullChain extends BaseChain {
         return true;
     }
 
-    /**
-     * @param {Hash} blockHash
-     * @param {string} startPrefix
-     * @returns {Promise.<boolean|AccountsTreeChunk>}
-     */
-    async getAccountsTreeChunk(blockHash, startPrefix) {
-        const snapshot = await this._getSnapshot(blockHash);
-        return snapshot && await snapshot.getAccountsTreeChunk(startPrefix);
-    }
-
-    /**
-     * @param {Hash} blockHash
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<boolean|AccountsProof>}
-     */
-    async getAccountsProof(blockHash, addresses) {
-        const snapshot = await this._getSnapshot(blockHash);
-        return snapshot && await snapshot.getAccountsProof(addresses);
-    }
-
-    /**
-     * @param {Hash} blockHash
-     * @returns {Promise.<boolean|Accounts>}
-     */
-    async _getSnapshot(blockHash) {
-        const block = await this.getBlock(blockHash);
-        // Check if blockHash is a block on the main chain within the allowed window.
-        if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
-            return false;
-        }
-
-        // Check if there already is a snapshot, otherwise create it.
-        let snapshot = null;
-        if (!this._snapshots.contains(blockHash)) {
-            const tx = await this._accounts.transaction();
-            let currentHash = this._headHash;
-            // Save all snapshots up to blockHash (and stop when its predecessor would be next).
-            while (!block.prevHash.equals(currentHash)) {
-                const currentBlock = await this.getBlock(currentHash);
-
-                if (!this._snapshots.contains(currentHash)) {
-                    snapshot = await tx.snapshot();
-                    this._snapshots.put(currentHash, snapshot);
-                    this._snapshotOrder.unshift(currentHash);
-                }
-
-                await tx.revertBlock(currentBlock);
-                currentHash = currentBlock.prevHash;
-            }
-            await tx.abort();
-        } else {
-            snapshot = this._snapshots.get(blockHash);
-        }
-
-        return snapshot;
-    }
-
-    /**
-     * @param {Hash} blockHash
-     * @returns {Promise.<void>}
-     * @private
-     */
-    async _saveSnapshot(blockHash) {
-        // Replace oldest snapshot if possible.
-        // This ensures snapshots are only created lazily.
-        if (this._snapshotOrder.length > 0) {
-            const oldestHash = this._snapshotOrder.shift();
-            // If the hash is not reused, remove it.
-            const oldestSnapshot = this._snapshots.get(oldestHash);
-            await oldestSnapshot.abort();
-            this._snapshots.remove(oldestHash);
-
-            // Add new snapshot.
-            const snapshot = await this._accounts.snapshot();
-            this._snapshots.put(blockHash, snapshot);
-            this._snapshotOrder.push(blockHash);
-        }
-    }
 
     /**
      * @param {Hash} blockHash
      * @param {ChainData} chainData
      * @returns {Promise.<boolean>}
+     * @fires FullChain#head-changed
      * @private
      */
     async _extend(blockHash, chainData) {
@@ -310,6 +224,9 @@ class FullChain extends BaseChain {
 
         this._mainChain = chainData;
         this._headHash = blockHash;
+
+        // Tell listeners that the head of the chain has changed.
+        this.fire('head-changed', this.head, /*rebranching*/ false);
 
         return true;
     }
@@ -407,8 +324,12 @@ class FullChain extends BaseChain {
         await chainTx.setHead(blockHash);
         await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
 
-        this._mainChain = chainData;
-        this._headHash = blockHash;
+        // Fire head-changed event for each fork block.
+        for (let i = forkChain.length - 1; i >= 0; i--) {
+            this._mainChain = forkChain[i];
+            this._headHash = forkHashes[i];
+            this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+        }
 
         return true;
     }
@@ -432,6 +353,85 @@ class FullChain extends BaseChain {
         const proof = await this._getChainProof();
         Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
         return proof;
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {string} startPrefix
+     * @returns {Promise.<boolean|AccountsTreeChunk>}
+     */
+    async getAccountsTreeChunk(blockHash, startPrefix) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsTreeChunk(startPrefix);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<boolean|AccountsProof>}
+     */
+    async getAccountsProof(blockHash, addresses) {
+        const snapshot = await this._getSnapshot(blockHash);
+        return snapshot && await snapshot.getAccountsProof(addresses);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<boolean|Accounts>}
+     */
+    async _getSnapshot(blockHash) {
+        const block = await this.getBlock(blockHash);
+        // Check if blockHash is a block on the main chain within the allowed window.
+        if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
+            return false;
+        }
+
+        // Check if there already is a snapshot, otherwise create it.
+        let snapshot = null;
+        if (!this._snapshots.contains(blockHash)) {
+            const tx = await this._accounts.transaction();
+            let currentHash = this._headHash;
+            // Save all snapshots up to blockHash (and stop when its predecessor would be next).
+            while (!block.prevHash.equals(currentHash)) {
+                const currentBlock = await this.getBlock(currentHash);
+
+                if (!this._snapshots.contains(currentHash)) {
+                    snapshot = await tx.snapshot();
+                    this._snapshots.put(currentHash, snapshot);
+                    this._snapshotOrder.unshift(currentHash);
+                }
+
+                await tx.revertBlock(currentBlock);
+                currentHash = currentBlock.prevHash;
+            }
+            await tx.abort();
+        } else {
+            snapshot = this._snapshots.get(blockHash);
+        }
+
+        return snapshot;
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _saveSnapshot(blockHash) {
+        // Replace oldest snapshot if possible.
+        // This ensures snapshots are only created lazily.
+        if (this._snapshotOrder.length > 0) {
+            const oldestHash = this._snapshotOrder.shift();
+            // If the hash is not reused, remove it.
+            const oldestSnapshot = this._snapshots.get(oldestHash);
+            await oldestSnapshot.abort();
+            this._snapshots.remove(oldestHash);
+
+            // Add new snapshot.
+            const snapshot = await this._accounts.snapshot();
+            this._snapshots.put(blockHash, snapshot);
+            this._snapshotOrder.push(blockHash);
+        }
     }
 
     /** @type {Block} */

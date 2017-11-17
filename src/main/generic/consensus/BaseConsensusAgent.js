@@ -10,6 +10,10 @@ class BaseConsensusAgent extends Observable {
         /** @type {Peer} */
         this._peer = peer;
 
+        // Flag indicating that have synced our blockchain with the peer's.
+        /** @type {boolean} */
+        this._synced = false;
+
         // Set of all objects (InvVectors) that we think the remote peer knows.
         /** @type {HashSet.<InvVector>} */
         this._knownObjects = new HashSet();
@@ -57,6 +61,11 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<boolean>}
      */
     async relayBlock(block) {
+        // Don't relay block if have not synced with the peer yet.
+        if (!this._synced) {
+            return false;
+        }
+
         // Only relay block if it matches the peer's subscription.
         if (!this._subscription.matchesBlock(block)) {
             return false;
@@ -122,6 +131,7 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     _onSubscribe(msg) {
+        Log.d(BaseConsensusAgent, `[SUBSCRIBE] ${this._peer.peerAddress} ${msg.subscription}`);
         this._subscription = msg.subscription;
     }
 
@@ -316,18 +326,19 @@ class BaseConsensusAgent extends Observable {
 
         // Process block.
         this._objectsProcessing.add(vector);
-        await this._processBlock(msg.block);
+        await this._processBlock(hash, msg.block);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);
     }
 
     /**
+     * @param {Hash} hash
      * @param {Block} block
      * @returns {Promise.<void>}
      * @protected
      */
-    async _processBlock(block) {
+    async _processBlock(hash, block) {
     }
 
     /**
@@ -350,18 +361,19 @@ class BaseConsensusAgent extends Observable {
 
         // Process header.
         this._objectsProcessing.add(vector);
-        await this._processHeader(msg.header);
+        await this._processHeader(hash, msg.header);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);
     }
 
     /**
+     * @param {Hash} hash
      * @param {BlockHeader} header
      * @returns {Promise.<void>}
      * @protected
      */
-    async _processHeader(header) {
+    async _processHeader(hash, header) {
     }
 
     /**
@@ -385,18 +397,19 @@ class BaseConsensusAgent extends Observable {
 
         // Process transaction.
         this._objectsProcessing.add(vector);
-        await this._processTransaction(msg.transaction);
+        await this._processTransaction(hash, msg.transaction);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);
     }
 
     /**
+     * @param {Hash} hash
      * @param {Transaction} transaction
      * @returns {Promise.<void>}
      * @protected
      */
-    async _processTransaction(transaction) {
+    async _processTransaction(hash, transaction) {
     }
 
     /**
@@ -589,6 +602,11 @@ class BaseConsensusAgent extends Observable {
     /** @type {Peer} */
     get peer() {
         return this._peer;
+    }
+
+    /** @type {boolean} */
+    get synced() {
+        return this._synced;
     }
 }
 /**

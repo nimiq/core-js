@@ -92,8 +92,12 @@ class NanoConsensus extends Observable {
         }
 
         Log.v(NanoConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-
         this._syncing = true;
+
+        // Notify listeners when we start syncing and have not established consensus yet.
+        if (!this._established) {
+            this.fire('syncing');
+        }
 
         agent.on('sync', () => this._onPeerSynced());
         agent.on('close', () => {
@@ -137,7 +141,7 @@ class NanoConsensus extends Observable {
             try {
                 return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e.message}`);
+                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e}`);
                 // Try the next peer.
             }
         }
@@ -153,11 +157,13 @@ class NanoConsensus extends Observable {
     async relayTransaction(transaction) {
         // Fail if we are not connected to at least one full/light node.
         if (!this._agents.values().some(agent => !Services.isNanoNode(agent.peer.peerAddress.services))) {
-            throw new Error('Failed to relay transaction');
+            throw new Error('Failed to relay transaction - only nano nodes connected');
         }
 
         // Store transaction in mempool.
-        await this._mempool.pushTransaction(transaction);
+        if (!(await this._mempool.pushTransaction(transaction))) {
+            throw new Error('Failed to relay transaction - mempool rejected transaction');
+        }
 
         // Relay transaction to all connected peers.
         const promises = [];
@@ -168,7 +174,7 @@ class NanoConsensus extends Observable {
         // Fail if the transaction was not relayed.
         return Promise.all(promises).then(results => {
             if (!results.some(it => !!it)) {
-                throw new Error('Failed to relay transaction');
+                throw new Error('Failed to relay transaction - no agent relayed transaction');
             }
         });
     }
@@ -187,7 +193,7 @@ class NanoConsensus extends Observable {
             try {
                 return await agent.getFullBlock(hash); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(NanoConsensus, `Failed to retrieve full block ${hash} from ${agent.peer.peerAddress}: ${e.message}`);
+                Log.w(NanoConsensus, `Failed to retrieve full block ${hash} from ${agent.peer.peerAddress}: ${e}`);
                 // Try the next peer.
             }
         }

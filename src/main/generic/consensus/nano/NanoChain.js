@@ -280,7 +280,7 @@ class NanoChain extends BaseChain {
             }
 
             // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
+            this.fire('head-changed', this.head, /*rebranching*/ false);
 
             return NanoChain.OK_EXTENDED;
         }
@@ -290,10 +290,8 @@ class NanoChain extends BaseChain {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
 
+            // Recompute chain proof.
             this._proof = await this._getChainProof();
-
-            // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head);
 
             return NanoChain.OK_REBRANCHED;
         }
@@ -350,10 +348,12 @@ class NanoChain extends BaseChain {
             const forkData = forkChain[i];
             forkData.onMainChain = true;
             await this._store.putChainData(forkHashes[i], forkData);
-        }
 
-        this._mainChain = chainData;
-        this._headHash = blockHash;
+            // Fire head-changed event for each fork block.
+            this._mainChain = forkChain[i];
+            this._headHash = forkHashes[i];
+            this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+        }
     }
 
     /**
