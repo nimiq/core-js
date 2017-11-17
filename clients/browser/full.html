@@ -530,12 +530,12 @@
         }
 
         _showAverageBlockTime() {
-            const headBlock = $.blockchain.head;
+            const headBlock  = $.blockchain.head;
+            const tailHeight = Math.max(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
 
-            $.blockchain.getBlockAt(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW).then(function(tailBlock) {
+            $.blockchain.getBlockAt(tailHeight).then(function(tailBlock) {
                 const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
-
-                this._bcAverageBlockTime.innerText = averageBlockTime + " s";
+                this._bcAverageBlockTime.innerText = averageBlockTime + ' s';
             }.bind(this));
         }
     }
