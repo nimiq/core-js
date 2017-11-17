@@ -68,7 +68,54 @@ class Address extends Primitive {
     static fromHex(hex) {
         return new Address(BufferUtils.fromHex(hex));
     }
+
+    /**
+     * @param {string} str
+     * @return {Address}
+     */
+    static fromUserFriendlyAddress(str) {
+        str = str.replace(/ /g, '');
+        if (str.substr(0, 2) !== Address.CCODE) {
+            throw new Error('Invalid Address: Wrong country code', 201);
+        }
+        if (str.length !== 36) {
+            throw new Error('Invalid Address: Should be 36 chars (ignoring spaces)', 202);
+        }
+        if (Address._ibanCheck(str.substr(4) + str.substr(0, 4)) !== 1) {
+            throw new Error('Invalid Address: Checksum invalid', 203);
+        }
+        return new Address(BufferUtils.fromBase32(str.substr(4)));
+    }
+
+    static _ibanCheck(str) {
+        const num = str.split('').map((c) => {
+            const code = c.toUpperCase().charCodeAt(0);
+            return code >= 48 && code <= 57 ? c : (code - 55).toString();
+        }).join('');
+        let tmp = '';
+
+        for (let i = 0; i < Math.ceil(num.length / 6); i++) {
+            tmp = (parseInt(tmp + num.substr(i * 6, 6)) % 97).toString();
+        }
+
+        return parseInt(tmp);
+    }
+
+    /**
+     * @param {boolean} [withSpaces]
+     * @return {string}
+     */
+    toUserFriendlyAddress(withSpaces = true) {
+        const base32 = BufferUtils.toBase32(this.serialize());
+        // eslint-disable-next-line prefer-template
+        const check = ('00' + (98 - Address._ibanCheck(base32 + Address.CCODE + '00'))).slice(-2);
+        let res = Address.CCODE + check + base32;
+        if (withSpaces) res = res.replace(/.{4}/g, '$& ').trim();
+        return res;
+    }
 }
+
+Address.CCODE = 'NQ';
 Address.SERIALIZED_SIZE = 20;
 Address.HEX_SIZE = 40;
 Class.register(Address);

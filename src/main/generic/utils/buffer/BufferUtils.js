@@ -52,6 +52,76 @@ class BufferUtils {
     }
 
     /**
+     * @param {Uint8Array} buf
+     * @param {string} [alphabet] Alphabet to use, defaults to base32hex (rfc 4648)
+     * @return {string}
+     */
+    static toBase32(buf, alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV') {
+        let shift = 3, carry = 0, byte, symbol, i, res = '';
+
+        for (i = 0; i < buf.length; i++) {
+            byte = buf[i];
+            symbol = carry | (byte >> shift);
+            res += alphabet[symbol & 0x1f];
+
+            if (shift > 5) {
+                shift -= 5;
+                symbol = byte >> shift;
+                res += alphabet[symbol & 0x1f];
+            }
+
+            shift = 5 - shift;
+            carry = byte << shift;
+            shift = 8 - shift;
+        }
+
+        if (shift !== 3) {
+            res += alphabet[carry & 0x1f];
+        }
+
+        return res;
+    }
+
+    /**
+     * @param {string} base32
+     * @param {string} [alphabet] Alphabet to use, defaults to base32hex (rfc 4648)
+     * @return {Uint8Array}
+     */
+    static fromBase32(base32, alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV') {
+        const charmap = [];
+        alphabet.toUpperCase().split('').forEach((c, i) => {
+            if (!(c in charmap)) charmap[c] = i;
+        });
+
+        let symbol, shift = 8, carry = 0, buf = [];
+        base32.toUpperCase().split('').forEach((char) => {
+            // ignore padding
+            if (char === '=') return;
+
+            symbol = charmap[char] & 0xff;
+
+            shift -= 5;
+            if (shift > 0) {
+                carry |= symbol << shift;
+            } else if (shift < 0) {
+                buf.push(carry | (symbol >> -shift));
+                shift += 8;
+                carry = (symbol << shift) & 0xff;
+            } else {
+                buf.push(carry | symbol);
+                shift = 8;
+                carry = 0;
+            }
+        });
+
+        if (shift !== 8 && carry !== 0) {
+            buf.push(carry);
+        }
+
+        return new Uint8Array(buf);
+    }
+
+    /**
      * @param {*} buffer
      * @return {string}
      */
@@ -96,4 +166,5 @@ class BufferUtils {
         return true;
     }
 }
+
 Class.register(BufferUtils);
