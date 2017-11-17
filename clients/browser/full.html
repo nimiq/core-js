@@ -111,6 +111,10 @@
                 <span id="bcHeight"></span>
             </div>
             <div class="info-block">
+                <strong>Average Block Time</strong>
+                <span id="bcAverageBlockTime"></span>
+            </div>
+            <div class="info-block">
                 <strong>Accounts Hash</strong>
                 <hash id="bcAccountsHash"></hash>
             </div>
@@ -250,6 +254,8 @@
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
+            this._bcAverageBlockTime = document.querySelector('#bcAverageBlockTime');
             /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
@@ -398,6 +404,7 @@
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
+            this._showAverageBlockTime();
             $.blockchain.accountsHash().then(function(accountsHash) {
                 this._bcAccountsHash.innerText = accountsHash.toBase64();
             }.bind(this));
@@ -520,6 +527,15 @@
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }.bind(this));
+        }
+
+        async _showAverageBlockTime() {
+            const headBlock = $.blockchain.head;
+            const tailBlock = await $.blockchain.getBlockAt(headBlock.height - 100);
+
+            const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
+
+            this._bcAverageBlockTime.innerText = averageBlockTime + " s";
         }
     }
 
