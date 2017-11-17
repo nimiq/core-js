@@ -529,13 +529,14 @@
             }.bind(this));
         }
 
-        async _showAverageBlockTime() {
+        _showAverageBlockTime() {
             const headBlock = $.blockchain.head;
-            const tailBlock = await $.blockchain.getBlockAt(headBlock.height - 100);
 
-            const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
+            $.blockchain.getBlockAt(headBlock.height - 100).then(function(tailBlock) {
+                const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
 
-            this._bcAverageBlockTime.innerText = averageBlockTime + " s";
+                this._bcAverageBlockTime.innerText = averageBlockTime + " s";
+            }.bind(this));
         }
     }
 
