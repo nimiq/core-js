@@ -532,7 +532,7 @@
         _showAverageBlockTime() {
             const headBlock = $.blockchain.head;
 
-            $.blockchain.getBlockAt(headBlock.height - 100).then(function(tailBlock) {
+            $.blockchain.getBlockAt(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW).then(function(tailBlock) {
                 const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
 
                 this._bcAverageBlockTime.innerText = averageBlockTime + " s";
