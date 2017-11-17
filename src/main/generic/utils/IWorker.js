@@ -44,10 +44,6 @@ class IWorker {
         return typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
     }
 
-    static get _insideNodeJs() {
-        return typeof process === 'object' && typeof require === 'function' && typeof window === 'undefined';
-    }
-
     static get _global() {
         return typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : typeof self !== 'undefined' ? self : null;
     }
@@ -250,7 +246,7 @@ class IWorker {
 
                 return new Promise((resolve) => {
                     try {
-                        if (IWorker._insideNodeJs) {
+                        if (PlatformUtils.isNodeJs()) {
                             const toUint8Array = function (buf) {
                                 const u = new Uint8Array(buf.length);
                                 for (let i = 0; i < buf.length; ++i) {

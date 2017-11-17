@@ -21,6 +21,20 @@ class Primitive {
         return o instanceof Primitive && BufferUtils.equals(this.serialize(), o.serialize());
     }
 
+    /**
+     * @param {Primitive} o
+     * @return {number} negative if this is smaller than o, positive if this is larger than o, zero if equal.
+     */
+    compare(o) {
+        if (typeof this._obj.compare === 'function') {
+            return this._obj.compare(o._obj);
+        } else if (this._obj.prototype === o._obj.prototype) {
+            return BufferUtils.compare(this.serialize(), o.serialize());
+        }
+
+        throw new Error(`Incomparable types: ${this._obj.constructor.name} and ${o._obj.constructor.name}`);
+    }
+
     hashCode() {
         return this.toBase64();
     }
@@ -52,4 +66,5 @@ class Primitive {
         return BufferUtils.toHex(this.serialize());
     }
 }
+
 Class.register(Primitive);

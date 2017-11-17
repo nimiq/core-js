@@ -77,7 +77,7 @@ class Mempool extends Observable {
             if (transactions.length >= maxCount) break;
             transactions.push(transaction);
         }
-        return transactions;
+        return transactions.sort((a, b) => a.compare(b));
     }
 
     /**

@@ -158,6 +158,7 @@ const sources = {
     ],
     worker: [
         './src/main/platform/browser/Class.js',
+        './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/platform/browser/utils/LogNative.js',
         './src/main/generic/utils/Log.js',
         './src/main/generic/utils/IWorker.js',

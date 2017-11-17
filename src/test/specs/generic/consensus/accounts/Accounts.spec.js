@@ -126,27 +126,26 @@ describe('Accounts', () => {
         })().then(done, done.fail);
     });
 
-    // Deactivated since it takes up too much time during the travis build (firefox fails).
     it('can handle a large amount of block transactions', (done) => {
-        spyOn(BlockHeader.prototype, 'verifyProofOfWork').and.returnValue(true);
         (async function test() {
-            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4, true);
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
             const numTransactions = Math.floor(TestBlockchain.MAX_NUM_TRANSACTIONS / 20);
-            const users = await TestBlockchain.generateUsers(numTransactions);
-            const user0 = users[0];
+            const users = await TestBlockchain.getUsers(2);
+            let nonce = 0;
             const transactionPromises = [];
             const treeTx = await accounts._tree.transaction();
             // create users, raise their balance, create transaction
             for (let i = 1; i < numTransactions; i++) {
-                const currentUser = users[i];
-                await accounts._updateBalance(treeTx, currentUser.address, Policy.BLOCK_REWARD, (a,b) => a+b); //eslint-disable-line no-await-in-loop
-                transactionPromises.push(TestBlockchain.createTransaction(currentUser.publicKey, user0.address, Policy.BLOCK_REWARD, 0, 0, currentUser.privateKey));
+                await accounts._updateBalance(treeTx, users[0].address, Policy.BLOCK_REWARD, (a, b) => a + b); //eslint-disable-line no-await-in-loop
+                transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.BLOCK_REWARD, 0, nonce++, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);
-            expect(await treeTx.commit()).toBe(true);
+            transactions.sort((a, b) => a.compare(b));
+            expect(await treeTx.commit()).toBeTruthy();
             const block = await testBlockchain.createBlock({transactions: transactions});
-            await accounts.commitBlock(block);
+            expect(await block.verify()).toBeTruthy();
+            expect(await accounts.commitBlock(block)).toBeTruthy();
         })().then(done, done.fail);
     });
 
