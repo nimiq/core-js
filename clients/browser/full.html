@@ -111,6 +111,10 @@
                 <span id="bcHeight"></span>
             </div>
             <div class="info-block">
+                <strong>Average Block Time</strong>
+                <span id="bcAverageBlockTime"></span>
+            </div>
+            <div class="info-block">
                 <strong>Accounts Hash</strong>
                 <hash id="bcAccountsHash"></hash>
             </div>
@@ -250,6 +254,8 @@
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
             this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
+            this._bcAverageBlockTime = document.querySelector('#bcAverageBlockTime');
             /** @type {HTMLElement} */
             this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
@@ -398,6 +404,7 @@
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
             this._bcHeight.innerText = $.blockchain.height;
+            this._showAverageBlockTime();
             $.blockchain.accountsHash().then(function(accountsHash) {
                 this._bcAccountsHash.innerText = accountsHash.toBase64();
             }.bind(this));
@@ -519,6 +526,16 @@
                     el.innerHTML = `from=<hash>${senderAddr.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipientAddr.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
+            }.bind(this));
+        }
+
+        _showAverageBlockTime() {
+            const headBlock  = $.blockchain.head;
+            const tailHeight = Math.max(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
+
+            $.blockchain.getBlockAt(tailHeight).then(function(tailBlock) {
+                const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
+                this._bcAverageBlockTime.innerText = averageBlockTime + ' s';
             }.bind(this));
         }
     }
