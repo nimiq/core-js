@@ -111,8 +111,9 @@
                 <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
             </div>
             <div class="info-block">
-                <strong>Average Block Time</strong>
-                <span id="bcAverageBlockTime"></span>
+                <strong>Block Time</strong>
+                <span id="bcAverageBlockTime"></span> <small>average</small> /
+                <span id="bcLastBlockTime"></span> <small>last</small>
             </div>
             <hr/>
         </div>
@@ -252,6 +253,8 @@
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
             this._bcAverageBlockTime = document.querySelector('#bcAverageBlockTime');
+            /** @type {HTMLElement} */
+            this._bcLastBlockTime = document.querySelector('#bcLastBlockTime');
 
             // Head block
             /** @type {HTMLElement} */
@@ -398,7 +401,7 @@
             this._bcHeight.innerText = $.blockchain.height;
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
-            this._showAverageBlockTime();
+            this._showBlockTime();
 
             this._hdHash.innerText = $.blockchain.headHash.toBase64();
             this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
@@ -520,13 +523,17 @@
             }.bind(this));
         }
 
-        _showAverageBlockTime() {
-            const headBlock  = $.blockchain.head;
+        _showBlockTime() {
+            const headBlock = $.blockchain.head;
             const tailHeight = Math.max(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
 
             $.blockchain.getBlockAt(tailHeight).then(function(tailBlock) {
                 const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
-                this._bcAverageBlockTime.innerText = averageBlockTime + ' s';
+                this._bcAverageBlockTime.innerText = averageBlockTime + 's';
+            }.bind(this));
+
+            $.blockchain.getBlock(headBlock.prevHash).then(function(prevBlock) {
+                this._bcLastBlockTime.innerText = (headBlock.timestamp - prevBlock.timestamp) + 's';
             }.bind(this));
         }
     }
