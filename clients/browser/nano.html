@@ -170,7 +170,7 @@
     class MinerUI {
         constructor($) {
             $.blockchain.on('head-changed', function(head, rebranching) {
-                this._headChanged(head, rebranching);
+                this._headChanged(rebranching);
             }.bind(this));
 
             $.network.on('peers-changed', function() {
@@ -259,6 +259,7 @@
             // Init values.
             this._networkChanged();
             this._mempoolChanged();
+            this._headChanged(true);
         }
 
         _submitTransaction(e) {
@@ -316,7 +317,7 @@
             return false;
         }
 
-        _headChanged(head, rebranching) {
+        _headChanged(rebranching) {
             this._bcHeight.innerText = $.blockchain.height;
             this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
 
@@ -326,7 +327,7 @@
             this._hdTimestamp.innerText = new Date($.blockchain.head.timestamp * 1000);
             this._hdNonce.innerText = $.blockchain.head.nonce;
 
-            var interlink = `<hash>${head.interlink.hashes.map((it, i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
+            var interlink = `<hash>${$.blockchain.head.interlink.hashes.map((it, i) => i + ':' + it.toBase64()).join('</hash><br><hash>')}</hash>`;
             this._hdInterlink.innerHTML = interlink;
 
             $.blockchain.head.pow().then(function (pow) {
