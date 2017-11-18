@@ -32,7 +32,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_TIME() {
-        return 5; // Seconds
+        return 30; // Seconds
     }
 
     /**
@@ -54,7 +54,7 @@ class Policy {
     }
 
     /**
-     * The highest (easiest) block hash target.
+     * The highest (easiest) block PoW target.
      * @type {number}
      * @constant
      */
