@@ -103,20 +103,16 @@
             <hr/>
 
             <div class="info-block">
-                <strong>Work</strong>
-                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
-            </div>
-            <div class="info-block">
                 <strong>Height</strong>
                 <span id="bcHeight"></span>
             </div>
             <div class="info-block">
-                <strong>Average Block Time</strong>
-                <span id="bcAverageBlockTime"></span>
+                <strong>Work</strong>
+                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
             </div>
             <div class="info-block">
-                <strong>Accounts Hash</strong>
-                <hash id="bcAccountsHash"></hash>
+                <strong>Average Block Time</strong>
+                <span id="bcAverageBlockTime"></span>
             </div>
             <hr/>
         </div>
@@ -249,15 +245,13 @@
 
             // Blockchain
             /** @type {HTMLElement} */
+            this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
             this._bcTotalDifficulty = document.querySelector('#bcTotalDifficulty');
             /** @type {HTMLElement} */
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
-            this._bcHeight = document.querySelector('#bcHeight');
-            /** @type {HTMLElement} */
             this._bcAverageBlockTime = document.querySelector('#bcAverageBlockTime');
-            /** @type {HTMLElement} */
-            this._bcAccountsHash = document.querySelector('#bcAccountsHash');
 
             // Head block
             /** @type {HTMLElement} */
@@ -401,13 +395,10 @@
         }
 
         _headChanged(head) {
+            this._bcHeight.innerText = $.blockchain.height;
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
-            this._bcHeight.innerText = $.blockchain.height;
             this._showAverageBlockTime();
-            $.blockchain.accountsHash().then(function(accountsHash) {
-                this._bcAccountsHash.innerText = accountsHash.toBase64();
-            }.bind(this));
 
             this._hdHash.innerText = $.blockchain.headHash.toBase64();
             this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
