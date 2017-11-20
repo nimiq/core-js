@@ -68,9 +68,9 @@ class ChainDataStore {
 
     /**
      * @param {number} height
-     * @returns {Promise.<?Block>}
+     * @returns {Promise.<?ChainData>}
      */
-    async getBlockAt(height) {
+    async getChainDataAt(height) {
         /** @type {Array.<ChainData>} */
         const candidates = await this._store.values(JDB.Query.eq('height', height));
         if (!candidates || !candidates.length) {
@@ -79,16 +79,25 @@ class ChainDataStore {
 
         for (const chainData of candidates) {
             if (chainData.onMainChain) {
-                return chainData.head;
+                return chainData;
             }
         }
 
-        // TODO handle corrupted storage
         return undefined;
     }
 
     /**
      * @param {number} height
+     * @returns {Promise.<?Block>}
+     */
+    async getBlockAt(height) {
+        const chainData = await this.getChainDataAt(height);
+        return chainData ? chainData.head : undefined;
+    }
+
+    /**
+     * @param {number} height
+     * @param {boolean} [lower]
      * @returns {Promise.<?Block>}
      */
     async getNearestBlockAt(height, lower=true) {

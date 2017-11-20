@@ -95,7 +95,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('can push 100 blocks with constant difficulty, then increase the difficulty over 10 more blocks', (done) => {
+    it('can push 10 blocks with constant difficulty, then increase the difficulty over 10 more blocks', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
@@ -103,7 +103,7 @@ describe('Blockchain', () => {
             expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1));
 
             let timestamp;
-            for (let i = 0; i < 100; ++i) {
+            for (let i = 0; i < 10; ++i) {
                 timestamp = testBlockchain.height * Policy.BLOCK_TIME;
                 const block = await testBlockchain.createBlock({timestamp: timestamp});
                 const hash = await block.hash();
@@ -120,7 +120,7 @@ describe('Blockchain', () => {
 
             // all timestamps are explicitly set to trigger an increase in difficulty after the last block
             for (let i = 0; i < 10; ++i) {
-                const block = await testBlockchain.createBlock({timestamp: 100 * Policy.BLOCK_TIME + i});
+                const block = await testBlockchain.createBlock({timestamp: 10 * Policy.BLOCK_TIME + i});
                 const hash = await block.hash();
                 const status = await testBlockchain.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
@@ -131,11 +131,11 @@ describe('Blockchain', () => {
             }
 
             nextTarget = await testBlockchain.getNextTarget();
-            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.3128888088354262));
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.0930698023517638));
         })().then(done, done.fail);
     });
 
-    it('can push 100 blocks and keep difficulty increasing over each block', (done) => {
+    it('can push 20 blocks and keep difficulty increasing over each block', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
@@ -143,8 +143,8 @@ describe('Blockchain', () => {
             expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1));
 
             let difficulty = 0;
-            for (let i = 0; i < 100; ++i) {
-                let timestamp = testBlockchain.height * Policy.BLOCK_TIME - 2;
+            for (let i = 0; i < 20; ++i) {
+                let timestamp = testBlockchain.height * Math.floor(Policy.BLOCK_TIME / 2);
                 const block = await testBlockchain.createBlock({timestamp: timestamp});
                 const hash = await block.hash();
                 const status = await testBlockchain.pushBlock(block);
@@ -159,7 +159,7 @@ describe('Blockchain', () => {
             }
 
             nextTarget = await testBlockchain.getNextTarget();
-            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.0347215348595213));
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.098953617064091));
         })().then(done, done.fail);
     });
 

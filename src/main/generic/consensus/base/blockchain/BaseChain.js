@@ -34,25 +34,26 @@ class BaseChain extends IBlockchain {
      * @returns {Promise.<number>}
      */
     async getNextTarget(block) {
-        let chainData;
+        /** @type {ChainData} */
+        let headData;
         if (block) {
             const hash = await block.hash();
-            chainData = await this._store.getChainData(hash);
-            Assert.that(!!chainData);
+            headData = await this._store.getChainData(hash);
+            Assert.that(!!headData);
         } else {
             block = this.head;
-            chainData = this._mainChain;
+            headData = this._mainChain;
         }
 
         // Retrieve the timestamp of the block that appears DIFFICULTY_BLOCK_WINDOW blocks before the given block in the chain.
         // The block might not be on the main chain.
-        const startHeight = Math.max(block.height - Policy.DIFFICULTY_BLOCK_WINDOW, 1);
-        /** @type {Block} */
-        let startBlock;
-        if (chainData.onMainChain) {
-            startBlock = await this._store.getBlockAt(startHeight);
+        const tailHeight = Math.max(block.height - Policy.DIFFICULTY_BLOCK_WINDOW, 1);
+        /** @type {ChainData} */
+        let tailData;
+        if (headData.onMainChain) {
+            tailData = await this._store.getChainDataAt(tailHeight);
         } else {
-            let prevData = chainData;
+            let prevData = headData;
             for (let i = 0; i < Policy.DIFFICULTY_BLOCK_WINDOW && !prevData.onMainChain; i++) {
                 prevData = await this._store.getChainData(prevData.head.prevHash);
                 if (!prevData) {
@@ -61,19 +62,20 @@ class BaseChain extends IBlockchain {
                 }
             }
 
-            if (prevData.onMainChain && prevData.head.height > startHeight) {
-                startBlock = await this._store.getBlockAt(startHeight);
+            if (prevData.onMainChain && prevData.head.height > tailHeight) {
+                tailData = await this._store.getChainDataAt(tailHeight);
             } else {
-                startBlock = prevData.head;
+                tailData = prevData;
             }
         }
 
-        if (!startBlock) {
+        if (!tailData) {
             // Not enough blocks are available to compute the next target, fail.
             return -1;
         }
 
-        return BlockUtils.getNextTarget(block.header, startBlock.header);
+        const deltaTotalDifficulty = headData.totalDifficulty - tailData.totalDifficulty;
+        return BlockUtils.getNextTarget(headData.head.header, tailData.head.header, deltaTotalDifficulty);
     }
 
 

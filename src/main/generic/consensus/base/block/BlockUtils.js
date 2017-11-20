@@ -125,9 +125,10 @@ class BlockUtils {
     /**
      * @param {BlockHeader} headBlock
      * @param {BlockHeader} tailBlock
+     * @param {number} deltaTotalDifficulty
      * @returns {number}
      */
-    static getNextTarget(headBlock, tailBlock) {
+    static getNextTarget(headBlock, tailBlock, deltaTotalDifficulty) {
         Assert.that((headBlock.height - tailBlock.height === Policy.DIFFICULTY_BLOCK_WINDOW)
             || (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW && tailBlock.height === 1),
             `Tail and head block must be ${Policy.DIFFICULTY_BLOCK_WINDOW} blocks apart`);
@@ -135,25 +136,24 @@ class BlockUtils {
         let actualTime = headBlock.timestamp - tailBlock.timestamp;
 
         // Simulate that the Policy.BLOCK_TIME was achieved for the blocks before the genesis block, i.e. we simulate
-        // a sliding window that starts before the genesis block.
+        // a sliding window that starts before the genesis block. Assume difficulty = 1 for these blocks.
         if (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
             actualTime += (Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1) * Policy.BLOCK_TIME;
+            deltaTotalDifficulty += Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1;
         }
 
         // Compute the target adjustment factor.
         const expectedTime = Policy.DIFFICULTY_BLOCK_WINDOW * Policy.BLOCK_TIME;
         let adjustment = actualTime / expectedTime;
 
-        // Dampen the adjustment.
-        adjustment = (adjustment - 1) * 0.5 + 1;
-
         // Clamp the adjustment factor to [1 / MAX_ADJUSTMENT_FACTOR, MAX_ADJUSTMENT_FACTOR].
         adjustment = Math.max(adjustment, 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
         adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
 
         // Compute the next target.
-        const currentTarget = headBlock.target;
-        let nextTarget = currentTarget * adjustment;
+        const averageDifficulty = deltaTotalDifficulty / Policy.DIFFICULTY_BLOCK_WINDOW;
+        const averageTarget = BlockUtils.difficultyToTarget(averageDifficulty);
+        let nextTarget = averageTarget * adjustment;
 
         // Make sure the target is below or equal the maximum allowed target (difficulty 1).
         // Also enforce a minimum target of 1.

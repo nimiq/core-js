@@ -32,7 +32,7 @@ class Policy {
      * @constant
      */
     static get BLOCK_TIME() {
-        return 30; // Seconds
+        return 60; // Seconds
     }
 
     /**
@@ -45,12 +45,12 @@ class Policy {
     }
 
     /**
-     * Maximum block size.
+     * Maximum block size in bytes.
      * @type {number}
      * @constant
      */
     static get BLOCK_SIZE_MAX() {
-        return 5e5; // 500 KB
+        return 1e6; // 1 MB
     }
 
     /**
@@ -68,7 +68,7 @@ class Policy {
      * @constant
      */
     static get DIFFICULTY_BLOCK_WINDOW() {
-        return 100; // Blocks
+        return 120; // Blocks
     }
 
     /**
@@ -90,7 +90,7 @@ class Policy {
      * @constant
      */
     static get M() {
-        return 300;
+        return 240;
     }
 
     /**
@@ -100,7 +100,7 @@ class Policy {
      * @constant
      */
     static get K() {
-        return 200;
+        return 120;
     }
 
     /**

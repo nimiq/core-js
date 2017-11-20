@@ -528,12 +528,12 @@
             const tailHeight = Math.max(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
 
             $.blockchain.getBlockAt(tailHeight).then(function(tailBlock) {
-                const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (headBlock.height - tailBlock.height);
+                const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (Math.max(headBlock.height - tailBlock.height, 1));
                 this._bcAverageBlockTime.innerText = averageBlockTime + 's';
             }.bind(this));
 
             $.blockchain.getBlock(headBlock.prevHash).then(function(prevBlock) {
-                this._bcLastBlockTime.innerText = (headBlock.timestamp - prevBlock.timestamp) + 's';
+                this._bcLastBlockTime.innerText = (prevBlock ? (headBlock.timestamp - prevBlock.timestamp) : 0) + 's';
             }.bind(this));
         }
     }

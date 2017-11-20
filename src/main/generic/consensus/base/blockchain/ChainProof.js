@@ -81,13 +81,22 @@ class ChainProof {
 
         /** Array.<BlockHeader> */
         const denseChain = denseSuffix.concat(this.suffix.headers);
+
+        // Compute totalDifficulty for each block of the dense chain.
+        let totalDifficulty = 0;
+        const totalDifficulties = [];
+        for (let i = 0; i < denseChain.length; i++) {
+            totalDifficulty += denseChain[i].difficulty;
+            totalDifficulties[i] = totalDifficulty;
+        }
+
         let headIndex = denseChain.length - 2;
         let tailIndex = headIndex - Policy.DIFFICULTY_BLOCK_WINDOW;
-
         while (tailIndex >= 0 && headIndex >= 0) {
             const headBlock = denseChain[headIndex];
             const tailBlock = denseChain[tailIndex];
-            const target = BlockUtils.getNextTarget(headBlock, tailBlock);
+            const deltaTotalDifficulty = totalDifficulties[headIndex] - totalDifficulties[tailIndex];
+            const target = BlockUtils.getNextTarget(headBlock, tailBlock, deltaTotalDifficulty);
             const nBits = BlockUtils.targetToCompact(target);
 
             /** @type {BlockHeader} */
