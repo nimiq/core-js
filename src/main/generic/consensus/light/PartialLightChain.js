@@ -143,18 +143,54 @@ class PartialLightChain extends LightChain {
             // Delete our current chain.
             await this._store.truncate();
 
+            // Compute the dense suffix of the prefix.
+            // Then use it to compute totalWork and totalDifficulty.
+            const denseSuffix = [proof.prefix.head.header];
+            let denseSuffixStart = proof.prefix.length - 1;
+            let denseSuffixHead = proof.prefix.head;
+            for (let i = proof.prefix.length - 2; i >= 0; i--) {
+                const block = proof.prefix.blocks[i];
+                const hash = await block.hash();
+                if (!hash.equals(denseSuffixHead.prevHash)) {
+                    break;
+                }
+
+                --denseSuffixStart;
+                denseSuffix.push(block.header);
+                denseSuffixHead = block;
+            }
+            denseSuffix.reverse();
+
+            // Compute totalDifficulty and totalWork for each block of the dense chain.
+            let totalDifficulty = 0, totalWork = 0;
+            const totalDifficulties = [], totalWorks = [];
+            for (let i = 0; i < denseSuffix.length; i++) {
+                totalDifficulty += denseSuffix[i].difficulty;
+                totalDifficulties[denseSuffixStart + i] = totalDifficulty;
+
+                totalWork += BlockUtils.realDifficulty(await denseSuffix[i].pow());
+                totalWorks[denseSuffixStart + i] = totalWork;
+            }
+
             // Set the prefix head as the new chain head.
             // TODO use the tail end of the dense suffix of the prefix instead.
             this._headHash = headHash;
-            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(await head.pow()), true);
+            this._mainChain = new ChainData(head, totalDifficulties[totalDifficulties.length - 1], totalWorks[totalWorks.length - 1], true);
             await this._store.putChainData(headHash, this._mainChain);
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
+            // Only in the dense suffix of the prefix we can calculate the difficulties.
             for (let i = 0; i < proof.prefix.length - 1; i++) {
                 const block = proof.prefix.blocks[i];
                 const hash = await block.hash();
-                const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
+                let totalDifficulty = -1;
+                let totalWork = -1;
+                if (totalDifficulties[i]) {
+                    totalDifficulty = totalDifficulties[i];
+                    totalWork = totalWorks[i];
+                }
+                const data = new ChainData(block, /*totalDifficulty*/ totalDifficulty, /*totalWork*/ totalWork, true);
                 await this._store.putChainData(hash, data);
             }
         }
