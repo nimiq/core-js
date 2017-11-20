@@ -123,7 +123,7 @@ class WsPeerAddress extends PeerAddress {
      * @returns {WsPeerAddress}
      */
     static seed(host, port) {
-        return new WsPeerAddress(Services.DEFAULT, /*timestamp*/ 0, NetAddress.UNSPECIFIED, host, port);
+        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, host, port);
     }
 
     /**
