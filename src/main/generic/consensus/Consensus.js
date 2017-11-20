@@ -4,7 +4,7 @@ class Consensus {
         Services.configureServiceMask(Services.FULL);
 
         /** @type {ConsensusDB} */
-        const db = await ConsensusDB.get();
+        const db = await ConsensusDB.getFull();
         /** @type {Accounts} */
         const accounts = await Accounts.getPersistent(db);
         /** @type {FullChain} */
@@ -22,7 +22,7 @@ class Consensus {
         Services.configureServiceMask(Services.LIGHT | Services.FULL);
 
         /** @type {ConsensusDB} */
-        const db = await ConsensusDB.get();
+        const db = await ConsensusDB.getLight();
         /** @type {Accounts} */
         const accounts = await Accounts.getPersistent(db);
         /** @type {FullChain} */

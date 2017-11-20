@@ -32,6 +32,16 @@ class LightChain extends FullChain {
     }
 
     /**
+     * @override
+     * @protected
+     */
+    async _init() {
+        await FullChain.prototype._init.call(this);
+        this._proof = await this.getChainProof();
+        return this;
+    }
+
+    /**
      * @returns {Promise.<?ChainProof>}
      * @override
      */

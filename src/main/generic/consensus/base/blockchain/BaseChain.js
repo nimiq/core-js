@@ -69,7 +69,7 @@ class BaseChain extends IBlockchain {
             }
         }
 
-        if (!tailData) {
+        if (!tailData || tailData.totalDifficulty < 1) {
             // Not enough blocks are available to compute the next target, fail.
             return -1;
         }

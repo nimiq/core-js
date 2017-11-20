@@ -277,7 +277,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {Hash} hash
      * @param {Block} block
-     * @private
+     * @protected
      */
     _onOrphanBlock(hash, block) {
         // Ignore orphan blocks if we're not synced yet. This shouldn't happen.

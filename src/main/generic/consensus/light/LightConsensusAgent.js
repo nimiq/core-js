@@ -42,9 +42,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
         peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
-
-        // Subscribe to all announcements from the peer.
-        this._peer.channel.subscribe(Subscription.ANY);
     }
 
     /**
@@ -71,7 +68,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         // Ban peer if the sync failed more often than allowed.
-        if (this._failedSyncs >= LightConsensusAgent.MAX_SYNC_ATTEMPTS) {
+        if (this._failedSyncs >= LightConsensusAgent.SYNC_ATTEMPTS_MAX) {
             this._peer.channel.ban('blockchain sync failed');
             if (this._partialChain) {
                 await this._partialChain.abort();
@@ -81,7 +78,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         // Check if we know head block.
-        const block = await this._blockchain.getBlock(this._peer.headHash);
+        const block = await this._blockchain.getBlock(this._syncTarget);
 
         /*
          * Three cases:
@@ -106,7 +103,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
             let header;
             try {
-                header = await this.getHeader(this._peer.headHash);
+                header = await this.getHeader(this._syncTarget);
             } catch(err) {
                 this._peer.channel.close('Did not get requested header');
                 return;
@@ -157,6 +154,9 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @private
      */
     async _initChainProofSync() {
+        // Subscribe to all announcements from the peer.
+        this._peer.channel.subscribe(Subscription.ANY);
+
         this._syncing = true;
         this._synced = false;
         this._catchup = false;
@@ -460,10 +460,22 @@ class LightConsensusAgent extends FullConsensusAgent {
                 break;
 
             case LightChain.ERR_ORPHAN:
-                if (this._syncing && !this._catchup) {
-                    this._orphanedBlocks.push(block);
-                }
+                this._onOrphanBlock(hash, block);
                 break;
+        }
+    }
+
+    /**
+     * @param {Hash} hash
+     * @param {Block} block
+     * @private
+     * @override
+     */
+    _onOrphanBlock(hash, block) {
+        if (this._syncing && !this._catchup) {
+            this._orphanedBlocks.push(block);
+        } else {
+            super._onOrphanBlock(hash, block);
         }
     }
 
@@ -572,7 +584,7 @@ LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 5;
  * blocks.
  * @type {number}
  */
-LightConsensusAgent.MAX_SYNC_ATTEMPTS = 5;
+LightConsensusAgent.SYNC_ATTEMPTS_MAX = 5;
 /**
  * Maximum number of inventory vectors to sent in the response for onGetBlocks.
  * @type {number}

@@ -3,7 +3,7 @@ class ChainDataStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const store = jdb.createObjectStore('FullChain', new ChainDataStoreCodec());
+        const store = jdb.createObjectStore('ChainData', new ChainDataStoreCodec());
         ChainDataStore._createIndexes(store);
     }
 
@@ -12,7 +12,7 @@ class ChainDataStore {
      * @returns {ChainDataStore}
      */
     static getPersistent(jdb) {
-        return new ChainDataStore(jdb.getObjectStore('FullChain'));
+        return new ChainDataStore(jdb.getObjectStore('ChainData'));
     }
 
     /**
