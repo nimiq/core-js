@@ -95,6 +95,60 @@ describe('Mempool', () => {
         })().then(done, done.fail);
     });
 
+    it('can push 2 transactions from same user with increasing nonce', (done) => {
+        (async () => {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+            const wallet = await Wallet.createVolatile();
+
+            await accounts._tree.put(wallet.address, new Account(new Balance(152, 42)));
+
+            // Create transactions
+            const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 42);
+            const t2 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 43);
+
+            // The transaction should be successfully pushed
+            let result = await mempool.pushTransaction(t1);
+            expect(result).toBe(true);
+
+            // The transaction should be successfully pushed
+            result = await mempool.pushTransaction(t2);
+            expect(result).toBe(true);
+
+            // Get back the transactions and check that they are the same one we pushed before
+            expect(await mempool.getTransaction(await t1.hash())).toBe(t1);
+            expect(await mempool.getTransaction(await t2.hash())).toBe(t2);
+        })().then(done, done.fail);
+    });
+
+    it('cannot push 2 transactions from same user with same nonce', (done) => {
+        (async () => {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+            const wallet = await Wallet.createVolatile();
+
+            await accounts._tree.put(wallet.address, new Account(new Balance(152, 42)));
+
+            // Create transactions
+            const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 42);
+            const t2 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 42);
+
+            // The transaction should be successfully pushed
+            let result = await mempool.pushTransaction(t1);
+            expect(result).toBe(true);
+
+            // The transaction should be successfully pushed
+            result = await mempool.pushTransaction(t2);
+            expect(result).toBe(false);
+
+            // Get back the transactions and check that they are the same one we pushed before
+            expect(await mempool.getTransaction(await t1.hash())).toBe(t1);
+            expect(await mempool.getTransaction(await t2.hash())).not.toBe(t2);
+        })().then(done, done.fail);
+    });
+
     it('can get a list of its transactions and can evict them', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
@@ -109,7 +163,7 @@ describe('Mempool', () => {
             // several different transactions to push
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const wallet = await Wallet.createVolatile(accounts, mempool);
+                const wallet = await Wallet.createVolatile();
                 await accounts._tree.put(wallet.address, new Account(new Balance(23478, 42)));
                 wallets.push(wallet);
             }
