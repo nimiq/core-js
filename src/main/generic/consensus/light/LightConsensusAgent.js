@@ -554,11 +554,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         super._onClose();
     }
 
-    /** @type {boolean} */
-    get synced() {
-        return this._synced;
-    }
-
     /** @type {LightChain} */
     get _chain() {
         if (this._syncing && !this._catchup && this._partialChain) {
