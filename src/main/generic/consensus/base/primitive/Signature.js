@@ -1,6 +1,6 @@
 class Signature extends Primitive {
     /**
-     * @param {{_obj}} o
+     * @param {Signature} o
      * @returns {Signature}
      */
     static copy(o) {

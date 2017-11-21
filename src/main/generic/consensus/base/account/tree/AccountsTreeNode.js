@@ -22,7 +22,7 @@ class AccountsTreeNode {
     }
 
     /**
-     * @param {{_type, _prefix, ?_childrenSuffixes, ?_childrenHashes, ?_account}} o
+     * @param {AccountsTreeNode} o
      * @returns {AccountsTreeNode}
      */
     static copy(o) {

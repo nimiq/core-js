@@ -1,6 +1,6 @@
 class BlockInterlink {
     /**
-     * @param {{_hashes}} o
+     * @param {BlockInterlink} o
      * @returns {BlockInterlink}
      */
     static copy(o) {

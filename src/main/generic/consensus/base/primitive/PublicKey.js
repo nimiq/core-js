@@ -1,6 +1,6 @@
 class PublicKey extends Primitive {
     /**
-     * @param {{_obj}} o
+     * @param {PublicKey} o
      * @returns {PublicKey}
      */
     static copy(o) {

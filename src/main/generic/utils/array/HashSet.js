@@ -5,7 +5,7 @@ class HashSet {
     constructor(fnHash = HashSet._hash) {
         /** @type {Map.<string,V>} */
         this._map = new Map();
-        /** @type {function(object): string} */
+        /** @type {function(o: object): string} */
         this._fnHash = fnHash;
     }
 

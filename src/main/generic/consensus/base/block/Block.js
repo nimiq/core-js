@@ -1,6 +1,6 @@
 class Block {
     /**
-     * @param {{_header, _interlink, _body}} o
+     * @param {Block} o
      * @returns {Block}
      */
     static copy(o) {

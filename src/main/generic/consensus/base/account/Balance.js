@@ -1,6 +1,6 @@
 class Balance {
     /**
-     * @param {{_value, _nonce}} o
+     * @param {Balance} o
      * @returns {Balance}
      */
     static copy(o) {
@@ -8,6 +8,10 @@ class Balance {
         return new Balance(o._value, o._nonce);
     }
 
+    /**
+     * @param {number} [value]
+     * @param {number} [nonce]
+     */
     constructor(value = 0, nonce = 0) {
         if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
