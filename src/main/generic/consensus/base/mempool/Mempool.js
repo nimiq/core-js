@@ -1,88 +1,3 @@
-class MempoolTransactionSet {
-    constructor() {
-        /** @type {Array.<Transaction>} */
-        this._transactions = [];
-    }
-
-    /**
-     * @param {Transaction} transaction
-     * @return {MempoolTransactionSet}
-     */
-    add(transaction) {
-        this._transactions.push(transaction);
-        return this;
-    }
-
-    /** @type {Array.<Transaction>} */
-    get transactions() {
-        return this._transactions;
-    }
-
-    /** @type {number} */
-    get serializedSize() {
-        return this._transactions.map(t => t.serializedSize).reduce((a, b) => a + b, 0);
-    }
-
-    /** @type {number} */
-    get value() {
-        return this._transactions.map(t => t.value).reduce((a, b) => a + b, 0);
-    }
-
-    /** @type {number} */
-    get fee() {
-        return this._transactions.map(t => t.fee).reduce((a, b) => a + b, 0);
-    }
-
-    /** @type {PublicKey} */
-    get senderPubKey() {
-        return this._transactions.length > 0 ? this._transactions[0].senderPubKey : null;
-    }
-
-    /** @type {number} */
-    get length() {
-        return this._transactions.length;
-    }
-
-    /** @type {number} */
-    get nonce() {
-        return this._transactions[0].nonce;
-    }
-
-    /**
-     * @return {Transaction}
-     */
-    shift() {
-        return this._transactions.shift();
-    }
-
-    /**
-     * @return {Promise.<Address>}
-     */
-    async getSenderAddr() {
-        return this.senderPubKey.toAddress();
-    }
-
-    /**
-     * @param {MempoolTransactionSet} o
-     * @return {number}
-     */
-    compare(o) {
-        if (this.fee/this.serializedSize > o.fee/o.serializedSize) return -1;
-        if (this.fee/this.serializedSize < o.fee/o.serializedSize) return 1;
-        if (this.serializedSize > o.serializedSize) return -1;
-        if (this.serializedSize < o.serializedSize) return 1;
-        if (this.fee > o.fee) return -1;
-        if (this.fee < o.fee) return 1;
-        if (this.value > o.value) return -1;
-        if (this.value < o.value) return 1;
-        return this.transactions[0].compare(o.transactions[0]);
-    }
-
-    toString() {
-        return `MempoolTransactionSet{senderKey=${this.senderPubKey}, length=${this.length}, value=${this.value}, fee=${this.fee}}`;
-    }
-}
-
 class Mempool extends Observable {
     /**
      * @param {IBlockchain} blockchain
@@ -100,6 +15,8 @@ class Mempool extends Observable {
         this._transactionsByHash = new HashMap();
         /** @type {HashMap.<PublicKey, MempoolTransactionSet>} */
         this._transactionSetByKey = new HashMap();
+        /** @type {Synchronizer} */
+        this._synchronizer = new Synchronizer();
 
         // Listen for changes in the blockchain head to evict transactions that
         // have become invalid.
@@ -111,7 +28,11 @@ class Mempool extends Observable {
      * @fires Mempool#transaction-added
      * @returns {Promise.<boolean>}
      */
-    async pushTransaction(transaction) {
+    pushTransaction(transaction) {
+        return this._synchronizer.push(() => this._pushTransaction(transaction));
+    }
+
+    async _pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
@@ -177,11 +98,10 @@ class Mempool extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @param {boolean} [pickFromStore]
      * @returns {Promise.<boolean>}
      * @private
      */
-    async _verifyTransaction(transaction, pickFromStore = true) {
+    async _verifyTransaction(transaction) {
         // Verify transaction signature.
         if (!(await transaction.verifySignature())) {
             Log.w(Mempool, 'Rejected transaction - invalid signature', transaction);
@@ -235,7 +155,7 @@ class Mempool extends Observable {
      * @private
      */
     _verifyAdditionalTransaction(set, transaction, quiet = false) {
-        if (set.length > 0 && !set.senderPubKey.equals(transaction.senderPubKey)) return false;
+        if (set.length > 0 && !set.senderPubKey.equals(transaction.senderPubKey)) return Promise.resolve(false);
         return this._verifyBalanceAndNonce(transaction, quiet, set.value, set.fee, set.length);
     }
 
@@ -246,12 +166,12 @@ class Mempool extends Observable {
      * @private
      */
     _verifyTransactionSet(set, quiet = false) {
-        if (set.length === 0) return false;
+        if (set.length === 0) return Promise.resolve(false);
         return this._verifyBalanceAndNonce(set, quiet);
     }
 
     /**
-     * @fires Mempool#transaction-ready
+     * @fires Mempool#transactions-ready
      * @returns {Promise}
      * @private
      */
@@ -274,7 +194,7 @@ class Mempool extends Observable {
 
         // Tell listeners that the pool has updated after a blockchain head change.
         /**
-         * @event Mempool#transaction-ready
+         * @event Mempool#transactions-ready
          */
         this.fire('transactions-ready');
     }
