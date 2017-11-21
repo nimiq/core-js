@@ -164,7 +164,7 @@ class PartialLightChain extends LightChain {
             // Only in the dense suffix of the prefix we can calculate the difficulties.
             for (let i = 1; i < denseSuffix.length; i++) {
                 const block = denseSuffix[i];
-                const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
+                const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
             }
         }
