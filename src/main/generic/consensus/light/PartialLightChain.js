@@ -143,19 +143,29 @@ class PartialLightChain extends LightChain {
             // Delete our current chain.
             await this._store.truncate();
 
-            // Set the prefix head as the new chain head.
-            // TODO use the tail end of the dense suffix of the prefix instead.
-            this._headHash = headHash;
-            this._mainChain = new ChainData(head, head.difficulty, BlockUtils.realDifficulty(await head.pow()), true);
-            await this._store.putChainData(headHash, this._mainChain);
+            /** @type {Array.<Block>} */
+            const denseSuffix = await proof.prefix.denseSuffix();
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
-            for (let i = 0; i < proof.prefix.length - 1; i++) {
+            for (let i = 0; i < proof.prefix.length - denseSuffix.length; i++) {
                 const block = proof.prefix.blocks[i];
                 const hash = await block.hash();
                 const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
                 await this._store.putChainData(hash, data);
+            }
+
+            // Set the tail end of the dense suffix of the prefix as the new chain head.
+            const tailEnd = denseSuffix[0];
+            this._headHash = await tailEnd.hash();
+            this._mainChain = new ChainData(tailEnd, tailEnd.difficulty, BlockUtils.realDifficulty(await tailEnd.pow()), true);
+            await this._store.putChainData(this._headHash, this._mainChain);
+
+            // Only in the dense suffix of the prefix we can calculate the difficulties.
+            for (let i = 1; i < denseSuffix.length; i++) {
+                const block = denseSuffix[i];
+                const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
+                Assert.that(result >= 0);
             }
         }
 
