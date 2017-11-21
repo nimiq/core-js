@@ -137,6 +137,27 @@ class BlockChain {
     }
 
     /**
+     * @returns {Promise.<Array.<Block>>}
+     */
+    async denseSuffix() {
+        // Compute the dense suffix.
+        const denseSuffix = [this.head];
+        let denseSuffixHead = this.head;
+        for (let i = this.length - 2; i >= 0; i--) {
+            const block = this.blocks[i];
+            const hash = await block.hash();
+            if (!hash.equals(denseSuffixHead.prevHash)) {
+                break;
+            }
+
+            denseSuffix.push(block);
+            denseSuffixHead = block;
+        }
+        denseSuffix.reverse();
+        return denseSuffix;
+    }
+
+    /**
      * @returns {Promise.<boolean>}
      */
     async isAnchored() {

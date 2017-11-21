@@ -65,20 +65,9 @@ class ChainProof {
      */
     async _verifyDifficulty() {
         // Extract the dense suffix of the prefix.
-        const denseSuffix = [this.prefix.head.header];
-        let head = this.prefix.head;
-        for (let i = this.prefix.length - 2; i >= 0; i--) {
-            const block = this.prefix.blocks[i];
-            const hash = await block.hash();
-            if (!hash.equals(head.prevHash)) {
-                break;
-            }
-
-            denseSuffix.push(block.header);
-            head = block;
-        }
-        denseSuffix.reverse();
-
+        let denseSuffix = await this.prefix.denseSuffix();
+        /** Array.<BlockHeader> */
+        denseSuffix = denseSuffix.map(block => block.header);
         /** Array.<BlockHeader> */
         const denseChain = denseSuffix.concat(this.suffix.headers);
 

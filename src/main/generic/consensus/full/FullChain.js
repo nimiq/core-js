@@ -379,37 +379,39 @@ class FullChain extends BaseChain {
      * @param {Hash} blockHash
      * @returns {Promise.<boolean|Accounts>}
      */
-    async _getSnapshot(blockHash) {
-        const block = await this.getBlock(blockHash);
-        // Check if blockHash is a block on the main chain within the allowed window.
-        if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
-            return false;
-        }
-
-        // Check if there already is a snapshot, otherwise create it.
-        let snapshot = null;
-        if (!this._snapshots.contains(blockHash)) {
-            const tx = await this._accounts.transaction();
-            let currentHash = this._headHash;
-            // Save all snapshots up to blockHash (and stop when its predecessor would be next).
-            while (!block.prevHash.equals(currentHash)) {
-                const currentBlock = await this.getBlock(currentHash);
-
-                if (!this._snapshots.contains(currentHash)) {
-                    snapshot = await tx.snapshot();
-                    this._snapshots.put(currentHash, snapshot);
-                    this._snapshotOrder.unshift(currentHash);
-                }
-
-                await tx.revertBlock(currentBlock);
-                currentHash = currentBlock.prevHash;
+    _getSnapshot(blockHash) {
+        return this._synchronizer.push(async () => {
+            const block = await this.getBlock(blockHash);
+            // Check if blockHash is a block on the main chain within the allowed window.
+            if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
+                return false;
             }
-            await tx.abort();
-        } else {
-            snapshot = this._snapshots.get(blockHash);
-        }
 
-        return snapshot;
+            // Check if there already is a snapshot, otherwise create it.
+            let snapshot = null;
+            if (!this._snapshots.contains(blockHash)) {
+                const tx = await this._accounts.transaction();
+                let currentHash = this._headHash;
+                // Save all snapshots up to blockHash (and stop when its predecessor would be next).
+                while (!block.prevHash.equals(currentHash)) {
+                    const currentBlock = await this.getBlock(currentHash);
+
+                    if (!this._snapshots.contains(currentHash)) {
+                        snapshot = await tx.snapshot();
+                        this._snapshots.put(currentHash, snapshot);
+                        this._snapshotOrder.unshift(currentHash);
+                    }
+
+                    await tx.revertBlock(currentBlock);
+                    currentHash = currentBlock.prevHash;
+                }
+                await tx.abort();
+            } else {
+                snapshot = this._snapshots.get(blockHash);
+            }
+
+            return snapshot;
+        });
     }
 
     /**
@@ -424,7 +426,11 @@ class FullChain extends BaseChain {
             const oldestHash = this._snapshotOrder.shift();
             // If the hash is not reused, remove it.
             const oldestSnapshot = this._snapshots.get(oldestHash);
-            await oldestSnapshot.abort();
+            if (oldestSnapshot) {
+                await oldestSnapshot.abort();
+            } else {
+                Log.e(FullChain, `Snapshot with hash ${oldestHash.toBase64()} not found.`);
+            }
             this._snapshots.remove(oldestHash);
 
             // Add new snapshot.
