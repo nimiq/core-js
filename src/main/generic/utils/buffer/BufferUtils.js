@@ -53,10 +53,10 @@ class BufferUtils {
 
     /**
      * @param {Uint8Array} buf
-     * @param {string} [alphabet] Alphabet to use, defaults to base32hex (rfc 4648)
+     * @param {string} [alphabet] Alphabet to use
      * @return {string}
      */
-    static toBase32(buf, alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV') {
+    static toBase32(buf, alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVXY') {
         let shift = 3, carry = 0, byte, symbol, i, res = '';
 
         for (i = 0; i < buf.length; i++) {
@@ -84,10 +84,10 @@ class BufferUtils {
 
     /**
      * @param {string} base32
-     * @param {string} [alphabet] Alphabet to use, defaults to base32hex (rfc 4648)
+     * @param {string} [alphabet] Alphabet to use
      * @return {Uint8Array}
      */
-    static fromBase32(base32, alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV') {
+    static fromBase32(base32, alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVXY') {
         const charmap = [];
         alphabet.toUpperCase().split('').forEach((c, i) => {
             if (!(c in charmap)) charmap[c] = i;
