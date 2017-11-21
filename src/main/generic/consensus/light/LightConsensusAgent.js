@@ -32,16 +32,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._accountsRequest = null;
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
-        peer.channel.on('mempool', msg => this._onMempool(msg));
-
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
         peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
-
-        peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
-        peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
-        peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
     }
 
     /**
