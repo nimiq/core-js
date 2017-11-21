@@ -46,12 +46,8 @@ class HeaderChain {
      * @returns {Promise.<boolean>}
      */
     async verify() {
-        // Check that all headers in the chain are valid.
-        for (const header of this._headers) {
-            if (!(await header.verifyProofOfWork())) { // eslint-disable-line no-await-in-loop
-                return false;
-            }
-        }
+        // For performance reasons, we DO NOT VERIFY the validity of the blocks in the chain here.
+        // Block validity is checked by the Nano/LightChain upon receipt of a ChainProof.
 
         // Check that all headers in the chain are valid successors of one another.
         for (let i = this._headers.length - 1; i >= 1; i--) {

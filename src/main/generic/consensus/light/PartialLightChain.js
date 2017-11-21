@@ -37,6 +37,32 @@ class PartialLightChain extends LightChain {
      * @private
      */
     async _pushProof(proof) {
+        // Verify all prefix blocks that we don't know yet.
+        for (let i = 0; i < proof.prefix.length; i++) {
+            const block = proof.prefix.blocks[i];
+            const hash = await block.hash();
+            const knownBlock = await this._store.getBlock(hash);
+            if (knownBlock) {
+                proof.prefix.blocks[i] = knownBlock.toLight();
+            } else if (!(await block.verify())) {
+                Log.w(PartialLightChain, 'Rejecting proof - prefix contains invalid block');
+                return false;
+            }
+        }
+
+        // Verify all suffix headers that we don't know yet.
+        for (let i = 0; i < proof.suffix.length; i++) {
+            const header = proof.suffix.headers[i];
+            const hash = await header.hash();
+            const knownBlock = await this._store.getBlock(hash);
+            if (knownBlock) {
+                proof.suffix.headers[i] = knownBlock.header;
+            } else if (!(await header.verifyProofOfWork())) {
+                Log.w(PartialLightChain, 'Rejecting proof - suffix contains invalid header');
+                return false;
+            }
+        }
+
         // Check that the proof is valid.
         if (!(await proof.verify())) {
             Log.w(PartialLightChain, 'Rejecting proof - verification failed');

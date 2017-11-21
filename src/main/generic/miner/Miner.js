@@ -97,6 +97,9 @@ class Miner extends Observable {
         this._mempoolChanged = false;
 
         /** @type {boolean} */
+        this._restarting = false;
+
+        /** @type {boolean} */
         this._submittingBlock = false;
 
         // Listen to changes in the mempool which evicts invalid transactions
@@ -132,9 +135,10 @@ class Miner extends Observable {
 
     async _startWork() {
         // XXX Needed as long as we cannot unregister from transactions-ready events.
-        if (!this.working) {
+        if (!this.working || this._restarting) {
             return;
         }
+        this._restarting = true;
 
         // Construct next block.
         const block = await this._getNextBlock();
@@ -145,6 +149,7 @@ class Miner extends Observable {
         Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
         this._workerPool.startMiningOnBlock(block.header);
+        this._restarting = false;
     }
 
     /**

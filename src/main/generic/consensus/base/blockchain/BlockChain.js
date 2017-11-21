@@ -105,12 +105,8 @@ class BlockChain {
      * @returns {Promise.<boolean>}
      */
     async verify() {
-        // Check that all blocks in the chain are valid.
-        for (const block of this._blocks) {
-            if (!(await block.verify())) { // eslint-disable-line no-await-in-loop
-                return false;
-            }
-        }
+        // For performance reasons, we DO NOT VERIFY the validity of the blocks in the chain here.
+        // Block validity is checked by the Nano/LightChain upon receipt of a ChainProof.
 
         // Check that all blocks in the chain are valid successors of one another.
         for (let i = this._blocks.length - 1; i >= 1; i--) {

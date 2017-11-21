@@ -421,11 +421,14 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onMempool(msg) {
         // Query mempool for transactions
         const transactions = await this._mempool.getTransactions();
+        if (!transactions || transactions.length === 0) return;
 
-        // Send transactions back to sender.
+        // Send InvVector for each transaction in the mempool.
+        const vectors = [];
         for (const tx of transactions) {
-            this._peer.channel.tx(tx);
+            vectors.push(await InvVector.fromTransaction(tx));
         }
+        this._peer.channel.inv(vectors);
     }
 }
 /**
