@@ -157,8 +157,8 @@ class Nimiq {
     }
 
     /**
-     * Initialize the Nimiq client library and provide a {@link Core} object
-     * @param {function()} ready Function to be called once the Core object is available.
+     * Initialize the Nimiq client library.
+     * @param {function()} ready Function to be called once the library is available.
      * @param {function(errorCode: number)} error Function to be called when the initialization fails.
      */
     static init(ready, error) {
