@@ -92,9 +92,6 @@ class AccountsTree extends Observable {
         // Insert account into the tree at address.
         const prefix = address.toHex();
         await this._insertBatch(rootNode, prefix, account, []);
-
-        // Tell listeners that the account at address has changed.
-        this.fire(address.toBase64(), account, address);
     }
 
     /**
@@ -269,9 +266,6 @@ class AccountsTree extends Observable {
         // Insert account into the tree at address.
         const prefix = address.toHex();
         await this._insert(rootNode, prefix, account, []);
-
-        // Tell listeners that the account at address has changed.
-        this.fire(address.toBase64(), account, address);
     }
 
     /**
