@@ -87,16 +87,9 @@ class BlockBody {
             }
             previousTx = tx;
 
-            // Check that there are no transactions to oneself.
-            const txSenderAddr = await tx.getSenderAddr(); // eslint-disable-line no-await-in-loop
-            if (tx.recipientAddr.equals(txSenderAddr)) {
-                Log.w(BlockBody, 'Invalid block - sender and recipient coincide');
-                return false;
-            }
-
-            // Check that all transaction signatures are valid.
-            if (!(await tx.verifySignature())) { // eslint-disable-line no-await-in-loop
-                Log.w(BlockBody, 'Invalid block - invalid transaction signature');
+            // Check that all transactions are valid.
+            if (!(await tx.verify())) { // eslint-disable-line no-await-in-loop
+                Log.w(BlockBody, 'Invalid block - invalid transaction');
                 return false;
             }
         }

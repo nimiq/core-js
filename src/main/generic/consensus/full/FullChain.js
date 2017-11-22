@@ -207,7 +207,7 @@ class FullChain extends BaseChain {
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
-            Log.w(FullChain, 'Rejecting block - AccountsHash mismatch');
+            Log.w(FullChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
             accountsTx.abort();
             return false;
         }

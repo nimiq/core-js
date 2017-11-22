@@ -21,7 +21,7 @@ class NanoMempool extends Observable {
         }
 
         // Verify transaction.
-        if (!(await NanoMempool._verifyTransaction(transaction))) {
+        if (!(await transaction.verify())) {
             return false;
         }
 
@@ -59,28 +59,6 @@ class NanoMempool extends Observable {
             transactions.push(transaction);
         }
         return transactions;
-    }
-
-    /**
-     * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    static async _verifyTransaction(transaction) {
-        // Verify transaction signature.
-        if (!(await transaction.verifySignature())) {
-            Log.w(Mempool, 'Rejected transaction - invalid signature', transaction);
-            return false;
-        }
-
-        // Do not allow transactions where sender and recipient coincide.
-        const senderAddr = await transaction.getSenderAddr();
-        if (transaction.recipientAddr.equals(senderAddr)) {
-            Log.w(Mempool, 'Rejecting transaction - sender and recipient coincide');
-            return false;
-        }
-
-        return true;
     }
 
     /**

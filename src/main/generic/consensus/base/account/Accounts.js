@@ -37,11 +37,10 @@ class Accounts extends Observable {
     }
 
     /**
-     * @param {Hash} blockHash
      * @param {string} startPrefix
      * @returns {Promise.<AccountsTreeChunk>}
      */
-    async getAccountsTreeChunk(startPrefix) {
+    getAccountsTreeChunk(startPrefix) {
         return this._tree.getChunk(startPrefix, AccountsTreeChunk.SIZE_MAX);
     }
 
@@ -52,7 +51,7 @@ class Accounts extends Observable {
     async commitBlock(block) {
         const tree = await this._tree.transaction();
         try {
-            await this._execute(tree, block.body, (a, b) => a + b);
+            await this._commitBlockBody(tree, block.body);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -63,7 +62,7 @@ class Accounts extends Observable {
         const hash = await tree.root();
         if (!block.accountsHash.equals(hash)) {
             await tree.abort();
-            throw new Error('Failed to commit block - AccountsHash mismatch');
+            throw new Error('AccountsHash mismatch');
         }
         return tree.commit();
     }
@@ -75,7 +74,7 @@ class Accounts extends Observable {
     async commitBlockBody(body) {
         const tree = await this._tree.transaction();
         try {
-            await this._execute(tree, body, (a, b) => a + b);
+            await this._commitBlockBody(tree, body);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -93,7 +92,7 @@ class Accounts extends Observable {
 
         const hash = await this._tree.root();
         if (!block.accountsHash.equals(hash)) {
-            throw new Error('Failed to revert block - AccountsHash mismatch');
+            throw new Error('AccountsHash mismatch');
         }
         return this.revertBlockBody(block.body);
     }
@@ -105,7 +104,7 @@ class Accounts extends Observable {
     async revertBlockBody(body) {
         const tree = await this._tree.transaction();
         try {
-            await this._execute(tree, body, (a, b) => a - b);
+            await this._revertBlockBody(tree, body);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -170,12 +169,34 @@ class Accounts extends Observable {
     /**
      * @param {AccountsTree} tree
      * @param {BlockBody} body
-     * @param {Function} operator
      * @return {Promise.<void>}
      * @private
      */
-    async _execute(tree, body, operator) {
-        await this._executeTransactions(tree, body, operator);
+    async _commitBlockBody(tree, body) {
+        const operator = (a, b) => a + b;
+
+        for (const tx of body.transactions) {
+            await this._executeTransaction(tree, tx, operator);
+        }
+
+        await this._rewardMiner(tree, body, operator);
+    }
+
+    /**
+     * @param {AccountsTree} tree
+     * @param {BlockBody} body
+     * @return {Promise.<void>}
+     * @private
+     */
+    async _revertBlockBody(tree, body) {
+        const operator = (a, b) => a - b;
+
+        // Execute transactions in reverse order.
+        for (let i = body.transactions.length - 1; i >= 0; i--) {
+            const tx = body.transactions[i];
+            await this._executeTransaction(tree, tx, operator);
+        }
+
         await this._rewardMiner(tree, body, operator);
     }
 
@@ -194,30 +215,47 @@ class Accounts extends Observable {
 
     /**
      * @param {AccountsTree} tree
-     * @param {BlockBody} body
+     * @param {Transaction} tx
      * @param {Function} op
-     * @return {Promise.<void>}
+     * @returns {Promise.<void>}
      * @private
      */
-    async _executeTransactions(tree, body, op) {
-        for (const tx of body.transactions) {
-            await this._executeTransaction(tree, tx, op); // eslint-disable-line no-await-in-loop
-        }
-    }
     async _executeTransaction(tree, tx, op) {
         await this._updateSender(tree, tx, op);
         await this._updateRecipient(tree, tx, op);
     }
 
+    /**
+     * @param {AccountsTree} tree
+     * @param {Transaction} tx
+     * @param {Function} op
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _updateSender(tree, tx, op) {
         const addr = await tx.getSenderAddr();
-        await this._updateBalance(tree, addr, -tx.value - tx.fee, op);
+        await this._updateBalanceAndNonce(tree, addr, -tx.value - tx.fee, tx.nonce, op);
     }
 
+    /**
+     * @param {AccountsTree} tree
+     * @param {Transaction} tx
+     * @param {Function} op
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _updateRecipient(tree, tx, op) {
         await this._updateBalance(tree, tx.recipientAddr, tx.value, op);
     }
 
+    /**
+     * @param {AccountsTree} tree
+     * @param {Address} address
+     * @param {number} value
+     * @param {Function} operator
+     * @returns {Promise.<void>}
+     * @private
+     */
     async _updateBalance(tree, address, value, operator) {
         const balance = await this.getBalance(address, tree);
 
@@ -226,8 +264,32 @@ class Accounts extends Observable {
             throw new Error('Balance Error!');
         }
 
-        const newNonce = value < 0 ? operator(balance.nonce, 1) : balance.nonce;
-        if (newNonce < 0) {
+        const newBalance = new Balance(newValue, balance.nonce);
+        const newAccount = new Account(newBalance);
+        await tree.putBatch(address, newAccount);
+    }
+
+    /**
+     *
+     * @param {AccountsTree} tree
+     * @param {Address} address
+     * @param {number} value
+     * @param {number} nonce
+     * @param {Function} operator
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _updateBalanceAndNonce(tree, address, value, nonce, operator) {
+        const balance = await this.getBalance(address, tree);
+
+        const newValue = operator(balance.value, value);
+        if (newValue < 0) {
+            throw new Error('Balance Error!');
+        }
+
+        const newNonce = operator(balance.nonce, 1);
+        const reverting = newNonce < balance.nonce;
+        if (newNonce < 0 || (reverting && nonce !== newNonce) || (!reverting && nonce !== balance.nonce)) {
             throw new Error('Nonce Error!');
         }
 
