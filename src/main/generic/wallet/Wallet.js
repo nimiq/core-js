@@ -25,7 +25,7 @@ class Wallet {
 
     static load(hexBuf) {
         if (!StringUtils.isHexBytes(hexBuf, KeyPair.SERIALIZED_SIZE)) {
-            throw Wallet.ERR_INVALID_WALLET_SEED;
+            throw 'Invalid wallet seed';
         }
 
         return new Wallet(KeyPair.fromHex(hexBuf));
@@ -101,7 +101,4 @@ class Wallet {
         return this._keyPair.toHex();
     }
 }
-
-Wallet.ERR_INVALID_WALLET_SEED = -100;
-
 Class.register(Wallet);
