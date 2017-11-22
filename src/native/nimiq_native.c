@@ -84,9 +84,6 @@ uint32_t nimiq_hard_hash_target(void *out, void *in, const size_t inlen, const u
     for(noncer[0] = htonl(min_nonce); ntohl(noncer[0]) < max_nonce; noncer[0] = htonl(ntohl(noncer[0])+1)) {
         nimiq_hard_hash(out, in, inlen, m_cost);
         uint256_set_bytes(hash, out);
-        if (hash[0] < 0xffffffffffffll) {
-            printf("Found hash %.16llx%.16llx%.16llx%.16llx with nonce %d\n", hash[0], hash[1], hash[2], hash[3], ntohl(noncer[0]));
-        }
         if (uint256_compare(target, hash) > 0) {
             break;
         }

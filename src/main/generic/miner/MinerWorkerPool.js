@@ -134,7 +134,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
             await super._updateToSize();
         }
 
-        while (this._miningEnabled && this._activeNonces.length < this.size) {
+        while (this._miningEnabled && this._activeNonces.length < this.poolSize) {
             this._startMiner();
         }
     }
@@ -170,8 +170,8 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
                     nonce: nonceRange.maxNonce
                 });
             }
-            if (this._activeNonces.length > this.size) {
-                this._activeNonces.splice(this._activeNonces.indexOf(nonce), 1);
+            if (this._activeNonces.length > this.poolSize) {
+                this._activeNonces.splice(this._activeNonces.indexOf(nonceRange), 1);
                 return;
             } else {
                 const newMin = Math.max.apply(null, this._activeNonces.map((a) => a.maxNonce));
