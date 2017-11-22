@@ -103,16 +103,17 @@
             <hr/>
 
             <div class="info-block">
-                <strong>Work</strong>
-                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
-            </div>
-            <div class="info-block">
                 <strong>Height</strong>
                 <span id="bcHeight"></span>
             </div>
             <div class="info-block">
-                <strong>Accounts Hash</strong>
-                <hash id="bcAccountsHash"></hash>
+                <strong>Work</strong>
+                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
+            </div>
+            <div class="info-block">
+                <strong>Block Time</strong>
+                <span id="bcAverageBlockTime"></span> <small>average</small> /
+                <span id="bcLastBlockTime"></span> <small>last</small>
             </div>
             <hr/>
         </div>
@@ -251,13 +252,15 @@
 
             // Blockchain
             /** @type {HTMLElement} */
+            this._bcHeight = document.querySelector('#bcHeight');
+            /** @type {HTMLElement} */
             this._bcTotalDifficulty = document.querySelector('#bcTotalDifficulty');
             /** @type {HTMLElement} */
             this._bcTotalWork = document.querySelector('#bcTotalWork');
             /** @type {HTMLElement} */
-            this._bcHeight = document.querySelector('#bcHeight');
+            this._bcAverageBlockTime = document.querySelector('#bcAverageBlockTime');
             /** @type {HTMLElement} */
-            this._bcAccountsHash = document.querySelector('#bcAccountsHash');
+            this._bcLastBlockTime = document.querySelector('#bcLastBlockTime');
 
             // Head block
             /** @type {HTMLElement} */
@@ -368,7 +371,7 @@
             }
             var address;
             try {
-                address = new Nimiq.Address.fromUserFriendlyAddress(recipientAddr);
+                address = Nimiq.Address.fromUserFriendlyAddress(recipientAddr);
             } catch (e) {
                 elRecipientAddr.className = 'error';
                 return;
@@ -405,12 +408,10 @@
         }
 
         _headChanged(head) {
+            this._bcHeight.innerText = $.blockchain.height;
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
-            this._bcHeight.innerText = $.blockchain.height;
-            $.blockchain.accountsHash().then(function(accountsHash) {
-                this._bcAccountsHash.innerText = accountsHash.toBase64();
-            }.bind(this));
+            this._showBlockTime();
 
             this._hdHash.innerText = $.blockchain.headHash.toBase64();
             this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
@@ -503,6 +504,20 @@
                     el.innerHTML = `from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
+            }.bind(this));
+        }
+
+        _showBlockTime() {
+            const headBlock = $.blockchain.head;
+            const tailHeight = Math.max(headBlock.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
+
+            $.blockchain.getBlockAt(tailHeight).then(function(tailBlock) {
+                const averageBlockTime = (headBlock.timestamp - tailBlock.timestamp) / (Math.max(headBlock.height - tailBlock.height, 1));
+                this._bcAverageBlockTime.innerText = averageBlockTime + 's';
+            }.bind(this));
+
+            $.blockchain.getBlock(headBlock.prevHash).then(function(prevBlock) {
+                this._bcLastBlockTime.innerText = (prevBlock ? (headBlock.timestamp - prevBlock.timestamp) : 0) + 's';
             }.bind(this));
         }
     }
