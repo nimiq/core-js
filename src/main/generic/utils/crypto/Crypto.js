@@ -5,18 +5,27 @@ class Crypto {
      * @returns {Promise.<CryptoWorker>}
      * @private
      */
-    static async _cryptoWorker() {
-        if (!Crypto._cryptoWorkerPromise) {
-            //Crypto._cryptoWorkerPromise = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
-            Crypto._cryptoWorkerPromise = new Promise(async (resolve) => {
+    static _cryptoWorkerSync() {
+        if (!Crypto._cryptoWorkerPromiseSync) {
+            Crypto._cryptoWorkerPromiseSync = new Promise(async (resolve) => {
                 const impl = IWorker._workerImplementation[CryptoWorker.name];
                 await impl.init('crypto');
                 resolve(impl);
             });
         }
-        return Crypto._cryptoWorkerPromise;
+        return Crypto._cryptoWorkerPromiseSync;
     }
 
+    /**
+     * @returns {Promise.<CryptoWorker>}
+     * @private
+     */
+    static _cryptoWorkerAsync() {
+        if (!Crypto._cryptoWorkerPromiseAsync) {
+            Crypto._cryptoWorkerPromiseAsync = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+        }
+        return Crypto._cryptoWorkerPromiseAsync;
+    }
 
     // Signature implementation using ED25519 through WebAssembly
     static get publicKeySize() {
@@ -37,7 +46,7 @@ class Crypto {
     }
 
     static async publicKeyDerive(privateKey) {
-        const worker = await Crypto._cryptoWorker();
+        const worker = await Crypto._cryptoWorkerSync();
         return worker.publicKeyDerive(privateKey);
     }
 
@@ -92,12 +101,12 @@ class Crypto {
     }
 
     static async signatureCreate(privateKey, publicKey, data) {
-        const worker = await Crypto._cryptoWorker();
+        const worker = await Crypto._cryptoWorkerSync();
         return worker.signatureCreate(privateKey, publicKey, data);
     }
 
     static async signatureVerify(publicKey, data, signature) {
-        const worker = await Crypto._cryptoWorker();
+        const worker = await Crypto._cryptoWorkerSync();
         return worker.signatureVerify(publicKey, data, signature);
     }
 
@@ -137,7 +146,7 @@ class Crypto {
 
     // Light hash implementation using blake2b via WebAssembly WebWorker
     static async hashLight(arr) {
-        const worker = await Crypto._cryptoWorker();
+        const worker = await Crypto._cryptoWorkerSync();
         return worker.computeLightHash(arr);
     }
 
@@ -148,7 +157,7 @@ class Crypto {
 
     // Hard hash implementation using Argon2 via WebAssembly WebWorker
     static async hashHard(arr) {
-        const worker = await Crypto._cryptoWorker();
+        const worker = await Crypto._cryptoWorkerAsync();
         return worker.computeHardHash(arr);
     }
 
