@@ -27,7 +27,7 @@ class Transaction {
         if (!NumberUtils.isUint16(version)) throw 'Malformed version';
         if (!(senderPubKey instanceof PublicKey)) throw 'Malformed senderPubKey';
         if (!(recipientAddr instanceof Address)) throw 'Malformed recipientAddr';
-        if (!NumberUtils.isUint64(value) || value == 0) throw new Error('Malformed value');
+        if (!NumberUtils.isUint64(value) || value === 0) throw new Error('Malformed value');
         if (!NumberUtils.isUint64(fee)) throw 'Malformed fee';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         // Signature may be initially empty and can be set later.
@@ -113,6 +113,24 @@ class Transaction {
             + /*value*/ 8
             + /*fee*/ 8
             + /*nonce*/ 4;
+    }
+
+    /**
+     * @returns {Promise.<boolean>}
+     */
+    async verify() {
+        // Check that the signature is valid.
+        if (!(await this.verifySignature())) {
+            return false;
+        }
+
+        // Check that sender != recipient.
+        const senderAddr = await this.getSenderAddr();
+        if (this._recipientAddr.equals(senderAddr)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

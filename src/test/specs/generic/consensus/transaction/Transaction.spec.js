@@ -187,7 +187,18 @@ describe('Transaction', () => {
                     expect(isValid).toBe(true);
                     done();
                 });
+        })();
+    });
 
+    it('does not allow sender == receiver', (done) => {
+        (async function () {
+            const users = await TestBlockchain.getUsers(1);
+            const tx = await TestBlockchain.createTransaction(users[0].publicKey, users[0].address, 1000, 20, 0, users[0].privateKey);
+            tx.verify()
+                .then(isValid => {
+                    expect(isValid).toBe(false);
+                    done();
+                });
         })();
     });
 

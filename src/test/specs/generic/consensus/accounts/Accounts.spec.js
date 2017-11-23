@@ -72,7 +72,7 @@ describe('Accounts', () => {
             const fee2 = 5;
             const transactions = [
                 await TestBlockchain.createTransaction(user1.publicKey, user3.address, amount1, fee1, 0, user1.privateKey),
-                await TestBlockchain.createTransaction(user1.publicKey, user4.address, amount2, fee2, 0, user1.privateKey)
+                await TestBlockchain.createTransaction(user1.publicKey, user4.address, amount2, fee2, 1, user1.privateKey)
             ];
             const block = await testBlockchain.createBlock({
                 transactions: transactions,

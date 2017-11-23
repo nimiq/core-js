@@ -40,13 +40,11 @@ const TAG = 'Node';
     const consensus = await Nimiq.Consensus.full();
 
     const blockchain = consensus.blockchain;
-    const accounts = blockchain.accounts;
     const mempool = consensus.mempool;
     const network = consensus.network;
 
     const wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
     Nimiq.Log.i(TAG, `Wallet initialized for address ${wallet.address.toUserFriendlyAddress()}.`);
-    //Nimiq.Log.i(TAG, `Wallet initialized with seed ${wallet.dump()}.`);
 
     const miner = new Nimiq.Miner(blockchain, mempool, wallet.address);
 
@@ -83,4 +81,7 @@ const TAG = 'Node';
     miner.on('block-mined', (block) => {
         Nimiq.Log.i(TAG, `Block mined: ${block.header}`);
     });
-})().then(console.log, console.error);
+})().catch(e => {
+    console.error(e);
+    process.exit(1);
+});

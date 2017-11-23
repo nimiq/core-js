@@ -32,6 +32,11 @@ class Mempool extends Observable {
         return this._synchronizer.push(() => this._pushTransaction(transaction));
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @returns {Promise.<boolean>}
+     * @private
+     */
     async _pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
@@ -41,7 +46,8 @@ class Mempool extends Observable {
         }
 
         // Intrinsic transaction verification
-        if (!(await this._verifyTransaction(transaction))) {
+        if (!(await transaction.verify())) {
+            Log.w(Mempool, 'Rejected transaction - invalid transaction', transaction);
             return false;
         }
 
@@ -94,28 +100,6 @@ class Mempool extends Observable {
         } else {
             return [];
         }
-    }
-
-    /**
-     * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    async _verifyTransaction(transaction) {
-        // Verify transaction signature.
-        if (!(await transaction.verifySignature())) {
-            Log.w(Mempool, 'Rejected transaction - invalid signature', transaction);
-            return false;
-        }
-
-        // Do not allow transactions where sender and recipient coincide.
-        const senderAddr = await transaction.getSenderAddr();
-        if (transaction.recipientAddr.equals(senderAddr)) {
-            Log.w(Mempool, 'Rejecting transaction - sender and recipient coincide');
-            return false;
-        }
-
-        return true;
     }
 
     /**

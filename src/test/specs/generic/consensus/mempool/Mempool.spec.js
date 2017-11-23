@@ -33,7 +33,7 @@ describe('Mempool', () => {
             spyOn(Log, 'w');
 
             // Create a transaction
-            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523,23,42);
+            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 42);
 
             // Save the valid transaction signature and replace it with an invalid one
             const validSignature = transaction.signature;
@@ -46,7 +46,7 @@ describe('Mempool', () => {
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid signature', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid transaction', transaction);
 
             // Set the valid transaction signature to test different scenarios
             transaction.signature = validSignature;

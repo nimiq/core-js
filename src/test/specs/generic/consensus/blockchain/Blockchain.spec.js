@@ -1,6 +1,6 @@
 describe('Blockchain', () => {
 
-    it('will verify block transaction limit', (done) => {
+    it('verifies block transaction limit', (done) => {
         (async function () {
             // Now try to push a block which exceeds the maximum block size
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
@@ -12,74 +12,190 @@ describe('Blockchain', () => {
         })().then(done).catch(done.fail);
     });
 
-    it('will always verify a block before accepting it', (done) => {
+    it('rejects orphan blocks', (done) => {
         (async function () {
-            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
 
             // Try to push a block with an invalid prevHash and check that it fails
             // hash that does NOT match the one from Genesis
-            const zeroHash = new Hash(BufferUtils.fromBase64('0000000000000000000000000000000000000000000'));
-            // create block with invalid prevHash
-            let block = await testBlockchain.createBlock({prevHash: zeroHash});
-            // set wrong* prevHash      *(with close-to-1 probability)
-
-            let status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock({prevHash: zeroHash});
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_ORPHAN);
+        })().then(done, done.fail);
+    });
 
-            // Now try to push a block that has more than one transaction from the same
-            // sender public key
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr1 = testBlockchain._users[1].address;
-            const receiverAddr2 = testBlockchain._users[2].address;
-            // user[0] -> user[1] & user[0] -> user[2]
-            let transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, senderPrivKey), await TestBlockchain.createTransaction(senderPubKey, receiverAddr2, 1, 1, 0, undefined, senderPrivKey)];
-            block = await testBlockchain.createBlock({transactions: transactions});
-            status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(FullChain.ERR_INVALID);
+    it('rejects blocks from the future', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Now try to push a block with a timestamp that's more than
             // Block.TIMESTAMP_DRIFT_MAX seconds into the future
-            const spyObj = spyOn(Time,'now').and.returnValue(0);
+            const spyObj = spyOn(Time, 'now').and.returnValue(0);
             const timestamp = Block.TIMESTAMP_DRIFT_MAX + 1;
-            block = await testBlockchain.createBlock({timestamp: timestamp});
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock({timestamp: timestamp});
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
             spyObj.and.callThrough();
+        })().then(done, done.fail);
+    });
+
+    it('rejects blocks from the future', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Now try to push a block with the wrong difficulty
             const correctDifficulty = BlockUtils.targetToDifficulty(await testBlockchain.getNextTarget());
             const compactWrongDifficulty = BlockUtils.difficultyToCompact(correctDifficulty + 1);
-            block = await testBlockchain.createBlock({nBits: compactWrongDifficulty});
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock({nBits: compactWrongDifficulty});
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies block body hash', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
 
             // Now try to push a block with an invalid body hash
-            block = await testBlockchain.createBlock({bodyHash: zeroHash});
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock({bodyHash: zeroHash});
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies accounts hash', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
+
+            // Try to push a block that has an invalid AccountsHash
+            const block = await testBlockchain.createBlock({accountsHash: zeroHash});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies transaction order', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const senderPubKey = testBlockchain._users[0].publicKey;
+            const senderPrivKey = testBlockchain._users[0].privateKey;
+            const receiverAddr = testBlockchain._users[1].address;
+
+            let transactions = [
+                await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 1, senderPrivKey),
+                await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, senderPrivKey)
+            ];
+
+            const block = await testBlockchain.createBlock({transactions: transactions});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies transaction signatures', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const senderPubKey = testBlockchain._users[0].publicKey;
+            const receiverAddr = testBlockchain._users[1].address;
 
             // Now try to push a block with an invalid transaction signature
             const data = new Uint8Array(32);
             const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, testBlockchain._users[0].publicKey, data);
-            transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr1, 1, 1, 0, undefined, wrongSignature)];
+            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, undefined, wrongSignature)];
+            const block = await testBlockchain.createBlock({transactions: transactions});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies that sufficient funds are available', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const senderPubKey = testBlockchain._users[0].publicKey;
+            const senderPrivKey = testBlockchain._users[0].privateKey;
+            const receiverAddr = testBlockchain._users[1].address;
+
+            // Now try to push a block with a transaction with insufficient funds.
+            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, Policy.coinsToSatoshis(1000), 1, 0, senderPrivKey)];
+            const block = await testBlockchain.createBlock({transactions: transactions});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies transaction nonce', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const senderPubKey = testBlockchain._users[0].publicKey;
+            const senderPrivKey = testBlockchain._users[0].privateKey;
+            const receiverAddr = testBlockchain._users[1].address;
+
+            // Now try to push a block with a transaction with invalid nonce.
+            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 42, senderPrivKey)];
+            const block = await testBlockchain.createBlock({transactions: transactions});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('prevents transaction replay across blocks', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const senderPubKey = testBlockchain._users[0].publicKey;
+            const senderPrivKey = testBlockchain._users[0].privateKey;
+            const receiverAddr = testBlockchain._users[1].address;
+
+            // Include a valid transaction.
+            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, senderPrivKey)];
+            let block = await testBlockchain.createBlock({transactions: transactions});
+            let status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            // Include the same transaction again.
             block = await testBlockchain.createBlock({transactions: transactions});
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('verifies proof of work', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Now try to push a block that is not compliant with Proof of Work requirements
-            block = await testBlockchain.createBlock({nonce: 4711});
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock({nonce: 4711});
+            const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
+    it('ignores known blocks', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Push valid block.
-            block = await testBlockchain.createBlock();
-            status = await testBlockchain.pushBlock(block);
+            const block = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
 
             // Try to push the same block again.
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_KNOWN);
+            expect(testBlockchain.height).toBe(2);
+        })().then(done, done.fail);
+    });
+
+    it('verifies that block timestamps are increasing', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+
+            // Push valid block.
+            let block = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
             // Try to push a block that has a lower timestamp than the one
             // successfully pushed before and check that it fails
@@ -87,9 +203,31 @@ describe('Blockchain', () => {
             block = await testBlockchain.createBlock({timestamp: older});
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
 
-            // Finally, try to push a block that has an invalid AccountsHash
-            block = await testBlockchain.createBlock({accountsHash: zeroHash});
+    it('verifies that the block height is increasing', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+
+            // Push valid block.
+            let block = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            expect(testBlockchain.height).toBe(2);
+
+            // Try to push a block that has the same height as the block before.
+            block = await testBlockchain.createBlock({height: 2});
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+
+            // Try to push a block that has a lower height than the block before.
+            block = await testBlockchain.createBlock({height: 1});
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+
+            // Try to push a block that has an invalid height.
+            block = await testBlockchain.createBlock({height: 5});
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
         })().then(done, done.fail);
