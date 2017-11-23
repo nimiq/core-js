@@ -22,6 +22,9 @@ class LightConsensus extends Observable {
         /** @type {boolean} */
         this._established = false;
 
+        /** @type {Peer} */
+        this._syncPeer = null;
+
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
 
@@ -63,6 +66,8 @@ class LightConsensus extends Observable {
         agent.on('sync', () => this._onPeerSynced(agent.peer));
         agent.on('out-of-sync', () => this._onPeerOutOfSync(agent.peer));
 
+        this.bubble(agent, 'sync-chain-proof', 'verify-chain-proof', 'sync-accounts-tree', 'verify-accounts-tree', 'sync-finalize');
+
         // If no more peers connect within the specified timeout, start syncing.
         this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), LightConsensus.SYNC_THROTTLE);
     }
@@ -76,6 +81,7 @@ class LightConsensus extends Observable {
         if (peer.equals(this._syncPeer)) {
             Log.w(FullConsensus, `Peer ${peer.peerAddress} left during sync`);
             this._syncPeer = null;
+            this.fire('sync-failed', peer.peerAddress);
         }
 
         this._agents.remove(peer.id);
@@ -93,7 +99,8 @@ class LightConsensus extends Observable {
             }
 
             // Choose a random peer which we aren't sync'd with yet.
-            const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
+            const agents = this._agents.values().filter(agent => !agent.synced);
+            const agent = ArrayUtils.randomElement(agents);
             if (!agent) {
                 // We are synced with all connected peers.
                 if (this._agents.length > 0) {
@@ -119,7 +126,7 @@ class LightConsensus extends Observable {
 
             // Notify listeners when we start syncing and have not established consensus yet.
             if (!this._established) {
-                this.fire('syncing');
+                this.fire('syncing', agent.peer.peerAddress, agents.length - 1);
             }
 
             Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
@@ -135,6 +142,7 @@ class LightConsensus extends Observable {
         if (peer.equals(this._syncPeer)) {
             Log.v(FullConsensus, `Finished sync with peer ${peer.peerAddress}`);
             this._syncPeer = null;
+            this.fire('sync-finished', peer.peerAddress);
         }
         this._syncBlockchain();
     }

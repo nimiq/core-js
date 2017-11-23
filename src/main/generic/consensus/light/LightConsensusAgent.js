@@ -120,15 +120,19 @@ class LightConsensusAgent extends FullConsensusAgent {
                 switch (this._partialChain.state) {
                     case PartialLightChain.State.PROVE_CHAIN:
                         this._requestChainProof();
+                        this.fire('sync-chain-proof', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
                         this._requestAccountsTree();
+                        this.fire('sync-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.PROVE_BLOCKS:
                         this._requestProofBlocks();
+                        this.fire('verify-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.COMPLETE:
                         // Commit state on success.
+                        this.fire('sync-finalize', this._peer.peerAddress);
                         this._busy = true;
                         await this._partialChain.commit();
                         await this._applyOrphanedBlocks();
@@ -229,6 +233,10 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Clear timeout.
         this._timers.clearTimeout('getChainProof');
+
+        if (this._syncing) {
+            this.fire('verify-chain-proof', this._peer.peerAddress);
+        }
 
         // Push the proof into the LightChain.
         if (!(await this._partialChain.pushProof(msg.proof))) {
