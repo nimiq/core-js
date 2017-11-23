@@ -384,7 +384,10 @@ class IWorker {
                 while (call) {
                     // eslint-disable-next-line no-await-in-loop
                     await worker[call.name].apply(worker, call.args).then(call.resolve).catch(call.error);
-                    if (this._workers.indexOf(worker) === -1) return;
+                    if (this._workers.indexOf(worker) === -1) {
+                        worker.destroy();
+                        return;
+                    }
                     call = this._waitingCalls.shift();
                 }
                 this._freeWorkers.push(worker);
@@ -409,7 +412,11 @@ class IWorker {
                 while (this._workers.length > this._poolSize) {
                     const worker = this._freeWorkers.shift() || this._workers.pop();
                     const idx = this._workers.indexOf(worker);
-                    if (idx >= 0) this._workers.splice(idx, 1);
+                    if (idx >= 0) {
+                        // This was a free worker, also remove it from the worker list and destroy it now.
+                        this._workers.splice(idx, 1);
+                        worker.destroy();
+                    }
                 }
                 return this;
             }
