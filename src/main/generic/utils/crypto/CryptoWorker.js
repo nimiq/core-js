@@ -21,6 +21,12 @@ class CryptoWorker {
     async computeHardHash(input) {}
 
     /**
+     * @param {Array.<Uint8Array>} inputs
+     * @returns {Promise.<Array.<Uint8Array>>}
+     */
+    async computeHardHashBatch(inputs) {}
+
+    /**
      * @param {Uint8Array} input
      * @param {Uint8Array} hash
      */
@@ -48,6 +54,7 @@ class CryptoWorker {
      */
     async signatureVerify(publicKey, message, signature) {}
 }
+CryptoWorker.HASH_SIZE = 32;
 CryptoWorker.PUBLIC_KEY_SIZE = 32;
 CryptoWorker.PRIVATE_KEY_SIZE = 32;
 CryptoWorker.SIGNATURE_SIZE = 64;

@@ -32,18 +32,18 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Promise.<Uint8Array>}
      */
     async computeLightHash(input) {
-        const hash = new Uint8Array(32);
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(hash.length);
+            const wasmOut = Module.stackAlloc(CryptoWorker.HASH_SIZE);
             const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_light_hash(wasmOut, wasmIn, input.length);
             if (res !== 0) {
                 throw res;
             }
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
+            const hash = new Uint8Array(CryptoWorker.HASH_SIZE);
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.HASH_SIZE));
             return hash;
         } catch (e) {
             Log.w(CryptoWorkerImpl, e);
@@ -58,19 +58,51 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Promise.<Uint8Array>}
      */
     async computeHardHash(input) {
-        const hash = new Uint8Array(32);
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(hash.length);
+            const wasmOut = Module.stackAlloc(CryptoWorker.HASH_SIZE);
             const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_hard_hash(wasmOut, wasmIn, input.length, 512);
             if (res !== 0) {
                 throw res;
             }
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
+            const hash = new Uint8Array(CryptoWorker.HASH_SIZE);
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.HASH_SIZE));
             return hash;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
+     * @param {Array.<Uint8Array>} inputs
+     * @returns {Promise.<Array.<Uint8Array>>}
+     */
+    async computeHardHashBatch(inputs) {
+        const hashes = [];
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(CryptoWorker.HASH_SIZE);
+            const stackTmp = Module.stackSave();
+            for(const input of inputs) {
+                Module.stackRestore(stackTmp);
+                const wasmIn = Module.stackAlloc(input.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                const res = Module._nimiq_hard_hash(wasmOut, wasmIn, input.length, 512);
+                if (res !== 0) {
+                    throw res;
+                }
+                const hash = new Uint8Array(CryptoWorker.HASH_SIZE);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.HASH_SIZE));
+                hashes.push(hash);
+            }
+            return hashes;
         } catch (e) {
             Log.w(CryptoWorkerImpl, e);
             throw e;
