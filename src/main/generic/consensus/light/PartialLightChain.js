@@ -6,8 +6,9 @@ class PartialLightChain extends LightChain {
      * @returns {PartialLightChain}
      */
     constructor(store, accounts, proof) {
-        const tx = store.transaction(false);
-        super(tx, accounts);
+        //const tx = store.transaction(false);
+        //super(tx, accounts);
+        super(store, accounts);
 
         this._proof = proof;
 
@@ -491,9 +492,8 @@ class PartialLightChain extends LightChain {
         if (this._accountsTx) {
             await this._accountsTx.abort();
         }
-        const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
-        // await this._partialTree.commit();
-        // const result = await this._store.commit();
+        // const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
+        const result = await this._partialTree.commit();
         this._partialTree = null;
         this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;
@@ -510,7 +510,7 @@ class PartialLightChain extends LightChain {
         if (this._partialTree) {
             await this._partialTree.abort();
         }
-        await this._store.abort();
+        // await this._store.abort();
         this.fire('aborted');
     }
 

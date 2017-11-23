@@ -36,6 +36,18 @@ class LightChain extends FullChain {
      * @protected
      */
     async _init() {
+        const headHash = await this._store.getHead();
+        if (headHash) {
+            // Load main chain from store.
+            const mainChain = await this._store.getChainData(headHash);
+            Assert.that(!!mainChain, 'Failed to load main chain from storage');
+
+            // If, for example, the last sync was interrupted, clear everything.
+            if (!mainChain.head.accountsHash.equals(await this._accounts.hash())) {
+                await Promise.all([this._store.truncate(), this._accounts.truncate()]);
+            }
+        }
+
         await FullChain.prototype._init.call(this);
         this._proof = await this.getChainProof();
         return this;

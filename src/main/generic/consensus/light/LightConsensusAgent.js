@@ -535,6 +535,21 @@ class LightConsensusAgent extends FullConsensusAgent {
     }
 
     /**
+     * @param {Hash} hash
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Block>}
+     * @protected
+     * @override
+     */
+    async _getBlock(hash, includeForks = false) {
+        const block = await this._chain.getBlock(hash, includeForks);
+        if ((block && block.isFull()) || !this._syncing || this._catchup || !this._partialChain) {
+            return block;
+        }
+        return undefined;
+    }
+
+    /**
      * @returns {void}
      * @protected
      * @override
