@@ -131,7 +131,7 @@ class Accounts extends Observable {
     }
 
     /**
-     * @param {boolean} [enableWatchdog}
+     * @param {boolean} [enableWatchdog]
      * @returns {Promise.<Accounts>}
      */
     async transaction(enableWatchdog = true) {

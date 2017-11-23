@@ -42,7 +42,7 @@ class CryptoWorker {
 
     /**
      * @param {Uint8Array} publicKey
-     * @param {Uint8Array} data
+     * @param {Uint8Array} message
      * @param {Uint8Array} signature
      * @returns {Promise.<bool>}
      */

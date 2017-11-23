@@ -512,7 +512,7 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * @param {boolean} [enableWatchdog}
+     * @param {boolean} [enableWatchdog]
      * @returns {Promise.<AccountsTree>}
      */
     transaction(enableWatchdog = true) {

@@ -90,13 +90,16 @@ class AccountsTreeStore {
         return Promise.all(nodes);
     }
 
+    /**
+     * @returns {AccountsTreeStore}
+     */
     snapshot() {
         const snapshot = this._store.snapshot();
         return new AccountsTreeStore(snapshot);
     }
 
     /**
-     * @param {boolean} [enableWatchdog}
+     * @param {boolean} [enableWatchdog]
      * @returns {AccountsTreeStore}
      */
     transaction(enableWatchdog = true) {
@@ -104,6 +107,9 @@ class AccountsTreeStore {
         return new AccountsTreeStore(tx);
     }
 
+    /**
+     * @returns {Promise}
+     */
     truncate() {
         return this._store.truncate();
     }
