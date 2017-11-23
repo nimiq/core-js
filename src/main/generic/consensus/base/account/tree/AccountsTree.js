@@ -531,10 +531,11 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @param {AccountsTree} [tx]
      * @returns {Promise.<AccountsTree>}
      */
-    snapshot() {
-        const tree = new AccountsTree(this._store.snapshot());
+    snapshot(tx) {
+        const tree = new AccountsTree(this._store.snapshot(tx ? tx._store : undefined));
         return tree._init();
     }
 

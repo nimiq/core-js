@@ -397,7 +397,7 @@ class FullChain extends BaseChain {
                     const currentBlock = await this.getBlock(currentHash);
 
                     if (!this._snapshots.contains(currentHash)) {
-                        snapshot = await tx.snapshot();
+                        snapshot = await this._accounts.snapshot(tx);
                         this._snapshots.put(currentHash, snapshot);
                         this._snapshotOrder.unshift(currentHash);
                     }
@@ -409,6 +409,8 @@ class FullChain extends BaseChain {
             } else {
                 snapshot = this._snapshots.get(blockHash);
             }
+
+            Assert.that(block.accountsHash.equals(await snapshot.hash()), 'AccountsHash mismatch for snapshot of block ${blockHash}');
 
             return snapshot;
         });

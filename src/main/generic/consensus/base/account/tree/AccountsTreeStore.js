@@ -91,10 +91,14 @@ class AccountsTreeStore {
     }
 
     /**
+     * @param {AccountsTreeStore} [tx]
      * @returns {AccountsTreeStore}
      */
-    snapshot() {
+    snapshot(tx) {
         const snapshot = this._store.snapshot();
+        if (tx) {
+            snapshot.inherit(tx._store);
+        }
         return new AccountsTreeStore(snapshot);
     }
 

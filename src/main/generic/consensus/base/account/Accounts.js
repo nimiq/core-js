@@ -139,10 +139,11 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {Accounts} [tx]
      * @returns {Promise.<Accounts>}
      */
-    async snapshot() {
-        return new Accounts(await this._tree.snapshot());
+    async snapshot(tx) {
+        return new Accounts(await this._tree.snapshot(tx ? tx._tree : undefined));
     }
 
     /**
