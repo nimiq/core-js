@@ -3,7 +3,7 @@
 class Transaction {
 
     /**
-     * @param {{_version, _senderPubKey, _recipientAddr, _value, _fee, _nonce, _signature}} o
+     * @param {Transaction} o
      * @returns {Transaction}
      */
     static copy(o) {

@@ -1,6 +1,6 @@
 class BlockBody {
     /**
-     * @param {{_minerAddr, _transactions}} o
+     * @param {BlockBody} o
      * @returns {BlockBody}
      */
     static copy(o) {

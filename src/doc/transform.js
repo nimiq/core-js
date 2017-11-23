@@ -7,13 +7,13 @@
  * @param {Function} is - a convenience to check if the current fileName matches a glob pattern
  */
 module.exports = function transform({$, config, options, fileName, is}) {
-    if (fileName.indexOf('class/src/main') === 0) {
+    if (fileName.indexOf('class/src/main') > 0) {
         const h1 = $('h1');
         if (h1.text() !== 'Nimiq') {
             h1.prepend('<span style="opacity: 0.7;">Nimiq.</span>');
         }
     }
-    $('div[class=nav-dir-path]').each((_, _navLi) => {
+    $('a[class=nav-dir-path]').each((_, _navLi) => {
         const navLi = $(_navLi);
         if (navLi.text().startsWith('main/generic/')) {
             navLi.text(navLi.text().substring(13));

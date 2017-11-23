@@ -1,3 +1,6 @@
+/**
+ * @interface
+ */
 class IWorker {
     static async createProxy(clazz, name, worker) {
         return new (IWorker.Proxy(clazz))(worker, name);
@@ -162,8 +165,13 @@ class IWorker {
         return proxyClass;
     }
 
+    /**
+     * @param {object} clazz
+     * @return {Stub}
+     * @constructor
+     */
     static Stub(clazz) {
-        const stubClass = class extends clazz {
+        const Stub = class extends clazz {
             constructor() {
                 super();
             }
@@ -307,12 +315,12 @@ class IWorker {
         };
         for (const funcName of Object.getOwnPropertyNames(clazz.prototype)) {
             if (typeof clazz.prototype[funcName] === 'function' && funcName !== 'constructor') {
-                stubClass.prototype[funcName] = function () {
+                Stub.prototype[funcName] = function () {
                     throw `Not implemented in IWorker Stub: ${funcName}`;
                 };
             }
         }
-        return stubClass;
+        return Stub;
     }
 
     static Pool(clazz) {

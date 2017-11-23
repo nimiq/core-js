@@ -5,8 +5,17 @@
         "^main/generic/"
     ],
     "destination": "./dist/doc",
-    "unexportIdentifier": true,
     "plugins": [
+        {
+            "name": "esdoc-standard-plugin",
+            "option": {
+                "test": {
+                    "source": "./src/test/"
+                },
+                "unexportedIdentifier": {"enable": true},
+                "accessor": {"access": ["public", "protected"], "autoPrivate": true}
+            }
+        },
         {
             "name": "esdoc-plugin-transform-html",
             "option": "./src/doc/transform.js"

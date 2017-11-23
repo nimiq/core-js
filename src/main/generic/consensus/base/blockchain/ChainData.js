@@ -1,6 +1,6 @@
 class ChainData {
     /**
-     * @param {{_head, _totalDifficulty, _totalWork, _onMainChain}} o
+     * @param {ChainData} o
      * @returns {ChainData}
      */
     static copy(o) {

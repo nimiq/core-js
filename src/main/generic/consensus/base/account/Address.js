@@ -1,6 +1,6 @@
 class Address extends Primitive {
     /**
-     * @param {{_obj}} o
+     * @param {Address} o
      * @returns {Address}
      */
     static copy(o) {

@@ -1,7 +1,7 @@
 class MerkleTree {
     /**
      * @param {Array} values
-     * @param {function(*):Promise.<Hash>} fnHash
+     * @param {function(o: *):Promise.<Hash>} fnHash
      * @returns {Promise.<Hash>}
      */
     static computeRoot(values, fnHash = MerkleTree._hash) {
@@ -10,7 +10,7 @@ class MerkleTree {
 
     /**
      * @param {Array} values
-     * @param {function(*):Promise.<Hash>} fnHash
+     * @param {function(o: *):Promise.<Hash>} fnHash
      * @returns {Promise.<Hash>}
      * @private
      */

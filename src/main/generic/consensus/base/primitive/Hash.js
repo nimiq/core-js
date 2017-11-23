@@ -1,6 +1,6 @@
 class Hash extends Primitive {
     /**
-     * @param {{_obj}} o
+     * @param {Hash} o
      * @returns {Hash}
      */
     static copy(o) {

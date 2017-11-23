@@ -1,6 +1,6 @@
 class Account {
     /**
-     * @param {{_balance}} o
+     * @param {Account} o
      * @returns {Account}
      */
     static copy(o) {

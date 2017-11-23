@@ -1,6 +1,6 @@
 class BlockHeader {
     /**
-     * @param {{_version, _prevHash, _interlinkHash, _bodyHash, _accountsHash, _nBits, _height, _timestamp, _nonce}} o
+     * @param {BlockHeader} o
      * @returns {BlockHeader}
      */
     static copy(o) {
