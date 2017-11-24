@@ -168,13 +168,6 @@ class Accounts extends Observable {
     }
 
     /**
-     * @returns {Promise}
-     */
-    truncate() {
-        return this._tree.truncate();
-    }
-
-    /**
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @return {Promise.<void>}
