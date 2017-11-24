@@ -555,6 +555,14 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @returns {Promise}
+     */
+    async truncate() {
+        await this._store.truncate();
+        await this._init();
+    }
+
+    /**
      * @returns {Promise.<Hash>}
      */
     async root() {

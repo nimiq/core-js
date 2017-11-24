@@ -6,10 +6,12 @@ class PartialLightChain extends LightChain {
      * @returns {PartialLightChain}
      */
     constructor(store, accounts, proof) {
-        const tx = store.transaction(false);
-        super(tx, accounts);
+        super(store, accounts);
 
         this._proof = proof;
+
+        /** @type {ChainDataStore} */
+        this._realStore = store;
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
@@ -179,6 +181,7 @@ class PartialLightChain extends LightChain {
      * @protected
      */
     async _acceptProof(proof, suffix) {
+        this._store = this._realStore.transaction(false);
         // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
         // TODO use a store transaction here?
         const head = proof.prefix.head;
@@ -198,7 +201,18 @@ class PartialLightChain extends LightChain {
                 const hash = await block.hash();
                 const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
                 await this._store.putChainData(hash, data);
+
+                // FIXME: Hacky detection for low-RAM devices.
+                if (PlatformUtils.isMobileOrTablet() && i % PartialLightChain.BATCH_SIZE === 0) {
+                    // Tx Part 1a: Sparse part of prefix.
+                    await this._store.commit();
+                    this._store = this._realStore.transaction(false);
+                }
             }
+
+            // Tx Part 1b: Sparse part of prefix.
+            await this._store.commit();
+            this._store = this._realStore.transaction(false);
 
             // Set the tail end of the dense suffix of the prefix as the new chain head.
             const tailEnd = denseSuffix[0];
@@ -211,7 +225,18 @@ class PartialLightChain extends LightChain {
                 const block = denseSuffix[i];
                 const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
+
+                // FIXME: Hacky detection for low-RAM devices.
+                if (PlatformUtils.isMobileOrTablet() && i % PartialLightChain.BATCH_SIZE === 0) {
+                    // Tx Part 2a: Dense part of prefix.
+                    await this._store.commit();
+                    this._store = this._realStore.transaction(false);
+                }
             }
+
+            // Tx Part 2b: Dense part of prefix.
+            await this._store.commit();
+            this._store = this._realStore.transaction(false);
         }
 
         // Push all suffix blocks.
@@ -224,6 +249,10 @@ class PartialLightChain extends LightChain {
         this._partialTree = await this._accounts.partialAccountsTree();
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
+
+        // Tx Part 3: Suffix.
+        await this._store.commit();
+        this._store = this._realStore;
 
         this._proof = proof;
     }
@@ -485,6 +514,7 @@ class PartialLightChain extends LightChain {
         if (result === PartialAccountsTree.OK_COMPLETE) {
             this._state = PartialLightChain.State.PROVE_BLOCKS;
             this._accountsTx = new Accounts(await this._partialTree.transaction(false));
+            this._store = this._realStore.transaction(false);
         }
 
         return result;
@@ -510,10 +540,11 @@ class PartialLightChain extends LightChain {
         if (this._accountsTx) {
             await this._accountsTx.abort();
         }
-        const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
-        // await this._partialTree.commit();
-        // const result = await this._store.commit();
+        // const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
+        const result = await this._partialTree.commit();
         this._partialTree = null;
+        await this._store.commit();
+        this._store = this._realStore;
         this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;
     }
@@ -529,7 +560,11 @@ class PartialLightChain extends LightChain {
         if (this._partialTree) {
             await this._partialTree.abort();
         }
-        await this._store.abort();
+        if (this._store !== this._realStore) {
+            await this._store.abort();
+            this._store = this._realStore;
+        }
+        // await this._store.abort();
         this.fire('aborted');
     }
 
@@ -592,4 +627,6 @@ PartialLightChain.State = {
     PROVE_BLOCKS: 2,
     COMPLETE: 3
 };
+/** @type {number} */
+PartialLightChain.BATCH_SIZE = 50;
 Class.register(PartialLightChain);
