@@ -182,9 +182,15 @@ class PartialLightChain extends LightChain {
                 const hash = await block.hash();
                 const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
                 await this._store.putChainData(hash, data);
+
+                if (i % PartialLightChain.BATCH_SIZE === 0) {
+                    // Tx Part 1a: Sparse part of prefix.
+                    await this._store.commit();
+                    this._store = this._realStore.transaction(false);
+                }
             }
 
-            // Tx Part 1: Sparse part of prefix.
+            // Tx Part 1b: Sparse part of prefix.
             await this._store.commit();
             this._store = this._realStore.transaction(false);
 
@@ -199,9 +205,15 @@ class PartialLightChain extends LightChain {
                 const block = denseSuffix[i];
                 const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
+
+                if (i % PartialLightChain.BATCH_SIZE === 0) {
+                    // Tx Part 2a: Dense part of prefix.
+                    await this._store.commit();
+                    this._store = this._realStore.transaction(false);
+                }
             }
 
-            // Tx Part 2: Dense part of prefix.
+            // Tx Part 2b: Dense part of prefix.
             await this._store.commit();
             this._store = this._realStore.transaction(false);
         }
@@ -594,4 +606,6 @@ PartialLightChain.State = {
     PROVE_BLOCKS: 2,
     COMPLETE: 3
 };
+/** @type {number} */
+PartialLightChain.BATCH_SIZE = 200;
 Class.register(PartialLightChain);
