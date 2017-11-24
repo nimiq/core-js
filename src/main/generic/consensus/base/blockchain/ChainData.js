@@ -5,8 +5,10 @@ class ChainData {
      */
     static copy(o) {
         if (!o) return o;
+        const head = Block.unserialize(new SerialBuffer(o._head));
+        head.header._pow = Hash.unserialize(new SerialBuffer(o._pow));
         return new ChainData(
-            Block.copy(o._head),
+            head,
             o._totalDifficulty,
             o._totalWork,
             o._onMainChain
@@ -24,6 +26,19 @@ class ChainData {
         this._totalDifficulty = totalDifficulty;
         this._totalWork = totalWork;
         this._onMainChain = onMainChain;
+        this._height = head.height;
+    }
+
+    stripDown() {
+        Assert.that(this._head.header._pow instanceof Hash, 'Expected cashed PoW hash');
+        return {
+            _head: this._head.serialize(),
+            _totalDifficulty: this._totalDifficulty,
+            _totalWork: this._totalWork,
+            _onMainChain: this._onMainChain,
+            _height: this._height,
+            _pow: this._head.header._pow.serialize()
+        };
     }
 
     /** @type {Block} */

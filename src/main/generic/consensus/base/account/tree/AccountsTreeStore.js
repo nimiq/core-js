@@ -160,7 +160,6 @@ class AccountsTreeStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        obj._prefix = key; // Restore prefix.
         return AccountsTreeNode.copy(obj);
     }
 

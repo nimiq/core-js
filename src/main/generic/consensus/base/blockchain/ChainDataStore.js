@@ -29,7 +29,7 @@ class ChainDataStore {
      * @private
      */
     static _createIndexes(store) {
-        store.createIndex('height', ['_head', '_header', '_height']);
+        store.createIndex('height', ['_height']);
     }
 
     /**
@@ -213,7 +213,7 @@ class ChainDataStoreCodec {
      * @returns {*} Encoded object.
      */
     encode(obj) {
-        return obj;
+        return typeof obj === 'string' ? obj : obj.stripDown();
     }
 
     /**

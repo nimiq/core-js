@@ -27,14 +27,7 @@ class AccountsTreeNode {
      */
     static copy(o) {
         if (!o) return o;
-        let arg, arg2;
-        if (AccountsTreeNode.isBranchType(o._type)) {
-            arg = o._childrenSuffixes;
-            arg2 = o._childrenHashes.map(it => Hash.copy(it));
-        } else {
-            arg = Account.copy(o._account);
-        }
-        return new AccountsTreeNode(o._type, o._prefix, arg, arg2);
+        return AccountsTreeNode.unserialize(new SerialBuffer(o));
     }
 
     /**
@@ -142,6 +135,13 @@ class AccountsTreeNode {
             + /*extra byte varLengthString prefix*/ 1
             + this._prefix.length
             + payloadSize;
+    }
+
+    /**
+     * @returns {SerialBuffer}
+     */
+    stripDown() {
+        return this.serialize();
     }
 
     /**
@@ -323,24 +323,6 @@ class AccountsTreeNode {
             }
         }
         return true;
-    }
-
-    /**
-     * @returns {{_type: *}}
-     */
-    stripDown() {
-        const obj = {
-            _type: this._type
-        };
-
-        if (this.isBranch()) {
-            obj._childrenSuffixes = this._childrenSuffixes;
-            obj._childrenHashes = this._childrenHashes;
-        } else {
-            obj._account = this._account;
-        }
-
-        return obj;
     }
 }
 AccountsTreeNode.BRANCH = 0x00;
