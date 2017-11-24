@@ -125,10 +125,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
             let block = this._blockchain.head;
             for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
-                locators.push(block.prevHash);
-                if (block) {
-                    block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+                if (!block) {
+                    break;
                 }
+                locators.push(block.prevHash);
+                block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
             }
 
             let step = 2;
