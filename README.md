@@ -5,18 +5,18 @@
 For a high-level introduction checkout the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
 
 ## Library Demo
-Check out our betanet [Browser Miner](https://nimiq.com/betanet).
+Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](https://nimiq.com/wallet).
 
 ## Quickstart
 
 1. Clone this repository `git clone https://github.com/nimiq-network/core`.
 2. Run `npm install` or `yarn`
 3. Run `npm run build` or `yarn build`
-4. Open `clients/browser/index.html` in your browser to access the Browser Client.
+4. Open `clients/browser/(full|light|nano).html` in your browser to access the Browser Client.
 
 ## Web Developers
 ### Most simple Web Application on top of the Nimiq Blockchain
-A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://robinlinus.github.io/nimiq-demo/).
+A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://demo.nimiq.com/).
 
 ### Installation for Web Developers
 Follow the Quickstart guide or use our CDN:
@@ -29,7 +29,7 @@ Follow the Quickstart guide or use our CDN:
 ### Run Client
 
 #### Run Browser Client
-Open `clients/browser/index.html` in your browser.
+Open `clients/browser/(full|light|nano).html` in your browser.
 
 #### Run NodeJs client
 
@@ -59,7 +59,7 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 ## Core Developers
 Developers are free to choose between npm and yarn for managing the dependencies.
 ### Installation for Core Developers (using npm)
-- NodeJs latest version (> 7.9.0)
+- NodeJs latest version (> 8.0.0)
 - Dependencies: `npm install`
 - NodeJs dependencies:
 
@@ -71,7 +71,7 @@ Developers are free to choose between npm and yarn for managing the dependencies
 	```
 
 ### Installation for Core Developers (using yarn)
-- NodeJs latest version (> 7.9.0)
+- NodeJs latest version (> 8.0.0)
 - Dependencies: `yarn`
 - NodeJs dependencies:
 
