@@ -37,6 +37,25 @@ class NanoChain extends BaseChain {
      * @private
      */
     async _pushProof(proof) {
+        const toDo = [];
+        for (let i = 0; i < proof.prefix.length; ++i) {
+            const block = proof.prefix.blocks[i];
+            const hash = await block.hash();
+            const knownBlock = await this._store.getBlock(hash);
+            if (!knownBlock && !block.header._pow) {
+                toDo.push(block.header);
+            }
+        }
+        for (let i = 0; i < proof.suffix.length; ++i) {
+            const header = proof.suffix.headers[i];
+            const hash = await header.hash();
+            const knownBlock = await this._store.getBlock(hash);
+            if (!knownBlock && !header._pow) {
+                toDo.push(header);
+            }
+        }
+        await Crypto.manyPow(toDo);
+
         // Verify all prefix blocks that we don't know yet.
         for (let i = 0; i < proof.prefix.length; i++) {
             const block = proof.prefix.blocks[i];

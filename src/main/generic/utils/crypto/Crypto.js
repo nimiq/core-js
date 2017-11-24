@@ -161,6 +161,36 @@ class Crypto {
         return worker.computeHardHash(arr);
     }
 
+    static async hashHardBatch(arrarr) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        return worker.computeHardHashBatch(arrarr);
+    }
+
+    /**
+     * @param {Array.<BlockHeader>} headers
+     * @return {Promise.<void>}
+     */
+    static async manyPow(headers) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        const size = worker.poolSize || 1;
+        let partitions = [];
+        let j = 0;
+        for (let i = 0; i < size; ++i) {
+            partitions.push([]);
+            for (; j < ((i + 1) / size) * headers.length; ++j) {
+                partitions[i].push(headers[j].serialize());
+            }
+        }
+        const promises = [];
+        for (const part of partitions) {
+            promises.push(worker.computeHardHashBatch(part));
+        }
+        const pows = (await Promise.all(promises)).reduce((a, b) => [...a, ...b], []);
+        for(let i = 0; i < headers.length; ++i) {
+            headers[i]._pow = new Hash(pows[i]);
+        }
+    }
+
     // Hard hash implementation using double light hash
     //static async hashHard(arr) {
     //    return Crypto.hashLight(await Crypto.hashLight(arr));
