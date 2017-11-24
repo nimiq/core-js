@@ -184,6 +184,10 @@ class PartialLightChain extends LightChain {
                 await this._store.putChainData(hash, data);
             }
 
+            // Tx Part 1: Sparse part of prefix.
+            await this._store.commit();
+            this._store = this._realStore.transaction(false);
+
             // Set the tail end of the dense suffix of the prefix as the new chain head.
             const tailEnd = denseSuffix[0];
             this._headHash = await tailEnd.hash();
@@ -196,6 +200,10 @@ class PartialLightChain extends LightChain {
                 const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
             }
+
+            // Tx Part 2: Dense part of prefix.
+            await this._store.commit();
+            this._store = this._realStore.transaction(false);
         }
 
         // Push all suffix blocks.
@@ -209,6 +217,7 @@ class PartialLightChain extends LightChain {
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
 
+        // Tx Part 3: Suffix.
         await this._store.commit();
         this._store = this._realStore;
 
