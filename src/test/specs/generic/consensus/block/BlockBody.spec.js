@@ -21,10 +21,14 @@ describe('BlockBody', () => {
         })().then(done, done.fail);
     });
 
-    it('is serializable and unserializable', () => {
-        const blockBody1 = new BlockBody(minerAddress, [transaction1, transaction2, transaction3, transaction4]);
-        const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
-        expect(BufferUtils.equals(blockBody1, blockBody2)).toBe(true);
+    it('is serializable and unserializable', (done) => {
+        (async () => {
+            const blockBody1 = new BlockBody(minerAddress, [transaction1, transaction2], BufferUtils.fromAscii('Random'));
+            const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
+            expect(BufferUtils.equals(blockBody1, blockBody2)).toBe(true);
+            expect(BufferUtils.equals(await blockBody1.hash(), await blockBody2.hash())).toBe(true);
+            expect(BufferUtils.equals(blockBody1.extraData, blockBody2.extraData)).toBe(true);
+        })().then(done, done.fail);
     });
 
     it('transactions must be well defined', () => {
