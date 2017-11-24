@@ -183,7 +183,8 @@ class PartialLightChain extends LightChain {
                 const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
                 await this._store.putChainData(hash, data);
 
-                if (i % PartialLightChain.BATCH_SIZE === 0) {
+                // FIXME: Hacky detection for low-RAM devices.
+                if (PlatformUtils.isMobileOrTablet() && i % PartialLightChain.BATCH_SIZE === 0) {
                     // Tx Part 1a: Sparse part of prefix.
                     await this._store.commit();
                     this._store = this._realStore.transaction(false);
@@ -206,7 +207,8 @@ class PartialLightChain extends LightChain {
                 const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
 
-                if (i % PartialLightChain.BATCH_SIZE === 0) {
+                // FIXME: Hacky detection for low-RAM devices.
+                if (PlatformUtils.isMobileOrTablet() && i % PartialLightChain.BATCH_SIZE === 0) {
                     // Tx Part 2a: Dense part of prefix.
                     await this._store.commit();
                     this._store = this._realStore.transaction(false);
@@ -607,5 +609,5 @@ PartialLightChain.State = {
     COMPLETE: 3
 };
 /** @type {number} */
-PartialLightChain.BATCH_SIZE = 200;
+PartialLightChain.BATCH_SIZE = 50;
 Class.register(PartialLightChain);
