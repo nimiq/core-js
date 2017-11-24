@@ -28,7 +28,7 @@ class LightChain extends FullChain {
     constructor(store, accounts) {
         super(store, accounts);
 
-        this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
+        this._proof = null;
     }
 
     /**
@@ -37,7 +37,9 @@ class LightChain extends FullChain {
      */
     async _init() {
         await FullChain.prototype._init.call(this);
-        this._proof = await this.getChainProof();
+        if (!this._proof) {
+            this._proof = await this.getChainProof();
+        }
         return this;
     }
 
