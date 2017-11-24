@@ -44,5 +44,5 @@ class ConsensusDB extends JDB.JungleDB {
     }
 }
 ConsensusDB._instance = null;
-ConsensusDB.VERSION = 2;
+ConsensusDB.VERSION = 3;
 Class.register(ConsensusDB);
