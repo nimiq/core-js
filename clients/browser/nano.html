@@ -186,6 +186,12 @@
             $.consensus.on('syncing', function() {
                 bcTitle.classList.add('syncing');
             }.bind(this));
+            $.consensus.on('sync-chain-proof', function() {
+                bcTitle.classList.add('sync-chain-proof');
+            }.bind(this));
+            $.consensus.on('verify-chain-proof', function() {
+                bcTitle.classList.add('verify-chain-proof');
+            }.bind(this));
 
             $.consensus.on('established', function() {
                 bcTitle.classList.add('consensus-established');
@@ -194,7 +200,7 @@
             }.bind(this));
 
             $.consensus.on('lost', function() {
-                bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'consensus-established');
+                bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'sync-chain-proof', 'verify-chain-proof', 'consensus-established');
                 txSubmitBtn.setAttribute('disabled', '');
             }.bind(this));
 

@@ -135,6 +135,7 @@ class LightConsensus extends Observable {
     }
 
     /**
+     * @param {Peer} peer
      * @private
      */
     _onPeerSynced(peer) {

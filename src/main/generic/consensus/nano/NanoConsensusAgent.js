@@ -47,6 +47,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         const headBlock = await this._blockchain.getBlock(this._peer.headHash);
         if (!headBlock) {
             this._requestChainProof();
+            this.fire('sync-chain-proof', this._peer.peerAddress);
         } else {
             this._syncFinished();
         }
@@ -99,6 +100,10 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Clear timeout.
         this._timers.clearTimeout('getChainProof');
+
+        if (this._syncing) {
+            this.fire('verify-chain-proof', this._peer.peerAddress);
+        }
 
         // Push the proof into the NanoChain.
         if (!(await this._blockchain.pushProof(msg.proof))) {

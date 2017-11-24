@@ -99,7 +99,7 @@
 
     <div class="right">
         <div class="info">
-            <div class="info-title not-connected" id="blockchain-title">Blockchain</div>
+            <div class="info-title not-connected" id="bcTitle">Blockchain</div>
             <hr/>
 
             <div class="info-block">
@@ -212,10 +212,6 @@
                 this._networkChanged();
             }.bind(this));
 
-            $.accounts.on($.wallet.address, function(account) {
-                this._balanceChanged(account._balance);
-            }.bind(this));
-
             $.mempool.on('*', function() {
                 this._mempoolChanged();
             }.bind(this));
@@ -234,19 +230,38 @@
                 this._blockMined()
             }.bind(this));
 
+            const bcTitle = document.querySelector('#bcTitle');
+            const txSubmitBtn = document.querySelector('#txSubmitBtn');
+            txSubmitBtn.onclick = function(e) {
+                this._submitTransaction(e);
+            }.bind(this);
+
             $.consensus.on('syncing', function() {
-                document.getElementById('blockchain-title').classList.add('syncing');
+                bcTitle.classList.add('syncing');
+            }.bind(this));
+            $.consensus.on('sync-chain-proof', function() {
+                bcTitle.classList.add('sync-chain-proof');
+            }.bind(this));
+            $.consensus.on('verify-chain-proof', function() {
+                bcTitle.classList.add('verify-chain-proof');
+            }.bind(this));
+            $.consensus.on('sync-accounts-tree', function() {
+                bcTitle.classList.add('sync-accounts-tree');
+            }.bind(this));
+            $.consensus.on('verify-accounts-tree', function() {
+                bcTitle.classList.add('verify-accounts-tree');
             }.bind(this));
 
             $.consensus.on('established', function() {
-                document.getElementById('blockchain-title').classList.add('consensus-established');
-                document.getElementById('txSubmitBtn').removeAttribute('disabled');
+                bcTitle.classList.add('consensus-established');
+                txSubmitBtn.removeAttribute('disabled');
             }.bind(this));
 
             $.consensus.on('lost', function() {
                 $.miner.stopWork();
-                document.getElementById('blockchain-title').classList.remove('initializing', 'syncing', 'consensus-established');
-                document.getElementById('txSubmitBtn').setAttribute('disabled', '');
+                bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'sync-chain-proof', 'verify-chain-proof',
+                    'sync-accounts-tree', 'verify-accounts-tree', 'consensus-established');
+                txSubmitBtn.setAttribute('disabled', '');
                 //document.getElementById('mnrStartBtn').setAttribute('disabled', '');
             }.bind(this));
 
@@ -308,11 +323,6 @@
                 this._balanceChanged(balance);
                 document.querySelector('#wltBalance').classList.add('icon-nimiq');
             }.bind(this));
-
-            var txSubmitBtn = document.querySelector('#txSubmitBtn');
-            txSubmitBtn.onclick = function(e) {
-                this._submitTransaction(e);
-            }.bind(this);
 
             // Mempool
             /** @type {HTMLElement} */
@@ -526,7 +536,9 @@
     var overlay_ = document.querySelector('#overlay');
 
     function startNimiq() {
-        document.getElementById('blockchain-title').classList.add('initializing');
+        const bcTitle = document.querySelector('#bcTitle');
+        bcTitle.classList.add('initializing');
+
         document.querySelector('#wltAddress').innerHTML = '<i>loading...</i>';
 
         Nimiq.init(async function() {
@@ -544,12 +556,13 @@
             $.wallet = await Nimiq.Wallet.getPersistent();
             $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.wallet.address);
 
+            bcTitle.classList.add('connecting');
             $.network.connect();
 
             overlay_.style.display = 'none';
             window.ui = new MinerUI($);
         }, function(code) {
-            document.getElementById('blockchain-title').classList.remove('initializing');
+            bcTitle.classList.remove('initializing');
             document.querySelector('#wltAddress').innerText = '';
 
             switch (code) {

@@ -296,7 +296,6 @@ hash {
     background: orange;
     opacity: 0.8;
 }
-
 .syncing::after {
     content: "Syncronizing...";
     position: absolute;
@@ -304,7 +303,43 @@ hash {
     right: 20px;
     font-style: italic;
     font-size: 14px;
-    opacity: 0.6;
+    opacity: 0.7;
+}
+.sync-chain-proof::after {
+    content: "Downloading proof...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.verify-chain-proof::after {
+    content: "Verifying proof...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.sync-accounts-tree::after {
+    content: "Downloading accounts...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.verify-accounts-tree::after {
+    content: "Verifying accounts...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
 }
 
 .consensus-established {
