@@ -556,8 +556,9 @@ class AccountsTree extends Observable {
     /**
      * @returns {Promise}
      */
-    truncate() {
-        return this._store.truncate();
+    async truncate() {
+        await this._store.truncate();
+        await this._init();
     }
 
     /**
