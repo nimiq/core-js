@@ -6,11 +6,12 @@ class PartialLightChain extends LightChain {
      * @returns {PartialLightChain}
      */
     constructor(store, accounts, proof) {
-        //const tx = store.transaction(false);
-        //super(tx, accounts);
         super(store, accounts);
 
         this._proof = proof;
+
+        /** @type {ChainDataStore} */
+        this._realStore = store;
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
@@ -161,6 +162,7 @@ class PartialLightChain extends LightChain {
      * @protected
      */
     async _acceptProof(proof, suffix) {
+        this._store = this._realStore.transaction(false);
         // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
         // TODO use a store transaction here?
         const head = proof.prefix.head;
@@ -206,6 +208,9 @@ class PartialLightChain extends LightChain {
         this._partialTree = await this._accounts.partialAccountsTree();
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
+
+        await this._store.commit();
+        this._store = this._realStore;
 
         this._proof = proof;
     }
@@ -467,6 +472,7 @@ class PartialLightChain extends LightChain {
         if (result === PartialAccountsTree.OK_COMPLETE) {
             this._state = PartialLightChain.State.PROVE_BLOCKS;
             this._accountsTx = new Accounts(await this._partialTree.transaction(false));
+            this._store = this._realStore.transaction(false);
         }
 
         return result;
@@ -495,6 +501,8 @@ class PartialLightChain extends LightChain {
         // const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
         const result = await this._partialTree.commit();
         this._partialTree = null;
+        await this._store.commit();
+        this._store = this._realStore;
         this.fire('committed', this._proof, this._headHash, this._mainChain);
         return result;
     }
@@ -509,6 +517,10 @@ class PartialLightChain extends LightChain {
         }
         if (this._partialTree) {
             await this._partialTree.abort();
+        }
+        if (this._store !== this._realStore) {
+            await this._store.abort();
+            this._store = this._realStore;
         }
         // await this._store.abort();
         this.fire('aborted');
