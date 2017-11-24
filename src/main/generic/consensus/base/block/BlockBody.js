@@ -7,7 +7,7 @@ class BlockBody {
         if (!o) return o;
         const minerAddr = Address.copy(o._minerAddr);
         const transactions = o._transactions.map(it => Transaction.copy(it));
-        return new BlockBody(minerAddr, transactions);
+        return new BlockBody(minerAddr, transactions, o.extraData);
     }
 
     /**
@@ -23,7 +23,7 @@ class BlockBody {
         /** @type {Array.<Transaction>} */
         this._transactions = transactions;
         /** @type {Uint8Array} */
-        this._extraData = new Uint8Array(0);
+        this._extraData = extraData;
         /** @type {Hash} */
         this._hash = null;
     }
