@@ -744,8 +744,14 @@ PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddresses.MAX_FAILED_BACKOFF = 10; // 10 minutes
 PeerAddresses.INITIAL_FAILED_BACKOFF = 1; // 1 minute
 PeerAddresses.SEED_PEERS = [
+    WsPeerAddress.seed('alpacash.com', 8080),
+    WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
+    WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
+    WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
+    WsPeerAddress.seed('emily.nimiq-network.com', 443),
     WsPeerAddress.seed('dev.nimiq-network.com', 8080)
-    // WsPeerAddress.seed('localhost', 8080)
 ];
 Class.register(PeerAddresses);
 
