@@ -160,6 +160,15 @@ class Mempool extends Observable {
      * @private
      */
     async _evictTransactions() {
+        return this._synchronizer.push(() => this.__evictTransactions());
+    }
+
+    /**
+     * @fires Mempool#transactions-ready
+     * @returns {Promise}
+     * @private
+     */
+    async __evictTransactions() {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
@@ -168,7 +177,9 @@ class Mempool extends Observable {
 
             while (!(await this._verifyTransactionSet(set, true))) {
                 const transaction = set.shift();
-                this._transactionsByHash.remove(await transaction.hash());
+                if (transaction) {
+                    this._transactionsByHash.remove(await transaction.hash());
+                }
                 if (set.length === 0) {
                     this._transactionSetByKey.remove(senderPubKey);
                     break;
