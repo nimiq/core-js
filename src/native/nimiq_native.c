@@ -1,7 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <arpa/inet.h>
+#if defined(_WIN32)
+    #include <winsock2.h>
+    #pragma comment(lib, "Ws2_32.lib")
+#else
+    #include <arpa/inet.h>
+#endif
 #include "nimiq_native.h"
 
 static inline uint16_t bswap_16(uint16_t x) {
