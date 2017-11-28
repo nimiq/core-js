@@ -21,6 +21,7 @@ RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y python build-essential
 
 RUN wget ${RELEASE} && tar -xvzf ./${BRANCH}.tar.gz
+RUN cd /core-${BRANCH}/clients/nodejs && npm install
 RUN cd /core-${BRANCH} && npm install && npm run build
 
 EXPOSE ${PORT}
