@@ -141,7 +141,7 @@ describe('Accounts', () => {
                 transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.BLOCK_REWARD, 0, nonce++, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);
-            transactions.sort((a, b) => a.compareForBlock(b));
+            transactions.sort((a, b) => a.compareBlockOrder(b));
             expect(await treeTx.commit()).toBeTruthy();
             const block = await testBlockchain.createBlock({transactions: transactions});
             expect(await block.verify()).toBeTruthy();

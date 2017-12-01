@@ -170,7 +170,7 @@ class Transaction {
     /**
      * @param {Transaction} o
      */
-    compareForBlock(o) {
+    compareBlockOrder(o) {
         const recCompare = this.recipientAddr.compare(o.recipientAddr);
         if (recCompare !== 0) return recCompare;
         if (this.nonce < o.nonce) return -1;
@@ -185,7 +185,7 @@ class Transaction {
     /**
      * @param {Transaction} o
      */
-    compareForApply(o) {
+    compareAccountOrder(o) {
         const senderCompare = this.senderPubKey.compare(o.senderPubKey);
         if (senderCompare !== 0) return senderCompare;
         if (this.nonce < o.nonce) return -1;

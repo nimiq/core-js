@@ -3,11 +3,12 @@ class Miner extends Observable {
      * @param {Blockchain} blockchain
      * @param {Mempool} mempool
      * @param {Address} minerAddress
+     * @param {Uint8Array} extraData
      *
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, minerAddress) {
+    constructor(blockchain, mempool, minerAddress, extraData = new Uint8Array(0)) {
         super();
         /** @type {Blockchain} */
         this._blockchain = blockchain;
@@ -15,6 +16,8 @@ class Miner extends Observable {
         this._mempool = mempool;
         /** @type {Address} */
         this._address = minerAddress;
+        /** @type {Uint8Array} */
+        this._extraData = extraData;
 
         /**
          * Number of hashes computed since the last hashrate update.
@@ -192,7 +195,7 @@ class Miner extends Observable {
     async getNextBlock() {
         const nextTarget = await this._blockchain.getNextTarget();
         const interlink = await this._getNextInterlink(nextTarget);
-        const body = this._getNextBody();
+        const body = this._getNextBody(interlink.serializedSize);
         const header = await this._getNextHeader(nextTarget, interlink, body);
         return new Block(header, interlink, body);
     }
@@ -238,14 +241,17 @@ class Miner extends Observable {
     }
 
     /**
+     * @param {number} interlinkSize
      * @return {BlockBody}
      * @private
      */
-    _getNextBody() {
-        // Get transactions from mempool (default is maxCount=5000).
-        // TODO Completely fill up the block with transactions until the size limit is reached.
-        const transactions = this._mempool.getTransactions().sort((a, b) => a.compareForBlock(b));
-        return new BlockBody(this._address, transactions);
+    _getNextBody(interlinkSize) {
+        const maxSize = Policy.BLOCK_SIZE_MAX
+            - BlockHeader.SERIALIZED_SIZE
+            - interlinkSize
+            - BlockBody.getMetadataSize(this._extraData);
+        const transactions = this._mempool.getTransactionsForBlock(maxSize);
+        return new BlockBody(this._address, transactions, this._extraData);
     }
 
     /**

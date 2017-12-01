@@ -77,16 +77,34 @@ class Mempool extends Observable {
     }
 
     /**
-     * @param {number} maxCount
      * @returns {Array.<Transaction>}
      */
-    getTransactions(maxCount = 5000) {
+    getTransactions() {
         const transactions = [];
-        for (const set of this._transactionSetByKey.values().sort((a, b) => a.compare(b))) {
-            if (transactions.length >= maxCount) break;
-            if (transactions.length + set.length > maxCount) continue;
+        for (const set of this._transactionSetByKey.values()) {
             transactions.push(...set.transactions);
         }
+
+        transactions.sort((a, b) => a.compareAccountOrder(b));
+        return transactions;
+    }
+
+    /**
+     * @param {number} maxSize
+     */
+    getTransactionsForBlock(maxSize) {
+        const transactions = [];
+        let size = 0;
+        for (const set of this._transactionSetByKey.values().sort((a, b) => a.compare(b))) {
+            const setSize = set.serializedSize;
+            if (size >= maxSize) break;
+            if (size + setSize > maxSize) continue;
+
+            transactions.push(...set.transactions);
+            size += setSize;
+        }
+
+        transactions.sort((a, b) => a.compareBlockOrder(b));
         return transactions;
     }
 

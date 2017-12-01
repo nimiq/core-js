@@ -7,7 +7,7 @@ describe('BlockHeader', () => {
     const timestamp = 1;
     const nonce = 1;
 
-    it('is 150 bytes long', () => {
+    it('is 146 bytes long', () => {
 
         //   2 bytes version
         //  32 bytes prevHash
@@ -28,6 +28,13 @@ describe('BlockHeader', () => {
         expect(serialized.byteLength).toBe(146);
     });
 
+    it('has the correct size set in BlockHeader.SERIALIZED_SIZE', () => {
+        const blockHeader1 = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, difficulty, 1, timestamp, nonce);
+
+        const serialized = blockHeader1.serialize();
+
+        expect(BlockHeader.SERIALIZED_SIZE).toBe(serialized.byteLength);
+    });
 
     it('must have a well defined prevHash (32 bytes)', () => {
         expect(() => {
