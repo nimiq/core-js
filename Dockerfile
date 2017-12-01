@@ -22,6 +22,8 @@ RUN apt-get install -y python build-essential
 
 RUN wget ${RELEASE} && tar -xvzf ./${BRANCH}.tar.gz
 RUN cd /core-${BRANCH} && npm install && npm run build
+RUN cd /core-${BRANCH}/clients/nodejs && npm install
+RUN cd /core-${BRANCH} && npm run prepare
 
 EXPOSE ${PORT}
 ENTRYPOINT node /core-${BRANCH}/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT} --wallet-seed=${WALLET_SEED} --miner
