@@ -387,10 +387,9 @@ TestBlockchain.NONCES = {
     'WROQUlgewBjoOotIDhlUtqhMiQGrlx7GbuIVH7M/fBk=': 18605,
     '2nc+vAUDLA3B9oCBXO/d/e7thV4ZsTHFsGB1GMbZGcg=': 5920,
     'bYpcs1m4jvD3jRpPDGjwi9s8UyGaj1zx/JDTH+3PrUY=': 9339,
-    'CrG90+sYwJwluMUOLrEGa2plLbAYxtqxnx6kjcUUr0k=': 47658,
     'uf2HOcZEBuxu5BQOShH57q8yvQzDbNI850CfTW0UHZI=': 12006,
-    'DTkx9qRhwYFgM/eeXVT//f9W2k5kHy1AKZijsB4ESvI=': 108196,
     'BkylQQcDhb024zNHWvBCVj4l6gZsgkfpI738RjNTmNo=': 19229,
-    'DW+HG21CYxcI+K+uq4Q4M6AmPz8L7iRInhH2u1HWZ3A=': 83899
+    'DW+HG21CYxcI+K+uq4Q4M6AmPz8L7iRInhH2u1HWZ3A=': 83899,
+    'Usrqp130QX+oYtIZfEIcVdxhkjSLuWjuHUXL4EWFWls=': 1579
 };
 Class.register(TestBlockchain);

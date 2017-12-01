@@ -80,9 +80,9 @@ describe('Blockchain', () => {
     it('verifies transaction order', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             let transactions = [
                 await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 1, senderPrivKey),
@@ -98,12 +98,12 @@ describe('Blockchain', () => {
     it('verifies transaction signatures', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with an invalid transaction signature
             const data = new Uint8Array(32);
-            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, testBlockchain._users[0].publicKey, data);
+            const wrongSignature = await Signature.create(testBlockchain.users[0].privateKey, testBlockchain.users[0].publicKey, data);
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, undefined, wrongSignature)];
             const block = await testBlockchain.createBlock({transactions: transactions});
             const status = await testBlockchain.pushBlock(block);
@@ -114,9 +114,9 @@ describe('Blockchain', () => {
     it('verifies that sufficient funds are available', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with a transaction with insufficient funds.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, Policy.coinsToSatoshis(1000), 1, 0, senderPrivKey)];
@@ -129,9 +129,9 @@ describe('Blockchain', () => {
     it('verifies transaction nonce', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with a transaction with invalid nonce.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 42, senderPrivKey)];
@@ -144,9 +144,9 @@ describe('Blockchain', () => {
     it('prevents transaction replay across blocks', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Include a valid transaction.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, senderPrivKey)];
