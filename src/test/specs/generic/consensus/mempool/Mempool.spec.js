@@ -197,4 +197,23 @@ describe('Mempool', () => {
             });
         })().then(done, done.fail);
     });
+
+    it('will wait for transactions that are delayed', (done) => {
+        (async () => {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallet = await Wallet.createVolatile();
+            await accounts._tree.put(wallet.address, new Account(new Balance(10000, 10)));
+
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 11));
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 10));
+
+            const txs = mempool.getTransactions();
+            expect(txs.length).toBe(2);
+            expect(txs[0].nonce).toBe(10);
+            expect(txs[1].nonce).toBe(11);
+        })().then(done, done.fail);
+    });
 });
