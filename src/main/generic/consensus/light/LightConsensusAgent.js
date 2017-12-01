@@ -591,7 +591,7 @@ class LightConsensusAgent extends FullConsensusAgent {
  * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
  * @type {number}
  */
-LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 10;
+LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 20;
 /**
  * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
  * @type {number}
