@@ -528,10 +528,16 @@ class Network extends Observable {
      * @returns {void}
      * @private
      */
-    _onSignal(channel, msg) {
+    async _onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
             channel.ban('invalid signal ttl');
+            return;
+        }
+
+        // Discard signals that have a payload, which is not properly signed.
+        if (msg.hasPayload() && !(await msg.verifySignature())) {
+            channel.ban('invalid signature');
             return;
         }
 
@@ -593,7 +599,7 @@ class Network extends Observable {
         }
 
         // Decrement ttl and forward signal.
-        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload, msg.senderPubKey, msg.signature);
 
         // We store forwarded messages if there are no special flags set.
         if (msg.flags === 0) {
@@ -657,6 +663,8 @@ class SignalStore {
         /** @type {Queue.<ForwardedSignal>} */
         this._queue = new Queue();
         /** @type {HashMap.<ForwardedSignal, number>} */
+
+
         this._store = new HashMap();
     }
 

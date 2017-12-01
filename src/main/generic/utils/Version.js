@@ -3,5 +3,5 @@ class Version {
         return code === Version.CODE;
     }
 }
-Version.CODE = 1;
+Version.CODE = 2;
 Class.register(Version);

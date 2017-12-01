@@ -61,6 +61,13 @@ class PublicKey extends Primitive {
     async toAddress() {
         return new Address((await Hash.light(this.serialize())).subarray(0, 20));
     }
+
+    /**
+     * @return {Promise.<Uint8Array>}
+     */
+    async toSignalId() {
+        return (await Hash.light(this.serialize())).subarray(0, 16);
+    }
 }
 
 Class.register(PublicKey);

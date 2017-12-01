@@ -207,10 +207,12 @@ class PeerChannel extends Observable {
      * @param {number} ttl
      * @param {SignalMessage.Flags|number} flags
      * @param {Uint8Array} [payload]
+     * @param {PublicKey} [senderPubKey]
+     * @param {Signature} [signature]
      * @return {boolean}
      */
-    signal(senderId, recipientId, nonce, ttl, flags, payload) {
-        return this._send(new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload));
+    signal(senderId, recipientId, nonce, ttl, flags, payload, senderPubKey, signature) {
+        return this._send(new SignalMessage(senderId, recipientId, nonce, ttl, flags, payload, senderPubKey, signature));
     }
 
     /**

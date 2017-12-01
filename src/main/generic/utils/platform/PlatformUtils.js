@@ -18,7 +18,7 @@ class PlatformUtils {
      */
     static supportsWebRTC() {
         let RTCPeerConnection = PlatformUtils.isBrowser() ? (window.RTCPeerConnection || window.webkitRTCPeerConnection) : null;
-        return !!RTCPeerConnection && !!RTCPeerConnection.generateCertificate;
+        return !!RTCPeerConnection;
     }
 
     /**

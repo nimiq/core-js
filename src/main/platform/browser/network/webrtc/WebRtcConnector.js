@@ -144,15 +144,6 @@ class PeerConnector extends Observable {
 
     onSignal(signal) {
         if (signal.sdp) {
-            // Validate that the signalId given in the session description matches
-            // the advertised signalId.
-            const signalId = WebRtcUtils.sdpToSignalId(signal.sdp);
-            if (signalId !== this._signalId) {
-                // TODO what to do here?
-                Log.e(PeerConnector, `Invalid remote description received: expected signalId ${this._signalId}, got {signalId}`);
-                return;
-            }
-
             this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal))
                 .then(() => {
                     if (signal.type === 'offer') {
@@ -167,14 +158,18 @@ class PeerConnector extends Observable {
         }
     }
 
-    _signal(signal) {
+    async _signal(signal) {
+        const payload = BufferUtils.fromAscii(JSON.stringify(signal));
+        const keyPair = await WebRtcConfig.myKeyPair();
         this._signalChannel.signal(
             NetworkConfig.myPeerAddress().signalId,
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,
             0, /*flags*/
-            BufferUtils.fromAscii(JSON.stringify(signal))
+            payload,
+            keyPair.publicKey,
+            await Signature.create(keyPair.privateKey, keyPair.publicKey, payload)
         );
     }
 

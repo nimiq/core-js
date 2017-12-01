@@ -230,7 +230,7 @@ class RtcPeerAddress extends PeerAddress {
      * @returns {boolean}
      */
     static isSignalId(arg) {
-        return /[a-z0-9]{32}/i.test(arg);
+        return /[a-f0-9]{32}/i.test(arg);
     }
 
     /**
