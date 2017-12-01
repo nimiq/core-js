@@ -73,15 +73,19 @@ class Mempool extends Observable {
         this._transactionsByHash.put(hash, transaction);
         this._transactionSetByKey.put(transaction.senderPubKey, set);
 
+        // Tell listeners about the new valid transaction we received.
+        this.fire('transaction-added', transaction);
+
         if (this._waitingTransactions.contains(transaction.senderPubKey)) {
             /** @type {Array.<Transaction>} */
             const txs = this._waitingTransactions.get(transaction.senderPubKey);
             /** @type {Transaction} */
             let tx;
             while ((tx = txs.shift())) {
-                if (!(await this._verifyAdditionalTransaction(set, transaction))) {
+                if (await this._verifyAdditionalTransaction(set, tx, true)) {
                     set.add(tx);
                     this._transactionsByHash.put(await tx.hash(), tx);
+                    this.fire('transaction-added', tx);
                 } else {
                     break;
                 }
@@ -94,9 +98,6 @@ class Mempool extends Observable {
                 this._waitingTransactionTimeout.remove(transaction.senderPubKey);
             }
         }
-
-        // Tell listeners about the new valid transaction we received.
-        this.fire('transaction-added', transaction);
 
         return true;
     }

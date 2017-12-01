@@ -207,13 +207,23 @@ describe('Mempool', () => {
             const wallet = await Wallet.createVolatile();
             await accounts._tree.put(wallet.address, new Account(new Balance(10000, 10)));
 
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 13));
             await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 11));
             await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 10));
 
-            const txs = mempool.getTransactions();
+            let txs = mempool.getTransactions();
             expect(txs.length).toBe(2);
             expect(txs[0].nonce).toBe(10);
             expect(txs[1].nonce).toBe(11);
+
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 12));
+
+            txs = mempool.getTransactions();
+            expect(txs.length).toBe(4);
+            expect(txs[0].nonce).toBe(10);
+            expect(txs[1].nonce).toBe(11);
+            expect(txs[2].nonce).toBe(12);
+            expect(txs[3].nonce).toBe(13);
         })().then(done, done.fail);
     });
 });
