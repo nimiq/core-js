@@ -166,7 +166,7 @@ class WebRtcDataChannel extends Observable {
 }
 WebRtcDataChannel.CHUNK_SIZE_MAX = 1024 * 16; // 16 kb
 WebRtcDataChannel.MESSAGE_SIZE_MAX = 10 * 1024 * 1024; // 10 mb
-WebRtcDataChannel.CHUNK_TIMEOUT = 1000 * 2; // 2 seconds
+WebRtcDataChannel.CHUNK_TIMEOUT = 1000 * 5; // 5 seconds
 
 // These must not overlap with the first byte of the Message magic.
 WebRtcDataChannel.CHUNK_BEGIN_MAGIC = 0xff;

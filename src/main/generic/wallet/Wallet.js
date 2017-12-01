@@ -100,5 +100,14 @@ class Wallet {
     dump() {
         return this._keyPair.toHex();
     }
+
+    /**
+     * @returns {Promise}
+     */
+    async persist() {
+        const db = await new WalletStore();
+        await db.put('keys', this._keyPair);
+        await db.close();
+    }
 }
 Class.register(Wallet);
