@@ -61,7 +61,7 @@ describe('Mempool', () => {
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
-            await accounts._tree.put(wallet.address, new Account(new Balance(7745, 23)));
+            await accounts._tree.put(wallet.address, new Account(new Balance(7745, 68)));
 
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
