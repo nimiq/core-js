@@ -207,22 +207,34 @@ describe('Transaction', () => {
         const tx1 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
 
         let tx2 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
-        expect(tx1.compare(tx2)).toBe(0);
+        expect(tx1.compareForBlock(tx2)).toBe(0);
+        expect(tx2.compareForBlock(tx1)).toBe(0);
+        expect(() => tx1.compareForApply(tx2)).toThrow();
+        expect(() => tx2.compareForApply(tx1)).toThrow();
 
         tx2 = new Transaction(senderPubKey, recipientAddr, value, fee + 1, nonce, signature);
-        expect(tx1.compare(tx2)).toBeGreaterThan(0);
-        expect(tx2.compare(tx1)).toBeLessThan(0);
+        expect(tx1.compareForBlock(tx2)).toBeGreaterThan(0);
+        expect(tx2.compareForBlock(tx1)).toBeLessThan(0);
+        expect(() => tx1.compareForApply(tx2)).toThrow();
+        expect(() => tx2.compareForApply(tx1)).toThrow();
 
         tx2 = new Transaction(senderPubKey, recipientAddr, value, fee, nonce - 1, signature);
-        expect(tx1.compare(tx2)).toBeGreaterThan(0);
-        expect(tx2.compare(tx1)).toBeLessThan(0);
+        expect(tx1.compareForBlock(tx2)).toBeGreaterThan(0);
+        expect(tx2.compareForBlock(tx1)).toBeLessThan(0);
+        expect(tx1.compareForApply(tx2)).toBeGreaterThan(0);
+        expect(tx2.compareForApply(tx1)).toBeLessThan(0);
 
         tx2 = new Transaction(senderPubKey, recipientAddr, value + 1, fee, nonce, signature);
-        expect(tx1.compare(tx2)).toBeGreaterThan(0);
-        expect(tx2.compare(tx1)).toBeLessThan(0);
+        expect(tx1.compareForBlock(tx2)).toBeGreaterThan(0);
+        expect(tx2.compareForBlock(tx1)).toBeLessThan(0);
+        expect(() => tx1.compareForApply(tx2)).toThrow();
+        expect(() => tx2.compareForApply(tx1)).toThrow();
 
         tx2 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2)), recipientAddr, value, fee, nonce, signature);
-        expect(tx1.compare(tx2)).not.toBe(0);
+        expect(tx1.compareForBlock(tx2)).not.toBe(0);
+        expect(tx2.compareForBlock(tx1)).not.toBe(0);
+        expect(tx1.compareForApply(tx2)).not.toBe(0);
+        expect(tx2.compareForApply(tx1)).not.toBe(0);
     });
 
 });

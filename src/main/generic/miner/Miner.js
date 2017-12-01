@@ -141,7 +141,7 @@ class Miner extends Observable {
         this._restarting = true;
 
         // Construct next block.
-        const block = await this._getNextBlock();
+        const block = await this.getNextBlock();
         this._currentBlock = block;
         const buffer = block.header.serialize();
         this._mempoolChanged = false;
@@ -189,7 +189,7 @@ class Miner extends Observable {
      * @return {Promise.<Block>}
      * @private
      */
-    async _getNextBlock() {
+    async getNextBlock() {
         const nextTarget = await this._blockchain.getNextTarget();
         const interlink = await this._getNextInterlink(nextTarget);
         const body = this._getNextBody();
@@ -217,7 +217,7 @@ class Miner extends Observable {
             await accounts.abort();
         } catch (e) {
             await accounts.abort();
-            throw new Error('Invalid block body');
+            throw new Error(`Invalid block body: ${e.message}`);
         }
 
         const bodyHash = await body.hash();
@@ -244,7 +244,7 @@ class Miner extends Observable {
     _getNextBody() {
         // Get transactions from mempool (default is maxCount=5000).
         // TODO Completely fill up the block with transactions until the size limit is reached.
-        const transactions = this._mempool.getTransactions();
+        const transactions = this._mempool.getTransactions().sort((a, b) => a.compareForBlock(b));
         return new BlockBody(this._address, transactions);
     }
 

@@ -78,10 +78,11 @@ class BlockBody {
      * @returns {Promise.<boolean>}
      */
     async verify() {
+        /** @type {Transaction} */
         let previousTx = null;
         for (const tx of this._transactions) {
             // Ensure transactions are ordered.
-            if (previousTx && previousTx.compare(tx) > 0) {
+            if (previousTx && previousTx.compareForBlock(tx) > 0) {
                 Log.w(BlockBody, 'Invalid block - transactions not ordered.');
                 return false;
             }

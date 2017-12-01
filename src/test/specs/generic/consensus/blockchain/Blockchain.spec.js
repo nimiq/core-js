@@ -302,9 +302,26 @@ describe('Blockchain', () => {
     });
 
     it('can handle larger chains', (done) => {
-        (async function() {
+        (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
             expect(testBlockchain).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('changes balance after transaction', (done) => {
+        (async () => {
+            const testBlockchain = await TestBlockchain.createVolatileTest(10, 20);
+            expect(testBlockchain).toBeTruthy();
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const balance0 = await testBlockchain.accounts.getBalance(user0.address);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce + 1, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx1, tx2], minerAddr: user1.address});
+            await testBlockchain.pushBlock(block);
+            const balance1 = await testBlockchain.accounts.getBalance(user0.address);
+            expect(balance1.nonce).toBe(balance0.nonce + 2);
+            expect(balance1.value).toBe(balance0.value - 4);
         })().then(done, done.fail);
     });
 
