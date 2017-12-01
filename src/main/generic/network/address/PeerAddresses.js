@@ -511,10 +511,10 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @param {number} duration in minutes
+     * @param {number} [duration] in milliseconds
      * @returns {void}
      */
-    ban(peerAddress, duration = 10 /*minutes*/) {
+    ban(peerAddress, duration = PeerAddresses.DEFAULT_BAN_TIME) {
         let peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
@@ -525,7 +525,7 @@ class PeerAddresses extends Observable {
         }
 
         peerAddressState.state = PeerAddressState.BANNED;
-        peerAddressState.bannedUntil = Date.now() + duration * 60 * 1000;
+        peerAddressState.bannedUntil = Date.now() + duration;
 
         // Drop all routes to this peer.
         peerAddressState.deleteAllRoutes();
@@ -733,16 +733,17 @@ class PeerAddresses extends Observable {
         return this._peerCountDumb;
     }
 }
-PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 15; // 15 minutes
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 45; // 45 seconds
-PeerAddresses.MAX_AGE_DUMB = 1000 * 45; // 45 seconds
+PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
+PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
+PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
 PeerAddresses.MAX_DISTANCE = 4;
 PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
 PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
-PeerAddresses.MAX_FAILED_BACKOFF = 10; // 10 minutes
-PeerAddresses.INITIAL_FAILED_BACKOFF = 1; // 1 minute
+PeerAddresses.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
+PeerAddresses.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
+PeerAddresses.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
 PeerAddresses.SEED_PEERS = [
     WsPeerAddress.seed('alpacash.com', 8080),
     WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
