@@ -469,6 +469,30 @@ class LightConsensusAgent extends FullConsensusAgent {
     /**
      * @param {Hash} hash
      * @param {Block} block
+     * @returns {void}
+     * @protected
+     * @override
+     */
+    async _onKnownBlockAnnounced(hash, block) {
+        if (this._syncing && this._catchup) {
+            // If we find that we are on a fork far away from our chain, resync.
+            if (block.height < this._chain.height - Policy.NUM_BLOCKS_VERIFICATION
+                && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
+                this._onMainChain = false;
+                await this._initChainProofSync();
+                this.syncBlockchain();
+                return;
+            } else {
+                this._onMainChain = true;
+            }
+
+            super._onKnownBlockAnnounced(hash, block);
+        }
+    }
+
+    /**
+     * @param {Hash} hash
+     * @param {Block} block
      * @private
      * @override
      */
