@@ -223,6 +223,18 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @returns {void}
+     * @protected
+     * @override
+     */
+    _onNoUnknownObjects() {
+        // The peer does not have any new inv vectors for us.
+        if (this._syncing) {
+            this.syncBlockchain();
+        }
+    }
+
+    /**
      * @param {HeaderMessage} msg
      * @return {Promise.<void>}
      * @protected
