@@ -212,8 +212,11 @@
                 this._networkChanged();
             }.bind(this));
 
-            $.mempool.on('*', function() {
-                this._mempoolChanged();
+            $.mempool.on('transaction-added', function(tx) {
+                this._mempoolTransactionAdded(tx);
+            }.bind(this));
+            $.mempool.on('transactions-ready', function() {
+                this._mempoolTransactionsReady();
             }.bind(this));
 
             $.miner.on('start', function() {
@@ -350,7 +353,7 @@
             this._headChanged($.blockchain.head);
             this._networkChanged();
             this._minerChanged();
-            this._mempoolChanged();
+            this._mempoolTransactionsReady();
 
             // Check for miner auto start.
             if (window.location.hash && window.location.hash === '#miner') {
@@ -497,26 +500,36 @@
             this._wltNonce.innerText = balance.nonce;
         }
 
-        _mempoolChanged() {
+        _mempoolTransactionAdded(tx) {
             // XXX inefficient
             var txs = $.mempool.getTransactions();
             this._mplTransactionCount.innerText = txs.length;
 
-            /*
-            while (this._mplTransactions.firstChild) {
-                this._mplTransactions.removeChild(this._mplTransactions.firstChild);
-            }
+            tx.getSenderAddr().then(function(senderAddr) {
+                var el = document.createElement('div');
+                var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                el.innerHTML = `from=<hash>${senderAddr.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipientAddr.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                this._mplTransactions.appendChild(el);
+            }.bind(this));
+        }
+
+        _mempoolTransactionsReady() {
+            // XXX inefficient
+            var txs = $.mempool.getTransactions();
+            this._mplTransactionCount.innerText = txs.length;
+
+            this._mplTransactions.innerHTML = '';
 
             txs.forEach(function(tx) {
                 tx.getSenderAddr().then(function(senderAddr) {
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${senderAddr.toBase64()}</hash>, to=<hash>${tx.recipientAddr.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    el.innerHTML = `from=<hash>${senderAddr.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipientAddr.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }.bind(this));
-            */
         }
 
         _showBlockTime() {
