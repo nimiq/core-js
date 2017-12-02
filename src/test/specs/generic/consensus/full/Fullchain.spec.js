@@ -40,7 +40,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('rejects blocks from the future', (done) => {
+    it('rejects blocks with wrong difficulty', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
