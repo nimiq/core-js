@@ -67,13 +67,6 @@ class Network extends Observable {
         this._backedOff = false;
 
         /**
-         * Number of ongoing outbound connection attempts.
-         * @type {number}
-         * @private
-         */
-        this._connectingCount = 0;
-
-        /**
          * Map of agents indexed by connection ids.
          * @type {HashMap.<number,NetworkAgent>}
          * @private
@@ -182,8 +175,8 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this.peerCount + this._connectingCount < Network.PEER_COUNT_DESIRED
-            && this._connectingCount < Network.CONNECTING_COUNT_MAX) {
+            && this.peerCount + this._addresses.connectingCount < Network.PEER_COUNT_DESIRED
+            && this._addresses.connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._addresses.pickAddress();
@@ -221,7 +214,6 @@ class Network extends Observable {
                 Log.d(Network, `Connecting to ${peerAddress} ...`);
                 if (this._wsConnector.connect(peerAddress)) {
                     this._addresses.connecting(peerAddress);
-                    this._connectingCount++;
                 }
                 break;
 
@@ -230,7 +222,6 @@ class Network extends Observable {
                 Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
                 if (this._rtcConnector.connect(peerAddress, signalChannel)) {
                     this._addresses.connecting(peerAddress);
-                    this._connectingCount++;
                 }
                 break;
             }
@@ -251,11 +242,6 @@ class Network extends Observable {
      * @private
      */
     _onConnection(conn) {
-        // Decrement connectingCount if we have initiated this connection.
-        if (conn.outbound && this._addresses.isConnecting(conn.peerAddress)) {
-            this._connectingCount--;
-        }
-
         // If the connector was able to determine the peer's netAddress,
         // enforce the max connections per IP limit here.
         if (conn.netAddress && !this._incrementConnectionCount(conn)) {
@@ -380,10 +366,6 @@ class Network extends Observable {
      */
     _onError(peerAddress, reason) {
         Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
-
-        if (this._addresses.isConnecting(peerAddress)) {
-            this._connectingCount--;
-        }
 
         this._addresses.unreachable(peerAddress);
 

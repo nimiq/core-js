@@ -25,6 +25,13 @@ class PeerAddresses extends Observable {
         /** @type {number} */
         this._peerCountDumb = 0;
 
+        /**
+         * Number of ongoing outbound connection attempts.
+         * @type {number}
+         * @private
+         */
+        this._connectingCount = 0;
+
         // Init seed peers.
         this.add(/*channel*/ null, PeerAddresses.SEED_PEERS);
 
@@ -363,6 +370,9 @@ class PeerAddresses extends Observable {
             throw `Duplicate connection to ${peerAddress}`;
         }
 
+        if (peerAddressState.state !== PeerAddressState.CONNECTING) {
+            this._connectingCount++;
+        }
         peerAddressState.state = PeerAddressState.CONNECTING;
     }
 
@@ -400,6 +410,9 @@ class PeerAddresses extends Observable {
             throw 'Connected to banned address';
         }
 
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
+        }
         if (peerAddressState.state !== PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, 1);
         }
@@ -438,6 +451,9 @@ class PeerAddresses extends Observable {
         // Delete all addresses that were signalable over the disconnected peer.
         this._removeBySignalChannel(channel);
 
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
+        }
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
         }
@@ -466,6 +482,9 @@ class PeerAddresses extends Observable {
         }
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
+        }
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
         }
 
         peerAddressState.state = PeerAddressState.FAILED;
@@ -520,6 +539,9 @@ class PeerAddresses extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
         }
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
+        }
         if (peerAddressState.state === PeerAddressState.CONNECTED) {
             this._updateConnectedPeerCount(peerAddress, -1);
         }
@@ -529,15 +551,6 @@ class PeerAddresses extends Observable {
 
         // Drop all routes to this peer.
         peerAddressState.deleteAllRoutes();
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {boolean}
-     */
-    isConnecting(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
-        return peerAddressState && peerAddressState.state === PeerAddressState.CONNECTING;
     }
 
     /**
@@ -584,6 +597,10 @@ class PeerAddresses extends Observable {
         // Delete from signalId index.
         if (peerAddress.protocol === Protocol.RTC) {
             this._signalIds.remove(peerAddress.signalId);
+        }
+
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
         }
 
         // Don't delete bans.
@@ -731,6 +748,11 @@ class PeerAddresses extends Observable {
     /** @type {number} */
     get peerCountDumb() {
         return this._peerCountDumb;
+    }
+
+    /** @type {number} */
+    get connectingCount() {
+        return this._connectingCount;
     }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
