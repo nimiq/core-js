@@ -61,8 +61,6 @@ class Mempool extends Observable {
             const senderBalance = await this._accounts.getBalance(await transaction.senderPubKey.toAddress());
             if (transaction.nonce > senderBalance.nonce + set.length) {
                 this._waitTransaction(hash, transaction);
-            } else {
-                Log.w(Mempool, `Rejected transaction ${hash} - invalid/duplicate nonce`);
             }
 
             return false;
