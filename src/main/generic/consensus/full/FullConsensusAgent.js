@@ -86,7 +86,10 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._peer.channel.subscribe(Subscription.ANY);
 
         // Request the peer's mempool.
-        this._peer.channel.mempool();
+        // XXX Use a random delay here to prevent requests to multiple peers at once.
+        const delay = FullConsensusAgent.MEMPOOL_DELAY_MIN
+            + Math.random() * (FullConsensusAgent.MEMPOOL_DELAY_MAX - FullConsensusAgent.MEMPOOL_DELAY_MIN);
+        setTimeout(() => this._peer.channel.mempool(), delay);
 
         this._syncing = false;
         this._synced = true;
@@ -473,4 +476,14 @@ FullConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
  * @type {number}
  */
 FullConsensusAgent.RESYNC_THROTTLE = 1000 * 3; // 3 seconds
+/**
+ * Minimum time {ms} to wait before triggering the initial mempool request.
+ * @type {number}
+ */
+FullConsensusAgent.MEMPOOL_DELAY_MIN = 1000 * 2; // 2 seconds
+/**
+ * Maximum time {ms} to wait before triggering the initial mempool request.
+ * @type {number}
+ */
+FullConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 20; // 20 seconds
 Class.register(FullConsensusAgent);

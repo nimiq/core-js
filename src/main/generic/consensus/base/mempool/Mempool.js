@@ -5,7 +5,7 @@ class Mempool extends Observable {
      */
     constructor(blockchain, accounts) {
         super();
-        /** @type {Blockchain} */
+        /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {Accounts} */
         this._accounts = accounts;
@@ -58,11 +58,11 @@ class Mempool extends Observable {
         // Fully verify the transaction against the current accounts state + Mempool.
         const set = this._transactionSetByKey.get(transaction.senderPubKey) || new MempoolTransactionSet();
         if (!(await this._verifyAdditionalTransaction(set, transaction))) {
-
             const senderBalance = await this._accounts.getBalance(await transaction.senderPubKey.toAddress());
-            if (senderBalance.nonce < transaction.nonce) {
-                Log.d(Mempool, 'Delaying transaction - nonce suggests future validity', transaction);
-                this._waitTransaction(transaction);
+            if (transaction.nonce > senderBalance.nonce + set.length) {
+                this._waitTransaction(hash, transaction);
+            } else {
+                Log.w(Mempool, `Rejected transaction ${hash} - invalid/duplicate nonce`);
             }
 
             return false;
@@ -84,7 +84,6 @@ class Mempool extends Observable {
             while ((tx = txs.shift())) {
                 if (await this._verifyAdditionalTransaction(set, tx, true)) {
                     set.add(tx);
-                    this._transactionsByHash.put(await tx.hash(), tx);
                     this.fire('transaction-added', tx);
                 } else {
                     break;
@@ -103,28 +102,45 @@ class Mempool extends Observable {
     }
 
     /**
+     * @param {Hash} hash
      * @param {Transaction} transaction
      * @private
      */
-    _waitTransaction(transaction) {
+    _waitTransaction(hash, transaction) {
         const txs = this._waitingTransactions.get(transaction.senderPubKey) || [];
-        if (txs.length >= Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER || this._waitingTransactions.length >= Mempool.MAX_WAITING_TRANSACTION_SENDERS) {
+        if (txs.length >= Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER) {
+            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.senderPubKey} - max waiting transactions per sender reached`);
             return;
         }
+        if (this._waitingTransactions.length >= Mempool.MAX_WAITING_TRANSACTION_SENDERS) {
+            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.senderPubKey} - max waiting transaction senders reached`);
+            return;
+        }
+
         if (this._waitingTransactionTimeout.contains(transaction.senderPubKey)) {
             clearTimeout(this._waitingTransactionTimeout.get(transaction.senderPubKey));
         }
+
+        Log.d(Mempool, `Delaying transaction ${hash} - nonce ${transaction.nonce} suggests future validity`);
+
         txs.push(transaction);
         try {
             txs.sort((a, b) => a.compareAccountOrder(b));
         } catch (e) {
             // Unsortable transactions => abandon all.
+            Log.w(Mempool, `Abandoning ${txs.length} waiting transactions from ${transaction.senderPubKey} - duplicate nonce`);
             this._waitingTransactionTimeout.remove(transaction.senderPubKey);
             this._waitingTransactions.remove(transaction.senderPubKey);
             return;
         }
+
+        this._transactionsByHash.put(hash, transaction);
         this._waitingTransactions.put(transaction.senderPubKey, txs);
-        this._waitingTransactionTimeout.put(transaction.senderPubKey, setTimeout(() => {
+
+        this._waitingTransactionTimeout.put(transaction.senderPubKey, setTimeout(async () => {
+            for (const tx of txs) {
+                this._transactionsByHash.remove(await tx.hash());
+            }
             this._waitingTransactionTimeout.remove(transaction.senderPubKey);
             this._waitingTransactions.remove(transaction.senderPubKey);
         }, Mempool.WAITING_TRANSACTION_TIMEOUT));
@@ -218,24 +234,24 @@ class Mempool extends Observable {
     /**
      * @param {MempoolTransactionSet} set
      * @param {Transaction} transaction
-     * @param {boolean} [quiet]
+     * @param {boolean} [silent]
      * @returns {Promise.<boolean>}
      * @private
      */
-    _verifyAdditionalTransaction(set, transaction, quiet = false) {
+    _verifyAdditionalTransaction(set, transaction, silent = false) {
         if (set.length > 0 && !set.senderPubKey.equals(transaction.senderPubKey)) return Promise.resolve(false);
-        return this._verifyBalanceAndNonce(transaction, quiet, set.value, set.fee, set.length);
+        return this._verifyBalanceAndNonce(transaction, silent, set.value, set.fee, set.length);
     }
 
     /**
      * @param {MempoolTransactionSet} set
-     * @param {boolean} [quiet]
+     * @param {boolean} [silent]
      * @returns {Promise.<boolean>}
      * @private
      */
-    _verifyTransactionSet(set, quiet = false) {
+    _verifyTransactionSet(set, silent = false) {
         if (set.length === 0) return Promise.resolve(false);
-        return this._verifyBalanceAndNonce(set, quiet);
+        return this._verifyBalanceAndNonce(set, silent);
     }
 
     /**
@@ -243,7 +259,7 @@ class Mempool extends Observable {
      * @returns {Promise}
      * @private
      */
-    async _evictTransactions() {
+    _evictTransactions() {
         return this._synchronizer.push(() => this.__evictTransactions());
     }
 
@@ -278,8 +294,8 @@ class Mempool extends Observable {
         this.fire('transactions-ready');
     }
 }
-Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER = 100;
+Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER = 500;
 Mempool.MAX_WAITING_TRANSACTION_SENDERS = 10000;
-Mempool.WAITING_TRANSACTION_TIMEOUT = 60000;
+Mempool.WAITING_TRANSACTION_TIMEOUT = 30000;
 
 Class.register(Mempool);

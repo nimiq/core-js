@@ -510,6 +510,7 @@
             var txs = $.mempool.getTransactions();
             this._mplTransactionCount.innerText = txs.length;
 
+            /*
             while (this._mplTransactions.firstChild) {
                 this._mplTransactions.removeChild(this._mplTransactions.firstChild);
             }
@@ -523,6 +524,7 @@
                     this._mplTransactions.appendChild(el);
                 }.bind(this));
             }.bind(this));
+            */
         }
 
         _showBlockTime() {
