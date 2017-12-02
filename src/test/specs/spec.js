@@ -12,4 +12,4 @@ global.Class = {
 };
 
 require('./generic/DummyData.spec.js');
-require('./generic/consensus/blockchain/TestBlockchain.spec.js');
+require('./generic/consensus/full/TestFullchain.spec.js');
