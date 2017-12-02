@@ -147,14 +147,16 @@ class PeerConnector extends Observable {
             this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal))
                 .then(() => {
                     if (signal.type === 'offer') {
-                        this._rtcConnection.createAnswer(this._onDescription.bind(this), this._errorLog);
+                        this._rtcConnection.createAnswer()
+                            .then(description => this._onDescription(description))
+                            .catch(error => this._errorLog(error));
                     }
                 })
-                .catch(e => e);
+                .catch(error => this._errorLog(error));
         } else if (signal.candidate) {
             this._lastIceCandidate = new RTCIceCandidate(signal);
             this._rtcConnection.addIceCandidate(this._lastIceCandidate)
-                .catch(e => e);
+                .catch(error => this._errorLog(error));
         }
     }
 
@@ -180,9 +182,9 @@ class PeerConnector extends Observable {
     }
 
     _onDescription(description) {
-        this._rtcConnection.setLocalDescription(description, () => {
-            this._signal(description);
-        }, this._errorLog);
+        this._rtcConnection.setLocalDescription(description)
+            .then(() => this._signal(description))
+            .catch(error => this._errorLog(error));
     }
 
     _onDataChannel(event) {
@@ -230,7 +232,9 @@ class OutboundPeerConnector extends PeerConnector {
         const channel = this._rtcConnection.createDataChannel('data-channel');
         channel.binaryType = 'arraybuffer';
         channel.onopen = e => this._onDataChannel(e);
-        this._rtcConnection.createOffer(this._onDescription.bind(this), this._errorLog);
+        this._rtcConnection.createOffer()
+            .then(description => this._onDescription(description))
+            .catch(error => this._errorLog(error));
     }
 }
 Class.register(OutboundPeerConnector);
