@@ -545,7 +545,7 @@ class Network extends Observable {
         const mySignalId = NetworkConfig.myPeerAddress().signalId;
 
         // Discard signals from myself.
-        if (msg.senderId === mySignalId) {
+        if (msg.senderId.equals(mySignalId)) {
             Log.w(Network, `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${mySignalId})`);
             return;
         }
@@ -558,7 +558,7 @@ class Network extends Observable {
         }
 
         // If the signal is intended for us, pass it on to our WebRTC connector.
-        if (msg.recipientId === mySignalId) {
+        if (msg.recipientId.equals(mySignalId)) {
             // If we sent out a signal that did not reach the recipient because of TTL
             // or it was unroutable, delete this route.
             if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
@@ -735,14 +735,14 @@ Class.register(SignalStore);
 
 class ForwardedSignal {
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      */
     constructor(senderId, recipientId, nonce) {
-        /** @type {string} */
+        /** @type {SignalId} */
         this._senderId = senderId;
-        /** @type {string} */
+        /** @type {SignalId} */
         this._recipientId = recipientId;
         /** @type {number} */
         this._nonce = nonce;
@@ -754,8 +754,8 @@ class ForwardedSignal {
      */
     equals(o) {
         return o instanceof ForwardedSignal
-            && this._senderId === o._senderId
-            && this._recipientId === o._recipientId
+            && this._senderId.equals(o._senderId)
+            && this._recipientId.equals(o._recipientId)
             && this._nonce === o._nonce;
     }
 

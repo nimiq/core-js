@@ -12,7 +12,7 @@ class PeerAddresses extends Observable {
 
         /**
          * Map from signalIds to RTC peerAddresses.
-         * @type {HashMap.<string,PeerAddressState>}
+         * @type {HashMap.<SignalId,PeerAddressState>}
          * @private
          */
         this._signalIds = new HashMap();
@@ -151,7 +151,7 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * @param {string} signalId
+     * @param {SignalId} signalId
      * @returns {PeerAddress|null}
      */
     getBySignalId(signalId) {
@@ -161,7 +161,7 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * @param {string} signalId
+     * @param {SignalId} signalId
      * @returns {PeerChannel}
      */
     getChannelBySignalId(signalId) {

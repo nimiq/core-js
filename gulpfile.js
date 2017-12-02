@@ -108,6 +108,7 @@ const sources = {
         './src/main/generic/network/address/NetAddress.js',
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddresses.js',
+        './src/main/generic/network/address/SignalId.js',
         './src/main/generic/network/message/Message.js',
         './src/main/generic/network/message/AddrMessage.js',
         './src/main/generic/network/message/BlockMessage.js',

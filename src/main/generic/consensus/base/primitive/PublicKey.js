@@ -63,10 +63,10 @@ class PublicKey extends Primitive {
     }
 
     /**
-     * @return {Promise.<Uint8Array>}
+     * @return {Promise.<SignalId>}
      */
     async toSignalId() {
-        return (await Hash.light(this.serialize())).subarray(0, 16);
+        return new SignalId((await Hash.light(this.serialize())).subarray(0, 16));
     }
 }
 

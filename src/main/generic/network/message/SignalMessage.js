@@ -1,7 +1,7 @@
 class SignalMessage extends Message {
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      * @param {number} ttl
      * @param {SignalMessage.Flags|number} flags
@@ -11,8 +11,8 @@ class SignalMessage extends Message {
      */
     constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array(0), senderPubKey, signature) {
         super(Message.Type.SIGNAL);
-        if (!senderId || !RtcPeerAddress.isSignalId(senderId)) throw 'Malformed senderId';
-        if (!recipientId || !RtcPeerAddress.isSignalId(recipientId)) throw 'Malformed recipientId';
+        if (!senderId || !(senderId instanceof SignalId)) throw 'Malformed senderId';
+        if (!recipientId || !(recipientId instanceof SignalId)) throw 'Malformed recipientId';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
         if (!NumberUtils.isUint8(flags)) throw 'Malformed flags';
@@ -40,8 +40,8 @@ class SignalMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const senderId = buf.readString(32);
-        const recipientId = buf.readString(32);
+        const senderId = SignalId.unserialize(buf);
+        const recipientId = SignalId.unserialize(buf);
         const nonce = buf.readUint32();
         const ttl = buf.readUint8();
         const flags = buf.readUint8();
@@ -59,8 +59,8 @@ class SignalMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeString(this._senderId, 32);
-        buf.writeString(this._recipientId, 32);
+        this._senderId.serialize(buf);
+        this._recipientId.serialize(buf);
         buf.writeUint32(this._nonce);
         buf.writeUint8(this._ttl);
         buf.writeUint8(this._flags);
@@ -77,8 +77,8 @@ class SignalMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*senderId*/ 32
-            + /*recipientId*/ 32
+            + /*senderId*/ this._senderId.serializedSize
+            + /*recipientId*/ this._recipientId.serializedSize
             + /*nonce*/ 4
             + /*ttl*/ 1
             + /*flags*/ 1
@@ -95,15 +95,15 @@ class SignalMessage extends Message {
         if (!this._signature) {
             return false;
         }
-        return this._signature.verify(this._senderPubKey, this._payload) && BufferUtils.equals(await this._senderPubKey.toSignalId(), BufferUtils.fromHex(this._senderId));
+        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(await this._senderPubKey.toSignalId());
     }
 
-    /** @type {string} */
+    /** @type {SignalId} */
     get senderId() {
         return this._senderId;
     }
 
-    /** @type {string} */
+    /** @type {SignalId} */
     get recipientId() {
         return this._recipientId;
     }

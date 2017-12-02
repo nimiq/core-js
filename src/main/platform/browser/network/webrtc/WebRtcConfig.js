@@ -16,7 +16,7 @@ class WebRtcConfig {
             };
 
             // Configure our peer address.
-            const signalId = BufferUtils.toHex(await WebRtcConfig.mySignalId());
+            const signalId = await WebRtcConfig.mySignalId();
             NetworkConfig.configurePeerAddress(signalId);
         }
 
@@ -41,7 +41,7 @@ class WebRtcConfig {
     }
 
     /**
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Promise.<SignalId>}
      */
     static async mySignalId() {
         const keyPair = await WebRtcConfig.myKeyPair();
