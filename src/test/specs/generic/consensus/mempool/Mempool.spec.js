@@ -61,7 +61,7 @@ describe('Mempool', () => {
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
-            await accounts._tree.put(wallet.address, new Account(new Balance(7745, 23)));
+            await accounts._tree.put(wallet.address, new Account(new Balance(7745, 68)));
 
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
@@ -178,8 +178,8 @@ describe('Mempool', () => {
             }
 
             // Check that the transactions were successfully pushed
-            let transactions = await mempool.getTransactions();
-            referenceTransactions.sort((a, b) => a.compare(b));
+            let transactions = await mempool.getTransactions().sort((a, b) => a.compareBlockOrder(b));
+            referenceTransactions.sort((a, b) => a.compareBlockOrder(b));
             expect(transactions).toEqual(referenceTransactions);
 
             // Change the balances so that pending transactions will get evicted
@@ -195,6 +195,35 @@ describe('Mempool', () => {
                 transactions = await mempool.getTransactions();
                 expect(transactions.length).toEqual(0);
             });
+        })().then(done, done.fail);
+    });
+
+    it('will wait for transactions that are delayed', (done) => {
+        (async () => {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallet = await Wallet.createVolatile();
+            await accounts._tree.put(wallet.address, new Account(new Balance(10000, 10)));
+
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 13));
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 11));
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 10));
+
+            let txs = mempool.getTransactions();
+            expect(txs.length).toBe(2);
+            expect(txs[0].nonce).toBe(10);
+            expect(txs[1].nonce).toBe(11);
+
+            await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 12));
+
+            txs = mempool.getTransactions();
+            expect(txs.length).toBe(4);
+            expect(txs[0].nonce).toBe(10);
+            expect(txs[1].nonce).toBe(11);
+            expect(txs[2].nonce).toBe(12);
+            expect(txs[3].nonce).toBe(13);
         })().then(done, done.fail);
     });
 });

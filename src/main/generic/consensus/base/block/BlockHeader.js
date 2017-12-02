@@ -250,4 +250,5 @@ class BlockHeader {
 }
 BlockHeader.CURRENT_VERSION = 1;
 BlockHeader.SUPPORTED_VERSIONS = [1];
+BlockHeader.SERIALIZED_SIZE = 146;
 Class.register(BlockHeader);

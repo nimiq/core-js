@@ -80,9 +80,9 @@ describe('Blockchain', () => {
     it('verifies transaction order', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             let transactions = [
                 await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 1, senderPrivKey),
@@ -98,12 +98,12 @@ describe('Blockchain', () => {
     it('verifies transaction signatures', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with an invalid transaction signature
             const data = new Uint8Array(32);
-            const wrongSignature = await Signature.create(testBlockchain._users[0].privateKey, testBlockchain._users[0].publicKey, data);
+            const wrongSignature = await Signature.create(testBlockchain.users[0].privateKey, testBlockchain.users[0].publicKey, data);
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, undefined, wrongSignature)];
             const block = await testBlockchain.createBlock({transactions: transactions});
             const status = await testBlockchain.pushBlock(block);
@@ -114,9 +114,9 @@ describe('Blockchain', () => {
     it('verifies that sufficient funds are available', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with a transaction with insufficient funds.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, Policy.coinsToSatoshis(1000), 1, 0, senderPrivKey)];
@@ -129,9 +129,9 @@ describe('Blockchain', () => {
     it('verifies transaction nonce', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with a transaction with invalid nonce.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 42, senderPrivKey)];
@@ -144,9 +144,9 @@ describe('Blockchain', () => {
     it('prevents transaction replay across blocks', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain._users[0].publicKey;
-            const senderPrivKey = testBlockchain._users[0].privateKey;
-            const receiverAddr = testBlockchain._users[1].address;
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            const senderPrivKey = testBlockchain.users[0].privateKey;
+            const receiverAddr = testBlockchain.users[1].address;
 
             // Include a valid transaction.
             const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, senderPrivKey)];
@@ -302,9 +302,26 @@ describe('Blockchain', () => {
     });
 
     it('can handle larger chains', (done) => {
-        (async function() {
+        (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(20, 20); // eslint-disable-line no-unused-vars
             expect(testBlockchain).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('changes balance after transaction', (done) => {
+        (async () => {
+            const testBlockchain = await TestBlockchain.createVolatileTest(10, 20);
+            expect(testBlockchain).toBeTruthy();
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const balance0 = await testBlockchain.accounts.getBalance(user0.address);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce + 1, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx1, tx2], minerAddr: user1.address});
+            await testBlockchain.pushBlock(block);
+            const balance1 = await testBlockchain.accounts.getBalance(user0.address);
+            expect(balance1.nonce).toBe(balance0.nonce + 2);
+            expect(balance1.value).toBe(balance0.value - 4);
         })().then(done, done.fail);
     });
 

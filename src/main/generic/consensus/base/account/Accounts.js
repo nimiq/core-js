@@ -176,7 +176,7 @@ class Accounts extends Observable {
     async _commitBlockBody(tree, body) {
         const operator = (a, b) => a + b;
 
-        for (const tx of body.transactions) {
+        for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b))) {
             await this._executeTransaction(tree, tx, operator);
         }
 
@@ -193,8 +193,7 @@ class Accounts extends Observable {
         const operator = (a, b) => a - b;
 
         // Execute transactions in reverse order.
-        for (let i = body.transactions.length - 1; i >= 0; i--) {
-            const tx = body.transactions[i];
+        for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b)).reverse()) {
             await this._executeTransaction(tree, tx, operator);
         }
 

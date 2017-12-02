@@ -84,7 +84,7 @@ class TestBlockchain extends FullChain {
             transactions.push(transaction);
         }
 
-        return transactions.sort((a, b) => a.compare(b));
+        return transactions.sort((a, b) => a.compareBlockOrder(b));
     }
 
     /**
@@ -118,6 +118,7 @@ class TestBlockchain extends FullChain {
                 accountsHash = await accountsTx.hash();
             } catch (e) {
                 // The block is invalid, fill with broken accountsHash
+                // TODO: This is harmful, as it might cause tests to succeed that should fail.
                 accountsHash = new Hash(null);
             }
             await accountsTx.abort();
@@ -128,27 +129,32 @@ class TestBlockchain extends FullChain {
         const header = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
 
         const block = new Block(header, interlink, body);
-        const hash = await block.hash();
-        TestBlockchain.BLOCKS[hash.toBase64()] = block;
 
         if (nonce === 0) {
-            if (TestBlockchain.NONCES[hash.toBase64()]) {
-                block.header.nonce = TestBlockchain.NONCES[hash.toBase64()];
-                if (!(await block.header.verifyProofOfWork())) {
-                    throw new Error(`Invalid nonce specified for block ${hash}: ${block.header.nonce}`);
-                }
-            } else if (TestBlockchain.MINE_ON_DEMAND) {
-                console.log(`No nonce available for block ${hash.toHex()}, will start mining at height ${block.height} following ${block.prevHash.toHex()}.`);
-                await TestBlockchain.mineBlock(block);
-                TestBlockchain.NONCES[hash.toBase64()] = block.header.nonce;
-            } else if (this._invalidNonce) {
-                console.log(`No nonce available for block ${hash.toHex()}, but accepting invalid nonce.`);
-            } else {
-                throw new Error(`No nonce available for block ${hash}: ${block}`);
-            }
+            await this.setOrMineBlockNonce(block);
         }
 
         return block;
+    }
+
+    async setOrMineBlockNonce(block) {
+        const hash = await block.hash();
+        TestBlockchain.BLOCKS[hash.toBase64()] = block;
+
+        if (TestBlockchain.NONCES[hash.toBase64()]) {
+            block.header.nonce = TestBlockchain.NONCES[hash.toBase64()];
+            if (!(await block.header.verifyProofOfWork())) {
+                throw new Error(`Invalid nonce specified for block ${hash}: ${block.header.nonce}`);
+            }
+        } else if (TestBlockchain.MINE_ON_DEMAND) {
+            console.log(`No nonce available for block ${hash.toHex()}, will start mining at height ${block.height} following ${block.prevHash.toHex()}.`);
+            await TestBlockchain.mineBlock(block);
+            TestBlockchain.NONCES[hash.toBase64()] = block.header.nonce;
+        } else if (this._invalidNonce) {
+            console.log(`No nonce available for block ${hash.toHex()}, but accepting invalid nonce.`);
+        } else {
+            throw new Error(`No nonce available for block ${hash}: ${block}`);
+        }
     }
 
     static async createVolatileTest(numBlocks, numUsers = 2, ignorePoW = false) {
@@ -320,7 +326,6 @@ TestBlockchain.NONCES = {
     '1rOxb4mPp5Jv1v7QIWqcsLbroNA3HW5RAzlUpWn+5hU=': 46208,
     'w6DCoVBCUe4IRUN6Bnq+bPghL4QdXFiGDYgESfhPakE=': 57532,
     'agiHpSkvXVYcSCcVFFu9ynHI2HtmmbrzsowRhOYzyyk=': 21452,
-    'kCm8rhpqYMBlTeU2F+Z47eMak8Bmwoe8FxkeGAOKQVU=': 355267,
     'RQ/E/AG281od3bjuDoJjtygzZc/7HUJu8MXxe9fCr3Q=': 30505,
     'ZuGQOTQhKM83EbwONX2kf0SymkLxU8H3HHyeKD+Alng=': 36858,
     'M8KmuO8c0dbKWOzL+eM4bR8XlXPZ8Iaxsp5k7U4A2O8=': 45901,
@@ -380,6 +385,11 @@ TestBlockchain.NONCES = {
     'GeyLRoL0RGUwLozU8zxXrPfpub0r92Rthof6Kf4qZsk=': 93418,
     'x2m0PymgMxL8+x6vTvYZH/Y5l20H/oR2WZnXGLjANZU=': 3115,
     'WROQUlgewBjoOotIDhlUtqhMiQGrlx7GbuIVH7M/fBk=': 18605,
-    '2nc+vAUDLA3B9oCBXO/d/e7thV4ZsTHFsGB1GMbZGcg=': 5920
+    '2nc+vAUDLA3B9oCBXO/d/e7thV4ZsTHFsGB1GMbZGcg=': 5920,
+    'bYpcs1m4jvD3jRpPDGjwi9s8UyGaj1zx/JDTH+3PrUY=': 9339,
+    'uf2HOcZEBuxu5BQOShH57q8yvQzDbNI850CfTW0UHZI=': 12006,
+    'BkylQQcDhb024zNHWvBCVj4l6gZsgkfpI738RjNTmNo=': 19229,
+    'DW+HG21CYxcI+K+uq4Q4M6AmPz8L7iRInhH2u1HWZ3A=': 83899,
+    'Usrqp130QX+oYtIZfEIcVdxhkjSLuWjuHUXL4EWFWls=': 1579
 };
 Class.register(TestBlockchain);

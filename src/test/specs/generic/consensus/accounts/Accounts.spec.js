@@ -17,7 +17,6 @@ describe('Accounts', () => {
     });
 
     it('can apply and revert a block', (done) => {
-        // prepare everything and serialize accountstree
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
@@ -25,6 +24,35 @@ describe('Accounts', () => {
             const accountsHash1 = await accounts.hash();
             const block = await testBlockchain.createBlock();
             await accounts.commitBlock(block);
+
+            let accountsHash2 = await accounts.hash();
+            expect(accountsHash1.equals(accountsHash2)).toEqual(false);
+
+            await accounts.revertBlock(block);
+            accountsHash2 = await accounts.hash();
+            expect(accountsHash1.equals(accountsHash2)).toEqual(true);
+        })().then(done, done.fail);
+    });
+
+    it('can apply and revert a block with multiple transaction per sender', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 5);
+            const accounts = testBlockchain.accounts;
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const user2 = testBlockchain.users[2];
+            const user3 = testBlockchain.users[3];
+            const user4 = testBlockchain.users[4];
+
+            const accountsHash1 = await accounts.hash();
+
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 0, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
+            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 2, user0.privateKey);
+            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 3, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
 
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
@@ -141,7 +169,7 @@ describe('Accounts', () => {
                 transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.BLOCK_REWARD, 0, nonce++, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);
-            transactions.sort((a, b) => a.compare(b));
+            transactions.sort((a, b) => a.compareBlockOrder(b));
             expect(await treeTx.commit()).toBeTruthy();
             const block = await testBlockchain.createBlock({transactions: transactions});
             expect(await block.verify()).toBeTruthy();

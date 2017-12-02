@@ -3,11 +3,12 @@ class Miner extends Observable {
      * @param {Blockchain} blockchain
      * @param {Mempool} mempool
      * @param {Address} minerAddress
+     * @param {Uint8Array} extraData
      *
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, minerAddress) {
+    constructor(blockchain, mempool, minerAddress, extraData = new Uint8Array(0)) {
         super();
         /** @type {Blockchain} */
         this._blockchain = blockchain;
@@ -15,6 +16,8 @@ class Miner extends Observable {
         this._mempool = mempool;
         /** @type {Address} */
         this._address = minerAddress;
+        /** @type {Uint8Array} */
+        this._extraData = extraData;
 
         /**
          * Number of hashes computed since the last hashrate update.
@@ -141,7 +144,7 @@ class Miner extends Observable {
         this._restarting = true;
 
         // Construct next block.
-        const block = await this._getNextBlock();
+        const block = await this.getNextBlock();
         this._currentBlock = block;
         const buffer = block.header.serialize();
         this._mempoolChanged = false;
@@ -189,10 +192,10 @@ class Miner extends Observable {
      * @return {Promise.<Block>}
      * @private
      */
-    async _getNextBlock() {
+    async getNextBlock() {
         const nextTarget = await this._blockchain.getNextTarget();
         const interlink = await this._getNextInterlink(nextTarget);
-        const body = this._getNextBody();
+        const body = this._getNextBody(interlink.serializedSize);
         const header = await this._getNextHeader(nextTarget, interlink, body);
         return new Block(header, interlink, body);
     }
@@ -217,7 +220,7 @@ class Miner extends Observable {
             await accounts.abort();
         } catch (e) {
             await accounts.abort();
-            throw new Error('Invalid block body');
+            throw new Error(`Invalid block body: ${e.message}`);
         }
 
         const bodyHash = await body.hash();
@@ -238,14 +241,17 @@ class Miner extends Observable {
     }
 
     /**
+     * @param {number} interlinkSize
      * @return {BlockBody}
      * @private
      */
-    _getNextBody() {
-        // Get transactions from mempool (default is maxCount=5000).
-        // TODO Completely fill up the block with transactions until the size limit is reached.
-        const transactions = this._mempool.getTransactions();
-        return new BlockBody(this._address, transactions);
+    _getNextBody(interlinkSize) {
+        const maxSize = Policy.BLOCK_SIZE_MAX
+            - BlockHeader.SERIALIZED_SIZE
+            - interlinkSize
+            - BlockBody.getMetadataSize(this._extraData);
+        const transactions = this._mempool.getTransactionsForBlock(maxSize);
+        return new BlockBody(this._address, transactions, this._extraData);
     }
 
     /**

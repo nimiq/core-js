@@ -121,12 +121,14 @@ class Transaction {
     async verify() {
         // Check that the signature is valid.
         if (!(await this.verifySignature())) {
+            Log.w(Transaction, 'Invalid signature');
             return false;
         }
 
         // Check that sender != recipient.
         const senderAddr = await this.getSenderAddr();
         if (this._recipientAddr.equals(senderAddr)) {
+            Log.w(Transaction, 'Sender and recipient must not match');
             return false;
         }
 
@@ -168,7 +170,7 @@ class Transaction {
     /**
      * @param {Transaction} o
      */
-    compare(o) {
+    compareBlockOrder(o) {
         const recCompare = this.recipientAddr.compare(o.recipientAddr);
         if (recCompare !== 0) return recCompare;
         if (this.nonce < o.nonce) return -1;
@@ -178,6 +180,17 @@ class Transaction {
         if (this.value > o.value) return -1;
         if (this.value < o.value) return 1;
         return this.senderPubKey.compare(o.senderPubKey);
+    }
+
+    /**
+     * @param {Transaction} o
+     */
+    compareAccountOrder(o) {
+        const senderCompare = this.senderPubKey.compare(o.senderPubKey);
+        if (senderCompare !== 0) return senderCompare;
+        if (this.nonce < o.nonce) return -1;
+        if (this.nonce > o.nonce) return 1;
+        return Assert.that(false, 'Invalid transaction set');
     }
 
     /**

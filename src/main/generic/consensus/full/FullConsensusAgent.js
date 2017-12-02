@@ -85,6 +85,9 @@ class FullConsensusAgent extends BaseConsensusAgent {
         // Subscribe to all announcements from the peer.
         this._peer.channel.subscribe(Subscription.ANY);
 
+        // Request the peer's mempool.
+        this._peer.channel.mempool();
+
         this._syncing = false;
         this._synced = true;
 
@@ -434,14 +437,22 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onMempool(msg) {
         // Query mempool for transactions
         const transactions = await this._mempool.getTransactions();
-        if (!transactions || transactions.length === 0) return;
 
-        // Send InvVector for each transaction in the mempool.
-        const vectors = [];
+        // Send an InvVector for each transaction in the mempool.
+        // Split into multiple Inv messages if the mempool is large.
+        let vectors = [];
         for (const tx of transactions) {
             vectors.push(await InvVector.fromTransaction(tx));
+
+            if (vectors.length >= BaseInventoryMessage.VECTORS_MAX_COUNT) {
+                this._peer.channel.inv(vectors);
+                vectors = [];
+            }
         }
-        this._peer.channel.inv(vectors);
+
+        if (vectors.length > 0) {
+            this._peer.channel.inv(vectors);
+        }
     }
 }
 /**

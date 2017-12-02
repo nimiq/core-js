@@ -11,6 +11,17 @@ class BlockBody {
     }
 
     /**
+     * @param {Uint8Array} extraData
+     * @returns {number}
+     */
+    static getMetadataSize(extraData) {
+        return Address.SERIALIZED_SIZE
+            + SerialBuffer.varUintSize(extraData.byteLength)
+            + extraData.byteLength
+            + /*transactionsLength*/ 2;
+    }
+
+    /**
      * @param {Address} minerAddr
      * @param {Array.<Transaction>} transactions
      * @param {Uint8Array} [extraData]
@@ -51,10 +62,10 @@ class BlockBody {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._minerAddr.serialize(buf);
-        buf.writeVarUint(this._extraData.length);
+        buf.writeVarUint(this._extraData.byteLength);
         buf.write(this._extraData);
         buf.writeUint16(this._transactions.length);
-        for (let tx of this._transactions) {
+        for (const tx of this._transactions) {
             tx.serialize(buf);
         }
         return buf;
@@ -65,7 +76,7 @@ class BlockBody {
      */
     get serializedSize() {
         let size = this._minerAddr.serializedSize
-            + SerialBuffer.varUintSize(this._extraData.length)
+            + SerialBuffer.varUintSize(this._extraData.byteLength)
             + this._extraData.byteLength
             + /*transactionsLength*/ 2;
         for (const tx of this._transactions) {
@@ -78,10 +89,11 @@ class BlockBody {
      * @returns {Promise.<boolean>}
      */
     async verify() {
+        /** @type {Transaction} */
         let previousTx = null;
         for (const tx of this._transactions) {
             // Ensure transactions are ordered.
-            if (previousTx && previousTx.compare(tx) > 0) {
+            if (previousTx && previousTx.compareBlockOrder(tx) > 0) {
                 Log.w(BlockBody, 'Invalid block - transactions not ordered.');
                 return false;
             }

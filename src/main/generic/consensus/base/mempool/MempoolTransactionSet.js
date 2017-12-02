@@ -75,7 +75,7 @@ class MempoolTransactionSet {
         if (this.fee < o.fee) return 1;
         if (this.value > o.value) return -1;
         if (this.value < o.value) return 1;
-        return this.transactions[0].compare(o.transactions[0]);
+        return this.transactions[0].compareBlockOrder(o.transactions[0]);
     }
 
     toString() {
