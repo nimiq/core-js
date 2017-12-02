@@ -393,8 +393,8 @@ class NetworkAgent extends Observable {
 NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
 NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
 NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
-NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
-NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 5; // 5 minutes
+NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 5; // 5 minutes
+NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
 NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
 NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
 Class.register(NetworkAgent);
