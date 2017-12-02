@@ -663,8 +663,6 @@ class SignalStore {
         /** @type {Queue.<ForwardedSignal>} */
         this._queue = new Queue();
         /** @type {HashMap.<ForwardedSignal, number>} */
-
-
         this._store = new HashMap();
     }
 
