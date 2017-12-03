@@ -1,6 +1,12 @@
 class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
+    constructor() {
+        super();
+        // FIXME: This is needed for Babel to work correctly. Can be removed as soon as we updated to Babel v7.
+        this._superInit = super.init;
+    }
+
     async init(name) {
-        await super.init(name);
+        await this._superInit.call(this, name);
 
         if (await this.importWasm('worker-wasm.wasm')) {
             await this.importScript('worker-wasm.js');

@@ -177,7 +177,9 @@ const sources = {
 const dependencies = ['./node_modules/jungle-db/dist/web.js']; // external dependencies
 
 const babel_config = {
-    plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
+    plugins: [['transform-runtime', {
+        'polyfill': false
+    }], 'transform-es2015-modules-commonjs'],
     presets: ['es2016', 'es2017']
 };
 
