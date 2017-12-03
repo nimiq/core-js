@@ -434,11 +434,11 @@ class PeerAddresses extends Observable {
     /**
      * Called when a connection to this peerAddress is closed.
      * @param {PeerChannel} channel
+     * @param {PeerAddress} peerAddress
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    disconnected(channel, closedByRemote) {
-        const peerAddress = channel.peerAddress;
+    disconnected(channel, peerAddress, closedByRemote) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -449,7 +449,9 @@ class PeerAddresses extends Observable {
         }
 
         // Delete all addresses that were signalable over the disconnected peer.
-        this._removeBySignalChannel(channel);
+        if (channel) {
+            this._removeBySignalChannel(channel);
+        }
 
         if (peerAddressState.state === PeerAddressState.CONNECTING) {
             this._connectingCount--;

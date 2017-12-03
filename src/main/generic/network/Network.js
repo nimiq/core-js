@@ -73,13 +73,6 @@ class Network extends Observable {
          */
         this._agents = new HashMap();
 
-        /**
-         * Map from netAddress.host -> number of connections to this host.
-         * @type {HashMap.<string,number>}
-         * @private
-         */
-        this._connectionCounts = new HashMap();
-
         // Total bytes sent/received on past connections.
         /** @type {number} */
         this._bytesSent = 0;
@@ -242,12 +235,6 @@ class Network extends Observable {
      * @private
      */
     _onConnection(conn) {
-        // If the connector was able to determine the peer's netAddress,
-        // enforce the max connections per IP limit here.
-        if (conn.netAddress && !this._incrementConnectionCount(conn)) {
-            return;
-        }
-
         // Reject connection if we are already connected to this peer address.
         // This can happen if the peer connects (inbound) while we are
         // initiating a (outbound) connection to it.
@@ -258,6 +245,9 @@ class Network extends Observable {
 
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
+            if (conn.outbound) {
+                this._addresses.disconnected(null, conn.peerAddress, false);
+            }
             conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return;
         }
@@ -316,11 +306,6 @@ class Network extends Observable {
         // Otherwise, use the netAddress advertised for this peer if available.
         else if (peer.channel.peerAddress.netAddress) {
             peer.channel.netAddress = peer.channel.peerAddress.netAddress;
-
-            // Enforce the max connection limit per IP here.
-            if (!this._incrementConnectionCount(peer.channel.connection)) {
-                return;
-            }
         }
         // Otherwise, we don't know the netAddress of this peer. Use a pseudo netAddress.
         else {
@@ -337,6 +322,19 @@ class Network extends Observable {
         if (this._addresses.isBanned(peer.peerAddress)) {
             agent.channel.close('peer is banned');
             return;
+        }
+
+        // Close connection if we have too many connections to the peer's IP address.
+        if (peer.netAddress && !peer.netAddress.isPseudo()) {
+            const numConnections = this._agents.values().filter(
+                agent => peer.netAddress.equals(agent.peer.netAddress));
+            const maxConnections = peer.channel.connection.protocol === Protocol.WS ?
+                Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
+
+            if (numConnections > maxConnections) {
+                agent.channel.close(`connection limit per ip (${maxConnections}) reached`);
+                return;
+            }
         }
 
         // Recalculate the network adjusted offset
@@ -386,11 +384,6 @@ class Network extends Observable {
         // Delete agent.
         this._agents.remove(channel.id);
 
-        // Decrement connection count per IP if we already know the peer's netAddress.
-        if (channel.netAddress && !channel.netAddress.isPseudo()) {
-            this._decrementConnectionCount(channel.netAddress);
-        }
-
         // Update total bytes sent/received.
         this._bytesSent += channel.connection.bytesSent;
         this._bytesReceived += channel.connection.bytesReceived;
@@ -400,7 +393,7 @@ class Network extends Observable {
             // Check if the handshake with this peer has completed.
             if (this._addresses.isConnected(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._addresses.disconnected(channel, closedByRemote);
+                this._addresses.disconnected(channel, channel.peerAddress, closedByRemote);
 
                 // Tell listeners that this peer has gone away.
                 this.fire('peer-left', peer);
@@ -414,9 +407,13 @@ class Network extends Observable {
                     + `(version=${peer.version}, headHash=${peer.headHash.toBase64()}, `
                     + `transferred=${kbTransferred} kB)`);
             } else {
-                // Treat connections closed pre-handshake as failed attempts.
+                // Treat connections closed pre-handshake by remote as failed attempts.
                 Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
-                this._addresses.unreachable(channel.peerAddress);
+                if (closedByRemote) {
+                    this._addresses.unreachable(channel.peerAddress);
+                } else {
+                    this._addresses.disconnected(null, channel.peerAddress, false);
+                }
             }
         }
 
@@ -442,37 +439,6 @@ class Network extends Observable {
         } else {
             // TODO ban netAddress
         }
-    }
-
-    /**
-     * @param {PeerConnection} conn
-     * @returns {boolean}
-     * @private
-     */
-    _incrementConnectionCount(conn) {
-        let numConnections = this._connectionCounts.get(conn.netAddress) || 0;
-        numConnections++;
-        this._connectionCounts.put(conn.netAddress, numConnections);
-
-        // Enforce max connections per IP limit.
-        const maxConnections = conn.protocol === Protocol.WS ?
-            Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
-        if (numConnections > maxConnections) {
-            conn.close(`connection limit per ip (${maxConnections}) reached`);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * @param {NetAddress} netAddress
-     * @returns {void}
-     * @private
-     */
-    _decrementConnectionCount(netAddress) {
-        let numConnections = this._connectionCounts.get(netAddress) || 1;
-        numConnections = Math.max(numConnections - 1, 0);
-        this._connectionCounts.put(netAddress, numConnections);
     }
 
     /**

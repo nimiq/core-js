@@ -54,6 +54,14 @@ class SignalId extends Primitive {
     }
 
     /**
+     * @returns {string}
+     * @override
+     */
+    toString() {
+        return this.toHex();
+    }
+
+    /**
      * @param {string} base64
      * @return {SignalId}
      */
