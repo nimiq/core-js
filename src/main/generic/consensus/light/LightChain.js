@@ -41,7 +41,7 @@ class LightChain extends FullChain {
      * @protected
      */
     async _init() {
-        //FIXME: this is a workaround as Babel doesn't understands await super()
+        // FIXME: this is a workaround as Babel doesn't understands await super().
         await FullChain.prototype._init.call(this);
         if (!this._proof) {
             this._proof = await this.getChainProof();

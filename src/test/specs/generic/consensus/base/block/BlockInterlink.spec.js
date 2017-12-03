@@ -25,24 +25,26 @@ describe('BlockInterlink', () => {
         /* eslint-enable no-unused-vars */
     });
 
-    it('is serializable and unserializable', () => {
+    it('is serializable and unserializable', (done) => {
         const blockInterlink2 = BlockInterlink.unserialize(blockInterlink1.serialize());
-        expect(BufferUtils.equals(blockInterlink1, blockInterlink2)).toBe(true);
-        expect(BufferUtils.equals(blockInterlink1.hash(), blockInterlink2.hash())).toBe(true);
+        (async () => {
+            expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
+            expect((await blockInterlink1.hash()).equals(await blockInterlink2.hash())).toBe(true);
+        })().then(done, done.fail);
     });
 
     it('must return the correct root hash', (done) => {
         const rootHash = new Hash(BufferUtils.fromBase64('JBd6ZZTwPWxWikFBawS9SrUEDiWAytbSjTjs6CKg78M='));
         (async () => {
             const hash = await blockInterlink1.hash();
-            expect(BufferUtils.equals(hash, rootHash)).toBe(true);
+            expect(hash.equals(rootHash)).toBe(true);
         })().then(done, done.fail);
     });
 
     it('must return the correct hash array', () => {
         const hashesArray = blockInterlink1.hashes;
         for (let i = 0; i < blockHashes.length; i++) {
-            expect(BufferUtils.equals(hashesArray[i], blockHashes[i])).toBe(true);
+            expect(hashesArray[i].equals(blockHashes[i])).toBe(true);
         }
     });
 
