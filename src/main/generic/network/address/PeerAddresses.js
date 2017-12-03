@@ -443,16 +443,15 @@ class PeerAddresses extends Observable {
         if (!peerAddressState) {
             return;
         }
-        if (peerAddressState.state !== PeerAddressState.CONNECTING
-            && peerAddressState.state !== PeerAddressState.CONNECTED) {
-            throw `disconnected() called in unexpected state ${peerAddressState.state}`;
-        }
 
         // Delete all addresses that were signalable over the disconnected peer.
         if (channel) {
             this._removeBySignalChannel(channel);
         }
 
+        if (peerAddressState.state === PeerAddressState.BANNED) {
+            return;
+        }
         if (peerAddressState.state === PeerAddressState.CONNECTING) {
             this._connectingCount--;
         }
