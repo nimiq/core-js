@@ -75,7 +75,7 @@ class Address extends Primitive {
      */
     static fromUserFriendlyAddress(str) {
         str = str.replace(/ /g, '');
-        if (str.substr(0, 2) !== Address.CCODE) {
+        if (str.substr(0, 2).toUpperCase() !== Address.CCODE) {
             throw new Error('Invalid Address: Wrong country code', 201);
         }
         if (str.length !== 36) {
