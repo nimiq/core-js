@@ -177,7 +177,7 @@ class BlockHeader {
      * @returns {string}
      */
     toString() {
-        return `BlockHeader{`
+        return 'BlockHeader{'
             + `prevHash=${this._prevHash}, `
             + `interlinkHash=${this._interlinkHash}, `
             + `bodyHash=${this._bodyHash}, `
@@ -186,7 +186,7 @@ class BlockHeader {
             + `height=${this._height}, `
             + `timestamp=${this._timestamp}, `
             + `nonce=${this._nonce}`
-            + `}`;
+            + '}';
     }
 
     /** @type {Hash} */

@@ -1,3 +1,8 @@
+/**
+ * A LightChain is initialized by using NiPoPoWs instead of the full
+ * blockchain history, but after initialization, it behaves as a regular
+ * full blockchain.
+ */
 class LightChain extends FullChain {
     /**
     * @param {JungleDB} jdb
@@ -36,6 +41,7 @@ class LightChain extends FullChain {
      * @protected
      */
     async _init() {
+        // FIXME: this is a workaround as Babel doesn't understands await super().
         await FullChain.prototype._init.call(this);
         if (!this._proof) {
             this._proof = await this.getChainProof();
@@ -51,7 +57,7 @@ class LightChain extends FullChain {
         const proof = await this._getChainProof();
         if (!proof) {
             // If we cannot construct a chain proof, superquality of the chain is harmed.
-            // Return the last know proof.
+            // Return the last known proof.
             return this._proof;
         }
         return proof;

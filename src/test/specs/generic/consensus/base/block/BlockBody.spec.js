@@ -32,6 +32,7 @@ describe('BlockBody', () => {
     });
 
     it('transactions must be well defined', () => {
+        /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockBody(minerAddress, null);
         }).toThrow('Malformed transactions');
@@ -47,5 +48,6 @@ describe('BlockBody', () => {
         expect(() => {
             const test5 = new BlockBody(minerAddress, [true]);
         }).toThrow('Malformed transactions');
+        /* eslint-enable no-unused-vars */
     });
 });

@@ -13,7 +13,7 @@ class BlockInterlink {
      * @param {Array.<Hash>} blockHashes
      */
     constructor(blockHashes) {
-        if (!blockHashes || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
+        if (!blockHashes || !Array.isArray(blockHashes) || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
         /** @type {Array.<Hash>} */
         this._hashes = blockHashes;
     }
