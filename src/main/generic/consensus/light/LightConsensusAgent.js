@@ -110,7 +110,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Case 3: We are are syncing.
         if (this._syncing && !this._busy) {
             if (this._catchup) {
-                await super.syncBlockchain();
+                await FullConsensusAgent.prototype.syncBlockchain.call(this);
             } else {
                 // Initialize partial chain on first call.
                 if (!this._partialChain) {
@@ -480,13 +480,13 @@ class LightConsensusAgent extends FullConsensusAgent {
                 && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
                 this._onMainChain = false;
                 await this._initChainProofSync();
-                this.syncBlockchain();
+                this.syncBlockchain().catch(e => Log.e(LightConsensusAgent, e));
                 return;
             } else {
                 this._onMainChain = true;
             }
 
-            super._onKnownBlockAnnounced(hash, block);
+            FullConsensusAgent.prototype._onKnownBlockAnnounced.call(this, hash, block);
         }
     }
 

@@ -21,6 +21,9 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         /** @type {number} */
         this._cycleWait = 100;
 
+        // FIXME: This is needed for Babel to work correctly. Can be removed as soon as we updated to Babel v7.
+        this._superUpdateToSize = super._updateToSize;
+
         if (PlatformUtils.isNodeJs()) {
             const nimiq_node = require(`${__dirname}/nimiq_node`);
             /**
@@ -131,7 +134,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
 
     async _updateToSize() {
         if (!PlatformUtils.isNodeJs()) {
-            await super._updateToSize();
+            await this._superUpdateToSize.call(this);
         }
 
         while (this._miningEnabled && this._activeNonces.length < this.poolSize) {
