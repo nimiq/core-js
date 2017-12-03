@@ -8,13 +8,11 @@ class WebRtcConfig {
                 return WebRtcConfig._config;
             }
 
-            const certificate = await WebRtcCertificate.get();
             WebRtcConfig._config = {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun.nimiq-network.com:19302' }
-                ],
-                certificates : [certificate]
+                ]
             };
 
             // Configure our peer address.
@@ -25,13 +23,29 @@ class WebRtcConfig {
         return WebRtcConfig._config;
     }
 
+    /**
+     * @returns {Promise.<KeyPair>}
+     */
+    static async myKeyPair() {
+        if (!WebRtcConfig._keyPair) {
+            const db = await new WebRtcStore();
+            let keys = await db.get('keys');
+            if (!keys) {
+                keys = await KeyPair.generate();
+                await db.put('keys', keys);
+            }
+            await db.close();
+            WebRtcConfig._keyPair = keys;
+        }
+        return WebRtcConfig._keyPair;
+    }
+
+    /**
+     * @returns {Promise.<SignalId>}
+     */
     static async mySignalId() {
-        const config = await WebRtcConfig.get();
-        const conn = new RTCPeerConnection(config);
-        conn.createDataChannel('pseudo');
-        return conn.createOffer().then(desc => {
-            return WebRtcUtils.sdpToSignalId(desc.sdp);
-        });
+        const keyPair = await WebRtcConfig.myKeyPair();
+        return keyPair.publicKey.toSignalId();
     }
 }
 Class.register(WebRtcConfig);

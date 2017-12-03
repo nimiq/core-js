@@ -214,23 +214,15 @@ class RtcPeerAddress extends PeerAddress {
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
-     * @param {string} signalId
+     * @param {SignalId} signalId
      * @param {number} distance
      */
     constructor(services, timestamp, netAddress, signalId, distance) {
         super(Protocol.RTC, services, timestamp, netAddress);
-        if (!RtcPeerAddress.isSignalId(signalId)) throw 'Malformed signalId';
+        if (!(signalId instanceof SignalId)) throw 'Malformed signalId';
         if (!NumberUtils.isUint8(distance)) throw 'Malformed distance';
         this._signalId = signalId;
         this._distance = distance;
-    }
-
-    /**
-     * @param {string} arg
-     * @returns {boolean}
-     */
-    static isSignalId(arg) {
-        return /[a-z0-9]{32}/i.test(arg);
     }
 
     /**
@@ -241,7 +233,7 @@ class RtcPeerAddress extends PeerAddress {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const netAddress = NetAddress.unserialize(buf);
-        const signalId = buf.readString(32);
+        const signalId = SignalId.unserialize(buf);
         const distance = buf.readUint8();
         return new RtcPeerAddress(services, timestamp, netAddress, signalId, distance);
     }
@@ -253,7 +245,7 @@ class RtcPeerAddress extends PeerAddress {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeString(this._signalId, 32);
+        this._signalId.serialize(buf);
         buf.writeUint8(this._distance);
         return buf;
     }
@@ -261,7 +253,7 @@ class RtcPeerAddress extends PeerAddress {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*signalId*/ 32
+            + /*signalId*/ this._signalId.serializedSize
             + /*distance*/ 1;
     }
 
@@ -273,7 +265,7 @@ class RtcPeerAddress extends PeerAddress {
     equals(o) {
         return super.equals(o)
             && o instanceof RtcPeerAddress
-            && this._signalId === o.signalId;
+            && this._signalId.equals(o.signalId);
     }
 
     hashCode() {
@@ -287,7 +279,7 @@ class RtcPeerAddress extends PeerAddress {
         return `rtc://${this._signalId}`;
     }
 
-    /** @type {string} */
+    /** @type {SignalId} */
     get signalId() {
         return this._signalId;
     }

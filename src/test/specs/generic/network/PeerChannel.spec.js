@@ -13,7 +13,7 @@ describe('PeerChannel', () => {
             await Block.GENESIS.hash();
             const spy = new SpyConnection(msg => {
                 const vMsg = VersionMessage.unserialize(msg);
-                expect(vMsg.version).toBe(1);
+                expect(vMsg.version).toBe(Version.CODE);
                 expect(vMsg.peerAddress.equals(addr)).toBe(true);
                 expect(vMsg.headHash.equals(hash)).toBe(true);
             });

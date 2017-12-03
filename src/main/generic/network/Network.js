@@ -510,10 +510,16 @@ class Network extends Observable {
      * @returns {void}
      * @private
      */
-    _onSignal(channel, msg) {
+    async _onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
             channel.ban('invalid signal ttl');
+            return;
+        }
+
+        // Discard signals that have a payload, which is not properly signed.
+        if (msg.hasPayload() && !(await msg.verifySignature())) {
+            channel.ban('invalid signature');
             return;
         }
 
@@ -521,7 +527,7 @@ class Network extends Observable {
         const mySignalId = NetworkConfig.myPeerAddress().signalId;
 
         // Discard signals from myself.
-        if (msg.senderId === mySignalId) {
+        if (msg.senderId.equals(mySignalId)) {
             Log.w(Network, `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${mySignalId})`);
             return;
         }
@@ -534,7 +540,7 @@ class Network extends Observable {
         }
 
         // If the signal is intended for us, pass it on to our WebRTC connector.
-        if (msg.recipientId === mySignalId) {
+        if (msg.recipientId.equals(mySignalId)) {
             // If we sent out a signal that did not reach the recipient because of TTL
             // or it was unroutable, delete this route.
             if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
@@ -575,7 +581,7 @@ class Network extends Observable {
         }
 
         // Decrement ttl and forward signal.
-        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload);
+        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload, msg.senderPubKey, msg.signature);
 
         // We store forwarded messages if there are no special flags set.
         if (msg.flags === 0) {
@@ -648,8 +654,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      */
     add(senderId, recipientId, nonce) {
@@ -673,8 +679,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      * @return {boolean}
      */
@@ -684,8 +690,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      * @return {boolean}
      */
@@ -711,14 +717,14 @@ Class.register(SignalStore);
 
 class ForwardedSignal {
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      */
     constructor(senderId, recipientId, nonce) {
-        /** @type {string} */
+        /** @type {SignalId} */
         this._senderId = senderId;
-        /** @type {string} */
+        /** @type {SignalId} */
         this._recipientId = recipientId;
         /** @type {number} */
         this._nonce = nonce;
@@ -730,8 +736,8 @@ class ForwardedSignal {
      */
     equals(o) {
         return o instanceof ForwardedSignal
-            && this._senderId === o._senderId
-            && this._recipientId === o._recipientId
+            && this._senderId.equals(o._senderId)
+            && this._recipientId.equals(o._recipientId)
             && this._nonce === o._nonce;
     }
 
