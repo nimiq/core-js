@@ -672,8 +672,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      */
     add(senderId, recipientId, nonce) {
@@ -697,8 +697,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      * @return {boolean}
      */
@@ -708,8 +708,8 @@ class SignalStore {
     }
 
     /**
-     * @param {string} senderId
-     * @param {string} recipientId
+     * @param {SignalId} senderId
+     * @param {SignalId} recipientId
      * @param {number} nonce
      * @return {boolean}
      */

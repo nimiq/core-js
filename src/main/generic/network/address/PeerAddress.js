@@ -219,18 +219,10 @@ class RtcPeerAddress extends PeerAddress {
      */
     constructor(services, timestamp, netAddress, signalId, distance) {
         super(Protocol.RTC, services, timestamp, netAddress);
-        if (!signalId || !(signalId instanceof SignalId)) throw 'Malformed signalId';
+        if (!(signalId instanceof SignalId)) throw 'Malformed signalId';
         if (!NumberUtils.isUint8(distance)) throw 'Malformed distance';
         this._signalId = signalId;
         this._distance = distance;
-    }
-
-    /**
-     * @param {string} arg
-     * @returns {boolean}
-     */
-    static isSignalId(arg) {
-        return /[a-f0-9]{32}/i.test(arg);
     }
 
     /**

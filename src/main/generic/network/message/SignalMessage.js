@@ -11,12 +11,12 @@ class SignalMessage extends Message {
      */
     constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array(0), senderPubKey, signature) {
         super(Message.Type.SIGNAL);
-        if (!senderId || !(senderId instanceof SignalId)) throw 'Malformed senderId';
-        if (!recipientId || !(recipientId instanceof SignalId)) throw 'Malformed recipientId';
+        if (!(senderId instanceof SignalId)) throw 'Malformed senderId';
+        if (!(recipientId instanceof SignalId)) throw 'Malformed recipientId';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
         if (!NumberUtils.isUint8(flags)) throw 'Malformed flags';
-        if (!payload || !(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
+        if (!(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
         const hasPayload = payload.byteLength > 0;
         if (hasPayload && !(signature instanceof Signature)) throw 'Malformed signature';
         if (hasPayload && !(senderPubKey instanceof PublicKey)) throw 'Malformed public key';
