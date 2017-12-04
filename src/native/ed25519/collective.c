@@ -1,4 +1,5 @@
 #include "ed25519.h"
+#include "sha512.h"
 #include "ge.h"
 #include "sc.h"
 
@@ -19,22 +20,22 @@ void ed25519_add_points(unsigned char *point_AB, const unsigned char *point_A, c
     ge_p3 AB;
     /* point A related */
     ge_p3 point_A_unpacked;
-    ge_cached pA;
+    ge_cached A;
     /* point B related */
     ge_p3 point_B_unpacked;
-    ge_cached pB;
+    ge_cached B;
     
     /* unpack point A into pA */
     ge_frombytes_negate_vartime(&point_A_unpacked, point_A);
     fe_neg(point_A_unpacked.X, point_A_unpacked.X); /* undo negate */
     fe_neg(point_A_unpacked.T, point_A_unpacked.T); /* undo negate */
-    ge_p3_to_cached(&pA, &point_A_unpacked);
+    ge_p3_to_cached(&A, &point_A_unpacked);
 
     /* unpack point B into pB */
     ge_frombytes_negate_vartime(&point_B_unpacked, point_B);
     fe_neg(point_B_unpacked.X, point_B_unpacked.X); /* undo negate */
     fe_neg(point_B_unpacked.T, point_B_unpacked.T); /* undo negate */
-    ge_p3_to_cached(&pB, &point_B_unpacked);
+    ge_p3_to_cached(&B, &point_B_unpacked);
     
     /* AB = A + B */
     ge_add(&AB_p1p1, &A, &B);
@@ -61,17 +62,17 @@ int ed25519_create_commitment(unsigned char *secret_r, unsigned char *commitment
     ge_p3 R;
 
     // Decompress the 32 byte cryptographically secure random data to 64 byte.
-    sha512(ramdomness, 32, secret);
-    sc_reduce(secret);
+    sha512(randomness, 32, secret_r);
+    sc_reduce(secret_r);
 
     // Abort if secret equals 0 mod l or 1 mod l.
-    if (!sc_valid_reduction(secret)) {
+    if (!sc_valid_reduction(secret_r)) {
         return 0;
     }
 
     // Compute the point [secret]B. Let the string R be the encoding of this point.
-    ge_scalarmult_base(&R, secret);
-    ge_p3_tobytes(commitment, &R);
+    ge_scalarmult_base(&R, secret_r);
+    ge_p3_tobytes(commitment_R, &R);
 
     return 1;
 }
