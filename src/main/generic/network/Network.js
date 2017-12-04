@@ -327,7 +327,7 @@ class Network extends Observable {
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
             const numConnections = this._agents.values().filter(
-                agent => peer.netAddress.equals(agent.peer.netAddress));
+                agent => peer.netAddress.equals(agent.channel.netAddress));
             const maxConnections = peer.channel.connection.protocol === Protocol.WS ?
                 Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
 
