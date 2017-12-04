@@ -219,11 +219,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
         const onFork = !(await this._getBlock(hash, /*includeForks*/ false));
         if (onFork) {
             this._numBlocksForking++;
-            if (this._forkHead && !(await block.isImmediateSuccessorOf(this._forkHead))) {
-                // The peer is sending fork blocks, but they are not forming a chain. Drop peer.
-                this._peer.channel.close('conspicuous fork');
-                return;
-            }
             this._forkHead = block;
         }
     }
@@ -274,11 +269,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
             case FullChain.OK_FORKED:
                 if (this._syncing) {
                     this._numBlocksForking++;
-                    if (this._forkHead && !(await block.isImmediateSuccessorOf(this._forkHead))) {
-                        // The peer is sending fork blocks, but they are not forming a chain. Drop peer.
-                        this._peer.channel.close('conspicuous fork');
-                        break;
-                    }
                     this._forkHead = block;
                 }
                 break;
