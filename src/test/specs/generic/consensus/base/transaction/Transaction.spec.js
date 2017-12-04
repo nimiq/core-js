@@ -6,7 +6,7 @@ describe('Transaction', () => {
     const nonce = 1;
     const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
-    it('is 171 bytes long', () => {
+    it('is 139 bytes long', () => {
 
         //   2 bytes version
         //   1 byte  type
