@@ -36,6 +36,7 @@ void ed25519_partial_sign(unsigned char *partial_signature, const unsigned char 
 }
 
 void ed25519_sign(unsigned char *signature, const unsigned char *message, size_t message_len, const unsigned char *public_key, const unsigned char *private_key) {
+    sha512_context hash;
     unsigned char az[64];
     unsigned char r[64];
     ge_p3 R;
@@ -55,5 +56,5 @@ void ed25519_sign(unsigned char *signature, const unsigned char *message, size_t
     ge_scalarmult_base(&R, r);
     ge_p3_tobytes(signature, &R);
 
-    ed25519_partial_sign(signature + 32, message, message_len, signature, &r, public_key, az);
+    ed25519_partial_sign(signature + 32, message, message_len, signature, r, public_key, az);
 }
