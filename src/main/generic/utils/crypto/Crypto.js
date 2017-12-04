@@ -108,6 +108,50 @@ class Crypto {
         return { privateKey, publicKey };
     }
 
+    static get randomnessSize() {
+        return 32;
+    }
+
+    static async noncePairGenerate() {
+        const randomness = new Uint8Array(Crypto.randomnessSize);
+        Crypto.lib.getRandomValues(randomness);
+        const worker = await Crypto._cryptoWorkerSync();
+        return worker.commitmentCreate(randomness);
+    }
+
+    static noncePairSecret(obj) {
+        return obj.secret;
+    }
+
+    static noncePairCommitment(obj) {
+        return obj.commitment;
+    }
+
+    static async sumPublicKeys(...publicKeys) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return publicKeys.reduce((pubKeyA, pubKeyB) => worker.pointsAdd(pubKeyA, pubKeyB));
+    }
+
+    static async sumCommitments(...commitments) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return commitments.reduce((commitment1, commitment2) => worker.pointsAdd(commitment1, commitment2));
+    }
+
+    static async sumPartialSignatures(...partialSignatures) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return partialSignatures.reduce((sigA, sigB) => worker.scalarsAdd(sigA, sigB));
+    }
+
+    static async partialSignatureCreate(privateKey, combinedPublicKey, secret, combinedCommitment, data) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return worker.partialSignatureCreate(privateKey, combinedPublicKey, secret, combinedCommitment, data);
+    }
+
+    static async combineSignatures(combinedCommitment, ...partialSignatures) {
+        const combinedSignature = await Crypto.sumPartialSignatures(...partialSignatures);
+        return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
+    }
+
     static async signatureCreate(privateKey, publicKey, data) {
         const worker = await Crypto._cryptoWorkerSync();
         return worker.signatureCreate(privateKey, publicKey, data);
