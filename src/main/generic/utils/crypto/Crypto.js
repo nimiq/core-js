@@ -10,10 +10,18 @@ class Crypto {
             Crypto._cryptoWorkerPromiseSync = new Promise(async (resolve) => {
                 const impl = IWorker._workerImplementation[CryptoWorker.name];
                 await impl.init('crypto');
+                Crypto._cryptoWorkerResolvedSync = impl;
                 resolve(impl);
             });
         }
         return Crypto._cryptoWorkerPromiseSync;
+    }
+
+    /**
+     * @return {Promise}
+     */
+    static async prepareSyncCryptoWorker() {
+        await Crypto._cryptoWorkerSync();
     }
 
     /**
@@ -150,6 +158,16 @@ class Crypto {
         return worker.computeLightHash(arr);
     }
 
+    /**
+     * @param arr
+     * @return {Uint8Array}
+     */
+    static hashLightSync(arr) {
+        const worker = Crypto._cryptoWorkerResolvedSync;
+        if (!worker) throw new Error('Synchronous crypto worker not yet prepared');
+        return worker.computeLightHash(arr);
+    }
+
     // Light hash implementation using SHA-256 with WebCrypto API
     // static async hashLight(arr) {
     //     return new Uint8Array(await Crypto.lib.digest('SHA-256', arr));
@@ -218,6 +236,10 @@ class Crypto {
     }
 }
 
-/** @type {CryptoWorker} */
+/** @type {Promise.<CryptoWorker>} */
 Crypto._cryptoWorkerPromise = null;
+/** @type {Promise.<CryptoWorker>} */
+Crypto._cryptoWorkerPromiseSync = null;
+/** @type {CryptoWorkerImpl} */
+Crypto._cryptoWorkerResolvedSync = null;
 Class.register(Crypto);

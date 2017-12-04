@@ -35,9 +35,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} input
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async computeLightHash(input) {
+    computeLightHash(input) {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
