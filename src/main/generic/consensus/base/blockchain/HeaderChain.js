@@ -3,7 +3,7 @@ class HeaderChain {
      * @param {Array.<BlockHeader>} headers
      */
     constructor(headers) {
-        if (!headers || !NumberUtils.isUint16(headers.length)
+        if (!headers || !Array.isArray(headers) || !NumberUtils.isUint16(headers.length)
             || headers.some(it => !(it instanceof BlockHeader))) throw new Error('Malformed headers');
 
         /** @type {Array.<BlockHeader>} */

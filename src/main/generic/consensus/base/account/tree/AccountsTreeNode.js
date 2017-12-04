@@ -146,7 +146,7 @@ class AccountsTreeNode {
 
     /**
      * @param {string} prefix
-     * @returns {Hash}
+     * @returns {?Hash}
      */
     getChildHash(prefix) {
         return this._childrenHashes && this._childrenHashes[this._getChildIndex(prefix)];
@@ -154,7 +154,7 @@ class AccountsTreeNode {
 
     /**
      * @param {string} prefix
-     * @returns {string|boolean}
+     * @returns {?string}
      */
     getChild(prefix) {
         const suffix = this._childrenSuffixes && this._childrenSuffixes[this._getChildIndex(prefix)];
@@ -221,7 +221,7 @@ class AccountsTreeNode {
         if (!this._childrenSuffixes) {
             return undefined;
         }
-        for (let i = this._childrenSuffixes.length-1; i>=0; --i) {
+        for (let i = this._childrenSuffixes.length - 1; i >= 0; --i) {
             if (this._childrenSuffixes[i]) {
                 return this.prefix + this._childrenSuffixes[i];
             }
@@ -293,7 +293,7 @@ class AccountsTreeNode {
      * @private
      */
     _getChildIndex(prefix) {
-        Assert.that(prefix.substr(0, this.prefix.length) === this.prefix, 'Prefix is not a child of the current node');
+        Assert.that(prefix.substr(0, this.prefix.length) === this.prefix, `Prefix ${prefix} is not a child of the current node ${this.prefix}`);
         return parseInt(prefix[this.prefix.length], 16);
     }
 

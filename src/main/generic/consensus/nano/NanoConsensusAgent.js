@@ -493,7 +493,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
  */
 NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 20;
 /**
- * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
+ * Maximum time (ms) to wait for accountsProof after sending out getAccountsProof before dropping the peer.
  * @type {number}
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
