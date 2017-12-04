@@ -20,7 +20,6 @@ void ed25519_add_points(unsigned char *point_AB, const unsigned char *point_A, c
     ge_p3 AB;
     /* point A related */
     ge_p3 point_A_unpacked;
-    ge_cached A;
     /* point B related */
     ge_p3 point_B_unpacked;
     ge_cached B;
@@ -29,7 +28,6 @@ void ed25519_add_points(unsigned char *point_AB, const unsigned char *point_A, c
     ge_frombytes_negate_vartime(&point_A_unpacked, point_A);
     fe_neg(point_A_unpacked.X, point_A_unpacked.X); /* undo negate */
     fe_neg(point_A_unpacked.T, point_A_unpacked.T); /* undo negate */
-    ge_p3_to_cached(&A, &point_A_unpacked);
 
     /* unpack point B into pB */
     ge_frombytes_negate_vartime(&point_B_unpacked, point_B);
@@ -38,7 +36,7 @@ void ed25519_add_points(unsigned char *point_AB, const unsigned char *point_A, c
     ge_p3_to_cached(&B, &point_B_unpacked);
     
     /* AB = A + B */
-    ge_add(&AB_p1p1, &A, &B);
+    ge_add(&AB_p1p1, &point_A_unpacked, &B);
     ge_p1p1_to_p3(&AB, &AB_p1p1);
 
     /* pack point */
