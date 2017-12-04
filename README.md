@@ -9,10 +9,14 @@ Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](http
 
 ## Quickstart
 
-1. Clone this repository `git clone https://github.com/nimiq-network/core`.
-2. Run `npm install` or `yarn`
-3. Run `npm run build` or `yarn build`
-4. Open `clients/browser/(full|light|nano).html` in your browser to access the Browser Client.
+1. On Ubuntu, install `build-essential`: `sudo apt-get install -y build-essential`.
+    - On other Linux, install `python2.7`, `make` and `gcc`.
+    - For MacOS or Windows, [please see here](https://github.com/nodejs/node-gyp#on-mac-os-x).
+2. Install gulp globally: `sudo npm install -g gulp` or `yarn global add gulp`.
+3. Clone this repository `git clone https://github.com/nimiq-network/core`.
+4. In the core directory, run `npm install` or `yarn`.
+5. In the core directory, run `npm run build` or `yarn build`.
+6. Open `clients/browser/(full|light|nano).html` in your browser to access the Browser Client.
 
 ## Web Developers
 ### Most simple Web Application on top of the Nimiq Blockchain
@@ -26,18 +30,15 @@ Follow the Quickstart guide or use our CDN:
 ```
 
 
-### Run Client
-
-#### Run Browser Client
+### Run Browser Client
 Open `clients/browser/(full|light|nano).html` in your browser.
 
-#### Run NodeJs client
-
+### Run NodeJs client
 To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
 
 ```bash
 cd clients/nodejs/
-node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate>
+node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate> [--miner[=<threads>]]
 ```
 
 | Argument        | Description           |
@@ -47,6 +48,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 | **_key_** | Private key for the client      |
 | **_cert_** | SSL certificate of your Domain.       |
 | **_wallet-seed_** | Your wallet seed (optional)        |
+| **_miner_** | The number of threads to start for mining (optional) |
 
 
 ### Build your own Browser client
