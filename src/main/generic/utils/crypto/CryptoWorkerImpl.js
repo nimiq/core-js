@@ -147,7 +147,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, randomness.length).set(randomness);
             const res = Module._ed25519_create_commitment(wasmOutSecret, wasmOutCommitment, wasmIn);
             if (res !== 1) {
-                throw new Error('Secret must not be 0 or 1');
+                throw new Error('Secret must not be 0 or 1: ' + res);
             }
             const commitment = new Uint8Array(CryptoWorker.PUBLIC_KEY_SIZE);
             const secret = new Uint8Array(CryptoWorker.PRIVATE_KEY_SIZE);
@@ -197,20 +197,20 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Uint8Array}
      */
     scalarsAdd(a, b) {
-        if (a.byteLength !== CryptoWorker.SIGNATURE_SIZE || b.byteLength !== CryptoWorker.SIGNATURE_SIZE) {
+        if (a.byteLength !== CryptoWorker.PARTIAL_SIGNATURE_SIZE || b.byteLength !== CryptoWorker.PARTIAL_SIGNATURE_SIZE) {
             throw Error('Wrong buffer size.');
         }
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOutSum = Module.stackAlloc(CryptoWorker.SIGNATURE_SIZE);
+            const wasmOutSum = Module.stackAlloc(CryptoWorker.PARTIAL_SIGNATURE_SIZE);
             const wasmInA = Module.stackAlloc(a.length);
             const wasmInB = Module.stackAlloc(b.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmInA, a.length).set(a);
             new Uint8Array(Module.HEAPU8.buffer, wasmInB, b.length).set(b);
-            Module._ed25519_add_points(wasmOutSum, wasmInA, wasmInB);
-            const sum = new Uint8Array(CryptoWorker.SIGNATURE_SIZE);
-            sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, CryptoWorker.SIGNATURE_SIZE));
+            Module._ed25519_add_scalars(wasmOutSum, wasmInA, wasmInB);
+            const sum = new Uint8Array(CryptoWorker.PARTIAL_SIGNATURE_SIZE);
+            sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, CryptoWorker.PARTIAL_SIGNATURE_SIZE));
             return sum;
         } catch (e) {
             Log.w(CryptoWorkerImpl, e);
@@ -249,7 +249,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             new Uint8Array(Module.HEAPU8.buffer, wasmInSecret, secret.length).set(secret);
             new Uint8Array(Module.HEAPU8.buffer, wasmInCommitment, commitment.length).set(commitment);
             new Uint8Array(Module.HEAPU8.buffer, wasmInMessage, message.length).set(message);
-            Module._ed25519_partial_sign(wasmOut, message, message.length, commitment, secret, publicKey, privateKey);
+            Module._ed25519_partial_sign(wasmOut, wasmInMessage, message.length, wasmInCommitment, wasmInSecret, wasmInPublicKey, wasmInPrivateKey);
             const partialSignature = new Uint8Array(CryptoWorker.PARTIAL_SIGNATURE_SIZE);
             partialSignature.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.PARTIAL_SIGNATURE_SIZE));
             return partialSignature;
