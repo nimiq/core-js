@@ -57,15 +57,21 @@ void ed25519_add_scalars(unsigned char *scalar_AB, const unsigned char *scalar_A
  */
 
 int ed25519_create_commitment(unsigned char *secret_r, unsigned char *commitment_R, const unsigned char *randomness) {
+    unsigned char az[64];
     ge_p3 R;
 
     // Decompress the 32 byte cryptographically secure random data to 64 byte.
-    sha512(randomness, 32, secret_r);
-    sc_reduce(secret_r);
+    sha512(randomness, 32, az);
+    sc_reduce(az);
 
     // Abort if secret equals 0 mod l or 1 mod l.
-    if (!sc_valid_reduction(secret_r)) {
+    if (!sc_valid_reduction(az)) {
         return 0;
+    }
+
+    // Copy secret.
+    for (int i = 0; i < 32; ++i) {
+        secret_r[i] = az[i];
     }
 
     // Compute the point [secret]B. Let the string R be the encoding of this point.
