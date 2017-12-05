@@ -39,6 +39,36 @@ class CryptoWorker {
     async publicKeyDerive(privateKey) {}
 
     /**
+     * @param {Uint8Array} randomness
+     * @returns {Promise.<{commitment:Uint8Array, secret:Uint8Array}>}
+     */
+    async commitmentCreate(randomness) {}
+
+    /**
+     * @param {Uint8Array} pointA
+     * @param {Uint8Array} pointB
+     * @returns {Promise.<Uint8Array>}
+     */
+    async pointsAdd(pointA, pointB) {}
+
+    /**
+     * @param {Uint8Array} pointA
+     * @param {Uint8Array} pointB
+     * @returns {Promise.<Uint8Array>}
+     */
+    async scalarsAdd(a, b) {}
+
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} secret
+     * @param {Uint8Array} commitment
+     * @param {Uint8Array} message
+     * @returns {Promise.<Uint8Array>}
+     */
+    async partialSignatureCreate(privateKey, publicKey, secret, commitment, message) {}
+
+    /**
      * @param {Uint8Array} privateKey
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} message
@@ -57,5 +87,7 @@ class CryptoWorker {
 CryptoWorker.HASH_SIZE = 32;
 CryptoWorker.PUBLIC_KEY_SIZE = 32;
 CryptoWorker.PRIVATE_KEY_SIZE = 32;
+CryptoWorker.MULTISIG_RANDOMNESS_SIZE = 32;
 CryptoWorker.SIGNATURE_SIZE = 64;
+CryptoWorker.PARTIAL_SIGNATURE_SIZE = 32;
 Class.register(CryptoWorker);

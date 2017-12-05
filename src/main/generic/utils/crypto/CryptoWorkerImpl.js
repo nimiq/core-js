@@ -134,6 +134,134 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     }
 
     /**
+     * @param {Uint8Array} randomness
+     * @returns {Promise.<{commitment:Uint8Array, secret:Uint8Array}>}
+     */
+    async commitmentCreate(randomness) {
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOutCommitment = Module.stackAlloc(CryptoWorker.PUBLIC_KEY_SIZE);
+            const wasmOutSecret = Module.stackAlloc(CryptoWorker.PRIVATE_KEY_SIZE);
+            const wasmIn = Module.stackAlloc(randomness.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmIn, randomness.length).set(randomness);
+            const res = Module._ed25519_create_commitment(wasmOutSecret, wasmOutCommitment, wasmIn);
+            if (res !== 1) {
+                throw new Error('Secret must not be 0 or 1');
+            }
+            const commitment = new Uint8Array(CryptoWorker.PUBLIC_KEY_SIZE);
+            const secret = new Uint8Array(CryptoWorker.PRIVATE_KEY_SIZE);
+            commitment.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutCommitment, CryptoWorker.PUBLIC_KEY_SIZE));
+            secret.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSecret, CryptoWorker.PRIVATE_KEY_SIZE));
+            return {commitment, secret};
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
+     * @param {Uint8Array} pointA
+     * @param {Uint8Array} pointB
+     * @returns {Uint8Array}
+     */
+    pointsAdd(pointA, pointB) {
+        if (pointA.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE || pointB.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE) {
+            throw Error('Wrong buffer size.');
+        }
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOutSum = Module.stackAlloc(CryptoWorker.PUBLIC_KEY_SIZE);
+            const wasmInPointA = Module.stackAlloc(pointA.length);
+            const wasmInPointB = Module.stackAlloc(pointB.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPointA, pointA.length).set(pointA);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPointB, pointB.length).set(pointB);
+            Module._ed25519_add_points(wasmOutSum, wasmInPointA, wasmInPointB);
+            const sum = new Uint8Array(CryptoWorker.PUBLIC_KEY_SIZE);
+            sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, CryptoWorker.PUBLIC_KEY_SIZE));
+            return sum;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
+     * @param {Uint8Array} pointA
+     * @param {Uint8Array} pointB
+     * @returns {Uint8Array}
+     */
+    scalarsAdd(a, b) {
+        if (a.byteLength !== CryptoWorker.SIGNATURE_SIZE || b.byteLength !== CryptoWorker.SIGNATURE_SIZE) {
+            throw Error('Wrong buffer size.');
+        }
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOutSum = Module.stackAlloc(CryptoWorker.SIGNATURE_SIZE);
+            const wasmInA = Module.stackAlloc(a.length);
+            const wasmInB = Module.stackAlloc(b.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInA, a.length).set(a);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInB, b.length).set(b);
+            Module._ed25519_add_points(wasmOutSum, wasmInA, wasmInB);
+            const sum = new Uint8Array(CryptoWorker.SIGNATURE_SIZE);
+            sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, CryptoWorker.SIGNATURE_SIZE));
+            return sum;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} secret
+     * @param {Uint8Array} commitment
+     * @param {Uint8Array} message
+     * @returns {Promise.<Uint8Array>}
+     */
+    async partialSignatureCreate(privateKey, publicKey, secret, commitment, message) {
+        if (privateKey.byteLength !== CryptoWorker.PRIVATE_KEY_SIZE
+            || publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE
+            || secret.byteLength !== CryptoWorker.PRIVATE_KEY_SIZE
+            || commitment.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE) {
+            throw Error('Wrong buffer size.');
+        }
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(CryptoWorker.PARTIAL_SIGNATURE_SIZE);
+            const wasmInPrivateKey = Module.stackAlloc(privateKey.length);
+            const wasmInPublicKey = Module.stackAlloc(publicKey.length);
+            const wasmInSecret = Module.stackAlloc(secret.length);
+            const wasmInCommitment = Module.stackAlloc(commitment.length);
+            const wasmInMessage = Module.stackAlloc(message.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPrivateKey, privateKey.length).set(privateKey);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInSecret, secret.length).set(secret);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInCommitment, commitment.length).set(commitment);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInMessage, message.length).set(message);
+            Module._ed25519_partial_sign(wasmOut, message, message.length, commitment, secret, publicKey, privateKey);
+            const partialSignature = new Uint8Array(CryptoWorker.PARTIAL_SIGNATURE_SIZE);
+            partialSignature.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.PARTIAL_SIGNATURE_SIZE));
+            return partialSignature;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
      * @param {Uint8Array} privateKey
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} message
