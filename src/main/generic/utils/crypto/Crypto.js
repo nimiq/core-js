@@ -147,7 +147,7 @@ class Crypto {
         return worker.partialSignatureCreate(privateKey, combinedPublicKey, secret, combinedCommitment, data);
     }
 
-    static async combineSignatures(combinedCommitment, ...partialSignatures) {
+    static async combinePartialSignatures(combinedCommitment, ...partialSignatures) {
         const combinedSignature = await Crypto.sumPartialSignatures(...partialSignatures);
         return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
     }

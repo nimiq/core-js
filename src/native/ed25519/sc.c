@@ -393,7 +393,7 @@ int sc_valid_reduction(const unsigned char *s) {
     F(31);
     #undef F
 
-    return !r;
+    return !!r;
 }
 
 
