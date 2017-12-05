@@ -21,8 +21,8 @@ class Balance {
     }
 
     static unserialize(buf) {
-        let value = buf.readUint64();
-        let nonce = buf.readUint32();
+        const value = buf.readUint64();
+        const nonce = buf.readUint32();
         return new Balance(value, nonce);
     }
 
@@ -57,6 +57,10 @@ class Balance {
         return o instanceof Balance
             && this._value === o.value
             && this._nonce === o.nonce;
+    }
+    
+    toString() {
+        return `Balance{value=${this._value}, nonce=${this._nonce}}`;
     }
 }
 Balance.INITIAL = new Balance();

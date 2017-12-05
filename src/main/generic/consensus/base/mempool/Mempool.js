@@ -13,11 +13,11 @@ class Mempool extends Observable {
         // Our pool of transactions.
         /** @type {HashMap.<Hash, MempoolTransactionSet>} */
         this._transactionsByHash = new HashMap();
-        /** @type {HashMap.<PublicKey, MempoolTransactionSet>} */
-        this._transactionSetByKey = new HashMap();
-        /** @type {HashMap.<PublicKey, Array.<Transaction>>} */
+        /** @type {HashMap.<Address, MempoolTransactionSet>} */
+        this._transactionSetByAddress = new HashMap();
+        /** @type {HashMap.<Address, Array.<Transaction>>} */
         this._waitingTransactions = new HashMap();
-        /** @type {HashMap.<PublicKey, *>} */
+        /** @type {HashMap.<Address, *>} */
         this._waitingTransactionTimeout = new HashMap();
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
@@ -50,15 +50,27 @@ class Mempool extends Observable {
         }
 
         // Intrinsic transaction verification
-        if (!(await transaction.verify())) {
-            Log.w(Mempool, 'Rejected transaction - invalid transaction', transaction);
+        /** @type {Account} */ let senderAccount, recipientAccount;
+        try {
+            senderAccount = await this._accounts.get(transaction.sender);
+            recipientAccount = await this._accounts.get(transaction.recipient, transaction.recipientType);
+        } catch (e) {
+            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+            return false;
+        }
+        if (!(await senderAccount.verifyOutgoingTransactionValidity(transaction))) {
+            Log.w(Mempool, 'Rejected transaction - invalid for sender', transaction);
+            return false;
+        }
+        if (!(await recipientAccount.verifyIncomingTransactionValidity(transaction))) {
+            Log.w(Mempool, 'Rejected transaction - invalid for recipient', transaction);
             return false;
         }
 
         // Fully verify the transaction against the current accounts state + Mempool.
-        const set = this._transactionSetByKey.get(transaction.senderPubKey) || new MempoolTransactionSet();
-        if (!(await this._verifyAdditionalTransaction(set, transaction))) {
-            const senderBalance = await this._accounts.getBalance(await transaction.senderPubKey.toAddress());
+        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
+        if (!(await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1))) {
+            const senderBalance = await this._accounts.getBalance(transaction.sender);
             if (transaction.nonce > senderBalance.nonce + set.length) {
                 this._waitTransaction(hash, transaction);
             }
@@ -69,18 +81,20 @@ class Mempool extends Observable {
         // Transaction is valid, add it to the mempool.
         set.add(transaction);
         this._transactionsByHash.put(hash, transaction);
-        this._transactionSetByKey.put(transaction.senderPubKey, set);
+        this._transactionSetByAddress.put(transaction.sender, set);
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
 
-        if (this._waitingTransactions.contains(transaction.senderPubKey)) {
+        if (this._waitingTransactions.contains(transaction.sender)) {
             /** @type {Array.<Transaction>} */
-            const txs = this._waitingTransactions.get(transaction.senderPubKey);
+            const txs = this._waitingTransactions.get(transaction.sender);
             /** @type {Transaction} */
             let tx;
             while ((tx = txs.shift())) {
-                if (await this._verifyAdditionalTransaction(set, tx, true)) {
+                console.log('trying from waitlist', tx.toString());
+                if ((await senderAccount.verifyOutgoingTransactionSet([...set.transactions, tx], this._blockchain.height + 1, true))) {
+                    console.log('done');
                     set.add(tx);
                     this.fire('transaction-added', tx);
                 } else {
@@ -90,9 +104,9 @@ class Mempool extends Observable {
             if (tx) {
                 txs.unshift(tx);
             } else {
-                clearTimeout(this._waitingTransactionTimeout.get(transaction.senderPubKey));
-                this._waitingTransactions.remove(transaction.senderPubKey);
-                this._waitingTransactionTimeout.remove(transaction.senderPubKey);
+                clearTimeout(this._waitingTransactionTimeout.get(transaction.sender));
+                this._waitingTransactions.remove(transaction.sender);
+                this._waitingTransactionTimeout.remove(transaction.sender);
             }
         }
 
@@ -105,18 +119,18 @@ class Mempool extends Observable {
      * @private
      */
     _waitTransaction(hash, transaction) {
-        const txs = this._waitingTransactions.get(transaction.senderPubKey) || [];
+        const txs = this._waitingTransactions.get(transaction.sender) || [];
         if (txs.length >= Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER) {
-            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.senderPubKey} - max waiting transactions per sender reached`);
+            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transactions per sender reached`);
             return;
         }
         if (this._waitingTransactions.length >= Mempool.MAX_WAITING_TRANSACTION_SENDERS) {
-            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.senderPubKey} - max waiting transaction senders reached`);
+            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transaction senders reached`);
             return;
         }
 
-        if (this._waitingTransactionTimeout.contains(transaction.senderPubKey)) {
-            clearTimeout(this._waitingTransactionTimeout.get(transaction.senderPubKey));
+        if (this._waitingTransactionTimeout.contains(transaction.sender)) {
+            clearTimeout(this._waitingTransactionTimeout.get(transaction.sender));
         }
 
         Log.d(Mempool, `Delaying transaction ${hash} - nonce ${transaction.nonce} suggests future validity`);
@@ -126,21 +140,21 @@ class Mempool extends Observable {
             txs.sort((a, b) => a.compareAccountOrder(b));
         } catch (e) {
             // Unsortable transactions => abandon all.
-            Log.w(Mempool, `Abandoning ${txs.length} waiting transactions from ${transaction.senderPubKey} - duplicate nonce`);
-            this._waitingTransactionTimeout.remove(transaction.senderPubKey);
-            this._waitingTransactions.remove(transaction.senderPubKey);
+            Log.w(Mempool, `Abandoning ${txs.length} waiting transactions from ${transaction.sender} - duplicate nonce`);
+            this._waitingTransactionTimeout.remove(transaction.sender);
+            this._waitingTransactions.remove(transaction.sender);
             return;
         }
 
         this._transactionsByHash.put(hash, transaction);
-        this._waitingTransactions.put(transaction.senderPubKey, txs);
+        this._waitingTransactions.put(transaction.sender, txs);
 
-        this._waitingTransactionTimeout.put(transaction.senderPubKey, setTimeout(async () => {
+        this._waitingTransactionTimeout.put(transaction.sender, setTimeout(async () => {
             for (const tx of txs) {
                 this._transactionsByHash.remove(await tx.hash());
             }
-            this._waitingTransactionTimeout.remove(transaction.senderPubKey);
-            this._waitingTransactions.remove(transaction.senderPubKey);
+            this._waitingTransactionTimeout.remove(transaction.sender);
+            this._waitingTransactions.remove(transaction.sender);
         }, Mempool.WAITING_TRANSACTION_TIMEOUT));
     }
 
@@ -157,7 +171,7 @@ class Mempool extends Observable {
      */
     getTransactions() {
         const transactions = [];
-        for (const set of this._transactionSetByKey.values()) {
+        for (const set of this._transactionSetByAddress.values()) {
             transactions.push(...set.transactions);
         }
 
@@ -171,7 +185,7 @@ class Mempool extends Observable {
     getTransactionsForBlock(maxSize) {
         const transactions = [];
         let size = 0;
-        for (const set of this._transactionSetByKey.values().sort((a, b) => a.compare(b))) {
+        for (const set of this._transactionSetByAddress.values().sort((a, b) => a.compare(b))) {
             const setSize = set.serializedSize;
             if (size >= maxSize) break;
             if (size + setSize > maxSize) continue;
@@ -185,12 +199,12 @@ class Mempool extends Observable {
     }
 
     /**
-     * @param {PublicKey} publicKey
+     * @param {Address} address
      * @return {Array.<Transaction>}
      */
-    getWaitingTransactions(publicKey) {
-        if (this._transactionSetByKey.contains(publicKey)) {
-            return this._transactionSetByKey.get(publicKey).transactions;
+    getWaitingTransactions(address) {
+        if (this._transactionSetByAddress.contains(address)) {
+            return this._transactionSetByAddress.get(address).transactions;
         } else {
             return [];
         }
@@ -204,13 +218,13 @@ class Mempool extends Observable {
      * @param {number} [additionalNonce]
      * @returns {Promise.<boolean>}
      * @private
+     * @deprecated
      */
     async _verifyBalanceAndNonce(transactionOrSet, silent = false, additionalValue = 0, additionalFee = 0, additionalNonce = 0) {
         // Verify balance and nonce:
         // - sender account balance must be greater or equal the transaction value + fee.
         // - sender account nonce must match the transaction nonce.
-        const senderAddr = await transactionOrSet.getSenderAddr();
-        const senderBalance = await this._accounts.getBalance(senderAddr);
+        const senderBalance = await this._accounts.getBalance(transactionOrSet.sender);
         if (senderBalance.value < (transactionOrSet.value + transactionOrSet.fee + additionalValue + additionalFee)) {
             if (!silent) {
                 Log.w(Mempool, 'Rejected transaction - insufficient funds', transactionOrSet);
@@ -237,7 +251,7 @@ class Mempool extends Observable {
      * @private
      */
     _verifyAdditionalTransaction(set, transaction, silent = false) {
-        if (set.length > 0 && !set.senderPubKey.equals(transaction.senderPubKey)) return Promise.resolve(false);
+        if (set.length > 0 && !set.sender.equals(transaction.sender)) return Promise.resolve(false);
         return this._verifyBalanceAndNonce(transaction, silent, set.value, set.fee, set.length);
     }
 
@@ -270,18 +284,27 @@ class Mempool extends Observable {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
-        for (const senderPubKey of this._transactionSetByKey.keys()) {
-            const set = this._transactionSetByKey.get(senderPubKey);
+        for (const sender of this._transactionSetByAddress.keys()) {
+            /** @type {MempoolTransactionSet} */ const set = this._transactionSetByAddress.get(sender);
 
-            while (!(await this._verifyTransactionSet(set, true))) {
-                const transaction = set.shift();
-                if (transaction) {
+            try {
+                const senderAccount = await this._accounts.get(set.sender);
+                while (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, true))) {
+                    const transaction = set.shift();
+                    if (transaction) {
+                        this._transactionsByHash.remove(await transaction.hash());
+                    }
+                    if (set.length === 0) {
+                        this._transactionSetByAddress.remove(sender);
+                        break;
+                    }
+                }
+            } catch (e) {
+                let transaction;
+                while ((transaction = set.shift())) {
                     this._transactionsByHash.remove(await transaction.hash());
                 }
-                if (set.length === 0) {
-                    this._transactionSetByKey.remove(senderPubKey);
-                    break;
-                }
+                this._transactionSetByAddress.remove(sender);
             }
         }
 
@@ -292,6 +315,7 @@ class Mempool extends Observable {
         this.fire('transactions-ready');
     }
 }
+
 Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER = 500;
 Mempool.MAX_WAITING_TRANSACTION_SENDERS = 10000;
 Mempool.WAITING_TRANSACTION_TIMEOUT = 30000;

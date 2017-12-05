@@ -28,8 +28,18 @@ class TestBlockchain extends FullChain {
         return this._users;
     }
 
+    /**
+     * @param {PublicKey} senderPubKey
+     * @param {Address} recipientAddr
+     * @param {number} amount
+     * @param {number} fee
+     * @param {number} nonce
+     * @param {PrivateKey} [senderPrivKey]
+     * @param {Signature} [signature]
+     * @return {Promise.<Transaction>}
+     */
     static async createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, nonce = 0, senderPrivKey = undefined, signature = undefined) {
-        const transaction = new Transaction(senderPubKey, recipientAddr, amount, fee, nonce);
+        const transaction = Transaction.basic(senderPubKey, recipientAddr, amount, fee, nonce);
 
         // allow to hardcode a signature
         if (!signature) {
@@ -114,7 +124,7 @@ class TestBlockchain extends FullChain {
         if (!accountsHash) {
             const accountsTx = await this._accounts.transaction();
             try {
-                await accountsTx.commitBlockBody(body);
+                await accountsTx.commitBlockBody(body, height);
                 accountsHash = await accountsTx.hash();
             } catch (e) {
                 // The block is invalid, fill with broken accountsHash
