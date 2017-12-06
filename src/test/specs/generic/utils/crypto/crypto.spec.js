@@ -6,52 +6,64 @@ describe('Crypto', () => {
      */
     const partialSignatureTestVectors = [
         {
-            privKeys: [BufferUtils.fromHex("2991781eb707b76c9efb02949ad9c1198a2c82e26064f97ed0c62f3bb269990f"), BufferUtils.fromHex("760e072b36978950f83f602aa6e7297a0612a11a74abec525095c1d4272c8b0a")],
-            pubKeys: [BufferUtils.fromHex("598841c72f31653a61d7cf1395fff61e1c9e0079a28a2f3e97ffffd4f361a345"), BufferUtils.fromHex("595fe4e6dde685ee476dac054578666985c086090c274a33d385a926ff19c281")],
-            secrets: [BufferUtils.fromHex("7286494dde59783fd343ee8a40d56f007da017872feeda828240ec93f4edd703"), BufferUtils.fromHex("159bf97104571c1bc67e9a230acd584345fbcab0b3578a1962669f98cb4dca07")],
-            commitments: [BufferUtils.fromHex("e0ecb1d27ce208c051528b19c6b2ea32dac4211e135dd0e9a99f758f2718305f"), BufferUtils.fromHex("81ebc79f0b49cced1ddc8f4264871dc2453158c538d239415de460f20d468b48")],
-            aggCommitment: BufferUtils.fromHex("9579d7172446ab9fb1fd5daf5d203d3bc08ae0cac230d6e964a9d00cfac6d5c7"),
-            aggPubKey: BufferUtils.fromHex("7e9a17b2d4ecd879f823afacc0d71aad42d7d7f15e3528d4f66ef54028a5fe6c"),
-            partialSignatures: [BufferUtils.fromHex("aac5045cf8dd7e16d717faf71b733ffc4030a9deff5981a43fc3a95095b2ec0a"), BufferUtils.fromHex("7fbf7febf04695619da91675611f14b89387e25a2b5dd2812060acda89669c0a")],
-            aggSignature: BufferUtils.fromHex("3cb18eeacec101209e2419ca9e98749fd4b78b392bb753266023562b1f198905"),
-            signature: BufferUtils.fromHex("9579d7172446ab9fb1fd5daf5d203d3bc08ae0cac230d6e964a9d00cfac6d5c73cb18eeacec101209e2419ca9e98749fd4b78b392bb753266023562b1f198905"),
+            privKeys: [BufferUtils.fromHex("b0eec702f04d5c98c0f44f8f811230f46a70758987762a1fc2a6133b4e3e0505"), BufferUtils.fromHex("1f9094f9b1d94a38e4e7846f93517a706bf2875c695944ec58d6c4f264ce4408")],
+            pubKeys: [BufferUtils.fromHex("7ebf0c1c62f9e6ac09f1b6b6f05a7934e9eaed357ccca4012d1da521a53a91cb"), BufferUtils.fromHex("85400f95649dbee09196a2b2475c5c8dfdfa5c5ae0d9c1c6bc5e04c7eda62b0e")],
+            secrets: [BufferUtils.fromHex("db5b6b3b0b8e5de2881801a0bc69d30cc52f89f1f86dcfd98d95abc7f678ae0a"), BufferUtils.fromHex("0a2b1b2302d0cc480adae90f322ab2100b548836b0599aa0c92356c5b02beb03")],
+            commitments: [BufferUtils.fromHex("3bd1f9f117dc7b6fb0b7e4e65ac39a5002bcf9ccfb96b9c5ab1d3983148f0ac4"), BufferUtils.fromHex("89e79d8a2ae720fdfd0e90690b986633ab030f306f442eeb8ab68c60a60b393f")],
+            aggCommitment: BufferUtils.fromHex("7b3838df8f975af9800e5dfb306c7ea679bb7a468333476ca826661fbca9e49d"),
+            aggPubKey: BufferUtils.fromHex("85f93e77b08e45461c3c7bf766a0fc6982ae2f9cdb6fc535b798d614f676aa08"),
+            partialSignatures: [BufferUtils.fromHex("13467fffcb9982f9518649e93d04e144c06f89f16c59c10982f676d3e8fe1205"), BufferUtils.fromHex("5865d8d5bfbf30887045ec05b5b3715b0b94fc57fd6d208d1395e3663cc86605")],
+            aggSignature: BufferUtils.fromHex("6bab57d58b59b381c2cb35eff2b752a0cb0386496ac7e196958b5a3a25c7790a"),
+            signature: BufferUtils.fromHex("7b3838df8f975af9800e5dfb306c7ea679bb7a468333476ca826661fbca9e49d6bab57d58b59b381c2cb35eff2b752a0cb0386496ac7e196958b5a3a25c7790a"),
             message: BufferUtils.fromAscii("")
         },
         {
-            privKeys: [BufferUtils.fromHex("6bdae91b925bed772403bbde5d397b8eba228434caf79d2bed4d42e6dc57760c"), BufferUtils.fromHex("7657f8973f0147e760d08587515f5636ad271bd711911d30ff6195d7f1d73f0a")],
-            pubKeys: [BufferUtils.fromHex("70d134f140171efd745c9b12014a80a1b32a3673631242bd4452c4396aa0e092"), BufferUtils.fromHex("cb270e6dd5ec391823a0f6d30f8751ca40337fa012712b3909ce61651b101a7c")],
-            secrets: [BufferUtils.fromHex("11f261709c1dc2808ac70a51a59e1bf899db0633618d65561b68e03ee29be00c"), BufferUtils.fromHex("861195c2a25d752ebd9564b855b130bed277d1d1f4a3dff83f4cac001e843203")],
-            commitments: [BufferUtils.fromHex("e4677b3eeed02e012272e867d8851f784e29dc836394250b1b724f7cdc714598"), BufferUtils.fromHex("c1b4b96eca923409ae1e0bcdd239956ceacd7079ecb61ae2d92f4c25ab3bb1cd")],
-            aggCommitment: BufferUtils.fromHex("2e9e821f704a13f7902f0e921c9aba85985b54df073aa72ded0c9905a1bf3949"),
-            aggPubKey: BufferUtils.fromHex("24b13d9cdea5f5211b7b484cc20ae4b5d51b6f0fa326ddb88337370f59a316cc"),
-            partialSignatures: [BufferUtils.fromHex("04a09162c89864bf62290a6c0ca18d90b9ef6f31fdaf921737cc03f79bc6910f"), BufferUtils.fromHex("77be32921cef5935500d600d5538188bb9c700298c6ff5797b35b4a9e0e4a10c")],
-            aggSignature: BufferUtils.fromHex("8e8ace97ca24ac9cdc9972d682dfc60673b7705a891f8891b201b8a07cab330c"),
-            signature: BufferUtils.fromHex("2e9e821f704a13f7902f0e921c9aba85985b54df073aa72ded0c9905a1bf39498e8ace97ca24ac9cdc9972d682dfc60673b7705a891f8891b201b8a07cab330c"),
+            privKeys: [BufferUtils.fromHex("f01c66726b9e9d146b501fbfd4a54a6305a1009e4f49f1bb88896ea313e88d03"), BufferUtils.fromHex("241d01f0d31d4f1e53d8e0e40f19de8ba235ffc72d3968c35bf5cfcd808c0e08")],
+            pubKeys: [BufferUtils.fromHex("f83d6fc4bcf3f74493ad5ae8c4a56dd640022a84e3b359b4c25ba7273b63296e"), BufferUtils.fromHex("963fb86d79a47be87837f6f981f3bb3c6c8e0c9381f84f66660cc4c61e8fbbbd")],
+            secrets: [BufferUtils.fromHex("2e84f158127987284285e9490d89768d896ac7294cf98e0c99547979c73cc206"), BufferUtils.fromHex("778fb4e2abe9215c96b8d1e770fcf76ec523cd2ccf274e6f11bdf3d2a4b47806")],
+            commitments: [BufferUtils.fromHex("ea0ca01ba16c0e4fdbb4127718ac63e3d887f6c1c13cc7f1e2d1df1b7ae872a2"), BufferUtils.fromHex("5136ea38c2652831a76a6663838076ac6947cabbcc91cd5fc9de77cdb6915b00")],
+            aggCommitment: BufferUtils.fromHex("85300baa72356459ee6caf9c154be0aebda4af333c7731ed5fa0b257673eafa5"),
+            aggPubKey: BufferUtils.fromHex("aebbc044a881381f5ef497d40e45ce563b5391d6a9d1d11141a0c73c6454acc3"),
+            partialSignatures: [BufferUtils.fromHex("fc0f83ca11962e64a0a5587a6ed5a0df8519057500af8f0e34b7bfe16bf5220f"), BufferUtils.fromHex("e2ce9d77f9303c6a570766d6885b969e2cf3189a89f23891e86541da7ca2f70f")],
+            aggSignature: BufferUtils.fromHex("f10a2be5f06358762110c7ad18375869b20c1e0f8aa1c89f1c1d01bce8971a0f"),
+            signature: BufferUtils.fromHex("85300baa72356459ee6caf9c154be0aebda4af333c7731ed5fa0b257673eafa5f10a2be5f06358762110c7ad18375869b20c1e0f8aa1c89f1c1d01bce8971a0f"),
             message: BufferUtils.fromAscii("Hello World")
         },
         {
-            privKeys: [BufferUtils.fromHex("88d85f69e3a04436dae191107056e45fadd01cf429ee2e9aa52de38e53f5520f"), BufferUtils.fromHex("8450effdbe2daea0902d25f9ab4c7481cfbd7a97d3ee6ab6acf0b0d364e77e02"), BufferUtils.fromHex("51b34428453e4f232b3da5de2eae244452b1bd1bd56477e49356934dbcb5540b"), BufferUtils.fromHex("07342fadba28fe616e7edd659e22875abe2a2270a158aba5358fa4459dc9a10f")],
-            pubKeys: [BufferUtils.fromHex("a56c7dd6961d29688d19049e7bde69a3f7c23deeeeaced91b0e784569e34a12c"), BufferUtils.fromHex("b5c8d46f531a07f93fb3e0ba0be519e906a3094381178de818dce6aec0aafacd"), BufferUtils.fromHex("8168cf1c1a2558d03f1a5e678c4051239455e0db74117a311c2c47fdc19a94d8"), BufferUtils.fromHex("dac736ed87dc884270e027f67290ecddef5d6b8ac3277e361e277dc467bbc6e0")],
-            secrets: [BufferUtils.fromHex("5a8dac1429fa2ee944f9ca5d578db7beb40afa34229c27c69bc5fff1cc240703"), BufferUtils.fromHex("2e17352851a393e1b2eaa1086cce9c61fd022aa7146dbd660af974d33ff00b0c"), BufferUtils.fromHex("cb2cbf04fb51b94a3f4c7cd6ee713891e2d54abfac78d62ae696e37be2d8640a"), BufferUtils.fromHex("b4ad3a1d3cef4346dd89ef69f3a364a75020603c3a5c5671ba70eabf6f0e1f04")],
-            commitments: [BufferUtils.fromHex("739acfb026a1e6e81ebf95720d9d3b062cc0575d13a84416ebd381c5cd2462f9"), BufferUtils.fromHex("7b713028433669c37b75df0b62c2b01de3e1554cec2d4f97f9a258246fc54142"), BufferUtils.fromHex("ee73e6895d0551dff07dccb96bb5f2e226d6951b58b16209e1ba21cad32e4362"), BufferUtils.fromHex("a74e2d776245db609ee34eb42f16113407ebbc017532d75f1a23e7bc52919564")],
-            aggCommitment: BufferUtils.fromHex("ace91f70e9a78f769bec6cc448343778884e689bf110cc512ee5878be5361e67"),
-            aggPubKey: BufferUtils.fromHex("e9ee67553f9ca0e562a9b5cc06cfea1bdd65148920cfb5bbee7a15bf40153a49"),
-            partialSignatures: [BufferUtils.fromHex("206257a2a64b7b8d465cd4bfb52240dcb4814f12125b3b59c48fe8cf7151b405"), BufferUtils.fromHex("59d74b1f2bd881ef2007da82c4dbb39188273e752a78b1285ded74e535e33102"), BufferUtils.fromHex("7648283e6131334a660cef7fb7adb7951c1f53aa162ab9bdd990b67e12a71706"), BufferUtils.fromHex("89c916e3016195d526396f771599535d440dae9f7ec5dcabc6bf633a1eccc400")],
-            aggSignature: BufferUtils.fromHex("784be2e234b6c59cf4a80c3a4745ff609ed58ed1d1c282ebc1cd776ed8a7c20e"),
-            signature: BufferUtils.fromHex("ace91f70e9a78f769bec6cc448343778884e689bf110cc512ee5878be5361e67784be2e234b6c59cf4a80c3a4745ff609ed58ed1d1c282ebc1cd776ed8a7c20e"),
+            privKeys: [BufferUtils.fromHex("6438bbc36fc6070a59c712444d53f0187dd4ab27284af685a1ed86bb7ac70f01"), BufferUtils.fromHex("98ac4a59d36ab84c53f7555cfd323c901fba5d75e8eca3ac2e97f97d6200f903"), BufferUtils.fromHex("e12dca0f8aa5566769c1d1f351f3ddc2f9441999dd3559454adf5beb332fbe0c"), BufferUtils.fromHex("5aa84948c77059890a559dcd0b3a60d9c87d5e13b367400a6760d1566cc1630e")],
+            pubKeys: [BufferUtils.fromHex("c81da96af44335243bd3c3c0cb61fd76753d76720d74b198e7e4805d0d43e8f3"), BufferUtils.fromHex("273d1d16bcbfd5f5cebf42892140ba65d830143536adc15e4f1a6ac8fb091cd4"), BufferUtils.fromHex("bb3f7ab8db0ec22d6e64dff3caf7a6cf1421edfa8a418f4e56ddc5ab7f5ddbd1"), BufferUtils.fromHex("24226a921f5dd26eefd373cb227bb1fdaae5b998dd8f126258f591fffe6311f7")],
+            secrets: [BufferUtils.fromHex("abc3d8d3dc66b016baec79e59c3350927eb38c487763216e9f30d67c56207607"), BufferUtils.fromHex("d4cfb6947e2631d577e4fa3f977593e127e30d7a6bb12038f5e9d2c6c0d57a0c"), BufferUtils.fromHex("17e841471c15da07f908b797eb6596f3d9881e238061f2705d34c3cafe4f3b0d"), BufferUtils.fromHex("8d357919b0eee418adcf04e96bb8fc8e93233650c96c65e5afde8b5884698400")],
+            commitments: [BufferUtils.fromHex("f2d39101a2cb03597d54767169866bb852d715ca489697acaebdc5557d3bc26c"), BufferUtils.fromHex("279bba4f78ebc64e8f7d622a117ad8b6ca6d073c0e30abab98c6a571d9d4901f"), BufferUtils.fromHex("53f0c72867d50ef1590ef0ab0ae1b6dc5fbc52e1f1d34b6df4be55d7943680ef"), BufferUtils.fromHex("15affe1fe86aedbf906aa222344816602d4a368f65a7a4205317cb12d7f36786")],
+            aggCommitment: BufferUtils.fromHex("5db2b30b6b6e4438a5349afc58ffdaacef640ca60ebb33fc66577c01913c755b"),
+            aggPubKey: BufferUtils.fromHex("8598db520ad2ee8e31f3b0f5dc7f677eba8a350a8fbfa867c3f8d89078e6202a"),
+            partialSignatures: [BufferUtils.fromHex("c5f88948dc27d6927178405570e9774ee7203b70b7fafc7b4c6e8baed4f4d204"), BufferUtils.fromHex("80217c0d27c53d8a4e70959be6ef990b4ff7632ce9bfd221d0a1ac8ae8d02a0d"), BufferUtils.fromHex("3f5d059f90f61f3958d6fbb0745b8cbbf07555c053ced6037eaac93b9f777e02"), BufferUtils.fromHex("11b0f43ae4316366d2dade39bfc4b81982c2b0ad5acf0cb071a95457436fd709")],
+            aggSignature: BufferUtils.fromHex("a8530ad35db2846414fdb838acff771aa950a50a4f58b3510c6456cc9fac530e"),
+            signature: BufferUtils.fromHex("5db2b30b6b6e4438a5349afc58ffdaacef640ca60ebb33fc66577c01913c755ba8530ad35db2846414fdb838acff771aa950a50a4f58b3510c6456cc9fac530e"),
             message: BufferUtils.fromAscii("")
         },
         {
-            privKeys: [BufferUtils.fromHex("35d742e4b53993a977f8a82638bb11113b2397c57bea78c0ebb351a4bac0e006"), BufferUtils.fromHex("1100623b414e99062388def89636d47d553386f6731f15d2efadc0f584d22809"), BufferUtils.fromHex("c7c9a562fa91c56b1ca74b266f0142e735c425cd666dacfbb1ca12ee872c2609"), BufferUtils.fromHex("4892fc16e56693c3069c6b030de85c91057b886bb122568404c92327b4524603")],
-            pubKeys: [BufferUtils.fromHex("c2b06f0c3f6aa1dda5924d7ca67a666e5d6a901f7209a78e34c7b251ff0bbe41"), BufferUtils.fromHex("8c90258f7744977450f76c56a9340b02edc85e1681157257ec99ecbe6ac94a03"), BufferUtils.fromHex("8dadcec0af4aa3a808eb022a14ad5ae93dffec173d461461d84d14819dd2ad2e"), BufferUtils.fromHex("c8838f2cfb103e159bdf6aabc5249d82b081103196e4767d364a563633bf1766")],
-            secrets: [BufferUtils.fromHex("55c1944de3696b5a71d5e73ff6a10b06506ae91dd06d4e67e800538202b05301"), BufferUtils.fromHex("273e73bcf07e5cb468edb653094ac240545ffa23711c8aff06c72e1d7616de09"), BufferUtils.fromHex("f2e337d4ba0aeed16e7f7f1755da5780dfc42899bb3e8129c8b7cbd8409e420e"), BufferUtils.fromHex("ecf217452b462b5bd4b40bce0919a969fab65f41b40de1a7bb81f80aeb148108")],
-            commitments: [BufferUtils.fromHex("92252089fe2ea1b154c6b03e49a5b71cf0f5485d6bd544ac15b78c5e6e56df4c"), BufferUtils.fromHex("9ff13b3d1d87f9df15569120b2b226199758a18b6210dabde65440163c0aca6c"), BufferUtils.fromHex("dc6c7318907d1e857a279d46c2b4a748f8bc1373bd1b03f2a025c29305a6f78a"), BufferUtils.fromHex("5f71fc3b8c4cd71c87a7b21bf1eb52dccaed26313ea30ab9245b8a2b2c67b5af")],
-            aggCommitment: BufferUtils.fromHex("8034f1b2e0c7ca646ecc491ac1d85cc45f72d8472e039953a061c868d393ee65"),
-            aggPubKey: BufferUtils.fromHex("b0368feb70abfdb7d1b83d50943e34fd37d15ac3848a594ea0584f3485ff032b"),
-            partialSignatures: [BufferUtils.fromHex("19dbcceb47200e3980735cc3c45ecb38089ad49de9b02b3fd77f5a45e022a000"), BufferUtils.fromHex("3c620b1e5dbcf19bf5ebdd0cac2cf1dcc31884f0ffdda1c89faa498acd43e40e"), BufferUtils.fromHex("132d6fc0d5fbec8d425fecba9a4b4f118fc77fbfd15a6b8aa082afa6e389c701"), BufferUtils.fromHex("be15392a82dea151d5eab39d8a9fbb2406953e0e2af0aaa4b654e00271dabd01")],
-            aggSignature: BufferUtils.fromHex("39ac8a97e2537c5cb70ce385b77ce836610f175ce5d9e336ce01347902cb0903"),
-            signature: BufferUtils.fromHex("8034f1b2e0c7ca646ecc491ac1d85cc45f72d8472e039953a061c868d393ee6539ac8a97e2537c5cb70ce385b77ce836610f175ce5d9e336ce01347902cb0903"),
+            privKeys: [BufferUtils.fromHex("654e539ac6e52ef281c1cd262e576bad32242505e762b5ec43288188b4d7bc00"), BufferUtils.fromHex("aefa40012ba9308084672ecc66d313c0059297a8e3be7c9e1f685dbccf7f710f"), BufferUtils.fromHex("c27df551d581fc5cc163354f2a97f53f01380c1c2650e8331b9ff5a48547f804"), BufferUtils.fromHex("da3e796e49b184799920b6cfc5a3387b5f47777e6b6ef80c6128220aa2ab0806")],
+            pubKeys: [BufferUtils.fromHex("4cebc8d8210e3023f43e926547276f72716009702d5dd0a9177be4a2717391d2"), BufferUtils.fromHex("e45eaf74d08b1910d0d85454557bb549e152c59a956aae62fa4b704f453196fa"), BufferUtils.fromHex("e18f98812c4bbd84c5970a7a71a280a267d71539d5d69f7740cccc14df2ad930"), BufferUtils.fromHex("88daf3cc074bcb229c981a3934490e83d1c0eb83e5dfb675abc9a651817ff425")],
+            secrets: [BufferUtils.fromHex("cbff01f0fc811fef378e21d069c1fb8f617f866f739d3b394a08b9308f54cf00"), BufferUtils.fromHex("93abbb05ad2983c3b72e437796bff76eca2140ec4f49b60f0cd635a079c96502"), BufferUtils.fromHex("289c43171c23ced35fa8b0b860626ba7a10a4b850baeeb5dd769ff035ce8d304"), BufferUtils.fromHex("bc0bf9ea7a0a2092b1604cee26e10c9821ff7a2b36433f50a977040761138904")],
+            commitments: [BufferUtils.fromHex("73dab4b84166395ec1235f4ba031097bf5d83bb63889e531d446c688cad7bc8b"), BufferUtils.fromHex("9c8b564c53c7e26e75769f5969f0a3ffa8d1f4057fa8e4057e83afa79a8c75b3"), BufferUtils.fromHex("0b8210cb882de7ae5be946608a995d559626eedcb279109dc4d932116edafff6"), BufferUtils.fromHex("f6aee14f0111a1f5fb05991437b0f678e7bcae2ba5a75ffcdd5677df7a2b5252")],
+            aggCommitment: BufferUtils.fromHex("4c3b5f74eef21d0f9b2bc7d0ef8cc049a3985bbfcc759c93c9dbe0c8f2ceb4db"),
+            aggPubKey: BufferUtils.fromHex("13a1bba80a8c6ad982ee63a97f3040bf0a8c1a4efd8903bb171409898f160e32"),
+            partialSignatures: [BufferUtils.fromHex("fd71a473b25c83e083e5f35acc8994be5432041693eddafda7d91d7b889b6d0f"), BufferUtils.fromHex("d7e3152c6de8f6ce3e64a5d0d3e19ed7569d6fc3627b3f02db76f6f22509ff0c"), BufferUtils.fromHex("d61b25284b9ba87e09e3f990f818a9a1c65aef151fd6b508b48803abd9452a0f"), BufferUtils.fromHex("cc697ef1a915108496a373fc9e3a37a6730ef984e12ec55f1d0a5b10e8a10203")],
+            aggSignature: BufferUtils.fromHex("9c3372ffdf2f0e02b69617737acb55b4e5385c74f66d956854e37229708c990e"),
+            signature: BufferUtils.fromHex("4c3b5f74eef21d0f9b2bc7d0ef8cc049a3985bbfcc759c93c9dbe0c8f2ceb4db9c3372ffdf2f0e02b69617737acb55b4e5385c74f66d956854e37229708c990e"),
             message: BufferUtils.fromAscii("Hello World")
+        },
+        {
+            privKeys: [BufferUtils.fromHex("cf6819b423d504f78a7c1f405bc57896785aa9e129da9351a97ffe10aea25d08"), BufferUtils.fromHex("52f215658a7f492089760c5e25a24a3f3ecbfe586b0183b67d880616a92a5608"), BufferUtils.fromHex("919f666ddbe263e08c66281ba72f5ccc35333afa191aee5b909d2aea85d37d02"), BufferUtils.fromHex("8c688742c192a17780c7cac3c08bf964e728cac05ad7812d94b338cef306e205"), BufferUtils.fromHex("d165c4738be608989a7324290a73be47ec1b81f2fd87855696f58cc769505e03")],
+            pubKeys: [BufferUtils.fromHex("0be63b1c74662942abe524e74a0774744b517af77db058505858af62e28044c6"), BufferUtils.fromHex("d01760185873ed12d7ecfd3dd2985d4ad227965e84f8c3926a2f7abe2fabfdab"), BufferUtils.fromHex("1d57fbe2af36082eadce51737109c18dc010059ecc347e0db3926d3dd587c953"), BufferUtils.fromHex("dc766695bc21e3fbb810134cfaf163f6c8a0dfa433a9a711ada65d9755b6be94"), BufferUtils.fromHex("d83f22cc7486eeb96ad8b5ce42baa077b4b768763df468bbae10ef109ade2b94")],
+            secrets: [BufferUtils.fromHex("cc9fafa5442df1c7f8f246eac16ac6d5cfaf48b58722355a4ec3225af737da04"), BufferUtils.fromHex("34a9d67ce004197a6f7f6f1c8063901f224c073b7f3ac165dc8d243ec19cbc09"), BufferUtils.fromHex("a4c60a81b72362b608027337ebe14ed0bf174c533f7c9e97a0517056cb0b870c"), BufferUtils.fromHex("f82a050748f3229e0c25df586e00bfe0aa336d9a3accbd37638b05aabfc49209"), BufferUtils.fromHex("509a830bb7f9260862a825ea84c6037a005bdda34dcdd250ff7570b8ea536f06")],
+            commitments: [BufferUtils.fromHex("5543fb459fa99274e1a39045c1217259898e92793c010c8f44ccc3b83d2e4c3d"), BufferUtils.fromHex("c1c7ee749a488d8c47a200050ad0eb8eb668033722aa03fca18e5c33b7996521"), BufferUtils.fromHex("cfa53bb64d4fecdb2bbce113822e1434ec4febd185218b4728cd42a74dabefdd"), BufferUtils.fromHex("f67f5087af01190b9bb62271af81e00105f9f58cbedb6b966f6e5cd9cfce8a67"), BufferUtils.fromHex("26ed623e247eee53e958ab828a0dd1ac2701e36bafb97133c8f5494c2ff52282")],
+            aggCommitment: BufferUtils.fromHex("3c9a1317c3e159056b3572f61b6c8f949cd8b93b52d0073c04a4374a335185a4"),
+            aggPubKey: BufferUtils.fromHex("a954359abfa703a02dba4dfa97bf8795d18a735d76474829da543d5131e4116d"),
+            partialSignatures: [BufferUtils.fromHex("77530e2facd835c4243d9bad759e56c8acd73527233ac816feca298dc96f0e06"), BufferUtils.fromHex("4d42ba5cce802774c6f6f4ef0481af175b7835af547c8fc4e4d826f2535b1308"), BufferUtils.fromHex("71bb88743a73add173f54d0b066bace44a5f10543510f8ffebdf7687ce846401"), BufferUtils.fromHex("627f50e15d968b8864fa164404878c042425e8b35a5dfac0f75c324a982dd60b"), BufferUtils.fromHex("eccefbbac307c031fa79b3ed1340a1d34f921b632cd721d901c0c35ca545f502")],
+            aggSignature: BufferUtils.fromHex("96cba73fbc07446ce700b137ba570188c6667f4134fb6b75c8a0bdad29c3510e"),
+            signature: BufferUtils.fromHex("3c9a1317c3e159056b3572f61b6c8f949cd8b93b52d0073c04a4374a335185a496cba73fbc07446ce700b137ba570188c6667f4134fb6b75c8a0bdad29c3510e"),
+            message: BufferUtils.fromAscii("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
         }
     ];
 
@@ -300,6 +312,19 @@ describe('Crypto', () => {
         })().then(done, done.fail);
     });
 
+    it('correctly derives the public key', (done) => {
+        (async function () {
+            for (const testCase of partialSignatureTestVectors) {
+                for (let i = 0; i < testCase.pubKeys.length; ++i) {
+                    const pubKey = await Crypto.publicKeyDerive(testCase.privKeys[i]);
+                    expect(BufferUtils.equals(pubKey, testCase.pubKeys[i])).toBe(true);
+                    console.log(testCase.privKeys[i]);
+                    console.log(BufferUtils.toHex(testCase.pubKeys[i]));
+                }
+            }
+        })().then(done, done.fail);
+    });
+
     it('can create valid signatures', (done) => {
         (async function () {
             const message = BufferUtils.fromAscii('to be authenticated');
@@ -308,6 +333,8 @@ describe('Crypto', () => {
                 const keyPair = await Crypto.keyPairGenerate();
                 const nonce = await Crypto.noncePairGenerate();
 
+                // pubKeys.push(partialSignatureTestVectors[3].pubKeys[i]);
+                // privKeys.push(partialSignatureTestVectors[3].privKeys[i]);
                 pubKeys.push(keyPair.publicKey);
                 privKeys.push(keyPair.privateKey);
                 secrets.push(nonce.secret);
