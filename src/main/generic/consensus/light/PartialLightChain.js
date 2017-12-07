@@ -9,6 +9,7 @@ class PartialLightChain extends LightChain {
         const tx = store.transaction(false);
         super(tx, accounts);
 
+        /** @type {ChainProof} */
         this._proof = proof;
 
         /** @type {PartialLightChain.State} */
@@ -110,66 +111,14 @@ class PartialLightChain extends LightChain {
         }
 
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
-        if (await PartialLightChain._isBetterProof(proof, this._proof, Policy.M)) {
+        const currentProof = await this.getChainProof();
+        if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         } else {
             await this.abort();
         }
 
         return true;
-    }
-
-    /**
-     * @param {ChainProof} proof1
-     * @param {ChainProof} proof2
-     * @param {number} m
-     * @returns {boolean}
-     * @private
-     */
-    static async _isBetterProof(proof1, proof2, m) {
-        const lca = BlockChain.lowestCommonAncestor(proof1.prefix, proof2.prefix);
-        const score1 = await PartialLightChain._getProofScore(proof1.prefix, lca, m);
-        const score2 = await PartialLightChain._getProofScore(proof2.prefix, lca, m);
-        return score1 === score2
-            ? proof1.suffix.totalDifficulty() >= proof2.suffix.totalDifficulty()
-            : score1 > score2;
-    }
-
-    /**
-     *
-     * @param {BlockChain} chain
-     * @param {Block} lca
-     * @param {number} m
-     * @returns {Promise.<number>}
-     * @private
-     */
-    static async _getProofScore(chain, lca, m) {
-        const counts = [];
-        for (const block of chain.blocks) {
-            if (block.height < lca.height) {
-                continue;
-            }
-
-            const target = BlockUtils.hashToTarget(await block.pow()); // eslint-disable-line no-await-in-loop
-            const depth = BlockUtils.getTargetDepth(target);
-            counts[depth] = counts[depth] ? counts[depth] + 1 : 1;
-        }
-
-        let sum = 0;
-        let depth;
-        for (depth = counts.length - 1; sum < m && depth >= 0; depth--) {
-            sum += counts[depth] ? counts[depth] : 0;
-        }
-
-        let maxScore = Math.pow(2, depth + 1) * sum;
-        let length = sum;
-        for (let i = depth; i >= 0; i--) {
-            length += counts[i] ? counts[i] : 0;
-            const score = Math.pow(2, i) * length;
-            maxScore = Math.max(maxScore, score);
-        }
-
-        return maxScore;
     }
 
     /**
@@ -258,12 +207,16 @@ class PartialLightChain extends LightChain {
             chainData.onMainChain = true;
             await this._store.putChainData(blockHash, chainData);
 
+            // Update head.
             this._mainChain = chainData;
             this._headHash = blockHash;
 
-            const proofHeadHash = await this._proof.head.hash();
-            if (block.prevHash.equals(proofHeadHash)) {
-                await this._proof.extend(block.header);
+            // Append new block to chain proof.
+            if (this._proof) {
+                const proofHeadHash = await this._proof.head.hash();
+                if (block.prevHash.equals(proofHeadHash)) {
+                    this._proof = await this._extendChainProof(this._proof, block.header);
+                }
             }
 
             // Tell listeners that the head of the chain has changed.
@@ -276,9 +229,6 @@ class PartialLightChain extends LightChain {
         if (totalDifficulty > this._mainChain.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
-
-            // Recompute chain proof.
-            this._proof = await this._getChainProof();
 
             return NanoChain.OK_REBRANCHED;
         }
@@ -358,7 +308,7 @@ class PartialLightChain extends LightChain {
                 return FullChain.ERR_INVALID;
             }
         } else {
-            Log.w(NanoChain, 'Skipping difficulty verification - not enough blocks available');
+            Log.w(PartialLightChain, 'Skipping difficulty verification - not enough blocks available');
         }
 
         // Block looks good, create ChainData.
@@ -452,7 +402,7 @@ class PartialLightChain extends LightChain {
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
-            Log.w(PartialLightChain, 'Rejecting block - AccountsHash mismatch');
+            Log.w(PartialLightChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
             return false;
         }
 
@@ -500,7 +450,9 @@ class PartialLightChain extends LightChain {
             await this._accountsTx.abort();
             this._accountsTx = null;
         }
-        this.fire('complete', this._proof, this._headHash, this._mainChain);
+
+        const currentProof = await this.getChainProof();
+        this.fire('complete', currentProof, this._headHash, this._mainChain);
     }
 
     /**
@@ -510,11 +462,13 @@ class PartialLightChain extends LightChain {
         if (this._accountsTx) {
             await this._accountsTx.abort();
         }
+
         const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
-        // await this._partialTree.commit();
-        // const result = await this._store.commit();
         this._partialTree = null;
-        this.fire('committed', this._proof, this._headHash, this._mainChain);
+
+        const currentProof = await this.getChainProof();
+        this.fire('committed', currentProof, this._headHash, this._mainChain);
+
         return result;
     }
 

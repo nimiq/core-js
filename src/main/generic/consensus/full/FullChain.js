@@ -37,13 +37,11 @@ class FullChain extends BaseChain {
         /** @type {Array.<Hash>} */
         this._snapshotOrder = [];
 
-        /** @type {number} */
-        this._totalDifficulty = 0;
-        /** @type {number} */
-        this._totalWork = 0;
-
         /** @type {ChainData} */
         this._mainChain = null;
+
+        /** @type {ChainProof} */
+        this._proof = null;
 
         /**
          * @type {Synchronizer}
@@ -222,6 +220,12 @@ class FullChain extends BaseChain {
         // New block on main chain, so store a new snapshot.
         await this._saveSnapshot(blockHash);
 
+        // Update chain proof if we have cached one.
+        if (this._proof) {
+            this._proof = await this._extendChainProof(this._proof, chainData.head.header);
+        }
+
+        // Update head.
         this._mainChain = chainData;
         this._headHash = blockHash;
 
@@ -235,7 +239,7 @@ class FullChain extends BaseChain {
      * @param {Hash} blockHash
      * @param {ChainData} chainData
      * @returns {Promise.<boolean>}
-     * @private
+     * @protected
      */
     async _rebranch(blockHash, chainData) {
         Log.v(FullChain, `Rebranching to fork ${blockHash}, height=${chainData.head.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
@@ -320,9 +324,12 @@ class FullChain extends BaseChain {
         }
 
         // Update head & commit transactions.
-        // TODO commit both transactions atomically.
         await chainTx.setHead(blockHash);
         await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
+
+        // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
+        // TODO modify chain proof directly, don't recompute.
+        this._proof = null;
 
         // Fire head-changed event for each fork block.
         for (let i = forkChain.length - 1; i >= 0; i--) {
@@ -350,9 +357,10 @@ class FullChain extends BaseChain {
      * @override
      */
     async getChainProof() {
-        const proof = await this._getChainProof();
-        Assert.that(!!proof, 'Corrupted store: Failed to construct chain proof');
-        return proof;
+        if (!this._proof) {
+            this._proof = await this._getChainProof();
+        }
+        return this._proof;
     }
 
     /**
