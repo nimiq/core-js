@@ -27,7 +27,7 @@ class BasicAccount extends Account {
      * @return {Promise.<boolean>}
      */
     verifyOutgoingTransactionValidity(transaction) {
-        return ProofUtils.verifySignatureProof(transaction);
+        return SignatureProof.verifySignatureProof(transaction);
     }
 
     /**

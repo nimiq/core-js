@@ -267,7 +267,7 @@ describe('Crypto', () => {
     it('correctly aggregates public keys', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggPubKey = await Crypto.sumPublicKeys(...testCase.pubKeys);
+                const aggPubKey = await Crypto.aggregatePublicKeys(testCase.pubKeys);
                 expect(BufferUtils.equals(aggPubKey, testCase.aggPubKey)).toBe(true);
             }
         })().then(done, done.fail);
@@ -276,7 +276,7 @@ describe('Crypto', () => {
     it('correctly aggregates commitments', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggCommitment = await Crypto.sumCommitments(...testCase.commitments);
+                const aggCommitment = await Crypto.aggregateCommitments(testCase.commitments);
                 expect(BufferUtils.equals(aggCommitment, testCase.aggCommitment)).toBe(true);
             }
         })().then(done, done.fail);
@@ -285,7 +285,7 @@ describe('Crypto', () => {
     it('correctly aggregates partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggSignatures = await Crypto.sumPartialSignatures(...testCase.partialSignatures);
+                const aggSignatures = await Crypto.aggregatePartialSignatures(testCase.partialSignatures);
                 expect(BufferUtils.equals(aggSignatures, testCase.aggSignature)).toBe(true);
             }
         })().then(done, done.fail);
@@ -305,7 +305,7 @@ describe('Crypto', () => {
     it('correctly computes and verifies signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const signature = await Crypto.combinePartialSignatures(testCase.aggCommitment, ...testCase.partialSignatures);
+                const signature = await Crypto.combinePartialSignatures(testCase.aggCommitment, testCase.partialSignatures);
                 expect(BufferUtils.equals(signature, testCase.signature)).toBe(true, 'could not compute signature correctly');
                 expect(await Crypto.signatureVerify(testCase.aggPubKey, testCase.message, signature)).toBe(true, 'could not verify signature');
             }
@@ -318,8 +318,6 @@ describe('Crypto', () => {
                 for (let i = 0; i < testCase.pubKeys.length; ++i) {
                     const pubKey = await Crypto.publicKeyDerive(testCase.privKeys[i]);
                     expect(BufferUtils.equals(pubKey, testCase.pubKeys[i])).toBe(true);
-                    console.log(testCase.privKeys[i]);
-                    console.log(BufferUtils.toHex(testCase.pubKeys[i]));
                 }
             }
         })().then(done, done.fail);
@@ -331,7 +329,7 @@ describe('Crypto', () => {
             const pubKeys = [], privKeys = [], secrets = [], commitments = [], partialSignatures = [];
             for (let i = 0; i < 3; ++i) {
                 const keyPair = await Crypto.keyPairGenerate();
-                const nonce = await Crypto.noncePairGenerate();
+                const nonce = await Crypto.commitmentPairGenerate();
 
                 // pubKeys.push(partialSignatureTestVectors[3].pubKeys[i]);
                 // privKeys.push(partialSignatureTestVectors[3].privKeys[i]);
@@ -340,14 +338,14 @@ describe('Crypto', () => {
                 secrets.push(nonce.secret);
                 commitments.push(nonce.commitment);
             }
-            const aggPubKey = await Crypto.sumPublicKeys(...pubKeys);
-            const aggCommitment = await Crypto.sumCommitments(...commitments);
+            const aggPubKey = await Crypto.aggregatePublicKeys(pubKeys);
+            const aggCommitment = await Crypto.aggregateCommitments(commitments);
             for (let i = 0; i < 3; ++i) {
                 const partialSignature = await Crypto.partialSignatureCreate(privKeys[i], aggPubKey, secrets[i], aggCommitment, message);
                 partialSignatures.push(partialSignature);
             }
 
-            const signature = await Crypto.combinePartialSignatures(aggCommitment, ...partialSignatures);
+            const signature = await Crypto.combinePartialSignatures(aggCommitment, partialSignatures);
             expect(await Crypto.signatureVerify(aggPubKey, message, signature)).toBe(true);
         })().then(done, done.fail);
     });

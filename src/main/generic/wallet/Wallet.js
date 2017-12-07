@@ -34,19 +34,14 @@ class Wallet {
     /**
      * Create a new Wallet object.
      * @param {KeyPair} keyPair KeyPair owning this Wallet.
-     * @returns {Promise.<Wallet>} A newly generated Wallet.
+     * @returns {Wallet} A newly generated Wallet.
      */
     constructor(keyPair) {
         /** @type {KeyPair} */
         this._keyPair = keyPair;
         /** @type {Address} */
         this._address = undefined;
-        return this._init();
-    }
-
-    async _init() {
-        this._address = await this._keyPair.publicKey.toAddress();
-        return this;
+        this._address = this._keyPair.publicKey.toAddressSync();
     }
 
     /**

@@ -271,7 +271,7 @@ class Transaction {
     async verifySignature() {
         if (this._type !== Transaction.Type.BASIC) throw new Error('Not allowed for non-basic transactions');
         if (this._proof[0] !== 0) throw new Error('Not allowed for non-basic transactions');
-        return ProofUtils.verifySignatureProof(this);
+        return SignatureProof.verifySignatureProof(this);
     }
 
     /**

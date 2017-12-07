@@ -48,7 +48,7 @@ describe('Mempool', () => {
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
-            expect(Log.w).toHaveBeenCalledWith(ProofUtils, 'Invalid Transaction - signer does not match address', transaction);
+            expect(Log.w).toHaveBeenCalledWith(SignatureProof, 'Invalid Transaction - signer does not match address', transaction);
 
             // Set the valid transaction signature to test different scenarios
             transaction.proof = validProof;
