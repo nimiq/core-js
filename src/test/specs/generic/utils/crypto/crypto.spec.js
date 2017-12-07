@@ -267,7 +267,7 @@ describe('Crypto', () => {
     it('correctly aggregates public keys', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggPubKey = await Crypto.sumPublicKeys(...testCase.pubKeys);
+                const aggPubKey = await Crypto.aggregatePublicKeys(...testCase.pubKeys);
                 expect(BufferUtils.equals(aggPubKey, testCase.aggPubKey)).toBe(true);
             }
         })().then(done, done.fail);
@@ -276,7 +276,7 @@ describe('Crypto', () => {
     it('correctly aggregates commitments', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggCommitment = await Crypto.sumCommitments(...testCase.commitments);
+                const aggCommitment = await Crypto.aggregateCommitments(...testCase.commitments);
                 expect(BufferUtils.equals(aggCommitment, testCase.aggCommitment)).toBe(true);
             }
         })().then(done, done.fail);
@@ -285,7 +285,7 @@ describe('Crypto', () => {
     it('correctly aggregates partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggSignatures = await Crypto.sumPartialSignatures(...testCase.partialSignatures);
+                const aggSignatures = await Crypto.aggregatePartialSignatures(...testCase.partialSignatures);
                 expect(BufferUtils.equals(aggSignatures, testCase.aggSignature)).toBe(true);
             }
         })().then(done, done.fail);
@@ -331,7 +331,7 @@ describe('Crypto', () => {
             const pubKeys = [], privKeys = [], secrets = [], commitments = [], partialSignatures = [];
             for (let i = 0; i < 3; ++i) {
                 const keyPair = await Crypto.keyPairGenerate();
-                const nonce = await Crypto.noncePairGenerate();
+                const nonce = await Crypto.commitmentPairGenerate();
 
                 // pubKeys.push(partialSignatureTestVectors[3].pubKeys[i]);
                 // privKeys.push(partialSignatureTestVectors[3].privKeys[i]);
@@ -340,8 +340,8 @@ describe('Crypto', () => {
                 secrets.push(nonce.secret);
                 commitments.push(nonce.commitment);
             }
-            const aggPubKey = await Crypto.sumPublicKeys(...pubKeys);
-            const aggCommitment = await Crypto.sumCommitments(...commitments);
+            const aggPubKey = await Crypto.aggregatePublicKeys(...pubKeys);
+            const aggCommitment = await Crypto.aggregateCommitments(...commitments);
             for (let i = 0; i < 3; ++i) {
                 const partialSignature = await Crypto.partialSignatureCreate(privKeys[i], aggPubKey, secrets[i], aggCommitment, message);
                 partialSignatures.push(partialSignature);

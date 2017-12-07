@@ -25,6 +25,14 @@ class PublicKey extends Primitive {
     }
 
     /**
+     * @param {Array.<PublicKey>} publicKeys
+     * @return {PublicKey}
+     */
+    static sum(publicKeys) {
+        return new PublicKey(Crypto.aggregatePublicKeys(publicKeys.map(key => key._obj)));
+    }
+
+    /**
      * @param {SerialBuffer} buf
      * @return {PublicKey}
      */
