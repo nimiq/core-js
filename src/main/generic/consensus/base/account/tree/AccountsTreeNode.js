@@ -274,6 +274,26 @@ class AccountsTreeNode {
     }
 
     /**
+     * Returns the number of children this node has
+     * @param {boolean} includeBranchNodes
+     * @returns {number}
+     */
+    numberOfChildren(includeBranchNodes = true) {
+        let childrenToCount;
+
+        if (includeBranchNodes) {
+            childrenToCount = this._childrenSuffixes || [];
+        } else {
+            // Only terminal nodes have suffixes that equal 40 hex numbers when added to the parent's prefix
+            childrenToCount = this._childrenSuffixes.filter(suffix => (this._prefix + suffix).length == 40);
+        }
+
+        // The children array contains undefined values for non existing children.
+        // Only count existing ones.
+        return childrenToCount.reduce((count, child) => count + !!child, 0);
+    }
+
+    /**
      * @returns {boolean}
      */
     isTerminal() {
