@@ -12,4 +12,5 @@ global.Class = {
 };
 
 require('./generic/DummyData.spec.js');
+require('./generic/TestUtils.spec.js');
 require('./generic/consensus/full/TestFullchain.spec.js');
