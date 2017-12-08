@@ -7,9 +7,9 @@ class MultiSigWallet {
      * @param {Array.<PublicKey>} publicKeys A list of all owners' public keys.
      * @returns {Promise.<MultiSigWallet>} A newly generated MultiSigWallet.
      */
-    static fromPublicKeys(keyPair, minSignatures, publicKeys) {
+    static async fromPublicKeys(keyPair, minSignatures, publicKeys) {
         const combinations = [...ArrayUtils.k_combinations(publicKeys, minSignatures)];
-        const multiSigKeys = combinations.map(arr => PublicKey.sum(arr));
+        const multiSigKeys = await Promise.all(combinations.map(arr => PublicKey.sum(arr)));
         return new MultiSigWallet(keyPair, minSignatures, multiSigKeys);
     }
 
@@ -49,14 +49,14 @@ class MultiSigWallet {
      * @returns {Transaction} A prepared Transaction object.
      */
     async createTransaction(recipientAddr, value, fee, nonce) {
-        const transaction = new Transaction(Transaction.Type.BASIC, this._address, Account.Type.BASIC,
+        const transaction = new Transaction(Transaction.Type.EXTENDED, this._address, Account.Type.BASIC,
             recipientAddr, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0));
         return transaction;
     }
 
     /**
      * Creates a commitment pair for signing a transaction.
-     * @returns {CommitmentPair} The commitment pair.
+     * @returns {Promise.<CommitmentPair>} The commitment pair.
      */
     createCommitment() {
         return CommitmentPair.generate();
@@ -68,7 +68,6 @@ class MultiSigWallet {
      * @param {Commitment} aggregatedCommitment
      * @param {RandomSecret} secret
      * @returns {Promise.<PartialSignature>}
-     * @private
      */
     async signTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, secret) {
         return await PartialSignature.create(this._keyPair.privateKey, aggregatedPublicKey,
@@ -80,16 +79,15 @@ class MultiSigWallet {
      * @param {PublicKey} aggregatedPublicKey
      * @param {Commitment} aggregatedCommitment
      * @param {Array.<PartialSignature>} signatures
-     * @returns {Transaction}
-     * @private
+     * @returns {Promise.<Transaction>}
      */
-    completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
+    async completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
         if (signatures.length !== this._minSignatures) {
             throw 'Not enough signatures to complete this transaction';
         }
 
-        const signature = Signature.fromPartialSignatures(aggregatedCommitment, signatures);
-        const proof = SignatureProof.fromHashes(signature, aggregatedPublicKey, this._hashes);
+        const signature = await Signature.fromPartialSignatures(aggregatedCommitment, signatures);
+        const proof = await SignatureProof.fromHashes(signature, aggregatedPublicKey, this._hashes);
         transaction.proof = proof.serialize();
         return transaction;
     }

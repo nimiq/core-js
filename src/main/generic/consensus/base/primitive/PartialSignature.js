@@ -10,7 +10,7 @@ class PartialSignature extends Primitive {
     /**
      * @param {PrivateKey} privateKey
      * @param {PublicKey} aggregatePublicKey
-     * @param {NonceSecret} secret
+     * @param {RandomSecret} secret
      * @param {Commitment} aggregateCommitment
      * @param {Uint8Array} data
      * @return {Promise.<PartialSignature>}
