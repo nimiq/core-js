@@ -1,7 +1,7 @@
 class TestUtils {
     /**
      * Helper method to create an address object from a sequence of nibbles.
-     * @param {int[]} nibbles array of 40 nibbles (= 20 bytes)
+     * @param {Array.<number>} nibbles array of 40 nibbles (= 20 bytes)
      * @returns {Address} the resulting address
      */
     static raw2address(nibbles) {

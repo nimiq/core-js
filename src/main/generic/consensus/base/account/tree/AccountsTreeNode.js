@@ -275,7 +275,7 @@ class AccountsTreeNode {
 
     /**
      * Returns the number of children this node has
-     * @param {boolean} includeBranchNodes
+     * @param {boolean} [includeBranchNodes]
      * @returns {number}
      */
     numberOfChildren(includeBranchNodes = true) {
@@ -284,8 +284,9 @@ class AccountsTreeNode {
         if (includeBranchNodes) {
             childrenToCount = this._childrenSuffixes || [];
         } else {
-            // Only terminal nodes have suffixes that equal 40 hex numbers when added to the parent's prefix
-            childrenToCount = this._childrenSuffixes.filter(suffix => (this._prefix + suffix).length == 40);
+            // Only terminal nodes have suffixes that equal Address.HEX_SIZE (40 hex numbers) when added to the
+            // parent's prefix.
+            childrenToCount = this._childrenSuffixes.filter(suffix => (this._prefix + suffix).length === Address.HEX_SIZE);
         }
 
         // The children array contains undefined values for non existing children.
