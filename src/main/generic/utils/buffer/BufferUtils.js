@@ -56,7 +56,7 @@ class BufferUtils {
      * @param {string} [alphabet] Alphabet to use
      * @return {string}
      */
-    static toBase32(buf, alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVXY') {
+    static toBase32(buf, alphabet = BufferUtils.BASE32_ALPHABET.NIMIQ) {
         let shift = 3, carry = 0, byte, symbol, i, res = '';
 
         for (i = 0; i < buf.length; i++) {
@@ -78,6 +78,10 @@ class BufferUtils {
         if (shift !== 3) {
             res += alphabet[carry & 0x1f];
         }
+        
+        while (res.length % 8 !== 0 && alphabet.length === 33) {
+            res += alphabet[32];
+        }
 
         return res;
     }
@@ -87,7 +91,7 @@ class BufferUtils {
      * @param {string} [alphabet] Alphabet to use
      * @return {Uint8Array}
      */
-    static fromBase32(base32, alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVXY') {
+    static fromBase32(base32, alphabet = BufferUtils.BASE32_ALPHABET.NIMIQ) {
         const charmap = [];
         alphabet.toUpperCase().split('').forEach((c, i) => {
             if (!(c in charmap)) charmap[c] = i;
@@ -96,7 +100,7 @@ class BufferUtils {
         let symbol, shift = 8, carry = 0, buf = [];
         base32.toUpperCase().split('').forEach((char) => {
             // ignore padding
-            if (char === '=') return;
+            if (alphabet.length === 33 && char === alphabet[32]) return;
 
             symbol = charmap[char] & 0xff;
 
@@ -182,5 +186,10 @@ class BufferUtils {
         return 0;
     }
 }
+BufferUtils.BASE32_ALPHABET = {
+    RFC4648:        'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=',
+    RFC4648_HEX:    '0123456789ABCDEFGHIJKLMNOPQRSTUV=',
+    NIMIQ:          '0123456789ABCDEFGHJKLMNPQRSTUVXY'
+};
 
 Class.register(BufferUtils);

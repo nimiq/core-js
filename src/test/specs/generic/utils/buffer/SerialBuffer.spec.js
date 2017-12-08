@@ -79,6 +79,24 @@ describe('SerialBuffer', () => {
         expect(buffer.readUint64()).toEqual(value4);
 
     });
+    
+    it('can writeVarUint and readVarUint', () => {
+        const value1 = Number.MAX_SAFE_INTEGER;
+        const value2 = 42;
+        const value3 = Math.pow(2, 30);
+        const value4 = 0;
+        
+        const buffer = new SerialBuffer(SerialBuffer.varUintSize(value1) + SerialBuffer.varUintSize(value2) + SerialBuffer.varUintSize(value3) + SerialBuffer.varUintSize(value4));
+        buffer.writeVarUint(value1);
+        buffer.writeVarUint(value2);
+        buffer.writeVarUint(value3);
+        buffer.writeVarUint(value4);
+
+        expect(buffer.readVarUint()).toEqual(value1);
+        expect(buffer.readVarUint()).toEqual(value2);
+        expect(buffer.readVarUint()).toEqual(value3);
+        expect(buffer.readVarUint()).toEqual(value4);
+    });
 
     it('can writeUint16 and readUint16 unaligned', () => {
 
