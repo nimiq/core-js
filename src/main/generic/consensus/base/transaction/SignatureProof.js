@@ -88,7 +88,7 @@ class SignatureProof {
         return /*proof length*/ 1
             + this._publicKey.serializedSize
             + /*left*/ this._proof.length
-            + /*hashes*/ this._proof.reduce((acc, hash) => acc + hash.serializedSize, 0)
+            + /*hashes*/ this._proof.reduce((acc, node) => acc + node.inner.serializedSize, 0)
             + this._signature.serializedSize;
     }
 

@@ -8,8 +8,7 @@ describe('PublicKey', () => {
             expect(pubKey1.equals(pubKey2)).toEqual(true);
             expect(pubKey1.serialize().byteLength).toEqual(pubKey1.serializedSize);
             expect(pubKey2.serialize().byteLength).toEqual(pubKey2.serializedSize);
-            done();
-        })();
+        })().then(done, done.fail);
     });
 
     it('has an equals method', () => {
@@ -22,5 +21,16 @@ describe('PublicKey', () => {
         expect(pubKey1.equals(pubKey1)).toEqual(true);
         expect(pubKey1.equals(pubKey2)).toEqual(false);
         expect(pubKey2.equals(pubKey3)).toEqual(true);
+    });
+
+    it('can sum up public keys', (done) => {
+        (async function () {
+            const pubKey1 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+            const pubKey2 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2));
+            const pubKey3 = PublicKey.unserialize(BufferUtils.fromBase64('qkhhhl63RiqbK2R3Pv+9BnBYqPRREUp3tA5pjMtc66M='));
+
+            expect((await PublicKey.sum([pubKey1, pubKey2])).equals(pubKey3)).toEqual(true);
+            expect((await PublicKey.sum([pubKey2, pubKey1])).equals(pubKey3)).toEqual(true);
+        })().then(done, done.fail);
     });
 });
