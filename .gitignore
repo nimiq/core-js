@@ -18,3 +18,4 @@
 *.iml
 /database
 /build
+/.istanbul/

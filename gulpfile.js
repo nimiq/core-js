@@ -4,6 +4,7 @@ const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
 const concat = require('gulp-concat');
 const connect = require('gulp-connect');
+const istanbul = require('istanbul-api');
 const jasmine = require('gulp-jasmine-livereload-task');
 const merge = require('merge2');
 const source = require('vinyl-source-stream');
@@ -237,6 +238,20 @@ gulp.task('build-worker', function () {
         .pipe(connect.reload());
 });
 
+gulp.task('build-istanbul', function () {
+    return new Promise((callback) => {
+        istanbul.instrument.run(istanbul.config.loadObject(), {input: './src/main', output: './.istanbul/src/main'}, callback);
+    });
+});
+
+const BROWSER_SOURCES = [
+    ...dependencies, // external dependencies
+    './src/main/platform/browser/index.prefix.js',
+    ...sources.platform.browser,
+    ...sources.generic,
+    './src/main/platform/browser/index.suffix.js'
+];
+
 gulp.task('build-web-babel', ['build-worker'], function () {
     return merge(
         browserify([], {
@@ -260,8 +275,7 @@ gulp.task('build-web-babel', ['build-worker'], function () {
         }).bundle()
             .pipe(source('babel.js'))
             .pipe(buffer()),
-        gulp.src(dependencies // external dependencies
-            .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
+        gulp.src(BROWSER_SOURCES, {base: '.'})
             .pipe(sourcemaps.init({loadMaps: true}))
             .pipe(concat('web.js'))
             .pipe(babel(babel_config)))
@@ -273,11 +287,20 @@ gulp.task('build-web-babel', ['build-worker'], function () {
 });
 
 gulp.task('build-web', ['build-worker'], function () {
-    return gulp.src(dependencies // external dependencies
-        .concat(['./src/main/platform/browser/index.prefix.js']).concat(sources.platform.browser).concat(sources.generic).concat(['./src/main/platform/browser/index.suffix.js']), { base: '.' })
+    return gulp.src(BROWSER_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
-//        .pipe(uglify(uglify_config))
+        //.pipe(uglify(uglify_config))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'))
+        .pipe(connect.reload());
+});
+
+gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () {
+    return gulp.src(BROWSER_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(concat('web-istanbul.js'))
+        //.pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
@@ -305,11 +328,28 @@ gulp.task('build-loader', function () {
         .pipe(gulp.dest('dist'));
 });
 
+const NODE_SOURCES = [
+    './src/main/platform/nodejs/index.prefix.js',
+    ...sources.platform.node,
+    ...sources.generic,
+    './src/main/platform/nodejs/index.suffix.js'
+];
+
 gulp.task('build-node', function () {
     gulp.src(['build/Release/nimiq_node.node']).pipe(gulp.dest('dist'));
-    return gulp.src(['./src/main/platform/nodejs/index.prefix.js'].concat(sources.platform.node).concat(sources.generic).concat(['./src/main/platform/nodejs/index.suffix.js']))
+    return gulp.src(NODE_SOURCES)
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
+        .pipe(uglify(uglify_config))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build-node-istanbul', ['build-istanbul'], function () {
+    gulp.src(['build/Release/nimiq_node.node']).pipe(gulp.dest('dist'));
+    return gulp.src(NODE_SOURCES.map(f => `./.istanbul/${f}`))
+        .pipe(sourcemaps.init())
+        .pipe(concat('node-istanbul.js'))
         .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
@@ -360,6 +400,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-babel', 'build-loader', 'build-node']);
+gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-loader', 'build-node', 'build-node-istanbul']);
 
 gulp.task('default', ['build', 'serve']);
