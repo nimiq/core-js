@@ -10,7 +10,7 @@ describe('Mempool', () => {
             const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543,42,23);
 
             // Make sure we have some good values in our account
-            await accounts._tree.put(wallet.address, new Account(new Balance(745, 23)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(745, 23)));
 
             // Push the transaction for the first time
             let result = await mempool.pushTransaction(transaction);
@@ -34,10 +34,12 @@ describe('Mempool', () => {
 
             // Create a transaction
             const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 42);
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(7745, 42)));
 
             // Save the valid transaction signature and replace it with an invalid one
-            const validSignature = transaction.signature;
-            transaction.signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature3));
+            const validProof = transaction.proof;
+            transaction.proof = new Uint8Array(validProof);
+            transaction.proof.set(BufferUtils.fromBase64(Dummy.signature3), Crypto.publicKeySize);
 
             // Push the transaction, this should fail (return false) because of the
             // invalid signature
@@ -46,27 +48,27 @@ describe('Mempool', () => {
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid transaction', transaction);
+            expect(Log.w).toHaveBeenCalledWith(ProofUtils, 'Invalid Transaction - signer does not match address', transaction);
 
             // Set the valid transaction signature to test different scenarios
-            transaction.signature = validSignature;
+            transaction.proof = validProof;
 
             // Set the balance to a lower number than the transaction amount
-            await accounts._tree.put(wallet.address, new Account(new Balance(745, 42)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(745, 42)));
 
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - insufficient funds', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid for sender', transaction);
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
-            await accounts._tree.put(wallet.address, new Account(new Balance(7745, 68)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(7745, 68)));
 
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid nonce', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid for sender', transaction);
 
         })().then(done, done.fail);
     });
@@ -82,7 +84,7 @@ describe('Mempool', () => {
             const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,42);
 
             // Add the correct values we need to our wallet's balance
-            await accounts._tree.put(wallet.address, new Account(new Balance(745, 42)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(745, 42)));
 
             // The transaction should be successfully pushed
             const result = await mempool.pushTransaction(referenceTransaction);
@@ -102,7 +104,7 @@ describe('Mempool', () => {
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.createVolatile();
 
-            await accounts._tree.put(wallet.address, new Account(new Balance(152, 42)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(152, 42)));
 
             // Create transactions
             const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 42);
@@ -129,7 +131,7 @@ describe('Mempool', () => {
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.createVolatile();
 
-            await accounts._tree.put(wallet.address, new Account(new Balance(152, 42)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(152, 42)));
 
             // Create transactions
             const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 42);
@@ -164,7 +166,7 @@ describe('Mempool', () => {
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
                 const wallet = await Wallet.createVolatile();
-                await accounts._tree.put(wallet.address, new Account(new Balance(23478, 42)));
+                await accounts._tree.put(wallet.address, new BasicAccount(new Balance(23478, 42)));
                 wallets.push(wallet);
             }
 
@@ -184,7 +186,7 @@ describe('Mempool', () => {
 
             // Change the balances so that pending transactions will get evicted
             for (let i = 0; i < numberOfTransactions; i++) {
-                await accounts._tree.put(wallets[i].address, new Account(new Balance(2, 24)));
+                await accounts._tree.put(wallets[i].address, new BasicAccount(new Balance(2, 24)));
             }
 
             // Fire a 'head-change' event to evict all transactions
@@ -205,7 +207,7 @@ describe('Mempool', () => {
             const mempool = new Mempool(blockchain, accounts);
 
             const wallet = await Wallet.createVolatile();
-            await accounts._tree.put(wallet.address, new Account(new Balance(10000, 10)));
+            await accounts._tree.put(wallet.address, new BasicAccount(new Balance(10000, 10)));
 
             await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 13));
             await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 1, 11));

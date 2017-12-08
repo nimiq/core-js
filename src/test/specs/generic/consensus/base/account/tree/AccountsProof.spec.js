@@ -12,10 +12,10 @@ describe('AccountsProof', () => {
      */
     beforeEach(function (done) {
         (async function () {
-            const account1 = new Account(new Balance(25, 3));
-            const account2 = new Account(new Balance(1, 925));
-            const account3 = new Account(new Balance(1322, 532));
-            account4 = new Account(new Balance(93, 11));
+            const account1 = new BasicAccount(new Balance(25, 3));
+            const account2 = new BasicAccount(new Balance(1, 925));
+            const account3 = new BasicAccount(new Balance(1322, 532));
+            account4 = new BasicAccount(new Balance(93, 11));
 
             const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
             const t1Hash = await t1.hash();
@@ -113,7 +113,7 @@ describe('AccountsProof', () => {
     });
 
     it('must not verify successfully if it contains any node before the Root Node', (done) => {
-        const fakeAccount = new Account(new Balance(42, 31337));
+        const fakeAccount = new BasicAccount(new Balance(42, 31337));
         const fakeTreeNode = AccountsTreeNode.terminalNode('0023333222222222222222222222222222222222', fakeAccount);
         nodes.push(fakeTreeNode);
         const accountsProof1 = new AccountsProof(nodes);
@@ -130,7 +130,7 @@ describe('AccountsProof', () => {
     });
 
     it('must not verify successfully if it contains a node that is not part of the Tree at the end', (done) => {
-        const fakeAccount = new Account(new Balance(42, 31337));
+        const fakeAccount = new BasicAccount(new Balance(42, 31337));
         const fakeTreeNode = AccountsTreeNode.terminalNode('0023333222222222222222222222222222222222', fakeAccount);
         nodes.unshift(fakeTreeNode);
         const accountsProof1 = new AccountsProof(nodes);
@@ -147,7 +147,7 @@ describe('AccountsProof', () => {
     });
 
     it('must not verify successfully neither return an account if it contains a node that is not part of the Tree', (done) => {
-        const fakeAccount = new Account(new Balance(42, 31337));
+        const fakeAccount = new BasicAccount(new Balance(42, 31337));
         const fakeTreeNode = AccountsTreeNode.terminalNode('0023333222222222222222222222222222222222', fakeAccount);
         nodes.splice(4,0, fakeTreeNode);
         const accountsProof1 = new AccountsProof(nodes);

@@ -51,25 +51,24 @@ class Wallet {
 
     /**
      * Create a Transaction that is signed by the owner of this Wallet.
-     * @param {Address} recipientAddr Address of the transaction receiver
+     * @param {Address} recipient Address of the transaction receiver
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
      * @param {number} nonce The nonce representing the current balance of the sender.
      * @returns {Promise.<Transaction>} A prepared and signed Transaction object. This still has to be sent to the network.
      */
-    createTransaction(recipientAddr, value, fee, nonce) {
-        const transaction = new Transaction(this._keyPair.publicKey, recipientAddr, value, fee, nonce);
+    createTransaction(recipient, value, fee, nonce) {
+        const transaction = new BasicTransaction(this._keyPair.publicKey, recipient, value, fee, nonce);
         return this._signTransaction(transaction);
     }
 
     /**
-     * @param {Transaction} transaction
+     * @param {BasicTransaction} transaction
      * @returns {Promise.<Transaction>}
      * @private
      */
     async _signTransaction(transaction) {
-        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey,
-            transaction.serializeContent());
+        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey, transaction.serializeContent());
         return transaction;
     }
 

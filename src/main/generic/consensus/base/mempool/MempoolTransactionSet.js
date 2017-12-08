@@ -33,9 +33,9 @@ class MempoolTransactionSet {
         return this._transactions.map(t => t.fee).reduce((a, b) => a + b, 0);
     }
 
-    /** @type {PublicKey} */
-    get senderPubKey() {
-        return this._transactions.length > 0 ? this._transactions[0].senderPubKey : null;
+    /** @type {Address} */
+    get sender() {
+        return this._transactions.length > 0 ? this._transactions[0].sender : null;
     }
 
     /** @type {number} */
@@ -53,13 +53,6 @@ class MempoolTransactionSet {
      */
     shift() {
         return this._transactions.shift();
-    }
-
-    /**
-     * @return {Promise.<Address>}
-     */
-    async getSenderAddr() {
-        return this.senderPubKey.toAddress();
     }
 
     /**

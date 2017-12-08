@@ -374,15 +374,13 @@
             }
 
             txs.forEach(function(tx) {
-                tx.getSenderAddr().then(function(senderAddr) {
-                    if ($.wallet.address.equals(senderAddr) || $.wallet.address.equals(tx.recipientAddr)) {
-                        var el = document.createElement('div');
-                        var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
-                        var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                        el.innerHTML = `from=<hash>${senderAddr.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipientAddr.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
-                        this._mplTransactions.appendChild(el);
-                    }
-                }.bind(this));
+                if ($.wallet.address.equals(senderAddr) || $.wallet.address.equals(tx.recipient)) {
+                    var el = document.createElement('div');
+                    var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
+                    var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
+                    el.innerHTML = `from=<hash>${tx.sender.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipient.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    this._mplTransactions.appendChild(el);
+                }
             }.bind(this));
         }
 

@@ -210,12 +210,13 @@ class Miner extends Observable {
     async _getNextHeader(nextTarget, interlink, body) {
         const prevHash = this._blockchain.headHash;
         const interlinkHash = await interlink.hash();
+        const height = this._blockchain.height + 1;
 
         // Compute next accountsHash.
         const accounts = await this._blockchain.accounts.transaction();
         let accountsHash;
         try {
-            await accounts.commitBlockBody(body);
+            await accounts.commitBlockBody(body, height);
             accountsHash = await accounts.hash();
             await accounts.abort();
         } catch (e) {
@@ -224,7 +225,6 @@ class Miner extends Observable {
         }
 
         const bodyHash = await body.hash();
-        const height = this._blockchain.height + 1;
         const timestamp = this._getNextTimestamp();
         const nBits = BlockUtils.targetToCompact(nextTarget);
         const nonce = Math.round(Math.random() * 100000);

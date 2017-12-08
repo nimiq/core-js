@@ -31,6 +31,14 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
+     * @return {Hash}
+     */
+    static lightSync(arr) {
+        return new Hash(Crypto.hashLightSync(arr));
+    }
+
+    /**
+     * @param {Uint8Array} arr
      * @return {Promise.<Hash>}
      */
     static async hard(arr) {

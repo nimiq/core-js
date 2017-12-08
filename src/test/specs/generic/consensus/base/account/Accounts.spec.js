@@ -66,7 +66,7 @@ describe('Accounts', () => {
     it('put and get an account', (done) => {
         const balance = 42;
         const nonce = 192049;
-        const accountState1 = new Account(new Balance(balance, nonce));
+        const accountState1 = new BasicAccount(new Balance(balance, nonce));
         const accountAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         (async function () {

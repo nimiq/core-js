@@ -1,12 +1,20 @@
 describe('BlockBody', () => {
-    const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
+    let signature, transaction1, transaction2, transaction3, transaction4, minerAddress;
 
-    const transaction1 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
-    const transaction2 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
-    const transaction3 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
-    const transaction4 = new Transaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
+            signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
-    const minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+            transaction1 = new BasicTransaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+            transaction2 = new BasicTransaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+            transaction3 = new BasicTransaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+            transaction4 = new BasicTransaction(PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 8888, 42, 0, signature);
+
+            minerAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+
+        })().then(done, done.fail);
+    });
 
     // Note: This test is now useless as hash() returns a Hash object which verifies its size
     it('has a 32 byte bodyHash', (done) => {
@@ -25,7 +33,7 @@ describe('BlockBody', () => {
         (async () => {
             const blockBody1 = new BlockBody(minerAddress, [transaction1, transaction2], BufferUtils.fromAscii('Random'));
             const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
-            expect(BufferUtils.equals(blockBody1, blockBody2)).toBe(true);
+            expect(BufferUtils.equals(blockBody1.serialize(), blockBody2.serialize())).toBe(true);
             expect(BufferUtils.equals(await blockBody1.hash(), await blockBody2.hash())).toBe(true);
             expect(BufferUtils.equals(blockBody1.extraData, blockBody2.extraData)).toBe(true);
         })().then(done, done.fail);

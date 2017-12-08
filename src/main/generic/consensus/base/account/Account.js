@@ -1,3 +1,6 @@
+/**
+ * @abstract
+ */
 class Account {
     /**
      * @param {Account} o
@@ -5,11 +8,19 @@ class Account {
      */
     static copy(o) {
         if (!o) return o;
-        return new Account(Balance.copy(o._balance));
+        return new BasicAccount(Balance.copy(o._balance));
     }
 
-    constructor(balance) {
-        if (!balance || !(balance instanceof Balance)) throw 'Malformed balance';
+    /**
+     * @param {Account.Type} type
+     * @param {Balance} balance
+     */
+    constructor(type, balance) {
+        if (!NumberUtils.isUint8(type)) throw new Error('Malformed type');
+        if (!balance || !(balance instanceof Balance)) throw new Error('Malformed balance');
+
+        /** @type {Account.Type} */
+        this._type = type;
         /** @type {Balance} */
         this._balance = balance;
     }
@@ -20,12 +31,14 @@ class Account {
      * @return {Account} Newly created Account object.
      */
     static unserialize(buf) {
-        // We currently only support one account type: Basic.
-        const type = buf.readUint8();
-        if (type !== Account.Type.BASIC) throw 'Malformed account type';
+        const type = /** @type {Account.Type} */ buf.readUint8();
+        buf.readPos--;
 
-        const balance = Balance.unserialize(buf);
-        return new Account(balance);
+        if (!Account.TYPE_MAP.has(type)) {
+            throw new Error('Unknown account type');
+        }
+
+        return Account.TYPE_MAP.get(type).unserialize(buf);
     }
 
     /**
@@ -55,11 +68,12 @@ class Account {
      */
     equals(o) {
         return o instanceof Account
+            && this._type === o._type
             && this._balance.equals(o.balance);
     }
 
     toString() {
-        return `BasicAccount{value=${this._balance.value}, nonce=${this._balance.nonce}}`;
+        return `Account{type=${this._type}, balance=${this._balance.toString()}`;
     }
 
     /**
@@ -68,12 +82,99 @@ class Account {
     get balance() {
         return this._balance;
     }
+
+    /** @type {Account.Type} */
+    get type() {
+        return this._type;
+    }
+
+    /**
+     * @param {Array.<Transaction>} transactions
+     * @param {number} blockHeight
+     * @param {boolean} silent
+     * @return {Promise.<boolean>}
+     */
+    verifyOutgoingTransactionSet(transactions, blockHeight, silent = false) {
+        if (transactions.length === 0) return Promise.resolve(true);
+        const tx = transactions[0];
+        if (this._balance.nonce !== tx.nonce) {
+            if (!silent) Log.w(Account, 'Rejected transaction - insufficient funds', tx);
+            return Promise.resolve(false);
+        }
+        if (this._balance.value < tx.value + tx.fee) {
+            if (!silent) Log.w(Account, 'Rejected transaction - invalid nonce', tx);
+            return Promise.resolve(false);
+        }
+        return this.withOutgoingTransaction(tx, blockHeight).verifyOutgoingTransactionSet(transactions.slice(1), blockHeight);
+    }
+
+    /**
+     * @param {Balance} balance
+     * @return {Account|*}
+     */
+    withBalance(balance) { throw new Error('Not yet implemented.'); }
+
+    /**
+     * @param {Transaction} transaction
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
+     * @return {Account|*}
+     */
+    withOutgoingTransaction(transaction, blockHeight, revert = false) {
+        let newBalance;
+        if (!revert) {
+            const newValue = this._balance.value - transaction.value - transaction.fee;
+            if (newValue < 0) {
+                throw new Error('Balance Error!');
+            }
+            if (transaction.nonce !== this._balance.nonce) {
+                throw new Error('Nonce Error!');
+            }
+            newBalance = new Balance(newValue, this._balance.nonce + 1);
+        } else {
+            if (transaction.nonce !== this._balance.nonce - 1) {
+                throw new Error('Nonce Error!');
+            }
+            newBalance = new Balance(this._balance.value + transaction.value + transaction.fee, this._balance.nonce - 1);
+        }
+        return this.withBalance(newBalance);
+    }
+
+    /**
+     * @param {Transaction} transaction
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
+     * @return {Account}
+     */
+    withIncomingTransaction(transaction, blockHeight, revert = false) {
+        let newBalance;
+        if (!revert) {
+            newBalance = new Balance(this._balance.value + transaction.value, this._balance.nonce);
+        } else {
+            const newValue = this._balance.value - transaction.value;
+            if (newValue < 0) {
+                throw new Error('Balance Error!');
+            }
+            newBalance = new Balance(newValue, this._balance.nonce);
+        }
+        return this.withBalance(newBalance);
+    }
 }
-Account.INITIAL = new Account(Balance.INITIAL);
+
 /**
  * Enum for Account types.
- * @enum {number}
+ * @enum
  */
-Account.Type = {};
-Account.Type.BASIC = 0;
+Account.Type = {
+    /**
+     * Basic account type.
+     * @see {BasicAccount}
+     */
+    BASIC: 0
+};
+/**
+ * @type {Map.<Account.Type, {INITIAL: Account, unserialize: function(buf: SerialBuffer):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}
+ */
+Account.TYPE_MAP = new Map();
+
 Class.register(Account);
