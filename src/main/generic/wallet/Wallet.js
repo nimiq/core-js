@@ -58,18 +58,17 @@ class Wallet {
      * @returns {Promise.<Transaction>} A prepared and signed Transaction object. This still has to be sent to the network.
      */
     createTransaction(recipient, value, fee, nonce) {
-        const transaction = Transaction.basic(this._keyPair.publicKey, recipient, value, fee, nonce);
+        const transaction = new BasicTransaction(this._keyPair.publicKey, recipient, value, fee, nonce);
         return this._signTransaction(transaction);
     }
 
     /**
-     * @param {Transaction} transaction
+     * @param {BasicTransaction} transaction
      * @returns {Promise.<Transaction>}
      * @private
      */
     async _signTransaction(transaction) {
-        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey,
-            transaction.serializeContent());
+        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey, transaction.serializeContent());
         return transaction;
     }
 

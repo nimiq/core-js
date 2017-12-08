@@ -58,11 +58,11 @@ class Mempool extends Observable {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
             return false;
         }
-        if (!(await senderAccount.verifyOutgoingTransactionValidity(transaction))) {
+        if (!(await Account.TYPE_MAP.get(senderAccount.type).verifyOutgoingTransaction(transaction))) {
             Log.w(Mempool, 'Rejected transaction - invalid for sender', transaction);
             return false;
         }
-        if (!(await recipientAccount.verifyIncomingTransactionValidity(transaction))) {
+        if (!(await Account.TYPE_MAP.get(recipientAccount.type).verifyIncomingTransaction(transaction))) {
             Log.w(Mempool, 'Rejected transaction - invalid for recipient', transaction);
             return false;
         }
@@ -92,9 +92,7 @@ class Mempool extends Observable {
             /** @type {Transaction} */
             let tx;
             while ((tx = txs.shift())) {
-                console.log('trying from waitlist', tx.toString());
                 if ((await senderAccount.verifyOutgoingTransactionSet([...set.transactions, tx], this._blockchain.height + 1, true))) {
-                    console.log('done');
                     set.add(tx);
                     this.fire('transaction-added', tx);
                 } else {
