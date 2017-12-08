@@ -10,7 +10,7 @@ Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](http
 ## Quickstart
 
 1. On Ubuntu, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
-    - On other Linux, install `git`, `python2.7`, `make` and `gcc`.
+    - On other Linux systems, install `git`, `python2.7`, `make` and `gcc`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
 2. Install gulp globally: `sudo npm install -g gulp` or `yarn global add gulp`.
 3. Clone this repository `git clone https://github.com/nimiq-network/core`.
