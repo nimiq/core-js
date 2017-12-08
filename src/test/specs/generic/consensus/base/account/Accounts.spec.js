@@ -201,7 +201,7 @@ describe('Accounts', () => {
             }
             expect(error).toBe(true);
 
-            // sender balance wil be enough AFTER block is mined -> make sender also miner (should still fail)
+            // sender balance will be enough AFTER block is mined -> make sender also miner (should still fail)
             block.body._minerAddr = user1.address;
             error = false;
             try {

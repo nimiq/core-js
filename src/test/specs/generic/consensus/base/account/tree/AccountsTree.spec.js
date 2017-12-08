@@ -32,20 +32,6 @@ describe('AccountsTree', () => {
         // })
     ];
 
-    /**
-     * Helper method to create an address object from a sequence of nibbles.
-     * @param {int[]} nibbles array of 40 nibbles (= 20 bytes)
-     * @returns {Address} the resulting address
-     */
-    function raw2address(nibbles) {
-        let address = '';
-        for (let i = 0; i < nibbles.length; i++) {
-            const rawNibble = nibbles[i];
-            address += rawNibble.toString(16);
-        }
-        return Address.fromHex(address);
-    }
-
     // for each test, create a specialized version that runs on exactly the provided account tree type.
     treeBuilders.forEach((treeBuilder) => {
 
@@ -411,7 +397,7 @@ describe('AccountsTree', () => {
                  */
                 const tree = await treeBuilder.builder();
                 let current = new Array(40).fill(0);
-                await tree.put(raw2address(current), new Account(new Balance(1, 0)));
+                await tree.put(TestUtils.raw2address(current), new Account(new Balance(1, 0)));
 
                 for (let i = 1; i < 40; i++) {
                     const nibble = i % 16;
@@ -423,13 +409,13 @@ describe('AccountsTree', () => {
                     // now combine and set current
                     current = prefix.concat(diverging);
 
-                    await tree.put(raw2address(current), new Account(new Balance(1, 0)));
+                    await tree.put(TestUtils.raw2address(current), new Account(new Balance(1, 0)));
                 }
 
 
                 // check two balances
-                const address1 = raw2address(new Array(40).fill(0));
-                const address2 = raw2address([0, 1, 2, 3].concat(new Array(36).fill(4)));
+                const address1 = TestUtils.raw2address(new Array(40).fill(0));
+                const address2 = TestUtils.raw2address([0, 1, 2, 3].concat(new Array(36).fill(4)));
                 const account1 = await tree.get(address1);
                 const account2 = await tree.get(address2);
 
@@ -456,14 +442,14 @@ describe('AccountsTree', () => {
                 // insert 16 * 16 = 256 addresses into the tree to fill up the first two levels
                 for (let i = 0; i < 16; i++) {
                     for (let j = 0; j < 16; j++) {
-                        const address = raw2address([i, j].concat(new Array(38).fill(0)));
+                        const address = TestUtils.raw2address([i, j].concat(new Array(38).fill(0)));
                         await tree.put(address, new Account(new Balance(1, 0)));
                     }
                 }
 
                 // check two balances
-                const address1 = raw2address(new Array(40).fill(0));
-                const address2 = raw2address([15].concat(new Array(39).fill(0)));
+                const address1 = TestUtils.raw2address(new Array(40).fill(0));
+                const address2 = TestUtils.raw2address([15].concat(new Array(39).fill(0)));
                 const account1 = await tree.get(address1);
                 const account2 = await tree.get(address2);
 
@@ -529,7 +515,7 @@ describe('AccountsTree', () => {
 
                 // add address 1
                 const prefixT1 = new Array(40).fill(0); // 00000...
-                const address1 = raw2address(prefixT1);
+                const address1 = TestUtils.raw2address(prefixT1);
                 const account1 = new Account(new Balance(12, 9));
                 await tree.put(address1, account1);
                 /* current tree:
@@ -555,7 +541,7 @@ describe('AccountsTree', () => {
                 // add address 2
                 const prefixB1 = new Array(4).fill(0);   // branch node prefix 0000
                 const prefixT3 = prefixB1.concat([1]).concat(new Array(35).fill(0));   // second terminal node prefix 00001000...
-                const address2 = raw2address(prefixT3);
+                const address2 = TestUtils.raw2address(prefixT3);
                 const account2 = new Account(new Balance(642, 31));
                 await tree.put(address2, account2);
 
@@ -691,9 +677,9 @@ describe('AccountsTree', () => {
                 const prefixT8 = prefixB4.concat([2]).concat(new Array(37).fill(0));
                 const prefixT9 = prefixB4.concat(new Array(38).fill(3));
 
-                const address3 = raw2address(prefixT7);
-                const address4 = raw2address(prefixT8);
-                const address5 = raw2address(prefixT9);
+                const address3 = TestUtils.raw2address(prefixT7);
+                const address4 = TestUtils.raw2address(prefixT8);
+                const address5 = TestUtils.raw2address(prefixT9);
 
                 const account6 = new Account(new Balance(25, 3));
                 const account7 = new Account(new Balance(1322, 532));
@@ -729,7 +715,7 @@ describe('AccountsTree', () => {
                 const prefixT10 = prefixB6.concat(new Array(37).fill(0));
                 const prefixT11 = prefixB6.concat(new Array(37).fill(2));
 
-                const address6 = raw2address(prefixT11);
+                const address6 = TestUtils.raw2address(prefixT11);
                 const account9 = new Account(new Balance(93, 11));
 
                 // split on the second level

@@ -3,7 +3,7 @@ class AccountsProof {
      * @param {Array.<AccountsTreeNode>} nodes
      */
     constructor(nodes) {
-        if (!nodes || !NumberUtils.isUint16(nodes.length)
+        if (!nodes || !Array.isArray(nodes) || !NumberUtils.isUint16(nodes.length)
             || nodes.some(it => !(it instanceof AccountsTreeNode))) throw 'Malformed nodes';
 
         /** @type {Array.<AccountsTreeNode>} */
@@ -60,15 +60,18 @@ class AccountsProof {
         for (const node of this._nodes) {
             // If node is a branch node, validate its children.
             if (node.isBranch()) {
-                for (const child of children) {
+                // Get the number of children
+                const numberOfChildren = node.numberOfChildren();
+                for (let i = 0; i < numberOfChildren; i++) {
+                    const child = children.pop();
                     const hash = await child.hash(); // eslint-disable-line no-await-in-loop
                     // If the child is not valid, return false.
                     if (!node.getChildHash(child.prefix).equals(hash) || node.getChild(child.prefix) !== child.prefix) {
                         return false;
                     }
+
                     this._index.put(hash, child);
                 }
-                children = [];
             }
 
             // Append child.
