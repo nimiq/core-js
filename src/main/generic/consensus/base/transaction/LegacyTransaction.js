@@ -103,7 +103,7 @@ class LegacyTransaction extends Transaction {
      * @return {Promise.<boolean>}
      */
     async verifySignature() {
-        return ProofUtils.verifySignatureProof(this);
+        return SignatureProof.verifySignatureProof(this);
     }
 
     /**
