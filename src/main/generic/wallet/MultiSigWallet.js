@@ -49,7 +49,7 @@ class MultiSigWallet {
      * @returns {Transaction} A prepared Transaction object.
      */
     async createTransaction(recipientAddr, value, fee, nonce) {
-        const transaction = new Transaction(Transaction.Type.EXTENDED, this._address, Account.Type.BASIC,
+        const transaction = new ExtendedTransaction(this._address, Account.Type.BASIC,
             recipientAddr, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0));
         return transaction;
     }

@@ -33,8 +33,8 @@ class Transaction {
      * @param {number} value
      * @param {number} fee
      * @param {number} nonce
-     * @param {Uint8Array} proof
      * @param {Uint8Array} data
+     * @param {Uint8Array} proof
      */
     constructor(type, sender, senderType, recipient, recipientType, value, fee, nonce, data, proof) {
         if (!(sender instanceof Address)) throw new Error('Malformed sender');
