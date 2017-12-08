@@ -1,3 +1,6 @@
+/**
+ * @abstract
+ */
 class Account {
     /**
      * @param {Account} o
@@ -86,12 +89,6 @@ class Account {
     }
 
     /**
-     * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
-     */
-    verifyOutgoingTransactionValidity(transaction) { throw new Error('Not yet implemented.'); }
-
-    /**
      * @param {Array.<Transaction>} transactions
      * @param {number} blockHeight
      * @param {boolean} silent
@@ -110,12 +107,6 @@ class Account {
         }
         return this.withOutgoingTransaction(tx, blockHeight).verifyOutgoingTransactionSet(transactions.slice(1), blockHeight);
     }
-
-    /**
-     * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
-     */
-    verifyIncomingTransactionValidity(transaction) { throw new Error('Not yet implemented.'); }
 
     /**
      * @param {Balance} balance
@@ -172,13 +163,17 @@ class Account {
 
 /**
  * Enum for Account types.
- * @enum {number}
+ * @enum
  */
 Account.Type = {
+    /**
+     * Basic account type.
+     * @see {BasicAccount}
+     */
     BASIC: 0
 };
 /**
- * @type {Map.<Account.Type, {INITIAL: Account, unserialize: function(SerialBuffer):Account}>}
+ * @type {Map.<Account.Type, {INITIAL: Account, unserialize: function(buf: SerialBuffer):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}
  */
 Account.TYPE_MAP = new Map();
 

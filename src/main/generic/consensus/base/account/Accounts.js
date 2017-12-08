@@ -118,11 +118,10 @@ class Accounts extends Observable {
     /**
      * Gets the current balance of an account.
      *
-     * We only support basic accounts at this time.
      * @param {Address} address Address of the account to query.
      * @param {AccountsTree} [tree] AccountsTree or transaction to read from.
      * @return {Promise.<Balance>} Current Balance of given address.
-     * @deprecated
+     * @deprecated use {@link Accounts#get}
      */
     async getBalance(address, tree = this._tree) {
         const account = await tree.get(address);

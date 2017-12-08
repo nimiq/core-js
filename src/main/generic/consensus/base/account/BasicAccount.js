@@ -1,3 +1,7 @@
+/**
+ * This is a classic account that can send all his funds or receive any transaction.
+ * All outgoing transactions are signed using the any key corresponding to this address.
+ */
 class BasicAccount extends Account {
     /**
      * @param {Balance} balance
@@ -26,15 +30,15 @@ class BasicAccount extends Account {
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
      */
-    verifyOutgoingTransactionValidity(transaction) {
-        return SignatureProof.verifySignatureProof(transaction);
+    static verifyOutgoingTransaction(transaction) {
+        return ProofUtils.verifySignatureProof(transaction);
     }
 
     /**
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
      */
-    verifyIncomingTransactionValidity(transaction) {
+    static verifyIncomingTransaction(transaction) {
         return Promise.resolve(true); // Accept everything
     }
 
