@@ -89,9 +89,6 @@ class Miner extends Observable {
         this._workerPool.on('share', (obj) => this._onWorkerShare(obj));
         this._workerPool.on('no-share', (obj) => this._onWorkerShare(obj));
 
-        /** @type {Block} */
-        this._currentBlock = null;
-
         /**
          * Flag indicating that the mempool has changed since we started mining the current block.
          * @type {boolean}
@@ -101,6 +98,9 @@ class Miner extends Observable {
 
         /** @type {boolean} */
         this._restarting = false;
+
+        /** @type {number} */
+        this._lastRestart = 0;
 
         /** @type {boolean} */
         this._submittingBlock = false;
@@ -133,7 +133,7 @@ class Miner extends Observable {
         this.fire('start', this);
 
         // Kick off the mining process.
-        this._startWork();
+        this._startWork().catch(Miner._log);
     }
 
     async _startWork() {
@@ -141,51 +141,61 @@ class Miner extends Observable {
         if (!this.working || this._restarting) {
             return;
         }
-        this._restarting = true;
+        try {
+            this._lastRestart = Date.now();
+            this._restarting = true;
+            this._mempoolChanged = false;
 
-        // Construct next block.
-        const block = await this.getNextBlock();
-        this._currentBlock = block;
-        const buffer = block.header.serialize();
-        this._mempoolChanged = false;
+            // Construct next block.
+            const block = await this.getNextBlock();
 
-        Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
+            Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
-        this._workerPool.startMiningOnBlock(block.header);
-        this._restarting = false;
+            this._workerPool.startMiningOnBlock(block).catch(Miner._log);
+        } finally {
+            this._restarting = false;
+        }
     }
 
     /**
-     * @param {{hash: Hash, nonce: number, blockHeader: BlockHeader}} obj
+     * @param {{hash: Hash, nonce: number, block: Block}} obj
      * @private
      */
     async _onWorkerShare(obj) {
         this._hashCount += this._workerPool.noncesPerRun;
-        const block = this._currentBlock;
-        if (obj.blockHeader && obj.blockHeader.bodyHash.equals(this._currentBlock.bodyHash) && obj.blockHeader.prevHash.equals(this._blockchain.headHash)) {
+        if (obj.block && obj.block.prevHash.equals(this._blockchain.headHash)) {
             Log.d(Miner, `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
             if (BlockUtils.isProofOfWork(obj.hash, block.target) && !this._submittingBlock) {
-                block.header.nonce = obj.nonce;
+                obj.block.header.nonce = obj.nonce;
                 this._submittingBlock = true;
-                if (block.header.verifyProofOfWork()) {
+                if (obj.block.header.verifyProofOfWork()) {
                     // Tell listeners that we've mined a block.
-                    this.fire('block-mined', block, this);
+                    this.fire('block-mined', obj.block, this);
 
                     // Push block into blockchain.
-                    if ((await this._blockchain.pushBlock(block)) < 0) {
+                    if ((await this._blockchain.pushBlock(obj.block)) < 0) {
                         this._submittingBlock = false;
-                        this._startWork();
+                        this._startWork().catch(Miner._log);
+                        return;
                     } else {
                         this._submittingBlock = false;
                     }
                 } else {
-                    Log.d(Miner, `Ignoring invalid share: ${await block.header.pow()}`);
+                    Log.d(Miner, `Ignoring invalid share: ${await obj.block.header.pow()}`);
                 }
             }
         }
-        if (this._mempoolChanged) {
-            this._startWork();
+        if (this._mempoolChanged && this._lastRestart + Miner.MIN_TIME_ON_BLOCK < Date.now()) {
+            this._startWork().catch(Miner._log);
         }
+    }
+
+    /**
+     * @param {Error|*} e
+     * @private
+     */
+    static _log(e) {
+        Log.w(Miner, e.message || e);
     }
 
     /**
@@ -369,5 +379,6 @@ class Miner extends Observable {
     }
 }
 
+Miner.MIN_TIME_ON_BLOCK = 10000;
 Miner.MOVING_AVERAGE_MAX_SIZE = 10;
 Class.register(Miner);

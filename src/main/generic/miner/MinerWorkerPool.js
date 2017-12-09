@@ -8,8 +8,8 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         this._miningEnabled = false;
         /** @type {Array.<{minNonce: number, maxNonce: number}>} */
         this._activeNonces = [];
-        /** @type {BlockHeader} */
-        this._blockHeader = null;
+        /** @type {Block} */
+        this._block = null;
         /** @type {number} */
         this._noncesPerRun = 256;
         /** @type {Observable} */
@@ -110,11 +110,11 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
     off(type, id) { this._observable.off(type, id); }
 
     /**
-     * @param {BlockHeader} blockHeader
+     * @param {Block} block
      * @param {number} shareCompact target of a share, in compact format.
      */
-    async startMiningOnBlock(blockHeader, shareCompact = blockHeader.nBits) {
-        this._blockHeader = blockHeader;
+    async startMiningOnBlock(block, shareCompact = block.nBits) {
+        this._block = block;
         this._shareCompact = shareCompact;
         if (!this._miningEnabled) {
             await this._updateToSize();
@@ -159,12 +159,12 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         let i = 0;
         while (this._miningEnabled && (IWorker.areWorkersAsync || PlatformUtils.isNodeJs() || i === 0) && i < this._runsPerCycle) {
             i++;
-            const blockHeader = BlockHeader.copy(this._blockHeader);
-            const result = await this.multiMine(blockHeader.serialize(), this._shareCompact, nonceRange.minNonce, nonceRange.maxNonce);
+            const block = this._block;
+            const result = await this.multiMine(block.header.serialize(), this._shareCompact, nonceRange.minNonce, nonceRange.maxNonce);
             if (result) {
                 const hash = new Hash(result.hash);
                 this._observable.fire('share', {
-                    blockHeader,
+                    block,
                     nonce: result.nonce,
                     hash
                 });
