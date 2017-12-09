@@ -275,14 +275,13 @@ class AccountsTreeNode {
     }
 
     /**
-     * Test if this node is a child of some other node
-     * @param {AccountsTreeNode} possibleParent
+     * Tests if this node is a child of some other node.
+     * @param {AccountsTreeNode} parent
      * @returns {boolean}
      */
-    isChildOf(possibleParent) {
-        return (possibleParent.getChildren()).includes(this._prefix);
+    isChildOf(parent) {
+        return parent.getChildren() && parent.getChildren().includes(this._prefix);
     }
-
 
     /**
      * @returns {boolean}
