@@ -60,17 +60,19 @@ class AccountsProof {
         for (const node of this._nodes) {
             // If node is a branch node, validate its children.
             if (node.isBranch()) {
-                // Get the number of children
-                const numberOfChildren = node.numberOfChildren();
-                for (let i = 0; i < numberOfChildren; i++) {
-                    const child = children.pop();
-                    const hash = await child.hash(); // eslint-disable-line no-await-in-loop
-                    // If the child is not valid, return false.
-                    if (!node.getChildHash(child.prefix).equals(hash) || node.getChild(child.prefix) !== child.prefix) {
-                        return false;
+                let child;
+                while (child = children.pop()) { // eslint-disable-line no-cond-assign
+                    if (child.isChildOf(node)) {
+                        const hash = await child.hash(); // eslint-disable-line no-await-in-loop
+                        // If the child is not valid, return false.
+                        if (!node.getChildHash(child.prefix).equals(hash) || node.getChild(child.prefix) !== child.prefix) {
+                            return false;
+                        }
+                        this._index.put(hash, child);
+                    } else {
+                        children.push(child);
+                        break;
                     }
-
-                    this._index.put(hash, child);
                 }
             }
 
