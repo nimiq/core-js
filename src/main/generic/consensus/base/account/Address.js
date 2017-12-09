@@ -9,6 +9,14 @@ class Address extends Primitive {
         return new Address(obj);
     }
 
+    /**
+     * @param {Hash} hash
+     * @returns {Address}
+     */
+    static fromHash(hash) {
+        return new Address(hash.subarray(0, Address.SERIALIZED_SIZE));
+    }
+
     constructor(arg) {
         super(arg, Uint8Array, Address.SERIALIZED_SIZE);
     }
@@ -114,7 +122,6 @@ class Address extends Primitive {
         return res;
     }
 }
-
 Address.CCODE = 'NQ';
 Address.SERIALIZED_SIZE = 20;
 Address.HEX_SIZE = 40;

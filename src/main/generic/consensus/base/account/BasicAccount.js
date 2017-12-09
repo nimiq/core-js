@@ -31,7 +31,7 @@ class BasicAccount extends Account {
      * @return {Promise.<boolean>}
      */
     static verifyOutgoingTransaction(transaction) {
-        return SignatureProof.verifySignatureProof(transaction);
+        return SignatureProof.verifyTransaction(transaction);
     }
 
     /**

@@ -34,9 +34,8 @@ class MultiSigWallet {
     }
 
     async _init() {
-        const rootHash = await MerkleTree.computeRoot(this._publicKeys, key => Hash.light(key.serialize()));
-        this._address = new Address(rootHash.subarray(0, 20));
-        this._hashes = await Promise.all(this._publicKeys.map(key => key.hash()));
+        const merkleRoot = await MerkleTree.computeRoot(this._publicKeys);
+        this._address = Address.fromHash(merkleRoot);
         return this;
     }
 
@@ -87,7 +86,7 @@ class MultiSigWallet {
         }
 
         const signature = await Signature.fromPartialSignatures(aggregatedCommitment, signatures);
-        const proof = await SignatureProof.fromHashes(signature, aggregatedPublicKey, this._hashes);
+        const proof = await SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
         transaction.proof = proof.serialize();
         return transaction;
     }

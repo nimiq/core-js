@@ -89,14 +89,14 @@ class PublicKey extends Primitive {
      * @return {Promise.<Address>}
      */
     async toAddress() {
-        return new Address((await this.hash()).subarray(0, 20));
+        return Address.fromHash(await this.hash());
     }
 
     /**
      * @return {Address}
      */
     toAddressSync() {
-        return new Address(Hash.lightSync(this.serialize()).subarray(0, 20));
+        return Address.fromHash(Hash.lightSync(this.serialize()));
     }
 
     /**

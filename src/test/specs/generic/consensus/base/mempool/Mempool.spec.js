@@ -37,9 +37,8 @@ describe('Mempool', () => {
             await accounts._tree.put(wallet.address, new BasicAccount(new Balance(7745, 42)));
 
             // Save the valid transaction signature and replace it with an invalid one
-            const validProof = transaction.proof;
-            transaction.proof = new Uint8Array(validProof);
-            transaction.proof.set(BufferUtils.fromBase64(Dummy.signature3), Crypto.publicKeySize);
+            const validSignature = transaction.signature;
+            transaction.signature = new Signature(BufferUtils.fromBase64(Dummy.signature3));
 
             // Push the transaction, this should fail (return false) because of the
             // invalid signature
@@ -48,10 +47,11 @@ describe('Mempool', () => {
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
-            expect(Log.w).toHaveBeenCalledWith(SignatureProof, 'Invalid Transaction - signer does not match address', transaction);
+            expect(Log.w).toHaveBeenCalledWith(SignatureProof, 'Invalid SignatureProof - signature is invalid');
+            expect(Log.w).toHaveBeenCalledWith(Transaction, 'Invalid for sender', transaction);
 
             // Set the valid transaction signature to test different scenarios
-            transaction.proof = validProof;
+            transaction.signature = validSignature;
 
             // Set the balance to a lower number than the transaction amount
             await accounts._tree.put(wallet.address, new BasicAccount(new Balance(745, 42)));
@@ -59,7 +59,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid for sender', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Account, 'Rejected transaction - insufficient funds', transaction);
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
@@ -68,7 +68,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(Log.w).toHaveBeenCalledWith(Mempool, 'Rejected transaction - invalid for sender', transaction);
+            expect(Log.w).toHaveBeenCalledWith(Account, 'Rejected transaction - invalid nonce', transaction);
 
         })().then(done, done.fail);
     });

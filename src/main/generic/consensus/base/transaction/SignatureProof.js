@@ -1,51 +1,58 @@
 class SignatureProof {
-    constructor(signature, publicKey, proof) {
-        this._signature = signature;
-        this._publicKey = publicKey;
-        this._proof = proof;
-    }
-
-    static async fromHashes(signature, publicKey, hashes) {
-        const hash = await publicKey.hash();
-        const proof = [];
-        await SignatureProof._computeProof(hashes, hash, proof);
-        return new SignatureProof(signature, publicKey, proof);
+    /**
+     * @param {Transaction} transaction
+     * @returns {Promise.<boolean>}
+     */
+    static verifyTransaction(transaction) {
+        const proof = SignatureProof.unserialize(new SerialBuffer(transaction.proof));
+        return proof.verify(transaction.sender, transaction.serializeContent());
     }
 
     /**
-     * @param {Array.<Hash>} hashes
-     * @param {Hash} leaf
-     * @param {Array.<{left:boolean, inner:Hash}>} proof
-     * @return {{containsLeaf:boolean, inner:Hash}}
-     * @private
+     * @param {PublicKey} publicKey
+     * @param {Signature} signature
+     * @returns {SignatureProof}
      */
-    static async _computeProof(hashes, leaf, proof) {
-        const len = hashes.length;
-        let hash;
-        if (len === 0) {
-            hash = await Hash.light(new Uint8Array(0));
-            return {containsLeaf: false, inner: hash};
-        }
-        if (len === 1) {
-            hash = hashes[0];
-            return {containsLeaf: hash.equals(leaf), inner: hash};
-        }
+    static singleSig(publicKey, signature) {
+        return new SignatureProof(publicKey, new MerklePath([]), signature);
+    }
 
-        const mid = Math.round(len / 2);
-        const left = hashes.slice(0, mid);
-        const right = hashes.slice(mid);
-        const {containsLeaf: leftLeaf, inner: leftHash} = await SignatureProof._computeProof(left, leaf, proof);
-        const {containsLeaf: rightLeaf, inner: rightHash} = await SignatureProof._computeProof(right, leaf, proof);
-        hash = await Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
+    /**
+     * @param {PublicKey} signerKey
+     * @param {Array.<PublicKey>} publicKeys
+     * @param {Signature} signature
+     * @returns {Promise.<SignatureProof>}
+     */
+    static async multiSig(signerKey, publicKeys, signature) {
+        const merklePath = await MerklePath.compute(publicKeys, signerKey);
+        return new SignatureProof(signerKey, merklePath, signature);
+    }
 
-        if (leftLeaf) {
-            proof.push({left: false, inner: rightHash});
-            return {containsLeaf: true, inner: hash};
-        } else if (rightLeaf) {
-            proof.push({left: true, inner: leftHash});
-            return {containsLeaf: true, inner: hash};
-        }
-        return {containsLeaf: false, inner: hash};
+    /**
+     * @param {PublicKey} publicKey
+     * @param {MerklePath} merklePath
+     * @param {Signature} signature
+     */
+    constructor(publicKey, merklePath, signature) {
+        if (!(publicKey instanceof PublicKey)) throw new Error('Malformed publickKey');
+        if (!(merklePath instanceof MerklePath)) throw new Error('Malformed merklePath');
+        if (signature && !(signature instanceof Signature)) throw new Error('Malformed signature');
+
+        /**
+         * @type {PublicKey}
+         * @private
+         */
+        this._publicKey = publicKey;
+        /**
+         * @type {MerklePath}
+         * @private
+         */
+        this._merklePath = merklePath;
+        /**
+         * @type {Signature}
+         * @private
+         */
+        this._signature = signature;
     }
 
     /**
@@ -53,18 +60,10 @@ class SignatureProof {
      * @return {SignatureProof}
      */
     static unserialize(buf) {
-        const merkleTreeDepth = buf.readUint8();
         const publicKey = PublicKey.unserialize(buf);
-
-        const proof = [];
-        for (let i = 0; i < merkleTreeDepth; ++i) {
-            const left = buf.readUint8();
-            const inner = Hash.unserialize(buf);
-            proof.push({left: !!left, inner});
-        }
-
-        const sig = Signature.unserialize(buf);
-        return new SignatureProof(sig, publicKey, proof);
+        const merklePath = MerklePath.unserialize(buf);
+        const signature = Signature.unserialize(buf);
+        return new SignatureProof(publicKey, merklePath, signature);
     }
 
     /**
@@ -73,23 +72,24 @@ class SignatureProof {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._proof.length);
         this._publicKey.serialize(buf);
-        for (const node of this._proof) {
-            buf.writeUint8(node.left ? 1 : 0);
-            node.inner.serialize(buf);
+        this._merklePath.serialize(buf);
+
+        // The SignatureProof is sometimes serialized before the signature is set (e.g. when creating transactions).
+        // Simply don't serialize the signature if it's missing as this should never go over the wire.
+        // We always expect the signature to be present when unserializing.
+        if (this._signature) {
+            this._signature.serialize(buf);
         }
-        this._signature.serialize(buf);
+
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return /*proof length*/ 1
-            + this._publicKey.serializedSize
-            + /*left*/ this._proof.length
-            + /*hashes*/ this._proof.reduce((acc, node) => acc + node.inner.serializedSize, 0)
-            + this._signature.serializedSize;
+        return this._publicKey.serializedSize
+            + this._merklePath.serializedSize
+            + (this._signature ? this._signature.serializedSize : 0);
     }
 
     /**
@@ -99,40 +99,54 @@ class SignatureProof {
     equals(o) {
         return o instanceof SignatureProof
             && this._publicKey.equals(o._publicKey)
-            && this._proof.length === o._proof.length
-            && this._proof.every((node, i) => node.left === o._proof[i].left && node.inner.equals(o._proof[i].inner))
-            && this._signature.equals(o._signature);
-    }
-
-    static async verifySignatureProof(transaction, proof = transaction.proof, sender = transaction.sender, content = transaction.serializeContent()) {
-        return SignatureProof.unserialize(new SerialBuffer(proof)).verify(transaction, sender, content);
+            && this._merklePath.equals(o._merklePath)
+            && (this._signature ? this._signature.equals(o._signature) : this._signature === o._signature);
     }
 
     /**
-     * @param {Transaction} transaction
-     * @param {Address} [sender]
-     * @param {Uint8Array} [content]
-     * @return {Promise.<boolean>}
+     * @param {Address} sender
+     * @param {Uint8Array} data
+     * @returns {Promise.<boolean>}
      */
-    async verify(transaction, sender = transaction.sender, content = transaction.serializeContent()) {
-        let hash = await this._publicKey.hash();
-
-        for (let i = 0; i < this._proof.length; ++i) {
-            const left = this._proof[i].left;
-            const inner = this._proof[i].inner;
-            const concat = new SerialBuffer(inner.serializedSize * 2);
-            if (left) inner.serialize(concat);
-            hash.serialize(concat);
-            if (!left) inner.serialize(concat);
-            hash = await Hash.light(concat);
-        }
-
-        if (!sender.equals(new Address(hash.subarray(0, 20)))) {
-            Log.w(SignatureProof, 'Invalid Transaction - signer does not match address', transaction);
+    async verify(sender, data) {
+        const merkleRoot = await this._merklePath.computeRoot(this._publicKey);
+        const signerAddr = Address.fromHash(merkleRoot);
+        if (!signerAddr.equals(sender)) {
+            Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
             return false;
         }
 
-        return this._signature.verify(this._publicKey, content);
+        if (!this._signature) {
+            Log.w(SignatureProof, 'Invalid SignatureProof - signature is missing');
+            return false;
+        }
+
+        if (!(await this._signature.verify(this._publicKey, data))) {
+            Log.w(SignatureProof, 'Invalid SignatureProof - signature is invalid');
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @type {PublicKey} */
+    get publicKey() {
+        return this._publicKey;
+    }
+
+    /** @type {MerklePath} */
+    get merklePath() {
+        return this._merklePath;
+    }
+
+    /** @type {Signature} */
+    get signature() {
+        return this._signature;
+    }
+
+    /** @type {Signature} */
+    set signature(signature) {
+        this._signature = signature;
     }
 }
 

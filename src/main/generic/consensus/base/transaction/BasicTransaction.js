@@ -1,5 +1,4 @@
 class BasicTransaction extends Transaction {
-
     /**
      * @param {PublicKey} senderPubKey
      * @param {Address} recipient
@@ -13,11 +12,14 @@ class BasicTransaction extends Transaction {
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw new Error('Malformed signature');
 
-        const proof = new SerialBuffer(1 + Crypto.publicKeySize + Crypto.signatureSize);
-        proof.writeUint8(0); // merkle tree depth
-        senderPubKey.serialize(proof);
-        if (signature) signature.serialize(proof);
-        super(Transaction.Type.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0), proof);
+        const proof = SignatureProof.singleSig(senderPubKey, signature);
+        super(Transaction.Type.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0), proof.serialize());
+
+        /**
+         * @type {SignatureProof}
+         * @private
+         */
+        this._signatureProof = proof;
     }
 
     /**
@@ -56,35 +58,35 @@ class BasicTransaction extends Transaction {
     /** @type {number} */
     get serializedSize() {
         return /*type*/ 1
-            + Crypto.publicKeySize
-            + this.recipient.serializedSize
+            + this.senderPubKey.serializedSize
+            + this._recipient.serializedSize
             + /*value*/ 8
             + /*fee*/ 8
             + /*nonce*/ 4
-            + Crypto.signatureSize;
+            + this.signature.serializedSize;
     }
 
     /**
      * @type {PublicKey}
      */
     get senderPubKey() {
-        return PublicKey.unserialize(new SerialBuffer(this._proof.subarray(1, 1 + Crypto.publicKeySize)));
+        return this._signatureProof.publicKey;
     }
 
     /**
      * @type {Signature}
      */
     get signature() {
-        return Signature.unserialize(new SerialBuffer(this._proof.subarray(this._proof.length - Crypto.signatureSize, this._proof.length)));
+        return this._signatureProof.signature;
     }
 
     /**
      * @type {Signature}
      */
-    set signature(sig) {
-        this._proof.set(sig.serialize(), this._proof.length - sig.serializedSize);
+    set signature(signature) {
+        this._signatureProof.signature = signature;
+        this._proof = this._signatureProof.serialize();
     }
 }
-
 Transaction.TYPE_MAP.set(Transaction.Type.BASIC, BasicTransaction);
 Class.register(BasicTransaction);
