@@ -29,6 +29,15 @@ class Signature extends Primitive {
     }
 
     /**
+     * @param {Commitment} commitment
+     * @param {Array.<PartialSignature>} signatures
+     * @return {Promise.<Signature>}
+     */
+    static async fromPartialSignatures(commitment, signatures) {
+        return new Signature(await Crypto.combinePartialSignatures(commitment._obj, signatures.map(s => s._obj)));
+    }
+
+    /**
      * @param {SerialBuffer} buf
      * @return {Signature}
      */

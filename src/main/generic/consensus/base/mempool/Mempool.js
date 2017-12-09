@@ -50,20 +50,17 @@ class Mempool extends Observable {
         }
 
         // Intrinsic transaction verification
-        /** @type {Account} */ let senderAccount, recipientAccount;
+        if (!(await transaction.verify())) {
+            return false;
+        }
+
+        // Retrieve sender account.
+        /** @type {Account} */
+        let senderAccount;
         try {
             senderAccount = await this._accounts.get(transaction.sender);
-            recipientAccount = await this._accounts.get(transaction.recipient, transaction.recipientType);
         } catch (e) {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
-            return false;
-        }
-        if (!(await Account.TYPE_MAP.get(senderAccount.type).verifyOutgoingTransaction(transaction))) {
-            Log.w(Mempool, 'Rejected transaction - invalid for sender', transaction);
-            return false;
-        }
-        if (!(await Account.TYPE_MAP.get(recipientAccount.type).verifyIncomingTransaction(transaction))) {
-            Log.w(Mempool, 'Rejected transaction - invalid for recipient', transaction);
             return false;
         }
 

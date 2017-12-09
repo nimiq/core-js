@@ -8,10 +8,10 @@ class ExtendedTransaction extends Transaction {
      * @param {number} value
      * @param {number} fee
      * @param {number} nonce
-     * @param {Uint8Array} proof
      * @param {Uint8Array} data
+     * @param {Uint8Array} [proof]
      */
-    constructor(sender, senderType, recipient, recipientType, value, fee, nonce, data, proof) {
+    constructor(sender, senderType, recipient, recipientType, value, fee, nonce, data, proof = new Uint8Array(0)) {
         super(Transaction.Type.EXTENDED, sender, senderType, recipient, recipientType, value, fee, nonce, data, proof);
     }
 

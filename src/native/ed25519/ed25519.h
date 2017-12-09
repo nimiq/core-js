@@ -20,9 +20,14 @@
 extern "C" {
 #endif
 
-void ED25519_DECLSPEC ed25519_create_keypair(unsigned char *public_key, unsigned char *private_key, const unsigned char *seed);
+void ed25519_private_key_decompress(unsigned char *az, const unsigned char *private_key);
+void ED25519_DECLSPEC ed25519_public_key_derive(unsigned char *out_public_key, const unsigned char *private_key);
 void ED25519_DECLSPEC ed25519_sign(unsigned char *signature, const unsigned char *message, size_t message_len, const unsigned char *public_key, const unsigned char *private_key);
 int ED25519_DECLSPEC ed25519_verify(const unsigned char *signature, const unsigned char *message, size_t message_len, const unsigned char *public_key);
+int ED25519_DECLSPEC ed25519_create_commitment(unsigned char *secret_r, unsigned char *commitment_R, const unsigned char *randomness);
+void ED25519_DECLSPEC ed25519_add_points(unsigned char *point_AB, const unsigned char *point_A, const unsigned char *point_B);
+void ED25519_DECLSPEC ed25519_add_scalars(unsigned char *scalar_AB, const unsigned char *scalar_A, const unsigned char *scalar_B);
+void ED25519_DECLSPEC ed25519_partial_sign(unsigned char *partial_signature, const unsigned char *message, size_t message_len, const unsigned char* commitment_R, const unsigned char *secret_r, const unsigned char *public_key, const unsigned char *private_key);
 
 #ifdef __cplusplus
 }

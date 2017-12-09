@@ -2,7 +2,6 @@
  * @abstract
  */
 class Transaction {
-
     /**
      * @param {Transaction} o
      * @returns {Transaction}
@@ -33,8 +32,8 @@ class Transaction {
      * @param {number} value
      * @param {number} fee
      * @param {number} nonce
-     * @param {Uint8Array} proof
      * @param {Uint8Array} data
+     * @param {Uint8Array} proof
      */
     constructor(type, sender, senderType, recipient, recipientType, value, fee, nonce, data, proof) {
         if (!(sender instanceof Address)) throw new Error('Malformed sender');
@@ -118,19 +117,19 @@ class Transaction {
     async verify() {
         // Check that sender != recipient.
         if (this._recipient.equals(this._sender)) {
-            Log.w(Transaction, 'Sender and recipient must not match');
+            Log.w(Transaction, 'Sender and recipient must not match', this);
             return false;
         }
         if (!Account.TYPE_MAP.has(this._senderType) || !Account.TYPE_MAP.has(this._recipientType)) {
-            Log.w(Transaction, 'Invalid account type');
+            Log.w(Transaction, 'Invalid account type', this);
             return false;
         }
         if (!(await Account.TYPE_MAP.get(this._senderType).verifyOutgoingTransaction(this))) {
-            Log.w(Mempool, 'Invalid for sender proof');
+            Log.w(Transaction, 'Invalid for sender', this);
             return false;
         }
         if (!(await Account.TYPE_MAP.get(this._recipientType).verifyIncomingTransaction(this))) {
-            Log.w(Mempool, 'Invalid recipient data');
+            Log.w(Transaction, 'Invalid for recipient', this);
             return false;
         }
         return true;

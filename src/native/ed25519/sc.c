@@ -346,6 +346,55 @@ void sc_reduce(unsigned char *s) {
     s[31] = (unsigned char) (s11 >> 17);
 }
 
+/*
+Input:
+  s[0]+256*s[1]+...+256^31*s[31] = s
+
+Output:
+  0 if s == 0 || s == 1
+  1 otherwise
+*/
+
+int sc_valid_reduction(const unsigned char *s) {
+    unsigned char r = 0;
+    
+    r = (s[0] ^ 0) & (s[0] ^ 1);
+    #define F(i) r |= s[i] ^ 0
+    F(1);
+    F(2);
+    F(3);
+    F(4);
+    F(5);
+    F(6);
+    F(7);
+    F(8);
+    F(9);
+    F(10);
+    F(11);
+    F(12);
+    F(13);
+    F(14);
+    F(15);
+    F(16);
+    F(17);
+    F(18);
+    F(19);
+    F(20);
+    F(21);
+    F(22);
+    F(23);
+    F(24);
+    F(25);
+    F(26);
+    F(27);
+    F(28);
+    F(29);
+    F(30);
+    F(31);
+    #undef F
+
+    return !!r;
+}
 
 
 /*

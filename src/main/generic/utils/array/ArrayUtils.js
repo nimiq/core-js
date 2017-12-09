@@ -30,5 +30,39 @@ class ArrayUtils {
 
         return new Uint8Array(uintarr.buffer, uintarr.byteOffset + begin, len);
     }
+
+    /**
+     * @param {Array} list
+     * @param {number} k
+     * @return {Generator}
+     */
+    static *k_combinations(list, k) {
+        const n = list.length;
+        // Shortcut:
+        if (k > n) {
+            return;
+        }
+        const indices = Array.from(new Array(k), (x,i) => i);
+        yield indices.map(i => list[i]);
+        const reverseRange = Array.from(new Array(k), (x,i) => k-i-1);
+        /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
+        while (true) {
+            let i = k-1, found = false;
+            for (i of reverseRange) {
+                if (indices[i] !== i + n - k) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return;
+            }
+            indices[i] += 1;
+            for (const j of Array.from(new Array(k-i-1), (x,k) => i+k+1)) {
+                indices[j] = indices[j-1] + 1;
+            }
+            yield indices.map(i => list[i]);
+        }
+    }
 }
 Class.register(ArrayUtils);

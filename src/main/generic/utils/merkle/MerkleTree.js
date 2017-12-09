@@ -1,7 +1,7 @@
 class MerkleTree {
     /**
      * @param {Array} values
-     * @param {function(o: *):Promise.<Hash>} fnHash
+     * @param {function(o: *):Promise.<Hash>} [fnHash]
      * @returns {Promise.<Hash>}
      */
     static computeRoot(values, fnHash = MerkleTree._hash) {
@@ -33,7 +33,7 @@ class MerkleTree {
     }
 
     /**
-     * @param {{hash: function():Promise.<Hash>}|*} o
+     * @param {Hash|{hash: function():Promise.<Hash>}|{serialize: function():Uint8Array}} o
      * @returns {Promise.<Hash>}
      * @private
      */
@@ -41,10 +41,13 @@ class MerkleTree {
         if (o instanceof Hash) {
             return Promise.resolve(o);
         }
-        if (typeof o.hash !== 'function') {
-            throw 'MerkleTree objects require a .hash() method';
+        if (typeof o.hash === 'function') {
+            return o.hash();
         }
-        return o.hash();
+        if (typeof o.serialize === 'function') {
+            return Hash.light(o.serialize());
+        }
+        throw 'MerkleTree objects require a .hash() or .serialize() method';
     }
 }
 Class.register(MerkleTree);

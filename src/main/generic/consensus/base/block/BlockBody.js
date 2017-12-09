@@ -122,9 +122,15 @@ class BlockBody {
         return this._hash;
     }
 
+    /**
+     * @param {BlockBody} o
+     * @returns {boolean}
+     */
     equals(o) {
         return o instanceof BlockBody
             && this._minerAddr.equals(o.minerAddr)
+            && BufferUtils.equals(this._extraData, o.extraData)
+            && this._transactions.length === o.transactions.length
             && this._transactions.every((tx, i) => tx.equals(o.transactions[i]));
     }
 

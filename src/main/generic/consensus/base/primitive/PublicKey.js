@@ -25,6 +25,14 @@ class PublicKey extends Primitive {
     }
 
     /**
+     * @param {Array.<PublicKey>} publicKeys
+     * @return {Promise.<PublicKey>}
+     */
+    static async sum(publicKeys) {
+        return new PublicKey(await Crypto.aggregatePublicKeys(publicKeys.map(key => key._obj)));
+    }
+
+    /**
      * @param {SerialBuffer} buf
      * @return {PublicKey}
      */
@@ -63,17 +71,32 @@ class PublicKey extends Primitive {
     }
 
     /**
+     * @return {Hash}
+     */
+    hashSync() {
+        return Hash.lightSync(this.serialize());
+    }
+
+    /**
+     * @param {PublicKey} o
+     * @return {number}
+     */
+    compare(o) {
+        return BufferUtils.compare(this._obj, o._obj);
+    }
+
+    /**
      * @return {Promise.<Address>}
      */
     async toAddress() {
-        return new Address((await this.hash()).subarray(0, 20));
+        return Address.fromHash(await this.hash());
     }
 
     /**
      * @return {Address}
      */
     toAddressSync() {
-        return new Address(Hash.lightSync(this.serialize()).subarray(0, 20));
+        return Address.fromHash(Hash.lightSync(this.serialize()));
     }
 
     /**
