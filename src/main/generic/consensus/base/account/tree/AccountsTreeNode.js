@@ -38,6 +38,7 @@ class AccountsTreeNode {
      */
     constructor(type, prefix = '', arg, arg2 = []) {
         this._type = type;
+        /** @type {string} */
         this._prefix = prefix;
         if (this.isBranch()) {
             /** @type {Array.<string>} */
@@ -274,24 +275,12 @@ class AccountsTreeNode {
     }
 
     /**
-     * Returns the number of children this node has
-     * @param {boolean} [includeBranchNodes]
-     * @returns {number}
+     * Tests if this node is a child of some other node.
+     * @param {AccountsTreeNode} parent
+     * @returns {boolean}
      */
-    numberOfChildren(includeBranchNodes = true) {
-        let childrenToCount;
-
-        if (includeBranchNodes) {
-            childrenToCount = this._childrenSuffixes || [];
-        } else {
-            // Only terminal nodes have suffixes that equal Address.HEX_SIZE (40 hex numbers) when added to the
-            // parent's prefix.
-            childrenToCount = this._childrenSuffixes.filter(suffix => (this._prefix + suffix).length === Address.HEX_SIZE);
-        }
-
-        // The children array contains undefined values for non existing children.
-        // Only count existing ones.
-        return childrenToCount.reduce((count, child) => count + !!child, 0);
+    isChildOf(parent) {
+        return parent.getChildren() && parent.getChildren().includes(this._prefix);
     }
 
     /**
