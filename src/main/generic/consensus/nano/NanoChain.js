@@ -110,64 +110,12 @@ class NanoChain extends BaseChain {
         }
 
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
-        if (await NanoChain._isBetterProof(proof, this._proof, Policy.M)) {
+        const currentProof = await this.getChainProof();
+        if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         }
 
         return true;
-    }
-
-    /**
-     * @param {ChainProof} proof1
-     * @param {ChainProof} proof2
-     * @param {number} m
-     * @returns {boolean}
-     * @private
-     */
-    static async _isBetterProof(proof1, proof2, m) {
-        const lca = BlockChain.lowestCommonAncestor(proof1.prefix, proof2.prefix);
-        const score1 = await NanoChain._getProofScore(proof1.prefix, lca, m);
-        const score2 = await NanoChain._getProofScore(proof2.prefix, lca, m);
-        return score1 === score2
-            ? proof1.suffix.totalDifficulty() >= proof2.suffix.totalDifficulty()
-            : score1 > score2;
-    }
-
-    /**
-     *
-     * @param {BlockChain} chain
-     * @param {Block} lca
-     * @param {number} m
-     * @returns {Promise.<number>}
-     * @private
-     */
-    static async _getProofScore(chain, lca, m) {
-        const counts = [];
-        for (const block of chain.blocks) {
-            if (block.height < lca.height) {
-                continue;
-            }
-
-            const target = BlockUtils.hashToTarget(await block.pow()); // eslint-disable-line no-await-in-loop
-            const depth = BlockUtils.getTargetDepth(target);
-            counts[depth] = counts[depth] ? counts[depth] + 1 : 1;
-        }
-
-        let sum = 0;
-        let depth;
-        for (depth = counts.length - 1; sum < m && depth >= 0; depth--) {
-            sum += counts[depth] ? counts[depth] : 0;
-        }
-
-        let maxScore = Math.pow(2, depth + 1) * sum;
-        let length = sum;
-        for (let i = depth; i >= 0; i--) {
-            length += counts[i] ? counts[i] : 0;
-            const score = Math.pow(2, i) * length;
-            maxScore = Math.max(maxScore, score);
-        }
-
-        return maxScore;
     }
 
     /**
@@ -326,12 +274,16 @@ class NanoChain extends BaseChain {
             chainData.onMainChain = true;
             await this._store.putChainData(blockHash, chainData);
 
+            // Update head.
             this._mainChain = chainData;
             this._headHash = blockHash;
 
-            const proofHeadHash = await this._proof.head.hash();
-            if (block.prevHash.equals(proofHeadHash)) {
-                await this._proof.extend(block.header);
+            // Append new block to chain proof.
+            if (this._proof) {
+                const proofHeadHash = await this._proof.head.hash();
+                if (block.prevHash.equals(proofHeadHash)) {
+                    this._proof = await this._extendChainProof(this._proof, block.header);
+                }
             }
 
             // Tell listeners that the head of the chain has changed.
@@ -344,9 +296,6 @@ class NanoChain extends BaseChain {
         if (totalDifficulty > this._mainChain.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
-
-            // Recompute chain proof.
-            this._proof = await this._getChainProof();
 
             return NanoChain.OK_REBRANCHED;
         }
@@ -398,6 +347,10 @@ class NanoChain extends BaseChain {
             Assert.that(!!headData, 'Failed to find main chain predecessor while rebranching');
         }
 
+        // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
+        // TODO modify chain proof directly, don't recompute.
+        this._proof = null;
+
         // Set onMainChain flag on the fork.
         for (let i = forkChain.length - 1; i >= 0; i--) {
             const forkData = forkChain[i];
@@ -412,17 +365,14 @@ class NanoChain extends BaseChain {
     }
 
     /**
-     * @returns {Promise.<?ChainProof>}
+     * @returns {Promise.<ChainProof>}
      * @override
      */
     async getChainProof() {
-        const proof = await this._getChainProof();
-        if (!proof) {
-            // If we cannot construct a chain proof, superquality of the chain is harmed.
-            // Return the last know proof.
-            return this._proof;
+        if (!this._proof) {
+            this._proof = await this._getChainProof();
         }
-        return proof;
+        return this._proof;
     }
 
     /** @type {Block} */

@@ -32,8 +32,6 @@ class LightChain extends FullChain {
      */
     constructor(store, accounts) {
         super(store, accounts);
-
-        this._proof = null;
     }
 
     /**
@@ -41,30 +39,17 @@ class LightChain extends FullChain {
      * @protected
      */
     async _init() {
-        // FIXME: this is a workaround as Babel doesn't understands await super().
+        // FIXME: this is a workaround as Babel doesn't understand await super().
         await FullChain.prototype._init.call(this);
         if (!this._proof) {
-            this._proof = await this.getChainProof();
+            this._proof = await this._getChainProof();
         }
         return this;
     }
 
-    /**
-     * @returns {Promise.<?ChainProof>}
-     * @override
-     */
-    async getChainProof() {
-        const proof = await this._getChainProof();
-        if (!proof) {
-            // If we cannot construct a chain proof, superquality of the chain is harmed.
-            // Return the last known proof.
-            return this._proof;
-        }
-        return proof;
-    }
-
     async partialChain() {
-        const partialChain = new PartialLightChain(this._store, this._accounts, this._proof);
+        const proof = await this.getChainProof();
+        const partialChain = new PartialLightChain(this._store, this._accounts, proof);
         partialChain.on('committed', async (proof, headHash, mainChain) => {
             this._proof = proof;
             this._headHash = headHash;
