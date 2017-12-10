@@ -115,9 +115,7 @@ class BlockBody {
      */
     async hash() {
         if (!this._hash) {
-            const fnHash = value => value.hash ?
-                /*transaction*/ value.hash() : /*miner address*/ Hash.light(value.serialize());
-            this._hash = await MerkleTree.computeRoot([this._minerAddr, {serialize: () => this._extraData}, ...this._transactions], fnHash);
+            this._hash = await MerkleTree.computeRoot([this._minerAddr, this._extraData, ...this._transactions]);
         }
         return this._hash;
     }

@@ -10,10 +10,37 @@ class BlockInterlink {
     }
 
     /**
+     * @param {Array.<Hash>} hashes
+     * @returns {{repeatBits: Uint8Array, hashes: Array.<Hash>}}
+     * @private
+     */
+    static _compress(hashes) {
+        const count = hashes.length;
+        const repeatBitsSize = Math.ceil(count / 8);
+        const repeatBits = new Uint8Array(repeatBitsSize);
+
+        let lastHash = null;
+        const compressed = [];
+        for (let i = 0; i < count; i++) {
+            const hash = hashes[i];
+            if (!hash.equals(lastHash)) {
+                compressed.push(hash);
+                lastHash = hash;
+            } else {
+                repeatBits[Math.floor(i / 8)] |= 0x80 >>> (i % 8);
+            }
+        }
+
+        return {repeatBits, hashes: compressed};
+    }
+
+    /**
      * @param {Array.<Hash>} blockHashes
      */
     constructor(blockHashes) {
-        if (!blockHashes || !Array.isArray(blockHashes) || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
+        if (!Array.isArray(blockHashes) || !NumberUtils.isUint8(blockHashes.length)
+            || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
+
         /** @type {Array.<Hash>} */
         this._hashes = blockHashes;
     }
@@ -24,10 +51,19 @@ class BlockInterlink {
      */
     static unserialize(buf) {
         const count = buf.readUint8();
+        const repeatBitsSize = Math.ceil(count / 8);
+        const repeatBits = buf.read(repeatBitsSize);
+
+        let hash = null;
         const hashes = [];
         for (let i = 0; i < count; i++) {
-            hashes.push(Hash.unserialize(buf));
+            const repeated = (repeatBits[Math.floor(i / 8)] & (0x80 >>> (i % 8))) !== 0;
+            if (!repeated || !hash) {
+                hash = Hash.unserialize(buf);
+            }
+            hashes.push(hash);
         }
+
         return new BlockInterlink(hashes);
     }
 
@@ -38,7 +74,9 @@ class BlockInterlink {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._hashes.length);
-        for (const hash of this._hashes) {
+        const {repeatBits, hashes} = BlockInterlink._compress(this._hashes);
+        buf.write(repeatBits);
+        for (const hash of hashes) {
             hash.serialize(buf);
         }
         return buf;
@@ -48,11 +86,10 @@ class BlockInterlink {
      * @type {number}
      */
     get serializedSize() {
-        let size = /*count*/ 1;
-        for (const hash of this._hashes) {
-            size += hash.serializedSize;
-        }
-        return size;
+        const {repeatBits, hashes} = BlockInterlink._compress(this._hashes);
+        return /*count*/ 1
+            + repeatBits.length
+            + hashes.reduce((sum, hash) => sum + hash.serializedSize, 0);
     }
 
     /**
@@ -68,8 +105,12 @@ class BlockInterlink {
     /**
      * @returns {Promise.<Hash>}
      */
-    hash() {
-        return MerkleTree.computeRoot(this._hashes);
+    async hash() {
+        if (!this._hash) {
+            const {repeatBits, hashes} = BlockInterlink._compress(this._hashes);
+            this._hash = await MerkleTree.computeRoot([repeatBits, ...hashes]);
+        }
+        return this._hash;
     }
 
     /**

@@ -33,7 +33,7 @@ class MerkleTree {
     }
 
     /**
-     * @param {Hash|{hash: function():Promise.<Hash>}|{serialize: function():Uint8Array}} o
+     * @param {Hash|Uint8Array|{hash: function():Promise.<Hash>}|{serialize: function():Uint8Array}} o
      * @returns {Promise.<Hash>}
      * @private
      */
@@ -47,7 +47,10 @@ class MerkleTree {
         if (typeof o.serialize === 'function') {
             return Hash.light(o.serialize());
         }
-        throw 'MerkleTree objects require a .hash() or .serialize() method';
+        if (o instanceof Uint8Array) {
+            return Hash.light(o);
+        }
+        throw new Error('MerkleTree objects must be Uint8Array or have a .hash()/.serialize() method');
     }
 }
 Class.register(MerkleTree);

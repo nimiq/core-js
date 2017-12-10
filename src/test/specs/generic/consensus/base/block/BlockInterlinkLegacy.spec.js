@@ -1,32 +1,32 @@
-describe('BlockInterlink', () => {
+describe('BlockInterlinkLegacy', () => {
     const hash1 = new Hash(BufferUtils.fromBase64(Dummy.hash1));
     const hash2 = new Hash(BufferUtils.fromBase64(Dummy.hash2));
 
     const blockHashes = [hash1, hash2];
-    const blockInterlink1 = new BlockInterlink(blockHashes);
+    const blockInterlink1 = new BlockInterlinkLegacy(blockHashes);
 
     it('must have a well defined blockHashes array', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
-            const test1 = new BlockInterlink(undefined);
+            const test1 = new BlockInterlinkLegacy(undefined);
         }).toThrow('Malformed blockHashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(null);
+            const test1 = new BlockInterlinkLegacy(null);
         }).toThrow('Malformed blockHashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(1);
+            const test1 = new BlockInterlinkLegacy(1);
         }).toThrow('Malformed blockHashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(new Uint8Array(101));
+            const test1 = new BlockInterlinkLegacy(new Uint8Array(101));
         }).toThrow('Malformed blockHashes');
         /* eslint-enable no-unused-vars */
     });
 
     it('is serializable and unserializable', (done) => {
-        const blockInterlink2 = BlockInterlink.unserialize(blockInterlink1.serialize());
+        const blockInterlink2 = BlockInterlinkLegacy.unserialize(blockInterlink1.serialize());
         (async () => {
             expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
             expect((await blockInterlink1.hash()).equals(await blockInterlink2.hash())).toBe(true);
@@ -34,7 +34,7 @@ describe('BlockInterlink', () => {
     });
 
     it('must return the correct root hash', (done) => {
-        const rootHash = new Hash(BufferUtils.fromBase64('60x9tXAafmiaO2R3LPFcKTdJezUpuxZV+LspFBeIH5E='));
+        const rootHash = new Hash(BufferUtils.fromBase64('JBd6ZZTwPWxWikFBawS9SrUEDiWAytbSjTjs6CKg78M='));
         (async () => {
             const hash = await blockInterlink1.hash();
             expect(hash.equals(rootHash)).toBe(true);
