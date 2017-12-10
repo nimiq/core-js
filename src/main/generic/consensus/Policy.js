@@ -36,11 +36,102 @@ class Policy {
     }
 
     /**
-     * Miner reward per block.
+     * Targeted total supply.
      * @type {number}
      * @constant
      */
-    static get BLOCK_REWARD() {
+    static get TOTAL_SUPPLY() {
+        return Policy.coinsToSatoshis(21e6);
+    }
+
+    /**
+     * Initial supply before genesis block.
+     * FIXME: Change for main net.
+     * @type {number}
+     * @constant
+     */
+    static get INITIAL_SUPPLY() {
+        return Policy.coinsToSatoshis(0);
+    }
+
+    /**
+     * Emission speed.
+     * @type {number}
+     * @constant
+     */
+    static get EMISSION_SPEED() {
+        return Math.pow(2, 22);
+    }
+
+    /**
+     * First block using constant tail emission until total supply is reached.
+     * @type {number}
+     * @constant
+     */
+    static get EMISSION_TAIL_START() {
+        return 48696986;
+    }
+
+    /**
+     * Constant amount of tail emission until total supply is reached.
+     * @type {number}
+     * @constant
+     */
+    static get EMISSION_TAIL_REWARD() {
+        return 4000; // satoshi
+    }
+
+    /**
+     * First block using new block reward scheme.
+     * FIXME: Remove for main net.
+     * @type {number}
+     * @constant
+     */
+    static get EMISSION_CURVE_START() {
+        return 32000;
+    }
+
+    /**
+     * Miner reward per block.
+     * @param {number} initialSupply
+     * @param {number} blockHeight
+     * @return {number}
+     */
+    static _supplyAfter(initialSupply, blockHeight) {
+        let supply = initialSupply;
+        for (let i = 0; i <= blockHeight; ++i) {
+            supply += Policy._blockRewardAt(supply, i);
+        }
+        return supply;
+    }
+
+    /**
+     * Miner reward per block.
+     * @param {number} currentSupply
+     * @param {number} blockHeight
+     * @return {number}
+     */
+    static _blockRewardAt(currentSupply, blockHeight) {
+        const remaining = Policy.TOTAL_SUPPLY - currentSupply;
+        if (blockHeight >= Policy.EMISSION_TAIL_START && remaining >= Policy.EMISSION_TAIL_REWARD) {
+            return Policy.EMISSION_TAIL_REWARD;
+        }
+        const remainder = remaining % Policy.EMISSION_SPEED;
+        return (remaining-remainder) / Policy.EMISSION_SPEED;
+    }
+
+    /**
+     * Miner reward per block.
+     * @param {number} blockHeight
+     * @return {number}
+     */
+    static blockRewardAt(blockHeight) {
+        // FIXME: Change for main net.
+        if (blockHeight >= Policy.EMISSION_CURVE_START) {
+            const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
+            const currentSupply = Policy._supplyAfter(initialSupply, blockHeight-1-Policy.EMISSION_CURVE_START);
+            return Policy._blockRewardAt(currentSupply, blockHeight);
+        }
         return Policy.coinsToSatoshis(5);
     }
 
