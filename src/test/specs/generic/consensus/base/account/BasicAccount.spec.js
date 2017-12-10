@@ -6,6 +6,15 @@ describe('BasicAccount', () => {
         Crypto.prepareSyncCryptoWorker().then(done, done.fail);
     });
 
+    it('can serialize and unserialize itself', () => {
+        const account = new BasicAccount(100, 1);
+        const account2 = Account.unserialize(account.serialize());
+
+        expect(account.type).toEqual(account2.type);
+        expect(account.balance).toEqual(account2.balance);
+        expect(account.nonce).toEqual(account2.nonce);
+    });
+
     it('can handle balance changes', () => {
         const account = new BasicAccount(0, 0);
 
@@ -105,6 +114,16 @@ describe('BasicAccount', () => {
 
         expect(account.balance).toBe(49);
         expect(account.nonce).toBe(2);
+    });
+
+    it('refuses to apply invalid outgoing transaction', () => {
+        const account = new BasicAccount(100, 0);
+
+        let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 1);
+        expect(() => account.withOutgoingTransaction(transaction, 1)).toThrowError('Nonce Error!');
+
+        transaction = new BasicTransaction(pubKey, recipient, 101, 0, 0);
+        expect(() => account.withOutgoingTransaction(transaction, 1)).toThrowError('Balance Error!');
     });
 
     it('can revert outgoing transaction', () => {

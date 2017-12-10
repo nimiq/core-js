@@ -49,7 +49,7 @@ class Account {
 
     /**
      * Serialize this Account object into binary form.
-     * @param {?SerialBuffer} buf Buffer to write to.
+     * @param {?SerialBuffer} [buf] Buffer to write to.
      * @return {SerialBuffer} Buffer from `buf` or newly generated one.
      */
     serialize(buf) {
