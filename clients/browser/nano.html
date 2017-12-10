@@ -309,12 +309,12 @@
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-                if (account.balance.value < value + fee) {
+                if (!account || account.balance < value + fee) {
                     elValue.className = 'error';
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, account.balance.nonce).then(function(tx) {
+                $.wallet.createTransaction(address, value, fee, account.nonce).then(function(tx) {
                     $.consensus.relayTransaction(tx);
                 });
             });
@@ -358,8 +358,9 @@
         _updateBalance() {
             if ($.consensus.established) {
                 $.consensus.getAccount($.wallet.address, $.blockchain.headHash).then(function(account) {
-                    this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance.value).toFixed(8);
-                    this._wltNonce.innerText = account.balance.nonce;
+                    account = account || BasicAccount.INITIAL;
+                    this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance).toFixed(8);
+                    this._wltNonce.innerText = account.nonce.toString();
                 }.bind(this));
             }
         }

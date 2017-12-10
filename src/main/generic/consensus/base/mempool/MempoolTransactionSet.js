@@ -38,6 +38,11 @@ class MempoolTransactionSet {
         return this._transactions.length > 0 ? this._transactions[0].sender : null;
     }
 
+    /** @type {?Account.Type} */
+    get senderType() {
+        return this._transactions.length > 0 ? this._transactions[0].senderType : undefined;
+    }
+
     /** @type {number} */
     get length() {
         return this._transactions.length;

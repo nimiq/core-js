@@ -322,8 +322,8 @@
 
             this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
 
-            $.accounts.getBalance($.wallet.address).then(function(balance) {
-                this._balanceChanged(balance);
+            $.accounts.get($.wallet.address).then(function(account) {
+                this._balanceChanged(account);
                 document.querySelector('#wltBalance').classList.add('icon-nimiq');
             }.bind(this));
 
@@ -400,18 +400,18 @@
                 return;
             }
 
-            $.accounts.getBalance($.wallet.address).then(function(balance) {
+            $.accounts.get($.wallet.address).then(function(account) {
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
                 var waitingTransactions = $.mempool.getWaitingTransactions($.wallet.publicKey.toAddressSync());
 
-                if (balance.value < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
+                if (account.balance < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
                     elValue.className = 'error';
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, balance.nonce + waitingTransactions.length).then(function(tx) {
+                $.wallet.createTransaction(address, value, fee, account.nonce + waitingTransactions.length).then(function(tx) {
                     $.mempool.pushTransaction(tx);
                 });
             });
@@ -440,8 +440,8 @@
                 this._hdDifficulty.innerText = `${$.blockchain.head.difficulty} (${realDifficulty})`;
             }.bind(this));
 
-            $.accounts.getBalance($.wallet.address).then(function(balance) {
-                this._balanceChanged(balance);
+            $.accounts.get($.wallet.address).then(function(account) {
+                this._balanceChanged(account);
             }.bind(this));
         }
 
@@ -494,16 +494,20 @@
             this._minerChanged();
         }
 
-        _balanceChanged(balance) {
-            if (!balance) balance = Nimiq.Balance.INITIAL;
-            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(balance.value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
-            this._wltNonce.innerText = balance.nonce;
+        /**
+         * @param {Account} account
+         * @private
+         */
+        _balanceChanged(account) {
+            if (!account) account = Nimiq.BasicAccount.INITIAL;
+            this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
+            this._wltNonce.innerText = account.nonce.toString();
         }
 
         _mempoolTransactionAdded(tx) {
             // XXX inefficient
             var txs = $.mempool.getTransactions();
-            this._mplTransactionCount.innerText = txs.length;
+            this._mplTransactionCount.innerText = txs.length.toString();
 
             var el = document.createElement('div');
             var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);

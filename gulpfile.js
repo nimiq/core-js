@@ -70,7 +70,6 @@ const sources = {
         './src/main/generic/consensus/base/primitive/Signature.js',
         './src/main/generic/consensus/base/primitive/PartialSignature.js',
         './src/main/generic/consensus/base/account/Address.js',
-        './src/main/generic/consensus/base/account/Balance.js',
         './src/main/generic/consensus/base/account/Account.js',
         './src/main/generic/consensus/base/account/BasicAccount.js',
         './src/main/generic/consensus/base/account/tree/AccountsTreeNode.js',

@@ -66,18 +66,18 @@ describe('Accounts', () => {
     it('put and get an account', (done) => {
         const balance = 42;
         const nonce = 192049;
-        const accountState1 = new BasicAccount(new Balance(balance, nonce));
+        const accountState1 = new BasicAccount(balance, nonce);
         const accountAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         (async function () {
             const account = await Accounts.createVolatile();
             await account._tree.put(accountAddress, accountState1);
-            const balanceState1 = await account.getBalance(accountAddress);
-            expect(balanceState1.nonce).toBe(accountState1.balance.nonce);
+            const state1 = await account.get(accountAddress, Account.Type.BASIC);
+            expect(state1.nonce).toBe(accountState1.nonce);
 
-            // Verify that getBalance() returns Balance.INITIAL when called with an unknown address
-            const balanceState2 = await account.getBalance(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)));
-            expect(Balance.INITIAL.equals(balanceState2)).toBe(true);
+            // Verify that get() returns BasicAccount.INITIAL when called with an unknown address
+            const state2 = await account.get(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)), Account.Type.BASIC);
+            expect(BasicAccount.INITIAL.equals(state2)).toBe(true);
         })().then(done, done.fail);
     });
 
@@ -91,7 +91,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
 
             // initial setup: user1 mined genesis block with no transactions, user2 has a balance of 0
-            let balance = (await accounts.getBalance(user2.address)).value;
+            let balance = (await accounts.get(user2.address, Account.Type.BASIC)).balance;
             expect(balance).toBe(0);
 
             const amount1 = 20;
@@ -110,7 +110,7 @@ describe('Accounts', () => {
             await accounts.commitBlock(block);
 
             // now: expect user2 to have received the transaction fees and block reward
-            balance = (await testBlockchain.accounts.getBalance(user2.address)).value;
+            balance = (await testBlockchain.accounts.get(user2.address, Account.Type.BASIC)).balance;
             expect(balance).toBe(Policy.BLOCK_REWARD + fee1 + fee2);
 
         })().then(done, done.fail);
@@ -141,9 +141,9 @@ describe('Accounts', () => {
             try {
                 await accounts.commitBlock(block);
             } catch (e) {
-                const balance1 = (await accounts.getBalance(user1.address)).value;
-                const balance3 = (await accounts.getBalance(user3.address)).value;
-                const balance4 = (await accounts.getBalance(user4.address)).value;
+                const balance1 = (await accounts.get(user1.address, Account.Type.BASIC)).balance;
+                const balance3 = (await accounts.get(user3.address, Account.Type.BASIC)).balance;
+                const balance4 = (await accounts.get(user4.address, Account.Type.BASIC)).balance;
                 expect(balance1).toBe(Policy.BLOCK_REWARD);
                 expect(balance3).toBe(0);
                 expect(balance4).toBe(0);
@@ -165,7 +165,7 @@ describe('Accounts', () => {
             const treeTx = await accounts._tree.transaction();
             // create users, raise their balance, create transaction
             for (let i = 1; i < numTransactions; i++) {
-                await accounts._updateBalance(treeTx, users[0].address, Policy.BLOCK_REWARD, (a, b) => a + b); //eslint-disable-line no-await-in-loop
+                await accounts._addBalance(treeTx, users[0].address, Policy.BLOCK_REWARD); //eslint-disable-line no-await-in-loop
                 transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.BLOCK_REWARD, 0, nonce++, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);

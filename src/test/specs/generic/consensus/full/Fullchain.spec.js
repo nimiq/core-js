@@ -314,14 +314,14 @@ describe('Blockchain', () => {
             expect(testBlockchain).toBeTruthy();
             const user0 = testBlockchain.users[0];
             const user1 = testBlockchain.users[1];
-            const balance0 = await testBlockchain.accounts.getBalance(user0.address);
-            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce, user0.privateKey);
-            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, balance0.nonce + 1, user0.privateKey);
+            const account0 = await testBlockchain.accounts.get(user0.address, Account.Type.BASIC);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, account0.nonce, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, account0.nonce + 1, user0.privateKey);
             const block = await testBlockchain.createBlock({transactions: [tx1, tx2], minerAddr: user1.address});
             await testBlockchain.pushBlock(block);
-            const balance1 = await testBlockchain.accounts.getBalance(user0.address);
-            expect(balance1.nonce).toBe(balance0.nonce + 2);
-            expect(balance1.value).toBe(balance0.value - 4);
+            const account1 = await testBlockchain.accounts.get(user0.address, Account.Type.BASIC);
+            expect(account1.nonce).toBe(account0.nonce + 2);
+            expect(account1.balance).toBe(account0.balance - 4);
         })().then(done, done.fail);
     });
 
