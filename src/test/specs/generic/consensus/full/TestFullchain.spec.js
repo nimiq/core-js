@@ -258,15 +258,15 @@ class TestBlockchain extends FullChain {
     static async mineBlock(block) {
         await TestBlockchain._miningPool.start();
         block.header.nonce = 0;
-        const share = await new Promise((resolve) => {
+        const share = await new Promise((resolve, error) => {
             const temp = function (share) {
-                if (share.blockHeader.equals(block.header)) {
+                if (share.block.header.equals(block.header)) {
                     TestBlockchain._miningPool.off('share', temp.id);
                     resolve(share);
                 }
             };
             temp.id = TestBlockchain._miningPool.on('share', temp);
-            TestBlockchain._miningPool.startMiningOnBlock(block.header);
+            TestBlockchain._miningPool.startMiningOnBlock(block).catch(error);
         });
         TestBlockchain._miningPool.stop();
         block.header.nonce = share.nonce;

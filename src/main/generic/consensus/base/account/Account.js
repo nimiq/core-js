@@ -95,21 +95,24 @@ class Account {
      * @return {Promise.<boolean>}
      */
     verifyOutgoingTransactionSet(transactions, blockHeight, silent = false) {
-        if (transactions.length === 0) return Promise.resolve(true);
-        const tx = transactions[0];
-        if (tx.senderType !== this._type) {
-            if (!silent) Log.w(Account, 'Rejected transaction - sender type must match account type');
-            return Promise.resolve(false);
+        let account = this;
+        for (let i = 0; i < transactions.length; ++i) {
+            const tx = transactions[i];
+            if (account._type !== tx.senderType) {
+                if (!silent) Log.w(Account, 'Rejected transaction - sender type must match account type');
+                return Promise.resolve(false);
+            }
+            if (account._balance.nonce !== tx.nonce) {
+                if (!silent) Log.w(Account, `Rejected transaction - invalid nonce`, tx);
+                return Promise.resolve(false);
+            }
+            if (account._balance.value < tx.value + tx.fee) {
+                if (!silent) Log.w(Account, `Rejected transaction - insufficient funds`, tx);
+                return Promise.resolve(false);
+            }
+            account = account.withOutgoingTransaction(tx, blockHeight);
         }
-        if (this._balance.nonce !== tx.nonce) {
-            if (!silent) Log.w(Account, 'Rejected transaction - invalid nonce', tx);
-            return Promise.resolve(false);
-        }
-        if (this._balance.value < tx.value + tx.fee) {
-            if (!silent) Log.w(Account, 'Rejected transaction - insufficient funds', tx);
-            return Promise.resolve(false);
-        }
-        return this.withOutgoingTransaction(tx, blockHeight).verifyOutgoingTransactionSet(transactions.slice(1), blockHeight);
+        return Promise.resolve(true);
     }
 
     /**
