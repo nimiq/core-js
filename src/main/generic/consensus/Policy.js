@@ -88,21 +88,60 @@ class Policy {
      * @constant
      */
     static get EMISSION_CURVE_START() {
-        return 32000;
+        return 35000;
     }
 
     /**
-     * Miner reward per block.
+     * Circulating supply after block.
      * @param {number} initialSupply
      * @param {number} blockHeight
+     * @param {number} [startHeight]
      * @return {number}
      */
-    static _supplyAfter(initialSupply, blockHeight) {
+    static _supplyAfter(initialSupply, blockHeight, startHeight=0) {
         let supply = initialSupply;
-        for (let i = 0; i <= blockHeight; ++i) {
+        for (let i = startHeight; i <= blockHeight; ++i) {
             supply += Policy._blockRewardAt(supply, i);
         }
         return supply;
+    }
+
+    /**
+     * Circulating supply after block.
+     * @param {number} blockHeight
+     * @return {number}
+     */
+    static supplyAfter(blockHeight) {
+        // FIXME: Change for main net.
+        if (blockHeight < Policy.EMISSION_CURVE_START) {
+            return Policy.INITIAL_SUPPLY + (blockHeight+1) * Policy.coinsToSatoshis(5);
+        }
+        // Luna net supply after start of emission curve.
+        const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
+
+        // Calculate last entry in supply cache that is below blockHeight.
+        let startHeight = Math.floor(blockHeight / Policy._supplyCacheInterval) * Policy._supplyCacheInterval;
+        startHeight = Math.max(/* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START, Math.min(startHeight, Policy._supplyCacheMax));
+
+        // Calculate respective block for the last entry of the cache and the targeted height.
+        const startI = startHeight / Policy._supplyCacheInterval;
+        const endI = Math.floor(blockHeight / Policy._supplyCacheInterval);
+
+        // The starting supply is the initial supply at the beginning and a cached value afterwards.
+        let supply = startHeight === /* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START ? initialSupply : Policy._supplyCache.get(startHeight);
+        // Use and update cache.
+        for (let i=startI; i<endI; ++i) {
+            startHeight = i * Policy._supplyCacheInterval;
+            // Since the cache stores the supply *before* a certain block, subtract one.
+            const endHeight = (i+1) * Policy._supplyCacheInterval - 1;
+            supply = Policy._supplyAfter(supply, endHeight, startHeight);
+            // Don't forget to add one again.
+            Policy._supplyCache.set(endHeight + 1, supply);
+            Policy._supplyCacheMax = endHeight + 1;
+        }
+
+        // Calculate remaining supply (this also adds the block reward for endI*interval).
+        return Policy._supplyAfter(supply, blockHeight, endI*Policy._supplyCacheInterval);
     }
 
     /**
@@ -128,8 +167,7 @@ class Policy {
     static blockRewardAt(blockHeight) {
         // FIXME: Change for main net.
         if (blockHeight >= Policy.EMISSION_CURVE_START) {
-            const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
-            const currentSupply = Policy._supplyAfter(initialSupply, blockHeight-1-Policy.EMISSION_CURVE_START);
+            const currentSupply = Policy.supplyAfter(blockHeight - 1);
             return Policy._blockRewardAt(currentSupply, blockHeight);
         }
         return Policy.coinsToSatoshis(5);
@@ -224,4 +262,11 @@ class Policy {
         return 250;
     }
 }
+/**
+ * Stores the supply before the given block.
+ * @type {Map.<number, number>}
+ */
+Policy._supplyCache = new Map();
+Policy._supplyCacheMax = 0; // blocks
+Policy._supplyCacheInterval = 5000; // blocks
 Class.register(Policy);

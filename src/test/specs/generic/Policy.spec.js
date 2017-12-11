@@ -47,11 +47,39 @@ describe('Policy', () => {
     });
 
     it('correctly calculates LunaNet reward', () => {
-        let currentSupply = Policy.INITIAL_SUPPLY;
-
         expect(Policy.blockRewardAt(0)).toBe(Policy.coinsToSatoshis(5), 'Wrong initial reward.');
         expect(Policy.blockRewardAt(Policy.EMISSION_CURVE_START - 1)).toBe(Policy.coinsToSatoshis(5), 'Wrong reward before curve.');
         const expectedReward = Policy._blockRewardAt(Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5), Policy.EMISSION_CURVE_START);
         expect(Policy.blockRewardAt(Policy.EMISSION_CURVE_START)).toBe(expectedReward, 'Wrong reward at curve start.');
+    });
+
+    it('correctly calculates supply', () => {
+        expect(Policy.supplyAfter(-1)).toBe(Policy.INITIAL_SUPPLY, 'Wrong initial supply (block -1).');
+        expect(Policy.supplyAfter(0)).toBe(Policy.INITIAL_SUPPLY + Policy.blockRewardAt(0), 'Wrong initial supply (block 0).');
+
+        for (let block = 0; block < Policy._supplyCacheInterval * 10; block += Policy._supplyCacheInterval) {
+            /* FIXME change for main net */
+            // expect(Policy.supplyAfter(block-1)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY, block-1), `Wrong supply for block ${block-1}.`);
+            // expect(Policy.supplyAfter(block)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY, block), `Wrong supply for block ${block}.`);
+            // expect(Policy.supplyAfter(block+1)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY, block+1), `Wrong supply for block ${block+1}.`);
+            
+            if (block - 1 < Policy.EMISSION_CURVE_START) {
+                expect(Policy.supplyAfter(block-1)).toBe(block * Policy.coinsToSatoshis(5), `Wrong supply for block ${block-1}.`);
+            } else {
+                expect(Policy.supplyAfter(block-1)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY + (Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5)), block-1-Policy.EMISSION_CURVE_START), `Wrong supply for block ${block-1}.`);
+            }
+
+            if (block < Policy.EMISSION_CURVE_START) {
+                expect(Policy.supplyAfter(block)).toBe((block+1) * Policy.coinsToSatoshis(5), `Wrong supply for block ${block}.`);
+            } else {
+                expect(Policy.supplyAfter(block)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY + (Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5)), block-Policy.EMISSION_CURVE_START), `Wrong supply for block ${block}.`);
+            }
+
+            if (block + 1 < Policy.EMISSION_CURVE_START) {
+                expect(Policy.supplyAfter(block+1)).toBe((block+2) * Policy.coinsToSatoshis(5), `Wrong supply for block ${block+1}.`);
+            } else {
+                expect(Policy.supplyAfter(block+1)).toBe(Policy._supplyAfter(Policy.INITIAL_SUPPLY + (Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5)), block+1-Policy.EMISSION_CURVE_START), `Wrong supply for block ${block+1}.`);
+            }
+        }
     });
 });
