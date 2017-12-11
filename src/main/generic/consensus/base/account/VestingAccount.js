@@ -57,9 +57,7 @@ class VestingAccount extends Account {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(Account.Type.VESTING);
-        buf.writeUint64(this._balance);
-        buf.writeUint32(this._nonce);
+        super.serialize(buf);
         buf.writeUint32(this._vestingStart);
         buf.writeUint32(this._vestingStepBlocks);
         buf.writeUint64(this._vestingStepAmount);

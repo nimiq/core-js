@@ -9,8 +9,8 @@ class Account {
     static copy(o) {
         if (!o) return o;
         let type = o._type;
-        if (!type) type = 0;
-        return Account.TYPE_MAP[type].copy(o);
+        if (!type) type = Account.Type.BASIC;
+        return Account.TYPE_MAP.get(type).copy(o);
     }
 
     /**
@@ -54,7 +54,7 @@ class Account {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(Account.Type.BASIC);
+        buf.writeUint8(this._type);
         buf.writeUint64(this._balance);
         buf.writeUint32(this._nonce);
         return buf;
