@@ -111,7 +111,7 @@ describe('Accounts', () => {
 
             // now: expect user2 to have received the transaction fees and block reward
             balance = (await testBlockchain.accounts.get(user2.address, Account.Type.BASIC)).balance;
-            expect(balance).toBe(Policy.BLOCK_REWARD + fee1 + fee2);
+            expect(balance).toBe(Policy.blockRewardAt(block.height) + fee1 + fee2);
 
         })().then(done, done.fail);
     });
@@ -144,7 +144,7 @@ describe('Accounts', () => {
                 const balance1 = (await accounts.get(user1.address, Account.Type.BASIC)).balance;
                 const balance3 = (await accounts.get(user3.address, Account.Type.BASIC)).balance;
                 const balance4 = (await accounts.get(user4.address, Account.Type.BASIC)).balance;
-                expect(balance1).toBe(Policy.BLOCK_REWARD);
+                expect(balance1).toBe(Policy.blockRewardAt(block.height));
                 expect(balance3).toBe(0);
                 expect(balance4).toBe(0);
                 done();
@@ -165,8 +165,8 @@ describe('Accounts', () => {
             const treeTx = await accounts._tree.transaction();
             // create users, raise their balance, create transaction
             for (let i = 1; i < numTransactions; i++) {
-                await accounts._addBalance(treeTx, users[0].address, Policy.BLOCK_REWARD); //eslint-disable-line no-await-in-loop
-                transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.BLOCK_REWARD, 0, nonce++, users[0].privateKey));
+                await accounts._addBalance(treeTx, users[0].address, Policy.coinsToSatoshis(5)); //eslint-disable-line no-await-in-loop
+                transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.coinsToSatoshis(5), 0, nonce++, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);
             transactions.sort((a, b) => a.compareBlockOrder(b));
@@ -187,7 +187,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
 
             // sender balance not enough (amount + fee > block reward)
-            const transaction = await TestBlockchain.createTransaction(user1.publicKey, user2.address, Policy.BLOCK_REWARD, 1, 0, user1.privateKey);
+            const transaction = await TestBlockchain.createTransaction(user1.publicKey, user2.address, Policy.coinsToSatoshis(5), 1, 0, user1.privateKey);
             const block = await testBlockchain.createBlock({
                 transactions: [transaction],
                 minerAddr: user3.address
