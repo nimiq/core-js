@@ -112,6 +112,25 @@ class LegacyTransaction extends Transaction {
     }
 
     /**
+     * @param {Transaction} o
+     */
+    compareBlockOrder(o) {
+        const recCompare = this._recipient.compare(o._recipient);
+        if (recCompare !== 0) return recCompare;
+        if (this._nonce < o._nonce) return -1;
+        if (this._nonce > o._nonce) return 1;
+        if (this._fee > o._fee) return -1;
+        if (this._fee < o._fee) return 1;
+        if (this._value > o._value) return -1;
+        if (this._value < o._value) return 1;
+        if (o instanceof LegacyTransaction) {
+            return this.senderPubKey.compare((/** @type {LegacyTransaction} */ o).senderPubKey);
+        } else {
+            return this._sender.compare(o._sender);
+        }
+    }
+
+    /**
      * @type {PublicKey}
      */
     get senderPubKey() {

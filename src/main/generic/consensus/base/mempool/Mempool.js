@@ -58,7 +58,7 @@ class Mempool extends Observable {
         /** @type {Account} */
         let senderAccount;
         try {
-            senderAccount = await this._accounts.get(transaction.sender);
+            senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
         } catch (e) {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
             return false;
@@ -67,8 +67,7 @@ class Mempool extends Observable {
         // Fully verify the transaction against the current accounts state + Mempool.
         const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
         if (!(await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1))) {
-            const senderBalance = await this._accounts.getBalance(transaction.sender);
-            if (transaction.nonce > senderBalance.nonce + set.length) {
+            if (transaction.nonce > senderAccount.nonce + set.length) {
                 this._waitTransaction(hash, transaction);
             }
 
@@ -203,62 +202,6 @@ class Mempool extends Observable {
         } else {
             return [];
         }
-    }
-
-    /**
-     * @param {Transaction|MempoolTransactionSet} transactionOrSet
-     * @param {boolean} [silent]
-     * @param {number} [additionalValue]
-     * @param {number} [additionalFee]
-     * @param {number} [additionalNonce]
-     * @returns {Promise.<boolean>}
-     * @private
-     * @deprecated
-     */
-    async _verifyBalanceAndNonce(transactionOrSet, silent = false, additionalValue = 0, additionalFee = 0, additionalNonce = 0) {
-        // Verify balance and nonce:
-        // - sender account balance must be greater or equal the transaction value + fee.
-        // - sender account nonce must match the transaction nonce.
-        const senderBalance = await this._accounts.getBalance(transactionOrSet.sender);
-        if (senderBalance.value < (transactionOrSet.value + transactionOrSet.fee + additionalValue + additionalFee)) {
-            if (!silent) {
-                Log.w(Mempool, 'Rejected transaction - insufficient funds', transactionOrSet);
-            }
-            return false;
-        }
-
-        if (senderBalance.nonce !== transactionOrSet.nonce - additionalNonce) {
-            if (!silent && transactionOrSet.nonce < senderBalance.nonce) {
-                Log.w(Mempool, 'Rejected transaction - invalid nonce', transactionOrSet);
-            }
-            return false;
-        }
-
-        // Everything checks out.
-        return true;
-    }
-
-    /**
-     * @param {MempoolTransactionSet} set
-     * @param {Transaction} transaction
-     * @param {boolean} [silent]
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    _verifyAdditionalTransaction(set, transaction, silent = false) {
-        if (set.length > 0 && !set.sender.equals(transaction.sender)) return Promise.resolve(false);
-        return this._verifyBalanceAndNonce(transaction, silent, set.value, set.fee, set.length);
-    }
-
-    /**
-     * @param {MempoolTransactionSet} set
-     * @param {boolean} [silent]
-     * @returns {Promise.<boolean>}
-     * @private
-     */
-    _verifyTransactionSet(set, silent = false) {
-        if (set.length === 0) return Promise.resolve(false);
-        return this._verifyBalanceAndNonce(set, silent);
     }
 
     /**

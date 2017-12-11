@@ -81,7 +81,7 @@ class AccountsTree extends Observable {
      * @private
      */
     async _putBatch(address, account) {
-        if (Account.INITIAL.equals(account) && !(await this.get(address))) {
+        if (account.isInitial() && !(await this.get(address))) {
             return;
         }
 
@@ -128,7 +128,7 @@ class AccountsTree extends Observable {
             // Special case: If the new balance is the initial balance
             // (i.e. balance=0, nonce=0), it is like the account never existed
             // in the first place. Delete the node in this case.
-            if (Account.INITIAL.equals(account)) {
+            if (account.isInitial()) {
                 await this._store.remove(node);
                 // We have already deleted the node, remove the subtree it was on.
                 return this._pruneBatch(node.prefix, rootPath);
@@ -255,7 +255,7 @@ class AccountsTree extends Observable {
      * @private
      */
     async _put(address, account) {
-        if (Account.INITIAL.equals(account) && !(await this.get(address))) {
+        if (account.isInitial() && !(await this.get(address))) {
             return;
         }
 
@@ -304,7 +304,7 @@ class AccountsTree extends Observable {
             // Special case: If the new balance is the initial balance
             // (i.e. balance=0, nonce=0), it is like the account never existed
             // in the first place. Delete the node in this case.
-            if (Account.INITIAL.equals(account)) {
+            if (account.isInitial()) {
                 await this._store.remove(node);
                 // We have already deleted the node, remove the subtree it was on.
                 return this._prune(node.prefix, rootPath);

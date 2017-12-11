@@ -116,23 +116,6 @@ class Accounts extends Observable {
     }
 
     /**
-     * Gets the current balance of an account.
-     *
-     * @param {Address} address Address of the account to query.
-     * @param {AccountsTree} [tree] AccountsTree or transaction to read from.
-     * @return {Promise.<Balance>} Current Balance of given address.
-     * @deprecated use {@link Accounts#get}
-     */
-    async getBalance(address, tree = this._tree) {
-        const account = await tree.get(address);
-        if (account) {
-            return account.balance;
-        } else {
-            return Account.INITIAL.balance;
-        }
-    }
-
-    /**
      * Gets the {@link Account}-object for an address.
      *
      * @param {Address} address
@@ -144,13 +127,13 @@ class Accounts extends Observable {
         const account = await tree.get(address);
         if (!account) {
             if (typeof accountType === 'undefined') {
-                throw new Error('Account not present and no accountType given');
+                return null;
             }
             if (!Account.TYPE_MAP.has(accountType)) {
                 throw new Error('Invalid account type');
             }
             return Account.TYPE_MAP.get(accountType).INITIAL;
-        } else if (accountType && account.type !== accountType) {
+        } else if (typeof accountType !== 'undefined' && account.type !== accountType) {
             throw new Error('Account type does match actual account');
         }
         return account;
@@ -201,13 +184,11 @@ class Accounts extends Observable {
      * @private
      */
     async _commitBlockBody(tree, body, blockHeight) {
-        const operator = (a, b) => a + b;
-
         for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b))) {
             await this._executeTransaction(tree, tx, blockHeight, false);
         }
 
-        await this._rewardMiner(tree, body, operator);
+        await this._rewardMiner(tree, body, blockHeight, false);
     }
 
     /**
@@ -218,27 +199,32 @@ class Accounts extends Observable {
      * @private
      */
     async _revertBlockBody(tree, body, blockHeight) {
-        const operator = (a, b) => a - b;
-
         // Execute transactions in reverse order.
         for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b)).reverse()) {
             await this._executeTransaction(tree, tx, blockHeight, true);
         }
 
-        await this._rewardMiner(tree, body, operator);
+        await this._rewardMiner(tree, body, blockHeight, true);
     }
 
     /**
      * @param {AccountsTree} tree
      * @param {BlockBody} body
-     * @param {Function} op
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
      * @return {Promise.<void>}
      * @private
      */
-    async _rewardMiner(tree, body, op) {
+    async _rewardMiner(tree, body, blockHeight, revert = false) {
         // Sum up transaction fees.
         const txFees = body.transactions.reduce((sum, tx) => sum + tx.fee, 0);
-        await this._updateBalance(tree, body.minerAddr, txFees + Policy.BLOCK_REWARD, op);
+
+        // "Coinbase transaction"
+        const coinbaseSender = new Address(new Uint8Array(Address.SERIALIZED_SIZE));
+        const coinbaseTransaction = new ExtendedTransaction(coinbaseSender, Account.Type.BASIC, body.minerAddr, Account.Type.BASIC, txFees + Policy.BLOCK_REWARD, 0, 0, new Uint8Array(0));
+
+        const recipientAccount = await this.get(body.minerAddr, undefined, tree) || BasicAccount.INITIAL;
+        await tree.putBatch(body.minerAddr, recipientAccount.withIncomingTransaction(coinbaseTransaction, blockHeight, revert));
     }
 
     /**
@@ -258,79 +244,15 @@ class Accounts extends Observable {
 
     /**
      * @param {AccountsTree} tree
-     * @param {Transaction} tx
-     * @param {Function} op
-     * @returns {Promise.<void>}
-     * @deprecated
-     * @private
-     */
-    async _updateSender(tree, tx, op) {
-        const addr = tx.sender;
-        await this._updateBalanceAndNonce(tree, addr, -tx.value - tx.fee, tx.nonce, op);
-    }
-
-    /**
-     * @param {AccountsTree} tree
-     * @param {Transaction} tx
-     * @param {Function} op
-     * @returns {Promise.<void>}
-     * @deprecated
-     * @private
-     */
-    async _updateRecipient(tree, tx, op) {
-        await this._updateBalance(tree, tx.recipient, tx.value, op);
-    }
-
-    /**
-     * @param {AccountsTree} tree
      * @param {Address} address
      * @param {number} value
-     * @param {Function} operator
      * @returns {Promise.<void>}
      * @deprecated
      * @private
      */
-    async _updateBalance(tree, address, value, operator) {
-        const account = await this.get(address, Account.Type.BASIC, tree);
-
-        const newValue = operator(account.balance.value, value);
-        if (newValue < 0) {
-            throw new Error('Balance Error!');
-        }
-
-        const newBalance = new Balance(newValue, account.balance.nonce);
-        const newAccount = account.withBalance(newBalance);
-        await tree.putBatch(address, newAccount);
-    }
-
-    /**
-     *
-     * @param {AccountsTree} tree
-     * @param {Address} address
-     * @param {number} value
-     * @param {number} nonce
-     * @param {Function} operator
-     * @returns {Promise.<void>}
-     * @deprecated
-     * @private
-     */
-    async _updateBalanceAndNonce(tree, address, value, nonce, operator) {
-        const account = await this.get(address, Account.Type.BASIC, tree);
-
-        const newValue = operator(account.balance.value, value);
-        if (newValue < 0) {
-            throw new Error('Balance Error!');
-        }
-
-        const newNonce = operator(account.balance.nonce, 1);
-        const reverting = newNonce < account.balance.nonce;
-        if (newNonce < 0 || (reverting && nonce !== newNonce) || (!reverting && nonce !== balance.nonce)) {
-            throw new Error('Nonce Error!');
-        }
-
-        const newBalance = new Balance(newValue, newNonce);
-        const newAccount = account.withBalance(newBalance);
-        await tree.putBatch(address, newAccount);
+    async _addBalance(tree, address, value) {
+        const account = await this.get(address, undefined, tree) || BasicAccount.INITIAL;
+        await tree.putBatch(address, account.withBalance(account.balance + value));
     }
 
     /**

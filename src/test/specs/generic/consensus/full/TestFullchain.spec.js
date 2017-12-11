@@ -20,10 +20,12 @@ class TestBlockchain extends FullChain {
         return this._init();
     }
 
+    /** @type {Accounts} */
     get accounts() {
         return this._accounts;
     }
 
+    /** @type {Array.<{address: Address, publicKey: PublicKey, privateKey: PrivateKey}>} */
     get users() {
         return this._users;
     }
@@ -108,10 +110,10 @@ class TestBlockchain extends FullChain {
             const recipient = this.users[(j + 1) % numUsers];
 
             // 10% transaction + 5% fee
-            const balance = await this.accounts.getBalance(sender.address);
-            const amount = Math.floor(balance.value / 10) || 1;
+            const account = await this.accounts.get(sender.address, Account.Type.BASIC);
+            const amount = Math.floor(account.balance / 10) || 1;
             const fee = Math.floor(amount / 2);
-            const nonce = balance.nonce + (nonces[j % numUsers] ? nonces[j % numUsers] : 0);
+            const nonce = account.nonce + (nonces[j % numUsers] ? nonces[j % numUsers] : 0);
 
             const transaction = await TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, nonce, sender.privateKey);// eslint-disable-line no-await-in-loop
 
@@ -194,6 +196,12 @@ class TestBlockchain extends FullChain {
         }
     }
 
+    /**
+     * @param {number} numBlocks
+     * @param {number} [numUsers]
+     * @param {boolean} [ignorePoW]
+     * @return {Promise.<TestBlockchain>}
+     */
     static async createVolatileTest(numBlocks, numUsers = 2, ignorePoW = false) {
         const accounts = await Accounts.createVolatile();
         const store = ChainDataStore.createVolatile();
