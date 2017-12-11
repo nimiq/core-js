@@ -50,4 +50,8 @@ Block.GENESIS.HASH = Hash.fromBase64('EENgVNvNkOH7rYLnvuaf0j3sYP7xFPItS3yLKymrKX
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
+    if (typeof WebAssembly === 'undefined') {
+        // No WebAssembly => Likely slow
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
+    }
 }
