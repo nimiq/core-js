@@ -189,6 +189,11 @@ class BlockHeader {
             + '}';
     }
 
+    /** @type {number} */
+    get version() {
+        return this._version;
+    }
+
     /** @type {Hash} */
     get prevHash() {
         return this._prevHash;
@@ -248,7 +253,14 @@ class BlockHeader {
         this._pow = null;
     }
 }
-BlockHeader.CURRENT_VERSION = 1;
-BlockHeader.SUPPORTED_VERSIONS = [1];
+BlockHeader.Version = {
+    LUNA_V1: 1,
+    LUNA_V2: 2
+};
+BlockHeader.CURRENT_VERSION = BlockHeader.Version.LUNA_V2;
+BlockHeader.SUPPORTED_VERSIONS = [
+    BlockHeader.Version.LUNA_V1,
+    BlockHeader.Version.LUNA_V2
+];
 BlockHeader.SERIALIZED_SIZE = 146;
 Class.register(BlockHeader);

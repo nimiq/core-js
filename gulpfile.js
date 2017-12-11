@@ -83,6 +83,7 @@ const sources = {
         './src/main/generic/consensus/base/account/Accounts.js',
         './src/main/generic/consensus/base/block/BlockHeader.js',
         './src/main/generic/consensus/base/block/BlockInterlink.js',
+        './src/main/generic/consensus/base/block/BlockInterlinkLegacy.js',
         './src/main/generic/consensus/base/block/BlockBody.js',
         './src/main/generic/consensus/base/block/BlockUtils.js',
         './src/main/generic/consensus/base/subscription/Subscription.js',

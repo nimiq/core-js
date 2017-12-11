@@ -5,9 +5,12 @@ class Block {
      */
     static copy(o) {
         if (!o) return o;
+        const interlink = o._header.version === BlockHeader.Version.LUNA_V1
+            ? BlockInterlinkLegacy.copy(o._interlink)
+            : BlockInterlink.copy(o._interlink);
         return new Block(
             BlockHeader.copy(o._header),
-            BlockInterlink.copy(o._interlink),
+            interlink,
             BlockBody.copy(o._body)
         );
     }
@@ -36,7 +39,9 @@ class Block {
      */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
-        const interlink = BlockInterlink.unserialize(buf);
+        const interlink = header.version === BlockHeader.Version.LUNA_V1
+            ? BlockInterlinkLegacy.unserialize(buf)
+            : BlockInterlink.unserialize(buf);
 
         let body = undefined;
         const bodyPresent = buf.readUint8();
@@ -536,8 +541,9 @@ Block.GENESIS = new Block(
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        66958),
-    new BlockInterlink([]),
+        66958,
+        BlockHeader.Version.LUNA_V1),
+    new BlockInterlinkLegacy([]),
     new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access
