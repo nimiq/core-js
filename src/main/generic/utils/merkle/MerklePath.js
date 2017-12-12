@@ -170,33 +170,6 @@ class MerklePathNode {
         this._left = left;
     }
 
-    /**
-     * @param {SerialBuffer} buf
-     * @returns {MerklePathNode}
-     */
-    static unserialize(buf) {
-        const hash = Hash.unserialize(buf);
-        const left = buf.readUint8() === 1;
-        return new MerklePathNode(hash, left);
-    }
-
-    /**
-     * @param {SerialBuffer} [buf]
-     * @returns {SerialBuffer}
-     */
-    serialize(buf) {
-        buf = buf || new SerialBuffer(this.serializedSize);
-        this._hash.serialize(buf);
-        buf.writeUint8(this._left ? 1 : 0);
-        return buf;
-    }
-
-    /** @type {number} */
-    get serializedSize() {
-        return this._hash.serializedSize
-            + /*left*/ 1;
-    }
-
     /** @type {Hash} */
     get hash() {
         return this._hash;

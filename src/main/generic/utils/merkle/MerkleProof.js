@@ -160,7 +160,7 @@ class MerkleProof {
             }
         }
         // Everything but the root needs to be consumed.
-        if (stack.length !== 1 || proofNodes.length !== 0 ) {
+        if (stack.length !== 1 || proofNodes.length !== 0 || inputs.length !== 0) {
             throw Error('Did not consume all nodes.');
         }
         return stack[0];
