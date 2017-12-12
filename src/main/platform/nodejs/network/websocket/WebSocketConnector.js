@@ -6,9 +6,13 @@ const https = require('https');
 const fs = require('fs');
 
 class WebSocketConnector extends Observable {
-    constructor() {
+    /**
+     * @constructor
+     * @param {Services} services
+     */
+    constructor(services) {
         super();
-        const port = NetworkConfig.myPeerAddress().port;
+        const port = NetworkConfig.myPeerAddress(services).port;
         const sslConfig = NetworkConfig.getSSLConfig();
 
         const options = {

@@ -1,8 +1,13 @@
 class NetworkConfig {
-    static myPeerAddress() {
+    /**
+     * @static
+     * @param {Services} services
+     * @return {PeerAddress}
+     */
+    static myPeerAddress(services) {
         if (!PlatformUtils.supportsWebRTC()) {
             return new DumbPeerAddress(
-                Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
+                services.provided, Time.now(), NetAddress.UNSPECIFIED,
                 /*id*/ NumberUtils.randomUint64());
         }
 
@@ -11,11 +16,15 @@ class NetworkConfig {
         }
 
         return new RtcPeerAddress(
-            Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
+            services.provided, Time.now(), NetAddress.UNSPECIFIED,
             NetworkConfig._mySignalId, /*distance*/ 0);
     }
 
-    // Used for filtering peer addresses by protocols.
+    /**
+     * Used for filtering peer addresses by protocols.
+     * @static
+     * @return {number}
+     */
     static myProtocolMask() {
         return Protocol.WS | Protocol.RTC;
     }

@@ -1,6 +1,13 @@
 class WebRtcConnector extends Observable {
-    constructor() {
+    /**
+     * @constructor
+     * @param {Services} services
+     */
+    constructor(services) {
         super();
+        /** @type {Services} */
+        this._services = services;
+
         return this._init();
     }
 
@@ -22,7 +29,7 @@ class WebRtcConnector extends Observable {
             return false;
         }
 
-        const connector = new OutboundPeerConnector(this._config, peerAddress, signalChannel);
+        const connector = new OutboundPeerConnector(this._config, this._services, peerAddress, signalChannel);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors.put(signalId, connector);
 
@@ -90,7 +97,7 @@ class WebRtcConnector extends Observable {
             }
 
             // Accept the offer.
-            const connector = new InboundPeerConnector(this._config, channel, msg.senderId, payload);
+            const connector = new InboundPeerConnector(this._config, this._services, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors.put(msg.senderId, connector);
 
@@ -129,8 +136,9 @@ WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
-    constructor(config, signalChannel, signalId, peerAddress) {
+    constructor(config, services, signalChannel, signalId, peerAddress) {
         super();
+        this._services = services;
         this._signalChannel = signalChannel;
         this._signalId = signalId;
         this._peerAddress = peerAddress; // null for inbound connections
@@ -192,7 +200,7 @@ class PeerConnector extends Observable {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = await WebRtcConfig.myKeyPair();
         this._signalChannel.signal(
-            NetworkConfig.myPeerAddress().signalId,
+            NetworkConfig.myPeerAddress(this._services).signalId,
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,
@@ -252,8 +260,8 @@ class PeerConnector extends Observable {
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
-    constructor(config, peerAddress, signalChannel) {
-        super(config, signalChannel, peerAddress.signalId, peerAddress);
+    constructor(config, services, peerAddress, signalChannel) {
+        super(config, services, signalChannel, peerAddress.signalId, peerAddress);
         this._peerAddress = peerAddress;
 
         // Create offer.
@@ -268,8 +276,8 @@ class OutboundPeerConnector extends PeerConnector {
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
-    constructor(config, signalChannel, signalId, offer) {
-        super(config, signalChannel, signalId, null);
+    constructor(config, services, signalChannel, signalId, offer) {
+        super(config, services, signalChannel, signalId, null);
         this._rtcConnection.ondatachannel = event => {
             event.channel.onopen = e => this._onDataChannel(e);
         };
