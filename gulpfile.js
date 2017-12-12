@@ -75,6 +75,7 @@ const sources = {
         './src/main/generic/consensus/base/account/Address.js',
         './src/main/generic/consensus/base/account/Account.js',
         './src/main/generic/consensus/base/account/BasicAccount.js',
+        './src/main/generic/consensus/base/account/HashedTimeLockedContract.js',
         './src/main/generic/consensus/base/account/VestingAccount.js',
         './src/main/generic/consensus/base/account/tree/AccountsTreeNode.js',
         './src/main/generic/consensus/base/account/tree/AccountsTreeStore.js',
