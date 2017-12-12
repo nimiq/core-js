@@ -99,7 +99,7 @@ class PartialLightChain extends LightChain {
         const suffixBlocks = [];
         let head = proof.prefix.head;
         for (const header of proof.suffix.headers) {
-            const interlink = await head.getNextInterlink(header.target);
+            const interlink = await head.getNextInterlink(header.target, header.version);
             const interlinkHash = await interlink.hash();
             if (!header.interlinkHash.equals(interlinkHash)) {
                 Log.w(PartialLightChain, 'Rejecting proof - invalid interlink hash in proof suffix');

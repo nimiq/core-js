@@ -226,7 +226,7 @@ class Mempool extends Observable {
             /** @type {MempoolTransactionSet} */ const set = this._transactionSetByAddress.get(sender);
 
             try {
-                const senderAccount = await this._accounts.get(set.sender);
+                const senderAccount = await this._accounts.get(set.sender, set.senderType);
                 while (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, true))) {
                     const transaction = set.shift();
                     if (transaction) {

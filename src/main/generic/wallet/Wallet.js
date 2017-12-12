@@ -16,7 +16,7 @@ class Wallet {
     }
 
     /**
-     * Create a Wallet that will loose its data after this session.
+     * Create a Wallet that will lose its data after this session.
      * @returns {Promise.<Wallet>} Newly created Wallet.
      */
     static async createVolatile() {

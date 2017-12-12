@@ -236,6 +236,17 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @protected
+     * @override
+     */
+    _onAllObjectsReceived() {
+        // If all objects have been received, request more if we're syncing the blockchain.
+        if (this._syncing) {
+            this.syncBlockchain();
+        }
+    }
+
+    /**
      * @param {HeaderMessage} msg
      * @return {Promise.<void>}
      * @protected

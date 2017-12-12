@@ -57,6 +57,10 @@ class BlockHeader {
         this._nonce = nonce;
     }
 
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {BlockHeader}
+     */
     static unserialize(buf) {
         const version = buf.readUint16();
         if (!BlockHeader.SUPPORTED_VERSIONS.includes(version)) throw 'Block version unsupported';
@@ -71,6 +75,10 @@ class BlockHeader {
         return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version);
     }
 
+    /**
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint16(this._version);
@@ -253,6 +261,7 @@ class BlockHeader {
         this._pow = null;
     }
 }
+// FIXME: Clean up for mainnet.
 BlockHeader.Version = {
     LUNA_V1: 1,
     LUNA_V2: 2
