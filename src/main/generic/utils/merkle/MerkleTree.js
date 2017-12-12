@@ -29,7 +29,9 @@ class MerkleTree {
         return Promise.all([
             MerkleTree._computeRoot(left, fnHash),
             MerkleTree._computeRoot(right, fnHash)
-        ]).then(hashes => Hash.light(BufferUtils.concatTypedArrays(hashes[0].serialize(), hashes[1].serialize())));
+        ]).then(hashes => {
+            return Hash.light(BufferUtils.concatTypedArrays(hashes[0].serialize(), hashes[1].serialize()));
+        });
     }
 
     /**
