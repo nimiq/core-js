@@ -11,5 +11,4 @@ if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] && [ "$KARMA_BROWSERS" = "" ]; 
 if [[ "$TO_TEST" == Karma/Travis_CI/* ]] && [ "$KARMA_BROWSERS" = "" ]; then export KARMA_BROWSERS=Safari TO_TEST=Karma; fi
 if [ "$TO_TEST" = "Karma" ]; then node_modules/.bin/karma start; fi
 if [ "$TO_TEST" = "NodeJS" ]; then node_modules/.bin/jasmine; fi
-if [ "$TO_TEST" = "ESLint" ]; then node_modules/.bin/eslint src/main src/test *.js && node_modules/.bin/esdoc; fi
 if [ "$USE_ISTANBUL" = "1" ]; then node_modules/.bin/codecov; fi
