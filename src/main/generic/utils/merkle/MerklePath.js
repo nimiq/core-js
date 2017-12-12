@@ -84,14 +84,38 @@ class MerklePath {
     }
 
     /**
+     * @param {Array.<MerklePathNode>} nodes
+     * @returns {Uint8Array}
+     * @private
+     */
+    static _compress(nodes) {
+        const count = nodes.length;
+        const leftBitsSize = Math.ceil(count / 8);
+        const leftBits = new Uint8Array(leftBitsSize);
+
+        for (let i = 0; i < count; i++) {
+            if (nodes[i].left) {
+                leftBits[Math.floor(i / 8)] |= 0x80 >>> (i % 8);
+            }
+        }
+
+        return leftBits;
+    }
+
+    /**
      * @param {SerialBuffer} buf
      * @returns {MerklePath}
      */
     static unserialize(buf) {
         const count = buf.readUint8();
+        const leftBitsSize = Math.ceil(count / 8);
+        const leftBits = buf.read(leftBitsSize);
+
         const nodes = [];
         for (let i = 0; i < count; i++) {
-            nodes.push(MerklePathNode.unserialize(buf));
+            const left = (leftBits[Math.floor(i / 8)] & (0x80 >>> (i % 8))) !== 0;
+            const hash = Hash.unserialize(buf);
+            nodes.push(new MerklePathNode(hash, left));
         }
         return new MerklePath(nodes);
     }
@@ -103,16 +127,20 @@ class MerklePath {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._nodes.length);
+        buf.write(MerklePath._compress(this._nodes));
+
         for (const node of this._nodes) {
-            node.serialize(buf);
+            node.hash.serialize(buf);
         }
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
+        const leftBitsSize = Math.ceil(this._nodes.length / 8);
         return /*count*/ 1
-            + this._nodes.reduce((sum, node) => sum + node.serializedSize, 0);
+            + leftBitsSize
+            + this._nodes.reduce((sum, node) => sum + node.hash.serializedSize, 0);
     }
 
     /**
@@ -123,6 +151,11 @@ class MerklePath {
         return o instanceof MerklePath
             && this._nodes.length === o._nodes.length
             && this._nodes.every((node, i) => node.equals(o._nodes[i]));
+    }
+
+    /** @type {Array.<MerklePathNode>} */
+    get nodes() {
+        return this._nodes;
     }
 }
 Class.register(MerklePath);
