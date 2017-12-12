@@ -86,6 +86,8 @@ class Transaction {
      */
     serializeContent(buf) {
         buf = buf || new SerialBuffer(this.serializedContentSize);
+        buf.writeUint16(this._data.byteLength);
+        buf.write(this._data);
         this._sender.serialize(buf);
         buf.writeUint8(this._senderType);
         this._recipient.serialize(buf);
@@ -93,22 +95,20 @@ class Transaction {
         buf.writeUint64(this._value);
         buf.writeUint64(this._fee);
         buf.writeUint32(this._nonce);
-        buf.writeUint16(this._data.byteLength);
-        buf.write(this._data);
         return buf;
     }
 
     /** @type {number} */
     get serializedContentSize() {
-        return this._sender.serializedSize
+        return /*dataSize*/ 2
+            + this._data.byteLength
+            + this._sender.serializedSize
             + /*senderType*/ 1
             + this._recipient.serializedSize
             + /*recipientType*/ 1
             + /*value*/ 8
             + /*fee*/ 8
-            + /*nonce*/ 4
-            + /*dataSize*/ 2
-            + this._data.byteLength;
+            + /*nonce*/ 4;
     }
 
     /**
