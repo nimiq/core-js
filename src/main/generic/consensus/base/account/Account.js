@@ -207,7 +207,12 @@ Account.Type = {
      * Account with vesting functionality.
      * @see {VestingAccount}
      */
-    VESTING: 1
+    VESTING: 1,
+    /**
+     * Hashed Time-Locked Contract
+     * @see {HashedTimeLockedContract}
+     */
+    HTLC: 2
 };
 /**
  * @type {Map.<Account.Type, {INITIAL: Account, copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}

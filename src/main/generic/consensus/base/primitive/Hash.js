@@ -109,4 +109,6 @@ class Hash extends Primitive {
         return o instanceof Hash;
     }
 }
+
+Hash.NULL = new Hash(new Uint8Array(Crypto.hashSize));
 Class.register(Hash);

@@ -125,4 +125,5 @@ class Address extends Primitive {
 Address.CCODE = 'NQ';
 Address.SERIALIZED_SIZE = 20;
 Address.HEX_SIZE = 40;
+Address.NULL = new Address(new Uint8Array(Address.SERIALIZED_SIZE));
 Class.register(Address);
