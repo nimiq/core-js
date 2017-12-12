@@ -23,6 +23,7 @@ install: true
 jobs:
   include:
     - stage: build nimiq
+      env: BUILD=true
       script:
         - npm install -g gulp
         - yarn
@@ -32,6 +33,7 @@ jobs:
         - cp node_modules.tar.gz ~/shared
         - aws s3 sync ~/shared s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID --region eu-central-1
     - stage: build nimiq
+      env: TO_TEST=ESLint
       script:
         - npm install -g gulp
         - yarn
@@ -79,6 +81,15 @@ jobs:
           - google-chrome-stable
       script: ./travis-script.sh
     - stage: test
+      env: TO_TEST=Karma/Travis_CI/Chrome_Stable USE_BABEL=1
+      addons:
+        apt:
+          sources:
+          - google-chrome
+          packages:
+          - google-chrome-stable
+      script: ./travis-script.sh
+    - stage: test
       env: TO_TEST=Karma/Travis_CI/Chrome_Beta
       addons:
         apt:
@@ -87,14 +98,14 @@ jobs:
           packages:
           - google-chrome-beta
       script: ./travis-script.sh
-    - stage: test
-      env: TO_TEST=Karma/SauceLabs/Chrome_Old
-      addons:
-        sauce_connect:
-          username: nimiq
-        jwt:
-          secure: hoZJuHfZCCqD9umU2EbOlfcgLOhNjUJpkTHVVHny/CEjsonRcMO3+2dyASq1MspkhP+0au1KLXpKjvprkli8SMgNrrx35hyVVMw7p8Le0Flwmj+8oJkSqeUnJhfTRhcun0HB9lSILRpaQqW8eEgLQSlFf6uVQdk+rXcFPy/ZkM+PBZRwzlmdr1jtMQR0F+Iv/wz0ORy9GWA6hdpOqw8A0G3nnQqe9zZ8OdIXiVm/8ch8+hL4bGz6BoBC1kkhi1ia2Ne5KFSOEhz8P92S9K6IPSS+VqiZCZnOo/2alDQ4DniElskEliN1edhqOT4GCq29MfLZzV+xDqfRkcXwSbP0+t7QtHRG7ZW2cOHAPuyNlrdyWycVhB9Tp0khyHNxu3bK8HluCu0q2ZEpdZqQQvKPYJtaS/OmVszYFlj0RqDE1ZsrCCtpyawtqsvPrNPWcES3mro5P97884FFXX5Lou8QJkjm+rsHOxdHcONwz+b6TDRa4JQuubkglF9aeTHXgk0a6mpPcNDDEDNKQsaI99kAGxUbDSEDJ+Kc/t0ndZZ2L+OyrchgOajsRNopoUfopf3eOvGwGA6uQxGgQqLUueW2WNYI1Fh96RCYaZUCexh1hy24+LQLFzRYqxMQyMma11nSBsUudJoYk+ExI9GZgI8co7SxTxq0wh1wTFPv4Odcv50=
-      script: ./travis-script.sh
+#    - stage: test
+#      env: TO_TEST=Karma/SauceLabs/Chrome_Old
+#      addons:
+#        sauce_connect:
+#          username: nimiq
+#        jwt:
+#          secure: hoZJuHfZCCqD9umU2EbOlfcgLOhNjUJpkTHVVHny/CEjsonRcMO3+2dyASq1MspkhP+0au1KLXpKjvprkli8SMgNrrx35hyVVMw7p8Le0Flwmj+8oJkSqeUnJhfTRhcun0HB9lSILRpaQqW8eEgLQSlFf6uVQdk+rXcFPy/ZkM+PBZRwzlmdr1jtMQR0F+Iv/wz0ORy9GWA6hdpOqw8A0G3nnQqe9zZ8OdIXiVm/8ch8+hL4bGz6BoBC1kkhi1ia2Ne5KFSOEhz8P92S9K6IPSS+VqiZCZnOo/2alDQ4DniElskEliN1edhqOT4GCq29MfLZzV+xDqfRkcXwSbP0+t7QtHRG7ZW2cOHAPuyNlrdyWycVhB9Tp0khyHNxu3bK8HluCu0q2ZEpdZqQQvKPYJtaS/OmVszYFlj0RqDE1ZsrCCtpyawtqsvPrNPWcES3mro5P97884FFXX5Lou8QJkjm+rsHOxdHcONwz+b6TDRa4JQuubkglF9aeTHXgk0a6mpPcNDDEDNKQsaI99kAGxUbDSEDJ+Kc/t0ndZZ2L+OyrchgOajsRNopoUfopf3eOvGwGA6uQxGgQqLUueW2WNYI1Fh96RCYaZUCexh1hy24+LQLFzRYqxMQyMma11nSBsUudJoYk+ExI9GZgI8co7SxTxq0wh1wTFPv4Odcv50=
+#      script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Firefox_Stable
       addons:
@@ -110,18 +121,16 @@ jobs:
       addons:
         firefox: latest-beta
       script: ./travis-script.sh
-    - stage: test
-      env: TO_TEST=Karma/Travis_CI/Firefox_56
-      addons:
-        firefox: 56
-      script: ./travis-script.sh
-    - stage: test
-      env: TO_TEST=Karma/Travis_CI/Firefox_55
-      addons:
-        firefox: 55
-      script: ./travis-script.sh
-    - stage: cleanup
-      script: aws s3 rm --recursive s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID --region eu-central-1
+#    - stage: test
+#      env: TO_TEST=Karma/Travis_CI/Firefox_56
+#      addons:
+#        firefox: 56
+#      script: ./travis-script.sh
+#    - stage: test
+#      env: TO_TEST=Karma/Travis_CI/Firefox_55
+#      addons:
+#        firefox: 55
+#      script: ./travis-script.sh
 
 notifications:
   slack:
