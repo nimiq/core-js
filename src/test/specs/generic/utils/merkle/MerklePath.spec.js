@@ -9,6 +9,15 @@ describe('MerklePath', () => {
         BufferUtils.fromAscii('6')
     ];
 
+    it('correctly computes an empty proof', (done) => {
+        (async () => {
+            const root = await MerkleTree.computeRoot([]);
+            const proof = await MerklePath.compute([], values[0]);
+            expect(proof.nodes.length).toBe(0);
+            expect(root.equals(await proof.computeRoot(values[0]))).toBe(false);
+        })().then(done, done.fail);
+    });
+
     it('correctly computes a simple proof', (done) => {
         (async () => {
             const v4 = values.slice(0, 4);

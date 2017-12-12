@@ -14,6 +14,23 @@ describe('MerkleProof', () => {
         BufferUtils.fromAscii('9')
     ];
 
+    it('correctly computes an empty proof', (done) => {
+        (async () => {
+            const root = await MerkleTree.computeRoot([]);
+            let proof = await MerkleProof.compute([], [values[0]]);
+            expect(proof.nodes.length).toBe(1);
+
+            let threw = false;
+            const proofRoot = await proof.computeRoot([values[0]]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
+
+            proof = await MerkleProof.compute([], []);
+            expect(proof.nodes.length).toBe(1);
+            expect(root.equals(await proof.computeRoot([]))).toBe(true);
+        })().then(done, done.fail);
+    });
+
     it('correctly computes a simple proof', (done) => {
         (async () => {
             const v4 = values.slice(0, 4);
@@ -232,6 +249,56 @@ describe('MerkleProof', () => {
             const proof2 = MerkleProof.unserialize(proof.serialize());
             expect(proof.equals(proof)).toBe(true);
             expect(proof.equals(proof2)).toBe(true);
+        })().then(done, done.fail);
+    });
+
+    it('correctly discards invalid proofs', (done) => {
+        (async () => {
+            const v4 = values.slice(0, 4);
+            /*
+             * (X) should be the nodes included in the proof.
+             * *X* marks the values to be proven.
+             *            h6
+             *         /      \
+             *      h4        (h5)
+             *     / \         / \
+             *  (h0) h1      h2  h3
+             *   |    |      |    |
+             *  v0  *v1*    v2   v3
+             */
+            const root = await MerkleTree.computeRoot(v4);
+            let proof = await MerkleProof.compute(v4, [values[1]]);
+
+            expect(root.equals(await proof.computeRoot([values[0]]))).toBe(false);
+
+            let threw = false;
+            let proofRoot = await proof.computeRoot([]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
+
+            proof = new MerkleProof(proof.nodes, [MerkleProof.Operation.HASH]);
+            threw = false;
+            proofRoot = await proof.computeRoot([values[1]]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
+
+            proof = new MerkleProof(proof.nodes, [MerkleProof.Operation.CONSUME_PROOF, MerkleProof.Operation.CONSUME_PROOF, MerkleProof.Operation.CONSUME_PROOF]);
+            threw = false;
+            proofRoot = await proof.computeRoot([values[1]]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
+
+            proof = new MerkleProof(proof.nodes, [MerkleProof.Operation.CONSUME_INPUT, MerkleProof.Operation.CONSUME_INPUT]);
+            threw = false;
+            proofRoot = await proof.computeRoot([values[1]]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
+
+            proof = new MerkleProof(proof.nodes, [4]);
+            threw = false;
+            proofRoot = await proof.computeRoot([values[1]]).catch(() => { threw = true; });
+            expect(threw).toBe(true);
+            expect(root.equals(proofRoot)).toBe(false);
         })().then(done, done.fail);
     });
 });
