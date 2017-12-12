@@ -1,35 +1,67 @@
 class Services {
-    static myServices() {
-        if (!Services._myServices) throw new Error('Services are not configured');
-        return Services._myServices;
+    /**
+     * @constructor
+     * @param {number} provided Bitmap of services that can be provided
+     * @param {number} accepted Bitmap of services that can be accepted
+     */
+    constructor(provided, accepted) {
+        this._provided = provided || Services.NONE;
+        this._accepted = accepted || Services.NONE;
     }
 
-    // Used for filtering peer addresses by services.
-    static myServiceMask() {
-        if (!Services._myServiceMask) throw new Error('ServiceMask is not configured');
-        return Services._myServiceMask;
+    /**
+     * @type {number}
+     */
+    get provided() {
+        return this._provided;
     }
 
-    static configureServices(services) {
-        Services._myServices = services;
+    /**
+     * @type {number}
+     */
+    get accepted() {
+        return this._accepted;
     }
 
-    static configureServiceMask(serviceMask) {
-        Services._myServiceMask = serviceMask;
+    /**
+     * @param {number} services Bitmap of services that can be provided
+     */
+    set provided(services) {
+        this._provided = services;
     }
 
+    /**
+     * @param {number} services Bitmap of services that can be accepted
+     */
+    set accepted(services) {
+        this._accepted = services;
+    }
+
+    /**
+     * @param {number} services Bitmap of the services to check
+     * @returns {boolean}
+     */
     static isFullNode(services) {
         return (services & Services.FULL) !== 0;
     }
 
+    /**
+     * @param {number} services Bitmap of the services to check
+     * @returns {boolean}
+     */
     static isLightNode(services) {
         return (services & Services.LIGHT) !== 0;
     }
 
+    /**
+     * @param {number} services Bitmap of the services to check
+     * @returns {boolean}
+     */
     static isNanoNode(services) {
         return services === Services.NANO;
     }
 }
+Services.NONE   = 0;
 Services.NANO   = 1;
 Services.LIGHT  = 2;
 Services.FULL   = 4;

@@ -1,6 +1,12 @@
 class WebRtcConnector extends Observable {
-    constructor() {
+    /**
+     * @constructor
+     * @param {Services} services
+     */
+    constructor(services) {
         super();
+        /** @type {Services} */
+        this._services = services;
         return this._init();
     }
 
@@ -192,7 +198,7 @@ class PeerConnector extends Observable {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = await WebRtcConfig.myKeyPair();
         this._signalChannel.signal(
-            NetworkConfig.myPeerAddress().signalId,
+            NetworkConfig.myPeerAddress(this._services).signalId,
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,

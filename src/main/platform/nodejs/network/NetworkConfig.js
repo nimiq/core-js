@@ -1,11 +1,11 @@
 class NetworkConfig {
-    static myPeerAddress() {
+    static myPeerAddress(services) {
         if (!NetworkConfig._myHost || !NetworkConfig._myPort) {
             throw 'PeerAddress is not configured.';
         }
 
         return new WsPeerAddress(
-            Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
+            services.provided, Time.now(), NetAddress.UNSPECIFIED,
             NetworkConfig._myHost, NetworkConfig._myPort);
     }
 
