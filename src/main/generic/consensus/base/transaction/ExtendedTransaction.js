@@ -23,6 +23,8 @@ class ExtendedTransaction extends Transaction {
         const type = /** @type {Transaction.Type} */ buf.readUint8();
         Assert.that(type === Transaction.Type.EXTENDED);
 
+        const dataSize = buf.readUint16();
+        const data = buf.read(dataSize);
         const sender = Address.unserialize(buf);
         const senderType = /** @type {Account.Type} */ buf.readUint8();
         const recipient = Address.unserialize(buf);
@@ -30,8 +32,6 @@ class ExtendedTransaction extends Transaction {
         const value = buf.readUint64();
         const fee = buf.readUint64();
         const nonce = buf.readUint32();
-        const dataSize = buf.readUint16();
-        const data = buf.read(dataSize);
         const proofSize = buf.readUint16();
         const proof = buf.read(proofSize);
         return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, nonce, data, proof);
