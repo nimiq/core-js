@@ -222,7 +222,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     async _onChainProof(msg) {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
-        Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof} (${msg.proof.serializedSize} bytes)`);
+        Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
         if (!this._timers.timeoutExists('getChainProof')) {
