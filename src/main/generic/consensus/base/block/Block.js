@@ -192,7 +192,7 @@ class Block {
         }
 
         // Check that the interlink is correct.
-        const interlink = await predecessor.getNextInterlink(this.target);
+        const interlink = await predecessor.getNextInterlink(this.target, this.version);
         if (!this._interlink.equals(interlink)) {
             return false;
         }
@@ -248,7 +248,7 @@ class Block {
                 return false;
             }
 
-            const interlink = await predecessor.getNextInterlink(this.target);
+            const interlink = await predecessor.getNextInterlink(this.target, this.version);
             const interlinkHash = await interlink.hash();
             if (!this._header.interlinkHash.equals(interlinkHash)) {
                 Log.v(Block, 'No interlink predecessor - immediate interlink');
@@ -323,9 +323,10 @@ class Block {
 
     /**
      * @param {number} nextTarget
+     * @param {number} [nextVersion]
      * @returns {Promise.<BlockInterlink>}
      */
-    async getNextInterlink(nextTarget) {
+    async getNextInterlink(nextTarget, nextVersion = BlockHeader.CURRENT_VERSION) {
         // Compute how much harder the block hash is than the next target.
         const pow = await this.pow();
         const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
@@ -360,7 +361,9 @@ class Block {
             hashes.push(this.interlink.hashes[j]);
         }
 
-        return new BlockInterlink(hashes);
+        return nextVersion === BlockHeader.Version.LUNA_V1
+            ? new BlockInterlinkLegacy(hashes)
+            : new BlockInterlink(hashes);
     }
 
     /**
@@ -425,6 +428,13 @@ class Block {
             throw 'Cannot access body of light block';
         }
         return this._body;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get version() {
+        return this._header.version;
     }
 
     /**

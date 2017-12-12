@@ -124,7 +124,12 @@ class Account {
                 if (!silent) Log.w(Account, 'Rejected transaction - insufficient funds', tx);
                 return Promise.resolve(false);
             }
-            account = account.withOutgoingTransaction(tx, blockHeight);
+            try {
+                account = account.withOutgoingTransaction(tx, blockHeight);
+            } catch (e) {
+                if (!silent) Log.w(Account, `Rejected transaction - ${e.message || e}`, tx);
+                return Promise.resolve(false);
+            }
         }
         return Promise.resolve(true);
     }

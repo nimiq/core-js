@@ -264,7 +264,7 @@ class BaseChain extends IBlockchain {
         const suffixTail = suffix.shift();
 
         // Construct light block out of the old suffix tail.
-        const interlink = await proof.prefix.head.getNextInterlink(suffixTail.target);
+        const interlink = await proof.prefix.head.getNextInterlink(suffixTail.target, suffixTail.version);
         const prefixHead = new Block(suffixTail, interlink);
 
         // Append old suffix tail block to prefix.

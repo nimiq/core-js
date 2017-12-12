@@ -98,7 +98,7 @@ class NanoChain extends BaseChain {
         const suffixBlocks = [];
         let head = proof.prefix.head;
         for (const header of proof.suffix.headers) {
-            const interlink = await head.getNextInterlink(header.target);
+            const interlink = await head.getNextInterlink(header.target, header.version);
             const interlinkHash = await interlink.hash();
             if (!header.interlinkHash.equals(interlinkHash)) {
                 Log.w(NanoChain, 'Rejecting proof - invalid interlink hash in proof suffix');
@@ -244,7 +244,7 @@ class NanoChain extends BaseChain {
         }
 
         // Compute and verify interlink.
-        const interlink = await predecessor.getNextInterlink(header.target);
+        const interlink = await predecessor.getNextInterlink(header.target, header.version);
         const interlinkHash = await interlink.hash();
         if (!interlinkHash.equals(header.interlinkHash)) {
             Log.w(NanoChain, 'Rejecting header - interlink verification failed');
