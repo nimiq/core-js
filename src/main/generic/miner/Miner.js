@@ -1,6 +1,6 @@
 class Miner extends Observable {
     /**
-     * @param {Blockchain} blockchain
+     * @param {IBlockchain} blockchain
      * @param {Mempool} mempool
      * @param {Address} minerAddress
      * @param {Uint8Array} extraData
@@ -10,7 +10,7 @@ class Miner extends Observable {
      */
     constructor(blockchain, mempool, minerAddress, extraData = new Uint8Array(0)) {
         super();
-        /** @type {Blockchain} */
+        /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
@@ -165,7 +165,7 @@ class Miner extends Observable {
         this._hashCount += this._workerPool.noncesPerRun;
         if (obj.block && obj.block.prevHash.equals(this._blockchain.headHash)) {
             Log.d(Miner, `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
-            if (BlockUtils.isProofOfWork(obj.hash, block.target) && !this._submittingBlock) {
+            if (BlockUtils.isProofOfWork(obj.hash, obj.block.target) && !this._submittingBlock) {
                 obj.block.header.nonce = obj.nonce;
                 this._submittingBlock = true;
                 if (obj.block.header.verifyProofOfWork()) {
