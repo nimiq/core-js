@@ -632,5 +632,5 @@ BaseConsensusAgent.REQUEST_THROTTLE = 500;
  * Maximum time (ms) to wait after sending out getData or receiving the last object for this request.
  * @type {number}
  */
-BaseConsensusAgent.REQUEST_TIMEOUT = 5000;
+BaseConsensusAgent.REQUEST_TIMEOUT = 1000 * 10;
 Class.register(BaseConsensusAgent);

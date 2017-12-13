@@ -5,22 +5,22 @@ describe('Hash', () => {
         expect(hash.serializedSize).toEqual(32);
         expect(() => {
             const sign = new Hash(new Uint8Array(16));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
 
         expect(() => {
             const sign = new Hash('test');
-        }).toThrow('Primitive: Invalid type');
+        }).toThrow(new Error('Primitive: Invalid type'));
 
         expect(() => {
             const sign = new Hash(new Uint8Array(33));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
     });
 
     it('is serializable and unserializable', () => {
         const hash1 = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
         const hash2 = Hash.unserialize(hash1.serialize());
 
-        expect(hash2.toBase64()).toBe(Dummy.hash1, 'because of invariance.');
+        expect(hash2.toBase64()).toBe(Dummy.hash1);
     });
 
     it('has an equals method', () => {

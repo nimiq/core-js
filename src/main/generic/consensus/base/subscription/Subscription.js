@@ -105,7 +105,7 @@ class Subscription {
      * @returns {string}
      */
     toString() {
-        return `Subscription{type=${this._type}, addresses=${this._addresses}}`;
+        return `Subscription{type=${this._type}, addresses=[${this._addresses.values()}]}`;
     }
 
     /** @type {Subscription.Type} */

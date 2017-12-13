@@ -7,15 +7,15 @@ describe('Signature', () => {
 
         expect(() => {
             const sign = new Signature(new Uint8Array(16));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
 
         expect(() => {
             const sign = new Signature('wrong test string');
-        }).toThrow('Primitive: Invalid type');
+        }).toThrow(new Error('Primitive: Invalid type'));
 
         expect(() => {
             const sign = new Signature(new Uint8Array(65));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
     });
 
     it('has an equals method', () => {

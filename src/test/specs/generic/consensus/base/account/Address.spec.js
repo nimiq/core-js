@@ -5,22 +5,22 @@ describe('Address', () => {
         expect(address.serializedSize).toEqual(20);
         expect(() => {
             const sign = new Address(new Uint8Array(16));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
 
         expect(() => {
             const sign = new Address('test');
-        }).toThrow('Primitive: Invalid type');
+        }).toThrow(new Error('Primitive: Invalid type'));
 
         expect(() => {
             const sign = new Address(new Uint8Array(33));
-        }).toThrow('Primitive: Invalid length');
+        }).toThrow(new Error('Primitive: Invalid length'));
     });
 
     it('is serializable and unserializable', () => {
         const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
         const address2 = Address.unserialize(address1.serialize());
 
-        expect(address2.toBase64()).toBe(Dummy.address1,'because of invariance.');
+        expect(address2.toBase64()).toBe(Dummy.address1);
     });
 
     it('has an equals method', () => {
