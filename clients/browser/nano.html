@@ -375,7 +375,7 @@
             }
 
             txs.forEach(function(tx) {
-                if ($.wallet.address.equals(senderAddr) || $.wallet.address.equals(tx.recipient)) {
+                if ($.wallet.address.equals(tx.sender) || $.wallet.address.equals(tx.recipient)) {
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);

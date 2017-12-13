@@ -46,9 +46,13 @@ describe('MerkleProof', () => {
              *  v0  *v1*    v2   v3
              */
             const root = await MerkleTree.computeRoot(v4);
-            const proof = await MerkleProof.compute(v4, [values[1]]);
+            let proof = await MerkleProof.compute(v4, [values[1]]);
             expect(proof.nodes.length).toBe(2);
             expect(root.equals(await proof.computeRoot([values[1]]))).toBe(true);
+
+            proof = await MerkleProof.compute(v4, []);
+            expect(proof.nodes.length).toBe(1);
+            expect(root.equals(await proof.computeRoot([]))).toBe(true);
         })().then(done, done.fail);
     });
 
