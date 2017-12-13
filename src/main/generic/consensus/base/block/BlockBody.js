@@ -16,7 +16,7 @@ class BlockBody {
      */
     static getMetadataSize(extraData) {
         return Address.SERIALIZED_SIZE
-            + SerialBuffer.varUintSize(extraData.byteLength)
+            + /*extraDataLength*/ 1
             + extraData.byteLength
             + /*transactionsLength*/ 2;
     }
@@ -28,7 +28,9 @@ class BlockBody {
      */
     constructor(minerAddr, transactions, extraData = new Uint8Array(0)) {
         if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
-        if (!transactions || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
+        if (!Array.isArray(transactions) || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
+        if (!(extraData instanceof Uint8Array) || !NumberUtils.isUint8(extraData.byteLength)) throw 'Malformed extraData';
+
         /** @type {Address} */
         this._minerAddr = minerAddr;
         /** @type {Array.<Transaction>} */
@@ -45,7 +47,7 @@ class BlockBody {
      */
     static unserialize(buf) {
         const minerAddr = Address.unserialize(buf);
-        const extraDataLength = buf.readVarUint();
+        const extraDataLength = buf.readUint8();
         const extraData = buf.read(extraDataLength);
         const numTransactions = buf.readUint16();
         const transactions = new Array(numTransactions);
@@ -62,7 +64,7 @@ class BlockBody {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._minerAddr.serialize(buf);
-        buf.writeVarUint(this._extraData.byteLength);
+        buf.writeUint8(this._extraData.byteLength);
         buf.write(this._extraData);
         buf.writeUint16(this._transactions.length);
         for (const tx of this._transactions) {
@@ -76,7 +78,7 @@ class BlockBody {
      */
     get serializedSize() {
         let size = this._minerAddr.serializedSize
-            + SerialBuffer.varUintSize(this._extraData.byteLength)
+            + /*extraDataLength*/ 1
             + this._extraData.byteLength
             + /*transactionsLength*/ 2;
         for (const tx of this._transactions) {

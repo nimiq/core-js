@@ -5,7 +5,15 @@ class SignatureProof {
      */
     static verifyTransaction(transaction) {
         try {
-            const proof = SignatureProof.unserialize(new SerialBuffer(transaction.proof));
+            const buffer = new SerialBuffer(transaction.proof);
+            const proof = SignatureProof.unserialize(buffer);
+
+            // Reject proof if it is longer than needed.
+            if (buffer.readPos !== buffer.byteLength) {
+                Log.w(SignatureProof, 'Invalid SignatureProof - overlong');
+                return Promise.resolve(false);
+            }
+
             return proof.verify(transaction.sender, transaction.serializeContent());
         } catch (e) {
             Log.w(SignatureProof, `Failed to verify transaction: ${e.message || e}`, e);
