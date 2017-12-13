@@ -115,7 +115,9 @@ describe('MerklePath', () => {
     it('correctly serializes and unserializes proof', (done) => {
         (async () => {
             const proof = await MerklePath.compute(values, values[6]);
-            const proof2 = MerklePath.unserialize(proof.serialize());
+            const serialization = proof.serialize();
+            expect(serialization.byteLength).toBe(proof.serializedSize);
+            const proof2 = MerklePath.unserialize(serialization);
             expect(proof.equals(proof)).toBe(true);
             expect(proof.equals(proof2)).toBe(true);
         })().then(done, done.fail);
