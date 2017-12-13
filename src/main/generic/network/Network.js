@@ -555,9 +555,9 @@ class Network extends Observable {
         }
 
         // XXX This is very spammy!!!
-        Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
-            + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
-            + `(via ${signalChannel.peerAddress})`);
+        // Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
+        //     + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
+        //     + `(via ${signalChannel.peerAddress})`);
     }
 
     /** @type {number} */
