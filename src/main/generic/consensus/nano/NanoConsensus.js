@@ -125,7 +125,7 @@ class NanoConsensus extends Observable {
     _onPeerSynced(peer) {
         // Reset syncPeer if we finished syncing with it.
         if (peer.equals(this._syncPeer)) {
-            Log.v(FullConsensus, `Finished sync with peer ${peer.peerAddress}`);
+            Log.v(NanoConsensus, `Finished sync with peer ${peer.peerAddress}`);
             this._syncPeer = null;
             this.fire('sync-finished', peer.peerAddress);
         }
