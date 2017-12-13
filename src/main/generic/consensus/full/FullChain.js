@@ -385,6 +385,29 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<boolean|TransactionsProof>}
+     */
+    async getTransactionsProof(blockHash, addresses) {
+        const block = await this.getBlock(blockHash);
+        if (!block || !block.isFull()) {
+            return false;
+        }
+
+        const matches = [];
+        const addressesSet = new HashSet();
+        addressesSet.addAll(addresses);
+        for (const transaction of block.transactions) {
+            if (addressesSet.contains(transaction.sender) || addressesSet.contains(transaction.recipient)) {
+                matches.push(transaction);
+            }
+        }
+        const proof = await MerkleProof.compute([block.minerAddr, block.body.extraData, ...block.transactions], matches);
+        return new TransactionsProof(matches, proof);
+    }
+
+    /**
+     * @param {Hash} blockHash
      * @returns {Promise.<boolean|Accounts>}
      */
     _getSnapshot(blockHash) {

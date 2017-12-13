@@ -4,8 +4,8 @@ class MerkleProof {
      * @param {Array.<MerkleProof.Operation>} operations
      */
     constructor(hashes, operations) {
-        if (!Array.isArray(hashes) || !NumberUtils.isUint8(hashes.length)) throw new Error('Malformed nodes');
-        if (!Array.isArray(operations) || !NumberUtils.isUint8(operations.length)) throw new Error('Malformed operations');
+        if (!Array.isArray(hashes) || !NumberUtils.isUint16(hashes.length)) throw new Error('Malformed nodes');
+        if (!Array.isArray(operations) || !NumberUtils.isUint16(operations.length)) throw new Error('Malformed operations');
         /**
          * @type {Array.<*>}
          * @private
@@ -189,7 +189,7 @@ class MerkleProof {
      * @returns {MerkleProof}
      */
     static unserialize(buf) {
-        const opCount = buf.readUint8();
+        const opCount = buf.readUint16();
         const opBitsSize = Math.ceil(opCount / 4);
         const opBits = buf.read(opBitsSize);
 
@@ -199,7 +199,7 @@ class MerkleProof {
             operations.push(op);
         }
 
-        const countNodes = buf.readUint8();
+        const countNodes = buf.readUint16();
         const hashes = [];
         for (let i = 0; i < countNodes; i++) {
             hashes.push(Hash.unserialize(buf));
@@ -213,9 +213,9 @@ class MerkleProof {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._operations.length);
+        buf.writeUint16(this._operations.length);
         buf.write(MerkleProof._compress(this._operations));
-        buf.writeUint8(this._nodes.length);
+        buf.writeUint16(this._nodes.length);
         for (const hash of this._nodes) {
             hash.serialize(buf);
         }
@@ -225,7 +225,7 @@ class MerkleProof {
     /** @type {number} */
     get serializedSize() {
         const opBitsSize = Math.ceil(this._operations.length / 4);
-        return /*counts*/ 2
+        return /*counts*/ 4
             + opBitsSize
             + this._nodes.reduce((sum, node) => sum + node.serializedSize, 0);
     }

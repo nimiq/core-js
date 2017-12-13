@@ -456,4 +456,72 @@ describe('Blockchain', () => {
             });
         })().then(done, done.fail);
     });
+
+    it('correctly creates TransactionsProofs', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const user2 = testBlockchain.users[2];
+            const user3 = testBlockchain.users[3];
+            const user4 = testBlockchain.users[4];
+
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 0, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
+            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 2, user0.privateKey);
+            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 3, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            const blockHash = await block.hash();
+            const bodyHash = block.bodyHash;
+
+            let receivedTxs = new HashSet();
+            // Scenario 1
+            let proof = await testBlockchain.getTransactionsProof(blockHash, [user0.address]);
+            let root = await proof.root();
+            let expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 2
+            proof = await testBlockchain.getTransactionsProof(blockHash, [user1.address]);
+            root = await proof.root();
+            expectedTxs = [tx1];
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 3
+            proof = await testBlockchain.getTransactionsProof(blockHash, [user2.address, user3.address]);
+            root = await proof.root();
+            expectedTxs = [tx2, tx3];
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 4
+            proof = await testBlockchain.getTransactionsProof(blockHash, [user0.address, user4.address]);
+            root = await proof.root();
+            expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
 });

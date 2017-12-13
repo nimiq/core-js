@@ -24,6 +24,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
 
+        // Helper object to keep track of the transactions we're requesting from the peer.
+        this._transactionsRequest = null;
+
         // Helper object to keep track of full blocks we're requesting from the peer.
         this._blockRequest = null;
 
@@ -31,6 +34,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
         peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
+        peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
@@ -370,6 +374,103 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    getTransactions(blockHash, addresses) {
+        return this._synchronizer.push(() => {
+            return this._getTransactions(blockHash, addresses);
+        });
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array<Transaction>>}
+     * @private
+     */
+    async _getTransactions(blockHash, addresses) {
+        Assert.that(this._transactionsRequest === null);
+
+        Log.d(NanoConsensusAgent, `Requesting TransactionsProof for ${addresses} from ${this._peer.peerAddress}`);
+
+        /** @type {Block} */
+        const block = await this._blockchain.getBlock(blockHash);
+        if (!block) {
+            Log.d(NanoConsensusAgent, `Requested block with hash ${blockHash} not found`);
+            return [];
+        }
+
+        return new Promise((resolve, reject) => {
+            this._transactionsRequest = {
+                addresses: addresses,
+                blockHash: blockHash,
+                header: block.header,
+                resolve: resolve,
+                reject: reject
+            };
+
+            // Request AccountsProof from peer.
+            this._peer.channel.getTransactionsProof(blockHash, addresses);
+
+            // Drop the peer if it doesn't send the accounts proof within the timeout.
+            this._timers.setTimeout('getTransactionsProof', () => {
+                this._peer.channel.close('getTransactionsProof timeout');
+                reject(new Error('timeout')); // TODO error handling
+            }, NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {TransactionsProofMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onTransactionsProof(msg) {
+        Log.d(NanoConsensusAgent, `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, transactions=${msg.transactions}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
+
+        // Check if we have requested a transactions proof, reject unsolicited ones.
+        if (!this._transactionsRequest) {
+            Log.w(NanoConsensusAgent, `Unsolicited transactions proof received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear the request timeout.
+        this._timers.clearTimeout('getTransactionsProof');
+
+        const blockHash = this._transactionsRequest.blockHash;
+        /** @type {BlockHeader} */
+        const header = this._transactionsRequest.header;
+        const resolve = this._transactionsRequest.resolve;
+        const reject = this._transactionsRequest.reject;
+
+        // Reset transactionsRequest.
+        this._transactionsRequest = null;
+
+        // Check that the reference block corresponds to the one we requested.
+        if (!blockHash.equals(msg.blockHash)) {
+            Log.w(NanoConsensusAgent, `Received TransactionsProof for invalid reference block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid reference block'));
+            return;
+        }
+
+        // Verify the proof.
+        const proof = msg.proof;
+        if (!header.bodyHash.equals(await proof.root())) {
+            Log.w(NanoConsensusAgent, `Invalid TransactionsProof received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close('Invalid TransactionsProof');
+            reject(new Error('Invalid TransactionsProof'));
+            return;
+        }
+
+        // Return the retrieved transactions.
+        resolve(proof.transactions);
+    }
+
+    /**
      * @param {Hash} hash
      * @returns {Promise.<Block>}
      */
@@ -497,4 +598,5 @@ NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 30;
  * @type {number}
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
+NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT = 1000 * 10;
 Class.register(NanoConsensusAgent);

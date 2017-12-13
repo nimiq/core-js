@@ -168,6 +168,32 @@ class NanoConsensus extends Observable {
     }
 
     /**
+     * @param {Array.<Address>} addresses
+     * @param {Hash} [blockHash]
+     * @returns {Promise.<Array<Transaction>>}
+     */
+    async getTransactions(addresses, blockHash=null) {
+        blockHash = blockHash ? blockHash : this._blockchain.headHash;
+        const agents = this._agents.values().filter(agent =>
+            agent.synced
+            && agent.knowsBlock(blockHash)
+            && !Services.isNanoNode(agent.peer.peerAddress.services)
+        );
+
+        for (const agent of agents) {
+            try {
+                return await agent.getTransactions(blockHash, addresses); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(NanoConsensus, `Failed to retrieve transactions for ${addresses} from ${agent.peer.peerAddress}: ${e}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested account, fail.
+        throw new Error(`Failed to retrieve transactions for ${addresses}`);
+    }
+
+    /**
      * @param {Transaction} transaction
      * @returns {Promise.<boolean>}
      */

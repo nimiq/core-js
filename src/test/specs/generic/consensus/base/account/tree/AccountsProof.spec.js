@@ -75,7 +75,7 @@ describe('AccountsProof', () => {
     });
 
     it('is serializable and unserializable', () => {
-        for (nodes of testNodesArray) {
+        for (const nodes of testNodesArray) {
             const accountsProof1 = new AccountsProof(nodes);
             const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
             const nodesArray = accountsProof2.nodes;
@@ -91,7 +91,7 @@ describe('AccountsProof', () => {
 
     it('must not return an account before verify() has been run', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const accountsProof1 = new AccountsProof(nodes);
                 const address = TestUtils.raw2address(prefixesArray.shift());
 
@@ -102,7 +102,7 @@ describe('AccountsProof', () => {
 
     it('must be able to correctly return an account after verify() has been run', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const accountsProof1 = new AccountsProof(nodes);
                 const address = TestUtils.raw2address(prefixesArray.shift());
 
@@ -116,7 +116,7 @@ describe('AccountsProof', () => {
 
     it('must not verify successfully neither return an account if it contains a tainted AccountTreeNode', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const node = nodes[0]; // get the first node
                 node._account = accountsArray[0]; // change its account to a different one
                 nodes[0] = node; // set it back
@@ -137,7 +137,7 @@ describe('AccountsProof', () => {
 
     it('must not verify successfully if it contains any node before the Root Node', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const fakeAccount = new BasicAccount(42, 31337);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.push(fakeTreeNode);
@@ -156,7 +156,7 @@ describe('AccountsProof', () => {
 
     it('must not verify successfully if it contains a node that is not part of the Tree at the end', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const fakeAccount = new BasicAccount(42, 31337);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.unshift(fakeTreeNode);
@@ -175,7 +175,7 @@ describe('AccountsProof', () => {
 
     it('must not verify successfully neither return the account if it contains a node that is not part of the Tree', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const fakeAccount = new BasicAccount(42, 31337);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.splice(2, 0, fakeTreeNode);
@@ -196,7 +196,7 @@ describe('AccountsProof', () => {
 
     it('must return the correct root hash', (done) => {
         (async () => {
-            for (nodes of testNodesArray) {
+            for (const nodes of testNodesArray) {
                 const accountsProof1 = new AccountsProof(nodes);
                 const rootHash = new Hash(BufferUtils.fromBase64('UfAZwaXYoNdWgxTjefgWClEY/X2J2HzHL5MUq1qfRNI='));
 
@@ -207,14 +207,14 @@ describe('AccountsProof', () => {
     });
 
     it('must return the correct length', () => {
-        for (nodes of testNodesArray) {
+        for (const nodes of testNodesArray) {
             const accountsProof1 = new AccountsProof(nodes);
             expect(accountsProof1.length).toBe(sizesArray.shift());
         }
     });
 
     it('must return the correct nodes array', () => {
-        for (nodes of testNodesArray) {
+        for (const nodes of testNodesArray) {
             const accountsProof1 = new AccountsProof(nodes);
             const hashesArray = accountsProof1.nodes;
             for (let i = 0; i < nodes.length; i++) {

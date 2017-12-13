@@ -1,18 +1,42 @@
 class Subscription {
     /**
-     * @param {boolean} enabled
+     * @param {Array.<Address>} addresses
      */
-    constructor(enabled) {
-        this._enabled = enabled;
+    static fromAddresses(addresses) {
+        return new Subscription(Subscription.Type.ADDRESSES, addresses);
+    }
+
+    /**
+     * @param {Subscription.Type} type
+     * @param {Array.<Address>} addresses
+     */
+    constructor(type, addresses=null) {
+        if (!NumberUtils.isUint8(type)) throw new Error('Invalid type');
+        if (type === Subscription.Type.ADDRESSES
+            && (!Array.isArray(addresses) || !NumberUtils.isUint16(addresses.length)
+            || addresses.some(it => !(it instanceof Address)))) throw new Error('Invalid addresses');
+        this._type = type;
+        this._addresses = new HashSet();
+        if (addresses) {
+            this._addresses.addAll(addresses);
+        }
     }
 
     /**
      * @param {SerialBuffer} buf
-     * @return {Transaction}
+     * @return {Subscription}
      */
     static unserialize(buf) {
-        const enabled = buf.readUint8() === 1;
-        return new Subscription(enabled);
+        const type = /** @type {Subscription.Type} */ buf.readUint8();
+        let addresses = null;
+        if (type === Subscription.Type.ADDRESSES) {
+            addresses = [];
+            const size = buf.readUint16();
+            for (let i=0; i<size; ++i) {
+                addresses.push(Address.unserialize(buf));
+            }
+        }
+        return new Subscription(type, addresses);
     }
 
     /**
@@ -21,13 +45,27 @@ class Subscription {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._enabled ? 1 : 0);
+        buf.writeUint8(this._type);
+        if (this._type === Subscription.Type.ADDRESSES) {
+            buf.writeUint16(this._addresses.length);
+            for (const address of this._addresses) {
+                address.serialize(buf);
+            }
+        }
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return /*enabled*/ 1;
+        let additionalSize = 0;
+        if (this._type === Subscription.Type.ADDRESSES) {
+            additionalSize = /*length*/ 2;
+            for (const address of this._addresses) {
+                additionalSize += address.serializedSize;
+            }
+        }
+        return /*type*/ 1
+            + additionalSize;
     }
 
     /**
@@ -35,7 +73,15 @@ class Subscription {
      * @returns {boolean}
      */
     matchesBlock(block) {
-        return this._enabled;
+        switch (this._type) {
+            case Subscription.Type.NONE:
+                return false;
+            case Subscription.Type.ANY:
+            case Subscription.Type.ADDRESSES:
+                return true;
+            default:
+                throw new Error('Unknown type');
+        }
     }
 
     /**
@@ -43,16 +89,41 @@ class Subscription {
      * @returns {boolean}
      */
     matchesTransaction(transaction) {
-        return this._enabled;
+        switch (this._type) {
+            case Subscription.Type.NONE:
+                return false;
+            case Subscription.Type.ANY:
+                return true;
+            case Subscription.Type.ADDRESSES:
+                return this._addresses.contains(transaction.recipient) || this._addresses.contains(transaction.sender);
+            default:
+                throw new Error('Unknown type');
+        }
     }
 
     /**
      * @returns {string}
      */
     toString() {
-        return `Subscription{enabled=${this._enabled}}`;
+        return `Subscription{type=${this._type}, addresses=${this._addresses}}`;
+    }
+
+    /** @type {Subscription.Type} */
+    get type() {
+        return this._type;
+    }
+
+    /** @type {Array.<Address>} */
+    get addresses() {
+        return this._addresses.values();
     }
 }
-Subscription.NONE = new Subscription(false);
-Subscription.ANY = new Subscription(true);
+/** @enum {number} */
+Subscription.Type = {
+    NONE: 0,
+    ANY: 1,
+    ADDRESSES: 2
+};
+Subscription.NONE = new Subscription(Subscription.Type.NONE);
+Subscription.ANY = new Subscription(Subscription.Type.ANY);
 Class.register(Subscription);
