@@ -1,10 +1,10 @@
-class GetAccountsProofMessage extends Message {
+class GetTransactionsProofMessage extends Message {
     /**
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      */
     constructor(blockHash, addresses) {
-        super(Message.Type.GET_ACCOUNTS_PROOF);
+        super(Message.Type.GET_TRANSACTIONS_PROOF);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
         if (!addresses || !NumberUtils.isUint16(addresses.length)
             || addresses.some(it => !(it instanceof Address))) throw new Error('Malformed addresses');
@@ -15,7 +15,7 @@ class GetAccountsProofMessage extends Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {GetAccountsProofMessage}
+     * @returns {GetTransactionsProofMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
@@ -25,7 +25,7 @@ class GetAccountsProofMessage extends Message {
         for (let i = 0; i < count; i++) {
             addresses.push(Address.unserialize(buf));
         }
-        return new GetAccountsProofMessage(blockHash, addresses);
+        return new GetTransactionsProofMessage(blockHash, addresses);
     }
 
     /**
@@ -62,4 +62,4 @@ class GetAccountsProofMessage extends Message {
         return this._blockHash;
     }
 }
-Class.register(GetAccountsProofMessage);
+Class.register(GetTransactionsProofMessage);

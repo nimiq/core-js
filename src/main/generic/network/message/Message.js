@@ -149,6 +149,8 @@ Message.Type = {
     ACCOUNTS_PROOF:             43,
     GET_ACCOUNTS_TREE_CHUNK:    44,
     ACCOUNTS_TREE_CHUNK:        45,
-    ACCOUNTS_REJECTED:          46
+    ACCOUNTS_REJECTED:          46,
+    GET_TRANSACTIONS_PROOF:     47,
+    TRANSACTIONS_PROOF:         48,
 };
 Class.register(Message);

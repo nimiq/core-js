@@ -274,6 +274,24 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @return {boolean}
+     */
+    getTransactionsProof(blockHash, addresses) {
+        return this._send(new GetTransactionsProofMessage(blockHash, addresses));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {TransactionsProof} proof
+     * @return {boolean}
+     */
+    transactionsProof(blockHash, proof) {
+        return this._send(new TransactionsProofMessage(blockHash, proof));
+    }
+
+    /**
      * @param {PeerChannel} o
      * @return {boolean}
      */
@@ -360,3 +378,5 @@ PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chunk';
 PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
 PeerChannel.Event[Message.Type.ACCOUNTS_REJECTED] = 'accounts-rejected';
+PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF] = 'get-transactions-proof';
+PeerChannel.Event[Message.Type.TRANSACTIONS_PROOF] = 'transactions-proof';

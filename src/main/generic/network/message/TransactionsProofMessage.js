@@ -1,27 +1,27 @@
-class AccountsProofMessage extends Message {
+class TransactionsProofMessage extends Message {
     /**
      * @param {Hash} blockHash
-     * @param {AccountsProof} accountsProof
+     * @param {TransactionsProof} proof
      */
-    constructor(blockHash, accountsProof) {
-        super(Message.Type.ACCOUNTS_PROOF);
+    constructor(blockHash, proof) {
+        super(Message.Type.TRANSACTIONS_PROOF);
         if (!(blockHash instanceof Hash)) throw new Error('Malformed blockHash');
-        if (!(accountsProof instanceof AccountsProof)) throw new Error('Malformed proof');
+        if (!(proof instanceof TransactionsProof)) throw new Error('Malformed proof');
         /** @type {Hash} */
         this._blockHash = blockHash;
-        /** @type {AccountsProof} */
-        this._accountsProof = accountsProof;
+        /** @type {TransactionsProof} */
+        this._proof = proof;
     }
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {AccountsProofMessage}
+     * @returns {TransactionsProofMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
         const blockHash = Hash.unserialize(buf);
-        const accountsProof = AccountsProof.unserialize(buf);
-        return new AccountsProofMessage(blockHash, accountsProof);
+        const proof = TransactionsProof.unserialize(buf);
+        return new TransactionsProofMessage(blockHash, proof);
     }
 
     /**
@@ -32,7 +32,7 @@ class AccountsProofMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         this._blockHash.serialize(buf);
-        this._accountsProof.serialize(buf);
+        this._proof.serialize(buf);
         super._setChecksum(buf);
         return buf;
     }
@@ -41,7 +41,7 @@ class AccountsProofMessage extends Message {
     get serializedSize() {
         return super.serializedSize
             + this._blockHash.serializedSize
-            + this._accountsProof.serializedSize;
+            + this._proof.serializedSize;
     }
 
     /** @type {Hash} */
@@ -49,9 +49,9 @@ class AccountsProofMessage extends Message {
         return this._blockHash;
     }
 
-    /** @type {AccountsProof} */
+    /** @type {TransactionsProof} */
     get proof() {
-        return this._accountsProof;
+        return this._proof;
     }
 }
-Class.register(AccountsProofMessage);
+Class.register(TransactionsProofMessage);

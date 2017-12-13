@@ -36,4 +36,6 @@ MessageFactory.CLASSES[Message.Type.ACCOUNTS_PROOF] = AccountsProofMessage;
 MessageFactory.CLASSES[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = GetAccountsTreeChunkMessage;
 MessageFactory.CLASSES[Message.Type.ACCOUNTS_TREE_CHUNK] = AccountsTreeChunkMessage;
 MessageFactory.CLASSES[Message.Type.ACCOUNTS_REJECTED] = AccountsRejectedMessage;
+MessageFactory.CLASSES[Message.Type.GET_TRANSACTIONS_PROOF] = GetTransactionsProofMessage;
+MessageFactory.CLASSES[Message.Type.TRANSACTIONS_PROOF] = TransactionsProofMessage;
 Class.register(MessageFactory);
