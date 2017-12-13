@@ -79,7 +79,7 @@ class LightConsensus extends Observable {
     _onPeerLeft(peer) {
         // Reset syncPeer if it left during the sync.
         if (peer.equals(this._syncPeer)) {
-            Log.w(FullConsensus, `Peer ${peer.peerAddress} left during sync`);
+            Log.w(LightConsensus, `Peer ${peer.peerAddress} left during sync`);
             this._syncPeer = null;
             this.fire('sync-failed', peer.peerAddress);
         }
@@ -141,7 +141,7 @@ class LightConsensus extends Observable {
     _onPeerSynced(peer) {
         // Reset syncPeer if we finished syncing with it.
         if (peer.equals(this._syncPeer)) {
-            Log.v(FullConsensus, `Finished sync with peer ${peer.peerAddress}`);
+            Log.v(LightConsensus, `Finished sync with peer ${peer.peerAddress}`);
             this._syncPeer = null;
             this.fire('sync-finished', peer.peerAddress);
         }
@@ -153,7 +153,7 @@ class LightConsensus extends Observable {
      * @private
      */
     _onPeerOutOfSync(peer) {
-        Log.w(FullConsensus, `Peer ${peer.peerAddress} out of sync, resyncing`);
+        Log.w(LightConsensus, `Peer ${peer.peerAddress} out of sync, resyncing`);
         this._syncBlockchain();
     }
 
