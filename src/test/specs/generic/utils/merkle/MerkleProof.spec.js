@@ -250,7 +250,9 @@ describe('MerkleProof', () => {
     it('correctly serializes and unserializes proof', (done) => {
         (async () => {
             const proof = await MerkleProof.compute(values, [values[2], values[6]]);
-            const proof2 = MerkleProof.unserialize(proof.serialize());
+            const serialization = proof.serialize();
+            expect(serialization.byteLength).toBe(proof.serializedSize);
+            const proof2 = MerkleProof.unserialize(serialization);
             expect(proof.equals(proof)).toBe(true);
             expect(proof.equals(proof2)).toBe(true);
         })().then(done, done.fail);
