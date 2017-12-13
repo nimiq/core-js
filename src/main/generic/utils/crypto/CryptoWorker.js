@@ -47,16 +47,16 @@ class CryptoWorker {
     /**
      * @param {Uint8Array} pointA
      * @param {Uint8Array} pointB
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async pointsAdd(pointA, pointB) {}
+    pointsAdd(pointA, pointB) {}
 
     /**
-     * @param {Uint8Array} pointA
-     * @param {Uint8Array} pointB
-     * @returns {Promise.<Uint8Array>}
+     * @param {Uint8Array} a
+     * @param {Uint8Array} b
+     * @returns {Uint8Array}
      */
-    async scalarsAdd(a, b) {}
+    scalarsAdd(a, b) {}
 
     /**
      * @param {Uint8Array} privateKey

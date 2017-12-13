@@ -192,8 +192,8 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     }
 
     /**
-     * @param {Uint8Array} pointA
-     * @param {Uint8Array} pointB
+     * @param {Uint8Array} a
+     * @param {Uint8Array} b
      * @returns {Uint8Array}
      */
     scalarsAdd(a, b) {
