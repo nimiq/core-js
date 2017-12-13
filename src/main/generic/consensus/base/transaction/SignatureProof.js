@@ -4,8 +4,13 @@ class SignatureProof {
      * @returns {Promise.<boolean>}
      */
     static verifyTransaction(transaction) {
-        const proof = SignatureProof.unserialize(new SerialBuffer(transaction.proof));
-        return proof.verify(transaction.sender, transaction.serializeContent());
+        try {
+            const proof = SignatureProof.unserialize(new SerialBuffer(transaction.proof));
+            return proof.verify(transaction.sender, transaction.serializeContent());
+        } catch (e) {
+            Log.w(SignatureProof, `Failed to verify transaction: ${e.message || e}`, e);
+            return Promise.resolve(false);
+        }
     }
 
     /**

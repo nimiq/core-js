@@ -3,7 +3,7 @@ class MerklePath {
      * @param {Array.<MerklePathNode>} nodes
      */
     constructor(nodes) {
-        if (!Array.isArray(nodes) || !NumberUtils.isUint16(nodes.length)
+        if (!Array.isArray(nodes) || !NumberUtils.isUint8(nodes.length)
             || nodes.some(it => !(it instanceof MerklePathNode))) throw new Error('Malformed nodes');
         /**
          * @type {Array.<MerklePathNode>}
@@ -107,7 +107,7 @@ class MerklePath {
      * @returns {MerklePath}
      */
     static unserialize(buf) {
-        const count = buf.readUint16();
+        const count = buf.readUint8();
         const leftBitsSize = Math.ceil(count / 8);
         const leftBits = buf.read(leftBitsSize);
 
@@ -126,7 +126,7 @@ class MerklePath {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint16(this._nodes.length);
+        buf.writeUint8(this._nodes.length);
         buf.write(MerklePath._compress(this._nodes));
 
         for (const node of this._nodes) {
@@ -138,7 +138,7 @@ class MerklePath {
     /** @type {number} */
     get serializedSize() {
         const leftBitsSize = Math.ceil(this._nodes.length / 8);
-        return /*count*/ 2
+        return /*count*/ 1
             + leftBitsSize
             + this._nodes.reduce((sum, node) => sum + node.hash.serializedSize, 0);
     }

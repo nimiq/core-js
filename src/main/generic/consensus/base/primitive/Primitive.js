@@ -8,8 +8,8 @@ class Primitive {
      * @param {?number} length
      */
     constructor(arg, type, length) {
-        if (type && !(arg instanceof type)) throw 'Primitive: Invalid type';
-        if (length && arg.length && arg.length !== length) throw 'Primitive: Invalid length';
+        if (type && !(arg instanceof type)) throw new Error('Primitive: Invalid type');
+        if (length && arg.length && arg.length !== length) throw new Error('Primitive: Invalid length');
         this._obj = arg;
     }
 
