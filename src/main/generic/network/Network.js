@@ -25,15 +25,15 @@ class Network extends Observable {
 
     /**
      * @param {IBlockchain} blockchain
-     * @param {Services} services
+     * @param {NetworkConfig} config
      * @return {Promise.<Network>}
      */
-    constructor(blockchain, services) {
+    constructor(blockchain, config) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
-        /** @type {Services} */
-        this._services = services;
+        /** @type {NetworkConfig} */
+        this._config = config;
         return this._init();
     }
 
@@ -83,12 +83,12 @@ class Network extends Observable {
         this._bytesReceived = 0;
 
         /** @type {WebSocketConnector} */
-        this._wsConnector = new WebSocketConnector(this._services);
+        this._wsConnector = new WebSocketConnector(this._config);
         this._wsConnector.on('connection', conn => this._onConnection(conn));
         this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
 
         /** @type {WebRtcConnector} */
-        this._rtcConnector = await new WebRtcConnector(this._services);
+        this._rtcConnector = await new WebRtcConnector(this._config);
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
@@ -98,7 +98,7 @@ class Network extends Observable {
          * @type {PeerAddresses}
          * @private
          */
-        this._addresses = new PeerAddresses(this._services);
+        this._addresses = new PeerAddresses(this._config);
 
         // Relay new addresses to peers.
         this._addresses.on('added', addresses => {
@@ -266,7 +266,7 @@ class Network extends Observable {
         channel.on('fail', reason => this._onFail(channel, reason));
 
         // Create network agent.
-        const agent = new NetworkAgent(this._blockchain, this._addresses, this._services, channel);
+        const agent = new NetworkAgent(this._blockchain, this._addresses, this._config, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
         agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
 
@@ -507,7 +507,7 @@ class Network extends Observable {
         }
 
         // Can be undefined for non-rtc nodes.
-        const mySignalId = NetworkConfig.myPeerAddress(this._services).signalId;
+        const mySignalId = this._config.peerAddress.signalId;
 
         // Discard signals from myself.
         if (msg.senderId.equals(mySignalId)) {
@@ -575,6 +575,11 @@ class Network extends Observable {
         // Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
         //     + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
         //     + `(via ${signalChannel.peerAddress})`);
+    }
+
+    /** @type {PeerAddress} */
+    get myPeerAddress() {
+        return this._config.peerAddress;
     }
 
     /** @type {number} */

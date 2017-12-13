@@ -1,8 +1,9 @@
 class Consensus {
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<FullConsensus>}
      */
-    static async full() {
+    static async full(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {ConsensusDB} */
@@ -13,18 +14,19 @@ class Consensus {
         const blockchain = await FullChain.getPersistent(db, accounts);
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
-        /** @type {Services} */
-        const services = new Services(Services.FULL, Services.FULL);
+        /** @type {NetworkConfig} */
+        const networkConfig = netconfig || new NetworkConfig();
         /** @type {Network} */
-        const network = await new Network(blockchain, services);
+        const network = await new Network(blockchain, networkConfig);
 
         return new FullConsensus(blockchain, mempool, network);
     }
 
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<LightConsensus>}
      */
-    static async light() {
+    static async light(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {ConsensusDB} */
@@ -35,28 +37,29 @@ class Consensus {
         const blockchain = await LightChain.getPersistent(db, accounts);
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
-        /** @type {Services} */
-        const services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
+        /** @type {NetworkConfig} */
+        const networkConfig = netconfig || new NetworkConfig(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
         /** @type {Network} */
-        const network = await new Network(blockchain, services);
+        const network = await new Network(blockchain, networkConfig);
 
         return new LightConsensus(blockchain, mempool, network);
     }
 
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<NanoConsensus>}
      */
-    static async nano() {
+    static async nano(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {NanoChain} */
         const blockchain = await new NanoChain();
         /** @type {NanoMempool} */
         const mempool = new NanoMempool();
-        /** @type {Services} */
-        const services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
+        /** @type {NetworkConfig} */
+        const networkConfig = netconfig || new NetworkConfig(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
         /** @type {Network} */
-        const network = await new Network(blockchain, services);
+        const network = await new Network(blockchain, networkConfig);
 
         return new NanoConsensus(blockchain, mempool, network);
     }

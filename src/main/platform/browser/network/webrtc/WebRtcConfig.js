@@ -1,5 +1,8 @@
 class WebRtcConfig {
-    static async get() {
+    /**
+     * @param {NetworkConfig} netconfig
+     */
+    static async get(netconfig) {
         // Initialize singleton.
         if (!WebRtcConfig._config) {
             // If browser does not support WebRTC, simply return empty config.
@@ -17,7 +20,7 @@ class WebRtcConfig {
 
             // Configure our peer address.
             const signalId = await WebRtcConfig.mySignalId();
-            NetworkConfig.configurePeerAddress(signalId);
+            netconfig.signalId = signalId;
         }
 
         return WebRtcConfig._config;

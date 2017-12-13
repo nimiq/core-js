@@ -347,7 +347,7 @@
         }
 
         _networkChanged() {
-            this._netPeerAddress.innerText = Nimiq.NetworkConfig.myPeerAddress();
+            this._netPeerAddress.innerText = $.network.myPeerAddress;
             this._netPeerCount.innerText = $.network.peerCount;
             this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
             this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;

@@ -1,38 +1,66 @@
 class NetworkConfig {
-    static myPeerAddress(services) {
-        if (!NetworkConfig._myHost || !NetworkConfig._myPort) {
-            throw 'PeerAddress is not configured.';
-        }
+    /**
+     * @constructor
+     * @param {string} host
+     * @param {number} port
+     * @param {string} key
+     * @param {string} cert
+     * @param {Services} [services]
+     */
+    constructor(host, port, key, cert, services) {
+        /** @type {Services} */
+        this._services = services || new Services(Services.FULL, Services.FULL);
 
-        return new WsPeerAddress(
-            services.provided, Time.now(), NetAddress.UNSPECIFIED,
-            NetworkConfig._myHost, NetworkConfig._myPort);
+        /** @type {string} */
+        this._host = host;
+        /** @type {number} */
+        this._port = port;
+
+        /** @type {string} */
+        this._key = key;
+        /** @type {string} */
+        this._cert = cert;
     }
 
-    // Used for filtering peer addresses by protocols.
+    /**
+     * @returns {PeerAddress}
+     */
+    get peerAddress() {
+        return new WsPeerAddress(
+            this._services.provided, Time.now(), NetAddress.UNSPECIFIED, this._host, this._port);
+    }
+
+    /**
+     * @returns {Services}
+     */
+    get services() {
+        return this._services;
+    }
+
+    /**
+     * @returns {{key: string, cert: string}}
+     */
+    get sslConfig() {
+        return {
+            key: this._key,
+            cert: this._cert
+        };
+    }
+
+    /**
+     * Used for filtering peer addresses by protocols.
+     * @returns {number}
+     */
     static myProtocolMask() {
         return Protocol.WS;
     }
 
+    /**
+     * @param {number} protocol
+     * @returns {boolean}
+     */
     static canConnect(protocol) {
         return protocol === Protocol.WS;
-    }
-
-    static configurePeerAddress(host, port) {
-        NetworkConfig._myHost = host;
-        NetworkConfig._myPort = port;
-    }
-
-    static configureSSL(key, cert) {
-        NetworkConfig._myKey = key;
-        NetworkConfig._myCert = cert;
-    }
-
-    static getSSLConfig() {
-        return {
-            key : NetworkConfig._myKey,
-            cert: NetworkConfig._myCert
-        };
     }
 }
 Class.register(NetworkConfig);
