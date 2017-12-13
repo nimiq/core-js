@@ -5,6 +5,36 @@ describe('BlockInterlink', () => {
     const blockHashes = [hash1, hash2];
     const blockInterlink1 = new BlockInterlink(blockHashes);
 
+    const hashes = [
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2),
+        Hash.fromBase64(Dummy.hash3),
+        Hash.fromBase64(Dummy.hash1),
+        Hash.fromBase64(Dummy.hash2)
+    ];
+    const longInterlink = new BlockInterlink(hashes);
+
     it('must have a well defined blockHashes array', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
@@ -26,11 +56,25 @@ describe('BlockInterlink', () => {
     });
 
     it('is serializable and unserializable', (done) => {
-        const blockInterlink2 = BlockInterlink.unserialize(blockInterlink1.serialize());
+        let buf = blockInterlink1.serialize();
+        const blockInterlink2 = BlockInterlink.unserialize(buf);
+        expect(buf.readPos).toBe(buf.buffer.byteLength);
+        expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
+
+        buf = longInterlink.serialize();
+        const longInterlink2 = BlockInterlink.unserialize(buf);
+        expect(buf.readPos).toBe(buf.buffer.byteLength);
+        expect(longInterlink.equals(longInterlink2)).toBe(true);
+
         (async () => {
-            expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
             expect((await blockInterlink1.hash()).equals(await blockInterlink2.hash())).toBe(true);
+            expect((await longInterlink.hash()).equals(await longInterlink2.hash())).toBe(true);
         })().then(done, done.fail);
+    });
+
+    it('has the correct serialized size', () => {
+        expect(blockInterlink1.serializedSize).toBe(1 + 1 + blockHashes.length * Crypto.hashSize);
+        expect(longInterlink.serializedSize).toBe(1 + 4 + hashes.length * Crypto.hashSize);
     });
 
     it('must return the correct root hash', (done) => {

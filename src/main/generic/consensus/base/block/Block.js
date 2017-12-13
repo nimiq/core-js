@@ -340,7 +340,10 @@ class Block {
         // Exception: The genesis block has an empty interlink, its successor (and all other blocks) contain the genesis hash.
         const targetHeight = BlockUtils.getTargetHeight(this.target);
         if (depth === 0 && targetHeight === nextTargetHeight) {
-            return this.interlink.length > 0 ? this.interlink : new BlockInterlink([Block.GENESIS.HASH]);
+            const hashes = this.interlink.length > 0 ? this.interlink.hashes : [Block.GENESIS.HASH];
+            return nextVersion === BlockHeader.Version.LUNA_V1
+                ? new BlockInterlinkLegacy(hashes)
+                : new BlockInterlink(hashes);
         }
 
         // The interlink changes, start constructing a new one.
