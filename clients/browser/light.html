@@ -190,14 +190,6 @@
         <div class="info-block" id="mplTransactions"></div>
         <hr/>
     </div>
-
-    <div class="info">
-        <div class="info-title">Block History</div>
-        <hr/>
-
-        <div class="info-block" id="blockHistory"></div>
-        <hr/>
-    </div>
 </div>
 
 <script type="text/javascript">
@@ -344,10 +336,6 @@
             /** @type {HTMLElement} */
             this._mnrStartBtn = document.querySelector('#mnrStartBtn');
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
-
-            // Block history
-            /** @type {HTMLElement} */
-            this._blockHistory = document.querySelector('#blockHistory');
 
             // Init values.
             this._headChanged($.blockchain.head);
