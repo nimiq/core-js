@@ -7,15 +7,40 @@
     "destination": "./dist/doc",
     "plugins": [
         {
-            "name": "esdoc-standard-plugin",
+            "name": "esdoc-lint-plugin"
+        },
+        {
+            "name": "esdoc-coverage-plugin"
+        },
+        {
+            "name": "esdoc-accessor-plugin",
             "option": {
-                "test": {
-                    "source": "./src/test/"
-                },
-                "manual": {"files": []},
-                "brand": {},
-                "unexportedIdentifier": {"enable": true},
-                "accessor": {"access": ["public", "protected"], "autoPrivate": true}
+                "access": [
+                    "public",
+                    "protected"
+                ],
+                "autoPrivate": true
+            }
+        },
+        {
+            "name": "esdoc-type-inference-plugin"
+        },
+        {
+            "name": "esdoc-undocumented-identifier-plugin"
+        },
+        {
+            "name": "esdoc-unexported-identifier-plugin",
+            "option": {
+                "enable": true
+            }
+        },
+        {
+            "name": "esdoc-publish-html-plugin"
+        },
+        {
+            "name": "esdoc-integrate-test-plugin",
+            "option": {
+                "source": "./src/test/"
             }
         }
     ]
