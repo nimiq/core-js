@@ -12,13 +12,11 @@
                 "test": {
                     "source": "./src/test/"
                 },
+                "manual": {"files": []},
+                "brand": {},
                 "unexportedIdentifier": {"enable": true},
                 "accessor": {"access": ["public", "protected"], "autoPrivate": true}
             }
-        },
-        {
-            "name": "esdoc-plugin-transform-html",
-            "option": "./src/doc/transform.js"
         }
     ]
 }
