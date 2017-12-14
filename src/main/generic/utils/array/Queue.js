@@ -16,9 +16,14 @@ class Queue {
         return this._queue.shift();
     }
 
+    /**
+     * @param {*} value
+     * @return {number}
+     */
     indexOf(value) {
-        for (let i = 0; i <= this._queue.length; ++i) {
-            if (this._fnHash(value) === this._fnHash(this._queue[i])) {
+        const hash = this._fnHash(value);
+        for (let i = 0; i < this._queue.length; ++i) {
+            if (hash === this._fnHash(this._queue[i])) {
                 return i;
             }
         }
@@ -32,6 +37,18 @@ class Queue {
         }
     }
 
+    /**
+     * @param {number} count
+     * @return {Array}
+     */
+    dequeueMulti(count) {
+        return this._queue.splice(0, count);
+    }
+
+    /**
+     * @param {*} value
+     * @return {Array}
+     */
     dequeueUntil(value) {
         const index = this.indexOf(value);
         if (index > -1) {
@@ -48,6 +65,7 @@ class Queue {
         return this._queue;
     }
 
+    /** @type {number} */
     get length() {
         return this._queue.length;
     }

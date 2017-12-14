@@ -41,6 +41,11 @@ class BaseConsensusAgent extends Observable {
         /** @type {Timers} */
         this._timers = new Timers();
 
+        // Queue of transaction inv vectors waiting to be send out
+        /** @type {Queue.<InvVector>} */
+        this._waitingInvVectors = new Queue();
+        this._timers.setInterval('invVectors', () => this._sendWaitingInvVectors(), BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL);
+
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
         peer.channel.on('block', msg => this._onBlock(msg));
@@ -81,12 +86,20 @@ class BaseConsensusAgent extends Observable {
         }
 
         // Relay block to peer.
-        this._peer.channel.inv([vector]);
+        this._peer.channel.inv([vector, ...this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT - 1)]);
 
         // Assume that the peer knows this block now.
         this._knownObjects.add(vector);
 
         return true;
+    }
+
+    _sendWaitingInvVectors() {
+        const invVectors = this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT);
+        if (invVectors.length > 0) {
+            this._peer.channel.inv(invVectors);
+            Log.v(BaseConsensusAgent, `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
+        }
     }
 
     /**
@@ -108,8 +121,8 @@ class BaseConsensusAgent extends Observable {
             return false;
         }
 
-        // Relay transaction to peer.
-        this._peer.channel.inv([vector]);
+        // Relay transaction to peer later.
+        this._waitingInvVectors.enqueue(vector);
 
         // Assume that the peer knows this transaction now.
         this._knownObjects.add(vector);
@@ -144,6 +157,7 @@ class BaseConsensusAgent extends Observable {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
+            this._waitingInvVectors.remove(vector);
         }
 
         // Check which of the advertised objects we know
@@ -633,4 +647,9 @@ BaseConsensusAgent.REQUEST_THROTTLE = 500;
  * @type {number}
  */
 BaseConsensusAgent.REQUEST_TIMEOUT = 1000 * 10;
+/**
+ * Time interval (ms) to wait between sending out transactions.
+ * @type {number}
+ */
+BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = 5000;
 Class.register(BaseConsensusAgent);
