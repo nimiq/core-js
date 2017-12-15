@@ -7,6 +7,7 @@
 /clients/nodejs/node_modules
 /clients/nodejs/database
 /clients/nodejs/full-consensus
+/clients/nodejs/light-consensus
 /clients/nodejs/wallet
 /clients/nodejs/localhost.*
 /dist/nimiq*
