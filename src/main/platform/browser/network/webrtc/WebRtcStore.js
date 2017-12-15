@@ -1,6 +1,6 @@
 class WebRtcStore {
     /**
-     * @returns {Promise.<WalletStore>}
+     * @returns {Promise.<WebRtcStore>}
      */
     constructor() {
         this._jdb = new JDB.JungleDB('webrtc', WebRtcStore.VERSION);
@@ -8,7 +8,7 @@ class WebRtcStore {
     }
 
     /**
-     * @returns {Promise.<WalletStore>}
+     * @returns {Promise.<WebRtcStore>}
      * @private
      */
     async _init() {
