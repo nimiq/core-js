@@ -465,7 +465,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             if (vectors.length >= BaseInventoryMessage.VECTORS_MAX_COUNT) {
                 this._peer.channel.inv(vectors);
                 vectors = [];
-                await new Promise((resolve) => window.setTimeout(FullConsensusAgent.MEMPOOL_THROTTLE, resolve));
+                await new Promise((resolve) => setTimeout(resolve, FullConsensusAgent.MEMPOOL_THROTTLE));
             }
         }
 
