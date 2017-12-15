@@ -9,7 +9,7 @@ class Consensus {
         if (netconfig) {
             netconfig.services.type = Services.FULL;
         } else {
-            netconfig = new NetworkConfig();
+            netconfig = await NetworkConfig.getPersistent();
         }
 
         /** @type {ConsensusDB} */
@@ -36,7 +36,7 @@ class Consensus {
         if (netconfig) {
             netconfig.services.type = Services.LIGHT;
         } else {
-            netconfig = new NetworkConfig(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
+            netconfig = await NetworkConfig.getPersistent(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
         }
 
         /** @type {ConsensusDB} */
@@ -63,7 +63,7 @@ class Consensus {
         if (netconfig) {
             netconfig.services.type = Services.NANO;
         } else {
-            netconfig = new NetworkConfig(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
+            netconfig = await NetworkConfig.getPersistent(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
         }
 
         /** @type {NanoChain} */

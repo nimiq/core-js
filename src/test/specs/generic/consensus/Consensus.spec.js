@@ -1,10 +1,6 @@
 if (PlatformUtils.isBrowser()) {
     describe('Consensus', () => {
 
-        beforeAll(() => {
-            NetworkConfig.configurePeerAddress(new SignalId(new Uint8Array(SignalId.SERIALIZED_SIZE)));
-        });
-
         it('can instantiate a nano consensus', (done) => {
             (async () => {
                 const consensus = await Consensus.nano();

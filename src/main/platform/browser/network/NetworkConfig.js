@@ -1,12 +1,46 @@
 class NetworkConfig {
     /**
-     * @constructor
+     * Create a NetworkConfig with persistent storage backend.
      * @param {Services} [services]
-     * @param {SignalId} [signalId]
+     * @returns {Promise.<NetworkConfig>} A NetworkConfig object. If the persisted storage already stored a NetworkConfig before, this will be reused.
      */
-    constructor(services, signalId) {
+    static async getPersistent(services) {
+        services = services || new Services(Services.FULL, Services.FULL);
+        const db = await new WebRtcStore();
+        let keys = await db.get('keys');
+        if (!keys) {
+            keys = await KeyPair.generate();
+            await db.put('keys', keys);
+        }
+        await db.close();
+        const signalId = await keys.publicKey.toSignalId();
+        return new NetworkConfig(services, keys, signalId);
+    }
+
+    /**
+     * Create a NetworkConfig that will lose its data after this session.
+     * @param {Services} [services]
+     * @returns {Promise.<NetworkConfig>} Newly created NetworkConfig
+     */
+    static async createVolatile(services) {
+        services = services || new Services(Services.FULL, Services.FULL);
+        keys = await KeyPair.generate();
+        const signalId = await keys.publicKey.toSignalId();
+        return new NetworkConfig(services, keys, signalId);
+    }
+
+    /**
+     * @constructor
+     * @param {Services} services
+     * @param {KeyPair} keyPair
+     * @param {SignalId} signalId
+     */
+    constructor(services, keyPair, signalId) {
         /** @type {Services} */
-        this._services = services || new Services(Services.FULL, Services.FULL);
+        this._services = services;
+        /** @type {KeyPair} */
+        this._keyPair = keyPair;
+
         /** @type {SignalID} */
         this._signalId = signalId;
     }
@@ -21,13 +55,9 @@ class NetworkConfig {
                 /*id*/ NumberUtils.randomUint64());
         }
 
-        if (!this._signalId) {
-            throw 'PeerAddress is not configured.';
-        }
-
         return new RtcPeerAddress(
             this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
-            signalId, /*distance*/ 0);
+            this._signalId, /*distance*/ 0);
     }
 
     /**
@@ -38,10 +68,27 @@ class NetworkConfig {
     }
 
     /**
-     * @param {SignalId} signalId
+     * @returns {{iceServers: Array.<{urls: string}>}|{}}
      */
-    set signalId(signalId) {
-        this._signalId = signalId;
+    get webRtcConfig() {
+        // If browser does not support WebRTC, simply return empty config.
+        if (!PlatformUtils.supportsWebRTC()) {
+            return {};
+        }
+
+        return {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.nimiq-network.com:19302' }
+            ]
+        };
+    }
+
+    /**
+     * @returns {KeyPair}
+     */
+    get keyPair() {
+        return this._keyPair;
     }
 
     /**
