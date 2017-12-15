@@ -326,7 +326,7 @@ class NetworkAgent extends Observable {
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout(`ping_${nonce}`, () => {
             this._timers.clearTimeout(`ping_${nonce}`);
-            this._channel.close('ping timeout');
+            this._channel.fail('ping timeout');
         }, NetworkAgent.PING_TIMEOUT);
     }
 

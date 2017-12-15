@@ -66,6 +66,13 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {string} [reason]
+     */
+    fail(reason) {
+        this._conn.fail(reason);
+    }
+
+    /**
      * @param {PeerAddress} peerAddress
      * @param {Hash} headHash
      * @return {boolean}

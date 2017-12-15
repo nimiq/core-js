@@ -166,6 +166,15 @@ class PeerConnection extends Observable {
     }
 
     /**
+     * @param {string} [reason]
+     */
+    fail(reason) {
+        Log.w(PeerConnection, `Network failure on peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        this._close();
+        this.fire('fail', reason, this);
+    }
+
+    /**
      * @param {PeerConnection} o
      * @return {boolean}
      */

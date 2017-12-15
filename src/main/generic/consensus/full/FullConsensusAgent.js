@@ -465,6 +465,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             if (vectors.length >= BaseInventoryMessage.VECTORS_MAX_COUNT) {
                 this._peer.channel.inv(vectors);
                 vectors = [];
+                await new Promise((resolve) => window.setTimeout(FullConsensusAgent.MEMPOOL_THROTTLE, resolve));
             }
         }
 
@@ -501,4 +502,9 @@ FullConsensusAgent.MEMPOOL_DELAY_MIN = 1000 * 2; // 2 seconds
  * @type {number}
  */
 FullConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 20; // 20 seconds
+/**
+ * Time {ms} to wait between sending full inv vectors of transactions during Mempool request
+ * @type {number}
+ */
+FullConsensusAgent.MEMPOOL_THROTTLE = 1000;
 Class.register(FullConsensusAgent);

@@ -260,6 +260,7 @@ class Network extends Observable {
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
         channel.on('ban', reason => this._onBan(channel, reason));
+        channel.on('fail', reason => this._onFail(channel, reason));
 
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, channel);
@@ -365,7 +366,7 @@ class Network extends Observable {
     _onError(peerAddress, reason) {
         Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
-        this._addresses.unreachable(peerAddress);
+        this._addresses.failure(peerAddress);
 
         this._checkPeerCount();
     }
@@ -410,7 +411,7 @@ class Network extends Observable {
                 // Treat connections closed pre-handshake by remote as failed attempts.
                 Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
                 if (closedByRemote) {
-                    this._addresses.unreachable(channel.peerAddress);
+                    this._addresses.failure(channel.peerAddress);
                 } else {
                     this._addresses.disconnected(null, channel.peerAddress, false);
                 }
@@ -438,6 +439,19 @@ class Network extends Observable {
             this._addresses.ban(channel.peerAddress);
         } else {
             // TODO ban netAddress
+        }
+    }
+
+    /**
+     * This peer channel had a network failure.
+     * @param {PeerChannel} channel
+     * @param {string|*} [reason]
+     * @returns {void}
+     * @private
+     */
+    _onFail(channel, reason) {
+        if (channel.peerAddress) {
+            this._addresses.failure(channel.peerAddress);
         }
     }
 

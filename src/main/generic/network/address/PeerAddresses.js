@@ -472,11 +472,11 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * Called when a connection attempt to this peerAddress has failed.
+     * Called when a network connection to this peerAddress has failed.
      * @param {PeerAddress} peerAddress
      * @returns {void}
      */
-    unreachable(peerAddress) {
+    failure(peerAddress) {
         const peerAddressState = this._store.get(peerAddress);
         if (!peerAddressState) {
             return;
