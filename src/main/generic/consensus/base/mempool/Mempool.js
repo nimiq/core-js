@@ -161,15 +161,37 @@ class Mempool extends Observable {
     }
 
     /**
+     * @param {number} [maxSize]
      * @returns {Array.<Transaction>}
      */
-    getTransactions() {
+    getTransactions(maxSize=Infinity) {
         const transactions = [];
-        for (const set of this._transactionSetByAddress.values()) {
+        let size = 0;
+        /** @type {MempoolTransactionSet} */
+        let largeSet = null;
+        for (const set of this._transactionSetByAddress.values().sort((a, b) => a.compare(b))) {
+            const setSize = set.serializedSize;
+            if (size >= maxSize) break;
+            if (size + setSize > maxSize) {
+                largeSet = largeSet || set;
+                continue;
+            }
+
             transactions.push(...set.transactions);
+            size += setSize;
         }
 
-        transactions.sort((a, b) => a.compareAccountOrder(b));
+        if (size < maxSize && largeSet) {
+            for (const transaction of largeSet.transactions) {
+                const txSize = transaction.serializedSize;
+                if (size >= maxSize) break;
+                if (size + txSize > maxSize) continue;
+
+                transactions.push(transaction);
+                size += txSize;
+            }
+        }
+
         return transactions;
     }
 
@@ -177,17 +199,7 @@ class Mempool extends Observable {
      * @param {number} maxSize
      */
     getTransactionsForBlock(maxSize) {
-        const transactions = [];
-        let size = 0;
-        for (const set of this._transactionSetByAddress.values().sort((a, b) => a.compare(b))) {
-            const setSize = set.serializedSize;
-            if (size >= maxSize) break;
-            if (size + setSize > maxSize) continue;
-
-            transactions.push(...set.transactions);
-            size += setSize;
-        }
-
+        const transactions = this.getTransactions(maxSize);
         transactions.sort((a, b) => a.compareBlockOrder(b));
         return transactions;
     }

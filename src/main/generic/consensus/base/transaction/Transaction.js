@@ -135,6 +135,19 @@ class Transaction {
         return true;
     }
 
+    /** @type {number} */
+    get serializedSize() {
+        throw new Error('Getter needs to be overwritten by subclasses');
+    }
+
+    /**
+     * @param {?SerialBuffer} [buf]
+     * @return {SerialBuffer}
+     */
+    serialize(buf) {
+        throw new Error('Method needs to be overwritten by subclasses');
+    }
+
     /**
      * @return {Promise.<Hash>}
      */
