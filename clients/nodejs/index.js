@@ -36,56 +36,76 @@ Nimiq.NetworkConfig.configureSSL(key, cert);
 
 const TAG = 'Node';
 
+const $ = {};
+
 (async () => {
-    const consensus = await Nimiq.Consensus.full();
+    $.consensus = await Nimiq.Consensus.full();
 
-    const blockchain = consensus.blockchain;
-    const mempool = consensus.mempool;
-    const network = consensus.network;
+    $.blockchain = $.consensus.blockchain;
+    $.accounts = $.blockchain.accounts;
+    $.mempool = $.consensus.mempool;
+    $.network = $.consensus.network;
 
-    const wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
-    Nimiq.Log.i(TAG, () => `Wallet initialized for address ${wallet.address.toUserFriendlyAddress()}.`);
+    $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
+    Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
+                  + ` Balance: ${Nimiq.Policy.satoshisToCoins((await $.accounts.get($.wallet.address)).balance)} NIM`);
 
-    const miner = new Nimiq.Miner(blockchain, mempool, wallet.address);
+    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.wallet.address);
 
-    Nimiq.Log.i(TAG, () => `Blockchain: height=${blockchain.height}, totalWork=${blockchain.totalWork}, headHash=${blockchain.headHash.toBase64()}`);
+    Nimiq.Log.i(TAG, () => `Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
-    blockchain.on('head-changed', (head) => {
-        if (consensus.established || head.height % 100 === 0) {
-            Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
+    $.blockchain.on('head-changed', (head) => {
+        if ($.consensus.established || head.height % 100 === 0) {
+        Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
         }
     });
 
-    network.on('peer-joined', (peer) => {
+    $.network.on('peer-joined', (peer) => {
         Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
 
     if (!passive) {
-        network.connect();
+        $.network.connect();
     }
 
     if (minerOptions) {
-        consensus.on('established', () => miner.startWork());
-        consensus.on('lost', () => miner.stopWork());
+        $.consensus.on('established', () => $.miner.startWork());
+        $.consensus.on('lost', () => $.miner.stopWork());
         if (typeof minerOptions === 'number') {
-            miner.threads = minerOptions;
+            $.miner.threads = minerOptions;
         } else if (typeof minerOptions === 'string') {
             const margs = minerOptions.split(':');
-            miner.threads = parseInt(margs[0]);
-            if (margs.length >= 2) { miner.throttleAfter = parseInt(margs[1]) * miner.threads; }
-            if (margs.length >= 3) { miner.throttleWait = parseInt(margs[2]); }
+            $.miner.threads = parseInt(margs[0]);
+            if (margs.length >= 2) { $.miner.throttleAfter = parseInt(margs[1]) * $.miner.threads; }
+            if (margs.length >= 3) { $.miner.throttleWait = parseInt(margs[2]); }
         }
         if (passive) {
-            miner.startWork();
+            $.miner.startWork();
         }
     }
 
-    consensus.on('established', () => {
+    $.consensus.on('established', () => {
         Nimiq.Log.i(TAG, 'Blockchain consensus established');
     });
 
-    miner.on('block-mined', (block) => {
+    $.miner.on('block-mined', (block) => {
         Nimiq.Log.i(TAG, `Block mined: ${block.header}`);
+    });
+
+    // Output regular statistics
+    const hashrates      = [];
+    const outputInterval = 10; // Seconds
+
+    $.miner.on('hashrate-changed', async (hashrate) => {
+        hashrates.push(hashrate);
+
+        if(hashrates.length >= outputInterval) {
+            let sum = hashrates.reduce((acc, val) => acc += val);
+            Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(Math.log10(hashrates.length)).padStart(7)} H/s`
+                        + ` - Balance: ${Nimiq.Policy.satoshisToCoins((await $.accounts.get($.wallet.address)).balance)} NIM`
+                        + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
+            hashrates.length = 0;
+        }
     });
 })().catch(e => {
     console.error(e);
