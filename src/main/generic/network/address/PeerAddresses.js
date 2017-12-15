@@ -276,7 +276,7 @@ class PeerAddresses extends Observable {
      */
     _add(channel, peerAddress) {
         // Ignore our own address.
-        if (this._netconfig.peerAddress.equals(peerAddress)) {
+        if (this._netconfig.myPeerAddress.equals(peerAddress)) {
             return false;
         }
 

@@ -6,10 +6,12 @@ class Consensus {
     static async full(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig (FULL is the default type).
         if (netconfig) {
             netconfig.services.type = Services.FULL;
         } else {
-            netconfig = await NetworkConfig.getPersistent();
+            netconfig = await NetworkConfig.getPlatformDefault();
         }
 
         /** @type {ConsensusDB} */
@@ -33,10 +35,12 @@ class Consensus {
     static async light(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig.
         if (netconfig) {
             netconfig.services.type = Services.LIGHT;
         } else {
-            netconfig = await NetworkConfig.getPersistent(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
+            netconfig = await NetworkConfig.getPlatformDefault(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
         }
 
         /** @type {ConsensusDB} */
@@ -60,10 +64,12 @@ class Consensus {
     static async nano(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
 
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig.
         if (netconfig) {
             netconfig.services.type = Services.NANO;
         } else {
-            netconfig = await NetworkConfig.getPersistent(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
+            netconfig = await NetworkConfig.getPlatformDefault(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
         }
 
         /** @type {NanoChain} */

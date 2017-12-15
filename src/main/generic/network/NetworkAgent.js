@@ -120,7 +120,7 @@ class NetworkAgent extends Observable {
         // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(this._netconfig.peerAddress, this._blockchain.headHash)) {
+        if (!this._channel.version(this._netconfig.myPeerAddress, this._blockchain.headHash)) {
 
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
@@ -232,7 +232,7 @@ class NetworkAgent extends Observable {
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([this._netconfig.peerAddress]),
+            () => this._channel.addr([this._netconfig.myPeerAddress]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Tell listeners about the new peer that connected.
@@ -247,7 +247,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getAddr(NetworkConfig.myProtocolMask(), this._netconfig.services.accepted);
+        this._channel.getAddr(this._netconfig.protocolMask, this._netconfig.services.accepted);
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.

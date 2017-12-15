@@ -12,7 +12,7 @@ class WebSocketConnector extends Observable {
      */
     constructor(netconfig) {
         super();
-        const port = netconfig.peerAddress.port;
+        const port = netconfig.myPeerAddress.port;
         const sslConfig = netconfig.sslConfig;
 
         const options = {

@@ -144,7 +144,7 @@ class PeerConnector extends Observable {
 
         this._nonce = NumberUtils.randomUint32();
 
-        this._rtcConnection = new RTCPeerConnection(netconfig.webRtcConfig);
+        this._rtcConnection = new RTCPeerConnection(this._netconfig.webRtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
 
         this._lastIceCandidate = null;
@@ -199,7 +199,7 @@ class PeerConnector extends Observable {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._netconfig.keyPair;
         this._signalChannel.signal(
-            this._netconfig.peerAddress.signalId,
+            this._netconfig.myPeerAddress.signalId,
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,

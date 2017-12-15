@@ -20,7 +20,6 @@ const sources = {
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
-            './src/main/platform/browser/network/NetworkConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcStore.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
@@ -34,7 +33,6 @@ const sources = {
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
             './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
-            './src/main/platform/nodejs/network/NetworkConfig.js'
         ]
     },
     generic: [
@@ -118,6 +116,7 @@ const sources = {
         './src/main/generic/consensus/ConsensusDB.js',
         './src/main/generic/consensus/Consensus.js',
         './src/main/generic/network/Protocol.js',
+        './src/main/generic/network/NetworkConfig.js',
         './src/main/generic/network/address/NetAddress.js',
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddresses.js',

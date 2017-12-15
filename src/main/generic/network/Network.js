@@ -507,7 +507,7 @@ class Network extends Observable {
         }
 
         // Can be undefined for non-rtc nodes.
-        const mySignalId = this._config.peerAddress.signalId;
+        const mySignalId = this._config.myPeerAddress.signalId;
 
         // Discard signals from myself.
         if (msg.senderId.equals(mySignalId)) {
@@ -579,7 +579,7 @@ class Network extends Observable {
 
     /** @type {PeerAddress} */
     get myPeerAddress() {
-        return this._config.peerAddress;
+        return this._config.myPeerAddress;
     }
 
     /** @type {number} */
