@@ -1,12 +1,12 @@
 class Services {
     /**
      * @constructor
-     * @param {number} provided Bitmap of services that can be provided
-     * @param {number} accepted Bitmap of services that can be accepted
+     * @param {number} [provided=Services.NONE] Bitmap of services that can be provided
+     * @param {number} [accepted=Services.NONE] Bitmap of services that can be accepted
      */
-    constructor(provided, accepted) {
-        this._provided = provided || Services.NONE;
-        this._accepted = accepted || Services.NONE;
+    constructor(provided = Services.NONE, accepted = Services.NONE) {
+        this._provided = provided;
+        this._accepted = accepted;
     }
 
     /**
@@ -35,6 +35,15 @@ class Services {
      */
     set accepted(services) {
         this._accepted = services;
+    }
+
+    /**
+     * Set the type without affecting other provided services
+     * @param {number} type
+     */
+    set type(type) {
+        // The type is enconded in the 3 lsb, we clear them before setting the type
+        this._provided |= (type & 0xFFFFFFF8);
     }
 
     /**
