@@ -31,6 +31,7 @@ describe('Mempool', () => {
 
             // This is needed to check which reason caused pushTransaction() to fail
             spyOn(Log, 'w');
+            spyOn(Log, 'd');
 
             // Create a transaction
             const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 42);
@@ -68,7 +69,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
-            expect(Log.w).toHaveBeenCalledWith(Account, 'Rejected transaction - invalid nonce', transaction);
+            expect(Log.d).toHaveBeenCalledWith(Account, 'Rejected transaction - invalid nonce', transaction);
 
         })().then(done, done.fail);
     });

@@ -248,7 +248,7 @@ class IWorker {
                 if (typeof Nimiq !== 'undefined' && Nimiq._path) wasm = `${Nimiq._path}${wasm}`;
                 if (typeof __dirname === 'string' && wasm.indexOf('/') === -1) wasm = `${__dirname}/${wasm}`;
                 if (!IWorker._global.WebAssembly) {
-                    console.log('No support for WebAssembly available.');
+                    Log.w(IWorker, 'No support for WebAssembly available.');
                     return Promise.resolve(false);
                 }
 
@@ -265,7 +265,7 @@ class IWorker {
                             const fs = require('fs');
                             fs.readFile(wasm, (err, data) => {
                                 if (err) {
-                                    console.log(`Failed to access WebAssembly module ${wasm}: ${err}`);
+                                    Log.w(IWorker, `Failed to access WebAssembly module ${wasm}: ${err}`);
                                     resolve(false);
                                 } else {
                                     IWorker._global[module] = IWorker._global[module] || {};
@@ -283,13 +283,13 @@ class IWorker {
                                 resolve(true);
                             };
                             xhr.onerror = function () {
-                                console.log(`Failed to access WebAssembly module ${wasm}`);
+                                Log.w(IWorker, `Failed to access WebAssembly module ${wasm}`);
                                 resolve(false);
                             };
                             xhr.send(null);
                         }
                     } catch (e) {
-                        console.log(`Failed to access WebAssembly module ${wasm}`);
+                        Log.w(IWorker, `Failed to access WebAssembly module ${wasm}`);
                         resolve(false);
                     }
                 });
@@ -403,7 +403,7 @@ class IWorker {
 
             async _updateToSize() {
                 if (typeof Worker === 'undefined' && this._poolSize > 1) {
-                    console.warn('Pool of size larger than 1 requires WebWorker support.');
+                    Log.d(IWorker, 'Pool of size larger than 1 requires WebWorker support.');
                     this._poolSize = 1;
                 }
 

@@ -117,7 +117,7 @@ class Account {
                 return Promise.resolve(false);
             }
             if (account._nonce !== tx.nonce) {
-                if (!silent) Log.w(Account, 'Rejected transaction - invalid nonce', tx);
+                if (!silent) Log.d(Account, 'Rejected transaction - invalid nonce', tx);
                 return Promise.resolve(false);
             }
             if (account._balance < tx.value + tx.fee) {

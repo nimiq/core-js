@@ -66,7 +66,7 @@ class WebRtcConnector extends Observable {
         }
 
         if (!payload) {
-            Log.w(WebRtcConnector, `Discarding signal from ${msg.senderId} - empty payload`);
+            Log.d(WebRtcConnector, `Discarding signal from ${msg.senderId} - empty payload`);
             return;
         }
 

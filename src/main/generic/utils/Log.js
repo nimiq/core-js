@@ -41,12 +41,28 @@ class Log {
      * @param {Array} args
      */
     msg(level, tag, args) {
-        this._native.msg(level, tag, args);
+        if (this._native.isLoggable(tag, level)) {
+            for (let i = 0; i < args.length; ++i) {
+                if (typeof args[i] === 'function') {
+                    args[i] = args[i]();
+                }
+                if (typeof args[i] === 'object') {
+                    if (typeof args[i].toString === 'function') {
+                        args[i] = args[i].toString();
+                    } else if (args[i].constructor && args[i].constructor.name) {
+                        args[i] = `{Object: ${args[i].constructor.name}}`;
+                    } else {
+                        args[i] = '{Object}';
+                    }
+                }
+            }
+            this._native.msg(level, tag, args);
+        }
     }
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static d(tag, message, ...args) {
@@ -62,7 +78,7 @@ class Log {
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static e(tag, message, ...args) {
@@ -78,7 +94,7 @@ class Log {
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static i(tag, message, ...args) {
@@ -94,7 +110,7 @@ class Log {
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static v(tag, message, ...args) {
@@ -110,7 +126,7 @@ class Log {
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static w(tag, message, ...args) {
@@ -126,7 +142,7 @@ class Log {
 
     /**
      * @param {?string|{name:string}} [tag=undefined]
-     * @param {string} message
+     * @param {string|function():string} message
      * @param {...*} args
      */
     static t(tag, message, ...args) {

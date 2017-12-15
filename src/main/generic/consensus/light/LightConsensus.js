@@ -107,7 +107,7 @@ class LightConsensus extends Observable {
                     // Report consensus-established if we have at least one connected peer.
                     // TODO !!! Check peer types (at least one full node, etc.) !!!
                     if (!this._established) {
-                        Log.d(LightConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
+                        Log.i(LightConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
                         Log.d(LightConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
                         this._established = true;

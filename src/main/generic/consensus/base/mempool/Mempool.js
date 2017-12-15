@@ -45,7 +45,7 @@ class Mempool extends Observable {
         // Check if we already know this transaction.
         const hash = await transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
-            Log.v(Mempool, `Ignoring known transaction ${hash.toBase64()}`);
+            Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
             return false;
         }
 
@@ -115,11 +115,11 @@ class Mempool extends Observable {
     _waitTransaction(hash, transaction) {
         const txs = this._waitingTransactions.get(transaction.sender) || [];
         if (txs.length >= Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER) {
-            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transactions per sender reached`);
+            Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transactions per sender reached`);
             return;
         }
         if (this._waitingTransactions.length >= Mempool.MAX_WAITING_TRANSACTION_SENDERS) {
-            Log.w(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transaction senders reached`);
+            Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transaction senders reached`);
             return;
         }
 

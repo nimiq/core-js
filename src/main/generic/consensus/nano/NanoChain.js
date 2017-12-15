@@ -333,7 +333,7 @@ class NanoChain extends BaseChain {
             Assert.that(!!curData, 'Failed to find fork predecessor while rebranching');
         }
 
-        Log.v(NanoChain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
+        Log.v(NanoChain, () => `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
 
         // Unset onMainChain flag on the current main chain up to (excluding) the common ancestor.
         let headHash = this._headHash;

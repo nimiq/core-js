@@ -15,7 +15,7 @@ const cert = argv.cert;
 const walletSeed = argv['wallet-seed'] || null;
 
 if (argv['log']) {
-    Nimiq.Log.instance.level = argv['log'] === true ? Log.VERBOSE : argv['log'];
+    Nimiq.Log.instance.level = argv['log'] === true ? Nimiq.Log.VERBOSE : argv['log'];
 }
 if (argv['log-tag']) {
     if (!Array.isArray(argv['log-tag'])) {
@@ -44,14 +44,20 @@ const TAG = 'Node';
     const network = consensus.network;
 
     const wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
-    Nimiq.Log.i(TAG, `Wallet initialized for address ${wallet.address.toUserFriendlyAddress()}.`);
+    Nimiq.Log.i(TAG, () => `Wallet initialized for address ${wallet.address.toUserFriendlyAddress()}.`);
 
     const miner = new Nimiq.Miner(blockchain, mempool, wallet.address);
 
-    Nimiq.Log.i(TAG, `Blockchain: height=${blockchain.height}, totalWork=${blockchain.totalWork}, headHash=${blockchain.headHash.toBase64()}`);
+    Nimiq.Log.i(TAG, () => `Blockchain: height=${blockchain.height}, totalWork=${blockchain.totalWork}, headHash=${blockchain.headHash.toBase64()}`);
 
     blockchain.on('head-changed', (head) => {
-        Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
+        if (consensus.established || head.height % 100 === 0) {
+            Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
+        }
+    });
+
+    network.on('peer-joined', (peer) => {
+        Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
 
     if (!passive) {

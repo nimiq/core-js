@@ -353,7 +353,7 @@ class Network extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        Log.d(Network, `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
+        Log.d(Network, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
     }
 
     /**
@@ -533,7 +533,7 @@ class Network extends Observable {
 
         // Discard signals that have reached their TTL.
         if (msg.ttl <= 0) {
-            Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
+            Log.d(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             // Send signal containing TTL_EXCEEDED flag back in reverse direction.
             if (msg.flags === 0) {
                 channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flags.TTL_EXCEEDED);
@@ -544,7 +544,7 @@ class Network extends Observable {
         // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelBySignalId(msg.recipientId);
         if (!signalChannel) {
-            Log.w(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            Log.d(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             if (msg.flags === 0) {
@@ -556,7 +556,7 @@ class Network extends Observable {
         // Discard signal if our shortest route to the target is via the sending peer.
         // XXX Why does this happen?
         if (signalChannel.peerAddress.equals(channel.peerAddress)) {
-            Log.e(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
+            Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             return;
         }
 

@@ -1,6 +1,6 @@
 class LogNative {
     constructor() {
-        this._global_level = Log.TRACE;
+        this._global_level = Log.INFO;
         this._tag_levels = {};
         this._chalk = require('chalk');
     }

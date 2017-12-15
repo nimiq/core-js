@@ -269,7 +269,7 @@ class FullChain extends BaseChain {
             Assert.that(!!curData, 'Corrupted store: Failed to find fork predecessor while rebranching');
         }
 
-        Log.v(FullChain, `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
+        Log.v(FullChain, () => `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
@@ -462,7 +462,7 @@ class FullChain extends BaseChain {
             if (oldestSnapshot) {
                 await oldestSnapshot.abort();
             } else {
-                Log.e(FullChain, `Snapshot with hash ${oldestHash.toBase64()} not found.`);
+                Log.e(FullChain, () => `Snapshot with hash ${oldestHash.toBase64()} not found.`);
             }
             this._snapshots.remove(oldestHash);
 
