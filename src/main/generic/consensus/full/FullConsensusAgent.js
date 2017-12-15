@@ -454,7 +454,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _onMempool(msg) {
         // Query mempool for transactions
-        const transactions = await this._mempool.getTransactions();
+        const allTransactions = await this._mempool.getTransactions();
+        const transactions = new LimitIterable((allTransactions)[Symbol.iterator](), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
 
         // Send an InvVector for each transaction in the mempool.
         // Split into multiple Inv messages if the mempool is large.
@@ -507,4 +508,9 @@ FullConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 20; // 20 seconds
  * @type {number}
  */
 FullConsensusAgent.MEMPOOL_THROTTLE = 1000;
+/**
+ * Number of transaction vectors to send
+ * @type {number}
+ */
+FullConsensusAgent.MEMPOOL_ENTRIES_MAX = 10000;
 Class.register(FullConsensusAgent);

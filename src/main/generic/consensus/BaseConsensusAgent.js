@@ -28,6 +28,10 @@ class BaseConsensusAgent extends Observable {
         /** @type {HashSet.<InvVector>} */
         this._objectsInFlight = new HashSet();
 
+        // All objects that were requested from the peer but not received yet.
+        /** @type {HashSet.<InvVector>} */
+        this._objectsThatFlew = new HashSet();
+
         // Objects that are currently being processed by the blockchain/mempool.
         /** @type {HashSet.<InvVector>} */
         this._objectsProcessing = new HashSet();
@@ -332,7 +336,7 @@ class BaseConsensusAgent extends Observable {
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight.contains(vector)) {
+        if (!this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -367,7 +371,7 @@ class BaseConsensusAgent extends Observable {
 
         // Check if we have requested this header.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight.contains(vector)) {
+        if (!this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited header ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -399,11 +403,11 @@ class BaseConsensusAgent extends Observable {
      */
     async _onTx(msg) {
         const hash = await msg.transaction.hash();
-        //Log.i(BaseConsensusAgent, `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
+        //Log.d(BaseConsensusAgent, () => `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
 
         // Check if we have requested this transaction.
         const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-        if (!this._objectsInFlight.contains(vector)) {
+        if (!this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited transaction ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -475,6 +479,7 @@ class BaseConsensusAgent extends Observable {
         this._timers.clearTimeout('getData');
 
         // Reset objects in flight.
+        this._objectsThatFlew.addAll(this._objectsInFlight.values());
         this._objectsInFlight.clear();
 
         // If there are more objects to request, request them.
