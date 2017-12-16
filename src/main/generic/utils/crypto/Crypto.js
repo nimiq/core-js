@@ -286,6 +286,11 @@ class Crypto {
         return worker.computeHardHashBatch(arrarr);
     }
 
+    static async kdf(key, seed) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        return worker.kdf(key, seed);
+    }
+
     /**
      * @param {Array.<BlockHeader>} headers
      * @return {Promise.<void>}

@@ -5,6 +5,7 @@ class Wallet {
      * @returns {Promise.<Wallet>} A Wallet object. If the persisted storage already stored a Wallet before, this will be reused.
      */
     static async getPersistent() {
+        await Crypto.prepareSyncCryptoWorker();
         const db = await new WalletStore();
         let keys = await db.get('keys');
         if (!keys) {
@@ -20,12 +21,17 @@ class Wallet {
      * @returns {Promise.<Wallet>} Newly created Wallet.
      */
     static async createVolatile() {
+        await Crypto.prepareSyncCryptoWorker();
         return new Wallet(await KeyPair.generate());
     }
 
+    /**
+     * @param {string} hexBuf
+     * @return {Wallet}
+     */
     static load(hexBuf) {
-        if (!StringUtils.isHexBytes(hexBuf, KeyPair.SERIALIZED_SIZE)) {
-            throw 'Invalid wallet seed';
+        if (!hexBuf || !StringUtils.isHexBytes(hexBuf) || hexBuf.length === 0) {
+            throw new Error('Invalid wallet seed');
         }
 
         return new Wallet(KeyPair.fromHex(hexBuf));
@@ -103,5 +109,33 @@ class Wallet {
         await db.put('keys', this._keyPair);
         await db.close();
     }
+
+    /** @type {boolean} */
+    get isLocked() {
+        return this.keyPair.isLocked;
+    }
+
+    /**
+     * @param {Uint8Array|string} key
+     * @returns {Promise.<void>}
+     */
+    async lock(key) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        return this.keyPair.lock(key);
+    }
+
+    relock() {
+        this.keyPair.relock();
+    }
+
+    /**
+     * @param {Uint8Array|string} key
+     * @returns {Promise.<void>}
+     */
+    unlock(key) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        return this.keyPair.unlock(key);
+    }
 }
+
 Class.register(Wallet);

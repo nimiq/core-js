@@ -38,6 +38,14 @@ class PrivateKey extends Primitive {
     }
 
     /**
+     * Overwrite this private key with a replacement in-memory
+     * @param {PrivateKey} privateKey
+     */
+    overwrite(privateKey) {
+        this._obj.set(privateKey._obj);
+    }
+
+    /**
      * @param {Primitive} o
      * @return {boolean}
      */
