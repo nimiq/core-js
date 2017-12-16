@@ -82,6 +82,17 @@ int nimiq_hard_hash(void *out, const void *in, const size_t inlen, const uint32_
     return argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32);
 }
 
+int nimiq_kdf(void *out, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
+    int ret, i;
+    ret = argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, seed, seedlen, out, 32);
+    if (ret != ARGON2_OK) return ret;
+    for(i = 0; i < iter; ++i) {
+        ret = argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, out, 32, seed, seedlen, out, 32);
+        if (ret != ARGON2_OK) return ret;
+    }
+    return ARGON2_OK;
+}
+
 uint32_t nimiq_hard_hash_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost) {
     uint32_t* noncer = (uint32_t*)(((uint8_t*)in)+inlen-4);
     uint256 target = uint256_new(), hash = uint256_new();

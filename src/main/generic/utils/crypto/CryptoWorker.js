@@ -33,6 +33,13 @@ class CryptoWorker {
     async verifyHardHash(input, hash) {}
 
     /**
+     * @param {Uint8Array} key
+     * @param {Uint8Array} seed
+     * @returns {Promise.<Uint8Array>}
+     */
+    async kdf(key, seed) {}
+
+    /**
      * @param privateKey
      * @returns {Promise.<Uint8Array>}
      */

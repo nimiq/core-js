@@ -118,6 +118,35 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     }
 
     /**
+     * @param {Uint8Array} key
+     * @param {Uint8Array} seed
+     * @returns {Promise.<Uint8Array>}
+     */
+    async kdf(key, seed) {
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(CryptoWorker.HASH_SIZE);
+            const wasmIn = Module.stackAlloc(key.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
+            const wasmSeed = Module.stackAlloc(seed.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmSeed, seed.length).set(seed);
+            const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSeed, seed.length, 512, 256);
+            if (res !== 0) {
+                throw res;
+            }
+            const hash = new Uint8Array(CryptoWorker.HASH_SIZE);
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.HASH_SIZE));
+            return hash;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
+
+    /**
      * @param {Uint8Array} privateKey
      * @returns {Promise.<Uint8Array>}
      */
