@@ -39,4 +39,25 @@ describe('Miner', () => {
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
         })().then(done, done.fail);
     });
+
+    it('can mine a block', (done) => {
+        if (typeof WebAssembly === 'undefined') {
+            // Do not run this test without WASM.
+            done();
+            return;
+        }
+        spyOn(Time, 'now').and.returnValue(29000);
+        (async() => {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0);
+            const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
+            const miner = new Miner(testBlockchain, mempool, Block.GENESIS.minerAddr);
+            const block = await new Promise((resolve) => {
+                miner.on('block-mined', resolve);
+                miner.startWork();
+            });
+            miner.stopWork();
+            expect(await block.verify()).toBeTruthy();
+            expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
+        })().then(done, done.fail);
+    });
 });
