@@ -16,7 +16,7 @@ describe('Miner', () => {
 
             const txs = await testBlockchain.generateTransactions(5);
             for (const tx of txs) {
-                expect(await mempool.pushTransaction(tx)).toBeTruthy();
+                expect(await mempool.pushTransaction(tx)).toBe(Mempool.ReturnCode.ACCEPTED);
             }
 
             block = await miner.getNextBlock();
@@ -28,7 +28,7 @@ describe('Miner', () => {
             await testBlockchain.accounts.revertBlock(block);
 
             for (const tx of txs2) {
-                expect(await mempool.pushTransaction(tx)).toBeTruthy();
+                expect(await mempool.pushTransaction(tx)).toBe(Mempool.ReturnCode.ACCEPTED);
             }
 
             block = await miner.getNextBlock();

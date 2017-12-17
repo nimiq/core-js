@@ -9,7 +9,7 @@ describe('Subscription', () => {
     const proof = BufferUtils.fromAscii('ABCD');
     const data = BufferUtils.fromAscii('EFGH');
     const unrelatedAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
-    let testBlockchain, block, tx1, tx2;
+    let testBlockchain, block, tx1, tx2, txHighFee;
 
     beforeAll((done) => {
         (async () => {
@@ -21,6 +21,8 @@ describe('Subscription', () => {
 
             tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
             tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, data, proof);
+
+            txHighFee = new BasicTransaction(senderPubKey, recipientAddr, value, tx1.serializedSize*2, nonce, signature);
         })().then(done, done.fail);
     });
 
@@ -65,6 +67,22 @@ describe('Subscription', () => {
         })().then(done, done.fail);
     });
 
+    it('MIN_FEE subscription does match transactions with matching min fee', (done) => {
+        (async function () {
+            let sub = Subscription.fromMinFeePerByte(1);
+            expect(sub.matchesBlock(block)).toBe(true);
+            expect(sub.matchesTransaction(tx1)).toBe(false);
+            expect(sub.matchesTransaction(tx2)).toBe(false);
+            expect(sub.matchesTransaction(txHighFee)).toBe(true);
+
+            sub = Subscription.fromMinFeePerByte(0);
+            expect(sub.matchesBlock(block)).toBe(true);
+            expect(sub.matchesTransaction(tx1)).toBe(true);
+            expect(sub.matchesTransaction(tx2)).toBe(true);
+            expect(sub.matchesTransaction(txHighFee)).toBe(true);
+        })().then(done, done.fail);
+    });
+
     it('can serialize and unserialize', (done) => {
         (async function () {
             let sub1 = Subscription.NONE;
@@ -84,6 +102,11 @@ describe('Subscription', () => {
             expect(sub2.type).toBe(sub1.type);
             expect(sub2.addresses.length).toBe(sub1.addresses.length);
             expect(sub2.addresses.every((addr, i) => addr.equals(sub1.addresses[i]))).toBe(true);
+
+            sub1 = Subscription.fromMinFeePerByte(1000);
+            sub2 = Subscription.unserialize(sub1.serialize());
+            expect(sub2.type).toBe(sub1.type);
+            expect(sub2.minFeePerByte).toBe(sub1.minFeePerByte);
         })().then(done, done.fail);
     });
 

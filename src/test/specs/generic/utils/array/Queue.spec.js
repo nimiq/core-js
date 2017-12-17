@@ -41,6 +41,19 @@ describe('Queue', () => {
         expect(q.indexOf(2)).toBe(-1);
     });
 
+    it('can peek', () => {
+        const q = new Queue();
+
+        q.enqueue(3);
+        q.enqueue(1);
+
+        expect(q.peek()).toBe(3);
+        q.dequeue();
+        expect(q.peek()).toBe(1);
+        q.dequeue();
+        expect(q.peek()).toBeFalsy();
+    });
+
     it('can dequeueMulti', () => {
         const q = new Queue();
 

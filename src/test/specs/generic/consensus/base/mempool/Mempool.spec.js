@@ -14,11 +14,11 @@ describe('Mempool', () => {
 
             // Push the transaction for the first time
             let result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Push the transaction for a second time, and expect the result to be false
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.KNOWN);
         })().then(done, done.fail);
     });
 
@@ -44,7 +44,7 @@ describe('Mempool', () => {
             // Push the transaction, this should fail (return false) because of the
             // invalid signature
             let result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
 
             // Since a lot of things could make our method return false, we need to make sure
             // that the invalid signature was the real reason
@@ -59,7 +59,7 @@ describe('Mempool', () => {
 
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
             expect(Log.w).toHaveBeenCalledWith(Account, 'Rejected transaction - insufficient funds', transaction);
 
             // Set the balance to a higher number than the transaction amount, but change the
@@ -68,7 +68,7 @@ describe('Mempool', () => {
 
             // Make sure the transaction fails due to the incorrect nonce
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
             expect(Log.d).toHaveBeenCalledWith(Account, 'Rejected transaction - invalid nonce', transaction);
 
         })().then(done, done.fail);
@@ -89,7 +89,7 @@ describe('Mempool', () => {
 
             // The transaction should be successfully pushed
             const result = await mempool.pushTransaction(referenceTransaction);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transaction and check that it is the same one we pushed before
             const hash = await referenceTransaction.hash();
@@ -113,11 +113,11 @@ describe('Mempool', () => {
 
             // The transaction should be successfully pushed
             let result = await mempool.pushTransaction(t1);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // The transaction should be successfully pushed
             result = await mempool.pushTransaction(t2);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transactions and check that they are the same one we pushed before
             expect(await mempool.getTransaction(await t1.hash())).toBe(t1);
@@ -140,11 +140,11 @@ describe('Mempool', () => {
 
             // The transaction should be successfully pushed
             let result = await mempool.pushTransaction(t1);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // The transaction should be successfully pushed
             result = await mempool.pushTransaction(t2);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
 
             // Get back the transactions and check that they are the same one we pushed before
             expect(await mempool.getTransaction(await t1.hash())).toBe(t1);
@@ -176,7 +176,7 @@ describe('Mempool', () => {
             for (let i = 0; i < numberOfTransactions; i++) {
                 const transaction = await wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 42); // eslint-disable-line no-await-in-loop
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
-                expect(result).toBe(true);
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
             }
 
@@ -227,6 +227,26 @@ describe('Mempool', () => {
             expect(txs[1].nonce).toBe(11);
             expect(txs[2].nonce).toBe(12);
             expect(txs[3].nonce).toBe(13);
+        })().then(done, done.fail);
+    });
+
+    it('will reject too many free transactions', (done) => {
+        (async () => {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallet = await Wallet.createVolatile();
+            await accounts._tree.put(wallet.address, new BasicAccount(10000, 10));
+
+            let nonce = 10;
+            for (let i = 0; i < Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX; ++i) {
+                const result = await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 0, nonce));
+                ++nonce;
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+            }
+            const result = await mempool.pushTransaction(await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 1, 0, nonce));
+            expect(result).toBe(Mempool.ReturnCode.FEE_TOO_LOW);
         })().then(done, done.fail);
     });
 });

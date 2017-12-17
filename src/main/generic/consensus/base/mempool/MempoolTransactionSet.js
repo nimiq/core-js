@@ -54,6 +54,14 @@ class MempoolTransactionSet {
     }
 
     /**
+     * @param {number} feePerByte
+     * @return {number}
+     */
+    numBelowFeePerByte(feePerByte) {
+        return this._transactions.filter(t => t.fee/t.serializedSize < feePerByte).length;
+    }
+
+    /**
      * @return {Transaction}
      */
     shift() {
