@@ -1,4 +1,7 @@
 class Consensus {
+    /**
+     * @return {Promise.<FullConsensus>}
+     */
     static async full() {
         Services.configureServices(Services.FULL);
         Services.configureServiceMask(Services.FULL);
@@ -18,6 +21,9 @@ class Consensus {
         return new FullConsensus(blockchain, mempool, network);
     }
 
+    /**
+     * @return {Promise.<LightConsensus>}
+     */
     static async light() {
         Services.configureServices(Services.LIGHT);
         Services.configureServiceMask(Services.LIGHT | Services.FULL);
@@ -37,6 +43,9 @@ class Consensus {
         return new LightConsensus(blockchain, mempool, network);
     }
 
+    /**
+     * @return {Promise.<NanoConsensus>}
+     */
     static async nano() {
         Services.configureServices(Services.NANO);
         Services.configureServiceMask(Services.NANO | Services.LIGHT | Services.FULL);

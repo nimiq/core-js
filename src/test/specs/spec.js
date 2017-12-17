@@ -23,6 +23,8 @@ if (process.env.USE_ISTANBUL) {
             const map = require('istanbul-lib-coverage').createCoverageMap(__coverage__);
             reporter.addAll(['text', 'lcov', 'html']);
             reporter.write(map);
+            const fs = require('fs');
+            fs.writeFileSync('../coverage/coverage-jasmine.json', JSON.stringify(__coverage__));
         }
     });
 }
