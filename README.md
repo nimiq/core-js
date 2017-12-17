@@ -38,7 +38,7 @@ To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and 
 
 ```bash
 cd clients/nodejs/
-node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate> [--miner[=<threads>]]
+node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate> [--miner[=<threads>]] [--statistics[=<interval>]]
 ```
 
 | Argument        | Description           |
@@ -49,6 +49,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 | **_cert_** | SSL certificate of your Domain.       |
 | **_wallet-seed_** | Your wallet seed (optional)        |
 | **_miner_** | The number of threads to start for mining (optional) |
+| **_statistics_** | The interval in seconds to output miner statistics (optional, default: 10) |
 
 
 ### Build your own Browser client
