@@ -79,6 +79,20 @@ describe('Block', () => {
         expect(BufferUtils.equals(block, block2)).toBe(true);
     });
 
+    it('can handle light blocks', () => {
+        const block = Block.GENESIS.toLight();
+        expect(block.isLight()).toBeTruthy();
+
+        const block2 = Block.unserialize(block.serialize());
+        expect(block2.isLight()).toBeTruthy();
+        expect(() => block2.body).toThrow();
+        expect(block.equals(block2)).toBeTruthy();
+
+        const block3 = block2.toFull(Block.GENESIS.body);
+        expect(block3.isFull()).toBeTruthy();
+        expect(block3.equals(Block.GENESIS)).toBeTruthy();
+    });
+
     it('GENESIS is valid (testing)', (done) => {
         (async () => {
             expect(await Block.GENESIS.verify()).toBeTruthy();
