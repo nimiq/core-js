@@ -163,6 +163,7 @@ class NetworkAgent extends Observable {
 
         // Check if the peer is running a compatible version.
         if (!Version.isCompatible(msg.version)) {
+            this._channel.reject(Message.Type.VERSION, RejectMessage.Code.REJECT_OBSOLETE, `incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
             this._channel.close(`incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
             return;
         }

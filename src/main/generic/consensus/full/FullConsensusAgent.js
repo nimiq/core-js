@@ -414,11 +414,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _onGetAccountsProof(msg) {
         const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
-        if (!proof) {
-            this._peer.channel.rejectAccounts();
-        } else {
-            this._peer.channel.accountsProof(msg.blockHash, proof);
-        }
+        this._peer.channel.accountsProof(msg.blockHash, proof);
     }
 
     /**
@@ -427,11 +423,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _onGetTransactionsProof(msg) {
         const proof = await this._blockchain.getTransactionsProof(msg.blockHash, msg.addresses);
-        if (!proof) {
-            this._peer.channel.transactionsProof(msg.blockHash, [], await MerkleProof.compute([], []));
-        } else {
-            this._peer.channel.transactionsProof(msg.blockHash, proof);
-        }
+        this._peer.channel.transactionsProof(msg.blockHash, proof);
     }
 
     /**
@@ -440,11 +432,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _onGetAccountsTreeChunk(msg) {
         const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
-        if (!chunk) {
-            this._peer.channel.rejectAccounts();
-        } else {
-            this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
-        }
+        this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
     }
 
     /**

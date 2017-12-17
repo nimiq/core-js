@@ -34,7 +34,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
-        peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
     }
 
     /**
@@ -304,6 +303,15 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Reset accountsRequest.
         this._accountsRequest = null;
 
+        if (!msg.hasChunk()) {
+            // Restart syncing.
+            await this._partialChain.abort();
+            this._partialChain = null;
+            this._busy = false;
+            this._failedSyncs++;
+            return;
+        }
+
         // Check that we know the reference block.
         if (!blockHash.equals(msg.blockHash) || msg.chunk.head.prefix <= startPrefix) {
             Log.w(LightConsensusAgent, `Received AccountsTreeChunk for block != head or wrong start prefix from ${this._peer.peerAddress}`);
@@ -342,34 +350,6 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         this._busy = false;
         this.syncBlockchain();
-    }
-
-    /**
-     * @param {AccountsRejectedMessage} msg
-     * @returns {Promise.<void>}
-     * @private
-     */
-    async _onAccountsRejected(msg) {
-        Log.d(LightConsensusAgent, `[ACCOUNTS-REJECTED] Received from ${this._peer.peerAddress}`);
-
-        // Check if we have requested an accounts proof, reject unsolicited ones.
-        if (!this._accountsRequest) {
-            Log.w(LightConsensusAgent, `Unsolicited accounts rejected received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
-            return;
-        }
-
-        // Clear the request timeout.
-        this._timers.clearTimeout('getAccountsTreeChunk');
-
-        // Reset accountsRequest.
-        this._accountsRequest = null;
-
-        // Restart syncing.
-        await this._partialChain.abort();
-        this._partialChain = null;
-        this._busy = false;
-        this._failedSyncs++;
     }
 
     // Stage 3: Request proof blocks.

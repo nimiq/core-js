@@ -1,9 +1,18 @@
 class MessageFactory {
+    /**
+     * @param buffer
+     * @return {Message.Type}
+     */
+    static peekType(buffer) {
+        const buf = new SerialBuffer(buffer);
+        return Message.peekType(buf);
+    }
+
     static parse(buffer) {
         const buf = new SerialBuffer(buffer);
         const type = Message.peekType(buf);
         const clazz = MessageFactory.CLASSES[type];
-        if (!clazz || !clazz.unserialize) throw `Invalid message type: ${type}`;
+        if (!clazz || !clazz.unserialize) throw new Error(`Invalid message type: ${type}`);
         return clazz.unserialize(buf);
     }
 }
@@ -35,7 +44,6 @@ MessageFactory.CLASSES[Message.Type.GET_ACCOUNTS_PROOF] = GetAccountsProofMessag
 MessageFactory.CLASSES[Message.Type.ACCOUNTS_PROOF] = AccountsProofMessage;
 MessageFactory.CLASSES[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = GetAccountsTreeChunkMessage;
 MessageFactory.CLASSES[Message.Type.ACCOUNTS_TREE_CHUNK] = AccountsTreeChunkMessage;
-MessageFactory.CLASSES[Message.Type.ACCOUNTS_REJECTED] = AccountsRejectedMessage;
 MessageFactory.CLASSES[Message.Type.GET_TRANSACTIONS_PROOF] = GetTransactionsProofMessage;
 MessageFactory.CLASSES[Message.Type.TRANSACTIONS_PROOF] = TransactionsProofMessage;
 Class.register(MessageFactory);

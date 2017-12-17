@@ -17,20 +17,29 @@ class PeerChannel extends Observable {
      * @private
      */
     _onMessage(rawMsg) {
-        let msg;
+        let msg = null, type = null;
+
         try {
+            type = MessageFactory.peekType(rawMsg);
             msg = MessageFactory.parse(rawMsg);
         } catch(e) {
-            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}`, e.message);
+            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}`, e.message || e);
 
-            // Ban peer if it sends junk.
-            // TODO We should probably be more lenient here. Bitcoin sends a
-            // reject message if the message can't be decoded.
             // From the Bitcoin Reference:
             //  "Be careful of reject message feedback loops where two peers
             //   each don’t understand each other’s reject messages and so keep
             //   sending them back and forth forever."
-            this.ban('junk received');
+
+            // If the message does not make sense at a whole or we fear to get into a reject loop,
+            // we ban the peer instead.
+            if (!type || type === Message.Type.REJECT) {
+                this.ban('Failed to parse message type');
+                return;
+            }
+
+            // Otherwise inform other node and ignore message.
+            this.reject(type, RejectMessage.Code.REJECT_MALFORMED, e.message || e);
+            return;
         }
 
         if (!msg) return;
@@ -159,7 +168,7 @@ class PeerChannel extends Observable {
      * @param {Message.Type} messageType
      * @param {RejectMessage.Code} code
      * @param {string} reason
-     * @param {Uint8Array} extraData
+     * @param {Uint8Array} [extraData]
      * @return {boolean}
      */
     reject(messageType, code, reason, extraData) {
@@ -233,7 +242,7 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Hash} blockHash
-     * @param {AccountsProof} proof
+     * @param {AccountsProof} [proof]
      * @return {boolean}
      */
     accountsProof(blockHash, proof) {
@@ -266,18 +275,11 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Hash} blockHash
-     * @param {AccountsTreeChunk} chunk
+     * @param {AccountsTreeChunk} [chunk]
      * @return {boolean}
      */
     accountsTreeChunk(blockHash, chunk) {
         return this._send(new AccountsTreeChunkMessage(blockHash, chunk));
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    rejectAccounts() {
-        return this._send(new AccountsRejectedMessage());
     }
 
     /**
@@ -291,7 +293,7 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Hash} blockHash
-     * @param {TransactionsProof} proof
+     * @param {TransactionsProof} [proof]
      * @return {boolean}
      */
     transactionsProof(blockHash, proof) {
@@ -384,6 +386,5 @@ PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
 PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chunk';
 PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
-PeerChannel.Event[Message.Type.ACCOUNTS_REJECTED] = 'accounts-rejected';
 PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF] = 'get-transactions-proof';
 PeerChannel.Event[Message.Type.TRANSACTIONS_PROOF] = 'transactions-proof';

@@ -7,9 +7,9 @@ describe('GetTransactionsProofMessage', () => {
         const msg1 = new GetTransactionsProofMessage(blockHash, [address1, address2]);
         const msg2 = GetTransactionsProofMessage.unserialize(msg1.serialize());
 
-        expect(msg1.blockHash.equals(msg2.blockHash)).toBe(true);
-        expect(msg1.addresses.length).toBe(msg2.addresses.length);
-        expect(msg1.addresses.every((addr, i) => msg2.addresses[i].equals(addr))).toBe(true);
+        expect(msg2.blockHash.equals(msg1.blockHash)).toBe(true);
+        expect(msg2.addresses.length).toBe(msg1.addresses.length);
+        expect(msg2.addresses.every((addr, i) => msg1.addresses[i].equals(addr))).toBe(true);
     });
 
     it('must have well defined arguments', () => {

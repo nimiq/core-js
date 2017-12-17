@@ -7,6 +7,7 @@ class GetAccountsProofMessage extends Message {
         super(Message.Type.GET_ACCOUNTS_PROOF);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
         if (!addresses || !NumberUtils.isUint16(addresses.length)
+            || addresses.length < 1
             || addresses.some(it => !(it instanceof Address))) throw new Error('Malformed addresses');
         this._blockHash = blockHash;
         /** @type {Array.<Address>} */

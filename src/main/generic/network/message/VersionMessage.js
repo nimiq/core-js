@@ -8,7 +8,7 @@ class VersionMessage extends Message {
     constructor(version, peerAddress, genesisHash, headHash) {
         super(Message.Type.VERSION);
         if (!NumberUtils.isUint32(version)) throw 'Malformed version';
-        if (!peerAddress || !(peerAddress instanceof PeerAddress)) throw 'Malformed peerAddress';
+        if (!(peerAddress instanceof PeerAddress)) throw 'Malformed peerAddress';
         if (!Hash.isHash(genesisHash)) throw 'Malformed genesisHash';
         if (!Hash.isHash(headHash)) throw 'Malformed headHash';
 
