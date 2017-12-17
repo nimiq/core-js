@@ -33,7 +33,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
-        peer.channel.on('accounts-rejected', msg => this._onAccountsRejected(msg));
         peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
@@ -299,6 +298,11 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Reset accountsRequest.
         this._accountsRequest = null;
 
+        if (!msg.hasProof()) {
+            reject(new Error('Accounts request was rejected'));
+            return;
+        }
+
         // Check that the reference block corresponds to the one we requested.
         if (!blockHash.equals(msg.blockHash)) {
             Log.w(NanoConsensusAgent, `Received AccountsProof for invalid reference block from ${this._peer.peerAddress}`);
@@ -345,32 +349,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Return the retrieved accounts.
         resolve(accounts);
-    }
-
-    /**
-     * @param {AccountsRejectedMessage} msg
-     * @returns {void}
-     * @private
-     */
-    _onAccountsRejected(msg) {
-        Log.d(NanoConsensusAgent, `[ACCOUNTS-REJECTED] Received from ${this._peer.peerAddress}`);
-
-        // Check if we have requested an accounts proof, reject unsolicited ones.
-        if (!this._accountsRequest) {
-            Log.w(NanoConsensusAgent, `Unsolicited accounts rejected received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
-            return;
-        }
-
-        // Clear the request timeout.
-        this._timers.clearTimeout('getAccountsProof');
-        const reject = this._accountsRequest.reject;
-
-        // Reset accountsRequest.
-        this._accountsRequest = null;
-
-
-        reject(new Error('Accounts request was rejected'));
     }
 
     /**
@@ -448,6 +426,12 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Reset transactionsRequest.
         this._transactionsRequest = null;
+
+        if (!msg.hasProof()) {
+            Log.w(NanoConsensusAgent, `TransactionsProof request was rejected by ${this._peer.peerAddress}`);
+            reject(new Error('TransactionsProof request was rejected'));
+            return;
+        }
 
         // Check that the reference block corresponds to the one we requested.
         if (!blockHash.equals(msg.blockHash)) {

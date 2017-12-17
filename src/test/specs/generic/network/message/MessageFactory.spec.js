@@ -1,12 +1,17 @@
 describe('MessageFactory', () => {
 
-    it('whitelists valid Message types', () => {
+    it('whitelists valid message types', () => {
         const maliciousType = 77;
         const maliciousMsg = new Message(maliciousType).serialize();
         expect(() => {
             MessageFactory.parse(maliciousMsg);
-        }).toThrow('Invalid message type: ' + maliciousType);
-        // expect(true).toBe(false);
+        }).toThrow(new Error('Invalid message type: ' + maliciousType));
+    });
+
+    it('can peek the message type', () => {
+        const maliciousType = 77;
+        const maliciousMsg = new Message(maliciousType).serialize();
+        expect(MessageFactory.peekType(maliciousMsg)).toBe(maliciousType);
     });
 
 });

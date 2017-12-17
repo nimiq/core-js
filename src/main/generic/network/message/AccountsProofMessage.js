@@ -1,12 +1,12 @@
 class AccountsProofMessage extends Message {
     /**
      * @param {Hash} blockHash
-     * @param {AccountsProof} accountsProof
+     * @param {AccountsProof} [accountsProof]
      */
-    constructor(blockHash, accountsProof) {
+    constructor(blockHash, accountsProof=null) {
         super(Message.Type.ACCOUNTS_PROOF);
         if (!(blockHash instanceof Hash)) throw new Error('Malformed blockHash');
-        if (!(accountsProof instanceof AccountsProof)) throw new Error('Malformed proof');
+        if (accountsProof && !(accountsProof instanceof AccountsProof)) throw new Error('Malformed proof');
         /** @type {Hash} */
         this._blockHash = blockHash;
         /** @type {AccountsProof} */
@@ -20,7 +20,11 @@ class AccountsProofMessage extends Message {
     static unserialize(buf) {
         Message.unserialize(buf);
         const blockHash = Hash.unserialize(buf);
-        const accountsProof = AccountsProof.unserialize(buf);
+        const hasProof = buf.readUint8();
+        let accountsProof = null;
+        if (hasProof !== 0) {
+            accountsProof = AccountsProof.unserialize(buf);
+        }
         return new AccountsProofMessage(blockHash, accountsProof);
     }
 
@@ -32,7 +36,10 @@ class AccountsProofMessage extends Message {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
         this._blockHash.serialize(buf);
-        this._accountsProof.serialize(buf);
+        buf.writeUint8(this.hasProof() ? 1 : 0);
+        if (this.hasProof()) {
+            this._accountsProof.serialize(buf);
+        }
         super._setChecksum(buf);
         return buf;
     }
@@ -40,8 +47,16 @@ class AccountsProofMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
+            + /*success bit*/ 1
             + this._blockHash.serializedSize
-            + this._accountsProof.serializedSize;
+            + (this.hasProof() ? this._accountsProof.serializedSize : 0);
+    }
+
+    /**
+     * @return {boolean}
+     */
+    hasProof() {
+        return !!this._accountsProof;
     }
 
     /** @type {Hash} */

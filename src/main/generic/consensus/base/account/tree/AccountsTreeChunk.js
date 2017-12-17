@@ -114,4 +114,4 @@ class AccountsTreeChunk {
 }
 AccountsTreeChunk.SIZE_MAX = 1000;
 AccountsTreeChunk.EMPTY = new AccountsTreeChunk([], new AccountsProof([]));
-Class.register(AccountsProof);
+Class.register(AccountsTreeChunk);

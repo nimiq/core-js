@@ -4,7 +4,7 @@ class Message {
      * @param {Message.Type} type Message type
      */
     constructor(type) {
-        if (!NumberUtils.isUint64(type)) throw 'Malformed type';
+        if (!NumberUtils.isUint64(type)) throw new Error('Malformed type');
         /** @type {Message.Type} */
         this._type = type;
     }
@@ -149,8 +149,8 @@ Message.Type = {
     ACCOUNTS_PROOF:             43,
     GET_ACCOUNTS_TREE_CHUNK:    44,
     ACCOUNTS_TREE_CHUNK:        45,
-    ACCOUNTS_REJECTED:          46,
+    // ACCOUNTS_REJECTED:          46, FIXME: can be removed and reused in main net
     GET_TRANSACTIONS_PROOF:     47,
-    TRANSACTIONS_PROOF:         48,
+    TRANSACTIONS_PROOF:         48
 };
 Class.register(Message);

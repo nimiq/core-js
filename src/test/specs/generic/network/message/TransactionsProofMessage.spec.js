@@ -24,18 +24,37 @@ describe('TransactionsProofMessage', () => {
         })().then(done, done.fail);
     });
 
-    it('is serializable and unserializable', () => {
-        const msg1 = new TransactionsProofMessage(blockHash, txProof);
-        const msg2 = TransactionsProofMessage.unserialize(msg1.serialize());
+    it('is correctly constructed', () => {
+        let msg1 = new TransactionsProofMessage(blockHash, txProof);
 
-        expect(msg1.blockHash.equals(msg2.blockHash)).toBe(true);
-        expect(msg1.proof.length).toBe(msg2.proof.length);
-        expect(msg1.proof.transactions.every((tx, i) => msg2.proof.transactions[i].equals(tx))).toBe(true);
+        expect(msg1.blockHash.equals(blockHash)).toBe(true);
+        expect(msg1.proof === txProof).toBe(true);
+
+        msg1 = new TransactionsProofMessage(blockHash);
+        expect(msg1.blockHash.equals(blockHash)).toBe(true);
+        expect(msg1.proof).toBe(null);
+    });
+
+    it('is serializable and unserializable', () => {
+        let msg1 = new TransactionsProofMessage(blockHash, txProof);
+        let msg2 = TransactionsProofMessage.unserialize(msg1.serialize());
+
+        expect(msg2.blockHash.equals(msg1.blockHash)).toBe(true);
+        expect(msg2.proof.length).toBe(msg1.proof.length);
+        expect(msg2.proof.transactions.every((tx, i) => msg1.proof.transactions[i].equals(tx))).toBe(true);
+        expect(msg2.hasProof()).toBeTruthy();
+        expect(msg1.hasProof()).toBeTruthy();
+
+        msg1 = new TransactionsProofMessage(blockHash);
+        msg2 = TransactionsProofMessage.unserialize(msg1.serialize());
+
+        expect(msg2.blockHash.equals(msg1.blockHash)).toBe(true);
+        expect(msg2.hasProof()).toBeFalsy();
+        expect(msg1.hasProof()).toBeFalsy();
     });
 
     it('must have well defined arguments', () => {
         expect(() => new TransactionsProofMessage(recipientAddr)).toThrow();
-        expect(() => new TransactionsProofMessage(blockHash, null)).toThrow();
         expect(() => new TransactionsProofMessage(blockHash, [blockHash])).toThrow();
         expect(() => new TransactionsProofMessage(blockHash, tx2)).toThrow();
     });

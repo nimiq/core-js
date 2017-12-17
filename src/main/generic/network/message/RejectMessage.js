@@ -3,14 +3,14 @@ class RejectMessage extends Message {
      * @param {Message.Type} messageType
      * @param {RejectMessage.Code} code
      * @param {string} reason
-     * @param {Uint8Array} extraData
+     * @param {Uint8Array} [extraData]
      */
-    constructor(messageType, code, reason, extraData) {
+    constructor(messageType, code, reason, extraData=new Uint8Array(0)) {
         super(Message.Type.REJECT);
-        if (StringUtils.isMultibyte(messageType) || messageType.length > 12) throw 'Malformed type';
-        if (!NumberUtils.isUint8(code)) throw 'Malformed code';
-        if (StringUtils.isMultibyte(reason) || reason.length > 255) throw 'Malformed reason';
-        if (!extraData || !(extraData instanceof Uint8Array) || !NumberUtils.isUint16(extraData.byteLength)) throw 'Malformed extraData';
+        if (!NumberUtils.isUint64(messageType)) throw new Error('Malformed type');
+        if (!NumberUtils.isUint8(code)) throw new Error('Malformed code');
+        if (StringUtils.isMultibyte(reason) || reason.length > 255) throw new Error('Malformed reason');
+        if (!(extraData instanceof Uint8Array) || !NumberUtils.isUint16(extraData.byteLength)) throw new Error('Malformed extraData');
 
         /** @type {Message.Type} */
         this._messageType = messageType;
@@ -28,8 +28,8 @@ class RejectMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const messageType = Message.Type.readVarString(buf);
-        const code = RejectMessage.Code.read(buf);
+        const messageType = /** @type {Message.Type} */ buf.readUint64();
+        const code = /** @type {RejectMessage.Code} */ buf.readUint8();
         const reason = buf.readVarLengthString();
         const length = buf.readUint16();
         const extraData = buf.read(length);
@@ -43,7 +43,7 @@ class RejectMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeVarLengthString(this._messageType);
+        buf.writeUint64(this._messageType);
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
         buf.writeUint16(this._extraData.byteLength);
@@ -55,8 +55,7 @@ class RejectMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*messageType VarLengthString extra byte*/ 1
-            + this._messageType.length
+            + 8
             + /*code*/ 1
             + /*reason VarLengthString extra byte*/ 1
             + this._reason.length
@@ -88,14 +87,9 @@ class RejectMessage extends Message {
  * @enum {number}
  */
 RejectMessage.Code = {
-    DUPLICATE: 0x12,
-
-    /**
-     * @param {SerialBuffer} buf
-     * @returns {RejectMessage.Code}
-     */
-    read: function (buf) {
-        return /** @type {RejectMessage.Code} */ (buf.readUint8());
-    }
+    REJECT_MALFORMED: 0x01,
+    REJECT_OBSOLETE: 0x11,
+    REJECT_DUST: 0x41,
+    REJECT_INSUFFICIENTFEE: 0x42
 };
 Class.register(RejectMessage);
