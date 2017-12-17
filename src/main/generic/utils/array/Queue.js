@@ -16,6 +16,10 @@ class Queue {
         return this._queue.shift();
     }
 
+    peek() {
+        return this._queue[0];
+    }
+
     /**
      * @param {*} value
      * @return {number}

@@ -88,8 +88,10 @@ class RejectMessage extends Message {
  */
 RejectMessage.Code = {
     REJECT_MALFORMED: 0x01,
+    REJECT_INVALID: 0x10,
     REJECT_OBSOLETE: 0x11,
+    REJECT_DOUBLE: 0x12,
     REJECT_DUST: 0x41,
-    REJECT_INSUFFICIENTFEE: 0x42
+    REJECT_INSUFFICIENT_FEE: 0x42
 };
 Class.register(RejectMessage);

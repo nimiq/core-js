@@ -30,7 +30,7 @@ class Mempool extends Observable {
     /**
      * @param {Transaction} transaction
      * @fires Mempool#transaction-added
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<Mempool.ReturnCode>}
      */
     pushTransaction(transaction) {
         return this._synchronizer.push(() => this._pushTransaction(transaction));
@@ -38,7 +38,7 @@ class Mempool extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<Mempool.ReturnCode>}
      * @private
      */
     async _pushTransaction(transaction) {
@@ -46,12 +46,12 @@ class Mempool extends Observable {
         const hash = await transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
             Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
-            return false;
+            return Mempool.ReturnCode.KNOWN;
         }
 
         // Intrinsic transaction verification
         if (!(await transaction.verify())) {
-            return false;
+            return Mempool.ReturnCode.INVALID;
         }
 
         // Retrieve sender account.
@@ -61,7 +61,7 @@ class Mempool extends Observable {
             senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
         } catch (e) {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
-            return false;
+            return Mempool.ReturnCode.INVALID;
         }
 
         // Fully verify the transaction against the current accounts state + Mempool.
@@ -71,7 +71,13 @@ class Mempool extends Observable {
                 this._waitTransaction(hash, transaction);
             }
 
-            return false;
+            return Mempool.ReturnCode.INVALID;
+        }
+
+        // Check limit for free transactions.
+        if (transaction.fee/transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
+            && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
+            return Mempool.ReturnCode.FEE_TOO_LOW;
         }
 
         // Transaction is valid, add it to the mempool.
@@ -104,7 +110,7 @@ class Mempool extends Observable {
             }
         }
 
-        return true;
+        return Mempool.ReturnCode.ACCEPTED;
     }
 
     /**
@@ -114,11 +120,11 @@ class Mempool extends Observable {
      */
     _waitTransaction(hash, transaction) {
         const txs = this._waitingTransactions.get(transaction.sender) || [];
-        if (txs.length >= Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER) {
+        if (txs.length >= Mempool.WAITING_TRANSACTIONS_PER_SENDER_MAX) {
             Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transactions per sender reached`);
             return;
         }
-        if (this._waitingTransactions.length >= Mempool.MAX_WAITING_TRANSACTION_SENDERS) {
+        if (this._waitingTransactions.length >= Mempool.WAITING_TRANSACTION_SENDERS_MAX) {
             Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transaction senders reached`);
             return;
         }
@@ -266,8 +272,20 @@ class Mempool extends Observable {
     }
 }
 
-Mempool.MAX_WAITING_TRANSACTIONS_PER_SENDER = 500;
-Mempool.MAX_WAITING_TRANSACTION_SENDERS = 10000;
+Mempool.WAITING_TRANSACTIONS_PER_SENDER_MAX = 500;
+Mempool.WAITING_TRANSACTION_SENDERS_MAX = 10000;
 Mempool.WAITING_TRANSACTION_TIMEOUT = 30000;
+
+Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
+Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10; // max number of transactions considered free per sender
+
+/** @enum {number} */
+Mempool.ReturnCode = {
+    FEE_TOO_LOW: -2,
+    INVALID: -1,
+
+    ACCEPTED: 1,
+    KNOWN: 2
+};
 
 Class.register(Mempool);

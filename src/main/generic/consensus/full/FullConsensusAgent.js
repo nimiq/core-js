@@ -342,9 +342,24 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @protected
      * @override
      */
-    _processTransaction(hash, transaction) {
-        // TODO send reject message if we don't like the transaction
-        return this._mempool.pushTransaction(transaction);
+    async _processTransaction(hash, transaction) {
+        const result = await this._mempool.pushTransaction(transaction);
+        switch (result) {
+            case Mempool.ReturnCode.ACCEPTED:
+                return true;
+            case Mempool.ReturnCode.KNOWN:
+                return false;
+            case Mempool.ReturnCode.FEE_TOO_LOW:
+                this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INSUFFICIENT_FEE,
+                    'Sender has too many free transactions', (await transaction.hash()).serialize());
+                return false;
+            case Mempool.ReturnCode.INVALID:
+                this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
+                    (await transaction.hash()).serialize());
+                return false;
+            default:
+                return false;
+        }
     }
 
     /**

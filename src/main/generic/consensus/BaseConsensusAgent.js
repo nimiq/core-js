@@ -45,10 +45,14 @@ class BaseConsensusAgent extends Observable {
         /** @type {Timers} */
         this._timers = new Timers();
 
-        // Queue of transaction inv vectors waiting to be send out
+        // Queue of transaction inv vectors waiting to be sent out
         /** @type {Queue.<InvVector>} */
         this._waitingInvVectors = new Queue();
         this._timers.setInterval('invVectors', () => this._sendWaitingInvVectors(), BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL);
+        // Queue of "free" transaction inv vectors waiting to be sent out
+        /** @type {Queue.<{serializedSize:number, vector:InvVector}>} */
+        this._waitingFreeInvVectors = new Queue();
+        this._timers.setInterval('freeInvVectors', () => this._sendFreeWaitingInvVectors(), BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL);
 
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
@@ -106,6 +110,21 @@ class BaseConsensusAgent extends Observable {
         }
     }
 
+    _sendFreeWaitingInvVectors() {
+        const invVectors = [];
+        let size = 0;
+        while (invVectors.length <= BaseInventoryMessage.VECTORS_MAX_COUNT && this._waitingFreeInvVectors.length > 0
+            && size < BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL) {
+            const {serializedSize, vector} = this._waitingFreeInvVectors.dequeue();
+            invVectors.push(vector);
+            size += serializedSize;
+        }
+        if (invVectors.length > 0) {
+            this._peer.channel.inv(invVectors);
+            Log.v(BaseConsensusAgent, `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
+        }
+    }
+
     /**
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
@@ -126,7 +145,12 @@ class BaseConsensusAgent extends Observable {
         }
 
         // Relay transaction to peer later.
-        this._waitingInvVectors.enqueue(vector);
+        const serializedSize = transaction.serializedSize;
+        if (transaction.fee/serializedSize < BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN) {
+            this._waitingFreeInvVectors.enqueue({serializedSize, vector});
+        } else {
+            this._waitingInvVectors.enqueue(vector);
+        }
 
         // Assume that the peer knows this transaction now.
         this._knownObjects.add(vector);
@@ -657,4 +681,19 @@ BaseConsensusAgent.REQUEST_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = 5000;
+/**
+ * Time interval (ms) to wait between sending out "free" transactions.
+ * @type {number}
+ */
+BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL = 6000;
+/**
+ * Soft limit for the total size (bytes) of free transactions per relay interval.
+ * @type {number}
+ */
+BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL = 15000; // ~100 legacy transactions
+/**
+ * Minimum fee per byte (sat/byte) such that a transaction is not considered free.
+ * @type {number}
+ */
+BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
 Class.register(BaseConsensusAgent);
