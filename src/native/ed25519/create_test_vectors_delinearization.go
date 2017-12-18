@@ -4,6 +4,7 @@ import (
     "crypto/sha512"
     "hash"
     "fmt"
+    "strings"
 
     "github.com/dedis/kyber"
     "github.com/dedis/kyber/group/edwards25519"
@@ -70,6 +71,16 @@ func reverse(bytes []byte) []byte {
     return bytes
 }
 
+func fmtPad(format string, padLen int, a ...interface{}) string {
+    str := fmt.Sprintf(format, a...)
+    padCountInt := padLen - len(str)
+    retStr := str
+    if padCountInt > 0 {
+        retStr = str + strings.Repeat("0", padCountInt)
+    }
+    return retStr[:padLen]
+}
+
 // Example of using Schnorr
 func main() {
     // Parameters begin
@@ -94,7 +105,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032x\")", reverse(privates[i].Bytes()))
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%x", 64, reverse(privates[i].Bytes())))
     }
     fmt.Printf("],\n")
 
@@ -103,7 +114,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032s\")", publics[i].String())
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%s", 64, publics[i].String()))
     }
     fmt.Printf("],\n")
 
@@ -118,14 +129,14 @@ func main() {
         delinearizedPublics = append(delinearizedPublics, dlPublic)
     }
 
-    fmt.Printf("    pubKeysHash: BufferUtils.fromHex(\"%032x\"),\n", publicKeysHash(publics))
+    fmt.Printf("    pubKeysHash: BufferUtils.fromHex(\"%s\"),\n", fmtPad("%x", 128, publicKeysHash(publics)))
 
     fmt.Printf("    delinearizedPrivKeys: [")
     for i := 0; i < n; i++ {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032x\")", reverse(delinearizedPrivates[i].Bytes()))
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%x", 64, reverse(delinearizedPrivates[i].Bytes())))
     }
     fmt.Printf("],\n")
 
@@ -134,7 +145,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032s\")", delinearizedPublics[i].String())
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%s", 64, delinearizedPublics[i].String()))
     }
     fmt.Printf("],\n")
 
@@ -164,7 +175,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032x\")", reverse(v[i].Bytes()))
+        fmt.Printf("BufferUtils.fromHex(\"%x\")", fmtPad("%x", 64, reverse(v[i].Bytes())))
     }
     fmt.Printf("],\n")
 
@@ -173,7 +184,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032s\")", V[i].String())
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%s", 64, V[i].String()))
     }
     fmt.Printf("],\n")
 
@@ -182,7 +193,7 @@ func main() {
     if err != nil {
         panic(err.Error())
     }
-    fmt.Printf("    aggCommitment: BufferUtils.fromHex(\"%032s\"),\n", aggV.String())
+    fmt.Printf("    aggCommitment: BufferUtils.fromHex(\"%s\"),\n", fmtPad("%s", 64, aggV.String()))
 
     // Set aggregate mask in nodes
     for i := 0; i < n; i++ {
@@ -198,7 +209,7 @@ func main() {
         }
         c = append(c, ci)
     }
-    fmt.Printf("    aggPubKey: BufferUtils.fromHex(\"%032s\"),\n", masks[0].AggregatePublic.String())
+    fmt.Printf("    aggPubKey: BufferUtils.fromHex(\"%s\"),\n", fmtPad("%s", 64, masks[0].AggregatePublic.String()))
 
     // Compute responses
     var r []kyber.Scalar
@@ -212,7 +223,7 @@ func main() {
         if i != 0 {
             fmt.Printf(", ")
         }
-        fmt.Printf("BufferUtils.fromHex(\"%032x\")", reverse(r[i].Bytes()))
+        fmt.Printf("BufferUtils.fromHex(\"%s\")", fmtPad("%x", 64, reverse(r[i].Bytes())))
     }
     fmt.Printf("],\n")
 
@@ -221,7 +232,7 @@ func main() {
     if err != nil {
         panic(err.Error())
     }
-    fmt.Printf("    aggSignature: BufferUtils.fromHex(\"%032x\"),\n", reverse(aggr.Bytes()))
+    fmt.Printf("    aggSignature: BufferUtils.fromHex(\"%s\"),\n", fmtPad("%x", 64, reverse(aggr.Bytes())))
 
     for i := 0; i < n; i++ {
         // Sign
@@ -235,7 +246,7 @@ func main() {
         }
     }
 
-    fmt.Printf("    signature: BufferUtils.fromHex(\"%032s%032x\"),\n", aggV.String(), reverse(aggr.Bytes()))
-    fmt.Printf("    message: BufferUtils.fromAscii(\"%032s\")\n", message)
+    fmt.Printf("    signature: BufferUtils.fromHex(\"%s\"),\n", fmtPad("%s%x", 128, aggV.String(), reverse(aggr.Bytes())))
+    fmt.Printf("    message: BufferUtils.fromAscii(\"%s\")\n", message)
     fmt.Printf("}\n")
 }
