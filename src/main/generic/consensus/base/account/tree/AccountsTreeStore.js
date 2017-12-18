@@ -119,7 +119,7 @@ class AccountsTreeStore {
     }
 
     /**
-     * @returns {Promise}
+     * @returns {Promise.<boolean>}
      */
     commit() {
         return this._store.commit();

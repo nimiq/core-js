@@ -12,12 +12,12 @@ class PartialAccountsTree extends AccountsTree {
 
     /**
      * @param {AccountsTreeChunk} chunk
-     * @returns {Promise}
+     * @returns {Promise.<PartialAccountsTree.Status>}
      */
     async pushChunk(chunk) {
         // First verify the proof.
         if (!(await chunk.verify())) {
-            return PartialAccountsTree.ERR_INCORRECT_PROOF;
+            return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
         }
 
         const tx = await this.transaction();
@@ -28,7 +28,7 @@ class PartialAccountsTree extends AccountsTree {
         // Check if proof can be merged.
         if (!(await tx._mergeProof(chunk.proof, chunk.tail.prefix))) {
             await tx.abort();
-            return PartialAccountsTree.ERR_UNMERGEABLE;
+            return PartialAccountsTree.Status.ERR_UNMERGEABLE;
         }
         this._complete = tx.complete;
 
@@ -39,7 +39,7 @@ class PartialAccountsTree extends AccountsTree {
         this._lastPrefix = chunk.tail.prefix;
 
         // And return OK code depending on internal state.
-        return this._complete ? PartialAccountsTree.OK_COMPLETE : PartialAccountsTree.OK_UNFINISHED;
+        return this._complete ? PartialAccountsTree.Status.OK_COMPLETE : PartialAccountsTree.Status.OK_UNFINISHED;
     }
 
     /**
@@ -187,7 +187,7 @@ class PartialAccountsTree extends AccountsTree {
     }
 
     /**
-     * @returns {Promise}
+     * @returns {Promise.<boolean>}
      */
     commit() {
         return this._store.commit();
@@ -200,10 +200,16 @@ class PartialAccountsTree extends AccountsTree {
         return this._store.abort();
     }
 }
-PartialAccountsTree.ERR_HASH_MISMATCH = -3;
-PartialAccountsTree.ERR_INCORRECT_PROOF = -2;
-PartialAccountsTree.ERR_UNMERGEABLE = -1;
-PartialAccountsTree.OK_COMPLETE = 0;
-PartialAccountsTree.OK_UNFINISHED = 1;
+
+/**
+ * @enum {number}
+ */
+PartialAccountsTree.Status = {
+    ERR_HASH_MISMATCH: -3,
+    ERR_INCORRECT_PROOF: -2,
+    ERR_UNMERGEABLE: -1,
+    OK_COMPLETE: 0,
+    OK_UNFINISHED: 1
+};
 Class.register(PartialAccountsTree);
 

@@ -148,6 +148,7 @@ class AccountsProof {
         return this._nodes.length;
     }
 
+    /** @type {Array.<AccountsTreeNode>} */
     get nodes() {
         return this._nodes;
     }

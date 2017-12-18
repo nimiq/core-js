@@ -422,17 +422,17 @@ class PartialLightChain extends LightChain {
 
     /**
      * @param {AccountsTreeChunk} chunk
-     * @returns {Promise.<number>}
+     * @returns {Promise.<PartialAccountsTree.Status>}
      */
     async pushAccountsTreeChunk(chunk) {
         if (this._state !== PartialLightChain.State.PROVE_ACCOUNTS_TREE) {
-            return PartialAccountsTree.ERR_INCORRECT_PROOF;
+            return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
         }
 
         const result = await this._partialTree.pushChunk(chunk);
 
         // If we're done, prepare next phase.
-        if (result === PartialAccountsTree.OK_COMPLETE) {
+        if (result === PartialAccountsTree.Status.OK_COMPLETE) {
             this._state = PartialLightChain.State.PROVE_BLOCKS;
             this._accountsTx = new Accounts(await this._partialTree.transaction(false));
         }

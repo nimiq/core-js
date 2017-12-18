@@ -334,7 +334,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         const result = await this._partialChain.pushAccountsTreeChunk(chunk);
 
         // Something went wrong!
-        if (result !== PartialAccountsTree.OK_UNFINISHED && result !== PartialAccountsTree.OK_COMPLETE) {
+        if (result < 0) {
             // TODO maybe ban?
             Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
             this._peer.channel.close('AccountsTreeChunk root hash mismatch');
