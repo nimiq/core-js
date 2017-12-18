@@ -106,12 +106,7 @@ class AccountsTreeChunk {
     get length() {
         return this._nodes.length + 1;
     }
-
-    /** @type {boolean} */
-    get empty() {
-        return this._nodes.length === 0 && this._proof.length === 0;
-    }
 }
 AccountsTreeChunk.SIZE_MAX = 1000;
 AccountsTreeChunk.EMPTY = new AccountsTreeChunk([], new AccountsProof([]));
-Class.register(AccountsProof);
+Class.register(AccountsTreeChunk);

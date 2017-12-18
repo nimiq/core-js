@@ -507,7 +507,13 @@ class AccountsTree extends Observable {
     async getChunk(startPrefix, size) {
         const chunk = await this._store.getTerminalNodes(startPrefix, size);
         const lastNode = chunk.pop();
-        const proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
+        let /** @type {AccountsProof} */ proof;
+        if (lastNode) {
+            proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
+        } else {
+            // The proof that the last address does not exist is suitable to proof there is no such chunk.
+            proof = await this.getAccountsProof([Address.fromHex('ffffffffffffffffffffffffffffffffffffffff')]);
+        }
         return new AccountsTreeChunk(chunk, proof);
     }
 
