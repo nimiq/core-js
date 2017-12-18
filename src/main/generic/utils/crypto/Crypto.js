@@ -169,24 +169,42 @@ class Crypto {
         return key;
     }
 
-    static async aggregatePublicKeys(publicKeys) {
+    static async hashPublicKeys(publicKeys) {
         const worker = await Crypto._cryptoWorkerSync();
-        return publicKeys.reduce((pubKeyA, pubKeyB) => worker.pointsAdd(pubKeyA, pubKeyB));
+        return worker.publicKeysHash(publicKeys);
+    }
+
+    static async delinearizePublicKey(publicKeys, publicKey) {
+        const worker = await Crypto._cryptoWorkerSync();
+        const publicKeysHash = await worker.publicKeysHash(publicKeys);
+        return worker.publicKeyDelinearize(publicKey, publicKeysHash);
+    }
+
+    static async delinearizePrivateKey(publicKeys, publicKey, privateKey) {
+        const worker = await Crypto._cryptoWorkerSync();
+        const publicKeysHash = await worker.publicKeysHash(publicKeys);
+        return worker.privateKeyDelinearize(privateKey, publicKey, publicKeysHash);
+    }
+
+    static async delinearizeAndAggregatePublicKeys(publicKeys) {
+        const worker = await Crypto._cryptoWorkerSync();
+        const publicKeysHash = await worker.publicKeysHash(publicKeys);
+        return worker.publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash);
+    }
+
+    static async delinearizedPartialSignatureCreate(privateKey, publicKey, publicKeys, secret, combinedCommitment, data) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return worker.delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, combinedCommitment, data);
     }
 
     static async aggregateCommitments(commitments) {
         const worker = await Crypto._cryptoWorkerSync();
-        return commitments.reduce((commitment1, commitment2) => worker.pointsAdd(commitment1, commitment2));
+        return worker.commitmentsAggregate(commitments);
     }
 
     static async aggregatePartialSignatures(partialSignatures) {
         const worker = await Crypto._cryptoWorkerSync();
         return partialSignatures.reduce((sigA, sigB) => worker.scalarsAdd(sigA, sigB));
-    }
-
-    static async partialSignatureCreate(privateKey, combinedPublicKey, secret, combinedCommitment, data) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.partialSignatureCreate(privateKey, combinedPublicKey, secret, combinedCommitment, data);
     }
 
     static async combinePartialSignatures(combinedCommitment, partialSignatures) {

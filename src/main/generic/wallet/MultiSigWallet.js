@@ -63,13 +63,13 @@ class MultiSigWallet {
 
     /**
      * @param {Transaction} transaction
-     * @param {PublicKey} aggregatedPublicKey
+     * @param {Array.<PublicKey>} publicKeys
      * @param {Commitment} aggregatedCommitment
      * @param {RandomSecret} secret
      * @returns {Promise.<PartialSignature>}
      */
-    async signTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, secret) {
-        return await PartialSignature.create(this._keyPair.privateKey, aggregatedPublicKey,
+    async signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
+        return await PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
             secret, aggregatedCommitment, transaction.serializeContent());
     }
 

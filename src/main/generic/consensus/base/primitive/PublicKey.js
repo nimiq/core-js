@@ -29,7 +29,7 @@ class PublicKey extends Primitive {
      * @return {Promise.<PublicKey>}
      */
     static async sum(publicKeys) {
-        return new PublicKey(await Crypto.aggregatePublicKeys(publicKeys.map(key => key._obj)));
+        return new PublicKey(await Crypto.delinearizeAndAggregatePublicKeys(publicKeys.map(key => key._obj)));
     }
 
     /**

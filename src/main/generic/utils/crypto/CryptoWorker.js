@@ -52,13 +52,6 @@ class CryptoWorker {
     async commitmentCreate(randomness) {}
 
     /**
-     * @param {Uint8Array} pointA
-     * @param {Uint8Array} pointB
-     * @returns {Uint8Array}
-     */
-    pointsAdd(pointA, pointB) {}
-
-    /**
      * @param {Uint8Array} a
      * @param {Uint8Array} b
      * @returns {Uint8Array}
@@ -66,14 +59,49 @@ class CryptoWorker {
     scalarsAdd(a, b) {}
 
     /**
+     * @param {Array.<Uint8Array>} commitments
+     * @returns {Promise.<Uint8Array>}
+     */
+    async commitmentsAggregate(commitments) {}
+
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @returns {Promise.<Uint8Array>}
+     */
+    async publicKeysHash(publicKeys) {}
+
+    /**
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} publicKeysHash
+     * @returns {Promise.<Uint8Array>}
+     */
+    async publicKeyDelinearize(publicKey, publicKeysHash) {}
+
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @param {Uint8Array} publicKeysHash
+     * @returns {Promise.<Uint8Array>}
+     */
+    async publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash) {}
+
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} publicKeysHash
+     * @returns {Promise.<Uint8Array>}
+     */
+    async privateKeyDelinearize(privateKey, publicKey, publicKeysHash) {}
+
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
      * @param {Uint8Array} privateKey
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} secret
-     * @param {Uint8Array} commitment
+     * @param {Uint8Array} aggregateCommitment
      * @param {Uint8Array} message
      * @returns {Promise.<Uint8Array>}
      */
-    async partialSignatureCreate(privateKey, publicKey, secret, commitment, message) {}
+    async delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, aggregateCommitment, message) {}
 
     /**
      * @param {Uint8Array} privateKey
@@ -97,4 +125,5 @@ CryptoWorker.PRIVATE_KEY_SIZE = 32;
 CryptoWorker.MULTISIG_RANDOMNESS_SIZE = 32;
 CryptoWorker.SIGNATURE_SIZE = 64;
 CryptoWorker.PARTIAL_SIGNATURE_SIZE = 32;
+CryptoWorker.SIGNATURE_HASH_SIZE = 64;
 Class.register(CryptoWorker);

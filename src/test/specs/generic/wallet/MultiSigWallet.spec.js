@@ -19,9 +19,9 @@ describe('MultiSigWallet', () => {
 
             let transaction = await wallet1.createTransaction(recipient, value, fee, nonce);
 
-            const partialSignature1 = await wallet1.signTransaction(transaction, aggregatedPublicKey,
+            const partialSignature1 = await wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
                 aggregatedCommitment, commitmentPair1.secret);
-            const partialSignature2 = await wallet2.signTransaction(transaction, aggregatedPublicKey,
+            const partialSignature2 = await wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
                 aggregatedCommitment, commitmentPair2.secret);
 
             transaction = await wallet1.completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment,
