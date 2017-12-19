@@ -41,8 +41,7 @@ class GetAccountsTreeChunkMessage extends Message {
     get serializedSize() {
         return super.serializedSize
             + this._blockHash.serializedSize
-            + /*length of prefix*/ 1
-            + this._startPrefix.length;
+            + SerialBuffer.varLengthStringSize(this._startPrefix);
     }
 
     /** @type {Hash} */

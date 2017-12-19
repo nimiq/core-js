@@ -28,7 +28,7 @@ class RejectMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const messageType = /** @type {Message.Type} */ buf.readUint64();
+        const messageType = /** @type {Message.Type} */ buf.readVarUint();
         const code = /** @type {RejectMessage.Code} */ buf.readUint8();
         const reason = buf.readVarLengthString();
         const length = buf.readUint16();
@@ -43,7 +43,7 @@ class RejectMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint64(this._messageType);
+        buf.writeVarUint(this._messageType);
         buf.writeUint8(this._code);
         buf.writeVarLengthString(this._reason);
         buf.writeUint16(this._extraData.byteLength);
@@ -55,10 +55,9 @@ class RejectMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + 8
+            + SerialBuffer.varUintSize(this._messageType)
             + /*code*/ 1
-            + /*reason VarLengthString extra byte*/ 1
-            + this._reason.length
+            + SerialBuffer.varLengthStringSize(this._reason)
             + /*extraDataLength*/ 2
             + this._extraData.byteLength;
     }

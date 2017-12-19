@@ -169,8 +169,7 @@ class WsPeerAddress extends PeerAddress {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*extra byte VarLengthString host*/ 1
-            + this._host.length
+            + SerialBuffer.varLengthStringSize(this._host)
             + /*port*/ 2;
     }
 

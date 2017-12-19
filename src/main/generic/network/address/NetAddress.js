@@ -43,8 +43,7 @@ class NetAddress {
 
     /** @type {number} */
     get serializedSize() {
-        return /*extraByte VarLengthString ip*/ 1
-            + /*ip*/ this._ip.length;
+        return SerialBuffer.varLengthStringSize(this._ip);
     }
 
     /**

@@ -128,13 +128,14 @@ class AccountsTreeNode {
         } else {
             // The children array contains undefined values for non existing children.
             // Only count existing ones.
-            const childrenSize = this._childrenHashes.reduce((sum, child, i) => sum + (child ? child.serializedSize + this._childrenSuffixes[i].length + /*suffix varLengthString*/ 1 : 0), 0);
+            const childrenSize = this._childrenHashes.reduce((sum, child, i) => {
+                return sum + (child ? child.serializedSize + SerialBuffer.varLengthStringSize(this._childrenSuffixes[i]) : 0);
+            }, 0);
             payloadSize = /*childCount*/ 1 + childrenSize;
         }
 
         return /*type*/ 1
-            + /*extra byte varLengthString prefix*/ 1
-            + this._prefix.length
+            + SerialBuffer.varLengthStringSize(this._prefix)
             + payloadSize;
     }
 

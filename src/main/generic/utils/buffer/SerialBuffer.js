@@ -265,5 +265,14 @@ class SerialBuffer extends Uint8Array {
         this.writeUint8(bytes.byteLength);
         this.write(bytes);
     }
+
+    /**
+     * @param {string} value
+     * @returns {number}
+     */
+    static varLengthStringSize(value) {
+        if (StringUtils.isMultibyte(value) || !NumberUtils.isUint8(value.length)) throw new Error('Malformed value');
+        return /*length*/ 1 + value.length;
+    }
 }
 Class.register(SerialBuffer);
