@@ -48,8 +48,10 @@ const $ = {};
     $.network = $.consensus.network;
 
     $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
+
+    const account = await $.accounts.get($.wallet.address) || Nimiq.BasicAccount.INITIAL;
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
-                  + ` Balance: ${Nimiq.Policy.satoshisToCoins((await $.accounts.get($.wallet.address)).balance)} NIM`);
+                  + ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`);
 
     $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.wallet.address);
 
@@ -57,7 +59,7 @@ const $ = {};
 
     $.blockchain.on('head-changed', (head) => {
         if ($.consensus.established || head.height % 100 === 0) {
-        Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
+            Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
         }
     });
 
@@ -95,16 +97,17 @@ const $ = {};
 
     if (statisticsOptions) {
         // Output regular statistics
-        const hashrates      = [];
+        const hashrates = [];
         const outputInterval = typeof statisticsOptions === 'number' ? statisticsOptions : 10; // seconds
 
         $.miner.on('hashrate-changed', async (hashrate) => {
             hashrates.push(hashrate);
 
-            if(hashrates.length >= outputInterval) {
-                let sum = hashrates.reduce((acc, val) => acc += val);
+            if (hashrates.length >= outputInterval) {
+                const account = await $.accounts.get($.wallet.address) || Nimiq.BasicAccount.INITIAL;
+                const sum = hashrates.reduce((acc, val) => acc + val, 0);
                 Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(Math.log10(hashrates.length)).padStart(7)} H/s`
-                            + ` - Balance: ${Nimiq.Policy.satoshisToCoins((await $.accounts.get($.wallet.address)).balance)} NIM`
+                            + ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`
                             + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
                 hashrates.length = 0;
             }
