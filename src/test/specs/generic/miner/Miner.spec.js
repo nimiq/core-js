@@ -21,11 +21,14 @@ describe('Miner', () => {
 
             block = await miner.getNextBlock();
             expect(block).toBeTruthy();
-            await testBlockchain.accounts.commitBlock(block);
+            const cache = testBlockchain.transactionsCache.duplicate();
+            await testBlockchain.accounts.commitBlock(block, cache);
+            cache.pushBlock(block);
 
             const txs2 = await testBlockchain.generateTransactions(5);
 
-            await testBlockchain.accounts.revertBlock(block);
+            await testBlockchain.accounts.revertBlock(block, cache);
+            cache.revertBlock(block);
 
             for (const tx of txs2) {
                 expect(await mempool.pushTransaction(tx)).toBe(Mempool.ReturnCode.ACCEPTED);
@@ -46,7 +49,8 @@ describe('Miner', () => {
             done();
             return;
         }
-        spyOn(Time, 'now').and.returnValue(26000);
+
+        spyOn(Time, 'now').and.returnValue(3500);
         (async() => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);

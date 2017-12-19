@@ -16,19 +16,15 @@ class Account {
     /**
      * @param {Account.Type} type
      * @param {number} balance
-     * @param {number} nonce
      */
-    constructor(type, balance, nonce) {
+    constructor(type, balance) {
         if (!NumberUtils.isUint8(type)) throw new Error('Malformed type');
         if (!NumberUtils.isUint64(balance)) throw new Error('Malformed balance');
-        if (!NumberUtils.isUint32(nonce)) throw new Error('Malformed nonce');
 
         /** @type {Account.Type} */
         this._type = type;
         /** @type {number} */
         this._balance = balance;
-        /** @type {number} */
-        this._nonce = nonce;
     }
 
     /**
@@ -56,7 +52,6 @@ class Account {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._type);
         buf.writeUint64(this._balance);
-        buf.writeUint32(this._nonce);
         return buf;
     }
 
@@ -65,8 +60,7 @@ class Account {
      */
     get serializedSize() {
         return /*type*/ 1
-            + /*balance*/ 8
-            + /*nonce*/ 4;
+            + /*balance*/ 8;
     }
 
     /**
@@ -77,8 +71,7 @@ class Account {
     equals(o) {
         return o instanceof Account
             && this._type === o._type
-            && this._balance === o._balance
-            && this._nonce === o._nonce;
+            && this._balance === o._balance;
     }
 
     toString() {
@@ -92,11 +85,6 @@ class Account {
         return this._balance;
     }
 
-    /** @type {number} */
-    get nonce() {
-        return this._nonce;
-    }
-
     /** @type {Account.Type} */
     get type() {
         return this._type;
@@ -105,10 +93,11 @@ class Account {
     /**
      * @param {Array.<Transaction>} transactions
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @param {boolean} silent
      * @return {Promise.<boolean>}
      */
-    verifyOutgoingTransactionSet(transactions, blockHeight, silent = false) {
+    verifyOutgoingTransactionSet(transactions, blockHeight, transactionsCache, silent = false) {
         let account = this;
         for (let i = 0; i < transactions.length; ++i) {
             const tx = transactions[i];
@@ -116,8 +105,13 @@ class Account {
                 if (!silent) Log.w(Account, 'Rejected transaction - sender type must match account type');
                 return Promise.resolve(false);
             }
-            if (account._nonce !== tx.nonce) {
-                if (!silent) Log.d(Account, 'Rejected transaction - invalid nonce', tx);
+            if (blockHeight < tx.validityStartHeight
+                || blockHeight >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+                if (!silent) Log.d(Account, 'Rejected transaction - outside validity window', tx);
+                return Promise.resolve(false);
+            }
+            if (transactionsCache.containsTransaction(tx)) {
+                if (!silent) Log.d(Account, 'Rejected transaction - already spent', tx);
                 return Promise.resolve(false);
             }
             if (account._balance < tx.value + tx.fee) {
@@ -125,7 +119,7 @@ class Account {
                 return Promise.resolve(false);
             }
             try {
-                account = account.withOutgoingTransaction(tx, blockHeight);
+                account = account.withOutgoingTransaction(tx, blockHeight, transactionsCache);
             } catch (e) {
                 if (!silent) Log.w(Account, `Rejected transaction - ${e.message || e}`, tx);
                 return Promise.resolve(false);
@@ -136,32 +130,40 @@ class Account {
 
     /**
      * @param {number} balance
-     * @param {number} [nonce]
      * @return {Account|*}
      */
-    withBalance(balance, nonce) { throw new Error('Not yet implemented.'); }
+    withBalance(balance) { throw new Error('Not yet implemented.'); }
 
     /**
      * @param {Transaction} transaction
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @param {boolean} [revert]
      * @return {Account|*}
      */
-    withOutgoingTransaction(transaction, blockHeight, revert = false) {
+    withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         if (!revert) {
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < 0) {
                 throw new Error('Balance Error!');
             }
-            if (transaction.nonce !== this._nonce) {
-                throw new Error('Nonce Error!');
+            if (blockHeight < transaction.validityStartHeight
+                || blockHeight >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+                throw new Error('Validity Error!');
             }
-            return this.withBalance(newBalance, this._nonce + 1);
+            if (transactionsCache.containsTransaction(transaction)) {
+                throw new Error('Double Transaction Error!');
+            }
+            return this.withBalance(newBalance);
         } else {
-            if (transaction.nonce !== this._nonce - 1) {
-                throw new Error('Nonce Error!');
+            if (blockHeight < transaction.validityStartHeight
+                || blockHeight >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+                throw new Error('Validity Error!');
             }
-            return this.withBalance(this._balance + transaction.value + transaction.fee, this._nonce - 1);
+            if (!transactionsCache.containsTransaction(transaction)) {
+                throw new Error('Unknown Transaction Error!');
+            }
+            return this.withBalance(this._balance + transaction.value + transaction.fee);
         }
     }
 
@@ -173,13 +175,13 @@ class Account {
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
         if (!revert) {
-            return this.withBalance(this._balance + transaction.value, this._nonce);
+            return this.withBalance(this._balance + transaction.value);
         } else {
             const newBalance = this._balance - transaction.value;
             if (newBalance < 0) {
                 throw new Error('Balance Error!');
             }
-            return this.withBalance(newBalance, this._nonce);
+            return this.withBalance(newBalance);
         }
     }
 
@@ -187,7 +189,7 @@ class Account {
      * @return {boolean}
      */
     isInitial() {
-        return this._nonce === 0 && this._balance === 0;
+        return this._balance === 0;
     }
 }
 

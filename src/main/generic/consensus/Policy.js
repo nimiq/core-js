@@ -127,6 +127,13 @@ Policy.DIFFICULTY_BLOCK_WINDOW = 120;
  */
 Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR = 2;
 
+/**
+ * Number of blocks a transaction is valid.
+ * @type {number}
+ * @constant
+ */
+Policy.TRANSACTION_VALIDITY_WINDOW = 120;
+
 
 /* Supply & Emission Parameters */
 

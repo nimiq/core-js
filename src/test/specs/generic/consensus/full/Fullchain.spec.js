@@ -77,24 +77,6 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('verifies transaction order', (done) => {
-        (async function () {
-            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
-            const senderPubKey = testBlockchain.users[0].publicKey;
-            const senderPrivKey = testBlockchain.users[0].privateKey;
-            const receiverAddr = testBlockchain.users[1].address;
-
-            let transactions = [
-                await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 1, senderPrivKey),
-                await TestBlockchain.createTransaction(senderPubKey, receiverAddr, 1, 1, 0, senderPrivKey)
-            ];
-
-            const block = await testBlockchain.createBlock({transactions: transactions});
-            const status = await testBlockchain.pushBlock(block);
-            expect(status).toBe(FullChain.ERR_INVALID);
-        })().then(done, done.fail);
-    });
-
     it('verifies transaction signatures', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
@@ -315,12 +297,11 @@ describe('Blockchain', () => {
             const user0 = testBlockchain.users[0];
             const user1 = testBlockchain.users[1];
             const account0 = await testBlockchain.accounts.get(user0.address, Account.Type.BASIC);
-            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, account0.nonce, user0.privateKey);
-            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, account0.nonce + 1, user0.privateKey);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, 9, user0.privateKey);
+            const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 1, 10, user0.privateKey);
             const block = await testBlockchain.createBlock({transactions: [tx1, tx2], minerAddr: user1.address});
             await testBlockchain.pushBlock(block);
             const account1 = await testBlockchain.accounts.get(user0.address, Account.Type.BASIC);
-            expect(account1.nonce).toBe(account0.nonce + 2);
             expect(account1.balance).toBe(account0.balance - 4);
         })().then(done, done.fail);
     });
@@ -409,6 +390,94 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
+    it('updates transactions cache on rebranch', (done) => {
+        (async function () {
+            const users = await TestBlockchain.getUsers(2);
+            const tx1 = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 20, 1, users[0].privateKey);
+            const tx2 = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 1, users[0].privateKey);
+            const tx3 = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 500, 20, 2, users[0].privateKey);
+            const tx4 = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1, 20, 1, users[0].privateKey);
+            const tx5 = await TestBlockchain.createTransaction(users[1].publicKey, users[0].address, 500, 20, 2, users[1].privateKey);
+            const tx6 = await TestBlockchain.createTransaction(users[1].publicKey, users[0].address, 200, 20, 2, users[1].privateKey);
+
+            // Create first chain (2 blocks)
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+            let block = await testBlockchain.createBlock({transactions: [tx1]});
+            let status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            const transactions = block.transactions.slice();
+            for (const tx of transactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+            }
+
+            block = await testBlockchain.createBlock({transactions: [tx2, tx3]});
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            block.transactions.forEach(tx => transactions.push(tx));
+            for (const tx of transactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+            }
+
+            // Create second chain (3 blocks)
+            const fork = await TestBlockchain.createVolatileTest(0, 2);
+            block = await fork.createBlock({
+                timestamp: Block.GENESIS.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+                transactions: [tx4]
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_FORKED);
+
+            const forkTransactions = block.transactions.slice();
+            for (const tx of forkTransactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+            }
+
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+                transactions: [tx5]
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            // Expect the chain to rebranch here.
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_REBRANCHED);
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.height).toBe(3);
+
+            block.transactions.forEach(tx => forkTransactions.push(tx));
+            for (const tx of forkTransactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+            }
+            for (const tx of transactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+            }
+
+            block = await fork.createBlock({
+                timestamp: block.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+                transactions: [tx6]
+            });
+            status = await fork.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+            expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.height).toBe(4);
+
+            block.transactions.forEach(tx => forkTransactions.push(tx));
+            for (const tx of forkTransactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+            }
+            for (const tx of transactions) {
+                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+            }
+        })().then(done, done.fail);
+    });
+
     it('has getters that return correct values for its properties', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
@@ -467,10 +536,10 @@ describe('Blockchain', () => {
             const user3 = testBlockchain.users[3];
             const user4 = testBlockchain.users[4];
 
-            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 0, user0.privateKey);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 1, user0.privateKey);
             const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
-            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 2, user0.privateKey);
-            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 3, user0.privateKey);
+            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 1, user0.privateKey);
+            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 1, user0.privateKey);
             const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);

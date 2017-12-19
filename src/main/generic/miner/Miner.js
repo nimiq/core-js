@@ -226,7 +226,7 @@ class Miner extends Observable {
         const accounts = await this._blockchain.accounts.transaction();
         let accountsHash;
         try {
-            await accounts.commitBlockBody(body, height);
+            await accounts.commitBlockBody(body, height, this._blockchain.transactionsCache);
             accountsHash = await accounts.hash();
             await accounts.abort();
         } catch (e) {

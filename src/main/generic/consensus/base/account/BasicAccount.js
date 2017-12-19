@@ -9,15 +9,14 @@ class BasicAccount extends Account {
      */
     static copy(o) {
         if (!o) return o;
-        return new BasicAccount(o._balance, o._nonce);
+        return new BasicAccount(o._balance);
     }
 
     /**
      * @param {number} [balance]
-     * @param {number} [nonce]
      */
-    constructor(balance = 0, nonce = 0) {
-        super(Account.Type.BASIC, balance, nonce);
+    constructor(balance = 0) {
+        super(Account.Type.BASIC, balance);
     }
 
     /**
@@ -29,12 +28,11 @@ class BasicAccount extends Account {
         if (type !== Account.Type.BASIC) throw new Error('Invalid account type');
 
         const balance = buf.readUint64();
-        const nonce = buf.readUint32();
-        return new BasicAccount(balance, nonce);
+        return new BasicAccount(balance);
     }
 
     toString() {
-        return `BasicAccount{balance=${this._balance}, nonce=${this._nonce}}`;
+        return `BasicAccount{balance=${this._balance}}`;
     }
     
     /**
@@ -55,13 +53,12 @@ class BasicAccount extends Account {
 
     /**
      * @param {number} balance
-     * @param {number} [nonce]
      * @return {Account|*}
      */
-    withBalance(balance, nonce) { 
-        return new BasicAccount(balance, typeof nonce === 'undefined' ? this._nonce : nonce);
+    withBalance(balance) {
+        return new BasicAccount(balance);
     }
 }
-BasicAccount.INITIAL = new BasicAccount(0, 0);
+BasicAccount.INITIAL = new BasicAccount(0);
 Account.TYPE_MAP.set(Account.Type.BASIC, BasicAccount);
 Class.register(BasicAccount);

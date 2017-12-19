@@ -4,7 +4,7 @@ describe('TransactionsProof', () => {
     const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 1;
-    const nonce = 1;
+    const validityStartHeight = 1;
     const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
     const proof = BufferUtils.fromAscii('ABCD');
     const data = BufferUtils.fromAscii('EFGH');
@@ -16,8 +16,8 @@ describe('TransactionsProof', () => {
             await Crypto.prepareSyncCryptoWorker();
             senderAddress = senderPubKey.toAddressSync();
 
-            tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
-            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, data, proof);
+            tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
+            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, data, proof);
 
             tx1Proof = await MerkleProof.compute([tx1, tx2], [tx1]);
             tx2Proof = await MerkleProof.compute([tx1, tx2], [tx2]);

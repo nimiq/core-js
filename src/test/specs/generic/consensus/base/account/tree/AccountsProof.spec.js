@@ -18,10 +18,10 @@ describe('AccountsProof', () => {
      */
     beforeEach(function (done) {
         (async function () {
-            const account1 = new BasicAccount(25, 3);
-            const account2 = new BasicAccount(1, 925);
-            const account3 = new BasicAccount(1322, 532);
-            const account4 = new BasicAccount(93, 11);
+            const account1 = new BasicAccount(25);
+            const account2 = new BasicAccount(1);
+            const account3 = new BasicAccount(1322);
+            const account4 = new BasicAccount(93);
 
             const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
             const t1Hash = await t1.hash();
@@ -138,7 +138,7 @@ describe('AccountsProof', () => {
     it('must not verify successfully if it contains any node before the Root Node', (done) => {
         (async () => {
             for (const nodes of testNodesArray) {
-                const fakeAccount = new BasicAccount(42, 31337);
+                const fakeAccount = new BasicAccount(42);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.push(fakeTreeNode);
                 const accountsProof1 = new AccountsProof(nodes);
@@ -157,7 +157,7 @@ describe('AccountsProof', () => {
     it('must not verify successfully if it contains a node that is not part of the Tree at the end', (done) => {
         (async () => {
             for (const nodes of testNodesArray) {
-                const fakeAccount = new BasicAccount(42, 31337);
+                const fakeAccount = new BasicAccount(42);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.unshift(fakeTreeNode);
                 const accountsProof1 = new AccountsProof(nodes);
@@ -176,7 +176,7 @@ describe('AccountsProof', () => {
     it('must not verify successfully neither return the account if it contains a node that is not part of the Tree', (done) => {
         (async () => {
             for (const nodes of testNodesArray) {
-                const fakeAccount = new BasicAccount(42, 31337);
+                const fakeAccount = new BasicAccount(42);
                 const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
                 nodes.splice(2, 0, fakeTreeNode);
                 const accountsProof1 = new AccountsProof(nodes);
@@ -198,7 +198,7 @@ describe('AccountsProof', () => {
         (async () => {
             for (const nodes of testNodesArray) {
                 const accountsProof1 = new AccountsProof(nodes);
-                const rootHash = new Hash(BufferUtils.fromBase64('UfAZwaXYoNdWgxTjefgWClEY/X2J2HzHL5MUq1qfRNI='));
+                const rootHash = new Hash(BufferUtils.fromBase64('IWmy3mcw81BYGjamnhH81Qi4s6fUpOuyyU7AJVTn/Zo='));
 
                 const hash = await accountsProof1.root();
                 expect(hash.equals(rootHash)).toBe(true);

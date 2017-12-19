@@ -14,7 +14,6 @@ describe('VestingAccount', () => {
         expect(account2 instanceof VestingAccount).toBeTruthy();
         expect(account2.type).toEqual(account.type);
         expect(account2.balance).toEqual(account.balance);
-        expect(account2.nonce).toEqual(account.nonce);
         expect(account2.vestingStart).toEqual(account.vestingStart);
         expect(account2.vestingStepBlocks).toEqual(account.vestingStepBlocks);
         expect(account2.vestingStepAmount).toEqual(account.vestingStepAmount);
@@ -22,7 +21,7 @@ describe('VestingAccount', () => {
     });
 
     it('can handle balance changes', () => {
-        const account = new VestingAccount(0, 0);
+        const account = new VestingAccount(0);
 
         expect(account.balance).toBe(0);
         expect(account.withBalance(10).balance).toBe(10);
@@ -33,16 +32,6 @@ describe('VestingAccount', () => {
         expect(() => account.withBalance(NaN)).toThrowError('Malformed balance');
     });
 
-    it('can handle nonce changes', () => {
-        const account = new VestingAccount(0, 0);
-
-        expect(account.nonce).toBe(0);
-        expect(account.withBalance(0, 1).nonce).toBe(1);
-        expect(account.withBalance(0, 1).withBalance(0, 0).nonce).toBe(0);
-
-        expect(() => account.withBalance(0, -1)).toThrowError('Malformed nonce');
-        expect(() => account.withBalance(0, NaN)).toThrowError('Malformed nonce');
-    });
 
     it('can accept incoming transactions', (done) => {
         (async () => {
@@ -52,7 +41,7 @@ describe('VestingAccount', () => {
     });
 
     it('can apply incoming transactions', () => {
-        let account = new VestingAccount(0, 0);
+        let account = new VestingAccount(0);
 
         expect(account.balance).toBe(0);
 
@@ -68,7 +57,7 @@ describe('VestingAccount', () => {
     });
 
     it('can revert incoming transaction', () => {
-        let account = new VestingAccount(0, 0);
+        let account = new VestingAccount(0);
         const transaction = new BasicTransaction(pubKey, recipient, 100, 0, 0);
 
         expect(account.balance).toBe(0);
@@ -104,72 +93,73 @@ describe('VestingAccount', () => {
     });
 
     it('can apply outgoing transaction', () => {
-        let account = new VestingAccount(100, 0, 0, 100, 50);
+        let account = new VestingAccount(100, 0, 100, 50);
 
         expect(account.balance).toBe(100);
-        expect(account.nonce).toBe(0);
 
-        let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
-        account = account.withOutgoingTransaction(transaction, 110);
+        const cache = new TransactionsCache();
+        let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 110);
+        account = account.withOutgoingTransaction(transaction, 110, cache);
 
         expect(account.balance).toBe(99);
-        expect(account.nonce).toBe(1);
 
-        transaction = new BasicTransaction(pubKey, recipient, 50, 0, 1);
-        account = account.withOutgoingTransaction(transaction, 220);
+        transaction = new BasicTransaction(pubKey, recipient, 50, 0, 220);
+        account = account.withOutgoingTransaction(transaction, 220, cache);
 
         expect(account.balance).toBe(49);
-        expect(account.nonce).toBe(2);
 
-        transaction = new BasicTransaction(pubKey, recipient, 49, 0, 2);
-        account = account.withOutgoingTransaction(transaction, 230);
+        transaction = new BasicTransaction(pubKey, recipient, 49, 0, 230);
+        account = account.withOutgoingTransaction(transaction, 230, cache);
 
         expect(account.balance).toBe(0);
-        expect(account.nonce).toBe(3);
     });
 
     it('refuses to apply invalid outgoing transaction', () => {
-        const account = new VestingAccount(100, 0, 0, 100, 50);
+        const account = new VestingAccount(100, 0, 100, 50);
 
+        const cache = new TransactionsCache();
         let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 1);
-        expect(() => account.withOutgoingTransaction(transaction, 150)).toThrowError('Nonce Error!');
 
         transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 1)).toThrowError('Balance Error!');
+        expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Balance Error!');
 
         transaction = new BasicTransaction(pubKey, recipient, 75, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 150)).toThrowError('Balance Error!');
+        expect(() => account.withOutgoingTransaction(transaction, 150, cache)).toThrowError('Balance Error!');
 
         transaction = new BasicTransaction(pubKey, recipient, 101, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 1500)).toThrowError('Balance Error!');
+        expect(() => account.withOutgoingTransaction(transaction, 1500, cache)).toThrowError('Balance Error!');
+
+        // TODO: more tests
     });
 
     it('can revert outgoing transaction', () => {
-        let account = new VestingAccount(100, 0);
+        let account = new VestingAccount(100);
 
         expect(account.balance).toBe(100);
-        expect(account.nonce).toBe(0);
 
+        const cache = new TransactionsCache();
         const transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
-        account = account.withOutgoingTransaction(transaction, 1);
+        account = account.withOutgoingTransaction(transaction, 1, cache);
 
         expect(account.balance).toBe(99);
-        expect(account.nonce).toBe(1);
+        cache.transactions.add(transaction);
 
-        account = account.withOutgoingTransaction(transaction, 1, true);
+        account = account.withOutgoingTransaction(transaction, 1, cache, true);
 
         expect(account.balance).toBe(100);
-        expect(account.nonce).toBe(0);
     });
     
     it('can create vesting account via transaction and vest it', () => {
+        const cache = new TransactionsCache();
+
         let buf = new SerialBuffer(4);
         buf.writeUint32(1000);
         let creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, recipient, Account.Type.VESTING, 100, 0, 0, buf);
         let account = VestingAccount.INITIAL.withIncomingTransaction(creationTransaction, 1);
-        let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 2)).toThrowError('Balance Error!');
-        expect(account.withOutgoingTransaction(transaction, 1001).balance).toBe(99);
+        let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 2);
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(pubKey, recipient, 1, 0, 1001);
+        expect(account.withOutgoingTransaction(transaction, 1001, cache).balance).toBe(99);
         
         buf = new SerialBuffer(16);
         buf.writeUint32(0);
@@ -177,11 +167,14 @@ describe('VestingAccount', () => {
         buf.writeUint64(50);
         creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, recipient, Account.Type.VESTING, 100, 0, 0, buf);
         account = VestingAccount.INITIAL.withIncomingTransaction(creationTransaction, 1);
-        expect(() => account.withOutgoingTransaction(transaction, 2)).toThrowError('Balance Error!');
-        expect(account.withOutgoingTransaction(transaction, 101).balance).toBe(99);
-        transaction = new BasicTransaction(pubKey, recipient, 51, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 101)).toThrowError('Balance Error!');
-        expect(account.withOutgoingTransaction(transaction, 201).balance).toBe(49);
+        transaction = new BasicTransaction(pubKey, recipient, 1, 0, 2);
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(pubKey, recipient, 1, 0, 101);
+        expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(99);
+        transaction = new BasicTransaction(pubKey, recipient, 51, 0, 101);
+        expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(pubKey, recipient, 51, 0, 201);
+        expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(49);
 
         buf = new SerialBuffer(24);
         buf.writeUint32(0);
@@ -190,13 +183,15 @@ describe('VestingAccount', () => {
         buf.writeUint64(80);
         creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, recipient, Account.Type.VESTING, 100, 0, 0, buf);
         account = VestingAccount.INITIAL.withIncomingTransaction(creationTransaction, 1);
-        transaction = new BasicTransaction(pubKey, recipient, 20, 0, 0);
-        expect(account.withOutgoingTransaction(transaction, 2).balance).toBe(80);
-        transaction = new BasicTransaction(pubKey, recipient, 60, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 2)).toThrowError('Balance Error!');
-        expect(account.withOutgoingTransaction(transaction, 101).balance).toBe(40);
-        transaction = new BasicTransaction(pubKey, recipient, 100, 0, 0);
-        expect(() => account.withOutgoingTransaction(transaction, 101)).toThrowError('Balance Error!');
-        expect(account.withOutgoingTransaction(transaction, 201).balance).toBe(0);
+        transaction = new BasicTransaction(pubKey, recipient, 20, 0, 2);
+        expect(account.withOutgoingTransaction(transaction, 2, cache).balance).toBe(80);
+        transaction = new BasicTransaction(pubKey, recipient, 60, 0, 2);
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(pubKey, recipient, 60, 0, 101);
+        expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(40);
+        transaction = new BasicTransaction(pubKey, recipient, 100, 0, 101);
+        expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(pubKey, recipient, 100, 0, 201);
+        expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(0);
     });
 });

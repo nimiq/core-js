@@ -36,7 +36,7 @@ describe('AccountsTree', () => {
     treeBuilders.forEach((/** @type {{type: string, builder: function():Promise.<AccountsTree>}} */ treeBuilder) => {
 
         it(`has a 32 bytes root hash (${  treeBuilder.type  })` , (done) => {
-            const account1 = new BasicAccount(80000, 8);
+            const account1 = new BasicAccount(80000);
             const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             (async function () {
@@ -50,8 +50,7 @@ describe('AccountsTree', () => {
 
         it(`can put and get a Balance (${  treeBuilder.type  })`, (done) => {
             const value = 20;
-            const nonce = 2;
-            const account1 = new BasicAccount(value, nonce);
+            const account1 = new BasicAccount(value);
             const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             (async function () {
@@ -62,14 +61,12 @@ describe('AccountsTree', () => {
 
                 expect(account2).not.toBeUndefined();
                 expect(account2.balance).toEqual(value);
-                expect(account2.nonce).toEqual(nonce);
             })().then(done, done.fail);
         });
 
         it('can update a Balance', (done) => {
-            const nonce = 1;
             let value = 10;
-            let account = new BasicAccount(value, nonce);
+            let account = new BasicAccount(value);
             const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             (async function () {
@@ -80,20 +77,15 @@ describe('AccountsTree', () => {
 
                 expect(result).not.toBeUndefined();
                 expect(result.balance).toEqual(value);
-                expect(result.nonce).toEqual(nonce);
 
                 value = 50;
-                account = new BasicAccount(value, nonce);
+                account = new BasicAccount(value);
                 await tree.put(address, account);
 
                 result = await tree.get(address);
 
                 expect(result).not.toBeUndefined();
                 expect(result.balance).toEqual(value);
-                expect(result.nonce).toEqual(nonce);
-
-
-
             })().then(done, done.fail);
 
 
@@ -101,18 +93,15 @@ describe('AccountsTree', () => {
 
         it(`can put and get multiple Balances (${  treeBuilder.type  })`, (done) => {
             const value1 = 8;
-            const nonce1 = 8;
-            const account1 = new BasicAccount(value1, nonce1);
+            const account1 = new BasicAccount(value1);
             const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             const value2 = 88;
-            const nonce2 = 88;
-            const account2 = new BasicAccount(value2, nonce2);
+            const account2 = new BasicAccount(value2);
             const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
             const value3 = 88888888;
-            const nonce3 = 88888888;
-            const account3 = new BasicAccount(value3, nonce3);
+            const account3 = new BasicAccount(value3);
             const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
 
             (async function () {
@@ -125,23 +114,20 @@ describe('AccountsTree', () => {
                 const accountTest1 = await tree.get(address1);
                 expect(accountTest1).not.toBeUndefined();
                 expect(accountTest1.balance).toEqual(value1);
-                expect(accountTest1.nonce).toEqual(nonce1);
 
                 const accountTest2 = await tree.get(address2);
                 expect(accountTest2).not.toBeUndefined();
                 expect(accountTest2.balance).toEqual(value2);
-                expect(accountTest2.nonce).toEqual(nonce2);
 
                 const accountTest3 = await tree.get(address3);
                 expect(accountTest3).not.toBeUndefined();
                 expect(accountTest3.balance).toEqual(value3);
-                expect(accountTest3.nonce).toEqual(nonce3);
             })().then(done, done.fail);
         });
 
         it(`root hash is invariant to history (${  treeBuilder.type  })`, (done) => {
-            const account1 = new BasicAccount(80000, 8);
-            const account2 = new BasicAccount(8000000, 8);
+            const account1 = new BasicAccount(80000);
+            const account2 = new BasicAccount(8000000);
             const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             (async function () {
@@ -169,9 +155,9 @@ describe('AccountsTree', () => {
                 const tree = await treeBuilder.builder();
 
                 // order1
-                await tree.put(address1, new BasicAccount(8, 8));
-                await tree.put(address2, new BasicAccount(8, 8));
-                await tree.put(address3, new BasicAccount(8, 8));
+                await tree.put(address1, new BasicAccount(8));
+                await tree.put(address2, new BasicAccount(8));
+                await tree.put(address3, new BasicAccount(8));
                 const state1 = await tree.root();
 
                 // "reset"
@@ -180,9 +166,9 @@ describe('AccountsTree', () => {
                 await tree.put(address2, new BasicAccount());
 
                 // order2
-                await tree.put(address1, new BasicAccount(8, 8));
-                await tree.put(address3, new BasicAccount(8, 8));
-                await tree.put(address2, new BasicAccount(8, 8));
+                await tree.put(address1, new BasicAccount(8));
+                await tree.put(address3, new BasicAccount(8));
+                await tree.put(address2, new BasicAccount(8));
                 const state2 = await tree.root();
 
                 // "reset"
@@ -190,9 +176,9 @@ describe('AccountsTree', () => {
                 await tree.put(address3, new BasicAccount());
                 await tree.put(address2, new BasicAccount());
                 // order3
-                await tree.put(address2, new BasicAccount(8, 8));
-                await tree.put(address1, new BasicAccount(8, 8));
-                await tree.put(address3, new BasicAccount(8, 8));
+                await tree.put(address2, new BasicAccount(8));
+                await tree.put(address1, new BasicAccount(8));
+                await tree.put(address3, new BasicAccount(8));
                 const state3 = await tree.root();
 
                 // "reset"
@@ -200,9 +186,9 @@ describe('AccountsTree', () => {
                 await tree.put(address3, new BasicAccount());
                 await tree.put(address2, new BasicAccount());
                 // order4
-                await tree.put(address2, new BasicAccount(8, 8));
-                await tree.put(address3, new BasicAccount(8, 8));
-                await tree.put(address1, new BasicAccount(8, 8));
+                await tree.put(address2, new BasicAccount(8));
+                await tree.put(address3, new BasicAccount(8));
+                await tree.put(address1, new BasicAccount(8));
                 const state4 = await tree.root();
 
                 expect(state2.toBase64()).toBe(state1.toBase64());
@@ -213,11 +199,9 @@ describe('AccountsTree', () => {
 
         it(`root hash is invariant to insertion order (test 2) (${  treeBuilder.type  })`, (done) => {
             const value1 = 8;
-            const nonce1 = 8;
             const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             const value2 = 88;
-            const nonce2 = 88;
             const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
             (async function () {
@@ -226,8 +210,8 @@ describe('AccountsTree', () => {
 
                 // order1
                 await accounts.commitBlock(Block.GENESIS);
-                await accounts._tree.put(address1, new BasicAccount(value1, nonce1));
-                await accounts._tree.put(address2, new BasicAccount(value2, nonce2));
+                await accounts._tree.put(address1, new BasicAccount(value1));
+                await accounts._tree.put(address2, new BasicAccount(value2));
                 const state1 = await accounts._tree.root();
 
 
@@ -237,8 +221,8 @@ describe('AccountsTree', () => {
 
                 // order2
                 await accounts.commitBlock(Block.GENESIS);
-                await accounts._tree.put(address2, new BasicAccount(value2, nonce2));
-                await accounts._tree.put(address1, new BasicAccount(value1, nonce1));
+                await accounts._tree.put(address2, new BasicAccount(value2));
+                await accounts._tree.put(address1, new BasicAccount(value1));
                 const state2 = await accounts._tree.root();
 
 
@@ -248,18 +232,15 @@ describe('AccountsTree', () => {
 
         it(`can handle concurrency (${  treeBuilder.type  })`, (done) => {
             const value1 = 8;
-            const nonce1 = 8;
-            const account1 = new BasicAccount(value1, nonce1);
+            const account1 = new BasicAccount(value1);
             const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
             const value2 = 88;
-            const nonce2 = 88;
-            const account2 = new BasicAccount(value2, nonce2);
+            const account2 = new BasicAccount(value2);
             const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
             const value3 = 88888888;
-            const nonce3 = 88888888;
-            const account3 = new BasicAccount(value3, nonce3);
+            const account3 = new BasicAccount(value3);
             const address3 = Address.unserialize(BufferUtils.fromBase64(Dummy.address3));
 
             (async function () {
@@ -274,17 +255,14 @@ describe('AccountsTree', () => {
                 const accountTest1 = await tree.get(address1);
                 expect(accountTest1).not.toBeUndefined();
                 expect(accountTest1.balance).toEqual(value1);
-                expect(accountTest1.nonce).toEqual(nonce1);
 
                 const accountTest2 = await tree.get(address2);
                 expect(accountTest2).not.toBeUndefined();
                 expect(accountTest2.balance).toEqual(value2);
-                expect(accountTest2.nonce).toEqual(nonce2);
 
                 const accountTest3 = await tree.get(address3);
                 expect(accountTest3).not.toBeUndefined();
                 expect(accountTest3.balance).toEqual(value3);
-                expect(accountTest3.nonce).toEqual(nonce3);
 
                 //TODO: remove await from tree.get call
             })().then(done, done.fail);
@@ -297,13 +275,11 @@ describe('AccountsTree', () => {
                 const tree = await treeBuilder.builder();
 
                 const value1 = 8;
-                const nonce1 = 8;
-                const account1 = new BasicAccount(value1, nonce1);
+                const account1 = new BasicAccount(value1);
                 const address1 = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
                 const value2 = 88;
-                const nonce2 = 88;
-                const account2 = new BasicAccount(value2, nonce2);
+                const account2 = new BasicAccount(value2);
                 const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
 
@@ -311,7 +287,7 @@ describe('AccountsTree', () => {
                 const root1 = await tree.root();
 
                 await tree.put(address2, account2);
-                await tree.put(address2, new BasicAccount(0, 0));
+                await tree.put(address2, new BasicAccount(0));
 
                 const root2 = await tree.root();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
@@ -328,13 +304,13 @@ describe('AccountsTree', () => {
                 const address2 = new Address(new Uint8Array([1, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
                 const address3 = new Address(new Uint8Array([1, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 
-                await tree.put(address1, new BasicAccount(50, 0));
+                await tree.put(address1, new BasicAccount(50));
                 const root1 = await tree.root();
 
-                await tree.put(address2, new BasicAccount(50, 0));
-                await tree.put(address3, new BasicAccount(50, 0));
-                await tree.put(address2, new BasicAccount(0, 0));
-                await tree.put(address3, new BasicAccount(0, 0));
+                await tree.put(address2, new BasicAccount(50));
+                await tree.put(address3, new BasicAccount(50));
+                await tree.put(address2, new BasicAccount(0));
+                await tree.put(address3, new BasicAccount(0));
 
                 const root2 = await tree.root();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
@@ -346,20 +322,22 @@ describe('AccountsTree', () => {
                 const tree = await treeBuilder.builder();
 
                 const value1 = 1234;
-                const nonce1 = 0;
                 const address = new Address(BufferUtils.fromBase64(Dummy.address1));
 
-                await tree.put(address, new BasicAccount(value1, nonce1));
+                await tree.put(address, new BasicAccount(value1));
+
+                const balance2 = await tree.get(address);
+
+                const value4 = balance2.balance;
+                expect(value4).toBe(value1);
 
                 const value2 = 0;
-                const nonce2 = 1;
 
-                await tree.put(address, new BasicAccount(value2, nonce2));
+                await tree.put(address, new BasicAccount(value2));
 
                 const balance3 = await tree.get(address);
 
-                const value3 = balance3.balance;
-                expect(value3).toBe(value2);
+                expect(balance3).toBe(null);
             })().then(done, done.fail);
         });
 
@@ -381,7 +359,7 @@ describe('AccountsTree', () => {
                  */
                 const tree = await treeBuilder.builder();
                 let current = new Array(40).fill(0);
-                await tree.put(TestUtils.raw2address(current), new BasicAccount(1, 0));
+                await tree.put(TestUtils.raw2address(current), new BasicAccount(1));
 
                 for (let i = 1; i < 40; i++) {
                     const nibble = i % 16;
@@ -393,7 +371,7 @@ describe('AccountsTree', () => {
                     // now combine and set current
                     current = prefix.concat(diverging);
 
-                    await tree.put(TestUtils.raw2address(current), new BasicAccount(1, 0));
+                    await tree.put(TestUtils.raw2address(current), new BasicAccount(1));
                 }
 
 
@@ -407,8 +385,6 @@ describe('AccountsTree', () => {
                 expect(account2).toBeDefined();
                 expect(account1.balance).toBe(1);
                 expect(account2.balance).toBe(1);
-                expect(account1.nonce).toBe(0);
-                expect(account2.nonce).toBe(0);
 
             })().then(done, done.fail);
         });
@@ -425,7 +401,7 @@ describe('AccountsTree', () => {
                 for (let i = 0; i < 16; i++) {
                     for (let j = 0; j < 16; j++) {
                         const address = TestUtils.raw2address([i, j].concat(new Array(38).fill(0)));
-                        await tree.put(address, new BasicAccount(1, 0));
+                        await tree.put(address, new BasicAccount(1));
                     }
                 }
 
@@ -439,8 +415,6 @@ describe('AccountsTree', () => {
                 expect(account2).toBeDefined();
                 expect(account1.balance).toBe(1);
                 expect(account2.balance).toBe(1);
-                expect(account1.nonce).toBe(0);
-                expect(account2.nonce).toBe(0);
 
             })().then(done, done.fail);
 
@@ -496,7 +470,7 @@ describe('AccountsTree', () => {
                 // add address 1
                 const prefixT1 = new Array(40).fill(0); // 00000...
                 const address1 = TestUtils.raw2address(prefixT1);
-                const account1 = new BasicAccount(12, 9);
+                const account1 = new BasicAccount(12);
                 await tree.put(address1, account1);
                 /* current tree:
                  *            R2
@@ -522,7 +496,7 @@ describe('AccountsTree', () => {
                 const prefixB1 = new Array(4).fill(0);   // branch node prefix 0000
                 const prefixT3 = prefixB1.concat([1]).concat(new Array(35).fill(0));   // second terminal node prefix 00001000...
                 const address2 = TestUtils.raw2address(prefixT3);
-                const account2 = new BasicAccount(642, 31);
+                const account2 = new BasicAccount(642);
                 await tree.put(address2, account2);
 
                 /* current tree:
@@ -551,7 +525,7 @@ describe('AccountsTree', () => {
 
                 // now update the second address with a new balance
 
-                const account3 = new BasicAccount(77, 122);
+                const account3 = new BasicAccount(77);
                 await tree.put(address2, account3);
 
                 /* current tree:
@@ -578,44 +552,10 @@ describe('AccountsTree', () => {
 
                 await expectDefined([T2, T4, B2, R4], 'Second address updated.');
 
-
-
-                // now reduce the first address to a balance of 0 but leave the nonce to be non-zero so that the node
-                // is not deleted.
-                const account4 = new BasicAccount(0, 3);
-                await tree.put(address1, account4);
-
-                /* current tree:
-                 *            R5
-                 *            |
-                 *            B3
-                 *           /\
-                 *         T5  T4
-                 */
-                // await expectTreeSize(4);
-
-                // branch node and second terminal node changed
-                undefinedNodes.push(T2);
-                undefinedNodes.push(B2);
-                undefinedNodes.push(R4);
-                await expectUndefined(undefinedNodes, 'Zero balance.');
-
-
-                // updated terminal node with zero balance but non-zero nonce
-                const T5 = AccountsTreeNode.terminalNode(prefixT1.join(''), account4);
-                const T5Hash = await T5.hash();
-                // updated branch node
-                const B3 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T5Hash, T4Hash]);
-                const B3Hash = await B3.hash();
-                const R5 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B3Hash]);
-
-                await expectDefined([T5, T4, B3, R5], 'Zero balance.');
-
-
                 // now reduce the first address to a balance of 0 with nonce 0 so that the fifth terminal node and the
                 // third branch node disappear and the fourth terminal node receives its full address as the prefix
                 // (and becomes the sixth terminal node)
-                const account5 = new BasicAccount(0, 0);
+                const account5 = new BasicAccount(0);
                 await tree.put(address1, account5);
 
                 /* current tree:
@@ -626,9 +566,9 @@ describe('AccountsTree', () => {
                 // await expectTreeSize(2);
 
                 // root changed, branch node and fifth terminal node vanished, fourth turned into sixth
-                undefinedNodes.push(T5);
-                undefinedNodes.push(B3);
-                undefinedNodes.push(R5);
+                undefinedNodes.push(T2);
+                undefinedNodes.push(B2);
+                undefinedNodes.push(R4);
                 await expectUndefined(undefinedNodes, 'Prune node.');
 
                 // recreate new single terminal node with the full address as its prefix
@@ -641,7 +581,7 @@ describe('AccountsTree', () => {
                 await expectDefined([T6, R6], 'Prune node.');
 
                 // prune T6 so that we have an empty tree
-                await tree.put(address2, new BasicAccount(0, 0));
+                await tree.put(address2, new BasicAccount(0));
 
                 undefinedNodes.push(T6);
                 // do NOT test initial root (first entry) as it is defined for the special case of an empty tree
@@ -661,9 +601,9 @@ describe('AccountsTree', () => {
                 const address4 = TestUtils.raw2address(prefixT8);
                 const address5 = TestUtils.raw2address(prefixT9);
 
-                const account6 = new BasicAccount(25, 3);
-                const account7 = new BasicAccount(1322, 532);
-                const account8 = new BasicAccount(1, 925);
+                const account6 = new BasicAccount(25);
+                const account7 = new BasicAccount(1322);
+                const account8 = new BasicAccount(1);
 
                 await tree.put(address3, account6);
                 await tree.put(address4, account7);
@@ -696,7 +636,7 @@ describe('AccountsTree', () => {
                 const prefixT11 = prefixB6.concat(new Array(37).fill(2));
 
                 const address6 = TestUtils.raw2address(prefixT11);
-                const account9 = new BasicAccount(93, 11);
+                const account9 = new BasicAccount(93);
 
                 // split on the second level
                 await tree.put(address6, account9);
@@ -726,6 +666,8 @@ describe('AccountsTree', () => {
                 const R8 = AccountsTreeNode.branchNode('', [prefixB4.join('')], [B5Hash]);
 
                 await expectDefined([T10, T11, T7, B6, T9, B5, R8], 'Four addresses.');
+
+                expect(true).toBeTruthy();
             })().then(done, done.fail);
         });
     });

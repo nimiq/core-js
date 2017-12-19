@@ -7,12 +7,12 @@ class ExtendedTransaction extends Transaction {
      * @param {Account.Type} recipientType
      * @param {number} value
      * @param {number} fee
-     * @param {number} nonce
+     * @param {number} validityStartHeight
      * @param {Uint8Array} data
      * @param {Uint8Array} [proof]
      */
-    constructor(sender, senderType, recipient, recipientType, value, fee, nonce, data, proof = new Uint8Array(0)) {
-        super(Transaction.Type.EXTENDED, sender, senderType, recipient, recipientType, value, fee, nonce, data, proof);
+    constructor(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof = new Uint8Array(0)) {
+        super(Transaction.Type.EXTENDED, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof);
     }
 
     /**
@@ -31,10 +31,10 @@ class ExtendedTransaction extends Transaction {
         const recipientType = /** @type {Account.Type} */ buf.readUint8();
         const value = buf.readUint64();
         const fee = buf.readUint64();
-        const nonce = buf.readUint32();
+        const validityStartHeight = buf.readUint32();
         const proofSize = buf.readUint16();
         const proof = buf.read(proofSize);
-        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, nonce, data, proof);
+        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof);
     }
 
     /**

@@ -11,14 +11,10 @@ class Mempool extends Observable {
         this._accounts = accounts;
 
         // Our pool of transactions.
-        /** @type {HashMap.<Hash, MempoolTransactionSet>} */
+        /** @type {HashMap.<Hash, Transaction>} */
         this._transactionsByHash = new HashMap();
         /** @type {HashMap.<Address, MempoolTransactionSet>} */
         this._transactionSetByAddress = new HashMap();
-        /** @type {HashMap.<Address, Array.<Transaction>>} */
-        this._waitingTransactions = new HashMap();
-        /** @type {HashMap.<Address, *>} */
-        this._waitingTransactionTimeout = new HashMap();
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
 
@@ -66,11 +62,7 @@ class Mempool extends Observable {
 
         // Fully verify the transaction against the current accounts state + Mempool.
         const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
-        if (!(await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1))) {
-            if (transaction.nonce > senderAccount.nonce + set.length) {
-                this._waitTransaction(hash, transaction);
-            }
-
+        if (!(await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1, this._blockchain.transactionsCache))) {
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -88,74 +80,7 @@ class Mempool extends Observable {
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
 
-        if (this._waitingTransactions.contains(transaction.sender)) {
-            /** @type {Array.<Transaction>} */
-            const txs = this._waitingTransactions.get(transaction.sender);
-            /** @type {Transaction} */
-            let tx;
-            while ((tx = txs.shift())) {
-                if ((await senderAccount.verifyOutgoingTransactionSet([...set.transactions, tx], this._blockchain.height + 1, true))) {
-                    set.add(tx);
-                    this.fire('transaction-added', tx);
-                } else {
-                    break;
-                }
-            }
-            if (tx) {
-                txs.unshift(tx);
-            } else {
-                clearTimeout(this._waitingTransactionTimeout.get(transaction.sender));
-                this._waitingTransactions.remove(transaction.sender);
-                this._waitingTransactionTimeout.remove(transaction.sender);
-            }
-        }
-
         return Mempool.ReturnCode.ACCEPTED;
-    }
-
-    /**
-     * @param {Hash} hash
-     * @param {Transaction} transaction
-     * @private
-     */
-    _waitTransaction(hash, transaction) {
-        const txs = this._waitingTransactions.get(transaction.sender) || [];
-        if (txs.length >= Mempool.WAITING_TRANSACTIONS_PER_SENDER_MAX) {
-            Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transactions per sender reached`);
-            return;
-        }
-        if (this._waitingTransactions.length >= Mempool.WAITING_TRANSACTION_SENDERS_MAX) {
-            Log.d(Mempool, `Discarding transaction ${hash} from ${transaction.sender} - max waiting transaction senders reached`);
-            return;
-        }
-
-        if (this._waitingTransactionTimeout.contains(transaction.sender)) {
-            clearTimeout(this._waitingTransactionTimeout.get(transaction.sender));
-        }
-
-        Log.d(Mempool, `Delaying transaction ${hash} - nonce ${transaction.nonce} suggests future validity`);
-
-        txs.push(transaction);
-        try {
-            txs.sort((a, b) => a.compareAccountOrder(b));
-        } catch (e) {
-            // Unsortable transactions => abandon all.
-            Log.w(Mempool, `Abandoning ${txs.length} waiting transactions from ${transaction.sender} - duplicate nonce`);
-            this._waitingTransactionTimeout.remove(transaction.sender);
-            this._waitingTransactions.remove(transaction.sender);
-            return;
-        }
-
-        this._transactionsByHash.put(hash, transaction);
-        this._waitingTransactions.put(transaction.sender, txs);
-
-        this._waitingTransactionTimeout.put(transaction.sender, setTimeout(async () => {
-            for (const tx of txs) {
-                this._transactionsByHash.remove(await tx.hash());
-            }
-            this._waitingTransactionTimeout.remove(transaction.sender);
-            this._waitingTransactions.remove(transaction.sender);
-        }, Mempool.WAITING_TRANSACTION_TIMEOUT));
     }
 
     /**
@@ -173,29 +98,12 @@ class Mempool extends Observable {
     getTransactions(maxSize=Infinity) {
         const transactions = [];
         let size = 0;
-        /** @type {MempoolTransactionSet} */
-        let largeSet = null;
-        for (const set of this._transactionSetByAddress.values().sort((a, b) => a.compare(b))) {
-            const setSize = set.serializedSize;
-            if (size >= maxSize) break;
-            if (size + setSize > maxSize) {
-                largeSet = largeSet || set;
-                continue;
-            }
+        for (const tx of this._transactionsByHash.values().sort((a, b) => a.compare(b))) {
+            const txSize = tx.serializedSize;
+            if (size + txSize >= maxSize) continue;
 
-            transactions.push(...set.transactions);
-            size += setSize;
-        }
-
-        if (size < maxSize && largeSet) {
-            for (const transaction of largeSet.transactions) {
-                const txSize = transaction.serializedSize;
-                if (size >= maxSize) break;
-                if (size + txSize > maxSize) continue;
-
-                transactions.push(transaction);
-                size += txSize;
-            }
+            transactions.push(tx);
+            size += txSize;
         }
 
         return transactions;
@@ -205,9 +113,7 @@ class Mempool extends Observable {
      * @param {number} maxSize
      */
     getTransactionsForBlock(maxSize) {
-        const transactions = this.getTransactions(maxSize);
-        transactions.sort((a, b) => a.compareBlockOrder(b));
-        return transactions;
+        return this.getTransactions(maxSize);
     }
 
     /**
@@ -245,8 +151,8 @@ class Mempool extends Observable {
 
             try {
                 const senderAccount = await this._accounts.get(set.sender, set.senderType);
-                while (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, true))) {
-                    const transaction = set.shift();
+                while (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
+                    const transaction = set.pop();
                     if (transaction) {
                         this._transactionsByHash.remove(await transaction.hash());
                     }
@@ -257,7 +163,7 @@ class Mempool extends Observable {
                 }
             } catch (e) {
                 let transaction;
-                while ((transaction = set.shift())) {
+                while ((transaction = set.pop())) {
                     this._transactionsByHash.remove(await transaction.hash());
                 }
                 this._transactionSetByAddress.remove(sender);
@@ -271,10 +177,6 @@ class Mempool extends Observable {
         this.fire('transactions-ready');
     }
 }
-
-Mempool.WAITING_TRANSACTIONS_PER_SENDER_MAX = 500;
-Mempool.WAITING_TRANSACTION_SENDERS_MAX = 10000;
-Mempool.WAITING_TRANSACTION_TIMEOUT = 30000;
 
 Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
 Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10; // max number of transactions considered free per sender

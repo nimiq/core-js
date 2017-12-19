@@ -43,6 +43,8 @@ class FullChain extends BaseChain {
         /** @type {ChainProof} */
         this._proof = null;
 
+        this._transactionsCache = new TransactionsCache();
+
         /**
          * @type {Synchronizer}
          * @private
@@ -73,7 +75,7 @@ class FullChain extends BaseChain {
             await tx.setHead(Block.GENESIS.HASH);
             await tx.commit();
 
-            await this._accounts.commitBlock(Block.GENESIS);
+            await this._accounts.commitBlock(Block.GENESIS, this._transactionsCache);
         }
 
         return this;
@@ -200,7 +202,7 @@ class FullChain extends BaseChain {
     async _extend(blockHash, chainData) {
         const accountsTx = await this._accounts.transaction();
         try {
-            await accountsTx.commitBlock(chainData.head);
+            await accountsTx.commitBlock(chainData.head, this._transactionsCache);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
@@ -218,6 +220,9 @@ class FullChain extends BaseChain {
 
         // New block on main chain, so store a new snapshot.
         await this._saveSnapshot(blockHash);
+
+        // Update transactions cache.
+        this._transactionsCache.pushBlock(chainData.head);
 
         // Update chain proof if we have cached one.
         if (this._proof) {
@@ -272,11 +277,14 @@ class FullChain extends BaseChain {
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
+        const transactionsTx = this._transactionsCache.duplicate();
         let headHash = this._headHash;
         let head = this._mainChain.head;
         while (!headHash.equals(curHash)) {
             try {
-                await accountsTx.revertBlock(head);
+                // NThis only works if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
+                await accountsTx.revertBlock(head, transactionsTx);
+                transactionsTx.revertBlock(head);
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
                 accountsTx.abort();
@@ -289,10 +297,16 @@ class FullChain extends BaseChain {
             Assert.that(head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
         }
 
+        // Try to fetch missing transactions for the cache.
+        const numMissingBlocks = transactionsTx.missingBlocks;
+        const blocks = await this.getBlocks(head.height, numMissingBlocks, false);
+        transactionsTx.prependBlocks(blocks);
+
         // Try to apply all fork blocks.
         for (let i = forkChain.length - 1; i >= 0; i--) {
             try {
-                await accountsTx.commitBlock(forkChain[i].head);
+                await accountsTx.commitBlock(forkChain[i].head, transactionsTx);
+                transactionsTx.pushBlock(forkChain[i].head);
             } catch (e) {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
@@ -325,6 +339,7 @@ class FullChain extends BaseChain {
         // Update head & commit transactions.
         await chainTx.setHead(blockHash);
         await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
+        this._transactionsCache = transactionsTx;
 
         // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
         // TODO modify chain proof directly, don't recompute.
@@ -421,6 +436,7 @@ class FullChain extends BaseChain {
             let snapshot = null;
             if (!this._snapshots.contains(blockHash)) {
                 const tx = await this._accounts.transaction();
+                const transactionsTx = this._transactionsCache.duplicate();
                 let currentHash = this._headHash;
                 // Save all snapshots up to blockHash (and stop when its predecessor would be next).
                 while (!block.prevHash.equals(currentHash)) {
@@ -432,7 +448,8 @@ class FullChain extends BaseChain {
                         this._snapshotOrder.unshift(currentHash);
                     }
 
-                    await tx.revertBlock(currentBlock);
+                    await tx.revertBlock(currentBlock, transactionsTx);
+                    transactionsTx.revertBlock(currentBlock);
                     currentHash = currentBlock.prevHash;
                 }
                 await tx.abort();
@@ -500,6 +517,11 @@ class FullChain extends BaseChain {
     // XXX Do we really want to expose this?
     get accounts() {
         return this._accounts;
+    }
+
+    /** @type {TransactionsCache} */
+    get transactionsCache() {
+        return this._transactionsCache;
     }
 
     /**

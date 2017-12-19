@@ -5,19 +5,18 @@ class VestingAccount extends Account {
      */
     static copy(o) {
         if (!o) return o;
-        return new VestingAccount(o._balance, o._nonce, o._vestingStart, o._vestingStepBlocks, o._vestingStepAmount, o._vestingTotalAmount);
+        return new VestingAccount(o._balance, o._vestingStart, o._vestingStepBlocks, o._vestingStepAmount, o._vestingTotalAmount);
     }
 
     /**
      * @param {number} [balance]
-     * @param {number} [nonce]
      * @param {number} [vestingStart]
      * @param {number} [vestingStepBlocks]
      * @param {number} [vestingStepAmount]
      * @param {number} [vestingTotalAmount]
      */
-    constructor(balance = 0, nonce = 0, vestingStart = 0, vestingStepBlocks = 0, vestingStepAmount = balance, vestingTotalAmount = balance) {
-        super(Account.Type.VESTING, balance, nonce);
+    constructor(balance = 0, vestingStart = 0, vestingStepBlocks = 0, vestingStepAmount = balance, vestingTotalAmount = balance) {
+        super(Account.Type.VESTING, balance);
         if (!NumberUtils.isUint32(vestingStart)) throw new Error('Malformed vestingStart');
         if (!NumberUtils.isUint32(vestingStepBlocks)) throw new Error('Malformed vestingStepBlocks');
         if (!NumberUtils.isUint64(vestingStepAmount)) throw new Error('Malformed vestingStepAmount');
@@ -42,12 +41,11 @@ class VestingAccount extends Account {
         if (type !== Account.Type.VESTING) throw new Error('Invalid account type');
 
         const balance = buf.readUint64();
-        const nonce = buf.readUint32();
         const vestingStart = buf.readUint32();
         const vestingStepBlocks = buf.readUint32();
         const vestingStepAmount = buf.readUint64();
         const vestingTotalAmount = buf.readUint64();
-        return new VestingAccount(balance, nonce, vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount);
+        return new VestingAccount(balance, vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount);
     }
 
     /**
@@ -71,7 +69,6 @@ class VestingAccount extends Account {
     get serializedSize() {
         return /*type*/ 1
             + /*balance*/ 8
-            + /*nonce*/ 4
             + /*vestingStart*/ 4
             + /*vestingStepBlocks*/ 4
             + /*vestingStepAmount*/ 8
@@ -99,7 +96,7 @@ class VestingAccount extends Account {
     }
 
     toString() {
-        return `VestingAccount{balance=${this._balance}, nonce=${this._nonce}}`;
+        return `VestingAccount{balance=${this._balance}}`;
     }
 
     /**
@@ -123,20 +120,20 @@ class VestingAccount extends Account {
 
     /**
      * @param {number} balance
-     * @param {number} [nonce]
      * @return {Account|*}
      */
-    withBalance(balance, nonce) {
-        return new VestingAccount(balance, typeof nonce === 'undefined' ? this._nonce : nonce, this._vestingStart, this._vestingStepBlocks, this._vestingStepAmount, this._vestingTotalAmount);
+    withBalance(balance) {
+        return new VestingAccount(balance, this._vestingStart, this._vestingStepBlocks, this._vestingStepAmount, this._vestingTotalAmount);
     }
 
     /**
      * @param {Transaction} transaction
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @param {boolean} [revert]
      * @return {Account|*}
      */
-    withOutgoingTransaction(transaction, blockHeight, revert = false) {
+    withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         if (!revert) {
             const minCap = this._vestingStepBlocks && this._vestingStepAmount > 0 ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount) : 0;
             const newBalance = this._balance - transaction.value - transaction.fee;
@@ -144,7 +141,7 @@ class VestingAccount extends Account {
                 throw new Error('Balance Error!');
             }
         }
-        return super.withOutgoingTransaction(transaction, blockHeight, revert);
+        return super.withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert);
     }
 
     /**
@@ -181,7 +178,7 @@ class VestingAccount extends Account {
                 default:
                     throw new Error('Invalid transaction data');
             }
-            return new VestingAccount(transaction.value, 0, vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount);
+            return new VestingAccount(transaction.value, vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount);
         } else if (revert && transaction.data.length > 0) {
             return VestingAccount.INITIAL;
         } else if (transaction.data.length > 0) {

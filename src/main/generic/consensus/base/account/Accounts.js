@@ -46,12 +46,13 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise}
      */
-    async commitBlock(block) {
+    async commitBlock(block, transactionsCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._commitBlockBody(tree, block.body, block.height);
+            await this._commitBlockBody(tree, block.body, block.height, transactionsCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -70,12 +71,13 @@ class Accounts extends Observable {
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise}
      */
-    async commitBlockBody(body, blockHeight) {
+    async commitBlockBody(body, blockHeight, transactionsCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._commitBlockBody(tree, body, blockHeight);
+            await this._commitBlockBody(tree, body, blockHeight, transactionsCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -86,27 +88,29 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise}
      */
-    async revertBlock(block) {
+    async revertBlock(block, transactionsCache) {
         if (!block) throw new Error('block undefined');
 
         const hash = await this._tree.root();
         if (!block.accountsHash.equals(hash)) {
             throw new Error('AccountsHash mismatch');
         }
-        return this.revertBlockBody(block.body, block.height);
+        return this.revertBlockBody(block.body, block.height, transactionsCache);
     }
 
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise}
      */
-    async revertBlockBody(body, blockHeight) {
+    async revertBlockBody(body, blockHeight, transactionsCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._revertBlockBody(tree, body, blockHeight);
+            await this._revertBlockBody(tree, body, blockHeight, transactionsCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -180,12 +184,13 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise.<void>}
      * @private
      */
-    async _commitBlockBody(tree, body, blockHeight) {
-        for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b))) {
-            await this._executeTransaction(tree, tx, blockHeight, false);
+    async _commitBlockBody(tree, body, blockHeight, transactionsCache) {
+        for (const tx of body.transactions) {
+            await this._executeTransaction(tree, tx, blockHeight, transactionsCache, false);
         }
 
         await this._rewardMiner(tree, body, blockHeight, false);
@@ -195,13 +200,14 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @return {Promise.<void>}
      * @private
      */
-    async _revertBlockBody(tree, body, blockHeight) {
+    async _revertBlockBody(tree, body, blockHeight, transactionsCache) {
         // Execute transactions in reverse order.
-        for (const tx of body.transactions.slice().sort((a, b) => a.compareAccountOrder(b)).reverse()) {
-            await this._executeTransaction(tree, tx, blockHeight, true);
+        for (const tx of body.transactions.slice().reverse()) {
+            await this._executeTransaction(tree, tx, blockHeight, transactionsCache, true);
         }
 
         await this._rewardMiner(tree, body, blockHeight, true);
@@ -231,14 +237,15 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {Transaction} tx
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @param {boolean} revert
      * @returns {Promise.<void>}
      * @private
      */
-    async _executeTransaction(tree, tx, blockHeight, revert) {
+    async _executeTransaction(tree, tx, blockHeight, transactionsCache, revert) {
         const senderAccount = await this.get(tx.sender, tx.senderType, tree);
         const recipientAccount = await this.get(tx.recipient, tx.recipientType, tree);
-        await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, revert));
+        await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, transactionsCache, revert));
         await tree.putBatch(tx.recipient, recipientAccount.withIncomingTransaction(tx, blockHeight, revert));
     }
 
@@ -267,6 +274,4 @@ class Accounts extends Observable {
         return this._tree.tx;
     }
 }
-
-Accounts.EMPTY_TREE_HASH = Hash.fromBase64('qynm3BZ1XQBx66NJ69oiXRXk+RDLR0VJxH6Vy4XsxNY=');
 Class.register(Accounts);
