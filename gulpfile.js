@@ -19,22 +19,27 @@ const sources = {
             './src/main/platform/browser/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
+            './src/main/generic/network/DataChannel.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
-            './src/main/platform/browser/network/websocket/WebSocketConnector.js'
+            './src/main/platform/browser/network/websocket/WebSocketConnector.js',
+            './src/main/platform/browser/network/websocket/WebSocketDataChannel.js'
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
+            './src/main/generic/network/DataChannel.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js'
+            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
+            './src/main/platform/nodejs/network/websocket/WebSocketDataChannel.js',
+            './src/main/platform/nodejs/network/NetworkConfig.js'
         ]
     },
     generic: [

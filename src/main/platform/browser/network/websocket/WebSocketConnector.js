@@ -28,12 +28,7 @@ class WebSocketConnector extends Observable {
             this._timers.clearTimeout(timeoutKey);
 
             // There is no way to determine the remote IP ... thanks for nothing, WebSocket API.
-            const conn = new PeerConnection(ws, Protocol.WS, /*netAddress*/ null, peerAddress);
-
-            /**
-             * Tell listeners that an initial connection to a peer has been established.
-             * @event WebSocketConnector#connection
-             */
+            const conn = new PeerConnection(new WebSocketDataChannel(ws), Protocol.WS, /*netAddress*/ null, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {

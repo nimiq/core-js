@@ -1,14 +1,14 @@
-// TODO: DO NOT try to use different native channel objects from one entity, use abstraction layer!
 class PeerConnection extends Observable {
     /**
-     * @param {object} nativeChannel
+     * @param {DataChannel} channel
      * @param {number} protocol
      * @param {NetAddress} netAddress
      * @param {PeerAddress} peerAddress
      */
-    constructor(nativeChannel, protocol, netAddress, peerAddress) {
+    constructor(channel, protocol, netAddress, peerAddress) {
         super();
-        this._channel = nativeChannel;
+        /** @type {DataChannel} */
+        this._channel = channel;
 
         /** @type {number} */
         this._protocol = protocol;
@@ -33,15 +33,9 @@ class PeerConnection extends Observable {
         /** @type {number} */
         this._id = PeerConnection._instanceCount++;
 
-        if (this._channel.on) {
-            this._channel.on('message', msg => this._onMessage(msg.data || msg));
-            this._channel.on('close', () => this._onClose());
-            this._channel.on('error', e => this.fire('error', e, this));
-        } else {
-            this._channel.onmessage = msg => this._onMessage(msg.data || msg);
-            this._channel.onclose = () => this._onClose();
-            this._channel.onerror = e => this.fire('error', e, this);
-        }
+        this._channel.on('message', msg => this._onMessage(msg));
+        this._channel.on('close', () => this._onClose());
+        this._channel.on('error', e => this.fire('error', e, this));
     }
 
     _onMessage(msg) {
@@ -50,6 +44,7 @@ class PeerConnection extends Observable {
             return;
         }
 
+        /*
         // XXX Cleanup!
         if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
             this._bytesReceived += msg.byteLength || msg.length;
@@ -62,6 +57,10 @@ class PeerConnection extends Observable {
             reader.onloadend = () => this._onMessage(reader.result);
             reader.readAsArrayBuffer(msg);
         }
+        */
+
+        this._bytesReceived += msg.byteLength || msg.length;
+        this.fire('message', msg, this);
     }
 
     _onClose() {
@@ -92,8 +91,7 @@ class PeerConnection extends Observable {
      * @private
      */
     _isChannelOpen() {
-        return this._channel.readyState === WebSocket.OPEN
-            || this._channel.readyState === 'open';
+        return this._channel.readyState === DataChannel.ReadyState.OPEN;
     }
 
     /**
@@ -101,8 +99,7 @@ class PeerConnection extends Observable {
      * @private
      */
     _isChannelClosing() {
-        return this._channel.readyState === WebSocket.CLOSING
-            || this._channel.readyState === 'closing';
+        return this._channel.readyState === DataChannel.ReadyState.CLOSING;
     }
 
     /**
@@ -110,8 +107,7 @@ class PeerConnection extends Observable {
      * @private
      */
     _isChannelClosed() {
-        return this._channel.readyState === WebSocket.CLOSED
-            || this._channel.readyState === 'closed';
+        return this._channel.readyState === DataChannel.ReadyState.CLOSED;
     }
 
     /**
