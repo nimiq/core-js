@@ -5,10 +5,10 @@ describe('AccountsProofMessage', () => {
 
     beforeAll((done) => {
         (async () => {
-            const account1 = new BasicAccount(25, 3);
-            const account2 = new BasicAccount(1, 925);
-            const account3 = new BasicAccount(1322, 532);
-            const account4 = new BasicAccount(93, 11);
+            const account1 = new BasicAccount(25);
+            const account2 = new BasicAccount(1);
+            const account3 = new BasicAccount(1322);
+            const account4 = new BasicAccount(93);
 
             const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
             const t1Hash = await t1.hash();

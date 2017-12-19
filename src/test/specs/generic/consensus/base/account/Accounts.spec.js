@@ -23,12 +23,14 @@ describe('Accounts', () => {
 
             const accountsHash1 = await accounts.hash();
             const block = await testBlockchain.createBlock();
-            await accounts.commitBlock(block);
+            await accounts.commitBlock(block, testBlockchain.transactionsCache);
+            testBlockchain.transactionsCache.pushBlock(block);
 
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
 
-            await accounts.revertBlock(block);
+            await accounts.revertBlock(block, testBlockchain.transactionsCache);
+            testBlockchain.transactionsCache.revertBlock(block);
             accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         })().then(done, done.fail);
@@ -46,10 +48,10 @@ describe('Accounts', () => {
 
             const accountsHash1 = await accounts.hash();
 
-            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 0, user0.privateKey);
+            const tx1 = await TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 1, user0.privateKey);
             const tx2 = await TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
-            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 2, user0.privateKey);
-            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 3, user0.privateKey);
+            const tx3 = await TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 1, user0.privateKey);
+            const tx4 = await TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 1, user0.privateKey);
             const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
@@ -57,7 +59,7 @@ describe('Accounts', () => {
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
 
-            await accounts.revertBlock(block);
+            await accounts.revertBlock(block, testBlockchain.transactionsCache);
             accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         })().then(done, done.fail);
@@ -65,15 +67,14 @@ describe('Accounts', () => {
 
     it('put and get an account', (done) => {
         const balance = 42;
-        const nonce = 192049;
-        const accountState1 = new BasicAccount(balance, nonce);
+        const accountState1 = new BasicAccount(balance);
         const accountAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
         (async function () {
             const account = await Accounts.createVolatile();
             await account._tree.put(accountAddress, accountState1);
             const state1 = await account.get(accountAddress, Account.Type.BASIC);
-            expect(state1.nonce).toBe(accountState1.nonce);
+            expect(state1.balance).toBe(accountState1.balance);
 
             // Verify that get() returns BasicAccount.INITIAL when called with an unknown address
             const state2 = await account.get(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)), Account.Type.BASIC);
@@ -99,7 +100,7 @@ describe('Accounts', () => {
             const amount2 = 15;
             const fee2 = 5;
             const transactions = [
-                await TestBlockchain.createTransaction(user1.publicKey, user3.address, amount1, fee1, 0, user1.privateKey),
+                await TestBlockchain.createTransaction(user1.publicKey, user3.address, amount1, fee1, 1, user1.privateKey),
                 await TestBlockchain.createTransaction(user1.publicKey, user4.address, amount2, fee2, 1, user1.privateKey)
             ];
             const block = await testBlockchain.createBlock({
@@ -107,7 +108,7 @@ describe('Accounts', () => {
                 minerAddr: user2.address
             });
 
-            await accounts.commitBlock(block);
+            await accounts.commitBlock(block, testBlockchain.transactionsCache);
 
             // now: expect user2 to have received the transaction fees and block reward
             balance = (await testBlockchain.accounts.get(user2.address, Account.Type.BASIC)).balance;
@@ -160,20 +161,18 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
             const numTransactions = Math.floor(TestBlockchain.MAX_NUM_TRANSACTIONS / 20);
             const users = await TestBlockchain.getUsers(2);
-            let nonce = 0;
             const transactionPromises = [];
             const treeTx = await accounts._tree.transaction();
             // create users, raise their balance, create transaction
             for (let i = 1; i < numTransactions; i++) {
                 await accounts._addBalance(treeTx, users[0].address, Policy.coinsToSatoshis(5)); //eslint-disable-line no-await-in-loop
-                transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.coinsToSatoshis(5), 0, nonce++, users[0].privateKey));
+                transactionPromises.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.coinsToSatoshis(i/100), 0, 1, users[0].privateKey));
             }
             const transactions = await Promise.all(transactionPromises);
-            transactions.sort((a, b) => a.compareBlockOrder(b));
             expect(await treeTx.commit()).toBeTruthy();
             const block = await testBlockchain.createBlock({transactions: transactions});
             expect(await block.verify()).toBeTruthy();
-            expect(await accounts.commitBlock(block)).toBeTruthy();
+            expect(await accounts.commitBlock(block, testBlockchain.transactionsCache)).toBeTruthy();
         })().then(done, done.fail);
     });
 

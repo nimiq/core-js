@@ -1,5 +1,6 @@
 /**
  * @template V
+ * @implements {Iterable.<V>}
  */
 class HashSet {
     constructor(fnHash = HashSet._hash) {
@@ -26,7 +27,7 @@ class HashSet {
     }
 
     /**
-     * @param {Array.<V|*>} collection
+     * @param {Iterable.<V|*>} collection
      */
     addAll(collection) {
         for (const value of collection) {

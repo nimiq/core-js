@@ -77,11 +77,11 @@ class Wallet {
      * @param {Address} recipient Address of the transaction receiver
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
-     * @param {number} nonce The nonce representing the current balance of the sender.
+     * @param {number} validityStartHeight The validityStartHeight for the transaction.
      * @returns {Promise.<Transaction>} A prepared and signed Transaction object. This still has to be sent to the network.
      */
-    createTransaction(recipient, value, fee, nonce) {
-        const transaction = new BasicTransaction(this._keyPair.publicKey, recipient, value, fee, nonce);
+    createTransaction(recipient, value, fee, validityStartHeight) {
+        const transaction = new BasicTransaction(this._keyPair.publicKey, recipient, value, fee, validityStartHeight);
         return this._signTransaction(transaction);
     }
 

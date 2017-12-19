@@ -155,6 +155,15 @@ class BlockHeader {
         this._hash = this._hash || await Hash.light(this.serialize(buf));
         return this._hash;
     }
+
+    /**
+     * @param {SerialBuffer} [buf]
+     * @return {Hash}
+     */
+    hashSync(buf) {
+        this._hash = this._hash || Hash.lightSync(this.serialize(buf));
+        return this._hash;
+    }
     
     /**
      * @param {SerialBuffer} [buf]

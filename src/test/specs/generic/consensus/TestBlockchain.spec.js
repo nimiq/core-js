@@ -35,13 +35,13 @@ class TestBlockchain extends FullChain {
      * @param {Address} recipientAddr
      * @param {number} amount
      * @param {number} fee
-     * @param {number} nonce
+     * @param {number} validityStartHeight
      * @param {PrivateKey} [senderPrivKey]
      * @param {Signature} [signature]
      * @return {Promise.<BasicTransaction>}
      */
-    static async createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, nonce = 0, senderPrivKey = undefined, signature = undefined) {
-        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, nonce);
+    static async createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
+        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
 
         // allow to hardcode a signature
         if (!signature) {
@@ -61,14 +61,14 @@ class TestBlockchain extends FullChain {
      * @param {Address} recipientAddr
      * @param {number} amount
      * @param {number} fee
-     * @param {number} nonce
+     * @param {number} validityStartHeight
      * @param {PrivateKey} [senderPrivKey]
      * @param {Signature} [signature]
      * @return {Promise.<LegacyTransaction>}
      * @deprecated
      */
-    static async createLegacyTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, nonce = 0, senderPrivKey = undefined, signature = undefined) {
-        const transaction = new LegacyTransaction(senderPubKey, recipientAddr, amount, fee, nonce);
+    static async createLegacyTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
+        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
 
         // allow to hardcode a signature
         if (!signature) {
@@ -104,7 +104,6 @@ class TestBlockchain extends FullChain {
          At the same time, there must not be more than one transaction from the same sender.
          */
         const transactions = [];
-        const nonces = [];
         for (let j = 0; j < numTransactions; j++) {
             const sender = this.users[j % numUsers];
             const recipient = this.users[(j + 1) % numUsers];
@@ -113,17 +112,13 @@ class TestBlockchain extends FullChain {
             const account = await this.accounts.get(sender.address, Account.Type.BASIC);
             const amount = Math.floor(account.balance / 10) || 1;
             const fee = Math.floor(amount / 2);
-            const nonce = account.nonce + (nonces[j % numUsers] ? nonces[j % numUsers] : 0);
 
-            const transaction = await TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, nonce, sender.privateKey);// eslint-disable-line no-await-in-loop
-
-            // Increment nonce for this user
-            nonces[j % numUsers] = nonce + 1;
+            const transaction = await TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, this.height, sender.privateKey);// eslint-disable-line no-await-in-loop
 
             transactions.push(transaction);
         }
 
-        return transactions.sort((a, b) => a.compareBlockOrder(b));
+        return transactions;
     }
 
     /**
@@ -154,7 +149,7 @@ class TestBlockchain extends FullChain {
         if (!accountsHash) {
             const accountsTx = await this._accounts.transaction();
             try {
-                await accountsTx.commitBlockBody(body, height);
+                await accountsTx.commitBlockBody(body, height, this._transactionsCache);
                 accountsHash = await accountsTx.hash();
             } catch (e) {
                 // The block is invalid, fill with broken accountsHash
@@ -310,17 +305,19 @@ class TestBlockchain extends FullChain {
         return share.nonce;
     }
 
-    static mineBlocks() {
+    static async mineBlocks() {
         const nonces = {};
-        const promises = [];
         for (const hash in TestBlockchain.BLOCKS) {
             if (TestBlockchain.NONCES[hash]) {
                 nonces[hash] = TestBlockchain.NONCES[hash];
             } else {
-                promises.push(TestBlockchain.mineBlock(TestBlockchain.BLOCKS[hash]).then(nonce => nonces[hash] = nonce));
+                await TestBlockchain.mineBlock(TestBlockchain.BLOCKS[hash]).then(nonce => {
+                    nonces[hash] = nonce;
+                    Log.i(`'${hash}': ${nonce}`);
+                });
             }
         }
-        return Promise.all(promises).then(() => nonces);
+        return nonces;
     }
 
     static async mineBlocksJSON() {

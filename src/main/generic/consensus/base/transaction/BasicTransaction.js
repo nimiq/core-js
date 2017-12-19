@@ -4,16 +4,16 @@ class BasicTransaction extends Transaction {
      * @param {Address} recipient
      * @param {number} value
      * @param {number} fee
-     * @param {number} nonce
+     * @param {number} validityStartHeight
      * @param {Signature} [signature]
      */
-    constructor(senderPubKey, recipient, value, fee, nonce, signature) {
+    constructor(senderPubKey, recipient, value, fee, validityStartHeight, signature) {
         if (!(senderPubKey instanceof PublicKey)) throw new Error('Malformed senderPubKey');
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw new Error('Malformed signature');
 
         const proof = SignatureProof.singleSig(senderPubKey, signature);
-        super(Transaction.Type.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0), proof.serialize());
+        super(Transaction.Type.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, new Uint8Array(0), proof.serialize());
 
         /**
          * @type {SignatureProof}
@@ -34,9 +34,9 @@ class BasicTransaction extends Transaction {
         const recipient = Address.unserialize(buf);
         const value = buf.readUint64();
         const fee = buf.readUint64();
-        const nonce = buf.readUint32();
+        const validityStartHeight = buf.readUint32();
         const signature = Signature.unserialize(buf);
-        return new BasicTransaction(senderPubKey, recipient, value, fee, nonce, signature);
+        return new BasicTransaction(senderPubKey, recipient, value, fee, validityStartHeight, signature);
     }
 
     /**
@@ -50,7 +50,7 @@ class BasicTransaction extends Transaction {
         this._recipient.serialize(buf);
         buf.writeUint64(this._value);
         buf.writeUint64(this._fee);
-        buf.writeUint32(this._nonce);
+        buf.writeUint32(this._validityStartHeight);
         this.signature.serialize(buf);
         return buf;
     }
@@ -62,7 +62,7 @@ class BasicTransaction extends Transaction {
             + this._recipient.serializedSize
             + /*value*/ 8
             + /*fee*/ 8
-            + /*nonce*/ 4
+            + /*validityStartHeight*/ 4
             + this.signature.serializedSize;
     }
 

@@ -1,7 +1,7 @@
 class MempoolTransactionSet {
     constructor() {
-        /** @type {Array.<Transaction>} */
-        this._transactions = [];
+        /** @type {SortedList.<Transaction>} */
+        this._transactions = new SortedList();
     }
 
     /**
@@ -9,38 +9,38 @@ class MempoolTransactionSet {
      * @return {MempoolTransactionSet}
      */
     add(transaction) {
-        this._transactions.push(transaction);
+        this._transactions.add(transaction);
         return this;
     }
 
     /** @type {Array.<Transaction>} */
     get transactions() {
-        return this._transactions;
+        return this._transactions.values();
     }
 
     /** @type {number} */
     get serializedSize() {
-        return this._transactions.map(t => t.serializedSize).reduce((a, b) => a + b, 0);
+        return this._transactions.values().map(t => t.serializedSize).reduce((a, b) => a + b, 0);
     }
 
     /** @type {number} */
     get value() {
-        return this._transactions.map(t => t.value).reduce((a, b) => a + b, 0);
+        return this._transactions.values().map(t => t.value).reduce((a, b) => a + b, 0);
     }
 
     /** @type {number} */
     get fee() {
-        return this._transactions.map(t => t.fee).reduce((a, b) => a + b, 0);
+        return this._transactions.values().map(t => t.fee).reduce((a, b) => a + b, 0);
     }
 
     /** @type {Address} */
     get sender() {
-        return this._transactions.length > 0 ? this._transactions[0].sender : null;
+        return this._transactions.length > 0 ? this._transactions.values()[0].sender : null;
     }
 
     /** @type {?Account.Type} */
     get senderType() {
-        return this._transactions.length > 0 ? this._transactions[0].senderType : undefined;
+        return this._transactions.length > 0 ? this._transactions.values()[0].senderType : undefined;
     }
 
     /** @type {number} */
@@ -48,17 +48,12 @@ class MempoolTransactionSet {
         return this._transactions.length;
     }
 
-    /** @type {number} */
-    get nonce() {
-        return this._transactions[0].nonce;
-    }
-
     /**
      * @param {number} feePerByte
      * @return {number}
      */
     numBelowFeePerByte(feePerByte) {
-        return this._transactions.filter(t => t.fee/t.serializedSize < feePerByte).length;
+        return this._transactions.values().filter(t => t.fee/t.serializedSize < feePerByte).length;
     }
 
     /**
@@ -69,23 +64,14 @@ class MempoolTransactionSet {
     }
 
     /**
-     * @param {MempoolTransactionSet} o
-     * @return {number}
+     * @return {Transaction}
      */
-    compare(o) {
-        if (this.fee/this.serializedSize > o.fee/o.serializedSize) return -1;
-        if (this.fee/this.serializedSize < o.fee/o.serializedSize) return 1;
-        if (this.serializedSize > o.serializedSize) return -1;
-        if (this.serializedSize < o.serializedSize) return 1;
-        if (this.fee > o.fee) return -1;
-        if (this.fee < o.fee) return 1;
-        if (this.value > o.value) return -1;
-        if (this.value < o.value) return 1;
-        return this.transactions[0].compareBlockOrder(o.transactions[0]);
+    pop() {
+        return this._transactions.pop();
     }
 
     toString() {
-        return `MempoolTransactionSet{senderKey=${this.senderPubKey}, length=${this.length}, value=${this.value}, fee=${this.fee}}`;
+        return `MempoolTransactionSet{length=${this.length}, value=${this.value}, fee=${this.fee}}`;
     }
 }
 
