@@ -9,6 +9,8 @@ Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](http
 
 ## Quickstart
 
+_NodeJS v8.0.0 or higher is required_
+
 1. On Ubuntu, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
     - On other Linux systems, install `git`, `python2.7`, `make` and `gcc`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
@@ -38,18 +40,19 @@ To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and 
 
 ```bash
 cd clients/nodejs/
-node index.js --host <hostname> --port <port> --key <privkey> --cert <certificate> [--miner[=<threads>]] [--statistics[=<interval>]]
+node index.js --host <hostname> --port <port> --key <SSL key> --cert <SSL certificate> [--wallet-seed <seed>] [--wallet-address <address>] [--miner [<threads>]] [--statistics[=<interval>]]
 ```
 
 | Argument        | Description           |
 | ------------- |:-------------:|
 | **_host_** | Hostname of the NodeJs client. |
 | **_port_** | Port used to communicate with the peers. |  
-| **_key_** | Private key for the client      |
-| **_cert_** | SSL certificate of your Domain.       |
-| **_wallet-seed_** | Your wallet seed (optional)        |
-| **_miner_** | The number of threads to start for mining (optional) |
-| **_statistics_** | The interval in seconds to output miner statistics (optional, default: 10) |
+| **_key_** | SSL key for your Domain. |
+| **_cert_** | SSL certificate of your Domain. |
+| **_wallet-seed_** | Your wallet seed (optional). |
+| **_wallet-address_** | Your wallet address for mining (optional, can only be used without _wallet-seed_). |
+| **_miner_** | The number of threads to start for mining (optional). |
+| **_statistics_** | The interval in seconds to output miner statistics (optional, default: 10). |
 
 
 ### Build your own Browser client
