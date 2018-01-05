@@ -2,17 +2,17 @@ class KeyPair extends Primitive {
     /**
      * @param arg
      * @param {boolean} locked
-     * @param {Uint8Array} lockSeed
+     * @param {Uint8Array} lockSalt
      * @private
      */
-    constructor(arg, locked = false, lockSeed = null) {
+    constructor(arg, locked = false, lockSalt = null) {
         super(arg, Crypto.keyPairType);
         /** @type {boolean} */
         this._locked = locked;
         /** @type {boolean} */
         this._unlocked = false;
         /** @type {Uint8Array} */
-        this._lockSeed = lockSeed;
+        this._lockSalt = lockSalt;
     }
 
     /**
@@ -31,6 +31,26 @@ class KeyPair extends Primitive {
     }
 
     /**
+     *
+     * @param {SerialBuffer} buf
+     * @param {Uint8Array} key
+     * @return {Promise<KeyPair>}
+     */
+    static async deriveDeepLocked(buf, key) {
+        const encryptedKey = PrivateKey.unserialize(buf);
+        const salt = buf.read(KeyPair.DEEP_LOCK_SALT_LENGTH);
+        const check = buf.read(KeyPair.DEEP_LOCK_CHECKSUM_LENGTH);
+
+        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.DEEP_LOCK_ROUNDS));
+        const keyPair = await KeyPair.derive(privateKey);
+        const pubHash = await keyPair.publicKey.hash();
+        if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
+            throw new Error('Invalid key');
+        }
+        return keyPair;
+    }
+
+    /**
      * @param {SerialBuffer} buf
      * @return {KeyPair}
      */
@@ -38,15 +58,15 @@ class KeyPair extends Primitive {
         const privateKey = PrivateKey.unserialize(buf);
         const publicKey = PublicKey.unserialize(buf);
         let locked = false;
-        let lockSeed = null;
+        let lockSalt = null;
         if (buf.readPos < buf.byteLength) {
             const extra = buf.readUint8();
             if (extra === 1) {
                 locked = true;
-                lockSeed = buf.read(32);
+                lockSalt = buf.read(32);
             }
         }
-        return new KeyPair(Crypto.keyPairFromKeys(privateKey._obj, publicKey._obj), locked, lockSeed);
+        return new KeyPair(Crypto.keyPairFromKeys(privateKey._obj, publicKey._obj), locked, lockSalt);
     }
 
     /**
@@ -67,7 +87,7 @@ class KeyPair extends Primitive {
         this.publicKey.serialize(buf);
         if (this._locked) {
             buf.writeUint8(1);
-            buf.write(this._lockSeed);
+            buf.write(this._lockSalt);
         } else {
             buf.writeUint8(0);
         }
@@ -92,23 +112,50 @@ class KeyPair extends Primitive {
 
     /** @type {number} */
     get serializedSize() {
-        return this._privateKeyInternal.serializedSize + this.publicKey.serializedSize + (this._locked ? this._lockSeed.byteLength + 1 : 1);
+        return this._privateKeyInternal.serializedSize + this.publicKey.serializedSize + (this._locked ? this._lockSalt.byteLength + 1 : 1);
     }
 
     /**
      * @param {Uint8Array} key
-     * @param {Uint8Array} [lockSeed]
+     * @param {Uint8Array} [lockSalt]
      */
-    async lock(key, lockSeed) {
+    async lock(key, lockSalt) {
         if (this._locked) throw new Error('KeyPair already locked');
-        if (lockSeed) this._lockSeed = lockSeed;
-        if (!this._lockSeed || this._lockSeed.length === 0) {
-            this._lockSeed = new Uint8Array(32);
-            Crypto.lib.getRandomValues(this._lockSeed);
+        if (lockSalt) this._lockSalt = lockSalt;
+        if (!this._lockSalt || this._lockSalt.length === 0) {
+            this._lockSalt = new Uint8Array(32);
+            Crypto.lib.getRandomValues(this._lockSalt);
         }
         this._privateKeyInternal.overwrite(await this._otpPrivateKey(key));
         this._locked = true;
         this._unlocked = false;
+    }
+
+    /**
+     * @param {Uint8Array} key
+     * @return {Promise.<Uint8Array>}
+     */
+    async deepLock(key) {
+        const wasLocked = this._locked;
+        if (this._locked) {
+            try {
+                await this.unlock(key);
+            } catch (e) {
+                throw new Error('KeyPair is locked but deep lock key mismatches');
+            }
+        }
+
+        const salt = new Uint8Array(KeyPair.DEEP_LOCK_SALT_LENGTH);
+        Crypto.lib.getRandomValues(salt);
+
+        const buf = new SerialBuffer(this.privateKey.serializedSize + KeyPair.DEEP_LOCK_SALT_LENGTH + KeyPair.DEEP_LOCK_CHECKSUM_LENGTH);
+        buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.DEEP_LOCK_ROUNDS));
+        buf.write(salt);
+        buf.write((await this.publicKey.hash()).subarray(0, KeyPair.DEEP_LOCK_CHECKSUM_LENGTH));
+
+        if (wasLocked) this.relock();
+
+        return buf;
     }
 
     /**
@@ -136,8 +183,25 @@ class KeyPair extends Primitive {
         this._unlocked = false;
     }
 
+    /**
+     * @param {Uint8Array} key
+     * @return {Promise<PrivateKey>}
+     * @private
+     */
     async _otpPrivateKey(key) {
-        return new PrivateKey(KeyPair._xor(this._privateKeyInternal.serialize(), await Crypto.kdf(key, this._lockSeed)));
+        return new PrivateKey(await KeyPair._otpKdf(this._privateKeyInternal.serialize(), key, this._lockSalt, KeyPair.LOCK_ROUNDS));
+    }
+
+    /**
+     * @param {Uint8Array} message
+     * @param {Uint8Array} key
+     * @param {Uint8Array} salt
+     * @param {number} iterations
+     * @return {Promise<Uint8Array>}
+     * @private
+     */
+    static async _otpKdf(message, key, salt, iterations) {
+        return KeyPair._xor(message, await Crypto.kdf(key, salt, iterations));
     }
 
     /**
@@ -166,5 +230,9 @@ class KeyPair extends Primitive {
         return o instanceof KeyPair && super.equals(o);
     }
 }
-KeyPair.LOCK_ROUNDS = 100;
+KeyPair.LOCK_ROUNDS = 256;
+KeyPair.DEEP_LOCK_ROUNDS = 32768;
+KeyPair.DEEP_LOCK_CHECKSUM_LENGTH = 4;
+KeyPair.DEEP_LOCK_SALT_LENGTH = 16;
+
 Class.register(KeyPair);

@@ -3,6 +3,16 @@ describe('Wallet', () => {
     const value = 8888888;
     const fee = 888;
     const nonce = 8;
+    const deepLockRounds = KeyPair.DEEP_LOCK_ROUNDS;
+    
+    beforeAll(() => {
+        // Temporarily reduce deep lock rounds.
+        KeyPair.DEEP_LOCK_ROUNDS = KeyPair.LOCK_ROUNDS;
+    });
+    
+    afterAll(() => {
+        KeyPair.DEEP_LOCK_ROUNDS = deepLockRounds;
+    });
 
     it('can create a signed transaction', (done) => {
         (async () => {
@@ -51,6 +61,44 @@ describe('Wallet', () => {
             expect(wallet.isLocked).toBeFalsy();
             wallet.relock();
             expect(wallet.isLocked).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('can create a deep-locked wallet and import it', (done) => {
+        (async () => {
+            const wallet = await Wallet.createVolatile();
+            const key = 'password';
+
+            const deepLockedWallet = await wallet.deepLock(key);
+            const unlockedWallet = await Wallet.loadDeepLocked(deepLockedWallet, key);
+            expect(unlockedWallet.keyPair.privateKey).toEqual(wallet.keyPair.privateKey);
+            expect(unlockedWallet.address).toEqual(wallet.address);
+        })().then(done, done.fail);
+    });
+
+    it('can detect wrong key when creating a deep-locked wallet from locked wallet', (done) => {
+        (async () => {
+            const wallet = await Wallet.createVolatile();
+            const key = 'password';
+            const key2 = '123456';
+
+            await wallet.lock(key);
+            let err = false;
+            await wallet.deepLock(key2).catch(() => err = true);
+            expect(err).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('can detect wrong key on deep-locked wallet', (done) => {
+        (async () => {
+            const wallet = await Wallet.createVolatile();
+            const key = 'password';
+            const key2 = '123456';
+
+            const deepLockedWallet = await wallet.deepLock(key);
+            let err = false;
+            await Wallet.loadDeepLocked(deepLockedWallet, key2).catch(() => err = true);
+            expect(err).toBeTruthy();
         })().then(done, done.fail);
     });
 });

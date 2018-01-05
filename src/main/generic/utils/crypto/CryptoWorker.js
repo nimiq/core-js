@@ -34,10 +34,11 @@ class CryptoWorker {
 
     /**
      * @param {Uint8Array} key
-     * @param {Uint8Array} seed
+     * @param {Uint8Array} salt
+     * @param {number} iterations
      * @returns {Promise.<Uint8Array>}
      */
-    async kdf(key, seed) {}
+    async kdf(key, salt, iterations) {}
 
     /**
      * @param privateKey
