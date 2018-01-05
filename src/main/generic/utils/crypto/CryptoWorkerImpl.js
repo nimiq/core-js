@@ -119,19 +119,20 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} key
-     * @param {Uint8Array} seed
+     * @param {Uint8Array} salt
+     * @param {number} iterations
      * @returns {Promise.<Uint8Array>}
      */
-    async kdf(key, seed) {
+    async kdf(key, salt, iterations) {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
             const wasmOut = Module.stackAlloc(CryptoWorker.HASH_SIZE);
             const wasmIn = Module.stackAlloc(key.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
-            const wasmSeed = Module.stackAlloc(seed.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmSeed, seed.length).set(seed);
-            const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSeed, seed.length, 512, 256);
+            const wasmSalt = Module.stackAlloc(salt.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmSalt, salt.length).set(salt);
+            const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
             if (res !== 0) {
                 throw res;
             }

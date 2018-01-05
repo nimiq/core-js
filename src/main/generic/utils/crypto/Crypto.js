@@ -304,9 +304,15 @@ class Crypto {
         return worker.computeHardHashBatch(arrarr);
     }
 
-    static async kdf(key, seed) {
+    /**
+     * @param {Uint8Array} key
+     * @param {Uint8Array} salt
+     * @param {number} iterations
+     * @returns {Promise.<Uint8Array>}
+     */
+    static async kdf(key, salt, iterations = 256) {
         const worker = await Crypto._cryptoWorkerAsync();
-        return worker.kdf(key, seed);
+        return worker.kdf(key, salt, iterations);
     }
 
     /**

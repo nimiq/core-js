@@ -1,4 +1,3 @@
-// TODO V2: Store private key encrypted
 class Wallet {
     /**
      * Create a Wallet with persistent storage backend.
@@ -35,6 +34,26 @@ class Wallet {
         }
 
         return new Wallet(KeyPair.fromHex(hexBuf));
+    }
+
+    /**
+     * @param {Uint8Array|string} buf
+     * @param {Uint8Array|string} key
+     * @return {Promise.<Wallet>}
+     */
+    static async loadDeepLocked(buf, key) {
+        if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        return new Wallet(await KeyPair.deriveDeepLocked(new SerialBuffer(buf), key));
+    }
+
+    /**
+     * @param {Uint8Array|string} key
+     * @return {Promise.<Uint8Array>}
+     */
+    deepLock(key) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        return this._keyPair.deepLock(key);
     }
 
     /**
@@ -94,7 +113,7 @@ class Wallet {
         return this._keyPair;
     }
 
-    /** 
+    /**
      * @returns {string}
      */
     dump() {
