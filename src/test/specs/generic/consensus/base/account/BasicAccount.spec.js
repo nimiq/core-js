@@ -133,4 +133,11 @@ describe('BasicAccount', () => {
 
         expect(account.balance).toBe(100);
     });
+
+    it('has toString method', (done) => {
+        (async function () {
+            const account = new BasicAccount(100);
+            expect(() => account.toString()).not.toThrow();
+        })().then(done, done.fail);
+    });
 });
