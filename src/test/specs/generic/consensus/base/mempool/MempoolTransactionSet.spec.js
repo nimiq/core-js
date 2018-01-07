@@ -71,4 +71,16 @@ describe('MempoolTransactionSet', () => {
         expect(set.numBelowFeePerByte(100)).toBe(3);
         expect(set.numBelowFeePerByte(1)).toBe(1);
     });
+
+    it('has toString method', (done) => {
+        (async function () {
+            const set = new MempoolTransactionSet();
+
+            set.add(tx1);
+            set.add(tx2);
+            set.add(tx3);
+
+            expect(() => set.toString()).not.toThrow();
+        })().then(done, done.fail);
+    });
 });

@@ -36,6 +36,32 @@ describe('Accounts', () => {
         })().then(done, done.fail);
     });
 
+    it('cannot revert invalid blocks', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
+            const accounts = testBlockchain.accounts;
+
+            const accountsHash1 = await accounts.hash();
+            let block = await testBlockchain.createBlock();
+            await accounts.commitBlock(block, testBlockchain.transactionsCache);
+            testBlockchain.transactionsCache.pushBlock(block);
+
+            let accountsHash2 = await accounts.hash();
+            expect(accountsHash1.equals(accountsHash2)).toEqual(false);
+
+            block = await testBlockchain.createBlock();
+
+            let threw = false;
+            try {
+                await accounts.revertBlock(block, testBlockchain.transactionsCache);
+                testBlockchain.transactionsCache.revertBlock(block);
+            } catch (e) {
+                threw = true;
+            }
+            expect(threw).toEqual(true);
+        })().then(done, done.fail);
+    });
+
     it('can apply and revert a block with multiple transaction per sender', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 5);

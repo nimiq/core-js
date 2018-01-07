@@ -194,4 +194,11 @@ describe('VestingAccount', () => {
         transaction = new BasicTransaction(pubKey, recipient, 100, 0, 201);
         expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(0);
     });
+
+    it('has toString method', (done) => {
+        (async function () {
+            const account = new VestingAccount(100);
+            expect(() => account.toString()).not.toThrow();
+        })().then(done, done.fail);
+    });
 });
