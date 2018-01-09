@@ -10,9 +10,11 @@ class KeyPair extends Primitive {
         /** @type {boolean} */
         this._locked = locked;
         /** @type {boolean} */
-        this._unlocked = false;
+        this._lockedInternally = locked;
         /** @type {Uint8Array} */
         this._lockSalt = lockSalt;
+
+        this._internalPrivateKey = new PrivateKey(Crypto.keyPairPrivate(this._obj));
     }
 
     /**
@@ -83,7 +85,7 @@ class KeyPair extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        this._privateKeyInternal.serialize(buf);
+        this._privateKey.serialize(buf);
         this.publicKey.serialize(buf);
         if (this._locked) {
             buf.writeUint8(1);
@@ -94,15 +96,24 @@ class KeyPair extends Primitive {
         return buf;
     }
 
-    /** @type {PrivateKey} */
+    /**
+     * The unlocked private key.
+     * @type {PrivateKey}
+     */
     get privateKey() {
         if (this.isLocked) throw new Error('Wallet is locked');
-        return this._privateKeyInternal;
+        return this._privateKey;
     }
 
-    /** @type {PrivateKey} */
-    get _privateKeyInternal() {
-        return this._privateKey || (this._privateKey = new PrivateKey(Crypto.keyPairPrivate(this._obj)));
+    /**
+     * The private key in its current state, i.e., depending on this._locked.
+     * If this._locked, it is the internally locked private key.
+     * If !this._locked, it is either the internally unlocked private key (if !this._lockedInternally)
+     * or this._unlockedPrivateKey.
+     * @type {PrivateKey}
+     */
+    get _privateKey() {
+        return this._unlockedPrivateKey || this._internalPrivateKey;
     }
 
     /** @type {PublicKey} */
@@ -112,23 +123,7 @@ class KeyPair extends Primitive {
 
     /** @type {number} */
     get serializedSize() {
-        return this._privateKeyInternal.serializedSize + this.publicKey.serializedSize + (this._locked ? this._lockSalt.byteLength + 1 : 1);
-    }
-
-    /**
-     * @param {Uint8Array} key
-     * @param {Uint8Array} [lockSalt]
-     */
-    async lock(key, lockSalt) {
-        if (this._locked) throw new Error('KeyPair already locked');
-        if (lockSalt) this._lockSalt = lockSalt;
-        if (!this._lockSalt || this._lockSalt.length === 0) {
-            this._lockSalt = new Uint8Array(32);
-            Crypto.lib.getRandomValues(this._lockSalt);
-        }
-        this._privateKeyInternal.overwrite(await this._otpPrivateKey(key));
-        this._locked = true;
-        this._unlocked = false;
+        return this._privateKey.serializedSize + this.publicKey.serializedSize + (this._locked ? this._lockSalt.byteLength + 1 : 1);
     }
 
     /**
@@ -160,27 +155,58 @@ class KeyPair extends Primitive {
 
     /**
      * @param {Uint8Array} key
+     * @param {Uint8Array} [lockSalt]
+     */
+    async lock(key, lockSalt) {
+        if (this._locked) throw new Error('KeyPair already locked');
+
+        if (lockSalt) this._lockSalt = lockSalt;
+        if (!this._lockSalt || this._lockSalt.length === 0) {
+            this._lockSalt = new Uint8Array(32);
+            Crypto.lib.getRandomValues(this._lockSalt);
+        }
+
+        this._internalPrivateKey.overwrite(await this._otpPrivateKey(key));
+        this._clearUnlockedPrivateKey();
+        this._locked = true;
+        this._lockedInternally = true;
+    }
+
+    /**
+     * @param {Uint8Array} key
      */
     async unlock(key) {
         if (!this._locked) throw new Error('KeyPair not locked');
+
         const privateKey = await this._otpPrivateKey(key);
         const verifyPub = await PublicKey.derive(privateKey);
         if (verifyPub.equals(this.publicKey)) {
-            this._privateKey = privateKey;
+            // Only set this._internalPrivateKey, but keep this._obj locked.
+            this._unlockedPrivateKey = privateKey;
             this._locked = false;
-            this._unlocked = true;
         } else {
             throw new Error('Invalid key');
         }
     }
 
+    /**
+     * Destroy cached unlocked private key if the internal key is in locked state.
+     */
     relock() {
         if (this._locked) throw new Error('KeyPair already locked');
-        if (!this._unlocked) throw new Error('KeyPair was never locked');
-        this._privateKey.overwrite(PrivateKey.unserialize(new SerialBuffer(this._privateKey.serializedSize)));
-        this._privateKey = null;
+        if (!this._lockedInternally) throw new Error('KeyPair was never locked');
+        this._clearUnlockedPrivateKey();
         this._locked = true;
-        this._unlocked = false;
+    }
+
+    _clearUnlockedPrivateKey() {
+        // If this wallet is not locked internally and unlocked, this method does not have any effect.
+        if (!this._lockedInternally || this._locked) return;
+
+        // Overwrite cached key in this._unlockedPrivateKey with 0s.
+        this._unlockedPrivateKey.overwrite(PrivateKey.unserialize(new SerialBuffer(this._unlockedPrivateKey.serializedSize)));
+        // Then, reset it.
+        this._unlockedPrivateKey = null;
     }
 
     /**
@@ -189,7 +215,7 @@ class KeyPair extends Primitive {
      * @private
      */
     async _otpPrivateKey(key) {
-        return new PrivateKey(await KeyPair._otpKdf(this._privateKeyInternal.serialize(), key, this._lockSalt, KeyPair.LOCK_ROUNDS));
+        return new PrivateKey(await KeyPair._otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_ROUNDS));
     }
 
     /**
@@ -201,21 +227,7 @@ class KeyPair extends Primitive {
      * @private
      */
     static async _otpKdf(message, key, salt, iterations) {
-        return KeyPair._xor(message, await Crypto.kdf(key, salt, iterations));
-    }
-
-    /**
-     * @param {Uint8Array} a
-     * @param {Uint8Array} b
-     * @return {Uint8Array}
-     * @private
-     */
-    static _xor(a, b) {
-        const res = new Uint8Array(a.byteLength);
-        for (let i = 0; i < a.byteLength; ++i) {
-            res[i] = a[i] ^ b[i];
-        }
-        return res;
+        return BufferUtils.xor(message, await Crypto.kdf(key, salt, iterations));
     }
 
     get isLocked() {

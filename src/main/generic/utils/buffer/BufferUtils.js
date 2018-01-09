@@ -191,6 +191,19 @@ class BufferUtils {
         }
         return 0;
     }
+
+    /**
+     * @param {Uint8Array} a
+     * @param {Uint8Array} b
+     * @return {Uint8Array}
+     */
+    static xor(a, b) {
+        const res = new Uint8Array(a.byteLength);
+        for (let i = 0; i < a.byteLength; ++i) {
+            res[i] = a[i] ^ b[i];
+        }
+        return res;
+    }
 }
 BufferUtils.BASE32_ALPHABET = {
     RFC4648:        'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=',
