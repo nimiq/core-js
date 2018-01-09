@@ -31,7 +31,7 @@ Follow the Quickstart guide or use our CDN:
 
 
 ### Run Browser Client
-Open `clients/browser/(full|light|nano).html` in your browser.
+Open `clients/browser/(full|light|nano).html` in your browser or load using a local web server (nginx, nodejs, apache, etc.) - `localhost` should be enough. Also the first way will work, browser security policy would prevent loading `wasm` files form `file://` origin. The application would fallback to asm js, making everything (synchronization, mining) less efficient (10-12 times as tested with Chrome and Firefox on AMD Ryzen 1700X).
 
 ### Run NodeJs client
 To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
@@ -44,7 +44,7 @@ node index.js --host <hostname> --port <port> --key <privkey> --cert <certificat
 | Argument        | Description           |
 | ------------- |:-------------:|
 | **_host_** | Hostname of the NodeJs client. |
-| **_port_** | Port used to communicate with the peers. |  
+| **_port_** | Port used to communicate with the peers. |
 | **_key_** | Private key for the client      |
 | **_cert_** | SSL certificate of your Domain.       |
 | **_wallet-seed_** | Your wallet seed (optional)        |
