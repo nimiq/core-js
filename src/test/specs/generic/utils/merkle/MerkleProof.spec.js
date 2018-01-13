@@ -14,6 +14,10 @@ describe('MerkleProof', () => {
         BufferUtils.fromAscii('9')
     ];
 
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
+
     it('correctly computes an empty proof', () => {
         const root = MerkleTree.computeRoot([]);
         let proof = MerkleProof.compute([], [values[0]]);

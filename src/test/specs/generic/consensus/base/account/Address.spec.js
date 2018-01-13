@@ -1,4 +1,7 @@
 describe('Address', () => {
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
 
     it('is 20 bytes long', () => {
         const address = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));

@@ -82,6 +82,10 @@ describe('Crypto', () => {
         }
     ];
 
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
+
     it('can create keys of proposed size', (done) => {
         (async function () {
             const keyPair = await Crypto.keyPairGenerate();

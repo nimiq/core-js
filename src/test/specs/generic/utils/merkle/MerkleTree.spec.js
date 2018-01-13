@@ -1,6 +1,10 @@
 describe('MerkleTree', () => {
     const value = BufferUtils.fromBase64('bWVya2xldHJlZQ==');
 
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
+
     it('correctly computes an empty root hash', () => {
         const emptyHash = Hash.light(new Uint8Array(0));
         expect(emptyHash.equals(MerkleTree.computeRoot([]))).toBe(true);

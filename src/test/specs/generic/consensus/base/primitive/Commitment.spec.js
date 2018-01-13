@@ -1,4 +1,7 @@
 describe('Commitment', () => {
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
 
     it('is serializable and unserializable', (done) => {
         (async function () {

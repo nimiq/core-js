@@ -48,7 +48,3 @@ if (process.env.MINE_ON_DEMAND) {
         }
     });
 }
-
-jasmine.getEnv().beforeAll((done) => {
-    Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-});

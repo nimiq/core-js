@@ -7,8 +7,11 @@ describe('BasicTransaction', () => {
     const validityStartHeight = 1;
     const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
-    beforeAll(() => {
-        senderAddress = senderPubKey.toAddress();
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
+            senderAddress = senderPubKey.toAddress();
+        })().then(done, done.fail);
     });
 
     it('is correctly created', () => {
