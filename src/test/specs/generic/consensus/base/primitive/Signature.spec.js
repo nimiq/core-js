@@ -1,4 +1,7 @@
 describe('Signature', () => {
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
 
     it('is 64 bytes long', () => {
         const signature1 = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));

@@ -3,34 +3,39 @@ describe('AccountsProofMessage', () => {
     let proof;
 
 
-    beforeAll(() => {
-        const account1 = new BasicAccount(25);
-        const account2 = new BasicAccount(1);
-        const account3 = new BasicAccount(1322);
-        const account4 = new BasicAccount(93);
 
-        const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
-        const t1Hash = t1.hash();
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
 
-        const t2 = AccountsTreeNode.terminalNode('0033333333333333333333333333333333333333', account2);
-        const t2Hash = t2.hash();
+            const account1 = new BasicAccount(25);
+            const account2 = new BasicAccount(1);
+            const account3 = new BasicAccount(1322);
+            const account4 = new BasicAccount(93);
 
-        const t3 = AccountsTreeNode.terminalNode('0020000000000000000000000000000000000000', account3);
-        const t3Hash = t3.hash();
+            const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
+            const t1Hash = t1.hash();
 
-        const t4 = AccountsTreeNode.terminalNode('0022222222222222222222222222222222222222', account4);
-        const t4Hash = t4.hash();
+            const t2 = AccountsTreeNode.terminalNode('0033333333333333333333333333333333333333', account2);
+            const t2Hash = t2.hash();
 
-        const b2 = AccountsTreeNode.branchNode('002', ['0000000000000000000000000000000000000', undefined, '2222222222222222222222222222222222222'], [t3Hash, undefined, t4Hash]);
-        const b2Hash = b2.hash();
+            const t3 = AccountsTreeNode.terminalNode('0020000000000000000000000000000000000000', account3);
+            const t3Hash = t3.hash();
 
-        const b1 = AccountsTreeNode.branchNode('00', [undefined, '11111111111111111111111111111111111111', '2', '33333333333333333333333333333333333333'], [undefined, t1Hash, b2Hash, t2Hash]);
-        const b1Hash = b1.hash();
+            const t4 = AccountsTreeNode.terminalNode('0022222222222222222222222222222222222222', account4);
+            const t4Hash = t4.hash();
 
-        const r1 = AccountsTreeNode.branchNode('', ['00'], [b1Hash]);
+            const b2 = AccountsTreeNode.branchNode('002', ['0000000000000000000000000000000000000', undefined, '2222222222222222222222222222222222222'], [t3Hash, undefined, t4Hash]);
+            const b2Hash = b2.hash();
 
-        const nodes = [t1, t3, t4, b2, t2, b1, r1];
-        proof = new AccountsProof(nodes);
+            const b1 = AccountsTreeNode.branchNode('00', [undefined, '11111111111111111111111111111111111111', '2', '33333333333333333333333333333333333333'], [undefined, t1Hash, b2Hash, t2Hash]);
+            const b1Hash = b1.hash();
+
+            const r1 = AccountsTreeNode.branchNode('', ['00'], [b1Hash]);
+
+            const nodes = [t1, t3, t4, b2, t2, b1, r1];
+            proof = new AccountsProof(nodes);
+        })().then(done, done.fail);
     });
 
     it('is correctly constructed', () => {

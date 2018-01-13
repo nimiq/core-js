@@ -1,5 +1,8 @@
 describe('KeyPair', () => {
     const catcher = {catcher: () => 0};
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
 
     it('can serialize and unserialize', () => {
         const pair1 = KeyPair.generate();

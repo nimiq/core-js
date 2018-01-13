@@ -8,8 +8,11 @@ describe('ExtendedTransaction', () => {
     const proof = BufferUtils.fromAscii('ABCD');
     const data = BufferUtils.fromAscii('EFGH');
 
-    beforeAll(() => {
-        senderAddress = senderPubKey.toAddress();
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
+            senderAddress = senderPubKey.toAddress();
+        })().then(done, done.fail);
     });
 
     it('is correctly created', () => {
