@@ -134,7 +134,7 @@ Note that you can override any of the arguments which were baked into the image 
 
 ## Contribute
 
-If you'd like to contribute to development Nimiq please follow our [Code of Conduct](/.github/CODE_OF_CONDUCT.md) and [Contributing Guidelines](/.github/CONTRIBUTING.md).
+If you'd like to contribute to the development of Nimiq please follow our [Code of Conduct](/.github/CODE_OF_CONDUCT.md) and [Contributing Guidelines](/.github/CONTRIBUTING.md).
 
 ## License
 
