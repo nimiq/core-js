@@ -2,7 +2,7 @@ const Nimiq = require('../../dist/node.js');
 const argv = require('minimist')(process.argv.slice(2));
 
 if (!argv.host || !argv.port || !argv.key || !argv.cert) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--wallet-seed=<wallet-seed>] [--miner[=<thread-num>[:<throttle-after>[:<throttle-wait>]]]] [--statistics[=<interval>]] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
+    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--wallet-seed=<wallet-seed>] [--wallet-address=<address>] [--miner[=<thread-num>[:<throttle-after>[:<throttle-wait>]]]] [--statistics[=<interval>]] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
     process.exit();
 }
 
@@ -14,6 +14,7 @@ const passive = argv.passive;
 const key = argv.key;
 const cert = argv.cert;
 const walletSeed = argv['wallet-seed'] || null;
+const walletAddress = argv['wallet-address'] || null;
 
 if (argv['log']) {
     Nimiq.Log.instance.level = argv['log'] === true ? Nimiq.Log.VERBOSE : argv['log'];
@@ -26,6 +27,11 @@ if (argv['log-tag']) {
         const s = lt.split(':');
         Nimiq.Log.instance.setLoggable(s[0], s.length === 1 ? 2 : s[1]);
     });
+}
+
+if (walletSeed && walletAddress) {
+    console.error('Can only use one of wallet-seed or wallet-address, not both!');
+    process.exit(1);
 }
 
 console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive})`);
@@ -47,7 +53,12 @@ const $ = {};
     $.mempool = $.consensus.mempool;
     $.network = $.consensus.network;
 
-    $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
+    if (!walletAddress) {
+        $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
+    }
+    else {
+        $.wallet = { address: Nimiq.Address.fromUserFriendlyAddress(walletAddress) };
+    }
 
     const account = await $.accounts.get($.wallet.address) || Nimiq.BasicAccount.INITIAL;
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
