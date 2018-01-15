@@ -82,6 +82,26 @@ describe('BufferUtils', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromBase32('CPNMUOJ1E8======', BufferUtils.BASE32_ALPHABET.RFC4648_HEX))).toEqual('foobar');
     });
 
+    it('toHex fulfills RFC 4648 test vectors', () => {
+        expect(BufferUtils.toHex(BufferUtils.fromAscii(''))).toBe('');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('f'))).toBe('66');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('fo'))).toBe('666f');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('foo'))).toBe('666f6f');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('foob'))).toBe('666f6f62');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('fooba'))).toBe('666f6f6261');
+        expect(BufferUtils.toHex(BufferUtils.fromAscii('foobar'))).toBe('666f6f626172');
+    });
+
+    it('fromHex fulfills RFC 4648 test vectors', () => {
+        expect(BufferUtils.toAscii(BufferUtils.fromHex(''))).toEqual('');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('66'))).toEqual('f');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('666f'))).toEqual('fo');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f'))).toEqual('foo');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f62'))).toEqual('foob');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f6261'))).toEqual('fooba');
+        expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f626172'))).toEqual('foobar');
+    });
+
     it('has an equals method', () => {
         const buffer1 = BufferUtils.fromAscii('test');
         const buffer2 = BufferUtils.fromAscii('test');
@@ -102,16 +122,5 @@ describe('BufferUtils', () => {
 
         expect(BufferUtils.equals(buffer1, buffer3)).toEqual(true);
         expect(BufferUtils.equals(buffer2, buffer4)).toEqual(true);
-    });
-
-    it('can build a buffer from hex', () => {
-        const buffer1 = BufferUtils.fromHex('abcdef');
-        const buffer2 = BufferUtils.fromHex('123456');
-
-        const correctBuffer1 = new Uint8Array([171, 205, 239]);
-        const correctBuffer2 = new Uint8Array([18, 52, 86]);
-
-        expect(BufferUtils.equals(buffer1, correctBuffer1)).toEqual(true);
-        expect(BufferUtils.equals(buffer2, correctBuffer2)).toEqual(true);
     });
 });

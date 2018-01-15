@@ -130,7 +130,13 @@ class BufferUtils {
      * @return {string}
      */
     static toHex(buffer) {
-        return Array.prototype.map.call(buffer, x => ('00' + x.toString(16)).slice(-2)).join('');
+        let hex = '';
+        for (let i = 0; i < buffer.length; i++) {
+            const code = buffer[i];
+            hex += BufferUtils.HEX_ALPHABET[code >>> 4];
+            hex += BufferUtils.HEX_ALPHABET[code & 0x0F];
+        }
+        return hex;
     }
 
     /**
@@ -140,7 +146,7 @@ class BufferUtils {
     static fromHex(hex) {
         hex = hex.trim();
         if (!StringUtils.isHexBytes(hex)) return null;
-        return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g), byte => parseInt(byte, 16)));
+        return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g) || [], byte => parseInt(byte, 16)));
     }
 
     /**
@@ -191,5 +197,6 @@ BufferUtils.BASE32_ALPHABET = {
     RFC4648_HEX:    '0123456789ABCDEFGHIJKLMNOPQRSTUV=',
     NIMIQ:          '0123456789ABCDEFGHJKLMNPQRSTUVXY'
 };
+BufferUtils.HEX_ALPHABET = '0123456789abcdef';
 
 Class.register(BufferUtils);
