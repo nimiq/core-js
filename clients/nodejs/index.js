@@ -55,8 +55,7 @@ const $ = {};
 
     if (!walletAddress) {
         $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
-    }
-    else {
+    } else {
         $.wallet = { address: Nimiq.Address.fromUserFriendlyAddress(walletAddress) };
     }
 

@@ -9,16 +9,15 @@ Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](http
 
 ## Quickstart
 
-_NodeJS v8.0.0 or higher is required_
-
-1. On Ubuntu, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
+1. Install [Node.js](https://nodejs.org) v8.0.0 or higher.
+2. On Ubuntu, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
     - On other Linux systems, install `git`, `python2.7`, `make` and `gcc`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
-2. Install gulp globally: `sudo npm install -g gulp` or `yarn global add gulp`.
-3. Clone this repository `git clone https://github.com/nimiq-network/core`.
-4. In the core directory, run `npm install` or `yarn`.
-5. In the core directory, run `npm run build` or `yarn build`.
-6. Open `clients/browser/(full|light|nano).html` in your browser to access the Browser Client.
+3. Install gulp globally: `sudo npm install -g gulp` or `yarn global add gulp`.
+4. Clone this repository `git clone https://github.com/nimiq-network/core`.
+5. In the core directory, run `npm install` or `yarn`.
+6. In the core directory, run `npm run build` or `yarn build`.
+7. Open `clients/browser/(full|light|nano).html` in your browser to access the Browser Client.
 
 ## Web Developers
 ### Most simple Web Application on top of the Nimiq Blockchain
@@ -32,23 +31,23 @@ Follow the Quickstart guide or use our CDN:
 ```
 
 
-### Run Browser Client
+### Run Browser client
 Open `clients/browser/(full|light|nano).html` in your browser.
 
-### Run NodeJs client
-To run a NodeJs Client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
+### Run Node.js client
+To run a Node.js client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
 
 ```bash
 cd clients/nodejs/
-node index.js --host <hostname> --port <port> --key <SSL key> --cert <SSL certificate> [--wallet-seed <seed>] [--wallet-address <address>] [--miner [<threads>]] [--statistics[=<interval>]]
+node index.js --host <hostname> --port <port> --key <ssl-key> --cert <ssl-certificate> [--wallet-seed <seed>] [--wallet-address <address>] [--miner [<threads>]] [--statistics[=<interval>]]
 ```
 
 | Argument        | Description           |
 | ------------- |:-------------:|
-| **_host_** | Hostname of the NodeJs client. |
+| **_host_** | Hostname of the Node.js client. |
 | **_port_** | Port used to communicate with the peers. |  
-| **_key_** | SSL key for your Domain. |
-| **_cert_** | SSL certificate of your Domain. |
+| **_key_** | SSL private key for your domain. |
+| **_cert_** | SSL certificate of your domain. |
 | **_wallet-seed_** | Your wallet seed (optional). |
 | **_wallet-address_** | Your wallet address for mining (optional, can only be used without _wallet-seed_). |
 | **_miner_** | The number of threads to start for mining (optional). |
@@ -65,9 +64,9 @@ Visit the [API Documentation](dist/API_DOCUMENTATION.md).
 ## Core Developers
 Developers are free to choose between npm and yarn for managing the dependencies.
 ### Installation for Core Developers (using npm)
-- NodeJs latest version (> 8.0.0)
+- Node.js latest version (> 8.0.0)
 - Dependencies: `npm install`
-- NodeJs dependencies:
+- Node.js dependencies:
 
 	```bash
 	cd src/main/platform/nodejs/
@@ -77,9 +76,9 @@ Developers are free to choose between npm and yarn for managing the dependencies
 	```
 
 ### Installation for Core Developers (using yarn)
-- NodeJs latest version (> 8.0.0)
+- Node.js latest version (> 8.0.0)
 - Dependencies: `yarn`
-- NodeJs dependencies:
+- Node.js dependencies:
 
 	```bash
 	cd src/main/platform/nodejs/
