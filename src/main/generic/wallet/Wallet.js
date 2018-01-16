@@ -1,6 +1,18 @@
 // TODO V2: Store private key encrypted
 class Wallet {
     /**
+     * Tests if a persisted wallet exists in the store.
+     * @returns {boolean}
+     */
+    static async hasPersistent() {
+        await Crypto.prepareSyncCryptoWorker();
+        const db = await new WalletStore();
+        const keys = await db.get('keys');
+        await db.close();
+        return !!keys;
+    }
+
+    /**
      * Create a Wallet with persistent storage backend.
      * @returns {Promise.<Wallet>} A Wallet object. If the persisted storage already stored a Wallet before, this will be reused.
      */
