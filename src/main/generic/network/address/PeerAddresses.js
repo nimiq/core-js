@@ -1,6 +1,10 @@
 // TODO Limit the number of addresses we store.
 class PeerAddresses extends Observable {
-    constructor() {
+    /**
+     * @constructor
+     * @param {NetworkConfig} netconfig
+     */
+    constructor(netconfig) {
         super();
 
         /**
@@ -16,6 +20,12 @@ class PeerAddresses extends Observable {
          * @private
          */
         this._signalIds = new HashMap();
+
+        /**
+         * @type {NetworkConfig}
+         * @private
+         */
+        this._netconfig = netconfig;
 
         // Number of WebSocket/WebRTC peers.
         /** @type {number} */
@@ -266,7 +276,7 @@ class PeerAddresses extends Observable {
      */
     _add(channel, peerAddress) {
         // Ignore our own address.
-        if (NetworkConfig.myPeerAddress().equals(peerAddress)) {
+        if (this._netconfig.myPeerAddress.equals(peerAddress)) {
             return false;
         }
 

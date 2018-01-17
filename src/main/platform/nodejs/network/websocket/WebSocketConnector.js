@@ -6,10 +6,14 @@ const https = require('https');
 const fs = require('fs');
 
 class WebSocketConnector extends Observable {
-    constructor() {
+    /**
+     * @constructor
+     * @param {NetworkConfig} netconfig
+     */
+    constructor(netconfig) {
         super();
-        const port = NetworkConfig.myPeerAddress().port;
-        const sslConfig = NetworkConfig.getSSLConfig();
+        const port = netconfig.myPeerAddress.port;
+        const sslConfig = netconfig.sslConfig;
 
         const options = {
             key: fs.readFileSync(sslConfig.key),

@@ -36,17 +36,13 @@ if (walletSeed && walletAddress) {
 
 console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive})`);
 
-// XXX Configure Core.
-// TODO Create config/options object and pass to Core.get()/init().
-Nimiq.NetworkConfig.configurePeerAddress(host, port);
-Nimiq.NetworkConfig.configureSSL(key, cert);
-
 const TAG = 'Node';
 
 const $ = {};
 
 (async () => {
-    $.consensus = await Nimiq.Consensus.full();
+    const netconfig = Nimiq.NetworkConfig.createVolatileWS(host, port, key, cert);
+    $.consensus = await Nimiq.Consensus.full(netconfig);
 
     $.blockchain = $.consensus.blockchain;
     $.accounts = $.blockchain.accounts;

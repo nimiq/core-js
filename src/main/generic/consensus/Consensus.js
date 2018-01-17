@@ -1,11 +1,18 @@
 class Consensus {
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<FullConsensus>}
      */
-    static async full() {
-        Services.configureServices(Services.FULL);
-        Services.configureServiceMask(Services.FULL);
+    static async full(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig (FULL is the default type).
+        if (netconfig) {
+            netconfig.services.type = Services.FULL;
+        } else {
+            netconfig = await NetworkConfig.getPlatformDefault();
+        }
 
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getFull();
@@ -16,18 +23,25 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new FullConsensus(blockchain, mempool, network);
     }
 
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<LightConsensus>}
      */
-    static async light() {
-        Services.configureServices(Services.LIGHT);
-        Services.configureServiceMask(Services.LIGHT | Services.FULL);
+    static async light(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig.
+        if (netconfig) {
+            netconfig.services.type = Services.LIGHT;
+        } else {
+            netconfig = await NetworkConfig.getPlatformDefault(new Services(Services.LIGHT, Services.LIGHT | Services.FULL));
+        }
 
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getLight();
@@ -38,25 +52,32 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new LightConsensus(blockchain, mempool, network);
     }
 
     /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<NanoConsensus>}
      */
-    static async nano() {
-        Services.configureServices(Services.NANO);
-        Services.configureServiceMask(Services.NANO | Services.LIGHT | Services.FULL);
+    static async nano(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        // If we received a netconfig object, overwrite its type to make sure it matches the type of the
+        // Consensus object we're creating. If not, create a new NetworkConfig.
+        if (netconfig) {
+            netconfig.services.type = Services.NANO;
+        } else {
+            netconfig = await NetworkConfig.getPlatformDefault(new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL));
+        }
 
         /** @type {NanoChain} */
         const blockchain = await new NanoChain();
         /** @type {NanoMempool} */
         const mempool = new NanoMempool();
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new NanoConsensus(blockchain, mempool, network);
     }
