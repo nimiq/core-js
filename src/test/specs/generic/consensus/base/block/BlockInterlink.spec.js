@@ -1,9 +1,10 @@
 describe('BlockInterlink', () => {
     const hash1 = new Hash(BufferUtils.fromBase64(Dummy.hash1));
     const hash2 = new Hash(BufferUtils.fromBase64(Dummy.hash2));
+    const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
 
     const blockHashes = [hash1, hash2];
-    const blockInterlink1 = new BlockInterlink(blockHashes);
+    const blockInterlink1 = new BlockInterlink(blockHashes, zeroHash);
 
     const hashes = [
         Hash.fromBase64(Dummy.hash1),
@@ -33,36 +34,36 @@ describe('BlockInterlink', () => {
         Hash.fromBase64(Dummy.hash1),
         Hash.fromBase64(Dummy.hash2)
     ];
-    const longInterlink = new BlockInterlink(hashes);
+    const longInterlink = new BlockInterlink(hashes, zeroHash);
 
     it('must have a well defined blockHashes array', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
-            const test1 = new BlockInterlink(undefined);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlink(undefined, zeroHash);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(null);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlink(null, zeroHash);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(1);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlink(1, zeroHash);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlink(new Uint8Array(101));
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlink(new Uint8Array(101), zeroHash);
+        }).toThrowError('Malformed hashes');
         /* eslint-enable no-unused-vars */
     });
 
     it('is serializable and unserializable', (done) => {
         let buf = blockInterlink1.serialize();
-        const blockInterlink2 = BlockInterlink.unserialize(buf);
+        const blockInterlink2 = BlockInterlink.unserialize(buf, zeroHash);
         expect(buf.readPos).toBe(buf.buffer.byteLength);
         expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
 
         buf = longInterlink.serialize();
-        const longInterlink2 = BlockInterlink.unserialize(buf);
+        const longInterlink2 = BlockInterlink.unserialize(buf, zeroHash);
         expect(buf.readPos).toBe(buf.buffer.byteLength);
         expect(longInterlink.equals(longInterlink2)).toBe(true);
 
@@ -78,7 +79,7 @@ describe('BlockInterlink', () => {
     });
 
     it('must return the correct root hash', (done) => {
-        const rootHash = new Hash(BufferUtils.fromBase64('60x9tXAafmiaO2R3LPFcKTdJezUpuxZV+LspFBeIH5E='));
+        const rootHash = new Hash(BufferUtils.fromBase64('OE3QcoFW5eDd7InwJh6NfUXkcoMFOFy8l5jmtVUZDx0='));
         (async () => {
             const hash = await blockInterlink1.hash();
             expect(hash.equals(rootHash)).toBe(true);

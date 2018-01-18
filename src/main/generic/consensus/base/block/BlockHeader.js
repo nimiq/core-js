@@ -63,7 +63,7 @@ class BlockHeader {
      */
     static unserialize(buf) {
         const version = buf.readUint16();
-        if (!BlockHeader.SUPPORTED_VERSIONS.includes(version)) throw 'Block version unsupported';
+        if (!BlockHeader.SUPPORTED_VERSIONS.includes(version)) throw new Error(`Unsupported block version ${version}`);
         const prevHash = Hash.unserialize(buf);
         const interlinkHash = Hash.unserialize(buf);
         const bodyHash = Hash.unserialize(buf);
@@ -264,12 +264,14 @@ class BlockHeader {
 // FIXME: Clean up for mainnet.
 BlockHeader.Version = {
     LUNA_V1: 1,
-    LUNA_V2: 2
+    LUNA_V2: 2,
+    LUNA_V3: 3
 };
 BlockHeader.CURRENT_VERSION = BlockHeader.Version.LUNA_V2;
 BlockHeader.SUPPORTED_VERSIONS = [
     BlockHeader.Version.LUNA_V1,
-    BlockHeader.Version.LUNA_V2
+    BlockHeader.Version.LUNA_V2,
+    BlockHeader.Version.LUNA_V3
 ];
 BlockHeader.SERIALIZED_SIZE = 146;
 Class.register(BlockHeader);
