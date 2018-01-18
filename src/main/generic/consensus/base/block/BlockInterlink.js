@@ -6,20 +6,23 @@ class BlockInterlink {
     static copy(o) {
         if (!o) return o;
         const hashes = o._hashes.map(it => Hash.copy(it));
-        return new BlockInterlink(hashes);
+        const repeatBits = new Uint8Array(o._repeatBits);
+        const compressed = o._compressed.map(it => Hash.copy(it));
+        return new BlockInterlink(hashes, undefined, repeatBits, compressed);
     }
 
     /**
      * @param {Array.<Hash>} hashes
+     * @param {Hash} prevHash
      * @returns {{repeatBits: Uint8Array, compressed: Array.<Hash>}}
-     * @private
+     * @protected
      */
-    static _compress(hashes) {
+    static _compress(hashes, prevHash) {
         const count = hashes.length;
         const repeatBitsSize = Math.ceil(count / 8);
         const repeatBits = new Uint8Array(repeatBitsSize);
 
-        let lastHash = null;
+        let lastHash = prevHash;
         const compressed = [];
         for (let i = 0; i < count; i++) {
             const hash = hashes[i];
@@ -35,21 +38,23 @@ class BlockInterlink {
     }
 
     /**
-     * @param {Array.<Hash>} blockHashes
+     * @param {Array.<Hash>} hashes
+     * @param {Hash} [prevHash]
      * @param {Uint8Array} [repeatBits]
      * @param {Array.<Hash>} [compressed]
      */
-    constructor(blockHashes, repeatBits, compressed) {
-        if (!Array.isArray(blockHashes) || !NumberUtils.isUint8(blockHashes.length)
-            || blockHashes.some(it => !(it instanceof Hash))) throw 'Malformed blockHashes';
-        if ((repeatBits || compressed) && !(repeatBits && compressed)) throw 'Malformed repeatBits/compressed';
+    constructor(hashes, prevHash, repeatBits, compressed) {
+        if (!Array.isArray(hashes) || !NumberUtils.isUint8(hashes.length)
+            || hashes.some(it => !(it instanceof Hash))) throw new Error('Malformed hashes');
+        if ((repeatBits || compressed) && !(repeatBits && compressed)) throw new Error('Malformed repeatBits/compressed');
+        if (!prevHash && !repeatBits) throw new Error('Either prevHash or repeatBits/compressed required');
 
         if (!repeatBits) {
-            ({repeatBits, compressed} = BlockInterlink._compress(blockHashes));
+            ({repeatBits, compressed} = BlockInterlink._compress(hashes, prevHash));
         }
 
         /** @type {Array.<Hash>} */
-        this._hashes = blockHashes;
+        this._hashes = hashes;
         /** @type {Uint8Array} */
         this._repeatBits = repeatBits;
         /** @type {Array.<Hash>} */
@@ -58,26 +63,27 @@ class BlockInterlink {
 
     /**
      * @param {SerialBuffer} buf
+     * @param {Hash} prevHash
      * @returns {BlockInterlink}
      */
-    static unserialize(buf) {
+    static unserialize(buf, prevHash) {
         const count = buf.readUint8();
         const repeatBitsSize = Math.ceil(count / 8);
         const repeatBits = buf.read(repeatBitsSize);
 
-        let hash = null;
+        let hash = prevHash;
         const hashes = [];
         const compressed = [];
         for (let i = 0; i < count; i++) {
             const repeated = (repeatBits[Math.floor(i / 8)] & (0x80 >>> (i % 8))) !== 0;
-            if (!repeated || !hash) {
+            if (!repeated) {
                 hash = Hash.unserialize(buf);
                 compressed.push(hash);
             }
             hashes.push(hash);
         }
 
-        return new BlockInterlink(hashes, repeatBits, compressed);
+        return new BlockInterlink(hashes, prevHash, repeatBits, compressed);
     }
 
     /**
@@ -118,7 +124,7 @@ class BlockInterlink {
      */
     async hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot([this._repeatBits, ...this._compressed]);
+            this._hash = await MerkleTree.computeRoot([this._repeatBits, Block.GENESIS.HASH, ...this._compressed]);
         }
         return this._hash;
     }

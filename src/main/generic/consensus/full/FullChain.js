@@ -180,8 +180,7 @@ class FullChain extends BaseChain {
      */
     async _verifyInterlink(block) {
         // Check that all blocks referenced in the interlink of the given block are valid predecessors of that block.
-        // interlink[0] == Genesis is checked in Block.verify().
-        for (let i = 1; i < block.interlink.length; i++) {
+        for (let i = 0; i < block.interlink.length; i++) {
             const predecessor = await this._store.getBlock(block.interlink.hashes[i]); // eslint-disable-line no-await-in-loop
             if (!predecessor || !(await block.isInterlinkSuccessorOf(predecessor))) { // eslint-disable-line no-await-in-loop
                 return false;

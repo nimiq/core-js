@@ -77,13 +77,7 @@ class BlockChain {
         const count = buf.readUint16();
         const blocks = [];
         for (let i = 0; i < count; i++) {
-            const header = BlockHeader.unserialize(buf);
-            let interlink = BlockInterlink.unserialize(buf);
-            // FIXME: Remove for mainnet.
-            if (header.version === BlockHeader.Version.LUNA_V1) {
-                interlink = new BlockInterlinkLegacy(interlink.hashes);
-            }
-            blocks.push(new Block(header, interlink));
+            blocks.push(Block.unserialize(buf));
         }
         return new BlockChain(blocks);
     }
@@ -96,13 +90,7 @@ class BlockChain {
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint16(this._blocks.length);
         for (const block of this._blocks) {
-            block.header.serialize(buf);
-            // FIXME: Remove for mainnet.
-            if (block.version === BlockHeader.Version.LUNA_V1) {
-                (new BlockInterlink(block.interlink.hashes)).serialize(buf);
-            } else {
-                block.interlink.serialize(buf);
-            }
+            block.serialize(buf);
         }
         return buf;
     }
@@ -110,13 +98,7 @@ class BlockChain {
     /** @type {number} */
     get serializedSize() {
         return /*count*/ 2
-            + this._blocks.reduce((sum, block) => {
-                let size = block.serializedSize;
-                if (block.version === BlockHeader.Version.LUNA_V1) {
-                    size += (new BlockInterlink(block.interlink.hashes)).serializedSize - block.interlink.serializedSize;
-                }
-                return sum + size;
-            }, 0);
+            + this._blocks.reduce((sum, block) => sum + block.serializedSize, 0);
     }
 
     /**

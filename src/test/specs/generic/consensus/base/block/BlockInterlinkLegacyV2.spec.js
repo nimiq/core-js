@@ -1,32 +1,32 @@
-describe('BlockInterlinkLegacy', () => {
-    const hash1 = new Hash(BufferUtils.fromBase64(Dummy.hash1));
+describe('BlockInterlinkLegacyV2', () => {
+    const hash1 = Block.GENESIS.HASH;
     const hash2 = new Hash(BufferUtils.fromBase64(Dummy.hash2));
 
     const blockHashes = [hash1, hash2];
-    const blockInterlink1 = new BlockInterlinkLegacy(blockHashes);
+    const blockInterlink1 = new BlockInterlinkLegacyV2(blockHashes);
 
     it('must have a well defined blockHashes array', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
-            const test1 = new BlockInterlinkLegacy(undefined);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlinkLegacyV2(undefined);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlinkLegacy(null);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlinkLegacyV2(null);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlinkLegacy(1);
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlinkLegacyV2(1);
+        }).toThrowError('Malformed hashes');
 
         expect(() => {
-            const test1 = new BlockInterlinkLegacy(new Uint8Array(101));
-        }).toThrow('Malformed blockHashes');
+            const test1 = new BlockInterlinkLegacyV2(new Uint8Array(101));
+        }).toThrowError('Malformed hashes');
         /* eslint-enable no-unused-vars */
     });
 
     it('is serializable and unserializable', (done) => {
-        const blockInterlink2 = BlockInterlinkLegacy.unserialize(blockInterlink1.serialize());
+        const blockInterlink2 = BlockInterlinkLegacyV2.unserialize(blockInterlink1.serialize(), hash1);
         (async () => {
             expect(blockInterlink1.equals(blockInterlink2)).toBe(true);
             expect((await blockInterlink1.hash()).equals(await blockInterlink2.hash())).toBe(true);
@@ -34,7 +34,7 @@ describe('BlockInterlinkLegacy', () => {
     });
 
     it('must return the correct root hash', (done) => {
-        const rootHash = new Hash(BufferUtils.fromBase64('JBd6ZZTwPWxWikFBawS9SrUEDiWAytbSjTjs6CKg78M='));
+        const rootHash = new Hash(BufferUtils.fromBase64('2lZCoJNB7FzRoVMzMo2kp9FvK6x+5ZJRQ/PZXo6KAv8='));
         (async () => {
             const hash = await blockInterlink1.hash();
             expect(hash.equals(rootHash)).toBe(true);

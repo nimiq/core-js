@@ -5,9 +5,20 @@ class Block {
      */
     static copy(o) {
         if (!o) return o;
-        const interlink = o._header.version === BlockHeader.Version.LUNA_V1
-            ? BlockInterlinkLegacy.copy(o._interlink)
-            : BlockInterlink.copy(o._interlink);
+
+        // FIXME Remove version switch for mainnet.
+        let interlink = null;
+        switch (o._header.version) {
+            case BlockHeader.Version.LUNA_V1:
+                interlink = BlockInterlinkLegacyV1.copy(o._interlink);
+                break;
+            case BlockHeader.Version.LUNA_V2:
+                interlink = BlockInterlinkLegacyV2.copy(o._interlink);
+                break;
+            default:
+                interlink = BlockInterlink.copy(o._interlink);
+        }
+
         return new Block(
             BlockHeader.copy(o._header),
             interlink,
@@ -39,9 +50,19 @@ class Block {
      */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
-        const interlink = header.version === BlockHeader.Version.LUNA_V1
-            ? BlockInterlinkLegacy.unserialize(buf)
-            : BlockInterlink.unserialize(buf);
+
+        // FIXME: Remove version switch for mainnet.
+        let interlink = null;
+        switch (header.version) {
+            case BlockHeader.Version.LUNA_V1:
+                interlink = BlockInterlinkLegacyV1.unserialize(buf, header.prevHash);
+                break;
+            case BlockHeader.Version.LUNA_V2:
+                interlink = BlockInterlinkLegacyV2.unserialize(buf, header.prevHash);
+                break;
+            default:
+                interlink = BlockInterlink.unserialize(buf, header.prevHash);
+        }
 
         let body = undefined;
         const bodyPresent = buf.readUint8();
@@ -131,24 +152,6 @@ class Block {
             return false;
         }
 
-        // Check that the interlink connects to the correct genesis block.
-        if (!Block.GENESIS.HASH.equals(this._interlink.hashes[0])) {
-            Log.w(Block, 'Invalid block - wrong genesis block in interlink');
-            return false;
-        }
-
-        /*
-        // Disabled since Block.hash() != Block.pow()
-        // Check that all hashes in the interlink are hard enough for their respective depth.
-        const targetHeight = BlockUtils.getTargetHeight(this.target);
-        for (let depth = 1; depth < this._interlink.length; depth++) {
-            if (!BlockUtils.isProofOfWork(this._interlink.hashes[depth], Math.pow(2, targetHeight - depth))) {
-                Log.w(Block, 'Invalid block - invalid block in interlink');
-                return false;
-            }
-        }
-        */
-
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
         const interlinkHash = await this._interlink.hash();
         if (!this._header.interlinkHash.equals(interlinkHash)) {
@@ -224,7 +227,10 @@ class Block {
             const prevPow = await predecessor.pow();
             const targetHeight = BlockUtils.getTargetHeight(this.target);
             let blockFound = false;
-            for (let depth = 1; depth < this._interlink.length; depth++) {
+
+            // Legacy behavior: Don't verify position of the 0'th interlink element for block versions 1, 2
+            let depth = this.version > BlockHeader.Version.LUNA_V2 ? 0 : 1;
+            for (; depth < this._interlink.length; depth++) {
                 if (prevHash.equals(this._interlink.hashes[depth])) {
                     blockFound = true;
                     if (!BlockUtils.isProofOfWork(prevPow, Math.pow(2, targetHeight - depth))) {
@@ -233,6 +239,7 @@ class Block {
                     }
                 }
             }
+
             if (!blockFound) {
                 Log.v(Block, 'No interlink predecessor - not in interlink');
                 return false;
@@ -327,46 +334,54 @@ class Block {
      * @returns {Promise.<BlockInterlink>}
      */
     async getNextInterlink(nextTarget, nextVersion = BlockHeader.CURRENT_VERSION) {
-        // Compute how much harder the block hash is than the next target.
+        // Compute the depth of this block relative to the next target.
         const pow = await this.pow();
-        const nextTargetHeight = BlockUtils.getTargetHeight(nextTarget);
-        let i = 1, depth = 0;
-        while (BlockUtils.isProofOfWork(pow, Math.pow(2, nextTargetHeight - i))) {
-            depth = i;
-            i++;
-        }
+        const thisPowDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(pow));
+        const nextTargetDepth = BlockUtils.getTargetDepth(nextTarget);
+        let depth = thisPowDepth - nextTargetDepth;
 
-        // If the block hash is not hard enough and the target height didn't change, the interlink doesn't change.
-        // Exception: The genesis block has an empty interlink, its successor (and all other blocks) contain the genesis hash.
-        const targetHeight = BlockUtils.getTargetHeight(this.target);
-        if (depth === 0 && targetHeight === nextTargetHeight) {
-            const hashes = this.interlink.length > 0 ? this.interlink.hashes : [Block.GENESIS.HASH];
-            return nextVersion === BlockHeader.Version.LUNA_V1
-                ? new BlockInterlinkLegacy(hashes)
-                : new BlockInterlink(hashes);
-        }
-
-        // The interlink changes, start constructing a new one.
+        // Start constructing the next interlink.
         /** @type {Array.<Hash>} */
-        const hashes = [Block.GENESIS.HASH];
-
-        // Push the current block hash up to depth times onto the new interlink. If depth == 0, it won't be pushed.
+        const hashes = [];
         const hash = await this.hash();
-        for (let i = 0; i < depth; i++) {
+
+        // FIXME Remove version switch for mainnet.
+        if (nextVersion > BlockHeader.Version.LUNA_V2) {
+            // Push the current blockHash depth + 1 times onto the next interlink. If depth < 0, it won't be pushed.
+            for (let i = 0; i <= depth; i++) {
+                hashes.push(hash);
+            }
+        } else {
+            // Legacy behavior: Always push current blockHash once (prevHash),
+            // then push the current blockHash depth times onto the next interlink.
             hashes.push(hash);
+            for (let i = 0; i < depth; i++) {
+                hashes.push(hash);
+            }
+
+            // Don't include the level 0 hash from the previous interlink.
+            depth = Math.max(depth, 0);
         }
 
-        // Push the remaining hashes from the current interlink. If the target height decreases (i.e. the difficulty
+        // Push the remaining hashes from the current interlink. If the target depth increases (i.e. the difficulty
         // increases), we omit the block(s) at the beginning of the current interlink as they are not eligible for
         // inclusion anymore.
-        const offset = targetHeight - nextTargetHeight;
+        const thisTargetDepth = BlockUtils.getTargetDepth(this.target);
+        const offset = nextTargetDepth - thisTargetDepth;
         for (let j = depth + offset + 1; j < this.interlink.length; j++) {
             hashes.push(this.interlink.hashes[j]);
         }
 
-        return nextVersion === BlockHeader.Version.LUNA_V1
-            ? new BlockInterlinkLegacy(hashes)
-            : new BlockInterlink(hashes);
+        // Return the correct interlink version.
+        // FIXME Remove version switch for mainnet.
+        switch (nextVersion) {
+            case BlockHeader.Version.LUNA_V1:
+                return new BlockInterlinkLegacyV1(hashes);
+            case BlockHeader.Version.LUNA_V2:
+                return new BlockInterlinkLegacyV2(hashes);
+            default:
+                return new BlockInterlink(hashes, hash);
+        }
     }
 
     /**
@@ -556,7 +571,7 @@ Block.GENESIS = new Block(
         0,
         66958,
         BlockHeader.Version.LUNA_V1),
-    new BlockInterlinkLegacy([]),
+    new BlockInterlinkLegacyV1([]),
     new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access
