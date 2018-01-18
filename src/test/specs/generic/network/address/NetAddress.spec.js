@@ -174,5 +174,7 @@ describe('NetAddress', () => {
         expect(NetUtils.isPrivateIP('fd00:3456:789a:1::1')).toEqual(true);
         expect(NetUtils.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
         expect(NetUtils.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
+
+        expect(() => NetUtils.isPrivateIP('not-an-ip')).toThrow("Malformed IP address not-an-ip");
     });
 });
