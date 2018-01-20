@@ -18,77 +18,41 @@ class Policy {
     }
 
     /**
-     * Number of Satoshis per Nimiq.
-     * @type {number}
-     * @constant
+     * Circulating supply after block.
+     * @param {number} blockHeight
+     * @return {number}
      */
-    static get SATOSHIS_PER_COIN() {
-        return 1e8;
-    }
+    static supplyAfter(blockHeight) {
+        // FIXME: Change for main net.
+        if (blockHeight < Policy.EMISSION_CURVE_START) {
+            return Policy.INITIAL_SUPPLY + (blockHeight + 1) * Policy.coinsToSatoshis(5);
+        }
+        // Luna net supply after start of emission curve.
+        const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
 
-    /**
-     * Targeted block time in seconds.
-     * @type {number}
-     * @constant
-     */
-    static get BLOCK_TIME() {
-        return 60; // Seconds
-    }
+        // Calculate last entry in supply cache that is below blockHeight.
+        let startHeight = Math.floor(blockHeight / Policy._supplyCacheInterval) * Policy._supplyCacheInterval;
+        startHeight = Math.max(/* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START, Math.min(startHeight, Policy._supplyCacheMax));
 
-    /**
-     * Targeted total supply.
-     * @type {number}
-     * @constant
-     */
-    static get TOTAL_SUPPLY() {
-        return Policy.coinsToSatoshis(21e6);
-    }
+        // Calculate respective block for the last entry of the cache and the targeted height.
+        const startI = startHeight / Policy._supplyCacheInterval;
+        const endI = Math.floor(blockHeight / Policy._supplyCacheInterval);
 
-    /**
-     * Initial supply before genesis block.
-     * FIXME: Change for main net.
-     * @type {number}
-     * @constant
-     */
-    static get INITIAL_SUPPLY() {
-        return Policy.coinsToSatoshis(0);
-    }
+        // The starting supply is the initial supply at the beginning and a cached value afterwards.
+        let supply = startHeight === /* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START ? initialSupply : Policy._supplyCache.get(startHeight);
+        // Use and update cache.
+        for (let i = startI; i < endI; ++i) {
+            startHeight = i * Policy._supplyCacheInterval;
+            // Since the cache stores the supply *before* a certain block, subtract one.
+            const endHeight = (i + 1) * Policy._supplyCacheInterval - 1;
+            supply = Policy._supplyAfter(supply, endHeight, startHeight);
+            // Don't forget to add one again.
+            Policy._supplyCache.set(endHeight + 1, supply);
+            Policy._supplyCacheMax = endHeight + 1;
+        }
 
-    /**
-     * Emission speed.
-     * @type {number}
-     * @constant
-     */
-    static get EMISSION_SPEED() {
-        return Math.pow(2, 22);
-    }
-
-    /**
-     * First block using constant tail emission until total supply is reached.
-     * @type {number}
-     * @constant
-     */
-    static get EMISSION_TAIL_START() {
-        return 48696986;
-    }
-
-    /**
-     * Constant amount of tail emission until total supply is reached.
-     * @type {number}
-     * @constant
-     */
-    static get EMISSION_TAIL_REWARD() {
-        return 4000; // satoshi
-    }
-
-    /**
-     * First block using new block reward scheme.
-     * FIXME: Remove for main net.
-     * @type {number}
-     * @constant
-     */
-    static get EMISSION_CURVE_START() {
-        return 35000;
+        // Calculate remaining supply (this also adds the block reward for endI*interval).
+        return Policy._supplyAfter(supply, blockHeight, endI * Policy._supplyCacheInterval);
     }
 
     /**
@@ -107,59 +71,6 @@ class Policy {
     }
 
     /**
-     * Circulating supply after block.
-     * @param {number} blockHeight
-     * @return {number}
-     */
-    static supplyAfter(blockHeight) {
-        // FIXME: Change for main net.
-        if (blockHeight < Policy.EMISSION_CURVE_START) {
-            return Policy.INITIAL_SUPPLY + (blockHeight+1) * Policy.coinsToSatoshis(5);
-        }
-        // Luna net supply after start of emission curve.
-        const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
-
-        // Calculate last entry in supply cache that is below blockHeight.
-        let startHeight = Math.floor(blockHeight / Policy._supplyCacheInterval) * Policy._supplyCacheInterval;
-        startHeight = Math.max(/* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START, Math.min(startHeight, Policy._supplyCacheMax));
-
-        // Calculate respective block for the last entry of the cache and the targeted height.
-        const startI = startHeight / Policy._supplyCacheInterval;
-        const endI = Math.floor(blockHeight / Policy._supplyCacheInterval);
-
-        // The starting supply is the initial supply at the beginning and a cached value afterwards.
-        let supply = startHeight === /* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START ? initialSupply : Policy._supplyCache.get(startHeight);
-        // Use and update cache.
-        for (let i=startI; i<endI; ++i) {
-            startHeight = i * Policy._supplyCacheInterval;
-            // Since the cache stores the supply *before* a certain block, subtract one.
-            const endHeight = (i+1) * Policy._supplyCacheInterval - 1;
-            supply = Policy._supplyAfter(supply, endHeight, startHeight);
-            // Don't forget to add one again.
-            Policy._supplyCache.set(endHeight + 1, supply);
-            Policy._supplyCacheMax = endHeight + 1;
-        }
-
-        // Calculate remaining supply (this also adds the block reward for endI*interval).
-        return Policy._supplyAfter(supply, blockHeight, endI*Policy._supplyCacheInterval);
-    }
-
-    /**
-     * Miner reward per block.
-     * @param {number} currentSupply
-     * @param {number} blockHeight
-     * @return {number}
-     */
-    static _blockRewardAt(currentSupply, blockHeight) {
-        const remaining = Policy.TOTAL_SUPPLY - currentSupply;
-        if (blockHeight >= Policy.EMISSION_TAIL_START && remaining >= Policy.EMISSION_TAIL_REWARD) {
-            return Policy.EMISSION_TAIL_REWARD;
-        }
-        const remainder = remaining % Policy.EMISSION_SPEED;
-        return (remaining-remainder) / Policy.EMISSION_SPEED;
-    }
-
-    /**
      * Miner reward per block.
      * @param {number} blockHeight
      * @return {number}
@@ -174,12 +85,18 @@ class Policy {
     }
 
     /**
-     * Maximum block size in bytes.
-     * @type {number}
-     * @constant
+     * Miner reward per block.
+     * @param {number} currentSupply
+     * @param {number} blockHeight
+     * @return {number}
      */
-    static get BLOCK_SIZE_MAX() {
-        return 1e6; // 1 MB
+    static _blockRewardAt(currentSupply, blockHeight) {
+        const remaining = Policy.TOTAL_SUPPLY - currentSupply;
+        if (blockHeight >= Policy.EMISSION_TAIL_START && remaining >= Policy.EMISSION_TAIL_REWARD) {
+            return Policy.EMISSION_TAIL_REWARD;
+        }
+        const remainder = remaining % Policy.EMISSION_SPEED;
+        return (remaining - remainder) / Policy.EMISSION_SPEED;
     }
 
     /**
@@ -190,81 +107,140 @@ class Policy {
     static get BLOCK_TARGET_MAX() {
         return BlockUtils.compactToTarget(0x1f00ffff); // 16 zero bits, bitcoin uses 32 (0x1d00ffff)
     }
-
-    /**
-     * Number of blocks we take into account to calculate next difficulty.
-     * @type {number}
-     * @constant
-     */
-    static get DIFFICULTY_BLOCK_WINDOW() {
-        return 120; // Blocks
-    }
-
-    /**
-     * Limits the rate at which the difficulty is adjusted min/max.
-     * @type {number}
-     * @constant
-     */
-    static get DIFFICULTY_MAX_ADJUSTMENT_FACTOR() {
-        return 2;
-    }
-
-
-    /* NIPoPoW parameters */
-
-    /**
-     * Security parameter M
-     * FIXME naming
-     * @type {number}
-     * @constant
-     */
-    static get M() {
-        return 240;
-    }
-
-    /**
-     * Security parameter K
-     * FIXME naming
-     * @type {number}
-     * @constant
-     */
-    static get K() {
-        return 120;
-    }
-
-    /**
-     * Security parameter DELTA
-     * FIXME naming
-     * @type {number}
-     * @constant
-     */
-    static get DELTA() {
-        return 0.1;
-    }
-
-    /* Snapshot Parameters */
-    /**
-     * Maximum number of snapshots.
-     * @type {number}
-     * @constant
-     */
-    static get NUM_SNAPSHOTS_MAX() {
-        return 20;
-    }
-
-    /**
-     * Security parameter M
-     * FIXME naming
-     * @type {number}
-     * @constant
-     */
-    static get NUM_BLOCKS_VERIFICATION() {
-        return 250;
-    }
 }
+
 /**
- * Stores the supply before the given block.
+ * Targeted block time in seconds.
+ * @type {number}
+ * @constant
+ */
+Policy.BLOCK_TIME = 60;
+
+/**
+ * Maximum block size in bytes.
+ * @type {number}
+ * @constant
+ */
+Policy.BLOCK_SIZE_MAX = 1e6; // 1 MB
+
+/**
+ * Number of blocks we take into account to calculate next difficulty.
+ * @type {number}
+ * @constant
+ */
+Policy.DIFFICULTY_BLOCK_WINDOW = 120;
+
+/**
+ * Limits the rate at which the difficulty is adjusted min/max.
+ * @type {number}
+ * @constant
+ */
+Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR = 2;
+
+
+/* Supply & Emission Parameters */
+
+/**
+ * Number of Satoshis per Nimiq.
+ * @type {number}
+ * @constant
+ */
+Policy.SATOSHIS_PER_COIN = 1e8;
+
+/**
+ * Targeted total supply in satoshis.
+ * @type {number}
+ * @constant
+ */
+Policy.TOTAL_SUPPLY = Policy.coinsToSatoshis(21e6);
+
+/**
+ * Initial supply before genesis block in satoshis.
+ * FIXME: Change for main net.
+ * @type {number}
+ * @constant
+ */
+Policy.INITIAL_SUPPLY = Policy.coinsToSatoshis(0);
+
+/**
+ * Emission speed.
+ * @type {number}
+ * @constant
+ */
+Policy.EMISSION_SPEED = Math.pow(2, 22);
+
+/**
+ * First block using constant tail emission until total supply is reached.
+ * @type {number}
+ * @constant
+ */
+Policy.EMISSION_TAIL_START = 48696986;
+
+/**
+ * Constant tail emission in satoshis until total supply is reached.
+ * @type {number}
+ * @constant
+ */
+Policy.EMISSION_TAIL_REWARD = 4000;
+
+/**
+ * First block using new block reward scheme.
+ * FIXME: Remove for main net.
+ * @type {number}
+ * @constant
+ */
+Policy.EMISSION_CURVE_START = 35000;
+
+
+/* Security parameters */
+
+/**
+ * NIPoPoW Security parameter M
+ * FIXME naming
+ * @type {number}
+ * @constant
+ */
+Policy.M = 240;
+
+/**
+ * NIPoPoW Security parameter K
+ * FIXME naming
+ * @type {number}
+ * @constant
+ */
+Policy.K = 120;
+
+/**
+ * NIPoPoW Security parameter DELTA
+ * FIXME naming
+ * @type {number}
+ * @constant
+ */
+Policy.DELTA = 0.1;
+
+/**
+ * Number of blocks the light client downloads to verify the AccountsTree construction.
+ * FIXME naming
+ * @type {number}
+ * @constant
+ */
+Policy.NUM_BLOCKS_VERIFICATION = 250;
+
+
+/* Snapshot Parameters */
+
+/**
+ * Maximum number of snapshots.
+ * @type {number}
+ * @constant
+ */
+Policy.NUM_SNAPSHOTS_MAX = 20;
+
+
+/**
+ * Stores the circulating supply before the given block.
  * @type {Map.<number, number>}
+ * @private
  */
 Policy._supplyCache = new Map();
 Policy._supplyCacheMax = 0; // blocks

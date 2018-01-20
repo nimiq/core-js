@@ -80,7 +80,8 @@ class BlockInterlinkLegacyV1 extends BlockInterlink {
      */
     async hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot([Block.GENESIS.HASH, ...this._hashes.slice(1)]);
+            const hashes = this.length > 0 ? [Block.GENESIS.HASH, ...this._hashes.slice(1)] : [];
+            this._hash = await MerkleTree.computeRoot(hashes);
         }
         return this._hash;
     }

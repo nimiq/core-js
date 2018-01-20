@@ -127,7 +127,7 @@ class TestBlockchain extends FullChain {
     }
 
     /**
-     * @param {{prevHash, interlinkHash, bodyHash, accountsHash, nBits, timestamp, nonce, height, interlink, minerAddr, transactions, numTransactions}} options
+     * @param {{prevHash, interlinkHash, bodyHash, accountsHash, nBits, timestamp, nonce, height, interlink, minerAddr, transactions, numTransactions, version, superblockLevel}} options
      * @returns {Promise.<Block>}
      */
     async createBlock(options = {}) {
@@ -142,8 +142,9 @@ class TestBlockchain extends FullChain {
         const minerAddr = options.minerAddr || this.users[this.height % this._users.length].address;     // user[0] created genesis, hence we start with user[1]
         const body = new BlockBody(minerAddr, transactions);
 
+        const version = options.version || BlockHeader.Version.CURRENT_VERSION;
         const nBits = options.nBits || BlockUtils.targetToCompact(await this.getNextTarget());
-        const interlink = options.interlink || await this.head.getNextInterlink(BlockUtils.compactToTarget(nBits));
+        const interlink = options.interlink || await this.head.getNextInterlink(BlockUtils.compactToTarget(nBits), version);
 
         const prevHash = options.prevHash || this.headHash;
         const interlinkHash = options.interlinkHash || await interlink.hash();
@@ -165,34 +166,41 @@ class TestBlockchain extends FullChain {
 
         const timestamp = typeof options.timestamp !== 'undefined' ? options.timestamp : this.head.timestamp + Policy.BLOCK_TIME;
         const nonce = options.nonce || 0;
-        const header = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
+        const header = new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version);
 
         const block = new Block(header, interlink, body);
 
         if (nonce === 0) {
-            await this.setOrMineBlockNonce(block);
+            await this.setOrMineBlockNonce(block, options.superblockLevel);
         }
 
         return block;
     }
 
-    async setOrMineBlockNonce(block) {
-        const hash = await block.hash();
-        TestBlockchain.BLOCKS[hash.toBase64()] = block;
+    async setOrMineBlockNonce(block, superblockLevel) {
+        let id = (await block.hash()).toBase64();
+        const mineSuperblock = typeof superblockLevel === 'number';
+        if (mineSuperblock) {
+            id += `@${superblockLevel}`;
+        }
 
-        if (TestBlockchain.NONCES[hash.toBase64()]) {
-            block.header.nonce = TestBlockchain.NONCES[hash.toBase64()];
+        TestBlockchain.BLOCKS[id] = block;
+
+        if (TestBlockchain.NONCES[id]) {
+            block.header.nonce = TestBlockchain.NONCES[id];
             if (!(await block.header.verifyProofOfWork())) {
-                throw new Error(`Invalid nonce specified for block ${hash}: ${block.header.nonce}`);
+                throw new Error(`Invalid nonce specified for block ${id}: ${block.header.nonce}`);
             }
         } else if (TestBlockchain.MINE_ON_DEMAND) {
-            console.log(`No nonce available for block ${hash.toHex()}, will start mining at height ${block.height} following ${block.prevHash.toHex()}.`);
-            await TestBlockchain.mineBlock(block);
-            TestBlockchain.NONCES[hash.toBase64()] = block.header.nonce;
+            console.log(`No nonce available for block ${id}, will start mining${mineSuperblock ? ' superblock@' + superblockLevel : ''} at height ${block.height} following ${block.prevHash.toHex()}.`);
+
+            await TestBlockchain.mineBlock(block, superblockLevel);
+
+            TestBlockchain.NONCES[id] = block.header.nonce;
         } else if (this._invalidNonce) {
-            console.log(`No nonce available for block ${hash.toHex()}, but accepting invalid nonce.`);
+            console.log(`No nonce available for block ${id}, but accepting invalid nonce.`);
         } else {
-            throw new Error(`No nonce available for block ${hash}: ${block}`);
+            throw new Error(`No nonce available for block ${id}: ${block}`);
         }
     }
 
@@ -263,24 +271,42 @@ class TestBlockchain extends FullChain {
         };
     }
 
-    static async mineBlock(block) {
+    /**
+     * @param {Block} block
+     * @param {number} [superblockLevel]
+     * @returns {Promise.<number>}
+     */
+    static async mineBlock(block, superblockLevel) {
+        const mineSuperblock = typeof superblockLevel === 'number';
+        const targetLevel = BlockUtils.getTargetDepth(block.target);
+
         await TestBlockchain._miningPool.start();
-        block.header.nonce = 0;
+
         const share = await new Promise((resolve, error) => {
             const temp = function (share) {
                 if (share.block.header.equals(block.header)) {
-                    TestBlockchain._miningPool.off('share', temp.id);
-                    resolve(share);
+                    const shareLevel = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(share.hash)) - targetLevel;
+                    if (!mineSuperblock || shareLevel === superblockLevel) {
+                        TestBlockchain._miningPool.off('share', temp.id);
+                        resolve(share);
+                    }
                 }
             };
             temp.id = TestBlockchain._miningPool.on('share', temp);
-            TestBlockchain._miningPool.startMiningOnBlock(block).catch(error);
+
+            const shareCompact = mineSuperblock
+                ? BlockUtils.targetToCompact(block.target / Math.pow(2, superblockLevel))
+                : block.nBits;
+            TestBlockchain._miningPool.startMiningOnBlock(block, shareCompact).catch(error);
         });
+
         TestBlockchain._miningPool.stop();
+
         block.header.nonce = share.nonce;
         if (!(await block.header.verifyProofOfWork())) {
             throw 'While mining the block was succesful, it is still considered invalid.';
         }
+
         return share.nonce;
     }
 
@@ -303,24 +329,28 @@ class TestBlockchain extends FullChain {
     }
 
     static printNonces() {
+        console.log(TestBlockchain.getNonces());
+    }
+
+    static getNonces() {
         const nonces = Object.assign({}, TestBlockchain.NONCES);
         for (const key of Object.keys(nonces)) {
             if (!TestBlockchain.BLOCKS[key]) {
                 delete nonces[key];
             }
         }
-        TestBlockchain._printNonces(nonces);
+        return TestBlockchain._getNonces(nonces);
     }
 
-    static _printNonces(nonces) {
+    static _getNonces(nonces) {
         // XXX Primitive JSON pretty printer
-        const json = JSON.stringify(nonces)
+        return 'TestBlockchain.NONCES = ' + JSON.stringify(nonces)
             .replace(/"/g, '\'')
             .replace(/:/g, ': ')
             .replace(/,/g, ',\n    ')
             .replace(/{/g, '{\n    ')
-            .replace(/}/g, '\n}');
-        console.log(json);
+            .replace(/}/g, '\n}')
+            + ';\n';
     }
 
 }
@@ -356,86 +386,4 @@ TestBlockchain.USERS = [ // ed25519 keypairs
     'YhnMyCfXwdIRcul1TAZbBU7IsASMlC/2Vhmr/gwFjiMi1OlO3DNdnzd70aOHzoYyXSxdtqWGKcEGOn/AtgUSaw==',
     'g2/wZc1CCHBZAajOs0yHBiIj+YTBKf2kFqg4feCj6qNy5yilcUR752g6MC3pV0scZbEzqLzK1kZ5tnxOjbZYJw=='
 ];
-TestBlockchain.NONCES = {
-    '7cyIBzjnarUx43jauyq6VpKa8pW4+2GLT3myAOq5y3o=': 93094,
-    'ldXC8PJ2lNMa3AYUWLe3D+HynFiEKA3k7RjcleRZ8vc=': 8641,
-    'bJ5h4myf2WS1Us49O6lb+BOa8fdNwd/Tvz0r1w+fEAw=': 32714,
-    'mLa2XXyCdhB5N3h7sM+G90hhUQMXwC/qN9qHQbaDsy4=': 53226,
-    'kOBPT8C2/fvNNzh+u6gDS9D05knPO9fc5Tbq7q1sGps=': 33570,
-    'qWtfp+DIHIYveCtGwDTFJw8KLZDU8SEfQXLoPTrGsHY=': 12263,
-    'pnXUNKunv8pqZMeyEhFsWqAY0w84YUs257MfJmzzHF0=': 41055,
-    '9xMdUS+JtPCT83Ml4Um0lnE4ZV1p00Wmt/CCTOPE+rU=': 2629,
-    'R0kWRj8VtTM0Xt0MoqMXNSLOqnrRkRl9cQUmzIdTxg0=': 257225,
-    'DedB/l3f9Y9OL5wVL2+As2su9mJ7sPxz6rA23pdsru4=': 40730,
-    'SXqDrAesmoqLnj7kP+75iq3nFBAUu4Kdxy2DXFMI2rE=': 53910,
-    'cR3A7Paz2MX7V6i7pQbSuLLsYxMKHUIiRkehuD5ZPX4=': 186161,
-    'bMYPkWtf0ma/medPBL4GdMWdPizfEj88uVbPGolfGFA=': 47377,
-    'yPutNDSBY7b25E0vbHRU58OZow+9DgEJgzkwztLZNVg=': 5883,
-    'asMixxHEO4nI7FAPE89uYkyWO6mIcUwQMDZIdRWxVQE=': 76956,
-    'eNlmRKQTAuDj3pr4ZH8imGUmQa1UBpWnxlqz6JOlIR8=': 60100,
-    'zRDB7dzSf6RpuKIVC1yOPbRviOJHNFz1aJNSWCb/XGo=': 22732,
-    'j/kbjTwJvixQ6QFqkzjSYuYwxswIBKreBWdEF4jAy7g=': 2017,
-    'PaGDTMuhkr52k2d2aSBzGt8QTuJkzh3MnUtvS4sKhSA=': 22474,
-    '//OIXyr4H4BPGutMKVIxEenFgv+TneH6RcJo39I0LfU=': 103132,
-    'sU/CIi7LhAWG/iP2gmsebmZSM529nYXBR3GOMtKScfw=': 181778,
-    '3GyyvjzR7RUuxB2EMgD67RA1Ual9B+mTSXIH/wa/KFc=': 45269,
-    'p0FzkcjbQOUX0bFxGTe1w3S4RrNLwwyDwyyc4+sJPbw=': 44109,
-    'rKDC5Vzp+WBf9sKAY+Ohei7jKHhBFMDSjog3YvasEOw=': 68332,
-    'FAKMNOkx6mEFC27NCqNqI/t8V95bxOtmv26FSEubBXU=': 18761,
-    '5BLjNOdwFSTd6nDYoUjmtCEthEZLRqKQFUIxKlxqCbE=': 58934,
-    'PgetRzGr99CchJloxiwby4q1UIW4VeiJKeIHS4hyVGA=': 7216,
-    'ulgiOQLjaLZgK9AVixUBHBmxQ9UQK3SgBPmu7ufTUZE=': 25841,
-    'cCaO2yR/bElUIq6wBQeN7YIjkfH55WCV/mQFYTz7kXc=': 122783,
-    'TBKylG1fuZ1wsNqZ9rcz9F6Q1Pr77kQaJi0fLqxS0lY=': 76844,
-    'alAboGLz0sw/P/5X9xOcMuHbAEKsDUSKD/wyMo10s+8=': 32258,
-    'ZVXb+BEAt0CCmuDWvkbCPi1bMzcTzMK1bJDVdBut/Zs=': 70693,
-    'kY0xAKEiUiyX5ff8Hds+EmnZP6Ey49w6jRcKdLsDjxY=': 49117,
-    '92xap7RQyeLwyq/iKQJ9WCsg926ZsccnOIE0u8CO2/I=': 48810,
-    'JahVUO8AiC9j5/VtMCBY+4/l9HqffHM60zglA+QRokQ=': 15403,
-    'jzLA2oQPkE5ivNRVpUkPSQOLTOOs/UJYp7wt8CFN0+4=': 132422,
-    'XOqOCEhDlkznVpYJamtiZyezYRfzCbEfp0XhibHdKKY=': 18047,
-    'mJ0l9PlDpRhJTkruisJr3kyP0UW0WqPVuNwbrupJc84=': 31700,
-    'cJ05yYxevc92Pc39MZTHBUC8j6Y9xYb+Owcm33mn8Is=': 8287,
-    'dLMKX9qouqRdplG22XiFcSM3cOCSgIGiglbUwxjBOOk=': 11783,
-    'sN3ZVVWLUzxbKj0XPRDwT4BaPfm6WJr+WQcLpLFzEq8=': 66429,
-    'gsWC4MvWQPmSH01WcfBve3d4IJa/7l6sVNT/56foUA4=': 8167,
-    '2g3VY0Rtnwip2r+9hm/VndZs1BnNc1GmI3kRP4GHYPc=': 91332,
-    'AOV2C+wVvI11NuBp3F/V3jvswmy8yAaE+x/RotXmr6o=': 34772,
-    'b7vfuVTV8seKuV2QSv/KRhLuyk9OJYphUYtwHK8JS4k=': 68377,
-    'UfsvVkfQlj3ZeUF8rOC24f0nY25JDrRLhlwBqGatGEk=': 145326,
-    'H6Aov/Aq5ofkaiUTWe8PmySUEPnvRBzVB4e2siCfJqs=': 137980,
-    'Ie82nl1LrvTb2RCKn+vL2vmLxVJr1rqrtDND59vIoF8=': 269323,
-    'c8zxXuSGJgbQ7lGb2G8jvfZjuYuG1h3BWZjOuyRGp/0=': 26736,
-    'd8V7p1f5PfQwhfdQ9YQJ3AN0kCOJJdAaU6hbhd+reQw=': 25831,
-    'z/fK11mzA+AgRIbt+2yQubQUop8jKiFoDnR9XrWMlMU=': 100743,
-    'nZaywV0I3vE9Mto8YYLTPKQ5wwF9tup7SpGkRXND7Dc=': 44664,
-    'b5h3BdRkTNBkFy4hrZQBCceg8lg/kdOfx42hQKN+jkk=': 78758,
-    'UEH4C47Dgh9Fv36oVb2nbd+ccacXzkAEVERlCI4ROUw=': 144794,
-    'bGhCNWvMK/ya0J6YiBsS/qTKudVlvYeqs802Twh3K18=': 64834,
-    '72rJtrcRRMRrjxetKXxXoSgtmCNaXKYpoaR6pDt5hjw=': 38565,
-    'iL02ly2ZK7ifSIlIJfjA0ARUwG7v4ukKvQi3etsxJRg=': 53094,
-    'oS23jzZh6czQwIFhGy+futnyTVEl3L9re/YC86gyCN8=': 13689,
-    'TI5YZpMskbBIdoMOb75PMdVzSC859U4uXAvgRm702V4=': 42468,
-    'x4ckKzOO1ICqXgLs/iibt+g6u1IPZjjQ4l3RiW6DDLE=': 76309,
-    'c5N1JZW5+JQ80IjzA/a5dJFB0eEnvwSj9U2FWAoh48M=': 23234,
-    'ZdOwFEc2eii4h1e1Wp2JUGnZR+yu1N5Mnur5mGqbmAE=': 3508,
-    'N3jbe1hZpul+4ZWPB+i/t1IlJ7ThJCZtH/H1SOJUGHU=': 99697,
-    'jkRv5tbVrST4Exdk52efjXDYFBpOkrIEkBWZPVO5NhA=': 289363,
-    'IkAzZJH+5/8vLWGI0yaY2MIR5dsaIiaTh3O+BH/+PMQ=': 8324,
-    'QXH0ytgzzsjc27fHcjVdPfhvrfqnUdPwTwFprevStts=': 15651,
-    '9EhShvQJqCVYsNN6VMu2Q3atyW4MyrpcUDTpJvgnnHo=': 111406,
-    'rsOUL3vdPsE+sA5ERc78NQle374lTCOQ46buoSjp+QI=': 46857,
-    'JEFcmqxT55eDi/B3zHRf4g8m70HOddy/vsipp8t876M=': 75057,
-    'wIQhZqFKS/O6uojeUPQ2IC4IRFERnped7uU2QwFhxOw=': 38000,
-    '7lYGpfXTP+tIFvlrvl+oOpyTrN+vOMGyL+5JonufST8=': 22473,
-    'ELweYUBbgBy5TybAtrdLnS6JI5WtLS5+uldrik/ZunA=': 62303,
-    'Oaxoa23toLAbBEEJptj3a8E+TndXzMaULoZbL9xDNlQ=': 7173,
-    'Hwyr8Ykggr7KYL6d3mB+jty52+k7h22RjaDrBKruHfA=': 6207,
-    'S82dBIeJkKthd3fc61fVEeeY5bjqnJ/Hpj2a3ppCeyo=': 221913,
-    '0pbCBUnCoPfnAhNVSKcgbTzBDnVIUf+zuDcHC5QZo1s=': 10579,
-    'YcwzSAylxPqPMhTRGqH+cuNu8N4F/x7DjxLgmKHF0FU=': 60220,
-    'BQndt+T0N/bW/JUO1J7dBhmWXg9zGu9ahGkeuubR908=': 47306,
-    '2ilbBGfJxs8+xO2aNgCmh+YhfT5nfy7dydoNs0ovLfw=': 184673,
-    'Equf3XrHKZKKZYjE9mXXkhMAJQF4FBt0Ue6OWEuag8U=': 62133
-};
 Class.register(TestBlockchain);
