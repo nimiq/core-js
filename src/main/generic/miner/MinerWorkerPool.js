@@ -111,7 +111,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
 
     /**
      * @param {Block} block
-     * @param {number} shareCompact target of a share, in compact format.
+     * @param {number} [shareCompact] target of a share, in compact format.
      */
     async startMiningOnBlock(block, shareCompact = block.nBits) {
         this._block = block;

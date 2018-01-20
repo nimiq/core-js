@@ -141,17 +141,6 @@ class Block {
      * @private
      */
     async _verifyInterlink() {
-        // The genesis block has an empty interlink. Skip all interlink checks for it.
-        if (this.height === 1) {
-            return true;
-        }
-
-        // Check that the interlink contains at least one block.
-        if (this._interlink.length === 0) {
-            Log.w(Block, 'Invalid block - empty interlink');
-            return false;
-        }
-
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
         const interlinkHash = await this._interlink.hash();
         if (!this._header.interlinkHash.equals(interlinkHash)) {
@@ -211,13 +200,13 @@ class Block {
     async isInterlinkSuccessorOf(predecessor) {
         // Check that the height is higher than the predecessor's.
         if (this._header.height <= predecessor.header.height) {
-            Log.v(Block, 'No interlink predecessor - height');
+            Log.v(Block, 'No interlink successor - height');
             return false;
         }
 
         // Check that the timestamp is greater or equal to the predecessor's timestamp.
         if (this._header.timestamp < predecessor.header.timestamp) {
-            Log.v(Block, 'No interlink predecessor - timestamp');
+            Log.v(Block, 'No interlink successor - timestamp');
             return false;
         }
 
@@ -234,14 +223,14 @@ class Block {
                 if (prevHash.equals(this._interlink.hashes[depth])) {
                     blockFound = true;
                     if (!BlockUtils.isProofOfWork(prevPow, Math.pow(2, targetHeight - depth))) {
-                        Log.v(Block, 'No interlink predecessor - invalid position in interlink');
+                        Log.v(Block, 'No interlink successor - invalid position in interlink');
                         return false;
                     }
                 }
             }
 
             if (!blockFound) {
-                Log.v(Block, 'No interlink predecessor - not in interlink');
+                Log.v(Block, 'No interlink successor - not in interlink');
                 return false;
             }
         }
@@ -251,21 +240,21 @@ class Block {
         // - that the interlink is correct.
         if (this._header.prevHash.equals(prevHash)) {
             if (this._header.height !== predecessor.header.height + 1) {
-                Log.v(Block, 'No interlink predecessor - immediate height');
+                Log.v(Block, 'No interlink successor - immediate height');
                 return false;
             }
 
             const interlink = await predecessor.getNextInterlink(this.target, this.version);
             const interlinkHash = await interlink.hash();
             if (!this._header.interlinkHash.equals(interlinkHash)) {
-                Log.v(Block, 'No interlink predecessor - immediate interlink');
+                Log.v(Block, 'No interlink successor - immediate interlink');
                 return false;
             }
         }
         // Otherwise, if the prevHash doesn't match but the blocks should be adjacent according to their height fields,
         // this cannot be a valid successor of predecessor.
         else if (this._header.height === predecessor.height.height + 1) {
-            Log.v(Block, 'No interlink predecessor - immediate height (2)');
+            Log.v(Block, 'No interlink successor - immediate height (2)');
             return false;
         }
         // Otherwise, check that the interlink construction is valid given the information we have.
@@ -278,7 +267,7 @@ class Block {
             hashes.addAll(this._interlink.hashes);
             hashes.removeAll(predecessor.interlink.hashes);
             if (hashes.length > this._header.height - predecessor.header.height) {
-                Log.v(Block, 'No interlink predecessor - too many new blocks');
+                Log.v(Block, 'No interlink successor - too many new blocks');
                 return false;
             }
 
@@ -287,7 +276,7 @@ class Block {
             const prevDepth = BlockUtils.getTargetDepth(predecessor.target);
             const depthDiff = thisDepth - prevDepth;
             if (this._interlink.length < predecessor.interlink.length - depthDiff) {
-                Log.v(Block, 'No interlink predecessor - interlink too short');
+                Log.v(Block, 'No interlink successor - interlink too short');
                 return false;
             }
 
@@ -300,7 +289,7 @@ class Block {
                     commonBlock = true;
                 }
                 else if (commonBlock) {
-                    Log.v(Block, 'No interlink predecessor - invalid common suffix');
+                    Log.v(Block, 'No interlink successor - invalid common suffix');
                     return false;
                 }
             }
@@ -311,7 +300,7 @@ class Block {
         const heightDiff = this._header.height - predecessor.header.height;
         if (adjustmentFactor > Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, heightDiff)
                 || adjustmentFactor < Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, -heightDiff)) {
-            Log.v(Block, 'No interlink predecessor - target adjustment out of bounds');
+            Log.v(Block, 'No interlink successor - target adjustment out of bounds');
             return false;
         }
 

@@ -168,7 +168,7 @@ class Miner extends Observable {
             if (BlockUtils.isProofOfWork(obj.hash, obj.block.target) && !this._submittingBlock) {
                 obj.block.header.nonce = obj.nonce;
                 this._submittingBlock = true;
-                if (obj.block.header.verifyProofOfWork()) {
+                if (await obj.block.header.verifyProofOfWork()) {
                     // Tell listeners that we've mined a block.
                     this.fire('block-mined', obj.block, this);
 
