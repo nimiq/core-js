@@ -2,9 +2,9 @@
 class PeerAddresses extends Observable {
     /**
      * @constructor
-     * @param {Services} services
+     * @param {NetworkConfig} netconfig
      */
-    constructor(services) {
+    constructor(netconfig) {
         super();
 
         /**
@@ -22,10 +22,10 @@ class PeerAddresses extends Observable {
         this._signalIds = new HashMap();
 
         /**
-         * @type {Services}
+         * @type {NetworkConfig}
          * @private
          */
-        this._services = services;
+        this._netconfig = netconfig;
 
         // Number of WebSocket/WebRTC peers.
         /** @type {number} */
@@ -276,7 +276,7 @@ class PeerAddresses extends Observable {
      */
     _add(channel, peerAddress) {
         // Ignore our own address.
-        if (NetworkConfig.myPeerAddress(this._services).equals(peerAddress)) {
+        if (this._netconfig.peerAddress.equals(peerAddress)) {
             return false;
         }
 

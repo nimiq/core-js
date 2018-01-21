@@ -1,34 +1,73 @@
 class NetworkConfig {
     /**
-     * @static
-     * @param {Services} services
-     * @return {PeerAddress}
+     * @constructor
+     * @param {SignalId} [signalId]
+     * @param {Services} [services]
      */
-    static myPeerAddress(services) {
-        if (!PlatformUtils.supportsWebRTC()) {
-            return new DumbPeerAddress(
-                services.provided, Time.now(), NetAddress.UNSPECIFIED,
-                /*id*/ NumberUtils.randomUint64());
-        }
+    constructor(signalId, services) {
+        this._signalId = signalId;
+        this._services = services;
 
-        if (!NetworkConfig._mySignalId) {
-            throw 'PeerAddress is not configured';
-        }
+        /** @type {number} */
+        this._protocolMask = Protocol.WS | Protocol.RTC;
+    }
 
-        return new RtcPeerAddress(
-            services.provided, Time.now(), NetAddress.UNSPECIFIED,
-            NetworkConfig._mySignalId, /*distance*/ 0);
+    /**
+     * @return {Services}
+     */
+    get services() {
+        return this._services;
     }
 
     /**
      * Used for filtering peer addresses by protocols.
-     * @static
      * @return {number}
      */
-    static myProtocolMask() {
-        return Protocol.WS | Protocol.RTC;
+    get protocolMask() {
+        return this._protocolMask;
     }
 
+    /**
+     * @return {DumbPeerAddress|RtcPeerAddress}
+     */
+    get peerAddress() {
+        if (!this._services) {
+            throw 'PeerAddress is not configured.';
+        }
+
+        if (!PlatformUtils.supportsWebRTC()) {
+            return new DumbPeerAddress(
+                this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+                /*id*/ NumberUtils.randomUint64());
+        }
+
+        if (!this._signalId) {
+            throw 'PeerAddress is not configured';
+        }
+
+        return new RtcPeerAddress(
+            this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+            this._signalId, /*distance*/ 0);
+    }
+
+    /**
+     * @param {Services} services
+     */
+    set services(services) {
+        this._services = services;
+    }
+
+    /**
+     * @param {SignalId} signalId
+     */
+    set signalId(signalId) {
+        this._signalId = signalId;
+    }
+
+    /**
+     * @param {number} protocol
+     * @return {boolean}
+     */
     static canConnect(protocol) {
         switch (protocol) {
             case Protocol.WS:
@@ -39,10 +78,6 @@ class NetworkConfig {
             default:
                 return false;
         }
-    }
-
-    static configurePeerAddress(signalId) {
-        NetworkConfig._mySignalId = signalId;
     }
 }
 Class.register(NetworkConfig);

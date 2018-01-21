@@ -8,12 +8,12 @@ const fs = require('fs');
 class WebSocketConnector extends Observable {
     /**
      * @constructor
-     * @param {Services} services
+     * @param {NetworkConfig} netconfig
      */
-    constructor(services) {
+    constructor(netconfig) {
         super();
-        const port = NetworkConfig.myPeerAddress(services).port;
-        const sslConfig = NetworkConfig.getSSLConfig();
+        const port = netconfig.peerAddress.port;
+        const sslConfig = netconfig.sslConfig;
 
         const options = {
             key: fs.readFileSync(sslConfig.key),
