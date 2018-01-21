@@ -5,20 +5,18 @@ class WebRtcConnector extends Observable {
      */
     constructor(netconfig) {
         super();
-
-        /** @type {NetworkConfig} */
-        this._netconfig = netconfig;
-
-        return this._init();
+        return this._init(netconfig);
     }
 
     /**
+     * @param {NetworkConfig} netconfig
      * @return {WebRtcConnector}
      */
-    async _init() {
+    async _init(netconfig) {
         /** @type {HashMap.<SignalId,PeerConnector>} */
         this._connectors = new HashMap();
-        this._config = await WebRtcConfig.get(this._netconfig);
+        /** @type {WebRtcConfig} */
+        this._webRtcConfig = await new WebRtcConfig(netconfig);
         this._timers = new Timers();
 
         return this;
@@ -33,7 +31,7 @@ class WebRtcConnector extends Observable {
             return false;
         }
 
-        const connector = new OutboundPeerConnector(this._config, this._netconfig, peerAddress, signalChannel);
+        const connector = new OutboundPeerConnector(this._webRtcConfig, peerAddress, signalChannel);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors.put(signalId, connector);
 
@@ -61,7 +59,7 @@ class WebRtcConnector extends Observable {
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
 
                 // XXX Reason needs to be adapted when more flags are added.
-                const reason =  msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
+                const reason = msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
                 this.fire('error', peerAddress, reason);
             }
 
@@ -101,7 +99,7 @@ class WebRtcConnector extends Observable {
             }
 
             // Accept the offer.
-            const connector = new InboundPeerConnector(this._config, this._netconfig, channel, msg.senderId, payload);
+            const connector = new InboundPeerConnector(this._webRtcConfig, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors.put(msg.senderId, connector);
 
@@ -140,16 +138,16 @@ WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
-    constructor(config, netconfig, signalChannel, signalId, peerAddress) {
+    constructor(webRtcConfig, signalChannel, signalId, peerAddress) {
         super();
-        this._netconfig = netconfig;
+        this._webRtcConfig = webRtcConfig;
         this._signalChannel = signalChannel;
         this._signalId = signalId;
         this._peerAddress = peerAddress; // null for inbound connections
 
         this._nonce = NumberUtils.randomUint32();
 
-        this._rtcConnection = new RTCPeerConnection(config);
+        this._rtcConnection = new RTCPeerConnection(this._webRtcConfig.config);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
 
         this._lastIceCandidate = null;
@@ -202,9 +200,10 @@ class PeerConnector extends Observable {
 
     async _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
-        const keyPair = await WebRtcConfig.myKeyPair();
+        const keyPair = this._webRtcConfig.keyPair;
+        const signalId = await keyPair.publicKey.toSignalId();
         this._signalChannel.signal(
-            this._netconfig.peerAddress.signalId,
+            signalId,
             this._signalId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,
@@ -237,7 +236,7 @@ class PeerConnector extends Observable {
         if (this._lastIceCandidate) {
             try {
                 netAddress = WebRtcUtils.candidateToNetAddress(this._lastIceCandidate);
-            } catch(e) {
+            } catch (e) {
                 Log.w(PeerConnector, `Failed to parse IP from ICE candidate: ${this._lastIceCandidate}`);
             }
         } else {
@@ -264,8 +263,8 @@ class PeerConnector extends Observable {
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
-    constructor(config, netconfig, peerAddress, signalChannel) {
-        super(config, netconfig, signalChannel, peerAddress.signalId, peerAddress);
+    constructor(webRtcConfig, peerAddress, signalChannel) {
+        super(webRtcConfig, signalChannel, peerAddress.signalId, peerAddress);
         this._peerAddress = peerAddress;
 
         // Create offer.
@@ -280,8 +279,8 @@ class OutboundPeerConnector extends PeerConnector {
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
-    constructor(config, netconfig, signalChannel, signalId, offer) {
-        super(config, netconfig, signalChannel, signalId, null);
+    constructor(webRtcConfig, signalChannel, signalId, offer) {
+        super(webRtcConfig, signalChannel, signalId, null);
         this._rtcConnection.ondatachannel = event => {
             event.channel.onopen = e => this._onDataChannel(e);
         };
