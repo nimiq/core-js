@@ -267,7 +267,7 @@ BlockHeader.Version = {
     LUNA_V2: 2,
     LUNA_V3: 3
 };
-BlockHeader.CURRENT_VERSION = BlockHeader.Version.LUNA_V2;
+BlockHeader.CURRENT_VERSION = BlockHeader.Version.LUNA_V3;
 BlockHeader.SUPPORTED_VERSIONS = [
     BlockHeader.Version.LUNA_V1,
     BlockHeader.Version.LUNA_V2,
