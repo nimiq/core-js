@@ -2,6 +2,7 @@ class NetworkAgent extends Observable {
     /**
      * @param {IBlockchain} blockchain
      * @param {PeerAddresses} addresses
+     * @param {NetworkConfig} netconfig
      * @param {PeerChannel} channel
      *
      * @listens PeerChannel#version
@@ -11,12 +12,14 @@ class NetworkAgent extends Observable {
      * @listens PeerChannel#pong
      * @listens PeerChannel#close
      */
-    constructor(blockchain, addresses, channel) {
+    constructor(blockchain, addresses, netconfig, channel) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {PeerAddresses} */
         this._addresses = addresses;
+        /** @type {NetworkConfig} */
+        this._netconfig = netconfig;
         /** @type {PeerChannel} */
         this._channel = channel;
 
@@ -117,7 +120,7 @@ class NetworkAgent extends Observable {
         // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(NetworkConfig.myPeerAddress(), this._blockchain.headHash)) {
+        if (!this._channel.version(this._netconfig.peerAddress, this._blockchain.headHash)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
                 this._channel.close('sending of version message failed');
@@ -228,7 +231,7 @@ class NetworkAgent extends Observable {
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([NetworkConfig.myPeerAddress()]),
+            () => this._channel.addr([this._netconfig.peerAddress]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Tell listeners about the new peer that connected.
@@ -243,7 +246,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getAddr(NetworkConfig.myProtocolMask(), Services.myServiceMask());
+        this._channel.getAddr(this._netconfig.protocolMask, this._netconfig.services.accepted);
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.
@@ -280,8 +283,9 @@ class NetworkAgent extends Observable {
     }
 
     /**
-     * @param {GetAddrMessage} msg
      * @private
+     * @param {GetAddrMessage} msg
+     * @return {void}
      */
     _onGetAddr(msg) {
         // Make sure this is a valid message in our current state.

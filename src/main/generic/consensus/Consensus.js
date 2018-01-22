@@ -2,10 +2,15 @@ class Consensus {
     /**
      * @return {Promise.<FullConsensus>}
      */
-    static async full() {
-        Services.configureServices(Services.FULL);
-        Services.configureServiceMask(Services.FULL);
+    static async full(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || new NetworkConfig();
+
+        /** @type {Services} */
+        const services = new Services(Services.FULL, Services.FULL);
+        netconfig.services = services;
 
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getFull();
@@ -16,7 +21,7 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new FullConsensus(blockchain, mempool, network);
     }
@@ -24,10 +29,15 @@ class Consensus {
     /**
      * @return {Promise.<LightConsensus>}
      */
-    static async light() {
-        Services.configureServices(Services.LIGHT);
-        Services.configureServiceMask(Services.LIGHT | Services.FULL);
+    static async light(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || new NetworkConfig();
+
+        /** @type {Services} */
+        const services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
+        netconfig.services = services;
 
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getLight();
@@ -38,7 +48,7 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new LightConsensus(blockchain, mempool, network);
     }
@@ -46,17 +56,22 @@ class Consensus {
     /**
      * @return {Promise.<NanoConsensus>}
      */
-    static async nano() {
-        Services.configureServices(Services.NANO);
-        Services.configureServiceMask(Services.NANO | Services.LIGHT | Services.FULL);
+    static async nano(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || new NetworkConfig();
+
+        /** @type {Services} */
+        const services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
+        netconfig.services = services;
 
         /** @type {NanoChain} */
         const blockchain = await new NanoChain();
         /** @type {NanoMempool} */
         const mempool = new NanoMempool();
         /** @type {Network} */
-        const network = await new Network(blockchain);
+        const network = await new Network(blockchain, netconfig);
 
         return new NanoConsensus(blockchain, mempool, network);
     }

@@ -1,51 +1,57 @@
 class WebRtcConfig {
-    static async get() {
-        // Initialize singleton.
-        if (!WebRtcConfig._config) {
-            // If browser does not support WebRTC, simply return empty config.
-            if (!PlatformUtils.supportsWebRTC()) {
-                WebRtcConfig._config = {};
-                return WebRtcConfig._config;
-            }
+    /**
+     * @constructor
+     * @param {NetworkConfig} netconfig
+     */
+    constructor(netconfig) {
+        return this._init(netconfig);
+    }
 
-            WebRtcConfig._config = {
+    /**
+     * @param {NetworkConfig} netconfig
+     * @return {WebRtcConfig}
+     */
+    async _init(netconfig) {
+        const db = await new WebRtcStore();
+        let keys = await db.get('keys');
+        if (!keys) {
+            keys = await KeyPair.generate();
+            await db.put('keys', keys);
+        }
+        await db.close();
+        this._keyPair = keys;
+
+        // Configure our peer address.
+        netconfig.signalId = await keys.publicKey.toSignalId();
+
+        // If browser does not support WebRTC, use an empty config.
+        if (!PlatformUtils.supportsWebRTC()) {
+            this._config = {};
+        } else {
+            this._config = {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun.nimiq-network.com:19302' }
                 ]
             };
-
-            // Configure our peer address.
-            const signalId = await WebRtcConfig.mySignalId();
-            NetworkConfig.configurePeerAddress(signalId);
         }
 
-        return WebRtcConfig._config;
+        return this;
     }
 
     /**
-     * @returns {Promise.<KeyPair>}
+     * @return {KeyPair}
      */
-    static async myKeyPair() {
-        if (!WebRtcConfig._keyPair) {
-            const db = await new WebRtcStore();
-            let keys = await db.get('keys');
-            if (!keys) {
-                keys = await KeyPair.generate();
-                await db.put('keys', keys);
-            }
-            await db.close();
-            WebRtcConfig._keyPair = keys;
-        }
-        return WebRtcConfig._keyPair;
+    get keyPair() {
+        return this._keyPair;
     }
 
     /**
-     * @returns {Promise.<SignalId>}
+     * @return  {{iceServers: Array.<{urls: string}>}|{}}
      */
-    static async mySignalId() {
-        const keyPair = await WebRtcConfig.myKeyPair();
-        return keyPair.publicKey.toSignalId();
+    get config() {
+        return this._config;
     }
+
 }
 Class.register(WebRtcConfig);

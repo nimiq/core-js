@@ -227,6 +227,7 @@ class NanoConsensus extends Observable {
      * @returns {Promise.<Block>}
      */
     async getFullBlock(hash) {
+        // Filter agents that aren't synced or that are nano clients
         const agents = this._agents.values().filter(agent =>
             agent.synced
             && !Services.isNanoNode(agent.peer.peerAddress.services)

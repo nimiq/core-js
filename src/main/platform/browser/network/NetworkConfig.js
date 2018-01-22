@@ -1,25 +1,73 @@
 class NetworkConfig {
-    static myPeerAddress() {
+    /**
+     * @constructor
+     * @param {SignalId} [signalId]
+     * @param {Services} [services]
+     */
+    constructor(signalId, services) {
+        this._signalId = signalId;
+        this._services = services;
+
+        /** @type {number} */
+        this._protocolMask = Protocol.WS | Protocol.RTC;
+    }
+
+    /**
+     * @return {Services}
+     */
+    get services() {
+        return this._services;
+    }
+
+    /**
+     * Used for filtering peer addresses by protocols.
+     * @return {number}
+     */
+    get protocolMask() {
+        return this._protocolMask;
+    }
+
+    /**
+     * @return {DumbPeerAddress|RtcPeerAddress}
+     */
+    get peerAddress() {
+        if (!this._services) {
+            throw 'PeerAddress is not configured.';
+        }
+
         if (!PlatformUtils.supportsWebRTC()) {
             return new DumbPeerAddress(
-                Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
+                this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
                 /*id*/ NumberUtils.randomUint64());
         }
 
-        if (!NetworkConfig._mySignalId) {
+        if (!this._signalId) {
             throw 'PeerAddress is not configured';
         }
 
         return new RtcPeerAddress(
-            Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
-            NetworkConfig._mySignalId, /*distance*/ 0);
+            this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+            this._signalId, /*distance*/ 0);
     }
 
-    // Used for filtering peer addresses by protocols.
-    static myProtocolMask() {
-        return Protocol.WS | Protocol.RTC;
+    /**
+     * @param {Services} services
+     */
+    set services(services) {
+        this._services = services;
     }
 
+    /**
+     * @param {SignalId} signalId
+     */
+    set signalId(signalId) {
+        this._signalId = signalId;
+    }
+
+    /**
+     * @param {number} protocol
+     * @return {boolean}
+     */
     static canConnect(protocol) {
         switch (protocol) {
             case Protocol.WS:
@@ -30,10 +78,6 @@ class NetworkConfig {
             default:
                 return false;
         }
-    }
-
-    static configurePeerAddress(signalId) {
-        NetworkConfig._mySignalId = signalId;
     }
 }
 Class.register(NetworkConfig);

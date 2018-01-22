@@ -1,38 +1,74 @@
 class NetworkConfig {
-    static myPeerAddress() {
-        if (!NetworkConfig._myHost || !NetworkConfig._myPort) {
+    /**
+    * @constructor
+    * @param {string} host
+    * @param {number} port
+    * @param {string} key
+    * @param {string} cert
+    * @param {Services} [services]
+    */
+    constructor(host, port, key, cert, services) {
+        this._host = host;
+        this._port = port;
+        this._key = key;
+        this._cert = cert;
+        this._services = services;
+
+        /** @type {number} */
+        this._protocolMask = Protocol.WS;
+    }
+
+    /**
+     * @return {Services}
+     */
+    get services() {
+        return this._services;
+    }
+
+    /**
+     * Used for filtering peer addresses by protocols.
+     * @return {number}
+     */
+    get protocolMask() {
+        return this._protocolMask;
+    }
+
+    /**
+     * @return {{key: string, cert: string}}
+     */
+    get sslConfig() {
+        return {
+            key: this._key,
+            cert: this._cert
+        };
+    }
+
+    /**
+     * @return {WsPeerAddress}
+     */
+    get peerAddress() {
+        if (!this._services) {
             throw 'PeerAddress is not configured.';
         }
 
         return new WsPeerAddress(
-            Services.myServices(), Time.now(), NetAddress.UNSPECIFIED,
-            NetworkConfig._myHost, NetworkConfig._myPort);
+            this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+            this._host, this._port);
     }
 
-    // Used for filtering peer addresses by protocols.
-    static myProtocolMask() {
-        return Protocol.WS;
+    /**
+     * @param {Services} services
+     */
+    set services(services) {
+        this._services = services;
     }
 
+    /**
+     * @param {number} protocol
+     * @return {boolean}
+     */
     static canConnect(protocol) {
         return protocol === Protocol.WS;
-    }
-
-    static configurePeerAddress(host, port) {
-        NetworkConfig._myHost = host;
-        NetworkConfig._myPort = port;
-    }
-
-    static configureSSL(key, cert) {
-        NetworkConfig._myKey = key;
-        NetworkConfig._myCert = cert;
-    }
-
-    static getSSLConfig() {
-        return {
-            key : NetworkConfig._myKey,
-            cert: NetworkConfig._myCert
-        };
     }
 }
 Class.register(NetworkConfig);
