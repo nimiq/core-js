@@ -28,8 +28,16 @@ class KeyPair extends Primitive {
      * @param {PrivateKey} privateKey
      * @return {Promise.<KeyPair>}
      */
-    static async derive(privateKey) {
+    static async fromPrivateKey(privateKey) {
         return new KeyPair(await Crypto.keyPairDerive(privateKey._obj));
+    }
+
+    /**
+     * @param {string} hexBuf
+     * @return {KeyPair}
+     */
+    static fromHex(hexBuf) {
+        return KeyPair.unserialize(BufferUtils.fromHex(hexBuf));
     }
 
     /**
@@ -38,13 +46,13 @@ class KeyPair extends Primitive {
      * @param {Uint8Array} key
      * @return {Promise<KeyPair>}
      */
-    static async deriveDeepLocked(buf, key) {
+    static async fromEncrypted(buf, key) {
         const encryptedKey = PrivateKey.unserialize(buf);
-        const salt = buf.read(KeyPair.DEEP_LOCK_SALT_LENGTH);
-        const check = buf.read(KeyPair.DEEP_LOCK_CHECKSUM_LENGTH);
+        const salt = buf.read(KeyPair.EXPORT_SALT_LENGTH);
+        const check = buf.read(KeyPair.EXPORT_CHECKSUM_LENGTH);
 
-        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.DEEP_LOCK_ROUNDS));
-        const keyPair = await KeyPair.derive(privateKey);
+        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
+        const keyPair = await KeyPair.fromPrivateKey(privateKey);
         const pubHash = await keyPair.publicKey.hash();
         if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
             throw new Error('Invalid key');
@@ -69,14 +77,6 @@ class KeyPair extends Primitive {
             }
         }
         return new KeyPair(Crypto.keyPairFromKeys(privateKey._obj, publicKey._obj), locked, lockSalt);
-    }
-
-    /**
-     * @param {string} hexBuf
-     * @return {KeyPair}
-     */
-    static fromHex(hexBuf) {
-        return this.unserialize(BufferUtils.fromHex(hexBuf));
     }
 
     /**
@@ -128,25 +128,26 @@ class KeyPair extends Primitive {
 
     /**
      * @param {Uint8Array} key
+     * @param {Uint8Array} [unlockKey]
      * @return {Promise.<Uint8Array>}
      */
-    async deepLock(key) {
+    async exportEncrypted(key, unlockKey) {
         const wasLocked = this._locked;
         if (this._locked) {
             try {
-                await this.unlock(key);
+                await this.unlock(unlockKey || key);
             } catch (e) {
-                throw new Error('KeyPair is locked but deep lock key mismatches');
+                throw new Error('KeyPair is locked and lock key mismatches');
             }
         }
 
-        const salt = new Uint8Array(KeyPair.DEEP_LOCK_SALT_LENGTH);
+        const salt = new Uint8Array(KeyPair.EXPORT_SALT_LENGTH);
         Crypto.lib.getRandomValues(salt);
 
-        const buf = new SerialBuffer(this.privateKey.serializedSize + KeyPair.DEEP_LOCK_SALT_LENGTH + KeyPair.DEEP_LOCK_CHECKSUM_LENGTH);
-        buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.DEEP_LOCK_ROUNDS));
+        const buf = new SerialBuffer(this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH);
+        buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
         buf.write(salt);
-        buf.write((await this.publicKey.hash()).subarray(0, KeyPair.DEEP_LOCK_CHECKSUM_LENGTH));
+        buf.write((await this.publicKey.hash()).subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
 
         if (wasLocked) this.relock();
 
@@ -215,7 +216,7 @@ class KeyPair extends Primitive {
      * @private
      */
     async _otpPrivateKey(key) {
-        return new PrivateKey(await KeyPair._otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_ROUNDS));
+        return new PrivateKey(await KeyPair._otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_KDF_ROUNDS));
     }
 
     /**
@@ -242,9 +243,9 @@ class KeyPair extends Primitive {
         return o instanceof KeyPair && super.equals(o);
     }
 }
-KeyPair.LOCK_ROUNDS = 256;
-KeyPair.DEEP_LOCK_ROUNDS = 32768;
-KeyPair.DEEP_LOCK_CHECKSUM_LENGTH = 4;
-KeyPair.DEEP_LOCK_SALT_LENGTH = 16;
+KeyPair.LOCK_KDF_ROUNDS = 256;
+KeyPair.EXPORT_KDF_ROUNDS = 256;
+KeyPair.EXPORT_CHECKSUM_LENGTH = 4;
+KeyPair.EXPORT_SALT_LENGTH = 16;
 
 Class.register(KeyPair);
