@@ -116,8 +116,8 @@ describe('NetAddress', () => {
     const short5v6 = '::2:1';
     const long6v6 = '1:0:0:4:5::8';
     const short6v6 = '1::4:5:0:0:8';
-    const long7v6 = `::08.008.8.000008`;
-    const short7v6 = `8.8.8.8`;
+    const long7v6 = '::08.008.8.000008';
+    const short7v6 = '8.8.8.8';
     const long8v6 = '1:0:0:4:5::8';
     const short8v6 = '1::4:5:0:0:8';
     const long9v6 = '0:0:0::0:1.2.3.4';
@@ -175,6 +175,6 @@ describe('NetAddress', () => {
         expect(NetUtils.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
         expect(NetUtils.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
 
-        expect(() => NetUtils.isPrivateIP('not-an-ip')).toThrow("Malformed IP address not-an-ip");
+        expect(() => NetUtils.isPrivateIP('not-an-ip')).toThrow('Malformed IP address not-an-ip');
     });
 });
