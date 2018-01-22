@@ -25,15 +25,15 @@ class Wallet {
     }
 
     /**
-     * @param {string} hexBuf
+     * @param {Uint8Array|string} buf
      * @return {Wallet}
      */
-    static load(hexBuf) {
-        if (!hexBuf || !StringUtils.isHexBytes(hexBuf) || hexBuf.length === 0) {
+    static load(buf) {
+        if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
+        if (!buf || buf.byteLength === 0) {
             throw new Error('Invalid wallet seed');
         }
-
-        return new Wallet(KeyPair.fromHex(hexBuf));
+        return new Wallet(KeyPair.unserialize(new SerialBuffer(buf)));
     }
 
     /**
@@ -41,19 +41,10 @@ class Wallet {
      * @param {Uint8Array|string} key
      * @return {Promise.<Wallet>}
      */
-    static async loadDeepLocked(buf, key) {
+    static async loadEncrypted(buf, key) {
         if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
         if (typeof key === 'string') key = BufferUtils.fromAscii(key);
-        return new Wallet(await KeyPair.deriveDeepLocked(new SerialBuffer(buf), key));
-    }
-
-    /**
-     * @param {Uint8Array|string} key
-     * @return {Promise.<Uint8Array>}
-     */
-    deepLock(key) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
-        return this._keyPair.deepLock(key);
+        return new Wallet(await KeyPair.fromEncrypted(new SerialBuffer(buf), key));
     }
 
     /**
@@ -92,32 +83,31 @@ class Wallet {
         return transaction;
     }
 
-    /**
-     * The address of the Wallet owner.
-     * @type {Address}
-     */
-    get address() {
-        return this._address;
-    }
 
     /**
-     * The public key of the Wallet owner
-     * @type {PublicKey}
-     */
-    get publicKey() {
-        return this._keyPair.publicKey;
-    }
-
-    /** @type {KeyPair} */
-    get keyPair() {
-        return this._keyPair;
-    }
-
-    /**
+     * @deprecated
      * @returns {string}
      */
     dump() {
         return this._keyPair.toHex();
+    }
+
+    /**
+     * @returns {Uint8Array}
+     */
+    exportPlain() {
+        return this._keyPair.serialize();
+    }
+
+    /**
+     * @param {Uint8Array|string} key
+     * @param {Uint8Array|string} [unlockKey]
+     * @return {Promise.<Uint8Array>}
+     */
+    exportEncrypted(key, unlockKey) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof unlockKey === 'string') unlockKey = BufferUtils.fromAscii(unlockKey);
+        return this._keyPair.exportEncrypted(key, unlockKey);
     }
 
     /**
@@ -154,6 +144,27 @@ class Wallet {
     unlock(key) {
         if (typeof key === 'string') key = BufferUtils.fromAscii(key);
         return this.keyPair.unlock(key);
+    }
+
+    /**
+     * The address of the Wallet owner.
+     * @type {Address}
+     */
+    get address() {
+        return this._address;
+    }
+
+    /**
+     * The public key of the Wallet owner
+     * @type {PublicKey}
+     */
+    get publicKey() {
+        return this._keyPair.publicKey;
+    }
+
+    /** @type {KeyPair} */
+    get keyPair() {
+        return this._keyPair;
     }
 }
 

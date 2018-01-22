@@ -3,15 +3,15 @@ describe('Wallet', () => {
     const value = 8888888;
     const fee = 888;
     const nonce = 8;
-    const deepLockRounds = KeyPair.DEEP_LOCK_ROUNDS;
+    const deepLockRounds = KeyPair.EXPORT_KDF_ROUNDS;
     
     beforeAll(() => {
         // Temporarily reduce deep lock rounds.
-        KeyPair.DEEP_LOCK_ROUNDS = KeyPair.LOCK_ROUNDS;
+        KeyPair.EXPORT_KDF_ROUNDS = KeyPair.LOCK_KDF_ROUNDS;
     });
     
     afterAll(() => {
-        KeyPair.DEEP_LOCK_ROUNDS = deepLockRounds;
+        KeyPair.EXPORT_KDF_ROUNDS = deepLockRounds;
     });
 
     it('can create a signed transaction', (done) => {
@@ -39,10 +39,10 @@ describe('Wallet', () => {
         })().then(done, done.fail);
     });
 
-    it('can import valid wallet seed', (done) => {
+    it('can export & import a plaintext wallet', (done) => {
         (async () => {
             const wallet = await Wallet.createVolatile();
-            const wallet2 = await Wallet.load(wallet.dump());
+            const wallet2 = await Wallet.load(wallet.exportPlain());
 
             expect(wallet.keyPair.equals(wallet2.keyPair)).toBeTruthy();
             expect(wallet.address.equals(wallet2.address)).toBeTruthy();
@@ -64,19 +64,19 @@ describe('Wallet', () => {
         })().then(done, done.fail);
     });
 
-    it('can create a deep-locked wallet and import it', (done) => {
+    it('can export an encrypted wallet and import it', (done) => {
         (async () => {
             const wallet = await Wallet.createVolatile();
             const key = 'password';
 
-            const deepLockedWallet = await wallet.deepLock(key);
-            const unlockedWallet = await Wallet.loadDeepLocked(deepLockedWallet, key);
+            const encryptedWallet = await wallet.exportEncrypted(key);
+            const unlockedWallet = await Wallet.loadEncrypted(encryptedWallet, key);
             expect(unlockedWallet.keyPair.privateKey).toEqual(wallet.keyPair.privateKey);
             expect(unlockedWallet.address).toEqual(wallet.address);
         })().then(done, done.fail);
     });
 
-    it('can detect wrong key when creating a deep-locked wallet from locked wallet', (done) => {
+    it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
             const wallet = await Wallet.createVolatile();
             const key = 'password';
@@ -84,20 +84,24 @@ describe('Wallet', () => {
 
             await wallet.lock(key);
             let err = false;
-            await wallet.deepLock(key2).catch(() => err = true);
+            await wallet.exportEncrypted(key2).catch(() => err = true);
+            expect(err).toBeTruthy();
+
+            err = false;
+            await wallet.exportEncrypted(key, key2).catch(() => err = true);
             expect(err).toBeTruthy();
         })().then(done, done.fail);
     });
 
-    it('can detect wrong key on deep-locked wallet', (done) => {
+    it('can detect wrong key on an encrypted wallet', (done) => {
         (async () => {
             const wallet = await Wallet.createVolatile();
             const key = 'password';
             const key2 = '123456';
 
-            const deepLockedWallet = await wallet.deepLock(key);
+            const encryptedWallet = await wallet.exportEncrypted(key);
             let err = false;
-            await Wallet.loadDeepLocked(deepLockedWallet, key2).catch(() => err = true);
+            await Wallet.loadEncrypted(encryptedWallet, key2).catch(() => err = true);
             expect(err).toBeTruthy();
         })().then(done, done.fail);
     });
