@@ -9,12 +9,6 @@ class Block {
         // FIXME Remove version switch for mainnet.
         let interlink = null;
         switch (o._header.version) {
-            case BlockHeader.Version.LUNA_V1:
-                interlink = BlockInterlinkLegacyV1.copy(o._interlink);
-                break;
-            case BlockHeader.Version.LUNA_V2:
-                interlink = BlockInterlinkLegacyV2.copy(o._interlink);
-                break;
             default:
                 interlink = BlockInterlink.copy(o._interlink);
         }
@@ -54,12 +48,6 @@ class Block {
         // FIXME: Remove version switch for mainnet.
         let interlink = null;
         switch (header.version) {
-            case BlockHeader.Version.LUNA_V1:
-                interlink = BlockInterlinkLegacyV1.unserialize(buf, header.prevHash);
-                break;
-            case BlockHeader.Version.LUNA_V2:
-                interlink = BlockInterlinkLegacyV2.unserialize(buf, header.prevHash);
-                break;
             default:
                 interlink = BlockInterlink.unserialize(buf, header.prevHash);
         }
@@ -364,10 +352,6 @@ class Block {
         // Return the correct interlink version.
         // FIXME Remove version switch for mainnet.
         switch (nextVersion) {
-            case BlockHeader.Version.LUNA_V1:
-                return new BlockInterlinkLegacyV1(hashes);
-            case BlockHeader.Version.LUNA_V2:
-                return new BlockInterlinkLegacyV2(hashes);
             default:
                 return new BlockInterlink(hashes, hash);
         }
@@ -559,8 +543,8 @@ Block.GENESIS = new Block(
         1,
         0,
         66958,
-        BlockHeader.Version.LUNA_V1),
-    new BlockInterlinkLegacyV1([]),
+        BlockHeader.Version.V1),
+    new BlockInterlink([], new Hash(null)),
     new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access

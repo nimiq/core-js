@@ -42,8 +42,8 @@ Block.GENESIS = new Block(
         1,
         0,
         8232,
-        BlockHeader.Version.LUNA_V1),
-    new BlockInterlinkLegacyV1([]),
+        BlockHeader.Version.V1),
+    new BlockInterlink([], new Hash(null)),
     new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
 );
 // Store hash for synchronous access
