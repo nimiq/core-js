@@ -45,7 +45,8 @@ class HashedTimeLockedContract extends Account {
         const nonce = buf.readUint32();
         const sender = Address.unserialize(buf);
         const recipient = Address.unserialize(buf);
-        const hashRoot = Hash.unserialize(buf);
+        const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
+        const hashRoot = Hash.unserialize(buf, hashAlgo);
         const hashCount = buf.readUint8();
         const timeout = buf.readUint32();
         const totalAmount = buf.readUint64();
@@ -63,6 +64,7 @@ class HashedTimeLockedContract extends Account {
         super.serialize(buf);
         this._sender.serialize(buf);
         this._recipient.serialize(buf);
+        buf.writeUint8(this._hashRoot._algo);
         this._hashRoot.serialize(buf);
         buf.writeUint8(this._hashCount);
         buf.writeUint32(this._timeout);
@@ -77,6 +79,7 @@ class HashedTimeLockedContract extends Account {
         return super.serializedSize
             + this._sender.serializedSize
             + this._recipient.serializedSize
+            + /*hashAlgo*/ 1
             + this._hashRoot.serializedSize
             + /*hashCount*/ 1
             + /*timeout*/ 4
@@ -128,13 +131,14 @@ class HashedTimeLockedContract extends Account {
         switch (type) {
             case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
                 // pre-image
+                const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
                 const hashDepth = buf.readUint8();
-                const rootHash = Hash.unserialize(buf);
-                let hashTmp = buf.read(Crypto.hashSize);
+                const rootHash = Hash.unserialize(buf, hashAlgo);
+                let hashTmp = Hash.unserialize(buf, hashAlgo);
                 for (let i = 0; i < hashDepth; ++i) {
-                    hashTmp = await Crypto.hashLight(hashTmp);
+                    hashTmp = await Hash.compute(hashTmp.array, hashAlgo);
                 }
-                if (!rootHash.equals(new Hash(hashTmp))) {
+                if (!rootHash.equals(hashTmp)) {
                     return false;
                 }
 
@@ -170,12 +174,13 @@ class HashedTimeLockedContract extends Account {
 
         const buf = new SerialBuffer(transaction.data);
         const recipient = Address.unserialize(buf);
-        const hashRoot = Hash.unserialize(buf);
+        const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
+        const hashRoot = Hash.unserialize(buf, hashAlgo);
         const hashCount = buf.readUint8();
         const timeout = buf.readUint32();
 
         const contract = new HashedTimeLockedContract(transaction.value, 0, transaction.sender, recipient, hashRoot, hashCount, timeout);
-        const hash = await Hash.light(contract.serialize());
+        const hash = await Hash.blake2b(contract.serialize());
         if (!transaction.recipient.equals(Address.fromHash(hash))) {
             return false;
         }
@@ -212,8 +217,9 @@ class HashedTimeLockedContract extends Account {
                     throw new Error('Proof Error!');
                 }
 
+                const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
                 const hashDepth = buf.readUint8();
-                if (!Hash.unserialize(buf).equals(this._hashRoot)) {
+                if (!Hash.unserialize(buf, hashAlgo).equals(this._hashRoot)) {
                     throw new Error('Proof Error!');
                 }
 
@@ -266,7 +272,8 @@ class HashedTimeLockedContract extends Account {
         if (this === HashedTimeLockedContract.INITIAL) {
             const buf = new SerialBuffer(transaction.data);
             const recipient = Address.unserialize(buf);
-            const hashRoot = Hash.unserialize(buf);
+            const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
+            const hashRoot = Hash.unserialize(buf, hashAlgo);
             const hashCount = buf.readUint8();
             const timeout = buf.readUint32();
 

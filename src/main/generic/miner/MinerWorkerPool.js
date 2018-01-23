@@ -35,14 +35,14 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
              */
             this.multiMine = function (blockHeader, compact, minNonce, maxNonce) {
                 return new Promise((resolve, fail) => {
-                    nimiq_node.nimiq_hard_hash_target_async(async (nonce) => {
+                    nimiq_node.nimiq_argon2_target_async(async (nonce) => {
                         try {
                             if (nonce === maxNonce) {
                                 resolve(false);
                             } else {
                                 blockHeader.writePos -= 4;
                                 blockHeader.writeUint32(nonce);
-                                const hash = await Crypto.hashHard(blockHeader);
+                                const hash = await Crypto.argon2d(blockHeader);
                                 resolve({hash, nonce});
                             }
                         } catch (e) {

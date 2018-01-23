@@ -22,7 +22,7 @@ class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
             wasmOut = Module._malloc(hash.length);
             wasmIn = Module._malloc(input.length);
             Module.HEAPU8.set(input, wasmIn);
-            const nonce = Module._nimiq_hard_hash_target(wasmOut, wasmIn, input.length, compact, minNonce, maxNonce, 512);
+            const nonce = Module._nimiq_argon2_target(wasmOut, wasmIn, input.length, compact, minNonce, maxNonce, 512);
             if (nonce === maxNonce) return false;
             hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hash.length));
             return {hash, nonce};

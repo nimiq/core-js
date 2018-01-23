@@ -274,7 +274,7 @@ describe('Crypto', () => {
         (async function () {
             const dataToHash = BufferUtils.fromAscii('hello');
             const expectedHash = Dummy.hash1;
-            const hash = await Crypto.hashLight(dataToHash);
+            const hash = await Crypto.blake2b(dataToHash);
             expect(BufferUtils.toBase64(hash)).toBe(expectedHash);
         })().then(done, done.fail);
     });
