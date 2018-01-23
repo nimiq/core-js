@@ -5,7 +5,7 @@ describe('Miner', () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(5, 10);
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
             const minerAddr = testBlockchain.users[0].address;
-            const miner = new Miner(testBlockchain, mempool, minerAddr);
+            const miner = new Miner(testBlockchain, mempool, minerAddr, testBlockchain._time);
 
             let block = await miner.getNextBlock();
             block.header._timestamp = 1000;
@@ -50,17 +50,17 @@ describe('Miner', () => {
             return;
         }
 
-        spyOn(Time, 'now').and.returnValue(5000);
+        spyOn(Date, 'now').and.returnValue(5000);
         (async() => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
-            const miner = new Miner(testBlockchain, mempool, Block.GENESIS.minerAddr);
+            const miner = new Miner(testBlockchain, mempool, Block.GENESIS.minerAddr, testBlockchain._time);
             const block = await new Promise((resolve) => {
                 miner.on('block-mined', resolve);
                 miner.startWork();
             });
             miner.stopWork();
-            expect(await block.verify()).toBeTruthy();
+            expect(await block.verify(testBlockchain._time)).toBeTruthy();
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
         })().then(done, done.fail);
     });

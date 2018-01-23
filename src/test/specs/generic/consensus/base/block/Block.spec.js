@@ -95,7 +95,8 @@ describe('Block', () => {
 
     it('GENESIS is valid (testing)', (done) => {
         (async () => {
-            expect(await Block.GENESIS.verify()).toBeTruthy();
+            time = new Time();
+            expect(await Block.GENESIS.verify(time)).toBeTruthy();
         })().then(done, done.fail);
     });
 
@@ -107,7 +108,8 @@ describe('Block', () => {
 
     it('GENESIS is valid (real)', (done) => {
         (async () => {
-            expect(await Block.OLD_GENESIS.verify()).toBeTruthy();
+            time = new Time();
+            expect(await Block.OLD_GENESIS.verify(time)).toBeTruthy();
         })().then(done, done.fail);
     });
 

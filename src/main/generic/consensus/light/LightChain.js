@@ -7,11 +7,12 @@ class LightChain extends FullChain {
     /**
     * @param {JungleDB} jdb
     * @param {Accounts} accounts
+    * @param {Time} time
     * @returns {Promise.<LightChain>}
     */
-    static getPersistent(jdb, accounts) {
+    static getPersistent(jdb, accounts, time) {
         const store = ChainDataStore.getPersistent(jdb);
-        const chain = new LightChain(store, accounts);
+        const chain = new LightChain(store, accounts, time);
         return chain._init();
     }
 
@@ -19,19 +20,20 @@ class LightChain extends FullChain {
      * @param {Accounts} accounts
      * @returns {Promise.<LightChain>}
      */
-    static createVolatile(accounts) {
+    static createVolatile(accounts, time) {
         const store = ChainDataStore.createVolatile();
-        const chain = new LightChain(store, accounts);
+        const chain = new LightChain(store, accounts, time);
         return chain._init();
     }
 
     /**
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
+     * @param {Time} time
      * @returns {PartialLightChain}
      */
-    constructor(store, accounts) {
-        super(store, accounts);
+    constructor(store, accounts, time) {
+        super(store, accounts, time);
     }
 
     /**
@@ -47,9 +49,12 @@ class LightChain extends FullChain {
         return this;
     }
 
+    /**
+     * @return {PartialLightChain}
+     */
     async partialChain() {
         const proof = await this.getChainProof();
-        const partialChain = new PartialLightChain(this._store, this._accounts, proof);
+        const partialChain = new PartialLightChain(this._store, this._accounts, proof, this._time);
         partialChain.on('committed', async (proof, headHash, mainChain) => {
             this._proof = proof;
             this._headHash = headHash;

@@ -3,13 +3,16 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {NanoChain} blockchain
      * @param {NanoMempool} mempool
      * @param {Peer} peer
+     * @param {Time} time
      */
-    constructor(blockchain, mempool, peer) {
+    constructor(blockchain, mempool, peer, time) {
         super(peer);
         /** @type {NanoChain} */
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
         this._mempool = mempool;
+        /** @type {Time} */
+        this._time = time;
 
         // Flag indicating that we are currently syncing our blockchain with the peer's.
         /** @type {boolean} */
@@ -529,7 +532,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Verify block.
         // TODO should we let the caller do that instead?
-        if (!(await msg.block.verify())) {
+        if (!(await msg.block.verify(this._time))) {
             Log.w(NanoConsensusAgent, `Invalid block received from ${this._peer.peerAddress}`);
             // TODO ban instead?
             this._peer.channel.close('Invalid block');

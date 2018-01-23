@@ -26,14 +26,17 @@ class Network extends Observable {
     /**
      * @param {IBlockchain} blockchain
      * @param {NetworkConfig} netconfig
+     * @param {Time} time
      * @return {Promise.<Network>}
      */
-    constructor(blockchain, netconfig) {
+    constructor(blockchain, netconfig, time) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {NetworkConfig} */
         this._netconfig = netconfig;
+        /** @type {Time} */
+        this._time = time;
         return this._init();
     }
 
@@ -479,9 +482,9 @@ class Network extends Observable {
         offsets.sort((a, b) => a - b);
 
         if ((offsetsLength % 2) === 0) {
-            Time.timeOffset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
+            this._time.offset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
         } else {
-            Time.timeOffset = offsets[(offsetsLength - 1) / 2];
+            this._time.offset = offsets[(offsetsLength - 1) / 2];
         }
     }
 
@@ -575,6 +578,11 @@ class Network extends Observable {
         // Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
         //     + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
         //     + `(via ${signalChannel.peerAddress})`);
+    }
+
+    /** @type {Time} */
+    get time() {
+        return this._time;
     }
 
     /** @type {number} */

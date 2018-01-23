@@ -75,11 +75,12 @@ class Block {
     }
 
     /**
+     * @param {Time} time
      * @returns {Promise.<boolean>}
      */
-    async verify() {
+    async verify(time) {
         // Check that the timestamp is not too far into the future.
-        if (this._header.timestamp * 1000 > Time.now() + Block.TIMESTAMP_DRIFT_MAX * 1000) {
+        if (this._header.timestamp * 1000 > time.now() + Block.TIMESTAMP_DRIFT_MAX * 1000) {
             Log.w(Block, 'Invalid block - timestamp too far in the future');
             return false;
         }

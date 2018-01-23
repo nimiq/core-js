@@ -5,13 +5,15 @@ class NetworkConfig {
     * @param {number} port
     * @param {string} key
     * @param {string} cert
+    * @param {Time} [time]
     * @param {Services} [services]
     */
-    constructor(host, port, key, cert, services) {
+    constructor(host, port, key, cert, time, services) {
         this._host = host;
         this._port = port;
         this._key = key;
         this._cert = cert;
+        this._time = time;
         this._services = services;
 
         /** @type {number} */
@@ -47,12 +49,12 @@ class NetworkConfig {
      * @return {WsPeerAddress}
      */
     get peerAddress() {
-        if (!this._services) {
+        if (!this._time || !this._services) {
             throw 'PeerAddress is not configured.';
         }
 
         return new WsPeerAddress(
-            this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+            this._services.provided, this._time.now(), NetAddress.UNSPECIFIED,
             this._host, this._port);
     }
 
@@ -61,6 +63,13 @@ class NetworkConfig {
      */
     set services(services) {
         this._services = services;
+    }
+
+    /**
+     * @param {Time} time
+     */
+    set time(time) {
+        this._time = time;
     }
 
     /**
