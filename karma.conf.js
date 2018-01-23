@@ -128,5 +128,8 @@ module.exports = function (config) {
     if (process.env.KARMA_BROWSERS) {
         configuration.browsers = process.env.KARMA_BROWSERS.split(',');
     }
+    if (process.env.EXCLUDE_MINER) {
+        configuration.exclude.push('src/test/specs/generic/miner/Miner.spec.js');
+    }
     config.set(configuration);
 };
