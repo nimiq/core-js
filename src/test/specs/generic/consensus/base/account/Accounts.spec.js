@@ -197,8 +197,9 @@ describe('Accounts', () => {
             const transactions = await Promise.all(transactionPromises);
             transactions.sort((a, b) => a.compareBlockOrder(b));
             expect(await treeTx.commit()).toBeTruthy();
+            const time = new Time();
             const block = await testBlockchain.createBlock({transactions: transactions});
-            expect(await block.verify()).toBeTruthy();
+            expect(await block.verify(time)).toBeTruthy();
             expect(await accounts.commitBlock(block, testBlockchain.transactionsCache)).toBeTruthy();
         })().then(done, done.fail);
     });

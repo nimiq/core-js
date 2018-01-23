@@ -1,10 +1,12 @@
 class NetworkConfig {
     /**
      * @constructor
+     * @param {Time} [time]
      * @param {SignalId} [signalId]
      * @param {Services} [services]
      */
-    constructor(signalId, services) {
+    constructor(time, signalId, services) {
+        this._time = time;
         this._signalId = signalId;
         this._services = services;
 
@@ -31,13 +33,13 @@ class NetworkConfig {
      * @return {DumbPeerAddress|RtcPeerAddress}
      */
     get peerAddress() {
-        if (!this._services) {
+        if (!this._time || !this._services) {
             throw 'PeerAddress is not configured.';
         }
 
         if (!PlatformUtils.supportsWebRTC()) {
             return new DumbPeerAddress(
-                this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+                this._services.provided, this._time.now(), NetAddress.UNSPECIFIED,
                 /*id*/ NumberUtils.randomUint64());
         }
 
@@ -46,7 +48,7 @@ class NetworkConfig {
         }
 
         return new RtcPeerAddress(
-            this._services.provided, Time.now(), NetAddress.UNSPECIFIED,
+            this._services.provided, this._time.now(), NetAddress.UNSPECIFIED,
             this._signalId, /*distance*/ 0);
     }
 
@@ -62,6 +64,13 @@ class NetworkConfig {
      */
     set signalId(signalId) {
         this._signalId = signalId;
+    }
+
+    /**
+     * @param {Time} time
+     */
+    set time(time) {
+        this._time = time;
     }
 
     /**

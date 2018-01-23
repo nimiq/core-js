@@ -3,12 +3,13 @@ class Miner extends Observable {
      * @param {IBlockchain} blockchain
      * @param {Mempool} mempool
      * @param {Address} minerAddress
-     * @param {Uint8Array} extraData
+     * @param {Time} time
+     * @param {Uint8Array} [extraData=new Uint8Array(0)]
      *
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, minerAddress, extraData = new Uint8Array(0)) {
+    constructor(blockchain, mempool, minerAddress, time, extraData = new Uint8Array(0)) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
@@ -16,6 +17,8 @@ class Miner extends Observable {
         this._mempool = mempool;
         /** @type {Address} */
         this._address = minerAddress;
+        /** @type {Time} */
+        this._time = time;
         /** @type {Uint8Array} */
         this._extraData = extraData;
 
@@ -269,7 +272,7 @@ class Miner extends Observable {
      * @private
      */
     _getNextTimestamp() {
-        const now = Math.floor(Time.now() / 1000);
+        const now = Math.floor(this._time.now() / 1000);
         return Math.max(now, this._blockchain.head.timestamp + 1);
     }
 

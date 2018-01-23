@@ -1,9 +1,12 @@
 class NanoChain extends BaseChain {
     /**
+     * @param {Time} time
      * @returns {Promise.<NanoChain>}
      */
-    constructor() {
+    constructor(time) {
         super(ChainDataStore.createVolatile());
+
+        this._time = time;
 
         this._proof = new ChainProof(new BlockChain([Block.GENESIS.toLight()]), new HeaderChain([]));
 
@@ -63,7 +66,7 @@ class NanoChain extends BaseChain {
             const knownBlock = await this._store.getBlock(hash);
             if (knownBlock) {
                 proof.prefix.blocks[i] = knownBlock.toLight();
-            } else if (!(await block.verify())) {
+            } else if (!(await block.verify(this._time))) {
                 Log.w(NanoChain, 'Rejecting proof - prefix contains invalid block');
                 return false;
             }

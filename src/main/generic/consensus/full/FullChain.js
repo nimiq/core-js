@@ -5,32 +5,36 @@ class FullChain extends BaseChain {
     /**
      * @param {JungleDB} jdb
      * @param {Accounts} accounts
+     * @param {Time} time
      * @returns {Promise.<FullChain>}
      */
-    static getPersistent(jdb, accounts) {
+    static getPersistent(jdb, accounts, time) {
         const store = ChainDataStore.getPersistent(jdb);
-        const chain = new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts, time);
         return chain._init();
     }
 
     /**
      * @param {Accounts} accounts
+     * @param {Time} time
      * @returns {Promise.<FullChain>}
      */
-    static createVolatile(accounts) {
+    static createVolatile(accounts, time) {
         const store = ChainDataStore.createVolatile();
-        const chain = new FullChain(store, accounts);
+        const chain = new FullChain(store, accounts, time);
         return chain._init();
     }
 
     /**
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
+     * @param {Time} time
      * @returns {FullChain}
      */
-    constructor(store, accounts) {
+    constructor(store, accounts, time) {
         super(store);
         this._accounts = accounts;
+        this._time = time;
 
         /** @type {HashMap.<Hash,Accounts>} */
         this._snapshots = new HashMap();
@@ -112,7 +116,7 @@ class FullChain extends BaseChain {
         }
 
         // Check all intrinsic block invariants.
-        if (!(await block.verify())) {
+        if (!(await block.verify(this._time))) {
             return FullChain.ERR_INVALID;
         }
 

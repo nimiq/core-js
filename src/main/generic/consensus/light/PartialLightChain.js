@@ -3,14 +3,17 @@ class PartialLightChain extends LightChain {
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
      * @param {ChainProof} proof
+     * @param {Time} time
      * @returns {PartialLightChain}
      */
-    constructor(store, accounts, proof) {
+    constructor(store, accounts, proof, time) {
         const tx = store.transaction(false);
         super(tx, accounts);
 
         /** @type {ChainProof} */
         this._proof = proof;
+        /** @type {Time} */
+        this._time = time;
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
@@ -64,7 +67,7 @@ class PartialLightChain extends LightChain {
             const knownBlock = await this._store.getBlock(hash);
             if (knownBlock) {
                 proof.prefix.blocks[i] = knownBlock.toLight();
-            } else if (!(await block.verify())) {
+            } else if (!(await block.verify(this._time))) {
                 Log.w(PartialLightChain, 'Rejecting proof - prefix contains invalid block');
                 return false;
             }
@@ -275,7 +278,7 @@ class PartialLightChain extends LightChain {
         }
 
         // Check all intrinsic block invariants.
-        if (!(await block.verify())) {
+        if (!(await block.verify(this._time))) {
             return FullChain.ERR_INVALID;
         }
 
@@ -349,7 +352,7 @@ class PartialLightChain extends LightChain {
         }
 
         // Check all intrinsic block invariants.
-        if (!(await block.verify())) {
+        if (!(await block.verify(this._time))) {
             return FullChain.ERR_INVALID;
         }
 
