@@ -16,7 +16,7 @@ before_install:
 # set up awscli packages
 - pip install --user awscli
 - mkdir -p ~/shared
-- aws s3 sync s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID ~/shared --region eu-central-1
+- if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then aws s3 sync s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID ~/shared --region eu-central-1; fi
 
 install: true
 
@@ -31,7 +31,7 @@ jobs:
         - cp -r dist ~/shared
         - tar czf node_modules.tar.gz node_modules
         - cp node_modules.tar.gz ~/shared
-        - aws s3 sync ~/shared s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID --region eu-central-1
+        - if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then aws s3 sync ~/shared s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID --region eu-central-1; fi
     - stage: build nimiq
       env: TO_TEST=ESLint
       script:

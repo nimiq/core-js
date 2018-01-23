@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
-cp -r ~/shared/* .
-tar xzf node_modules.tar.gz
+if [ -z "$AWS_ACCESS_KEY_ID" ]
+then
+    npm install -g gulp
+    yarn
+    node_modules/.bin/gulp build
+else
+    cp -r ~/shared/* .
+    tar xzf node_modules.tar.gz
+fi
 if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] || [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]]; then export DISPLAY=:99.0; fi
 if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] || [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]]; then sh -e /etc/init.d/xvfb start; fi
 if [[ "$TO_TEST" == Karma/SauceLabs/Chrome_Old ]]; then export KARMA_BROWSERS="SL_Chrome_61,SL_Chrome_60,SL_Chrome_59,SL_Chrome_58" TO_TEST=Karma; fi
