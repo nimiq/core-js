@@ -119,7 +119,7 @@ describe('Blockchain', () => {
             const receiverAddr = testBlockchain.users[1].address;
 
             // Now try to push a block with a transaction with insufficient funds.
-            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, Policy.coinsToSatoshis(1000), 1, 0, senderPrivKey)];
+            const transactions = [await TestBlockchain.createTransaction(senderPubKey, receiverAddr, Policy.coinsToSatoshis(1000000), 1, 0, senderPrivKey)];
             const block = await testBlockchain.createBlock({transactions: transactions});
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
