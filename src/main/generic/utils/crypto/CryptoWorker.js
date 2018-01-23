@@ -6,31 +6,25 @@ class CryptoWorker {
      * @param {Uint8Array} input
      * @returns {Promise.<Uint8Array>}
      */
-    async computeLightHash(input) {}
-
-    /**
-     * @param {Uint8Array} input
-     * @param {Uint8Array} hash
-     */
-    async verifyLightHash(input, hash) {}
+    async computeBlake2b(input) {}
 
     /**
      * @param {Uint8Array} input
      * @returns {Promise.<Uint8Array>}
      */
-    async computeHardHash(input) {}
+    async computeArgon2d(input) {}
 
     /**
      * @param {Array.<Uint8Array>} inputs
      * @returns {Promise.<Array.<Uint8Array>>}
      */
-    async computeHardHashBatch(inputs) {}
+    async computeArgon2dBatch(inputs) {}
 
     /**
      * @param {Uint8Array} input
-     * @param {Uint8Array} hash
+     * @returns {Promise.<Uint8Array>}
      */
-    async verifyHardHash(input, hash) {}
+    async computeSha256(input) {}
 
     /**
      * @param {Uint8Array} key
@@ -120,7 +114,9 @@ class CryptoWorker {
      */
     async signatureVerify(publicKey, message, signature) {}
 }
-CryptoWorker.HASH_SIZE = 32;
+CryptoWorker.ARGON2_HASH_SIZE = 32;
+CryptoWorker.BLAKE2_HASH_SIZE = 32;
+CryptoWorker.SHA256_HASH_SIZE = 32;
 CryptoWorker.PUBLIC_KEY_SIZE = 32;
 CryptoWorker.PRIVATE_KEY_SIZE = 32;
 CryptoWorker.MULTISIG_RANDOMNESS_SIZE = 32;

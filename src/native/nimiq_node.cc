@@ -29,7 +29,7 @@ class MinerWorker : public AsyncWorker {
         ~MinerWorker() {}
 
         void Execute() {
-            result_nonce = nimiq_hard_hash_target(out, in, inlen, compact, min_nonce, max_nonce, m_cost);
+            result_nonce = nimiq_argon2_target(out, in, inlen, compact, min_nonce, max_nonce, m_cost);
         }
 
         void HandleOKCallback() {
@@ -49,7 +49,7 @@ class MinerWorker : public AsyncWorker {
         uint32_t result_nonce;
 };
 
-NAN_METHOD(nimiq_hard_hash_target_async) {
+NAN_METHOD(nimiq_argon2_target_async) {
     Callback* callback = new Callback(info[0].As<Function>());
 
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
@@ -65,8 +65,8 @@ NAN_METHOD(nimiq_hard_hash_target_async) {
 }
 
 NAN_MODULE_INIT(Init) {
-  Set(target, New<String>("nimiq_hard_hash_target_async").ToLocalChecked(),
-    GetFunction(New<FunctionTemplate>(nimiq_hard_hash_target_async)).ToLocalChecked());
+  Set(target, New<String>("nimiq_argon2_target_async").ToLocalChecked(),
+    GetFunction(New<FunctionTemplate>(nimiq_argon2_target_async)).ToLocalChecked());
 }
 
 NODE_MODULE(nimiq_node, Init)

@@ -273,35 +273,41 @@ class Crypto {
 
 
     // Light hash implementation using blake2b via WebAssembly WebWorker
-    static async hashLight(arr) {
+    static async blake2b(arr) {
         const worker = await Crypto._cryptoWorkerSync();
-        return worker.computeLightHash(arr);
+        return worker.computeBlake2b(arr);
+    }
+
+    static get blake2bSize() {
+        return 32;
     }
 
     /**
      * @param arr
      * @return {Uint8Array}
      */
-    static hashLightSync(arr) {
+    static blake2bSync(arr) {
         const worker = Crypto._cryptoWorkerResolvedSync;
         if (!worker) throw new Error('Synchronous crypto worker not yet prepared');
-        return worker.computeLightHash(arr);
+        return worker.computeBlake2b(arr);
     }
 
-    // Light hash implementation using SHA-256 with WebCrypto API
-    // static async hashLight(arr) {
-    //     return new Uint8Array(await Crypto.lib.digest('SHA-256', arr));
-    // }
-
-    // Hard hash implementation using Argon2 via WebAssembly WebWorker
-    static async hashHard(arr) {
+    static async argon2d(arr) {
         const worker = await Crypto._cryptoWorkerAsync();
-        return worker.computeHardHash(arr);
+        return worker.computeArgon2d(arr);
     }
 
-    static async hashHardBatch(arrarr) {
-        const worker = await Crypto._cryptoWorkerAsync();
-        return worker.computeHardHashBatch(arrarr);
+    static get argon2dSize() {
+        return 32;
+    }
+
+    static async sha256(arr) {
+        const worker = await Crypto._cryptoWorkerSync();
+        return worker.computeSha256(arr);
+    }
+
+    static get sha256Size() {
+        return 32;
     }
 
     /**
@@ -332,7 +338,7 @@ class Crypto {
         }
         const promises = [];
         for (const part of partitions) {
-            promises.push(worker.computeHardHashBatch(part));
+            promises.push(worker.computeArgon2dBatch(part));
         }
         const pows = (await Promise.all(promises)).reduce((a, b) => [...a, ...b], []);
         for(let i = 0; i < headers.length; ++i) {
@@ -340,24 +346,10 @@ class Crypto {
         }
     }
 
-    // Hard hash implementation using double light hash
-    //static async hashHard(arr) {
-    //    return Crypto.hashLight(await Crypto.hashLight(arr));
-    //}
-
-    // Hard hash implementation using light hash
-    // static async hashHard(arr) {
-    //     if (Crypto.lib._nimiq_callDigestDelayedWhenMining) {
-    //         return await new Promise((resolve, error) => {
-    //             window.setTimeout(() => {
-    //                 Crypto.hashLight(arr).then(resolve);
-    //             });
-    //         });
-    //     } else {
-    //         return Crypto.hashLight(arr);
-    //     }
-    // }
-
+    /**
+     * @deprecated
+     * @return {number}
+     */
     static get hashSize() {
         return 32;
     }

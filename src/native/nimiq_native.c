@@ -74,11 +74,18 @@ int8_t uint256_compare(uint256 left, uint256 right) {
     return 0;
 }
 
-int nimiq_light_hash(void *out, const void *in, const size_t inlen) {
+int nimiq_blake2(void *out, const void *in, const size_t inlen) {
     return blake2b(out, 32, in, inlen, NULL, 0);
 }
 
-int nimiq_hard_hash(void *out, const void *in, const size_t inlen, const uint32_t m_cost) {
+void nimiq_sha256(void *out, const void *in, const size_t inlen) {
+    SHA256_CTX ctx;
+    sha256_init(&ctx);
+    sha256_update(&ctx, in, inlen);
+    sha256_final(&ctx, out);
+}
+
+int nimiq_argon2(void *out, const void *in, const size_t inlen, const uint32_t m_cost) {
     return argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32);
 }
 
@@ -93,12 +100,12 @@ int nimiq_kdf(void *out, const void *in, const size_t inlen, const void* seed, c
     return ARGON2_OK;
 }
 
-uint32_t nimiq_hard_hash_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost) {
+uint32_t nimiq_argon2_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost) {
     uint32_t* noncer = (uint32_t*)(((uint8_t*)in)+inlen-4);
     uint256 target = uint256_new(), hash = uint256_new();
     uint256_set_compact(target, compact);
     for(noncer[0] = htonl(min_nonce); ntohl(noncer[0]) < max_nonce; noncer[0] = htonl(ntohl(noncer[0])+1)) {
-        nimiq_hard_hash(out, in, inlen, m_cost);
+        nimiq_argon2(out, in, inlen, m_cost);
         uint256_set_bytes(hash, out);
         if (uint256_compare(target, hash) > 0) {
             break;
@@ -109,9 +116,9 @@ uint32_t nimiq_hard_hash_target(void *out, void *in, const size_t inlen, const u
     return ntohl(noncer[0]);
 }
 
-int nimiq_hard_verify(const void *hash, const void *in, const size_t inlen, const uint32_t m_cost) {
+int nimiq_argon2_verify(const void *hash, const void *in, const size_t inlen, const uint32_t m_cost) {
     void* out = malloc(32);
-    nimiq_hard_hash(out, in, inlen, m_cost);
+    nimiq_argon2(out, in, inlen, m_cost);
     int res = memcmp(hash, out, 32);
     free(out);
     return res;
