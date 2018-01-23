@@ -80,7 +80,7 @@ class Policy {
      * @return {number}
      */
     static _blockRewardAt(currentSupply, blockHeight) {
-        if (blockHeight < 0) return 0;
+        if (blockHeight <= 0) return 0;
         const remaining = Policy.TOTAL_SUPPLY - currentSupply;
         if (blockHeight >= Policy.EMISSION_TAIL_START && remaining >= Policy.EMISSION_TAIL_REWARD) {
             return Policy.EMISSION_TAIL_REWARD;
@@ -164,7 +164,7 @@ Policy.EMISSION_SPEED = Math.pow(2, 22);
  * @type {number}
  * @constant
  */
-Policy.EMISSION_TAIL_START = 48696986;
+Policy.EMISSION_TAIL_START = 48692960;
 
 /**
  * Constant tail emission in satoshis until total supply is reached.
