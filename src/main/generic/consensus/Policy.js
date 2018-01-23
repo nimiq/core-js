@@ -23,23 +23,16 @@ class Policy {
      * @return {number}
      */
     static supplyAfter(blockHeight) {
-        // FIXME: Change for main net.
-        if (blockHeight < Policy.EMISSION_CURVE_START) {
-            return Policy.INITIAL_SUPPLY + (blockHeight + 1) * Policy.coinsToSatoshis(5);
-        }
-        // Luna net supply after start of emission curve.
-        const initialSupply = Policy.INITIAL_SUPPLY + Policy.EMISSION_CURVE_START * Policy.coinsToSatoshis(5);
-
         // Calculate last entry in supply cache that is below blockHeight.
         let startHeight = Math.floor(blockHeight / Policy._supplyCacheInterval) * Policy._supplyCacheInterval;
-        startHeight = Math.max(/* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START, Math.min(startHeight, Policy._supplyCacheMax));
+        startHeight = Math.max(0, Math.min(startHeight, Policy._supplyCacheMax));
 
         // Calculate respective block for the last entry of the cache and the targeted height.
         const startI = startHeight / Policy._supplyCacheInterval;
         const endI = Math.floor(blockHeight / Policy._supplyCacheInterval);
 
         // The starting supply is the initial supply at the beginning and a cached value afterwards.
-        let supply = startHeight === /* FIXME change to 0 for main net */ Policy.EMISSION_CURVE_START ? initialSupply : Policy._supplyCache.get(startHeight);
+        let supply = startHeight === 0 ? Policy.INITIAL_SUPPLY : Policy._supplyCache.get(startHeight);
         // Use and update cache.
         for (let i = startI; i < endI; ++i) {
             startHeight = i * Policy._supplyCacheInterval;
@@ -76,12 +69,8 @@ class Policy {
      * @return {number}
      */
     static blockRewardAt(blockHeight) {
-        // FIXME: Change for main net.
-        if (blockHeight >= Policy.EMISSION_CURVE_START) {
-            const currentSupply = Policy.supplyAfter(blockHeight - 1);
-            return Policy._blockRewardAt(currentSupply, blockHeight);
-        }
-        return Policy.coinsToSatoshis(5);
+        const currentSupply = Policy.supplyAfter(blockHeight - 1);
+        return Policy._blockRewardAt(currentSupply, blockHeight);
     }
 
     /**
@@ -91,6 +80,7 @@ class Policy {
      * @return {number}
      */
     static _blockRewardAt(currentSupply, blockHeight) {
+        if (blockHeight < 0) return 0;
         const remaining = Policy.TOTAL_SUPPLY - currentSupply;
         if (blockHeight >= Policy.EMISSION_TAIL_START && remaining >= Policy.EMISSION_TAIL_REWARD) {
             return Policy.EMISSION_TAIL_REWARD;
@@ -145,14 +135,14 @@ Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR = 2;
  * @type {number}
  * @constant
  */
-Policy.SATOSHIS_PER_COIN = 1e8;
+Policy.SATOSHIS_PER_COIN = 1e5;
 
 /**
  * Targeted total supply in satoshis.
  * @type {number}
  * @constant
  */
-Policy.TOTAL_SUPPLY = Policy.coinsToSatoshis(21e6);
+Policy.TOTAL_SUPPLY = 21e14;
 
 /**
  * Initial supply before genesis block in satoshis.
@@ -160,7 +150,7 @@ Policy.TOTAL_SUPPLY = Policy.coinsToSatoshis(21e6);
  * @type {number}
  * @constant
  */
-Policy.INITIAL_SUPPLY = Policy.coinsToSatoshis(0);
+Policy.INITIAL_SUPPLY = 0;
 
 /**
  * Emission speed.
@@ -182,15 +172,6 @@ Policy.EMISSION_TAIL_START = 48696986;
  * @constant
  */
 Policy.EMISSION_TAIL_REWARD = 4000;
-
-/**
- * First block using new block reward scheme.
- * FIXME: Remove for main net.
- * @type {number}
- * @constant
- */
-Policy.EMISSION_CURVE_START = 35000;
-
 
 /* Security parameters */
 
