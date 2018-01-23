@@ -263,15 +263,11 @@ class BlockHeader {
 }
 // FIXME: Clean up for mainnet.
 BlockHeader.Version = {
-    LUNA_V1: 1,
-    LUNA_V2: 2,
-    LUNA_V3: 3
+    V1: 1
 };
-BlockHeader.CURRENT_VERSION = BlockHeader.Version.LUNA_V3;
+BlockHeader.CURRENT_VERSION = BlockHeader.Version.V1;
 BlockHeader.SUPPORTED_VERSIONS = [
-    BlockHeader.Version.LUNA_V1,
-    BlockHeader.Version.LUNA_V2,
-    BlockHeader.Version.LUNA_V3
+    BlockHeader.Version.V1
 ];
 BlockHeader.SERIALIZED_SIZE = 146;
 Class.register(BlockHeader);
