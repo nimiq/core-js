@@ -16,8 +16,7 @@ describe('Interlink', () => {
             let prevHash = Block.GENESIS.HASH;
             for (let i = 0; i < 5; i++) {
                 const block = await bc.createBlock({
-                    superblockLevel: 0,
-                    version: BlockHeader.Version.LUNA_V3
+                    superblockLevel: 0
                 });
 
                 expect(block.interlink.length).toBe(1);
@@ -38,8 +37,7 @@ describe('Interlink', () => {
             let prevHash = Block.GENESIS.HASH;
             for (let i = 0; i < 5; i++) {
                 const block = await bc.createBlock({
-                    superblockLevel: i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    superblockLevel: i + 1
                 });
 
                 expect(block.interlink.length).toBe(i + 1);
@@ -66,8 +64,7 @@ describe('Interlink', () => {
             const hashes = [Block.GENESIS.HASH];
             for (let i = 0; i < levels.length; i++) {
                 const block = await bc.createBlock({
-                    superblockLevel: levels[i],
-                    version: BlockHeader.Version.LUNA_V3
+                    superblockLevel: levels[i]
                 });
 
                 hashes.push(await block.hash());
@@ -92,8 +89,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 0,
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -118,8 +114,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 1,
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -145,8 +140,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -172,8 +166,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -199,8 +192,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -226,8 +218,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: Block.GENESIS.timestamp + i + 1,
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
                 hashes.push(await block.hash());
@@ -254,8 +245,7 @@ describe('Interlink', () => {
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 0,
-                    timestamp: ts + timestamps[i],
-                    version: BlockHeader.Version.LUNA_V3
+                    timestamp: ts + timestamps[i]
                 });
 
                 ts = block.timestamp;

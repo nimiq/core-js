@@ -129,6 +129,11 @@ class Block {
      * @private
      */
     async _verifyInterlink() {
+        // Skip check for genesis block due to the cyclic dependency (since the interlink hash contains the genesis block hash).
+        if (this.height === 1 && this._header.interlinkHash.equals(new Hash(null))) {
+            return true;
+        }
+
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
         const interlinkHash = await this._interlink.hash();
         if (!this._header.interlinkHash.equals(interlinkHash)) {
@@ -205,8 +210,7 @@ class Block {
             const targetHeight = BlockUtils.getTargetHeight(this.target);
             let blockFound = false;
 
-            // Legacy behavior: Don't verify position of the 0'th interlink element for block versions 1, 2
-            let depth = this.version > BlockHeader.Version.LUNA_V2 ? 0 : 1;
+            let depth = 0;
             for (; depth < this._interlink.length; depth++) {
                 if (prevHash.equals(this._interlink.hashes[depth])) {
                     blockFound = true;
@@ -322,22 +326,9 @@ class Block {
         const hashes = [];
         const hash = await this.hash();
 
-        // FIXME Remove version switch for mainnet.
-        if (nextVersion > BlockHeader.Version.LUNA_V2) {
-            // Push the current blockHash depth + 1 times onto the next interlink. If depth < 0, it won't be pushed.
-            for (let i = 0; i <= depth; i++) {
-                hashes.push(hash);
-            }
-        } else {
-            // Legacy behavior: Always push current blockHash once (prevHash),
-            // then push the current blockHash depth times onto the next interlink.
+        // Push the current blockHash depth + 1 times onto the next interlink. If depth < 0, it won't be pushed.
+        for (let i = 0; i <= depth; i++) {
             hashes.push(hash);
-            for (let i = 0; i < depth; i++) {
-                hashes.push(hash);
-            }
-
-            // Don't include the level 0 hash from the previous interlink.
-            depth = Math.max(depth, 0);
         }
 
         // Push the remaining hashes from the current interlink. If the target depth increases (i.e. the difficulty
@@ -536,16 +527,16 @@ Class.register(Block);
 Block.GENESIS = new Block(
     new BlockHeader(
         new Hash(null),
-        Hash.fromBase64('SLyolftBRvPKjALu4RAvhPYQ4MSo5uDmQvUNOtmTtaA='),
+        new Hash(null),
         Hash.fromBase64('z2Qp5kzePlvq/ABN31K1eUAQ5Dn8rpeZQU0PTQn9pH0='),
         Hash.fromBase64('bw/AldaQXE6gXd11kESQs+xxzaBo7FcON3+IU8+gaWE='),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        30338,
+        251948,
         BlockHeader.Version.V1),
     new BlockInterlink([], new Hash(null)),
     new BlockBody(Address.fromBase64('9KzhefhVmhN0pOSnzcIYnlVOTs0='), [])
 );
 // Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('bjDKyWefN5X5R6agTXeOWg/TWweJXNyZVBzQ1jqw5gY=');
+Block.GENESIS.HASH = Hash.fromBase64('DyMyU/jTMc9C5/07+RM1MVWuU9YK+cTBUtkJDJN9gtA=');

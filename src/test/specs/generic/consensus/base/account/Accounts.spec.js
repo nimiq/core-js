@@ -144,7 +144,7 @@ describe('Accounts', () => {
                 const balance1 = (await accounts.get(user1.address, Account.Type.BASIC)).balance;
                 const balance3 = (await accounts.get(user3.address, Account.Type.BASIC)).balance;
                 const balance4 = (await accounts.get(user4.address, Account.Type.BASIC)).balance;
-                expect(balance1).toBe(Policy.blockRewardAt(block.height));
+                expect(balance1).toBe(Policy.blockRewardAt(block.height - 1));
                 expect(balance3).toBe(0);
                 expect(balance4).toBe(0);
                 done();
@@ -187,7 +187,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
 
             // sender balance not enough (amount + fee > block reward)
-            const transaction = await TestBlockchain.createTransaction(user1.publicKey, user2.address, Policy.coinsToSatoshis(5), 1, 0, user1.privateKey);
+            const transaction = await TestBlockchain.createTransaction(user1.publicKey, user2.address, Policy.blockRewardAt(1) + 5, 1, 0, user1.privateKey);
             const block = await testBlockchain.createBlock({
                 transactions: [transaction],
                 minerAddr: user3.address
