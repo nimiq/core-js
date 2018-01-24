@@ -1,15 +1,8 @@
 class NetworkConfig {
     /**
      * @constructor
-     * @param {Time} [time]
-     * @param {SignalId} [signalId]
-     * @param {Services} [services]
      */
-    constructor(time, signalId, services) {
-        this._time = time;
-        this._signalId = signalId;
-        this._services = services;
-
+    constructor() {
         /** @type {number} */
         this._protocolMask = Protocol.WS | Protocol.RTC;
     }
