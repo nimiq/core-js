@@ -46,7 +46,7 @@ describe('Miner', () => {
             done();
             return;
         }
-        spyOn(Time, 'now').and.returnValue(29000);
+        spyOn(Time, 'now').and.returnValue(26000);
         (async() => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
