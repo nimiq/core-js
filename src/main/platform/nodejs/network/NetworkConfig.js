@@ -5,16 +5,12 @@ class NetworkConfig {
     * @param {number} port
     * @param {string} key
     * @param {string} cert
-    * @param {Time} [time]
-    * @param {Services} [services]
     */
-    constructor(host, port, key, cert, time, services) {
+    constructor(host, port, key, cert) {
         this._host = host;
         this._port = port;
         this._key = key;
         this._cert = cert;
-        this._time = time;
-        this._services = services;
 
         /** @type {number} */
         this._protocolMask = Protocol.WS;
