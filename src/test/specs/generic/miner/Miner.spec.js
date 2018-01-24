@@ -21,7 +21,7 @@ describe('Miner', () => {
 
             block = await miner.getNextBlock();
             expect(block).toBeTruthy();
-            const cache = testBlockchain.transactionsCache.duplicate();
+            const cache = testBlockchain.transactionsCache.clone();
             await testBlockchain.accounts.commitBlock(block, cache);
             cache.pushBlock(block);
 

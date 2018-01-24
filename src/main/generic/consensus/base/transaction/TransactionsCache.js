@@ -75,8 +75,8 @@ class TransactionsCache {
     /**
      * @returns {TransactionsCache}
      */
-    duplicate() {
-        return new TransactionsCache(this._transactions, this._blockOrder.slice());
+    clone() {
+        return new TransactionsCache(/** @type {Iterable.<Transaction>} */ this._transactions, this._blockOrder.slice());
     }
 }
 Class.register(TransactionsCache);
