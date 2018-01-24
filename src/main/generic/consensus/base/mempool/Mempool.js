@@ -147,21 +147,33 @@ class Mempool extends Observable {
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
         for (const sender of this._transactionSetByAddress.keys()) {
-            /** @type {MempoolTransactionSet} */ const set = this._transactionSetByAddress.get(sender);
+            /** @type {MempoolTransactionSet} */
+            const set = this._transactionSetByAddress.get(sender);
 
             try {
                 const senderAccount = await this._accounts.get(set.sender, set.senderType);
-                while (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
-                    const transaction = set.pop();
-                    if (transaction) {
-                        this._transactionsByHash.remove(await transaction.hash());
+
+                // If a transaction in the set is not valid anymore,
+                // we try to construct a new set based on the heuristic of including
+                // high fee/byte transactions first.
+                if (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
+                    const transactions = [];
+                    for (const tx of set.transactions) {
+                        transactions.push(tx);
+
+                        if (!(await senderAccount.verifyOutgoingTransactionSet(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
+                            transactions.pop();
+                            this._transactionsByHash.remove(await tx.hash());
+                        }
                     }
-                    if (set.length === 0) {
+                    if (transactions.length === 0) {
                         this._transactionSetByAddress.remove(sender);
-                        break;
+                    } else {
+                        this._transactionSetByAddress.put(sender, new MempoolTransactionSet(transactions));
                     }
                 }
             } catch (e) {
+                // In case of an error, remove all transactions of this set.
                 let transaction;
                 while ((transaction = set.pop())) {
                     this._transactionsByHash.remove(await transaction.hash());
