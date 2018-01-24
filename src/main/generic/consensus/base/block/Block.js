@@ -5,17 +5,9 @@ class Block {
      */
     static copy(o) {
         if (!o) return o;
-
-        // FIXME Remove version switch for mainnet.
-        let interlink = null;
-        switch (o._header.version) {
-            default:
-                interlink = BlockInterlink.copy(o._interlink);
-        }
-
         return new Block(
             BlockHeader.copy(o._header),
-            interlink,
+            BlockInterlink.copy(o._interlink),
             BlockBody.copy(o._body)
         );
     }
@@ -44,13 +36,7 @@ class Block {
      */
     static unserialize(buf) {
         const header = BlockHeader.unserialize(buf);
-
-        // FIXME: Remove version switch for mainnet.
-        let interlink = null;
-        switch (header.version) {
-            default:
-                interlink = BlockInterlink.unserialize(buf, header.prevHash);
-        }
+        const interlink = BlockInterlink.unserialize(buf, header.prevHash);
 
         let body = undefined;
         const bodyPresent = buf.readUint8();
@@ -339,13 +325,8 @@ class Block {
         for (let j = depth + offset + 1; j < this.interlink.length; j++) {
             hashes.push(this.interlink.hashes[j]);
         }
-
-        // Return the correct interlink version.
-        // FIXME Remove version switch for mainnet.
-        switch (nextVersion) {
-            default:
-                return new BlockInterlink(hashes, hash);
-        }
+        
+        return new BlockInterlink(hashes, hash);
     }
 
     /**
