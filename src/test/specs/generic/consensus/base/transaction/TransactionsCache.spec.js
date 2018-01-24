@@ -9,7 +9,7 @@ describe('TransactionsCache', () => {
 
             // Duplicate
             expect(testBlockchain.transactionsCache.missingBlocks).toBe(Policy.TRANSACTION_VALIDITY_WINDOW - 5);
-            const cache = testBlockchain.transactionsCache.duplicate();
+            const cache = testBlockchain.transactionsCache.clone();
             expect(cache.missingBlocks).toBe(Policy.TRANSACTION_VALIDITY_WINDOW - 5);
             expect(cache.transactions.length).toBe(testBlockchain.transactionsCache.transactions.length);
 

@@ -277,7 +277,7 @@ class FullChain extends BaseChain {
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
-        const transactionsTx = this._transactionsCache.duplicate();
+        const transactionsTx = this._transactionsCache.clone();
         let headHash = this._headHash;
         let head = this._mainChain.head;
         while (!headHash.equals(curHash)) {
@@ -436,7 +436,7 @@ class FullChain extends BaseChain {
             let snapshot = null;
             if (!this._snapshots.contains(blockHash)) {
                 const tx = await this._accounts.transaction();
-                const transactionsTx = this._transactionsCache.duplicate();
+                const transactionsTx = this._transactionsCache.clone();
                 let currentHash = this._headHash;
                 // Save all snapshots up to blockHash (and stop when its predecessor would be next).
                 while (!block.prevHash.equals(currentHash)) {
