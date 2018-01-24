@@ -64,7 +64,7 @@ class HashedTimeLockedContract extends Account {
         super.serialize(buf);
         this._sender.serialize(buf);
         this._recipient.serialize(buf);
-        buf.writeUint8(this._hashRoot._algo);
+        buf.writeUint8(this._hashRoot.algorithm);
         this._hashRoot.serialize(buf);
         buf.writeUint8(this._hashCount);
         buf.writeUint32(this._timeout);
@@ -243,7 +243,7 @@ class HashedTimeLockedContract extends Account {
                     throw new Error('Proof Error!');
                 }
 
-                if (this._timeout > blockHeight) {
+                if (this._timeout >= blockHeight) {
                     throw new Error('Proof Error!');
                 }
 
