@@ -92,7 +92,15 @@ class BlockBody {
      */
     async verify() {
         /** @type {Transaction} */
+        let previousTx = null;
         for (const tx of this._transactions) {
+            // Ensure transactions are ordered.
+            if (previousTx && previousTx.compareBlockOrder(tx) > 0) {
+                Log.w(BlockBody, 'Invalid block - transactions not ordered.');
+                return false;
+            }
+            previousTx = tx;
+
             // Check that all transactions are valid.
             if (!(await tx.verify())) { // eslint-disable-line no-await-in-loop
                 Log.w(BlockBody, 'Invalid block - invalid transaction');

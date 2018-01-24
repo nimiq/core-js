@@ -113,7 +113,9 @@ class Mempool extends Observable {
      * @param {number} maxSize
      */
     getTransactionsForBlock(maxSize) {
-        return this.getTransactions(maxSize);
+        const transactions = this.getTransactions(maxSize);
+        transactions.sort((a, b) => a.compareBlockOrder(b));
+        return transactions;
     }
 
     /**

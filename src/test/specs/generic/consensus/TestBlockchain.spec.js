@@ -118,7 +118,7 @@ class TestBlockchain extends FullChain {
             transactions.push(transaction);
         }
 
-        return transactions;
+        return transactions.sort((a, b) => a.compareBlockOrder(b));
     }
 
     /**
