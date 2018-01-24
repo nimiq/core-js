@@ -90,9 +90,9 @@ class Hash extends Primitive {
      */
     static async compute(arr, algo) {
         switch (algo) {
-            case Hash.Algorithm.BLAKE2B: return this.blake2b(arr);
-            case Hash.Algorithm.ARGON2D: return this.argon2d(arr);
-            case Hash.Algorithm.SHA256: return this.sha256(arr);
+            case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
+            case Hash.Algorithm.ARGON2D: return Hash.argon2d(arr);
+            case Hash.Algorithm.SHA256: return Hash.sha256(arr);
             default: throw new Error('Invalid hash algorithm');
         }
     }
@@ -130,11 +130,14 @@ class Hash extends Primitive {
         return Hash.SIZE.get(this._algo);
     }
 
-    /**
-     * @return {Uint8Array}
-     */
+    /** @type {Uint8Array} */
     get array() {
         return this._obj;
+    }
+
+    /** @type {Hash.Algorithm} */
+    get algorithm() {
+        return this._algo;
     }
 
     /**
