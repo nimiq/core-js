@@ -164,6 +164,22 @@ class Hash extends Primitive {
         return new Hash(BufferUtils.fromHex(hex));
     }
 
+    static fromString(str) {
+        try {
+            return Hash.fromHex(str);
+        } catch (e) {
+            // Ignore
+        }
+
+        try {
+            return Hash.fromBase64(str);
+        } catch (e) {
+            // Ignore
+        }
+
+        throw new Error('Invalid hash format');
+    }
+
     /**
      * @param {Hash} o
      * @returns {boolean}

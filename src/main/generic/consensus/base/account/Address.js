@@ -61,6 +61,28 @@ class Address extends Primitive {
             && super.equals(o);
     }
 
+    static fromString(str) {
+        try {
+            return Address.fromUserFriendlyAddress(str);
+        } catch (e) {
+            // Ignore
+        }
+
+        try {
+            return Address.fromHex(str);
+        } catch (e) {
+            // Ignore
+        }
+
+        try {
+            return Address.fromBase64(str);
+        } catch (e) {
+            // Ignore
+        }
+
+        throw new Error('Invalid address format');
+    }
+
     /**
      * @param {string} base64
      * @return {Address}

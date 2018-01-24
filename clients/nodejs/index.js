@@ -1,4 +1,5 @@
 const Nimiq = require('../../dist/node.js');
+const JsonRpcServer = require('./JsonRpcServer.js');
 const START = Date.now();
 /**
  * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean}}
@@ -34,6 +35,7 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '         [:THROTTLE_WAIT]]]  throttled using THROTTLE_AFTER and _WAIT arguments.\n' +
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
+        '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
         '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
@@ -54,6 +56,7 @@ const cert = argv.cert;
 const minerOptions = argv.miner;
 const statisticsOptions = argv.statistics;
 const passive = argv.passive;
+const rpc = argv.rpc;
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
 const isNano = argv.type === 'nano';
@@ -81,7 +84,7 @@ if (walletSeed && walletAddress) {
     process.exit(1);
 }
 
-console.log(`Nimiq NodeJS Client starting (${host && port ? `host=${host}, port=${port}` : 'dumb'}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive})`);
+console.log(`Nimiq NodeJS Client starting (${host && port ? `host=${host}, port=${port}` : 'dumb'}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive}, rpc=${!!rpc})`);
 
 const TAG = 'Node';
 
@@ -142,8 +145,6 @@ const $ = {};
 
     $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
 
-    Nimiq.Log.i(TAG, () => `Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
-
     $.blockchain.on('head-changed', (head) => {
         if ($.consensus.established || head.height % 100 === 0) {
             Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
@@ -176,6 +177,7 @@ const $ = {};
 
     $.consensus.on('established', () => {
         Nimiq.Log.i(TAG, `Blockchain ${type}-consensus established in ${(Date.now() - START) / 1000}s.`);
+        Nimiq.Log.i(TAG, `Current state: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
     });
 
     $.miner.on('block-mined', (block) => {
@@ -199,6 +201,11 @@ const $ = {};
                 hashrates.length = 0;
             }
         });
+    }
+
+    if (rpc) {
+        $.rpcServer = new JsonRpcServer(rpc ? 8648 : undefined);
+        $.rpcServer.init($.network, $.mempool, $.blockchain, $.miner, $.accounts, $.walletStore);
     }
 })().catch(e => {
     console.error(e);
