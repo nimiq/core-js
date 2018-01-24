@@ -174,4 +174,87 @@ describe('Mempool', () => {
             });
         })().then(done, done.fail);
     });
+
+    it('can evict mined transactions', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallets = [];
+            for (let i = 0; i < 6; i++) {
+                const wallet = await Wallet.createVolatile();
+                await accounts._tree.put(wallet.address, new BasicAccount(5));
+                wallets.push(wallet);
+            }
+
+            // Push a bunch of transactions into the mempool
+            const referenceTransactions = [];
+            for (let i = 1; i < 6; i++) {
+                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+                referenceTransactions.push(transaction);
+            }
+
+            // Pretend to have one of the transactions mined
+            blockchain.transactionsCache.transactions.add(referenceTransactions[2]);
+            await accounts._tree.put(wallets[0].address, new BasicAccount(4));
+
+            // Fire a 'head-change' event to evict all transactions
+            blockchain.fire('head-changed');
+
+            // Check that all the transactions were evicted
+            mempool.on('transactions-ready', async function() {
+                const transactions = await mempool.getTransactions();
+                expect(transactions.length).toEqual(4);
+                for (let i = 0; i < transactions.length; ++i) {
+                    if (i < 2) {
+                        expect(transactions[i].equals(referenceTransactions[i])).toBeTruthy();
+                    } else {
+                        expect(transactions[i].equals(referenceTransactions[i + 1])).toBeTruthy();
+                    }
+                }
+            });
+        })().then(done, done.fail);
+    });
+
+    it('can evict non-mined transactions to restore validity', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts);
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallets = [];
+            for (let i = 0; i < 6; i++) {
+                const wallet = await Wallet.createVolatile();
+                await accounts._tree.put(wallet.address, new BasicAccount(5));
+                wallets.push(wallet);
+            }
+
+            // Push a bunch of transactions into the mempool
+            const referenceTransactions = [];
+            for (let i = 1; i < 6; i++) {
+                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+                referenceTransactions.push(transaction);
+            }
+
+            const largeTransaction = await wallets[0].createTransaction(wallets[2].address, 4, 0, 1); // eslint-disable-line no-await-in-loop
+
+            // Pretend to have one of the transactions mined
+            blockchain.transactionsCache.transactions.add(largeTransaction);
+            await accounts._tree.put(wallets[0].address, new BasicAccount(1));
+
+            // Fire a 'head-change' event to evict all transactions
+            blockchain.fire('head-changed');
+
+            // Check that all the transactions were evicted
+            mempool.on('transactions-ready', async function() {
+                const transactions = await mempool.getTransactions();
+                expect(transactions.length).toEqual(1);
+            });
+        })().then(done, done.fail);
+    });
 });

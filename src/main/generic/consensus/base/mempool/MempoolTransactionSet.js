@@ -1,7 +1,14 @@
 class MempoolTransactionSet {
-    constructor() {
+    /**
+     * @param {Array.<Transaction>} [transactions]
+     */
+    constructor(transactions) {
         /** @type {SortedList.<Transaction>} */
         this._transactions = new SortedList();
+
+        if (transactions) {
+            transactions.forEach(tx => this._transactions.add(tx));
+        }
     }
 
     /**
