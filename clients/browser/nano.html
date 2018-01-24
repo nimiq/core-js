@@ -43,10 +43,6 @@
                 <strong>Balance</strong>
                 <span id="wltBalance"></span>
             </div>
-            <div class="info-block wallet-nonce">
-                <strong>Nonce</strong>
-                <span id="wltNonce"></span>
-            </div>
             <hr/>
         </div>
 
@@ -251,8 +247,6 @@
             this._wltAddress = document.querySelector('#wltAddress');
             /** @type {HTMLElement} */
             this._wltBalance = document.querySelector('#wltBalance');
-            /** @type {HTMLElement} */
-            this._wltNonce = document.querySelector('#wltNonce');
 
             this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
 
@@ -309,12 +303,14 @@
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-                if (!account || account.balance < value + fee) {
+                var waitingTransactions = $.mempool.getWaitingTransactions($.wallet.publicKey.toAddressSync());
+
+                if (!account || account.balance < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
                     elValue.className = 'error';
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, account.nonce).then(function(tx) {
+                $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
                     $.consensus.relayTransaction(tx);
                 });
             });
@@ -360,7 +356,6 @@
                 $.consensus.getAccount($.wallet.address, $.blockchain.headHash).then(function(account) {
                     account = account || Nimiq.BasicAccount.INITIAL;
                     this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance).toFixed(8);
-                    this._wltNonce.innerText = account.nonce.toString();
                 }.bind(this));
             }
         }
@@ -379,7 +374,7 @@
                     var el = document.createElement('div');
                     var value = Nimiq.Policy.satoshisToCoins(tx.value).toFixed(4);
                     var fee = Nimiq.Policy.satoshisToCoins(tx.fee).toFixed(4);
-                    el.innerHTML = `from=<hash>${tx.sender.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipient.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}`;
+                    el.innerHTML = `from=<hash>${tx.sender.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipient.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, validityStartHeight=${tx.validityStartHeight}`;
                     this._mplTransactions.appendChild(el);
                 }
             }.bind(this));

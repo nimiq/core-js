@@ -44,12 +44,12 @@ class MultiSigWallet {
      * @param {Address} recipientAddr Address of the transaction receiver
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
-     * @param {number} nonce The nonce representing the current balance of the sender.
+     * @param {number} validityStartHeight The validityStartHeight for the transaction.
      * @returns {Transaction} A prepared Transaction object.
      */
-    async createTransaction(recipientAddr, value, fee, nonce) {
+    async createTransaction(recipientAddr, value, fee, validityStartHeight) {
         const transaction = new ExtendedTransaction(this._address, Account.Type.BASIC,
-            recipientAddr, Account.Type.BASIC, value, fee, nonce, new Uint8Array(0));
+            recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, new Uint8Array(0));
         return transaction;
     }
 
