@@ -171,7 +171,23 @@ class Transaction {
         if (this.fee < o.fee) return 1;
         if (this.value > o.value) return -1;
         if (this.value < o.value) return 1;
-        return 0;
+        return this.compareBlockOrder(o);
+    }
+
+    /**
+     * @param {Transaction} o
+     * @return {number}
+     */
+    compareBlockOrder(o) {
+        const recCompare = this._recipient.compare(o._recipient);
+        if (recCompare !== 0) return recCompare;
+        if (this._validityStartHeight < o._validityStartHeight) return -1;
+        if (this._validityStartHeight > o._validityStartHeight) return 1;
+        if (this._fee > o._fee) return -1;
+        if (this._fee < o._fee) return 1;
+        if (this._value > o._value) return -1;
+        if (this._value < o._value) return 1;
+        return this._sender.compare(o._sender);
     }
 
     /**

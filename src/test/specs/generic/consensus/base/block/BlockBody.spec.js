@@ -58,4 +58,15 @@ describe('BlockBody', () => {
         }).toThrow('Malformed transactions');
         /* eslint-enable no-unused-vars */
     });
+
+    it('transactions must be well ordered', (done) => {
+        const sortedTransactions = [transaction1, transaction2, transaction3, transaction4];
+        sortedTransactions.sort((a, b) => a.compareBlockOrder(b));
+        const blockBody1 = new BlockBody(minerAddress, [
+            sortedTransactions[0], sortedTransactions[2], sortedTransactions[1], sortedTransactions[3]]);
+
+        (async () => {
+            expect(await blockBody1.verify()).toBe(false);
+        })().then(done, done.fail);
+    });
 });

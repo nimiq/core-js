@@ -155,8 +155,8 @@ describe('Mempool', () => {
             }
 
             // Check that the transactions were successfully pushed
-            let transactions = await mempool.getTransactions().sort((a, b) => a.compare(b));
-            referenceTransactions.sort((a, b) => a.compare(b));
+            let transactions = await mempool.getTransactions().sort((a, b) => a.compareBlockOrder(b));
+            referenceTransactions.sort((a, b) => a.compareBlockOrder(b));
             expect(transactions).toEqual(referenceTransactions);
 
             // Change the balances so that pending transactions will get evicted
