@@ -31,7 +31,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block with a timestamp that's more than
             // Block.TIMESTAMP_DRIFT_MAX seconds into the future
-            const spyObj = spyOn(Date, 'now').and.returnValue(0);
+            const spyObj = spyOn(testBlockchain.time, 'now').and.returnValue(0);
             const timestamp = Block.TIMESTAMP_DRIFT_MAX + 1;
             const block = await testBlockchain.createBlock({timestamp: timestamp});
             const status = await testBlockchain.pushBlock(block);

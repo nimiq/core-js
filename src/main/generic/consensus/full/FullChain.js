@@ -47,12 +47,10 @@ class FullChain extends BaseChain {
         /** @type {ChainProof} */
         this._proof = null;
 
+        /** @type {TransactionsCache} */
         this._transactionsCache = new TransactionsCache();
 
-        /**
-         * @type {Synchronizer}
-         * @private
-         */
+        /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
     }
 

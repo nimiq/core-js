@@ -2,23 +2,23 @@ class Miner extends Observable {
     /**
      * @param {IBlockchain} blockchain
      * @param {Mempool} mempool
-     * @param {Address} minerAddress
      * @param {Time} time
+     * @param {Address} minerAddress
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
      *
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, minerAddress, time, extraData = new Uint8Array(0)) {
+    constructor(blockchain, mempool, time, minerAddress, extraData = new Uint8Array(0)) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
-        /** @type {Address} */
-        this._address = minerAddress;
         /** @type {Time} */
         this._time = time;
+        /** @type {Address} */
+        this._address = minerAddress;
         /** @type {Uint8Array} */
         this._extraData = extraData;
 

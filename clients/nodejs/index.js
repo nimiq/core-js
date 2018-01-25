@@ -59,7 +59,7 @@ const $ = {};
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
                   + ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`);
 
-    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.wallet.address, $.network.time);
+    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
 
     Nimiq.Log.i(TAG, () => `Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
