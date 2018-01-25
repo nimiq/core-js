@@ -4,6 +4,7 @@ class Consensus {
      * @return {Promise.<FullConsensus>}
      */
     static async full(netconfig = new NetworkConfig()) {
+        await netconfig;
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {Time} */
@@ -33,6 +34,7 @@ class Consensus {
      * @return {Promise.<LightConsensus>}
      */
     static async light(netconfig = new NetworkConfig()) {
+        await netconfig;
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {Time} */
@@ -62,6 +64,7 @@ class Consensus {
      * @return {Promise.<NanoConsensus>}
      */
     static async nano(netconfig = new NetworkConfig()) {
+        await netconfig;
         await Crypto.prepareSyncCryptoWorker();
 
         /** @type {Time} */

@@ -2,9 +2,10 @@ if (PlatformUtils.isBrowser()) {
     describe('Consensus', () => {
         let netconfig;
 
-        beforeAll(() => {
-            netconfig = new NetworkConfig();
-            netconfig.signalId = new SignalId(new Uint8Array(SignalId.SERIALIZED_SIZE));
+        beforeAll((done) => {
+            (async () => {
+                netconfig = await new NetworkConfig();
+            })().then(done, done.fail);
         });
 
         it('can instantiate a nano consensus', (done) => {

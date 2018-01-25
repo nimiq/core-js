@@ -5,10 +5,42 @@ class NetworkConfig {
     constructor() {
         /** @type {number} */
         this._protocolMask = Protocol.WS | Protocol.RTC;
+        return this._init();
     }
 
     /**
-     * @return {Services}
+     * @return {NetworkConfig}
+     */
+    async _init() {
+        const db = await new WebRtcStore();
+        let keys = await db.get('keys');
+        if (!keys) {
+            keys = await KeyPair.generate();
+            await db.put('keys', keys);
+        }
+        await db.close();
+        this._keyPair = keys;
+
+        // Configure our signalId (part of the peer address).
+        this._signalId = await keys.publicKey.toSignalId();
+
+        // If browser does not support WebRTC, use an empty config.
+        if (!PlatformUtils.supportsWebRTC()) {
+            this._webRtcConfig = {};
+        } else {
+            this._webRtcConfig = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun.nimiq-network.com:19302' }
+                ]
+            };
+        }
+
+        return this;
+    }
+
+    /**
+     * @type {Services}
      */
     get services() {
         return this._services;
@@ -16,14 +48,35 @@ class NetworkConfig {
 
     /**
      * Used for filtering peer addresses by protocols.
-     * @return {number}
+     * @type {number}
      */
     get protocolMask() {
         return this._protocolMask;
     }
 
     /**
-     * @return {DumbPeerAddress|RtcPeerAddress}
+     * @type {SignalId}
+     */
+    get signalId() {
+        return this._signalId;
+    }
+
+    /**
+     * @type {KeyPair}
+     */
+    get keyPair() {
+        return this._keyPair;
+    }
+
+    /**
+     * @type {{iceServers: Array.<{urls: string}>}|{}}
+     */
+    get webRtcConfig() {
+        return this._webRtcConfig;
+    }
+
+    /**
+     * @type {DumbPeerAddress|RtcPeerAddress}
      */
     get peerAddress() {
         if (!this._time || !this._services) {
@@ -46,21 +99,14 @@ class NetworkConfig {
     }
 
     /**
-     * @param {Services} services
+     * @type {Services} services
      */
     set services(services) {
         this._services = services;
     }
 
     /**
-     * @param {SignalId} signalId
-     */
-    set signalId(signalId) {
-        this._signalId = signalId;
-    }
-
-    /**
-     * @param {Time} time
+     * @type {Time} time
      */
     set time(time) {
         this._time = time;

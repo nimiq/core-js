@@ -22,7 +22,6 @@ const sources = {
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/NetworkConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcStore.js',
-            './src/main/platform/browser/network/webrtc/WebRtcConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',

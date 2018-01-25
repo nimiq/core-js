@@ -5,23 +5,19 @@ class WebRtcConnector extends Observable {
      */
     constructor(netconfig) {
         super();
-        return this._init(netconfig);
+        this._netconfig = netconfig;
+
+        /** @type {HashMap.<SignalId,PeerConnector>} */
+        this._connectors = new HashMap();
+        /** @type {Timers} */
+        this._timers = new Timers();
     }
 
     /**
-     * @param {NetworkConfig} netconfig
-     * @return {WebRtcConnector}
+     * @param {PeerAddress} peerAddress
+     * @param {PeerChannel} signalChannel
+     * @return {boolean}
      */
-    async _init(netconfig) {
-        /** @type {HashMap.<SignalId,PeerConnector>} */
-        this._connectors = new HashMap();
-        /** @type {WebRtcConfig} */
-        this._webRtcConfig = await new WebRtcConfig(netconfig);
-        this._timers = new Timers();
-
-        return this;
-    }
-
     connect(peerAddress, signalChannel) {
         if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
 
@@ -31,7 +27,7 @@ class WebRtcConnector extends Observable {
             return false;
         }
 
-        const connector = new OutboundPeerConnector(this._webRtcConfig, peerAddress, signalChannel);
+        const connector = new OutboundPeerConnector(this._netconfig, peerAddress, signalChannel);
         connector.on('connection', conn => this._onConnection(conn, signalId));
         this._connectors.put(signalId, connector);
 
@@ -99,7 +95,7 @@ class WebRtcConnector extends Observable {
             }
 
             // Accept the offer.
-            const connector = new InboundPeerConnector(this._webRtcConfig, channel, msg.senderId, payload);
+            const connector = new InboundPeerConnector(this._netconfig, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors.put(msg.senderId, connector);
 
@@ -138,16 +134,17 @@ WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
-    constructor(webRtcConfig, signalChannel, signalId, peerAddress) {
+    constructor(netconfig, signalChannel, signalId, peerAddress) {
         super();
-        this._webRtcConfig = webRtcConfig;
+        /** @type {NetworkConfig} */
+        this._netconfig = netconfig;
         this._signalChannel = signalChannel;
         this._signalId = signalId;
         this._peerAddress = peerAddress; // null for inbound connections
 
         this._nonce = NumberUtils.randomUint32();
 
-        this._rtcConnection = new RTCPeerConnection(this._webRtcConfig.config);
+        this._rtcConnection = new RTCPeerConnection(this._netconfig.webRtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
 
         this._lastIceCandidate = null;
@@ -200,8 +197,8 @@ class PeerConnector extends Observable {
 
     async _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
-        const keyPair = this._webRtcConfig.keyPair;
-        const signalId = await keyPair.publicKey.toSignalId();
+        const keyPair = this._netconfig.keyPair;
+        const signalId = this._netconfig.signalId;
         this._signalChannel.signal(
             signalId,
             this._signalId,
@@ -263,8 +260,8 @@ class PeerConnector extends Observable {
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
-    constructor(webRtcConfig, peerAddress, signalChannel) {
-        super(webRtcConfig, signalChannel, peerAddress.signalId, peerAddress);
+    constructor(netconfig, peerAddress, signalChannel) {
+        super(netconfig, signalChannel, peerAddress.signalId, peerAddress);
         this._peerAddress = peerAddress;
 
         // Create offer.
@@ -279,8 +276,8 @@ class OutboundPeerConnector extends PeerConnector {
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
-    constructor(webRtcConfig, signalChannel, signalId, offer) {
-        super(webRtcConfig, signalChannel, signalId, null);
+    constructor(netconfig, signalChannel, signalId, offer) {
+        super(netconfig, signalChannel, signalId, null);
         this._rtcConnection.ondatachannel = event => {
             event.channel.onopen = e => this._onDataChannel(e);
         };

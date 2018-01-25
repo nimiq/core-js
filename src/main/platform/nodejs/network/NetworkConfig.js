@@ -17,7 +17,7 @@ class NetworkConfig {
     }
 
     /**
-     * @return {Services}
+     * @type {Services}
      */
     get services() {
         return this._services;
@@ -25,14 +25,14 @@ class NetworkConfig {
 
     /**
      * Used for filtering peer addresses by protocols.
-     * @return {number}
+     * @type {number}
      */
     get protocolMask() {
         return this._protocolMask;
     }
 
     /**
-     * @return {{key: string, cert: string}}
+     * @type {{key: string, cert: string}}
      */
     get sslConfig() {
         return {
@@ -42,7 +42,7 @@ class NetworkConfig {
     }
 
     /**
-     * @return {WsPeerAddress}
+     * @type {WsPeerAddress}
      */
     get peerAddress() {
         if (!this._time || !this._services) {
@@ -55,14 +55,14 @@ class NetworkConfig {
     }
 
     /**
-     * @param {Services} services
+     * @type {Services} services
      */
     set services(services) {
         this._services = services;
     }
 
     /**
-     * @param {Time} time
+     * @type {Time} time
      */
     set time(time) {
         this._time = time;
