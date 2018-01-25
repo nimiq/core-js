@@ -42,8 +42,8 @@ cd clients/nodejs/
 node index.js --host <hostname> --port <port> --key <ssl-key> --cert <ssl-certificate> [--wallet-seed <seed>] [--wallet-address <address>] [--miner [<threads>]] [--statistics[=<interval>]]
 ```
 
-| Argument        | Description           |
-| ------------- |:-------------:|
+| Argument | Description |
+| --- | --- |
 | **_host_** | Hostname of the Node.js client. |
 | **_port_** | Port used to communicate with the peers. |  
 | **_key_** | SSL private key for your domain. |
@@ -104,8 +104,8 @@ Executing `npm run build` or `yarn build` concatenates all sources into `dist/{w
 
 A Dockerfile is provided which allows for creating your own backbone image using the following arguments.
 
-| Argument  | Description |
-| ------------- | ------------- |
+| Argument | Description |
+| --- | --- |
 | BRANCH  | Defaults to *master* but can be any available git branch  |
 | PORT  | Defaults to TCP port *8080* |
 | DOMAIN  | Domain to be used for hosting the backbone node  |
