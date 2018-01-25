@@ -30,6 +30,11 @@ class TestBlockchain extends FullChain {
         return this._users;
     }
 
+    /** @type {Time} */
+    get time() {
+        return this._time;
+    }
+
     /**
      * @param {PublicKey} senderPubKey
      * @param {Address} recipientAddr

@@ -2,10 +2,10 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {NanoChain} blockchain
      * @param {NanoMempool} mempool
-     * @param {Peer} peer
      * @param {Time} time
+     * @param {Peer} peer
      */
-    constructor(blockchain, mempool, peer, time) {
+    constructor(blockchain, mempool, time, peer) {
         super(peer);
         /** @type {NanoChain} */
         this._blockchain = blockchain;

@@ -45,7 +45,7 @@ class NanoConsensus extends Observable {
      */
     _onPeerJoined(peer) {
         // Create a ConsensusAgent for each peer that connects.
-        const agent = new NanoConsensusAgent(this._blockchain, this._mempool, peer, this._network.time);
+        const agent = new NanoConsensusAgent(this._blockchain, this._mempool, this._network.time, peer);
         this._agents.put(peer.id, agent);
 
         // Register agent event listeners.

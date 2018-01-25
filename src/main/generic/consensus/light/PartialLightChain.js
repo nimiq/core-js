@@ -2,18 +2,16 @@ class PartialLightChain extends LightChain {
     /**
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
-     * @param {ChainProof} proof
      * @param {Time} time
+     * @param {ChainProof} proof
      * @returns {PartialLightChain}
      */
-    constructor(store, accounts, proof, time) {
+    constructor(store, accounts, time, proof) {
         const tx = store.transaction(false);
-        super(tx, accounts);
+        super(tx, accounts, time);
 
         /** @type {ChainProof} */
         this._proof = proof;
-        /** @type {Time} */
-        this._time = time;
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
