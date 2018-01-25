@@ -7,13 +7,12 @@ describe('HashedTimeLockedContract', () => {
     });
 
     it('can serialize and unserialize itself', () => {
-        const account = new HashedTimeLockedContract(1000, 1, sender, recipient, Hash.NULL, 42, 1000, 800);
+        const account = new HashedTimeLockedContract(1000, sender, recipient, Hash.NULL, 42, 1000, 800);
         const account2 = /** @type {HashedTimeLockedContract} */ Account.unserialize(account.serialize());
 
         expect(account2 instanceof HashedTimeLockedContract).toBeTruthy();
         expect(account2.type).toEqual(account.type);
         expect(account2.balance).toEqual(account.balance);
-        expect(account2.nonce).toEqual(account.nonce);
         expect(account2.recipient.equals(account.recipient)).toBeTruthy();
         expect(account2.sender.equals(account.sender)).toBeTruthy();
         expect(account2.hashRoot.equals(account.hashRoot)).toBeTruthy();
@@ -24,7 +23,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('will deny incoming transaction after creation', () => {
         const account = new HashedTimeLockedContract();
-        const transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 0, new Uint8Array(0));
+        const transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 1, new Uint8Array(0));
         expect(() => account.withIncomingTransaction(transaction, 1)).toThrowError('Data Error!');
     });
 
@@ -34,7 +33,7 @@ describe('HashedTimeLockedContract', () => {
             const addr = await keyPair.publicKey.toAddress();
 
             // No proof
-            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
+            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
             // regular: invalid pre-image
@@ -54,7 +53,7 @@ describe('HashedTimeLockedContract', () => {
             proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
             proof.writeUint8(Hash.Algorithm.BLAKE2B);
             proof.writeUint8(1);
-            (await Hash.light(Hash.NULL.serialize())).serialize(proof);
+            (await Hash.blake2b(Hash.NULL.serialize())).serialize(proof);
             Hash.NULL.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
@@ -127,7 +126,7 @@ describe('HashedTimeLockedContract', () => {
         (async () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
-            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
 
             // regular
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
@@ -161,11 +160,12 @@ describe('HashedTimeLockedContract', () => {
 
     it('can redeem funds regularly before timeout', (done) => {
         (async () => {
+            const cache = new TransactionsCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
-            const account = new HashedTimeLockedContract(1000, 0, sender, addr, hashRoot, 1, 1000, 1000);
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
@@ -176,20 +176,20 @@ describe('HashedTimeLockedContract', () => {
             signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
-            expect(() => account.withOutgoingTransaction(transaction, 2000)).toThrowError();
-            const account2 = account.withOutgoingTransaction(transaction, 100);
+            expect(() => account.withOutgoingTransaction(transaction, 2000, cache)).toThrowError();
+            const account2 = account.withOutgoingTransaction(transaction, 100, cache);
             expect(account2.balance).toBe(900);
-            expect(account2.nonce).toBe(1);
         })().then(done, done.fail);
     });
 
     it('can use sha256', (done) => {
         (async () => {
+            const cache = new TransactionsCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.sha256(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
-            const account = new HashedTimeLockedContract(1000, 0, sender, addr, hashRoot, 1, 1000, 1000);
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
@@ -200,20 +200,20 @@ describe('HashedTimeLockedContract', () => {
             signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
-            expect(() => account.withOutgoingTransaction(transaction, 2000)).toThrowError();
-            const account2 = account.withOutgoingTransaction(transaction, 100);
+            expect(() => account.withOutgoingTransaction(transaction, 2000, cache)).toThrowError();
+            const account2 = account.withOutgoingTransaction(transaction, 100, cache);
             expect(account2.balance).toBe(900);
-            expect(account2.nonce).toBe(1);
         })().then(done, done.fail);
     });
 
     it('blocks regular redemption of too many funds', (done) => {
         (async () => {
+            const cache = new TransactionsCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 600, 0, 0, new Uint8Array(0));
-            const account = new HashedTimeLockedContract(1000, 0, sender, addr, hashRoot, 2, 1000, 1000);
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 600, 0, 100, new Uint8Array(0));
+            const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 2, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
@@ -224,37 +224,45 @@ describe('HashedTimeLockedContract', () => {
             signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
-            expect(() => account.withOutgoingTransaction(transaction, 100)).toThrowError();
+            expect(() => account.withOutgoingTransaction(transaction, 100, cache)).toThrowError();
         })().then(done, done.fail);
     });
 
     it('correctly allows to resolve after timeout', (done) => {
         (async () => {
+            const cache = new TransactionsCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
-            const account = new HashedTimeLockedContract(1000, 0, addr, recipient, hashRoot, 1, 1000, 1000);
-            const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
-            const proof = new SerialBuffer(1 + signatureProof.serializedSize);
+            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 500, new Uint8Array(0));
+            const account = new HashedTimeLockedContract(1000, addr, recipient, hashRoot, 1, 1000, 1000);
+            let signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+            let proof = new SerialBuffer(1 + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
             signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
-            expect(() => account.withOutgoingTransaction(transaction, 500)).toThrowError();
-            const account2 = account.withOutgoingTransaction(transaction, 2000);
+            expect(() => account.withOutgoingTransaction(transaction, 500, cache)).toThrowError();
+
+            transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 2000, new Uint8Array(0));
+            signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+            proof = new SerialBuffer(1 + signatureProof.serializedSize);
+            proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
+            signatureProof.serialize(proof);
+            transaction.proof = proof;
+            const account2 = account.withOutgoingTransaction(transaction, 2000, cache);
             expect(account2.balance).toBe(900);
-            expect(account2.nonce).toBe(1);
         })().then(done, done.fail);
     });
 
     it('correctly allows to resolve before timeout', (done) => {
         (async () => {
+            const cache = new TransactionsCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
-            const account = new HashedTimeLockedContract(1000, 0, addr, addr, hashRoot, 1, 1000, 1000);
+            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const account = new HashedTimeLockedContract(1000, addr, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(1 + Address.SERIALIZED_SIZE + 2 * signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.EARLY_RESOLVE);
@@ -263,16 +271,15 @@ describe('HashedTimeLockedContract', () => {
             signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
-            const account2 = account.withOutgoingTransaction(transaction, 100);
+            const account2 = account.withOutgoingTransaction(transaction, 100, cache);
             expect(account2.balance).toBe(900);
-            expect(account2.nonce).toBe(1);
-            const account3 = new HashedTimeLockedContract(1000, 0, addr, recipient, hashRoot, 1, 1000, 1000);
-            expect(() => account3.withOutgoingTransaction(transaction, 100)).toThrowError();
+            const account3 = new HashedTimeLockedContract(1000, addr, recipient, hashRoot, 1, 1000, 1000);
+            expect(() => account3.withOutgoingTransaction(transaction, 100, cache)).toThrowError();
         })().then(done, done.fail);
     });
 
     it('can create contract from transaction', () => {
-        const preContract = new HashedTimeLockedContract(100, 0, sender, recipient, Hash.NULL, 2, 1000);
+        const preContract = new HashedTimeLockedContract(100, sender, recipient, Hash.NULL, 2, 1000);
         const data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6);
         recipient.serialize(data);
         data.writeUint8(Hash.Algorithm.BLAKE2B);
@@ -284,7 +291,6 @@ describe('HashedTimeLockedContract', () => {
         const contract = /** @type {HashedTimeLockedContract} */ HashedTimeLockedContract.INITIAL.withIncomingTransaction(transaction, 1);
 
         expect(contract.balance).toBe(100);
-        expect(contract.nonce).toBe(0);
         expect(contract.sender.equals(sender)).toBeTruthy();
         expect(contract.recipient.equals(recipient)).toBeTruthy();
         expect(contract.hashRoot.equals(Hash.NULL)).toBeTruthy();

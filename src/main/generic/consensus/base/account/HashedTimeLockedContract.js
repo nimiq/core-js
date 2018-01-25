@@ -2,7 +2,6 @@ class HashedTimeLockedContract extends Account {
 
     /**
      * @param {number} balance
-     * @param {number} nonce
      * @param {Address} sender
      * @param {Address} recipient
      * @param {Hash} hashRoot
@@ -10,8 +9,8 @@ class HashedTimeLockedContract extends Account {
      * @param {number} timeout
      * @param {number} totalAmount
      */
-    constructor(balance = 0, nonce = 0, sender = Address.NULL, recipient = Address.NULL, hashRoot = Hash.NULL, hashCount = 1, timeout = 0, totalAmount = balance) {
-        super(Account.Type.HTLC, balance, nonce);
+    constructor(balance = 0, sender = Address.NULL, recipient = Address.NULL, hashRoot = Hash.NULL, hashCount = 1, timeout = 0, totalAmount = balance) {
+        super(Account.Type.HTLC, balance);
         if (!(sender instanceof Address)) throw new Error('Malformed address');
         if (!(recipient instanceof Address)) throw new Error('Malformed address');
         if (!(hashRoot instanceof Hash)) throw new Error('Malformed address');
@@ -42,15 +41,14 @@ class HashedTimeLockedContract extends Account {
         if (type !== Account.Type.HTLC) throw new Error('Invalid account type');
 
         const balance = buf.readUint64();
-        const nonce = buf.readUint32();
         const sender = Address.unserialize(buf);
         const recipient = Address.unserialize(buf);
-        const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
-        const hashRoot = Hash.unserialize(buf, hashAlgo);
+        const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
+        const hashRoot = Hash.unserialize(buf, hashAlgorithm);
         const hashCount = buf.readUint8();
         const timeout = buf.readUint32();
         const totalAmount = buf.readUint64();
-        return new HashedTimeLockedContract(balance, nonce, sender, recipient, hashRoot, hashCount, timeout, totalAmount);
+        return new HashedTimeLockedContract(balance, sender, recipient, hashRoot, hashCount, timeout, totalAmount);
     }
 
 
@@ -79,7 +77,7 @@ class HashedTimeLockedContract extends Account {
         return super.serializedSize
             + this._sender.serializedSize
             + this._recipient.serializedSize
-            + /*hashAlgo*/ 1
+            + /*hashAlgorithm*/ 1
             + this._hashRoot.serializedSize
             + /*hashCount*/ 1
             + /*timeout*/ 4
@@ -117,7 +115,7 @@ class HashedTimeLockedContract extends Account {
     }
 
     toString() {
-        return `HashedTimeLockedContract{sender=${this._sender.toUserFriendlyAddress(false)}, recipient=${this._sender.toUserFriendlyAddress(false)} amount=${this._totalAmount}/${this._hashCount}, timeout=${this._timeout}, balance=${this._balance}, nonce=${this._nonce}}`;
+        return `HashedTimeLockedContract{sender=${this._sender.toUserFriendlyAddress(false)}, recipient=${this._sender.toUserFriendlyAddress(false)} amount=${this._totalAmount}/${this._hashCount}, timeout=${this._timeout}, balance=${this._balance}}`;
     }
 
     /**
@@ -131,12 +129,12 @@ class HashedTimeLockedContract extends Account {
         switch (type) {
             case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
                 // pre-image
-                const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
+                const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
                 const hashDepth = buf.readUint8();
-                const rootHash = Hash.unserialize(buf, hashAlgo);
-                let hashTmp = Hash.unserialize(buf, hashAlgo);
+                const rootHash = Hash.unserialize(buf, hashAlgorithm);
+                let hashTmp = Hash.unserialize(buf, hashAlgorithm);
                 for (let i = 0; i < hashDepth; ++i) {
-                    hashTmp = await Hash.compute(hashTmp.array, hashAlgo);
+                    hashTmp = await Hash.compute(hashTmp.array, hashAlgorithm);
                 }
                 if (!rootHash.equals(hashTmp)) {
                     return false;
@@ -174,12 +172,12 @@ class HashedTimeLockedContract extends Account {
 
         const buf = new SerialBuffer(transaction.data);
         const recipient = Address.unserialize(buf);
-        const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
-        const hashRoot = Hash.unserialize(buf, hashAlgo);
+        const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
+        const hashRoot = Hash.unserialize(buf, hashAlgorithm);
         const hashCount = buf.readUint8();
         const timeout = buf.readUint32();
 
-        const contract = new HashedTimeLockedContract(transaction.value, 0, transaction.sender, recipient, hashRoot, hashCount, timeout);
+        const contract = new HashedTimeLockedContract(transaction.value, transaction.sender, recipient, hashRoot, hashCount, timeout);
         const hash = await Hash.blake2b(contract.serialize());
         if (!transaction.recipient.equals(Address.fromHash(hash))) {
             return false;
@@ -190,20 +188,20 @@ class HashedTimeLockedContract extends Account {
 
     /**
      * @param {number} balance
-     * @param {number} [nonce]
      * @return {Account|*}
      */
-    withBalance(balance, nonce) {
-        return new HashedTimeLockedContract(balance, typeof nonce === 'undefined' ? this._nonce : nonce, this._sender, this._recipient, this._hashRoot, this._hashCount, this._timeout, this._totalAmount);
+    withBalance(balance) {
+        return new HashedTimeLockedContract(balance, this._sender, this._recipient, this._hashRoot, this._hashCount, this._timeout, this._totalAmount);
     }
 
     /**
      * @param {Transaction} transaction
      * @param {number} blockHeight
+     * @param {TransactionsCache} transactionsCache
      * @param {boolean} [revert]
      * @return {Account|*}
      */
-    withOutgoingTransaction(transaction, blockHeight, revert = false) {
+    withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         const buf = new SerialBuffer(transaction.proof);
         const type = buf.readUint8();
         let minCap = 0;
@@ -217,9 +215,9 @@ class HashedTimeLockedContract extends Account {
                     throw new Error('Proof Error!');
                 }
 
-                const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
+                const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
                 const hashDepth = buf.readUint8();
-                if (!Hash.unserialize(buf, hashAlgo).equals(this._hashRoot)) {
+                if (!Hash.unserialize(buf, hashAlgorithm).equals(this._hashRoot)) {
                     throw new Error('Proof Error!');
                 }
 
@@ -258,7 +256,7 @@ class HashedTimeLockedContract extends Account {
                 throw new Error('Balance Error!');
             }
         }
-        return super.withOutgoingTransaction(transaction, blockHeight, revert);
+        return super.withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert);
     }
 
 
@@ -272,12 +270,12 @@ class HashedTimeLockedContract extends Account {
         if (this === HashedTimeLockedContract.INITIAL) {
             const buf = new SerialBuffer(transaction.data);
             const recipient = Address.unserialize(buf);
-            const hashAlgo = /** @type {Hash.Algorithm} */ buf.readUint8();
-            const hashRoot = Hash.unserialize(buf, hashAlgo);
+            const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
+            const hashRoot = Hash.unserialize(buf, hashAlgorithm);
             const hashCount = buf.readUint8();
             const timeout = buf.readUint32();
 
-            return new HashedTimeLockedContract(transaction.value, 0, transaction.sender, recipient, hashRoot, hashCount, timeout);
+            return new HashedTimeLockedContract(transaction.value, transaction.sender, recipient, hashRoot, hashCount, timeout);
         } else if (revert && transaction.data.length > 0) {
             return HashedTimeLockedContract.INITIAL;
         } else {
