@@ -6,22 +6,24 @@ class FullChain extends BaseChain {
      * @param {JungleDB} jdb
      * @param {Accounts} accounts
      * @param {Time} time
+     * @param {TransactionsStore} transactionsStore
      * @returns {Promise.<FullChain>}
      */
-    static getPersistent(jdb, accounts, time) {
+    static getPersistent(jdb, accounts, time, transactionsStore) {
         const store = ChainDataStore.getPersistent(jdb);
-        const chain = new FullChain(store, accounts, time);
+        const chain = new FullChain(store, accounts, time, transactionsStore);
         return chain._init();
     }
 
     /**
      * @param {Accounts} accounts
      * @param {Time} time
+     * @param {TransactionsStore} transactionsStore
      * @returns {Promise.<FullChain>}
      */
-    static createVolatile(accounts, time) {
+    static createVolatile(accounts, time, transactionsStore) {
         const store = ChainDataStore.createVolatile();
-        const chain = new FullChain(store, accounts, time);
+        const chain = new FullChain(store, accounts, time, transactionsStore);
         return chain._init();
     }
 
@@ -29,9 +31,10 @@ class FullChain extends BaseChain {
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
      * @param {Time} time
+     * @param {TransactionsStore} [transactionsStore]
      * @returns {FullChain}
      */
-    constructor(store, accounts, time) {
+    constructor(store, accounts, time, transactionsStore) {
         super(store);
         this._accounts = accounts;
         this._time = time;
@@ -49,6 +52,9 @@ class FullChain extends BaseChain {
 
         /** @type {TransactionsCache} */
         this._transactionsCache = new TransactionsCache();
+
+        /** @type {TransactionsStore} */
+        this._transactionsStore = transactionsStore;
 
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
@@ -218,7 +224,14 @@ class FullChain extends BaseChain {
         const tx = await this._store.transaction();
         await tx.putChainData(blockHash, chainData);
         await tx.setHead(blockHash);
-        await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
+
+        if (this._transactionsStore) {
+            const transactionsStoreTx = this._transactionsStore.transaction();
+            await transactionsStoreTx.put(chainData.head);
+            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx, transactionsStoreTx.tx);
+        } else {
+            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
+        }
 
         // New block on main chain, so store a new snapshot.
         await this._saveSnapshot(blockHash);
@@ -280,16 +293,27 @@ class FullChain extends BaseChain {
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
         const transactionsTx = this._transactionsCache.clone();
+        // Also update transactions in index.
+        const transactionsStoreTx = this._transactionsStore ? this._transactionsStore.transaction() : null;
+
         let headHash = this._headHash;
         let head = this._mainChain.head;
         while (!headHash.equals(curHash)) {
             try {
-                // NThis only works if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
+                // This only works if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
                 await accountsTx.revertBlock(head, transactionsTx);
                 transactionsTx.revertBlock(head);
+
+                // Also update transactions in index.
+                if (this._transactionsStore) {
+                    await transactionsStoreTx.remove(head);
+                }
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
                 accountsTx.abort();
+                if (this._transactionsStore) {
+                    transactionsStoreTx.abort();
+                }
                 return false;
             }
 
@@ -309,11 +333,19 @@ class FullChain extends BaseChain {
             try {
                 await accountsTx.commitBlock(forkChain[i].head, transactionsTx);
                 transactionsTx.pushBlock(forkChain[i].head);
+
+                // Also update transactions in index.
+                if (this._transactionsStore) {
+                    await transactionsStoreTx.put(forkChain[i].head);
+                }
             } catch (e) {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
                 Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
                 accountsTx.abort();
+                if (this._transactionsStore) {
+                    transactionsStoreTx.abort();
+                }
                 return false;
             }
         }
@@ -340,7 +372,11 @@ class FullChain extends BaseChain {
 
         // Update head & commit transactions.
         await chainTx.setHead(blockHash);
-        await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
+        if (this._transactionsStore) {
+            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx, transactionsStoreTx.tx);
+        } else {
+            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
+        }
         this._transactionsCache = transactionsTx;
 
         // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
@@ -420,6 +456,59 @@ class FullChain extends BaseChain {
         }
         const proof = await MerkleProof.compute([block.minerAddr, block.body.extraData, ...block.transactions], matches);
         return new TransactionsProof(matches, proof);
+    }
+
+    /**
+     * @param {Hash} txid
+     * @returns {Promise.<boolean|TransactionsProof>}
+     */
+    async getTransactionsProofById(txid) {
+        const txStoreEntry = await this.getTransactionInfoById(txid);
+        if (!txStoreEntry) {
+            return false;
+        }
+
+        const block = await this.getBlock(txStoreEntry.blockHash);
+        if (!block || !block.isFull()) {
+            return false;
+        }
+
+        const transactions = [block.transactions[txStoreEntry.index]];
+        const proof = await MerkleProof.compute([block.minerAddr, block.body.extraData, ...block.transactions], transactions);
+        return new TransactionsProof(transactions, proof);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<Hash>>}
+     */
+    async getTransactionIdsByAddress(address) {
+        const transactionIds = [];
+
+        const transactionsBySender = await this._transactionsStore.getBySender(address);
+        for (const txStoreEntry of transactionsBySender) {
+            transactionIds.push(txStoreEntry.txid);
+        }
+
+        const transactionsByRecipient = await this._transactionsStore.getByRecipient(address);
+        for (const txStoreEntry of transactionsByRecipient) {
+            transactionIds.push(txStoreEntry.txid);
+        }
+
+        return transactionIds;
+    }
+
+    /**
+     * @param {Hash} txid
+     * @returns {Promise.<boolean|TransactionsStoreEntry>}
+     */
+    async getTransactionInfoById(txid) {
+        const txStoreEntry = await this._transactionsStore.get(txid);
+        if (!txStoreEntry) {
+            return false;
+        }
+
+        return txStoreEntry;
     }
 
     /**
