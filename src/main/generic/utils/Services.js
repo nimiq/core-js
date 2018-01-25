@@ -65,5 +65,4 @@ Services.NONE   = 0;
 Services.NANO   = 1;
 Services.LIGHT  = 2;
 Services.FULL   = 4;
-Services.INDEX  = 8;
 Class.register(Services);
