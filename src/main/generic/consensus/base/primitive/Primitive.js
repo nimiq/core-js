@@ -9,7 +9,7 @@ class Primitive {
      */
     constructor(arg, type, length) {
         if (type && !(arg instanceof type)) throw new Error('Primitive: Invalid type');
-        if (length && arg.length && arg.length !== length) throw new Error('Primitive: Invalid length');
+        if (length !== undefined && arg.length !== undefined && arg.length !== length) throw new Error('Primitive: Invalid length');
         this._obj = arg;
     }
 

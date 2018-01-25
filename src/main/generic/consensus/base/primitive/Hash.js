@@ -17,9 +17,9 @@ class Hash extends Primitive {
      */
     constructor(arg, algorithm = Hash.Algorithm.BLAKE2B) {
         if (arg === null) {
-            arg = new Uint8Array(Crypto.hashSize);
+            arg = new Uint8Array(Hash.getSize(algorithm));
         }
-        super(arg, Crypto.hashType, Crypto.hashSize);
+        super(arg, Crypto.hashType, Hash.getSize(algorithm));
         /** @type {Hash.Algorithm} */
         this._algorithm = algorithm;
     }
@@ -27,7 +27,7 @@ class Hash extends Primitive {
     /**
      * @deprecated
      * @param {Uint8Array} arr
-     * @return {Promise.<Hash>}
+     * @returns {Promise.<Hash>}
      */
     static light(arr) {
         return Hash.blake2b(arr);
@@ -35,7 +35,7 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @return {Promise.<Hash>}
+     * @returns {Promise.<Hash>}
      */
     static async blake2b(arr) {
         return new Hash(await Crypto.blake2b(arr), Hash.Algorithm.BLAKE2B);
@@ -44,7 +44,7 @@ class Hash extends Primitive {
     /**
      * @deprecated
      * @param {Uint8Array} arr
-     * @return {Hash}
+     * @returns {Hash}
      */
     static lightSync(arr) {
         return Hash.blake2bSync(arr);
@@ -52,7 +52,7 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @return {Hash}
+     * @returns {Hash}
      */
     static blake2bSync(arr) {
         return new Hash(Crypto.blake2bSync(arr), Hash.Algorithm.BLAKE2B);
@@ -61,7 +61,7 @@ class Hash extends Primitive {
     /**
      * @param {Uint8Array} arr
      * @deprecated
-     * @return {Promise.<Hash>}
+     * @returns {Promise.<Hash>}
      */
     static hard(arr) {
         return Hash.argon2d(arr);
@@ -69,7 +69,7 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @return {Promise.<Hash>}
+     * @returns {Promise.<Hash>}
      */
     static async argon2d(arr) {
         return new Hash(await Crypto.argon2d(arr), Hash.Algorithm.ARGON2D);
@@ -77,7 +77,7 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @return {Promise.<Hash>}
+     * @returns {Promise.<Hash>}
      */
     static async sha256(arr) {
         return new Hash(await Crypto.sha256(arr), Hash.Algorithm.SHA256);
@@ -85,11 +85,11 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @param {Hash.Algorithm} algo
-     * @return {Promise<Hash>}
+     * @param {Hash.Algorithm} algorithm
+     * @returns {Promise.<Hash>}
      */
-    static async compute(arr, algo) {
-        switch (algo) {
+    static compute(arr, algorithm) {
+        switch (algorithm) {
             case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
             case Hash.Algorithm.ARGON2D: return Hash.argon2d(arr);
             case Hash.Algorithm.SHA256: return Hash.sha256(arr);
@@ -99,16 +99,16 @@ class Hash extends Primitive {
 
     /**
      * @param {SerialBuffer} buf
-     * @param {Hash.Algorithm} [algo]
-     * @return {Hash}
+     * @param {Hash.Algorithm} [algorithm]
+     * @returns {Hash}
      */
-    static unserialize(buf, algo = Hash.Algorithm.BLAKE2B) {
-        return new Hash(buf.read(Hash.SIZE.get(algo)), algo);
+    static unserialize(buf, algorithm = Hash.Algorithm.BLAKE2B) {
+        return new Hash(buf.read(Hash.SIZE.get(algorithm)), algorithm);
     }
 
     /**
      * @param {SerialBuffer} [buf]
-     * @return {SerialBuffer}
+     * @returns {SerialBuffer}
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
@@ -119,7 +119,7 @@ class Hash extends Primitive {
     /**
      * @param {number} begin
      * @param {number} end
-     * @return {Uint8Array}
+     * @returns {Uint8Array}
      */
     subarray(begin, end) {
         return this._obj.subarray(begin, end);
@@ -142,7 +142,7 @@ class Hash extends Primitive {
 
     /**
      * @param {Primitive} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     equals(o) {
         return o instanceof Hash && o._algorithm === this._algorithm && super.equals(o);
@@ -150,7 +150,7 @@ class Hash extends Primitive {
 
     /**
      * @param {string} base64
-     * @return {Hash}
+     * @returns {Hash}
      */
     static fromBase64(base64) {
         return new Hash(BufferUtils.fromBase64(base64));
@@ -158,7 +158,7 @@ class Hash extends Primitive {
 
     /**
      * @param {string} hex
-     * @return {Hash}
+     * @returns {Hash}
      */
     static fromHex(hex) {
         return new Hash(BufferUtils.fromHex(hex));
@@ -166,10 +166,20 @@ class Hash extends Primitive {
 
     /**
      * @param {Hash} o
-     * @return {boolean}
+     * @returns {boolean}
      */
     static isHash(o) {
         return o instanceof Hash;
+    }
+
+    /**
+     * @param {Hash.Algorithm} algorithm
+     * @returns {number}
+     */
+    static getSize(algorithm) {
+        const size = Hash.SIZE.get(algorithm);
+        if (!size) throw new Error('Invalid hash algorithm');
+        return size;
     }
 }
 

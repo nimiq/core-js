@@ -27,6 +27,53 @@ describe('HashedTimeLockedContract', () => {
         expect(() => account.withIncomingTransaction(transaction, 1)).toThrowError('Data Error!');
     });
 
+    it('can falsify invalid incoming transaction', (done) => {
+        (async () => {
+            // No data
+            let transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, new Uint8Array(0));
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            // Data too short
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, new Uint8Array(18));
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            // Data too long
+            const preContract = new HashedTimeLockedContract(100, sender, recipient, Hash.NULL, 2, 1000);
+            let data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6 + 4711);
+            recipient.serialize(data);
+            data.writeUint8(Hash.Algorithm.BLAKE2B);
+            Hash.NULL.serialize(data);
+            data.writeUint8(2);
+            data.writeUint32(1000);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.fromHash(Hash.blake2bSync(preContract.serialize())), Account.Type.HTLC, 100, 0, 0, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            // Invalid hash type
+            data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6);
+            recipient.serialize(data);
+            data.writeUint8(251);
+            Hash.NULL.serialize(data);
+            data.writeUint8(2);
+            data.writeUint32(1000);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            // Invalid contract address
+            data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6);
+            recipient.serialize(data);
+            data.writeUint8(Hash.Algorithm.BLAKE2B);
+            Hash.NULL.serialize(data);
+            data.writeUint8(2);
+            data.writeUint32(1000);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            // Sanity check
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.fromHash(Hash.blake2bSync(preContract.serialize())), Account.Type.HTLC, 100, 0, 0, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
     it('can falsify invalid outgoing transaction', (done) => {
         (async () => {
             const keyPair = await KeyPair.generate();
@@ -36,9 +83,27 @@ describe('HashedTimeLockedContract', () => {
             let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
-            // regular: invalid pre-image
+            // Proof too short
+            let proof = new SerialBuffer(1);
+            proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
+            transaction.proof = proof;
+            expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
+
+            // Proof too long
             let signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
-            let proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
+            proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize + 4711);
+            proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
+            proof.writeUint8(Hash.Algorithm.BLAKE2B);
+            proof.writeUint8(1);
+            (await Hash.blake2b(Hash.NULL.array)).serialize(proof);
+            Hash.NULL.serialize(proof);
+            signatureProof.serialize(proof);
+            transaction.proof = proof;
+            expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
+
+            // regular: invalid pre-image
+            signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+            proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
             proof.writeUint8(Hash.Algorithm.BLAKE2B);
             proof.writeUint8(1);
@@ -55,6 +120,18 @@ describe('HashedTimeLockedContract', () => {
             proof.writeUint8(1);
             (await Hash.blake2b(Hash.NULL.serialize())).serialize(proof);
             Hash.NULL.serialize(proof);
+            transaction.proof = proof;
+            expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
+
+            // regular: invalid hash type
+            signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+            proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
+            proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
+            proof.writeUint8(251);
+            proof.writeUint8(0);
+            Hash.NULL.serialize(proof);
+            Hash.NULL.serialize(proof);
+            signatureProof.serialize(proof);
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
@@ -278,25 +355,27 @@ describe('HashedTimeLockedContract', () => {
         })().then(done, done.fail);
     });
 
-    it('can create contract from transaction', () => {
-        const preContract = new HashedTimeLockedContract(100, sender, recipient, Hash.NULL, 2, 1000);
-        const data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6);
-        recipient.serialize(data);
-        data.writeUint8(Hash.Algorithm.BLAKE2B);
-        Hash.NULL.serialize(data);
-        data.writeUint8(2);
-        data.writeUint32(1000);
-        const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, Address.fromHash(Hash.blake2bSync(preContract.serialize())), Account.Type.BASIC, 100, 0, 0, data);
-        expect(HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
-        const contract = /** @type {HashedTimeLockedContract} */ HashedTimeLockedContract.INITIAL.withIncomingTransaction(transaction, 1);
+    it('can create contract from transaction', (done) => {
+        (async () => {
+            const preContract = new HashedTimeLockedContract(100, sender, recipient, Hash.NULL, 2, 1000);
+            const data = new SerialBuffer(Address.SERIALIZED_SIZE + Crypto.blake2bSize + 6);
+            recipient.serialize(data);
+            data.writeUint8(Hash.Algorithm.BLAKE2B);
+            Hash.NULL.serialize(data);
+            data.writeUint8(2);
+            data.writeUint32(1000);
+            const transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.fromHash(Hash.blake2bSync(preContract.serialize())), Account.Type.HTLC, 100, 0, 0, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
+            const contract = /** @type {HashedTimeLockedContract} */ HashedTimeLockedContract.INITIAL.withIncomingTransaction(transaction, 1);
 
-        expect(contract.balance).toBe(100);
-        expect(contract.sender.equals(sender)).toBeTruthy();
-        expect(contract.recipient.equals(recipient)).toBeTruthy();
-        expect(contract.hashRoot.equals(Hash.NULL)).toBeTruthy();
-        expect(contract.hashCount).toBe(2);
-        expect(contract.timeout).toBe(1000);
+            expect(contract.balance).toBe(100);
+            expect(contract.sender.equals(sender)).toBeTruthy();
+            expect(contract.recipient.equals(recipient)).toBeTruthy();
+            expect(contract.hashRoot.equals(Hash.NULL)).toBeTruthy();
+            expect(contract.hashCount).toBe(2);
+            expect(contract.timeout).toBe(1000);
 
-        expect(contract.withIncomingTransaction(transaction, 1, true)).toBe(HashedTimeLockedContract.INITIAL);
+            expect(contract.withIncomingTransaction(transaction, 1, true)).toBe(HashedTimeLockedContract.INITIAL);
+        })().then(done, done.fail);
     });
 });
