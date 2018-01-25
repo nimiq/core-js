@@ -12,16 +12,16 @@ class Hash extends Primitive {
 
     /**
      * @param {?Uint8Array} arg
-     * @param {Hash.Algorithm} [algo]
+     * @param {Hash.Algorithm} [algorithm]
      * @private
      */
-    constructor(arg, algo = Hash.Algorithm.BLAKE2B) {
+    constructor(arg, algorithm = Hash.Algorithm.BLAKE2B) {
         if (arg === null) {
             arg = new Uint8Array(Crypto.hashSize);
         }
         super(arg, Crypto.hashType, Crypto.hashSize);
         /** @type {Hash.Algorithm} */
-        this._algo = algo;
+        this._algorithm = algorithm;
     }
 
     /**
@@ -127,7 +127,7 @@ class Hash extends Primitive {
 
     /** @type {number} */
     get serializedSize() {
-        return Hash.SIZE.get(this._algo);
+        return Hash.SIZE.get(this._algorithm);
     }
 
     /** @type {Uint8Array} */
@@ -137,7 +137,7 @@ class Hash extends Primitive {
 
     /** @type {Hash.Algorithm} */
     get algorithm() {
-        return this._algo;
+        return this._algorithm;
     }
 
     /**
@@ -145,7 +145,7 @@ class Hash extends Primitive {
      * @return {boolean}
      */
     equals(o) {
-        return o instanceof Hash && o._algo === this._algo && super.equals(o);
+        return o instanceof Hash && o._algorithm === this._algorithm && super.equals(o);
     }
 
     /**
