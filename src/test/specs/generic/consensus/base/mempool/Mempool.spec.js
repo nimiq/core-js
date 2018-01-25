@@ -196,6 +196,7 @@ describe('Mempool', () => {
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
             }
+            referenceTransactions.sort((a, b) => a.compare(b));
 
             // Pretend to have one of the transactions mined
             blockchain.transactionsCache.transactions.add(referenceTransactions[2]);
@@ -207,6 +208,7 @@ describe('Mempool', () => {
             // Check that all the transactions were evicted
             mempool.on('transactions-ready', async function() {
                 const transactions = await mempool.getTransactions();
+                transactions.sort((a, b) => a.compare(b));
                 expect(transactions.length).toEqual(4);
                 for (let i = 0; i < transactions.length; ++i) {
                     if (i < 2) {
