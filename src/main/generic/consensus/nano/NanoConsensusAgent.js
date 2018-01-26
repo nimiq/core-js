@@ -37,6 +37,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
         peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
+        peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
@@ -359,9 +360,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Transaction>>}
      */
-    getTransactions(blockHash, addresses) {
+    getTransactionsProof(blockHash, addresses) {
         return this._synchronizer.push(() => {
-            return this._getTransactions(blockHash, addresses);
+            return this._getTransactionsProof(blockHash, addresses);
         });
     }
 
@@ -371,7 +372,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @returns {Promise.<Array<Transaction>>}
      * @private
      */
-    async _getTransactions(blockHash, addresses) {
+    async _getTransactionsProof(blockHash, addresses) {
         Assert.that(this._transactionsRequest === null);
 
         Log.d(NanoConsensusAgent, `Requesting TransactionsProof for ${addresses} from ${this._peer.peerAddress}`);
@@ -455,6 +456,38 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Return the retrieved transactions.
         resolve(proof.transactions);
+    }
+
+    /**
+     * @param {Address} address
+     */
+    getTransactions(address) {
+        this._peer.channel.getTransactions(address);
+
+        this._timers.setTimeout('getTransactions', () => {
+            this._peer.channel.close('getTransactions timeout');
+        }, NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT);
+    }
+
+    /**
+     * @param {TransactionReceiptsMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onTransactionReceipts(msg) {
+        Log.d(NanoConsensusAgent, `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionIds.length}`);
+
+        // Check if we have requested transaction receipts, reject unsolicited ones.
+        if (!this._timers.timeoutExists('getTransactions')) {
+            Log.w(NanoConsensusAgent, `Unsolicited transaction receipts received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear timeout.
+        this._timers.clearTimeout('getTransactions');
+
+        this.fire('transaction-receipts', msg.transactionIds, msg.blockHashes);
     }
 
     /**
@@ -586,4 +619,5 @@ NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 30;
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
 NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT = 1000 * 10;
+NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT = 1000 * 15;
 Class.register(NanoConsensusAgent);

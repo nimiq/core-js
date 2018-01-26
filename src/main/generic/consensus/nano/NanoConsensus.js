@@ -182,7 +182,7 @@ class NanoConsensus extends Observable {
 
         for (const agent of agents) {
             try {
-                return await agent.getTransactions(blockHash, addresses); // eslint-disable-line no-await-in-loop
+                return await agent.getTransactionsProof(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(NanoConsensus, `Failed to retrieve transactions for ${addresses} from ${agent.peer.peerAddress}: ${e}`);
                 // Try the next peer.

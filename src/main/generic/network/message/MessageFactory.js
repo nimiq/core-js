@@ -46,4 +46,6 @@ MessageFactory.CLASSES[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = GetAccountsTreeCh
 MessageFactory.CLASSES[Message.Type.ACCOUNTS_TREE_CHUNK] = AccountsTreeChunkMessage;
 MessageFactory.CLASSES[Message.Type.GET_TRANSACTIONS_PROOF] = GetTransactionsProofMessage;
 MessageFactory.CLASSES[Message.Type.TRANSACTIONS_PROOF] = TransactionsProofMessage;
+MessageFactory.CLASSES[Message.Type.GET_TRANSACTIONS] = GetTransactionsMessage;
+MessageFactory.CLASSES[Message.Type.TRANSACTION_RECEIPTS] = TransactionReceiptsMessage;
 Class.register(MessageFactory);
