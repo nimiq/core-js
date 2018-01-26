@@ -18,8 +18,8 @@ class Consensus {
         const db = await ConsensusDB.getFull();
         /** @type {Accounts} */
         const accounts = await Accounts.getPersistent(db);
-        /** @type {TransactionsStore} */
-        const transactionsStore = await TransactionsStore.getPersistent(db);
+        /** @type {TransactionStore} */
+        const transactionsStore = await TransactionStore.getPersistent(db);
         /** @type {FullChain} */
         const blockchain = await FullChain.getPersistent(db, accounts, time, transactionsStore);
         /** @type {Mempool} */

@@ -151,7 +151,7 @@ Message.Type = {
     ACCOUNTS_TREE_CHUNK:        45,
     GET_TRANSACTIONS_PROOF:     47,
     TRANSACTIONS_PROOF:         48,
-    GET_TRANSACTIONS:           49,
+    GET_TRANSACTION_RECEIPTS:           49,
     TRANSACTION_RECEIPTS:        50
 };
 Class.register(Message);

@@ -1,29 +1,29 @@
-class TransactionsStore {
+class TransactionStore {
     /**
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
         const store = jdb.createObjectStore('Transactions', new TransactionsStoreCodec());
-        store.createIndex('sender', 'sender', true);
-        store.createIndex('recipient', 'recipient', true);
+        store.createIndex('sender', 'senderKey', true);
+        store.createIndex('recipient', 'recipientKey', true);
     }
 
     /**
      * @param {JungleDB} jdb
-     * @returns {TransactionsStore}
+     * @returns {TransactionStore}
      */
     static getPersistent(jdb) {
-        return new TransactionsStore(jdb.getObjectStore('Transactions'));
+        return new TransactionStore(jdb.getObjectStore('Transactions'));
     }
 
     /**
-     * @returns {TransactionsStore}
+     * @returns {TransactionStore}
      */
     static createVolatile() {
         const store = JDB.JungleDB.createVolatileObjectStore();
-        store.createIndex('sender', 'sender', true);
-        store.createIndex('recipient', 'recipient', true);
-        return new TransactionsStore(store);
+        store.createIndex('sender', 'senderKey', true);
+        store.createIndex('recipient', 'recipientKey', true);
+        return new TransactionStore(store);
     }
 
     /**
@@ -34,16 +34,16 @@ class TransactionsStore {
     }
 
     /**
-     * @param {Hash} txid
-     * @returns {Promise.<TransactionsStoreEntry>}
+     * @param {Hash} transactionHash
+     * @returns {Promise.<TransactionStoreEntry>}
      */
-    get(txid) {
-        return this._store.get(txid.toBase64());
+    get(transactionHash) {
+        return this._store.get(transactionHash.toBase64());
     }
 
     /**
      * @param {Address} sender
-     * @returns {Promise.<Array.<TransactionsStoreEntry>>}
+     * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
     getBySender(sender) {
         const index = this._store.index('sender');
@@ -52,7 +52,7 @@ class TransactionsStore {
 
     /**
      * @param {Address} recipient
-     * @returns {Promise.<Array.<TransactionsStoreEntry>>}
+     * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
     getByRecipient(recipient) {
         const index = this._store.index('recipient');
@@ -65,7 +65,7 @@ class TransactionsStore {
      * @returns {Promise}
      */
     async put(block) {
-        const indexedTransactions = await TransactionsStoreEntry.fromBlock(block);
+        const indexedTransactions = await TransactionStoreEntry.fromBlock(block);
         const tx = this._store.transaction();
         const promises = [];
         for (const indexedTransaction of indexedTransactions) {
@@ -84,31 +84,31 @@ class TransactionsStore {
         const tx = this._store.transaction();
         const promises = [];
         for (const transaction of block.transactions) {
-            promises.push(transaction.hash().then(txid => tx.remove(txid.toBase64())));
+            promises.push(transaction.hash().then(transactionHash => tx.remove(transactionHash.toBase64())));
         }
         await Promise.all(promises);
         return tx.commit();
     }
 
     /**
-     * @param {TransactionsStore} [tx]
-     * @returns {TransactionsStore}
+     * @param {TransactionStore} [tx]
+     * @returns {TransactionStore}
      */
     snapshot(tx) {
         const snapshot = this._store.snapshot();
         if (tx) {
             snapshot.inherit(tx._store);
         }
-        return new TransactionsStore(snapshot);
+        return new TransactionStore(snapshot);
     }
 
     /**
      * @param {boolean} [enableWatchdog]
-     * @returns {TransactionsStore}
+     * @returns {TransactionStore}
      */
     transaction(enableWatchdog = true) {
         const tx = this._store.transaction(enableWatchdog);
-        return new TransactionsStore(tx);
+        return new TransactionStore(tx);
     }
 
     /**
@@ -140,7 +140,7 @@ class TransactionsStore {
         return undefined;
     }
 }
-Class.register(TransactionsStore);
+Class.register(TransactionStore);
 
 /**
  * @implements {ICodec}
@@ -160,7 +160,7 @@ class TransactionsStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        return TransactionsStoreEntry.fromJSON(key, obj);
+        return TransactionStoreEntry.fromJSON(key, obj);
     }
 
     /**

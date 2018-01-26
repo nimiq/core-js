@@ -6,7 +6,7 @@ class FullChain extends BaseChain {
      * @param {JungleDB} jdb
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionsStore} transactionsStore
+     * @param {TransactionStore} transactionsStore
      * @returns {Promise.<FullChain>}
      */
     static getPersistent(jdb, accounts, time, transactionsStore) {
@@ -18,7 +18,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionsStore} transactionsStore
+     * @param {TransactionStore} transactionsStore
      * @returns {Promise.<FullChain>}
      */
     static createVolatile(accounts, time, transactionsStore) {
@@ -31,7 +31,7 @@ class FullChain extends BaseChain {
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionsStore} [transactionsStore]
+     * @param {TransactionStore} [transactionsStore]
      * @returns {FullChain}
      */
     constructor(store, accounts, time, transactionsStore) {
@@ -53,7 +53,7 @@ class FullChain extends BaseChain {
         /** @type {TransactionsCache} */
         this._transactionsCache = new TransactionsCache();
 
-        /** @type {TransactionsStore} */
+        /** @type {TransactionStore} */
         this._transactionsStore = transactionsStore;
 
         /** @type {Synchronizer} */
@@ -460,42 +460,39 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Address} address
-     * @returns {Promise.<{transactionIds:Array.<Hash>, blockHashes:Array.<Hash>}>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    async getTransactionIdsByAddress(address) {
+    async getTransactionReceiptsByAddress(address) {
         if (!this._transactionsStore) {
             throw new Error('Invalid request');
         }
 
-        const transactionIds = [];
-        const blockHashes = [];
+        const transactionReceipts = [];
 
         const entriesBySender = await this._transactionsStore.getBySender(address);
         const entriesByRecipient = await this._transactionsStore.getByRecipient(address);
 
         entriesBySender.forEach(entry => {
-            transactionIds.push(entry.txid);
-            blockHashes.push(entry.blockHash);
+            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash));
         });
 
         entriesByRecipient.forEach(entry => {
-            transactionIds.push(entry.txid);
-            blockHashes.push(entry.blockHash);
+            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash));
         });
 
-        return {transactionIds, blockHashes};
+        return transactionReceipts;
     }
 
     /**
-     * @param {Hash} txid
-     * @returns {Promise.<boolean|TransactionsStoreEntry>}
+     * @param {Hash} transactionHash
+     * @returns {Promise.<boolean|TransactionStoreEntry>}
      */
-    async getTransactionInfoById(txid) {
+    async getTransactionInfoByTransactionHash(transactionHash) {
         if (!this._transactionsStore) {
             throw new Error('Invalid request');
         }
 
-        const txStoreEntry = await this._transactionsStore.get(txid);
+        const txStoreEntry = await this._transactionsStore.get(transactionHash);
         if (!txStoreEntry) {
             return false;
         }
