@@ -459,43 +459,31 @@ class FullChain extends BaseChain {
     }
 
     /**
-     * @param {Hash} txid
-     * @returns {Promise.<boolean|TransactionsProof>}
-     */
-    async getTransactionsProofById(txid) {
-        const txStoreEntry = await this.getTransactionInfoById(txid);
-        if (!txStoreEntry) {
-            return false;
-        }
-
-        const block = await this.getBlock(txStoreEntry.blockHash);
-        if (!block || !block.isFull()) {
-            return false;
-        }
-
-        const transactions = [block.transactions[txStoreEntry.index]];
-        const proof = await MerkleProof.compute([block.minerAddr, block.body.extraData, ...block.transactions], transactions);
-        return new TransactionsProof(transactions, proof);
-    }
-
-    /**
      * @param {Address} address
-     * @returns {Promise.<Array.<Hash>>}
+     * @returns {Promise.<{transactionIds:Array.<Hash>, blockHashes:Array.<Hash>}>}
      */
     async getTransactionIdsByAddress(address) {
+        if (!this._transactionsStore) {
+            throw new Error('Invalid request');
+        }
+
         const transactionIds = [];
+        const blockHashes = [];
 
-        const transactionsBySender = await this._transactionsStore.getBySender(address);
-        for (const txStoreEntry of transactionsBySender) {
-            transactionIds.push(txStoreEntry.txid);
-        }
+        const entriesBySender = await this._transactionsStore.getBySender(address);
+        const entriesByRecipient = await this._transactionsStore.getByRecipient(address);
 
-        const transactionsByRecipient = await this._transactionsStore.getByRecipient(address);
-        for (const txStoreEntry of transactionsByRecipient) {
-            transactionIds.push(txStoreEntry.txid);
-        }
+        entriesBySender.forEach(entry => {
+            transactionIds.push(entry.txid);
+            blockHashes.push(entry.blockHash);
+        });
 
-        return transactionIds;
+        entriesByRecipient.forEach(entry => {
+            transactionIds.push(entry.txid);
+            blockHashes.push(entry.blockHash);
+        });
+
+        return {transactionIds, blockHashes};
     }
 
     /**
@@ -503,6 +491,10 @@ class FullChain extends BaseChain {
      * @returns {Promise.<boolean|TransactionsStoreEntry>}
      */
     async getTransactionInfoById(txid) {
+        if (!this._transactionsStore) {
+            throw new Error('Invalid request');
+        }
+
         const txStoreEntry = await this._transactionsStore.get(txid);
         if (!txStoreEntry) {
             return false;

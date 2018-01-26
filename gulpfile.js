@@ -150,6 +150,8 @@ const sources = {
         './src/main/generic/network/message/GetAccountsTreeChunkMessage.js',
         './src/main/generic/network/message/TransactionsProofMessage.js',
         './src/main/generic/network/message/GetTransactionsProofMessage.js',
+        './src/main/generic/network/message/GetTransactionsMessage.js',
+        './src/main/generic/network/message/TransactionReceiptsMessage.js',
         './src/main/generic/network/message/MessageFactory.js',
         './src/main/generic/network/NetworkAgent.js',
         './src/main/generic/network/Network.js',
