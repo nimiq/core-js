@@ -198,7 +198,7 @@ describe('AccountsProof', () => {
         (async () => {
             for (const nodes of testNodesArray) {
                 const accountsProof1 = new AccountsProof(nodes);
-                const rootHash = new Hash(BufferUtils.fromBase64('IWmy3mcw81BYGjamnhH81Qi4s6fUpOuyyU7AJVTn/Zo='));
+                const rootHash = new Hash(BufferUtils.fromBase64('2YcmtlVU+aO61ZGIh/tJ8WOR04f29e3B9bfFVwH8c4M='));
 
                 const hash = await accountsProof1.root();
                 expect(hash.equals(rootHash)).toBe(true);

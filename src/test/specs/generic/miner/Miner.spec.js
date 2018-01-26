@@ -54,7 +54,7 @@ describe('Miner', () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Choose the timestamp such that the block is mined quickly.
-            spyOn(testBlockchain.time, 'now').and.returnValue(5000);
+            spyOn(testBlockchain.time, 'now').and.returnValue(1800);
 
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
             const miner = new Miner(testBlockchain, mempool, testBlockchain.time, Block.GENESIS.minerAddr);

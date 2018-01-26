@@ -37,17 +37,16 @@ Block.GENESIS = new Block(
         new Hash(null),
         new Hash(null),
         Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
-        Hash.fromBase64('D/9GJi5axtByv2zC0Hp6AZ28XZk4BvWoh13q+lQXRO0='),
+        Hash.fromBase64('/oV9hHPK+59k+Bj9hQMrRbeadb/Z8cOxiHYCz1wZmt0='),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        89483,
+        11883,
         BlockHeader.Version.V1),
     new BlockInterlink([], new Hash(null)),
     new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
 );
-// Store hash for synchronous access
-Block.GENESIS.HASH = Hash.fromBase64('2w2EEEg2AcBOsp+cM7tw7su6UU3rbQQsIMLklT7607c=');
+Block.GENESIS.HASH = Hash.fromBase64('B/ayKKwRAAQutgTARpNsNhPMlPnXltYd7u3X8wUfefM=');
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
