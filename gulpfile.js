@@ -20,7 +20,6 @@ const sources = {
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
-            './src/main/platform/browser/network/NetworkConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcStore.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
@@ -33,8 +32,7 @@ const sources = {
             './src/main/generic/utils/Observable.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
-            './src/main/platform/nodejs/network/NetworkConfig.js'
+            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js'
         ]
     },
     generic: [
@@ -154,6 +152,7 @@ const sources = {
         './src/main/generic/network/PeerChannel.js',
         './src/main/generic/network/PeerConnection.js',
         './src/main/generic/network/Peer.js',
+        './src/main/generic/network/NetworkConfig.js',
         './src/main/generic/miner/Miner.js',
         './src/main/generic/wallet/WalletStore.js',
         './src/main/generic/wallet/Wallet.js',
