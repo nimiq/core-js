@@ -13,19 +13,19 @@ class BaseChain extends IBlockchain {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeForks]
-     * @returns {Promise.<Block>}
+     * @returns {Promise.<?Block>}
      */
     async getBlock(hash, includeForks = false) {
         const chainData = await this._store.getChainData(hash);
-        return chainData && (chainData.onMainChain || includeForks) ? chainData.head : undefined;
+        return chainData && (chainData.onMainChain || includeForks) ? chainData.head : null;
     }
 
     /**
      * @param {number} height
-     * @returns {Promise.<Block>}
+     * @returns {Promise.<?Block>}
      */
     getBlockAt(height) {
-        return this._store.getBlockAt(height);
+        return this._store.getBlockAt(height) || null;
     }
 
     /**

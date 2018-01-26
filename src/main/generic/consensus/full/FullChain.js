@@ -418,7 +418,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Hash} blockHash
      * @param {string} startPrefix
-     * @returns {Promise.<boolean|AccountsTreeChunk>}
+     * @returns {Promise.<?AccountsTreeChunk>}
      */
     async getAccountsTreeChunk(blockHash, startPrefix) {
         const snapshot = await this._getSnapshot(blockHash);
@@ -428,7 +428,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
-     * @returns {Promise.<boolean|AccountsProof>}
+     * @returns {Promise.<?AccountsProof>}
      */
     async getAccountsProof(blockHash, addresses) {
         const snapshot = await this._getSnapshot(blockHash);
@@ -438,12 +438,12 @@ class FullChain extends BaseChain {
     /**
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
-     * @returns {Promise.<boolean|TransactionsProof>}
+     * @returns {Promise.<?TransactionsProof>}
      */
     async getTransactionsProof(blockHash, addresses) {
         const block = await this.getBlock(blockHash);
         if (!block || !block.isFull()) {
-            return false;
+            return null;
         }
 
         const matches = [];
@@ -485,7 +485,7 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Hash} transactionHash
-     * @returns {Promise.<boolean|TransactionStoreEntry>}
+     * @returns {Promise.<?TransactionStoreEntry>}
      */
     async getTransactionInfoByTransactionHash(transactionHash) {
         if (!this._transactionsStore) {
@@ -494,7 +494,7 @@ class FullChain extends BaseChain {
 
         const txStoreEntry = await this._transactionsStore.get(transactionHash);
         if (!txStoreEntry) {
-            return false;
+            return null;
         }
 
         return txStoreEntry;
@@ -502,14 +502,14 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Hash} blockHash
-     * @returns {Promise.<boolean|Accounts>}
+     * @returns {Promise.<?Accounts>}
      */
     _getSnapshot(blockHash) {
         return this._synchronizer.push(async () => {
             const block = await this.getBlock(blockHash);
             // Check if blockHash is a block on the main chain within the allowed window.
             if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {
-                return false;
+                return null;
             }
 
             // Check if there already is a snapshot, otherwise create it.
