@@ -172,7 +172,7 @@ class NanoConsensus extends Observable {
      * @param {Hash} [blockHash]
      * @returns {Promise.<Array<Transaction>>}
      */
-    async getTransactions(addresses, blockHash=null) {
+    async getTransactionsProof(addresses, blockHash=null) {
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
         const agents = this._agents.values().filter(agent =>
             agent.synced

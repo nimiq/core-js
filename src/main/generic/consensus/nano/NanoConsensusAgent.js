@@ -465,7 +465,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         this._peer.channel.getTransactions(address);
 
         this._timers.setTimeout('getTransactions', () => {
-            this._peer.channel.close('getTransactions timeout');
+            this._peer.channel.close('getTransactionsProof timeout');
         }, NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT);
     }
 
@@ -475,7 +475,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onTransactionReceipts(msg) {
-        Log.d(NanoConsensusAgent, `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionIds.length}`);
+        Log.d(NanoConsensusAgent, `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionReceipts.length}`);
 
         // Check if we have requested transaction receipts, reject unsolicited ones.
         if (!this._timers.timeoutExists('getTransactions')) {
@@ -487,7 +487,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Clear timeout.
         this._timers.clearTimeout('getTransactions');
 
-        this.fire('transaction-receipts', msg.transactionIds, msg.blockHashes);
+        this.fire('transaction-receipts', msg.transactionReceipts);
     }
 
     /**

@@ -1,13 +1,13 @@
-describe('TransactionsStore', () => {
-    /** @type {TransactionsStore} */
-    let transactionsStore;
+describe('TransactionStore', () => {
+    /** @type {TransactionStore} */
+    let transactionStore;
     /** @type {Array.<Transaction>} */
     let transactions;
     let block, senderAddress, recipientAddress1, recipientAddress2;
 
     beforeAll((done) => {
         (async () => {
-            transactionsStore = TransactionsStore.createVolatile();
+            transactionStore = TransactionStore.createVolatile();
 
             const blockchain = await TestBlockchain.createVolatileTest(0, 3);
             const senderPubKey = blockchain.users[0].publicKey;
@@ -30,64 +30,64 @@ describe('TransactionsStore', () => {
 
     it('can store and remove transactions', (done) => {
         (async () => {
-            await transactionsStore.put(block);
-            expect((await transactionsStore.getBySender(senderAddress)).length).toBe(3);
-            await transactionsStore.remove(block);
-            expect((await transactionsStore.getBySender(senderAddress)).length).toBe(0);
+            await transactionStore.put(block);
+            expect((await transactionStore.getBySender(senderAddress)).length).toBe(3);
+            await transactionStore.remove(block);
+            expect((await transactionStore.getBySender(senderAddress)).length).toBe(0);
         })().then(done, done.fail);
     });
 
     it('can retrieve transactions by senderAddress', (done) => {
         (async () => {
-            await transactionsStore.put(block);
-            const results = await transactionsStore.getBySender(senderAddress);
+            await transactionStore.put(block);
+            const results = await transactionStore.getBySender(senderAddress);
             expect(results.length).toBe(3);
 
             for (const entry of results) {
-                expect(entry.senderAddress.equals(senderAddress)).toBeTruthy();
+                expect(entry.sender.equals(senderAddress)).toBeTruthy();
             }
 
-            await transactionsStore.truncate();
+            await transactionStore.truncate();
         })().then(done, done.fail);
     });
 
     it('can retrieve transactions by recipientAddress', (done) => {
         (async () => {
-            await transactionsStore.put(block);
-            let results = await transactionsStore.getByRecipient(recipientAddress1);
+            await transactionStore.put(block);
+            let results = await transactionStore.getByRecipient(recipientAddress1);
             expect(results.length).toBe(2);
 
             for (const entry of results) {
-                expect(entry.recipientAddress.equals(recipientAddress1)).toBeTruthy();
+                expect(entry.recipient.equals(recipientAddress1)).toBeTruthy();
             }
 
-            results = await transactionsStore.getByRecipient(recipientAddress2);
+            results = await transactionStore.getByRecipient(recipientAddress2);
             expect(results.length).toBe(1);
 
             for (const entry of results) {
-                expect(entry.recipientAddress.equals(recipientAddress2)).toBeTruthy();
+                expect(entry.recipient.equals(recipientAddress2)).toBeTruthy();
             }
 
-            await transactionsStore.truncate();
+            await transactionStore.truncate();
         })().then(done, done.fail);
     });
 
     it('can retrieve transactions by hash', (done) => {
         (async () => {
-            await transactionsStore.put(block);
+            await transactionStore.put(block);
             const blockHash = await block.hash();
 
             for (let i=0; i<transactions.length; ++i) {
                 const hash = await transactions[i].hash();
-                const entry = await transactionsStore.get(hash);
-                expect(entry.txid.equals(hash)).toBeTruthy('wrong txid');
-                expect(entry.senderAddress.equals(transactions[i].sender)).toBeTruthy('wrong sender');
-                expect(entry.recipientAddress.equals(transactions[i].recipient)).toBeTruthy('wrong recipient');
+                const entry = await transactionStore.get(hash);
+                expect(entry.transactionHash.equals(hash)).toBeTruthy('wrong transactionHash');
+                expect(entry.sender.equals(transactions[i].sender)).toBeTruthy('wrong sender');
+                expect(entry.recipient.equals(transactions[i].recipient)).toBeTruthy('wrong recipient');
                 expect(entry.blockHeight).toBe(block.height, 'wrong block height');
                 expect(entry.index).toBe(i, 'wrong index');
                 expect(entry.blockHash.equals(blockHash)).toBeTruthy('wrong block hash');
             }
-            await transactionsStore.truncate();
+            await transactionStore.truncate();
         })().then(done, done.fail);
     });
 });

@@ -1,9 +1,9 @@
-class GetTransactionsMessage extends Message {
+class GetTransactionReceiptsMessage extends Message {
     /**
      * @param {Address} address
      */
     constructor(address) {
-        super(Message.Type.GET_BLOCKS);
+        super(Message.Type.GET_TRANSACTION_RECEIPTS);
         if (!(address instanceof Address)) throw new Error('Malformed address');
         /** @type {Address} */
         this._address = address;
@@ -11,12 +11,12 @@ class GetTransactionsMessage extends Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {GetTransactionsMessage}
+     * @return {GetTransactionReceiptsMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
         const address = Address.unserialize(buf);
-        return new GetTransactionsMessage(address);
+        return new GetTransactionReceiptsMessage(address);
     }
 
     /**
@@ -42,4 +42,4 @@ class GetTransactionsMessage extends Message {
         return this._address;
     }
 }
-Class.register(GetTransactionsMessage);
+Class.register(GetTransactionReceiptsMessage);

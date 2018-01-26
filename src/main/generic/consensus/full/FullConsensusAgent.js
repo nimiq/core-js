@@ -39,7 +39,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
         peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
         peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProof(msg));
-        peer.channel.on('get-transactions', msg => this._onGetTransactions(msg));
+        peer.channel.on('get-transaction-receipts', msg => this._onGetTransactions(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
     }
 
@@ -452,17 +452,16 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {GetTransactionsMessage} msg
+     * @param {GetTransactionReceiptsMessage} msg
      * @private
      */
     async _onGetTransactions(msg) {
-        const {transactionIds, blockHashes} = await this._blockchain.getTransactionIdsByAddress(msg.address);
+        const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address);
 
         let i = 0;
         while (i < TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) {
-            const partialTxIds = transactionIds.slice(i, i + TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
-            const partialBlockHashes = blockHashes.slice(i, i + TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
-            this._peer.channel.transactionReceipts(partialTxIds, partialBlockHashes);
+            const receipts = transactionReceipts.slice(i, i + TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
+            this._peer.channel.transactionReceipts(receipts);
             i += TransactionReceiptsMessage.RECEIPTS_MAX_COUNT;
         }
     }

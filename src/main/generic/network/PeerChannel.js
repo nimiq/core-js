@@ -304,17 +304,16 @@ class PeerChannel extends Observable {
      * @param {Address} address
      * @returns {boolean}
      */
-    getTransactions(address) {
-        return this._send(new GetTransactionsMessage(address));
+    getTransactionReceipts(address) {
+        return this._send(new GetTransactionReceiptsMessage(address));
     }
 
     /**
-     * @param {Array.<Hash>} transactionIds
-     * @param {Array.<Hash>} blockHashes
+     * @param {Array.<TransactionReceipt>} transactionReceipts
      * @returns {boolean}
      */
-    transactionReceipts(transactionIds, blockHashes) {
-        return this._send(new TransactionReceiptsMessage(transactionIds, blockHashes));
+    transactionReceipts(transactionReceipts) {
+        return this._send(new TransactionReceiptsMessage(transactionReceipts));
     }
 
     /**
@@ -405,5 +404,5 @@ PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chu
 PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
 PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF] = 'get-transactions-proof';
 PeerChannel.Event[Message.Type.TRANSACTIONS_PROOF] = 'transactions-proof';
-PeerChannel.Event[Message.Type.GET_TRANSACTIONS] = 'get-transactions';
+PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS] = 'get-transaction-receipts';
 PeerChannel.Event[Message.Type.TRANSACTION_RECEIPTS] = 'transaction-receipts';
