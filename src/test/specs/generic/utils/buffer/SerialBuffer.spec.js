@@ -66,17 +66,26 @@ describe('SerialBuffer', () => {
         const value2 = 42;
         const value3 = Number.MAX_SAFE_INTEGER;
         const value4 = 1;
+        const value5 = Math.pow(2, 34) - 1;
+        const value6 = Math.pow(2, 34) + 1;
+        const value7 = 0xFFFFFFFF * 0x10000 + 0xFFFF;
 
-        const buffer = new SerialBuffer(32);
+        const buffer = new SerialBuffer(56);
         buffer.writeUint64(value1);
         buffer.writeUint64(value2);
         buffer.writeUint64(value3);
         buffer.writeUint64(value4);
+        buffer.writeUint64(value5);
+        buffer.writeUint64(value6);
+        buffer.writeUint64(value7);
 
         expect(buffer.readUint64()).toEqual(value1);
         expect(buffer.readUint64()).toEqual(value2);
         expect(buffer.readUint64()).toEqual(value3);
         expect(buffer.readUint64()).toEqual(value4);
+        expect(buffer.readUint64()).toEqual(value5);
+        expect(buffer.readUint64()).toEqual(value6);
+        expect(buffer.readUint64()).toEqual(value7);
 
     });
     

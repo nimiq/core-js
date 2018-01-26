@@ -130,7 +130,7 @@ class SerialBuffer extends Uint8Array {
      */
     writeUint64(value) {
         if (!NumberUtils.isUint64(value)) throw new Error('Malformed value');
-        this._view.setUint32(this._writePos, value / Math.pow(2, 32));
+        this._view.setUint32(this._writePos, Math.floor(value / Math.pow(2, 32)));
         this._view.setUint32(this._writePos + 4, value);
         this._writePos += 8;
     }
