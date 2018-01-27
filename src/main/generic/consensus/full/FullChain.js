@@ -444,6 +444,20 @@ class FullChain extends BaseChain {
     }
 
     /**
+     * @param {Block} blockToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<?BlockChain>}
+     */
+    async getBlockInclusionProof(blockToProve, knownBlock) {
+        const blocks = await this._followDown(blockToProve, knownBlock);
+        if (!blocks) {
+            return null;
+        }
+
+        return new BlockChain(blocks);
+    }
+
+    /**
      * @param {Hash} blockHash
      * @param {string} startPrefix
      * @returns {Promise.<?AccountsTreeChunk>}

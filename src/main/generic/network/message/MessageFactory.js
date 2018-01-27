@@ -50,5 +50,7 @@ MessageFactory.CLASSES[Message.Type.GET_TRANSACTIONS_PROOF] = GetTransactionsPro
 MessageFactory.CLASSES[Message.Type.TRANSACTIONS_PROOF] = TransactionsProofMessage;
 MessageFactory.CLASSES[Message.Type.GET_TRANSACTION_RECEIPTS] = GetTransactionReceiptsMessage;
 MessageFactory.CLASSES[Message.Type.TRANSACTION_RECEIPTS] = TransactionReceiptsMessage;
+MessageFactory.CLASSES[Message.Type.GET_BLOCK_PROOF] = GetBlockProofMessage;
+MessageFactory.CLASSES[Message.Type.BLOCK_PROOF] = BlockProofMessage;
 MessageFactory.CLASSES[Message.Type.VERACK] = VerAckMessage;
 Class.register(MessageFactory);

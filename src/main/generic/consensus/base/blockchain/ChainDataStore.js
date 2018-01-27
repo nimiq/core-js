@@ -116,8 +116,7 @@ class ChainDataStore {
             }
         }
 
-        // TODO handle corrupted storage
-        throw new Error(`Failed to find main chain block at height ${height}`);
+        return undefined;
     }
 
     /**

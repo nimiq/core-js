@@ -40,6 +40,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
         peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProof(msg));
         peer.channel.on('get-transaction-receipts', msg => this._onGetTransactions(msg));
+        peer.channel.on('get-block-proof', msg => this._onGetBlockProof(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
     }
 
@@ -414,6 +415,22 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetChainProof(msg) {
         const proof = await this._blockchain.getChainProof();
         this._peer.channel.chainProof(proof);
+    }
+
+    /**
+     * @param {GetBlockProofMessage} msg
+     * @private
+     */
+    async _onGetBlockProof(msg) {
+        const blockToProve = await this._blockchain.getBlock(msg.blockHashToProve);
+        const knownBlock = await this._blockchain.getBlock(msg.knownBlockHash);
+        if (!blockToProve || !knownBlock) {
+            this._peer.channel.blockProof();
+            return;
+        }
+
+        const proof = await this._blockchain.getBlockInclusionProof(blockToProve, knownBlock);
+        this._peer.channel.blockProof(proof);
     }
 
     /**

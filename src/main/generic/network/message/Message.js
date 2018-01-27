@@ -173,8 +173,10 @@ Message.Type = {
     ACCOUNTS_TREE_CHUNK:        45,
     GET_TRANSACTIONS_PROOF:     47,
     TRANSACTIONS_PROOF:         48,
-    GET_TRANSACTION_RECEIPTS:           49,
-    TRANSACTION_RECEIPTS:        50,
+    GET_TRANSACTION_RECEIPTS:   49,
+    TRANSACTION_RECEIPTS:       50,
+    GET_BLOCK_PROOF:            51,
+    BLOCK_PROOF:                52,
 
     VERACK:   90
 };

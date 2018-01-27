@@ -30,6 +30,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
+        this._blockProofRequest = null;
 
         // Flag to track chain proof requests.
         this._requestedChainProof = false;
@@ -40,6 +41,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
+        peer.channel.on('block-proof', msg => this._onBlockProof(msg));
     }
 
     /**
@@ -364,6 +366,123 @@ class LightConsensusAgent extends FullConsensusAgent {
         this.syncBlockchain().catch(Log.w.tag(LightConsensusAgent));
     }
 
+    /**
+     * @param {Hash} blockHashToProve
+     * @param {number} blockHeightToProve
+     * @returns {Promise.<BlockChain>}
+     */
+    getBlockProof(blockHashToProve, blockHeightToProve) {
+        return this._synchronizer.push(() => {
+            return this._getBlockProof(blockHashToProve, blockHeightToProve);
+        });
+    }
+
+    /**
+     * @param {Hash} blockHashToProve
+     * @param {number} blockHeightToProve
+     * @returns {Promise.<BlockChain>}
+     * @private
+     */
+    async _getBlockProof(blockHashToProve, blockHeightToProve) {
+        Assert.that(this._blockProofRequest === null);
+
+        Log.d(LightConsensusAgent, `Requesting BlockProof for ${addresses} from ${this._peer.peerAddress}`);
+
+        const knownBlock = await this._blockchain.getNearestBlockAt(blockHeightToProve, false);
+        if (!knownBlock) {
+            throw new Error('No suitable block found for BlockProof');
+        }
+        const knownBlockHash = await knownBlock.hash();
+
+        return new Promise((resolve, reject) => {
+            this._blockProofRequest = {
+                blockHashToProve: blockHashToProve,
+                blockHeightToProve: blockHeightToProve,
+                knownBlockHash: knownBlockHash,
+                resolve: resolve,
+                reject: reject
+            };
+
+            // Request BlockProof from peer.
+            this._peer.channel.getBlockProof(blockHashToProve, knownBlockHash);
+
+            // Drop the peer if it doesn't send the accounts proof within the timeout.
+            this._timers.setTimeout('getBlockProof', () => {
+                this._peer.channel.close('getBlockProof timeout');
+                reject(new Error('timeout')); // TODO error handling
+            }, LightConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {BlockProofMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onBlockProof(msg) {
+        Log.d(LightConsensusAgent, `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
+
+        // Check if we have requested a header proof, reject unsolicited ones.
+        if (!this._blockProofRequest) {
+            Log.w(LightConsensusAgent, `Unsolicited header proof received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        // Clear the request timeout.
+        this._timers.clearTimeout('getBlockProof');
+
+        const blockHashToProve = this._blockProofRequest.blockHashToProve;
+        const blockHeightToProve = this._blockProofRequest.blockHeightToProve;
+        const knownBlockHash = this._blockProofRequest.knownBlockHash;
+        const resolve = this._blockProofRequest.resolve;
+        const reject = this._blockProofRequest.reject;
+
+        // Reset headerProofRequest.
+        this._blockProofRequest = null;
+
+        if (!msg.hasProof()) {
+            reject(new Error('Header request was rejected'));
+            return;
+        }
+
+        // Check that the reference block corresponds to the one we requested.
+        if (!blockHashToProve.equals(await msg.proof.tail.hash()) || msg.proof.tail.height !== blockHeightToProve) {
+            Log.w(LightConsensusAgent, `Received BlockProof for invalid tail block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid tail block'));
+            return;
+        }
+
+        if (!knownBlockHash.equals(await msg.proof.head.hash())) {
+            Log.w(LightConsensusAgent, `Received BlockProof for invalid head block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid head block'));
+            return;
+        }
+
+        // Verify the proof.
+        const proof = msg.proof;
+        if (!(await proof.verify())) {
+            Log.w(LightConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close('Invalid BlockProof');
+            reject(new Error('Invalid BlockProof'));
+            return;
+        }
+
+        // Verify individual blocks.
+        const verificationResults = await Promise.all(proof.blocks.map(block => block.verify()));
+        if (!verificationResults.every(result => result)) {
+            Log.w(LightConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close('Invalid BlockProof');
+            reject(new Error('Invalid BlockProof'));
+            return;
+        }
+
+        // Return the retrieved accounts.
+        resolve(proof);
+    }
+
     // Stage 3: Request proof blocks.
     /**
      * @private
@@ -586,6 +705,11 @@ LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 8;
+/**
+ * Maximum time (ms) to wait for blockProof after sending out getBlockProof before dropping the peer.
+ * @type {number}
+ */
+LightConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT = 1000 * 5;
 /**
  * Maximum number of blockchain sync retries before closing the connection.
  * @type {number}

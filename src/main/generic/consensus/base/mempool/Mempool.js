@@ -137,6 +137,7 @@ class Mempool extends Observable {
 
     /**
      * @param {number} maxSize
+     * @returns {Promise.<Array.<Transaction>>}
      */
     async getTransactionsForBlock(maxSize) {
         const transactions = this.getTransactions(maxSize);
