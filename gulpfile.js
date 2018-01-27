@@ -95,7 +95,7 @@ const sources = {
         './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
         './src/main/generic/consensus/base/transaction/LegacyTransaction.js',
         './src/main/generic/consensus/base/transaction/TransactionsProof.js',
-        './src/main/generic/consensus/base/transaction/TransactionsCache.js',
+        './src/main/generic/consensus/base/transaction/TransactionCache.js',
         './src/main/generic/consensus/base/transaction/index/TransactionStoreEntry.js',
         './src/main/generic/consensus/base/transaction/index/TransactionStore.js',
         './src/main/generic/consensus/base/transaction/index/TransactionReceipt.js',

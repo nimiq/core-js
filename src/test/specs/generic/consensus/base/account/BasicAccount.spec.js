@@ -90,7 +90,7 @@ describe('BasicAccount', () => {
 
         expect(account.balance).toBe(100);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
         account = account.withOutgoingTransaction(transaction, 1, cache);
 
@@ -105,7 +105,7 @@ describe('BasicAccount', () => {
     it('refuses to apply invalid outgoing transaction', () => {
         const account = new BasicAccount(100);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 4);
         expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Validity Error!');
 
@@ -122,7 +122,7 @@ describe('BasicAccount', () => {
 
         expect(account.balance).toBe(100);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         const transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
         account = account.withOutgoingTransaction(transaction, 1, cache);
 

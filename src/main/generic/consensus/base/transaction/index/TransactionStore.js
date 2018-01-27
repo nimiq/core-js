@@ -3,7 +3,7 @@ class TransactionStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const store = jdb.createObjectStore('Transactions', new TransactionsStoreCodec());
+        const store = jdb.createObjectStore('Transactions', new TransactionStoreCodec());
         store.createIndex('sender', 'senderKey', true);
         store.createIndex('recipient', 'recipientKey', true);
     }
@@ -145,7 +145,7 @@ Class.register(TransactionStore);
 /**
  * @implements {ICodec}
  */
-class TransactionsStoreCodec {
+class TransactionStoreCodec {
     /**
      * @param {*} obj The object to encode before storing it.
      * @returns {*} Encoded object.

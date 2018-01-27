@@ -1,4 +1,4 @@
-describe('TransactionsCache', () => {
+describe('TransactionCache', () => {
     it('correctly finds transactions', (done) => {
         (async () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(5, 10);

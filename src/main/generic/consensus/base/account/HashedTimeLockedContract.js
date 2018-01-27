@@ -218,7 +218,7 @@ class HashedTimeLockedContract extends Account {
     /**
      * @param {Transaction} transaction
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @param {boolean} [revert]
      * @return {Account|*}
      */

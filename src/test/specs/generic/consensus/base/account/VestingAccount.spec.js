@@ -97,7 +97,7 @@ describe('VestingAccount', () => {
 
         expect(account.balance).toBe(100);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 110);
         account = account.withOutgoingTransaction(transaction, 110, cache);
 
@@ -117,7 +117,7 @@ describe('VestingAccount', () => {
     it('refuses to apply invalid outgoing transaction', () => {
         const account = new VestingAccount(100, 0, 100, 50);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         let transaction = new BasicTransaction(pubKey, recipient, 1, 0, 1);
 
         transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
@@ -137,7 +137,7 @@ describe('VestingAccount', () => {
 
         expect(account.balance).toBe(100);
 
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
         const transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
         account = account.withOutgoingTransaction(transaction, 1, cache);
 
@@ -150,7 +150,7 @@ describe('VestingAccount', () => {
     });
     
     it('can create vesting account via transaction and vest it', () => {
-        const cache = new TransactionsCache();
+        const cache = new TransactionCache();
 
         let buf = new SerialBuffer(4);
         buf.writeUint32(1000);

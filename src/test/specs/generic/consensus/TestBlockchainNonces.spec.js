@@ -148,5 +148,7 @@ TestBlockchain.NONCES = {
     'bDxE/zqnEuB4zyQaM6FLahf8/nfIDSHCu5UE8LIi8ao=': 149452,
     'R4TPKMVmwZoNVrdETq51b2VMGro8y3Y14pKu7RYN47M=': 98656,
     '2svl8t+ZIbJi5DWxmkUIMnvuQfmSB+6xnCr/8TBlg0o=@1': 152492116,
-    'kfQqAJWq+guU78qpvpmg7QsyemhUAhOjUr8TvkAR8EI=@0': 387915
+    'kfQqAJWq+guU78qpvpmg7QsyemhUAhOjUr8TvkAR8EI=@0': 387915,
+    'HqseQclW/xLJry0G1mbjxjrUry7egsXD0zjnROG8FYY=': 13063,
+    'zqk7Czx4K1A/78lkVOMRcvhwmpAUZ4d2T76PTmf9j3k=': 28310
 };
