@@ -46,7 +46,7 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise}
      */
     async commitBlock(block, transactionsCache) {
@@ -71,7 +71,7 @@ class Accounts extends Observable {
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise}
      */
     async commitBlockBody(body, blockHeight, transactionsCache) {
@@ -88,7 +88,7 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise}
      */
     async revertBlock(block, transactionsCache) {
@@ -104,7 +104,7 @@ class Accounts extends Observable {
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise}
      */
     async revertBlockBody(body, blockHeight, transactionsCache) {
@@ -184,7 +184,7 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise.<void>}
      * @private
      */
@@ -200,7 +200,7 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @return {Promise.<void>}
      * @private
      */
@@ -236,7 +236,7 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {Transaction} tx
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @param {boolean} revert
      * @returns {Promise.<void>}
      * @private

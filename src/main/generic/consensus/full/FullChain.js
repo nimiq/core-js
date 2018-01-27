@@ -6,24 +6,24 @@ class FullChain extends BaseChain {
      * @param {JungleDB} jdb
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionStore} transactionsStore
+     * @param {TransactionStore} transactionStore
      * @returns {Promise.<FullChain>}
      */
-    static getPersistent(jdb, accounts, time, transactionsStore) {
+    static getPersistent(jdb, accounts, time, transactionStore) {
         const store = ChainDataStore.getPersistent(jdb);
-        const chain = new FullChain(store, accounts, time, transactionsStore);
+        const chain = new FullChain(store, accounts, time, transactionStore);
         return chain._init();
     }
 
     /**
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionStore} transactionsStore
+     * @param {TransactionStore} transactionStore
      * @returns {Promise.<FullChain>}
      */
-    static createVolatile(accounts, time, transactionsStore) {
+    static createVolatile(accounts, time, transactionStore) {
         const store = ChainDataStore.createVolatile();
-        const chain = new FullChain(store, accounts, time, transactionsStore);
+        const chain = new FullChain(store, accounts, time, transactionStore);
         return chain._init();
     }
 
@@ -31,10 +31,10 @@ class FullChain extends BaseChain {
      * @param {ChainDataStore} store
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionStore} [transactionsStore]
+     * @param {TransactionStore} [transactionStore]
      * @returns {FullChain}
      */
-    constructor(store, accounts, time, transactionsStore) {
+    constructor(store, accounts, time, transactionStore) {
         super(store);
         this._accounts = accounts;
         this._time = time;
@@ -50,11 +50,11 @@ class FullChain extends BaseChain {
         /** @type {ChainProof} */
         this._proof = null;
 
-        /** @type {TransactionsCache} */
-        this._transactionsCache = new TransactionsCache();
+        /** @type {TransactionCache} */
+        this._transactionsCache = new TransactionCache();
 
         /** @type {TransactionStore} */
-        this._transactionsStore = transactionsStore;
+        this._transactionStore = transactionStore;
 
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
@@ -225,10 +225,10 @@ class FullChain extends BaseChain {
         await tx.putChainData(blockHash, chainData);
         await tx.setHead(blockHash);
 
-        if (this._transactionsStore) {
-            const transactionsStoreTx = this._transactionsStore.transaction();
-            await transactionsStoreTx.put(chainData.head);
-            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx, transactionsStoreTx.tx);
+        if (this._transactionStore) {
+            const transactionStoreTx = this._transactionStore.transaction();
+            await transactionStoreTx.put(chainData.head);
+            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx, transactionStoreTx.tx);
         } else {
             await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
         }
@@ -294,7 +294,7 @@ class FullChain extends BaseChain {
         const accountsTx = await this._accounts.transaction(false);
         const transactionsTx = this._transactionsCache.clone();
         // Also update transactions in index.
-        const transactionsStoreTx = this._transactionsStore ? this._transactionsStore.transaction() : null;
+        const transactionStoreTx = this._transactionStore ? this._transactionStore.transaction() : null;
 
         let headHash = this._headHash;
         let head = this._mainChain.head;
@@ -305,14 +305,14 @@ class FullChain extends BaseChain {
                 transactionsTx.revertBlock(head);
 
                 // Also update transactions in index.
-                if (this._transactionsStore) {
-                    await transactionsStoreTx.remove(head);
+                if (this._transactionStore) {
+                    await transactionStoreTx.remove(head);
                 }
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
                 accountsTx.abort();
-                if (this._transactionsStore) {
-                    transactionsStoreTx.abort();
+                if (this._transactionStore) {
+                    transactionStoreTx.abort();
                 }
                 return false;
             }
@@ -335,16 +335,16 @@ class FullChain extends BaseChain {
                 transactionsTx.pushBlock(forkChain[i].head);
 
                 // Also update transactions in index.
-                if (this._transactionsStore) {
-                    await transactionsStoreTx.put(forkChain[i].head);
+                if (this._transactionStore) {
+                    await transactionStoreTx.put(forkChain[i].head);
                 }
             } catch (e) {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
                 Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
                 accountsTx.abort();
-                if (this._transactionsStore) {
-                    transactionsStoreTx.abort();
+                if (this._transactionStore) {
+                    transactionStoreTx.abort();
                 }
                 return false;
             }
@@ -372,8 +372,8 @@ class FullChain extends BaseChain {
 
         // Update head & commit transactions.
         await chainTx.setHead(blockHash);
-        if (this._transactionsStore) {
-            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx, transactionsStoreTx.tx);
+        if (this._transactionStore) {
+            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx, transactionStoreTx.tx);
         } else {
             await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
         }
@@ -463,14 +463,14 @@ class FullChain extends BaseChain {
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByAddress(address) {
-        if (!this._transactionsStore) {
+        if (!this._transactionStore) {
             throw new Error('Invalid request');
         }
 
         const transactionReceipts = [];
 
-        const entriesBySender = await this._transactionsStore.getBySender(address);
-        const entriesByRecipient = await this._transactionsStore.getByRecipient(address);
+        const entriesBySender = await this._transactionStore.getBySender(address);
+        const entriesByRecipient = await this._transactionStore.getByRecipient(address);
 
         entriesBySender.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash));
@@ -487,12 +487,12 @@ class FullChain extends BaseChain {
      * @param {Hash} transactionHash
      * @returns {Promise.<?TransactionStoreEntry>}
      */
-    async getTransactionInfoByTransactionHash(transactionHash) {
-        if (!this._transactionsStore) {
+    async getTransactionInfoByHash(transactionHash) {
+        if (!this._transactionStore) {
             throw new Error('Invalid request');
         }
 
-        const txStoreEntry = await this._transactionsStore.get(transactionHash);
+        const txStoreEntry = await this._transactionStore.get(transactionHash);
         if (!txStoreEntry) {
             return null;
         }
@@ -599,7 +599,7 @@ class FullChain extends BaseChain {
         return this._accounts;
     }
 
-    /** @type {TransactionsCache} */
+    /** @type {TransactionCache} */
     get transactionsCache() {
         return this._transactionsCache;
     }

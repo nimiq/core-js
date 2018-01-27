@@ -237,7 +237,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('can redeem funds regularly before timeout', (done) => {
         (async () => {
-            const cache = new TransactionsCache();
+            const cache = new TransactionCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
@@ -261,7 +261,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('can use sha256', (done) => {
         (async () => {
-            const cache = new TransactionsCache();
+            const cache = new TransactionCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.sha256(Hash.NULL.array);
@@ -285,7 +285,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('blocks regular redemption of too many funds', (done) => {
         (async () => {
-            const cache = new TransactionsCache();
+            const cache = new TransactionCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
@@ -307,7 +307,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('correctly allows to resolve after timeout', (done) => {
         (async () => {
-            const cache = new TransactionsCache();
+            const cache = new TransactionCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
@@ -334,7 +334,7 @@ describe('HashedTimeLockedContract', () => {
 
     it('correctly allows to resolve before timeout', (done) => {
         (async () => {
-            const cache = new TransactionsCache();
+            const cache = new TransactionCache();
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);

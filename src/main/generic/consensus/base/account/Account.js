@@ -93,7 +93,7 @@ class Account {
     /**
      * @param {Array.<Transaction>} transactions
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @param {boolean} silent
      * @return {Promise.<boolean>}
      */
@@ -137,7 +137,7 @@ class Account {
     /**
      * @param {Transaction} transaction
      * @param {number} blockHeight
-     * @param {TransactionsCache} transactionsCache
+     * @param {TransactionCache} transactionsCache
      * @param {boolean} [revert]
      * @return {Account|*}
      */

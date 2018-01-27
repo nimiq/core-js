@@ -1,4 +1,4 @@
-class TransactionsCache {
+class TransactionCache {
     /**
      * @param {Iterable.<Transaction>} [transactions]
      * @param {Array.<Block>} [blockOrder]
@@ -73,10 +73,10 @@ class TransactionsCache {
     }
 
     /**
-     * @returns {TransactionsCache}
+     * @returns {TransactionCache}
      */
     clone() {
-        return new TransactionsCache(/** @type {Iterable.<Transaction>} */ this._transactions, this._blockOrder.slice());
+        return new TransactionCache(/** @type {Iterable.<Transaction>} */ this._transactions, this._blockOrder.slice());
     }
 }
-Class.register(TransactionsCache);
+Class.register(TransactionCache);
