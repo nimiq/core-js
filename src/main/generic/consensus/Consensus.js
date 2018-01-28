@@ -3,8 +3,11 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<FullConsensus>}
      */
-    static async full(netconfig = new NetworkConfig()) {
+    static async full(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || await NetworkConfig.getPlatformDefault();
 
         /** @type {Time} */
         const time = new Time();
@@ -34,8 +37,11 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<LightConsensus>}
      */
-    static async light(netconfig = new NetworkConfig()) {
+    static async light(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || await NetworkConfig.getPlatformDefault();
 
         /** @type {Time} */
         const time = new Time();
@@ -63,8 +69,11 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<NanoConsensus>}
      */
-    static async nano(netconfig = new NetworkConfig()) {
+    static async nano(netconfig) {
         await Crypto.prepareSyncCryptoWorker();
+
+        /** @type {NetworkConfig} */
+        netconfig = netconfig || await NetworkConfig.getPlatformDefault();
 
         /** @type {Time} */
         const time = new Time();

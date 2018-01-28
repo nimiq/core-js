@@ -41,7 +41,7 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
-    const netconfig = new Nimiq.NetworkConfig(host, port, key, cert);
+    const netconfig = Nimiq.NetworkConfig.getPlatformDefault(host, port, key, cert);
     $.consensus = await Nimiq.Consensus.full(netconfig);
 
     $.blockchain = $.consensus.blockchain;

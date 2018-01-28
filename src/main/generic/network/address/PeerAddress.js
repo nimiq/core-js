@@ -185,6 +185,9 @@ class WsPeerAddress extends PeerAddress {
             && this._port === o.port;
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this.toString();
     }
@@ -267,6 +270,9 @@ class RtcPeerAddress extends PeerAddress {
             && this._signalId.equals(o.signalId);
     }
 
+    /**
+     * @return {string}
+     */
     hashCode() {
         return this.toString();
     }
