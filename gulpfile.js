@@ -165,6 +165,7 @@ const sources = {
         './src/main/generic/miner/Miner.js',
         './src/main/generic/wallet/Wallet.js',
         './src/main/generic/wallet/MultiSigWallet.js',
+        './src/main/generic/wallet/WalletStore.js',
         './src/main/generic/utils/IWorker.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
         './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
