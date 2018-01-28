@@ -28,28 +28,36 @@ class WalletStore {
     }
 
     /**
+     * @returns {Promise.<boolean>}
+     */
+    async hasDefault(key) {
+        const defaultAddress = await this._walletStore.get('default');
+        return !!defaultAddress;
+    }
+
+    /**
      * @param {Uint8Array|string} [key]
      * @returns {Promise.<?Wallet>}
      */
-    async getMainWallet(key) {
-        const mainAddress = await this._walletStore.get('main');
-        if (!mainAddress) return null;
-        const base64Address = BufferUtils.toBase64(mainAddress);
-
-        const buf = await this._walletStore.get(base64Address);
-        if (key) {
-            return Wallet.loadEncrypted(buf, key);
+    async getDefault(key) {
+        const defaultAddress = await this._walletStore.get('default');
+        if (!defaultAddress) {
+            const defaultWallet = await Wallet.generate();
+            await this.put(defaultWallet);
+            await this.setDefault(defaultWallet.address);
+            return defaultWallet;
         }
-        return Wallet.load(buf);
+        const base64Address = new Address(defaultAddress);
+        return this.get(base64Address, key);
     }
 
     /**
      * @param {Address} address
      * @returns {Promise}
      */
-    setMainWallet(address) {
-        const mainAddress = address.serialize();
-        return this._walletStore.put('main', mainAddress);
+    setDefault(address) {
+        const defaultAddress = address.serialize();
+        return this._walletStore.put('default', defaultAddress);
     }
 
     /**
@@ -57,25 +65,26 @@ class WalletStore {
      * @param {Uint8Array|string} [key]
      * @returns {Promise.<Wallet>}
      */
-    async getWallet(address, key) {
+    async get(address, key) {
         const base64Address = address.toBase64();
         const buf = await this._walletStore.get(base64Address);
         if (key) {
             return Wallet.loadEncrypted(buf, key);
         }
-        return Wallet.load(buf);
+        return Wallet.loadPlain(buf);
     }
 
     /**
      * @param {Wallet} wallet
      * @param {Uint8Array|string} [key]
+     * @param {Uint8Array|string} [unlockKey]
      * @returns {Promise}
      */
-    putWallet(wallet, key) {
+    put(wallet, key, unlockKey) {
         const base64Address = wallet.address.toBase64();
         let buf = null;
         if (key) {
-            buf = wallet.exportEncrypted(key);
+            buf = wallet.exportEncrypted(key, unlockKey);
         } else {
             buf = wallet.exportPlain();
         }
@@ -83,33 +92,50 @@ class WalletStore {
     }
 
     /**
+     * @returns {Promise<Array.<Address>>}
+     */
+    async list() {
+        const keys = await this._walletStore.keys();
+        return Array.from(keys).filter(key => key !== 'default').map(key => Address.fromBase64(key));
+    }
+
+    /**
      * @param {Address} address
      * @param {Uint8Array|string} [key]
      * @returns {Promise.<MultiSigWallet>}
      */
-    async getMultiSigWallet(address, key) {
+    async getMultiSig(address, key) {
         const base64Address = address.toBase64();
         const buf = await this._multisigStore.get(base64Address);
         if (key) {
             return MultiSigWallet.loadEncrypted(buf, key);
         }
-        return MultiSigWallet.load(buf);
+        return MultiSigWallet.loadPlain(buf);
     }
 
     /**
      * @param {MultiSigWallet} wallet
      * @param {Uint8Array|string} [key]
+     * @param {Uint8Array|string} [unlockKey]
      * @returns {Promise}
      */
-    putMultiSigWallet(wallet, key) {
+    putMultiSig(wallet, key, unlockKey) {
         const base64Address = wallet.address.toBase64();
         let buf = null;
         if (key) {
-            buf = wallet.exportEncrypted(key);
+            buf = wallet.exportEncrypted(key, unlockKey);
         } else {
             buf = wallet.exportPlain();
         }
         return this._multisigStore.put(base64Address, buf);
+    }
+
+    /**
+     * @returns {Promise<Array.<Address>>}
+     */
+    async listMultiSig() {
+        const keys = await this._multisigStore.keys();
+        return Array.from(keys).map(key => Address.fromBase64(key));
     }
 
     close() {
