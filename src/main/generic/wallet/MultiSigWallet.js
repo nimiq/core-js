@@ -32,7 +32,7 @@ class MultiSigWallet extends Wallet {
      * @param {Uint8Array|string} buf
      * @return {MultiSigWallet}
      */
-    static load(buf) {
+    static loadPlain(buf) {
         if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
         if (!buf || buf.byteLength === 0) {
             throw new Error('Invalid wallet seed');
