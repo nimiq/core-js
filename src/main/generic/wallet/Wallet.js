@@ -1,37 +1,9 @@
 class Wallet {
     /**
-     * Tests if a persisted wallet exists in the store.
-     * @returns {boolean}
-     */
-    static async hasPersistent() {
-        await Crypto.prepareSyncCryptoWorker();
-        const db = await new WalletStore();
-        const keys = await db.get('keys');
-        await db.close();
-        return !!keys;
-    }
-
-    /**
-     * Create a Wallet with persistent storage backend.
-     * @returns {Promise.<Wallet>} A Wallet object. If the persisted storage already stored a Wallet before, this will be reused.
-     */
-    static async getPersistent() {
-        await Crypto.prepareSyncCryptoWorker();
-        const db = await new WalletStore();
-        let keys = await db.get('keys');
-        if (!keys) {
-            keys = await KeyPair.generate();
-            await db.put('keys', keys);
-        }
-        await db.close();
-        return new Wallet(keys);
-    }
-
-    /**
-     * Create a Wallet that will lose its data after this session.
+     * Create a new Wallet.
      * @returns {Promise.<Wallet>} Newly created Wallet.
      */
-    static async createVolatile() {
+    static async generate() {
         await Crypto.prepareSyncCryptoWorker();
         return new Wallet(await KeyPair.generate());
     }
@@ -68,7 +40,6 @@ class Wallet {
         /** @type {KeyPair} */
         this._keyPair = keyPair;
         /** @type {Address} */
-        this._address = undefined;
         this._address = this._keyPair.publicKey.toAddress();
     }
 
@@ -95,15 +66,6 @@ class Wallet {
         return transaction;
     }
 
-
-    /**
-     * @deprecated
-     * @returns {string}
-     */
-    dump() {
-        return this._keyPair.toHex();
-    }
-
     /**
      * @returns {Uint8Array}
      */
@@ -122,15 +84,6 @@ class Wallet {
         return this._keyPair.exportEncrypted(key, unlockKey);
     }
 
-    /**
-     * @returns {Promise}
-     */
-    async persist() {
-        const db = await new WalletStore();
-        await db.put('keys', this._keyPair);
-        await db.close();
-    }
-
     /** @type {boolean} */
     get isLocked() {
         return this.keyPair.isLocked;
@@ -140,7 +93,7 @@ class Wallet {
      * @param {Uint8Array|string} key
      * @returns {Promise.<void>}
      */
-    async lock(key) {
+    lock(key) {
         if (typeof key === 'string') key = BufferUtils.fromAscii(key);
         return this.keyPair.lock(key);
     }

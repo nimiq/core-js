@@ -144,7 +144,7 @@ class KeyPair extends Primitive {
         const salt = new Uint8Array(KeyPair.EXPORT_SALT_LENGTH);
         Crypto.lib.getRandomValues(salt);
 
-        const buf = new SerialBuffer(this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH);
+        const buf = new SerialBuffer(this.encryptedSize);
         buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
         buf.write(salt);
         buf.write(this.publicKey.hash().subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
@@ -152,6 +152,11 @@ class KeyPair extends Primitive {
         if (wasLocked) this.relock();
 
         return buf;
+    }
+
+    /** @type {number} */
+    get encryptedSize() {
+        return this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH;
     }
 
     /**

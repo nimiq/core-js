@@ -1,5 +1,4 @@
-// TODO V2: Store private key encrypted
-class MultiSigWallet {
+class MultiSigWallet extends Wallet {
     /**
      * Create a new MultiSigWallet object.
      * @param {KeyPair} keyPair KeyPair owning this Wallet.
@@ -14,6 +13,51 @@ class MultiSigWallet {
     }
 
     /**
+     * @param {KeyPair} keyPair
+     * @param {SerialBuffer} buf
+     * @returns {MultiSigWallet}
+     * @private
+     */
+    static _loadMultiSig(keyPair, buf) {
+        const minSignatures = buf.readUint8();
+        const numPublicKeys = buf.readUint8();
+        const publicKeys = [];
+        for (let i = 0; i < numPublicKeys; ++i) {
+            publicKeys.push(PublicKey.unserialize(buf));
+        }
+        return new MultiSigWallet(keyPair, minSignatures, publicKeys);
+    }
+
+    /**
+     * @param {Uint8Array|string} buf
+     * @return {MultiSigWallet}
+     */
+    static load(buf) {
+        if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
+        if (!buf || buf.byteLength === 0) {
+            throw new Error('Invalid wallet seed');
+        }
+
+        const serialBuf = new SerialBuffer(buf);
+        const keyPair = KeyPair.unserialize(serialBuf);
+        return MultiSigWallet._loadMultiSig(keyPair, serialBuf);
+    }
+
+    /**
+     * @param {Uint8Array|string} buf
+     * @param {Uint8Array|string} key
+     * @return {Promise.<MultiSigWallet>}
+     */
+    static async loadEncrypted(buf, key) {
+        if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+
+        const serialBuf = new SerialBuffer(buf);
+        const keyPair = await KeyPair.fromEncrypted(serialBuf, key);
+        return MultiSigWallet._loadMultiSig(keyPair, serialBuf);
+    }
+
+    /**
      * Create a new MultiSigWallet object.
      * @param {KeyPair} keyPair KeyPair owning this Wallet.
      * @param {number} minSignatures Number of signatures required.
@@ -21,8 +65,7 @@ class MultiSigWallet {
      * @returns {MultiSigWallet} A newly generated MultiSigWallet.
      */
     constructor(keyPair, minSignatures, publicKeys) {
-        /** @type {KeyPair} */
-        this._keyPair = keyPair;
+        super(keyPair);
         /** @type {number} minSignatures */
         this._minSignatures = minSignatures;
         /** @type {Array.<PublicKey>} publicKeys */
@@ -35,17 +78,68 @@ class MultiSigWallet {
     }
 
     /**
+     * @override
+     * @returns {Uint8Array}
+     */
+    exportPlain() {
+        const buf = new SerialBuffer(this.exportedSize);
+        this._keyPair.serialize(buf);
+        buf.writeUint8(this._minSignatures);
+        buf.writeUint8(this._publicKeys.length);
+        for (const pubKey of this._publicKeys) {
+            pubKey.serialize(buf);
+        }
+        return buf;
+    }
+
+    /**
+     * @override
+     * @param {Uint8Array|string} key
+     * @param {Uint8Array|string} [unlockKey]
+     * @return {Promise.<Uint8Array>}
+     */
+    async exportEncrypted(key, unlockKey) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof unlockKey === 'string') unlockKey = BufferUtils.fromAscii(unlockKey);
+        const buf = new SerialBuffer(this.encryptedExportedSize);
+        buf.write(await this._keyPair.exportEncrypted(key, unlockKey));
+        buf.writeUint8(this._minSignatures);
+        buf.writeUint8(this._publicKeys.length);
+        for (const pubKey of this._publicKeys) {
+            pubKey.serialize(buf);
+        }
+        return buf;
+    }
+
+    /** @type {number} */
+    get encryptedExportedSize() {
+        return this._keyPair.encryptedSize
+            + /*minSignatures*/ 1
+            + /*count*/ 1
+            + this._publicKeys.reduce((sum, pubKey) => sum + pubKey.serializedSize, 0);
+    }
+
+    /** @type {number} */
+    get exportedSize() {
+        return this._keyPair.serializedSize
+            + /*minSignatures*/ 1
+            + /*count*/ 1
+            + this._publicKeys.reduce((sum, pubKey) => sum + pubKey.serializedSize, 0);
+    }
+
+    /**
      * Create a Transaction that still needs to be signed.
      * @param {Address} recipientAddr Address of the transaction receiver
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
      * @param {number} validityStartHeight The validityStartHeight for the transaction.
-     * @returns {Transaction} A prepared Transaction object.
+     * @returns {Promise.<Transaction>} A prepared Transaction object.
+     * @override
      */
-    async createTransaction(recipientAddr, value, fee, validityStartHeight) {
+    createTransaction(recipientAddr, value, fee, validityStartHeight) {
         const transaction = new ExtendedTransaction(this._address, Account.Type.BASIC,
-            recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0));
-        return transaction;
+            recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, new Uint8Array(0));
+        return Promise.resolve(transaction);
     }
 
     /**
@@ -86,17 +180,14 @@ class MultiSigWallet {
         return transaction;
     }
 
-    /**
-     * The address of the MultiSigWallet.
-     * @type {Address}
-     */
-    get address() {
-        return this._address;
+    /** @type {number} */
+    get minSignatures() {
+        return this._minSignatures;
     }
 
-    /** @type {KeyPair} */
-    get keyPair() {
-        return this._keyPair;
+    /** @type {Array.<PublicKey>} */
+    get publicKeys() {
+        return this._publicKeys;
     }
 }
 Class.register(MultiSigWallet);
