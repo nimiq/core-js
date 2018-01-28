@@ -16,7 +16,7 @@ describe('Wallet', () => {
 
     it('can create a signed transaction', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const transaction = await wallet.createTransaction(recipient, value, fee, nonce);
             const isValid = await transaction.verify();
             expect(isValid).toBe(true);
@@ -41,7 +41,7 @@ describe('Wallet', () => {
 
     it('can export & import a plaintext wallet', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const wallet2 = await Wallet.load(wallet.exportPlain());
 
             expect(wallet.keyPair.equals(wallet2.keyPair)).toBeTruthy();
@@ -51,7 +51,7 @@ describe('Wallet', () => {
 
     it('can lock, unlock and relock itself', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const key = 'password';
 
             expect(wallet.isLocked).toBeFalsy();
@@ -66,7 +66,7 @@ describe('Wallet', () => {
 
     it('can export an encrypted wallet and import it', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const key = 'password';
 
             const encryptedWallet = await wallet.exportEncrypted(key);
@@ -78,7 +78,7 @@ describe('Wallet', () => {
 
     it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const key = 'password';
             const key2 = '123456';
 
@@ -95,7 +95,7 @@ describe('Wallet', () => {
 
     it('can detect wrong key on an encrypted wallet', (done) => {
         (async () => {
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
             const key = 'password';
             const key2 = '123456';
 

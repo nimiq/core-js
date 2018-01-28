@@ -4,7 +4,7 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts);
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
 
             // Create a transaction
             const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543, 42, 1);
@@ -27,7 +27,7 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts);
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
 
             // This is needed to check which reason caused pushTransaction() to fail
             spyOn(Log, 'w');
@@ -78,7 +78,7 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts);
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
 
             // Create a transaction
             const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,1);
@@ -102,7 +102,7 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts);
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.createVolatile();
+            const wallet = await Wallet.generate();
 
             await accounts._tree.put(wallet.address, new BasicAccount(152));
 
@@ -138,7 +138,7 @@ describe('Mempool', () => {
             // several different transactions to push
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const wallet = await Wallet.createVolatile();
+                const wallet = await Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(23478));
                 wallets.push(wallet);
             }
@@ -181,7 +181,7 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.createVolatile();
+                const wallet = await Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(5));
                 wallets.push(wallet);
             }
@@ -227,7 +227,7 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.createVolatile();
+                const wallet = await Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(5));
                 wallets.push(wallet);
             }
