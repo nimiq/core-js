@@ -58,6 +58,8 @@ class Transaction {
         this._data = data;
         /** @type {Uint8Array} */
         this._proof = proof;
+
+        if (this._recipient === Address.CONTRACT_CREATION) this._recipient = this.getContractCreationAddress();
     }
 
     /**
@@ -219,6 +221,16 @@ class Transaction {
             + `fee=${this._fee}, `
             + `validityStartHeight=${this._validityStartHeight}`
             + `}`;
+    }
+
+    /**
+     * @return {Address}
+     */
+    getContractCreationAddress() {
+        const tx = Transaction.unserialize(this.serialize());
+        tx._recipient = Address.NULL;
+        tx._hash = null;
+        return Address.fromHash(tx.hashSync());
     }
 
     get type() {

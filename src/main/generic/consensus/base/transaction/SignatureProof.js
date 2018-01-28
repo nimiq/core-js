@@ -117,16 +117,18 @@ class SignatureProof {
     }
 
     /**
-     * @param {Address} sender
+     * @param {?Address} sender
      * @param {Uint8Array} data
      * @returns {Promise.<boolean>}
      */
     async verify(sender, data) {
-        const merkleRoot = await this._merklePath.computeRoot(this._publicKey);
-        const signerAddr = Address.fromHash(merkleRoot);
-        if (!signerAddr.equals(sender)) {
-            Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
-            return false;
+        if (sender !== null) {
+            const merkleRoot = await this._merklePath.computeRoot(this._publicKey);
+            const signerAddr = Address.fromHash(merkleRoot);
+            if (!signerAddr.equals(sender)) {
+                Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
+                return false;
+            }
         }
 
         if (!this._signature) {

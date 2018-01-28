@@ -102,9 +102,9 @@ describe('Accounts', () => {
             const state1 = await account.get(accountAddress, Account.Type.BASIC);
             expect(state1.balance).toBe(accountState1.balance);
 
-            // Verify that get() returns BasicAccount.INITIAL when called with an unknown address
+            // Verify that get() returns Account.INITIAL when called with an unknown address
             const state2 = await account.get(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)), Account.Type.BASIC);
-            expect(BasicAccount.INITIAL.equals(state2)).toBe(true);
+            expect(Account.INITIAL.equals(state2)).toBe(true);
         })().then(done, done.fail);
     });
 

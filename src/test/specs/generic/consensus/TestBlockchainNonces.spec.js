@@ -150,5 +150,12 @@ TestBlockchain.NONCES = {
     '2svl8t+ZIbJi5DWxmkUIMnvuQfmSB+6xnCr/8TBlg0o=@1': 152492116,
     'kfQqAJWq+guU78qpvpmg7QsyemhUAhOjUr8TvkAR8EI=@0': 387915,
     'HqseQclW/xLJry0G1mbjxjrUry7egsXD0zjnROG8FYY=': 13063,
-    'zqk7Czx4K1A/78lkVOMRcvhwmpAUZ4d2T76PTmf9j3k=': 28310
+    'zqk7Czx4K1A/78lkVOMRcvhwmpAUZ4d2T76PTmf9j3k=': 28310,
+    'OFnXtUqIiZVoJn75omBDiLZaBOK5631fORM0kx1GxPY=': 238065,
+    '7QBY9jftCSS6WkAV1PnsXPlF4hCa00VWKYB8TwbiUcU=': 3082,
+    'XQs4DSVQGQ0rjNgOYMO5rXhvtlaGh7MHp7GQ2sX61ck=': 125098,
+    'L04MXqyFVogSUBK/F14l/A04VoRKFXH7xXgOhhX4ORg=': 32676,
+    'HffIW9FjhI4toBRkSwlPHad4kYUz1MFzfRNJVxT0gEg=': 241094,
+    'uH+v2gEghz3KrqyeVAG/Wx+QgnQZtjNKYqjjbX8EyMs=': 6019,
+    'LED2uEGIgaGjwwCbDR8nIL03RJIk3eQ2zEW4IprsOKE=': 92437
 };

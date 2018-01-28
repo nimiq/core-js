@@ -95,7 +95,7 @@ class Account {
      * @param {number} blockHeight
      * @param {TransactionCache} transactionsCache
      * @param {boolean} silent
-     * @return {Promise.<boolean>}
+     * @return {Promise.<boolean|Account>}
      */
     verifyOutgoingTransactionSet(transactions, blockHeight, transactionsCache, silent = false) {
         let account = this;
@@ -125,7 +125,7 @@ class Account {
                 return Promise.resolve(false);
             }
         }
-        return Promise.resolve(true);
+        return Promise.resolve(account);
     }
 
     /**
@@ -189,12 +189,20 @@ class Account {
      * @return {boolean}
      */
     isInitial() {
-        return this._balance === 0;
+        return this === Account.INITIAL;
+    }
+
+    /**
+     * @return {boolean}
+     */
+    isToBePruned() {
+        return this._balance === 0 && !this.isInitial();
     }
 }
 
 /**
  * Enum for Account types.
+ * Non-zero values are contracts.
  * @enum
  */
 Account.Type = {
@@ -205,7 +213,7 @@ Account.Type = {
     BASIC: 0,
     /**
      * Account with vesting functionality.
-     * @see {VestingAccount}
+     * @see {VestingContract}
      */
     VESTING: 1,
     /**
@@ -215,7 +223,7 @@ Account.Type = {
     HTLC: 2
 };
 /**
- * @type {Map.<Account.Type, {INITIAL: Account, copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}
+ * @type {Map.<Account.Type, {copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, create: function(balance: number, blockHeight: number, transaction: Transaction):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}
  */
 Account.TYPE_MAP = new Map();
 

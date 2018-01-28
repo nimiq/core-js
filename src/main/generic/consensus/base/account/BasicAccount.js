@@ -58,7 +58,36 @@ class BasicAccount extends Account {
     withBalance(balance) {
         return new BasicAccount(balance);
     }
+
+    /**
+     * @param {Transaction} transaction
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
+     * @return {Account}
+     */
+    withIncomingTransaction(transaction, blockHeight, revert = false) {
+        if (!revert) {
+            if (transaction.recipientType !== this._type) {
+                // Contract creation
+                return Account.TYPE_MAP.get(transaction.recipientType).create(this._balance + transaction.value, blockHeight, transaction);
+            }
+            return this.withBalance(this._balance + transaction.value);
+        } else {
+            const newBalance = this._balance - transaction.value;
+            if (newBalance < 0) {
+                throw new Error('Balance Error!');
+            }
+            return this.withBalance(newBalance);
+        }
+    }
+
+    /**
+     * @return {boolean}
+     */
+    isInitial() {
+        return this._balance === 0;
+    }
 }
-BasicAccount.INITIAL = new BasicAccount(0);
+Account.INITIAL = new BasicAccount(0);
 Account.TYPE_MAP.set(Account.Type.BASIC, BasicAccount);
 Class.register(BasicAccount);

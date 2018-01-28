@@ -354,7 +354,7 @@
         _updateBalance() {
             if ($.consensus.established) {
                 $.consensus.getAccount($.wallet.address, $.blockchain.headHash).then(function(account) {
-                    account = account || Nimiq.BasicAccount.INITIAL;
+                    account = account || Nimiq.Account.INITIAL;
                     this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance).toFixed(8);
                 }.bind(this));
             }

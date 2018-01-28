@@ -138,9 +138,13 @@ class TestBlockchain extends FullChain {
             const numTransactions = typeof options.numTransactions !== 'undefined' ? options.numTransactions : height - 1;
             transactions = await this.generateTransactions(numTransactions);
         }
+        let prunedAccounts = options.prunedAccounts;
+        if (!prunedAccounts) {
+            prunedAccounts = await this.accounts.gatherToBePrunedAccounts(transactions, height, this._transactionsCache);
+        }
 
         const minerAddr = options.minerAddr || this.users[this.height % this._users.length].address;     // user[0] created genesis, hence we start with user[1]
-        const body = new BlockBody(minerAddr, transactions);
+        const body = new BlockBody(minerAddr, transactions, new Uint8Array(0), prunedAccounts);
 
         const version = options.version || BlockHeader.Version.CURRENT_VERSION;
         const nBits = options.nBits || BlockUtils.targetToCompact(await this.getNextTarget());
@@ -197,6 +201,7 @@ class TestBlockchain extends FullChain {
             await TestBlockchain.mineBlock(block, superblockLevel);
 
             TestBlockchain.NONCES[id] = block.header.nonce;
+            console.log(`Mine on demand: Assigned ${id} to ${block.header.nonce}`);
         } else if (this._invalidNonce) {
             console.log(`No nonce available for block ${id}, but accepting invalid nonce.`);
         } else {
@@ -359,7 +364,7 @@ class TestBlockchain extends FullChain {
 }
 TestBlockchain._miningPool = new MinerWorkerPool(4);
 
-TestBlockchain.MINE_ON_DEMAND = false;
+TestBlockchain.MINE_ON_DEMAND = true;
 
 TestBlockchain.BLOCKS = {};
 TestBlockchain.USERS = [ // ed25519 keypairs

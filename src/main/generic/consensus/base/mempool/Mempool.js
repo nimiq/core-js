@@ -62,12 +62,13 @@ class Mempool extends Observable {
 
         // Fully verify the transaction against the current accounts state + Mempool.
         const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
-        if (!(await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1, this._blockchain.transactionsCache))) {
+        const senderAccountAfterApply = await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1, this._blockchain.transactionsCache);
+        if (!senderAccountAfterApply) {
             return Mempool.ReturnCode.INVALID;
         }
 
         // Check limit for free transactions.
-        if (transaction.fee/transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
+        if (transaction.fee / transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
             && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
             return Mempool.ReturnCode.FEE_TOO_LOW;
         }
@@ -95,7 +96,7 @@ class Mempool extends Observable {
      * @param {number} [maxSize]
      * @returns {Array.<Transaction>}
      */
-    getTransactions(maxSize=Infinity) {
+    getTransactions(maxSize = Infinity) {
         const transactions = [];
         let size = 0;
         for (const tx of this._transactionsByHash.values().sort((a, b) => a.compare(b))) {
@@ -112,8 +113,15 @@ class Mempool extends Observable {
     /**
      * @param {number} maxSize
      */
-    getTransactionsForBlock(maxSize) {
+    async getTransactionsForBlock(maxSize) {
         const transactions = this.getTransactions(maxSize);
+        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache);
+        const prunedAccountsSize = Array.from(prunedAccounts.keys()).reduce((sum, addr) => sum + addr.serializedSize, 0)
+            + Array.from(prunedAccounts.values()).reduce((sum, acc) => sum + acc.serializedSize, 0);
+        while (prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0) > maxSize) {
+            transactions.pop();
+        }
+
         transactions.sort((a, b) => a.compareBlockOrder(b));
         return transactions;
     }

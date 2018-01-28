@@ -55,11 +55,11 @@ const $ = {};
         $.wallet = { address: Nimiq.Address.fromUserFriendlyAddress(walletAddress) };
     }
 
-    const account = await $.accounts.get($.wallet.address) || Nimiq.BasicAccount.INITIAL;
+    const account = await $.accounts.get($.wallet.address) || Nimiq.Account.INITIAL;
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
                   + ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`);
 
-    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
+    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
 
     Nimiq.Log.i(TAG, () => `Blockchain: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
 
@@ -110,7 +110,7 @@ const $ = {};
             hashrates.push(hashrate);
 
             if (hashrates.length >= outputInterval) {
-                const account = await $.accounts.get($.wallet.address) || Nimiq.BasicAccount.INITIAL;
+                const account = await $.accounts.get($.wallet.address) || Nimiq.Account.INITIAL;
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
                 Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(Math.log10(hashrates.length)).padStart(7)} H/s`
                             + ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`

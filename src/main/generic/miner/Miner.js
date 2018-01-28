@@ -2,6 +2,7 @@ class Miner extends Observable {
     /**
      * @param {IBlockchain} blockchain
      * @param {Mempool} mempool
+     * @param {Accounts} accounts
      * @param {Time} time
      * @param {Address} minerAddress
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
@@ -9,12 +10,14 @@ class Miner extends Observable {
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, time, minerAddress, extraData = new Uint8Array(0)) {
+    constructor(blockchain, mempool, accounts, time, minerAddress, extraData = new Uint8Array(0)) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {Accounts} */
+        this._accounts = accounts;
         /** @type {Time} */
         this._time = time;
         /** @type {Address} */
@@ -208,7 +211,7 @@ class Miner extends Observable {
     async getNextBlock() {
         const nextTarget = await this._blockchain.getNextTarget();
         const interlink = await this._getNextInterlink(nextTarget);
-        const body = this._getNextBody(interlink.serializedSize);
+        const body = await this._getNextBody(interlink.serializedSize);
         const header = await this._getNextHeader(nextTarget, interlink, body);
         return new Block(header, interlink, body);
     }
@@ -258,13 +261,14 @@ class Miner extends Observable {
      * @return {BlockBody}
      * @private
      */
-    _getNextBody(interlinkSize) {
+    async _getNextBody(interlinkSize) {
         const maxSize = Policy.BLOCK_SIZE_MAX
             - BlockHeader.SERIALIZED_SIZE
             - interlinkSize
             - BlockBody.getMetadataSize(this._extraData);
-        const transactions = this._mempool.getTransactionsForBlock(maxSize);
-        return new BlockBody(this._address, transactions, this._extraData);
+        const transactions = await this._mempool.getTransactionsForBlock(maxSize);
+        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache);
+        return new BlockBody(this._address, transactions, this._extraData, prunedAccounts);
     }
 
     /**

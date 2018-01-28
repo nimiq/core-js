@@ -495,7 +495,7 @@
         }
 
         _balanceChanged(account) {
-            if (!account) account = Nimiq.BasicAccount.INITIAL;
+            if (!account) account = Nimiq.Account.INITIAL;
             this._wltBalance.innerText = Nimiq.Policy.satoshisToCoins(account.balance).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
         }
 
