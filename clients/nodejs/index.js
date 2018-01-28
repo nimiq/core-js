@@ -49,10 +49,31 @@ const $ = {};
     $.mempool = $.consensus.mempool;
     $.network = $.consensus.network;
 
-    if (!walletAddress) {
-        $.wallet = walletSeed ? await Nimiq.Wallet.load(walletSeed) : await Nimiq.Wallet.getPersistent();
+    // TODO: Wallet key.
+    $.walletStore = await new Nimiq.WalletStore();
+    if (!walletAddress && !walletSeed) {
+        // Load or create main wallet.
+        let mainWallet = await $.walletStore.getMainWallet();
+        if (!mainWallet) {
+            mainWallet = await Nimiq.Wallet.generate();
+            await $.walletStore.putWallet(mainWallet);
+            await $.walletStore.setMainWallet(mainWallet.address);
+        }
+        $.wallet = mainWallet;
+    } else if (walletSeed) {
+        // Load wallet from seed.
+        const mainWallet = await Nimiq.Wallet.load(walletSeed);
+        await $.walletStore.putWallet(mainWallet);
+        await $.walletStore.setMainWallet(mainWallet.address);
+        $.wallet = mainWallet;
     } else {
-        $.wallet = { address: Nimiq.Address.fromUserFriendlyAddress(walletAddress) };
+        const address = Nimiq.Address.fromUserFriendlyAddress(walletAddress);
+        $.wallet = {address: address};
+        // Check if we have a full wallet in store.
+        const wallet = await $.walletStore.getWallet(address);
+        if (wallet) {
+            $.wallet = wallet;
+        }
     }
 
     const account = await $.accounts.get($.wallet.address);

@@ -549,7 +549,15 @@
             $.network = $.consensus.network;
 
             // XXX Legacy components
-            $.wallet = await Nimiq.Wallet.getPersistent();
+            $.walletStore = await new Nimiq.WalletStore();
+            // Load or create main wallet.
+            let mainWallet = await $.walletStore.getMainWallet();
+            if (!mainWallet) {
+                mainWallet = await Nimiq.Wallet.generate();
+                await $.walletStore.putWallet(mainWallet);
+                await $.walletStore.setMainWallet(mainWallet.address);
+            }
+            $.wallet = mainWallet;
             $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
 
             bcTitle.classList.add('connecting');
