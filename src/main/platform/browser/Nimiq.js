@@ -156,6 +156,28 @@ class Nimiq {
         return window.Number && window.Number.isInteger;
     }
 
+    // Required for only testing iOS WASM bug on iOS devices
+    // FIXME: Remove when iOS 11.3 is sufficiently widespread
+    static _isiOS() {
+        return new RegExp("/iPad|iPhone|iPod/").test(navigator.userAgent) && !window.MSStream;
+    }
+
+    // Tests for a WASM implementation bug in iOS 11.2.5
+    // FIXME: Remove when iOS 11.3 is sufficiently widespread
+    static async _hasNoBrokenWasmImplementation() {
+        // From https://github.com/brion/min-wasm-fail
+        const mod = await WebAssembly.compile(iOSWasmTest.wasmBinary);
+        const inst = new WebAssembly.Instance(mod, {});
+        // test storing to and loading from a non-zero location via a parameter.
+        if (inst.exports.test(4)) {
+            // ok, we stored a value.
+            return true;
+        } else {
+            // Safari on iOS 11.2.5 returns 0 unexpectedly at non-zero locations
+            return false;
+        }
+    }
+
     /**
      * Initialize the Nimiq client library.
      * @param {function()} ready Function to be called once the library is available.
