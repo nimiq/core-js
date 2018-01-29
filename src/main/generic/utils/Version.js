@@ -1,7 +1,8 @@
 class Version {
     static isCompatible(code) {
-        return code === Version.CODE;
+        // Allow future, backwards-compatible versions.
+        return code >= Version.CODE;
     }
 }
-Version.CODE = 4;
+Version.CODE = 1;
 Class.register(Version);
