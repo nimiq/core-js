@@ -10,7 +10,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
         if (
             // FIXME: Remove when iOS 11.3 is sufficiently widespread
-            (!Nimiq._isiOS() || (await this.importWasm('iOS-wasm-fail.wasm', 'iOSWasmTest') && await Nimiq._hasNoBrokenWasmImplementation())) &&
+            (PlatformUtils.isNodeJs() || !Nimiq._isiOS() || (await this.importWasm('iOS-wasm-fail.wasm', 'iOSWasmTest') && await Nimiq._hasNoBrokenWasmImplementation())) &&
             await this.importWasm('worker-wasm.wasm')
         ) {
             await this.importScript('worker-wasm.js');
