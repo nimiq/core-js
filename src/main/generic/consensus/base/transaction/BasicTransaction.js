@@ -13,7 +13,7 @@ class BasicTransaction extends Transaction {
         if (signature !== undefined && !(signature instanceof Signature)) throw new Error('Malformed signature');
 
         const proof = SignatureProof.singleSig(senderPubKey, signature);
-        super(Transaction.Type.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, new Uint8Array(0), proof.serialize());
+        super(Transaction.Format.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0), proof.serialize());
 
         /**
          * @type {SignatureProof}
@@ -28,7 +28,7 @@ class BasicTransaction extends Transaction {
      */
     static unserialize(buf) {
         const type = buf.readUint8();
-        Assert.that(type === Transaction.Type.BASIC);
+        Assert.that(type === Transaction.Format.BASIC);
 
         const senderPubKey = PublicKey.unserialize(buf);
         const recipient = Address.unserialize(buf);
@@ -45,7 +45,7 @@ class BasicTransaction extends Transaction {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._type);
+        buf.writeUint8(Transaction.Format.BASIC);
         this.senderPubKey.serialize(buf);
         this._recipient.serialize(buf);
         buf.writeUint64(this._value);
@@ -88,5 +88,5 @@ class BasicTransaction extends Transaction {
         this._proof = this._signatureProof.serialize();
     }
 }
-Transaction.TYPE_MAP.set(Transaction.Type.BASIC, BasicTransaction);
+Transaction.FORMAT_MAP.set(Transaction.Format.BASIC, BasicTransaction);
 Class.register(BasicTransaction);

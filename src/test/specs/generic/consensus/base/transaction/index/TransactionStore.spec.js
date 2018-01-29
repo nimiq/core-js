@@ -17,8 +17,8 @@ describe('TransactionStore', () => {
             const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
             const proof = BufferUtils.fromAscii('ABCD');
             const tx1 = new BasicTransaction(senderPubKey, recipientAddress1, 1, 1, 1, signature);
-            const tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress2, Account.Type.BASIC, 1, 1, 1, new Uint8Array(0), proof);
-            const tx3 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress1, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0), proof);
+            const tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress2, Account.Type.BASIC, 1, 1, 1, Transaction.Flag.NONE, new Uint8Array(0), proof);
+            const tx3 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress1, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0), proof);
 
             /** @type {Array.<Transaction>} */
             transactions = [tx1, tx2, tx3];

@@ -17,7 +17,7 @@ describe('TransactionsProof', () => {
             senderAddress = senderPubKey.toAddressSync();
 
             tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
-            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, data, proof);
+            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, data, proof);
 
             tx1Proof = await MerkleProof.compute([tx1, tx2], [tx1]);
             tx2Proof = await MerkleProof.compute([tx1, tx2], [tx2]);

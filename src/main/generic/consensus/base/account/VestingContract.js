@@ -231,10 +231,6 @@ class VestingContract extends Contract {
      * @return {Account}
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
-        if (revert) {
-            // The only incoming transaction is the contract creation, revert to basic account.
-            return new BasicAccount(this._balance).withIncomingTransaction(transaction, blockHeight, revert);
-        }
         throw new Error('Illegal incoming transaction');
     }
 }

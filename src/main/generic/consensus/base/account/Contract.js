@@ -25,8 +25,9 @@ class Contract extends Account {
      * @return {Account}
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
-        if (!revert && transaction.data.length > 0) {
-            throw new Error('Data Error!');
+        if (!revert && transaction.hasFlag(Transaction.Flag.CONTRACT_CREATION)) {
+            // Contract already created
+            throw new Error('Data error');
         }
         return super.withIncomingTransaction(transaction, blockHeight, revert);
     }
@@ -39,7 +40,7 @@ class Contract extends Account {
      * @return {Account}
      */
     withContractCommand(transaction, blockHeight, revert = false) {
-        if (revert) {
+        if (revert && transaction.hasFlag(Transaction.Flag.CONTRACT_CREATION)) {
             // Revert contract creation
             return new BasicAccount(this.balance);
         }

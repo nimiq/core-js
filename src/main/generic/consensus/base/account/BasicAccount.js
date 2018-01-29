@@ -90,7 +90,7 @@ class BasicAccount extends Account {
      * @return {Account}
      */
     withContractCommand(transaction, blockHeight, revert = false) {
-        if (!revert && transaction.recipientType !== this._type) {
+        if (!revert && transaction.recipientType !== this._type && transaction.hasFlag(Transaction.Flag.CONTRACT_CREATION)) {
             // Contract creation
             return Account.TYPE_MAP.get(transaction.recipientType).create(this._balance, blockHeight, transaction);
         }

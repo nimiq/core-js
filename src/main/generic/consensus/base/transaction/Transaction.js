@@ -2,21 +2,9 @@
  * @abstract
  */
 class Transaction {
-    /**
-     * @param {Transaction} o
-     * @returns {Transaction}
-     */
-    static copy(o) {
-        if (!o) return o;
-        const sender = Address.copy(o._sender);
-        const recipient = Address.copy(o._recipient);
-        const data = new Uint8Array(o._data);
-        const proof = new Uint8Array(o._proof);
-        return new Transaction(o._type, sender, o._senderType, recipient, o._recipientType, o._value, o._fee, o._validityStartHeight, data, proof);
-    }
 
     /**
-     * @param {Transaction.Type} type
+     * @param {Transaction.Format} format
      * @param {Address} sender
      * @param {Account.Type} senderType
      * @param {Address} recipient
@@ -24,10 +12,11 @@ class Transaction {
      * @param {number} value
      * @param {number} fee
      * @param {number} validityStartHeight
+     * @param {Transaction.Flag | *} flags
      * @param {Uint8Array} data
      * @param {Uint8Array} proof
      */
-    constructor(type, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof) {
+    constructor(format, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof) {
         if (!(sender instanceof Address)) throw new Error('Malformed sender');
         if (!NumberUtils.isUint8(senderType)) throw new Error('Malformed sender type');
         if (!(recipient instanceof Address)) throw new Error('Malformed recipient');
@@ -35,11 +24,12 @@ class Transaction {
         if (!NumberUtils.isUint64(value) || value === 0) throw new Error('Malformed value');
         if (!NumberUtils.isUint64(fee)) throw new Error('Malformed fee');
         if (!NumberUtils.isUint32(validityStartHeight)) throw new Error('Malformed validityStartHeight');
+        if (!NumberUtils.isUint8(flags) && (flags && ~(Transaction.Flag.ALL)) > 0) throw new Error('Malformed flags');
         if (!(data instanceof Uint8Array) || !(NumberUtils.isUint16(data.byteLength))) throw new Error('Malformed data');
         if (proof && (!(proof instanceof Uint8Array) || !(NumberUtils.isUint16(proof.byteLength)))) throw new Error('Malformed proof');
 
-        /** @type {Transaction.Type} */
-        this._type = type;
+        /** @type {Transaction.Format} */
+        this._format = format;
         /** @type {Address} */
         this._sender = sender;
         /** @type {Account.Type} */
@@ -54,6 +44,8 @@ class Transaction {
         this._fee = fee;
         /** @type {number} */
         this._validityStartHeight = validityStartHeight;
+        /** @type {Transaction.Flag | *} */
+        this._flags = flags;
         /** @type {Uint8Array} */
         this._data = data;
         /** @type {Uint8Array} */
@@ -68,10 +60,10 @@ class Transaction {
      */
     static unserialize(buf) {
         // We currently only support one transaction type: Basic.
-        const type = /** @type {Transaction.Type} */ buf.readUint8();
+        const type = /** @type {Transaction.Format} */ buf.readUint8();
         buf.readPos--;
-        if (!Transaction.TYPE_MAP.has(type)) throw new Error('Invalid transaction type');
-        return Transaction.TYPE_MAP.get(type).unserialize(buf);
+        if (!Transaction.FORMAT_MAP.has(type)) throw new Error('Invalid transaction type');
+        return Transaction.FORMAT_MAP.get(type).unserialize(buf);
     }
 
     /**
@@ -89,6 +81,7 @@ class Transaction {
         buf.writeUint64(this._value);
         buf.writeUint64(this._fee);
         buf.writeUint32(this._validityStartHeight);
+        buf.writeUint8(this._flags);
         return buf;
     }
 
@@ -102,7 +95,8 @@ class Transaction {
             + /*recipientType*/ 1
             + /*value*/ 8
             + /*fee*/ 8
-            + /*validityStartHeight*/ 4;
+            + /*validityStartHeight*/ 4
+            + /*flags*/ 1;
     }
 
     /**
@@ -165,8 +159,8 @@ class Transaction {
      * @return {number}
      */
     compare(o) {
-        if (this.fee/this.serializedSize > o.fee/o.serializedSize) return -1;
-        if (this.fee/this.serializedSize < o.fee/o.serializedSize) return 1;
+        if (this.fee / this.serializedSize > o.fee / o.serializedSize) return -1;
+        if (this.fee / this.serializedSize < o.fee / o.serializedSize) return 1;
         if (this.serializedSize > o.serializedSize) return -1;
         if (this.serializedSize < o.serializedSize) return 1;
         if (this.fee > o.fee) return -1;
@@ -198,7 +192,7 @@ class Transaction {
      */
     equals(o) {
         return o instanceof Transaction
-            && this._type === o._type
+            && this._format === o._format
             && this._sender.equals(o._sender)
             && this._senderType === o._senderType
             && this._recipient.equals(o._recipient)
@@ -206,6 +200,7 @@ class Transaction {
             && this._value === o._value
             && this._fee === o._fee
             && this._validityStartHeight === o._validityStartHeight
+            && this._flags === o._flags
             && BufferUtils.equals(this._data, o._data)
             && BufferUtils.equals(this._proof, o._proof);
     }
@@ -231,10 +226,6 @@ class Transaction {
         tx._recipient = Address.NULL;
         tx._hash = null;
         return Address.fromHash(tx.hashSync());
-    }
-
-    get type() {
-        return this._type;
     }
 
     /** @type {Address} */
@@ -272,6 +263,19 @@ class Transaction {
         return this._validityStartHeight;
     }
 
+    /** @type {number} */
+    get flags() {
+        return this._flags;
+    }
+
+    /**
+     * @param {Transaction.Flag} flag
+     * @returns {boolean}
+     */
+    hasFlag(flag) {
+        return (this._flags & flag) > 0;
+    }
+
     /** @type {Uint8Array} */
     get data() {
         return this._data;
@@ -290,14 +294,22 @@ class Transaction {
 }
 
 /**
- * Enum for Transaction types.
+ * Enum for Transaction formats.
  * @enum
  */
-Transaction.Type = {
+Transaction.Format = {
     BASIC: 0,
     EXTENDED: 1
 };
-/** @type {Map.<Transaction.Type, {unserialize: function(buf: SerialBuffer):Transaction}>} */
-Transaction.TYPE_MAP = new Map();
+/**
+ * @enum
+ */
+Transaction.Flag = {
+    NONE: 0,
+    CONTRACT_CREATION: 0b1,
+    ALL: 0b1
+};
+/** @type {Map.<Transaction.Format, {unserialize: function(buf: SerialBuffer):Transaction}>} */
+Transaction.FORMAT_MAP = new Map();
 
 Class.register(Transaction);

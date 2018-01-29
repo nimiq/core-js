@@ -20,7 +20,7 @@ describe('Subscription', () => {
             block = await testBlockchain.createBlock();
 
             tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
-            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, data, proof);
+            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, Transaction.Flag.NONE, data, proof);
 
             txHighFee = new BasicTransaction(senderPubKey, recipientAddr, value, tx1.serializedSize*2, nonce, signature);
         })().then(done, done.fail);

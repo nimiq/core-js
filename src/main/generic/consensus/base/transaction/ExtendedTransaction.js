@@ -8,11 +8,12 @@ class ExtendedTransaction extends Transaction {
      * @param {number} value
      * @param {number} fee
      * @param {number} validityStartHeight
+     * @param {Transaction.Flag | *} flags
      * @param {Uint8Array} data
      * @param {Uint8Array} [proof]
      */
-    constructor(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof = new Uint8Array(0)) {
-        super(Transaction.Type.EXTENDED, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof);
+    constructor(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof = new Uint8Array(0)) {
+        super(Transaction.Format.EXTENDED, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof);
     }
 
     /**
@@ -20,8 +21,8 @@ class ExtendedTransaction extends Transaction {
      * @return {Transaction}
      */
     static unserialize(buf) {
-        const type = /** @type {Transaction.Type} */ buf.readUint8();
-        Assert.that(type === Transaction.Type.EXTENDED);
+        const type = /** @type {Transaction.Format} */ buf.readUint8();
+        Assert.that(type === Transaction.Format.EXTENDED);
 
         const dataSize = buf.readUint16();
         const data = buf.read(dataSize);
@@ -32,9 +33,10 @@ class ExtendedTransaction extends Transaction {
         const value = buf.readUint64();
         const fee = buf.readUint64();
         const validityStartHeight = buf.readUint32();
+        const flags = buf.readUint8();
         const proofSize = buf.readUint16();
         const proof = buf.read(proofSize);
-        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, data, proof);
+        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof);
     }
 
     /**
@@ -43,7 +45,7 @@ class ExtendedTransaction extends Transaction {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.writeUint8(this._type);
+        buf.writeUint8(Transaction.Format.EXTENDED);
         this.serializeContent(buf);
         buf.writeUint16(this._proof.byteLength);
         buf.write(this._proof);
@@ -59,5 +61,5 @@ class ExtendedTransaction extends Transaction {
     }
 }
 
-Transaction.TYPE_MAP.set(Transaction.Type.EXTENDED, ExtendedTransaction);
+Transaction.FORMAT_MAP.set(Transaction.Format.EXTENDED, ExtendedTransaction);
 Class.register(ExtendedTransaction);

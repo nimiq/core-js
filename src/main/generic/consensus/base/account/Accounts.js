@@ -321,7 +321,7 @@ class Accounts extends Observable {
         const txFees = body.transactions.reduce((sum, tx) => sum + tx.fee, 0);
 
         // "Coinbase transaction"
-        const coinbaseTransaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, body.minerAddr, Account.Type.BASIC, txFees + Policy.blockRewardAt(blockHeight), 0, 0, new Uint8Array(0));
+        const coinbaseTransaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, body.minerAddr, Account.Type.BASIC, txFees + Policy.blockRewardAt(blockHeight), 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
 
         const recipientAccount = await this.get(body.minerAddr, undefined, tree);
         await tree.putBatch(body.minerAddr, recipientAccount.withIncomingTransaction(coinbaseTransaction, blockHeight, revert));

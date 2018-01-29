@@ -23,18 +23,20 @@ describe('HashedTimeLockedContract', () => {
 
     it('will deny incoming transaction after creation', () => {
         const account = new HashedTimeLockedContract();
-        const transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 1, new Uint8Array(0));
+        let transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+        expect(() => account.withIncomingTransaction(transaction, 1)).toThrowError();
+        transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 1, Transaction.Flag.CONTRACT_CREATION, new Uint8Array(0));
         expect(() => account.withIncomingTransaction(transaction, 1)).toThrowError();
     });
 
     it('can falsify invalid incoming transaction', (done) => {
         (async () => {
             // No data
-            let transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, new Uint8Array(0));
+            let transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
             // Data too short
-            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, new Uint8Array(18));
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(18));
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
             // Data too long
@@ -45,7 +47,7 @@ describe('HashedTimeLockedContract', () => {
             Hash.NULL.serialize(data);
             data.writeUint8(2);
             data.writeUint32(1000);
-            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, data);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
             // Invalid hash type
@@ -56,7 +58,7 @@ describe('HashedTimeLockedContract', () => {
             Hash.NULL.serialize(data);
             data.writeUint8(2);
             data.writeUint32(1000);
-            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, data);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
             // Invalid contract address
@@ -67,11 +69,11 @@ describe('HashedTimeLockedContract', () => {
             Hash.NULL.serialize(data);
             data.writeUint8(2);
             data.writeUint32(1000);
-            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, data);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.NULL, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
             // Sanity check
-            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, data);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
         })().then(done, done.fail);
     });
@@ -82,7 +84,7 @@ describe('HashedTimeLockedContract', () => {
             const addr = await keyPair.publicKey.toAddress();
 
             // No proof
-            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
             let signatureProof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             let brokenSignatureProof = SignatureProof.singleSig(keyPair.publicKey, new Signature(new Uint8Array(64)));
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
@@ -166,7 +168,7 @@ describe('HashedTimeLockedContract', () => {
             transaction.proof = proof;
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
-            transaction = new ExtendedTransaction(sender, Account.Type.HTLC, recipient, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
+            transaction = new ExtendedTransaction(sender, Account.Type.HTLC, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
             signatureProof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
 
             /*
@@ -214,7 +216,7 @@ describe('HashedTimeLockedContract', () => {
         (async () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
-            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
 
             // regular
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
@@ -251,7 +253,7 @@ describe('HashedTimeLockedContract', () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
             const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
@@ -275,7 +277,7 @@ describe('HashedTimeLockedContract', () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.sha256(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
             const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
@@ -299,7 +301,7 @@ describe('HashedTimeLockedContract', () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 600, 0, 100, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(recipient, Account.Type.HTLC, addr, Account.Type.BASIC, 600, 0, 100, Transaction.Flag.NONE, new Uint8Array(0));
             const account = new HashedTimeLockedContract(1000, sender, addr, hashRoot, 2, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(3 + 2 * Crypto.blake2bSize + signatureProof.serializedSize);
@@ -321,7 +323,7 @@ describe('HashedTimeLockedContract', () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 500, new Uint8Array(0));
+            let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 500, Transaction.Flag.NONE, new Uint8Array(0));
             const account = new HashedTimeLockedContract(1000, addr, recipient, hashRoot, 1, 1000, 1000);
             let signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             let proof = new SerialBuffer(1 + signatureProof.serializedSize);
@@ -331,7 +333,7 @@ describe('HashedTimeLockedContract', () => {
             expect(await HashedTimeLockedContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
             expect(() => account.withOutgoingTransaction(transaction, 500, cache)).toThrowError();
 
-            transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 2000, new Uint8Array(0));
+            transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 2000, Transaction.Flag.NONE, new Uint8Array(0));
             signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             proof = new SerialBuffer(1 + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
@@ -348,7 +350,7 @@ describe('HashedTimeLockedContract', () => {
             const keyPair = await KeyPair.generate();
             const addr = await keyPair.publicKey.toAddress();
             const hashRoot = await Hash.blake2b(Hash.NULL.array);
-            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, new Uint8Array(0));
+            const transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
             const account = new HashedTimeLockedContract(1000, addr, addr, hashRoot, 1, 1000, 1000);
             const signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(1 + 2 * signatureProof.serializedSize);
@@ -373,7 +375,7 @@ describe('HashedTimeLockedContract', () => {
             Hash.NULL.serialize(data);
             data.writeUint8(2);
             data.writeUint32(1000);
-            const transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, data);
+            const transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
             const contract = /** @type {HashedTimeLockedContract} */ Account.INITIAL.withIncomingTransaction(transaction, 1).withContractCommand(transaction, 1);
 
