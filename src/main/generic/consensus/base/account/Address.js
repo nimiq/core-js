@@ -84,13 +84,13 @@ class Address extends Primitive {
     static fromUserFriendlyAddress(str) {
         str = str.replace(/ /g, '');
         if (str.substr(0, 2).toUpperCase() !== Address.CCODE) {
-            throw new Error('Invalid Address: Wrong country code', 201);
+            throw new Error('Invalid Address: Wrong country code');
         }
         if (str.length !== 36) {
-            throw new Error('Invalid Address: Should be 36 chars (ignoring spaces)', 202);
+            throw new Error('Invalid Address: Should be 36 chars (ignoring spaces)');
         }
         if (Address._ibanCheck(str.substr(4) + str.substr(0, 4)) !== 1) {
-            throw new Error('Invalid Address: Checksum invalid', 203);
+            throw new Error('Invalid Address: Checksum invalid');
         }
         return new Address(BufferUtils.fromBase32(str.substr(4)));
     }

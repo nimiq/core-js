@@ -14,9 +14,9 @@ class BlockBody {
      * @param {Address} minerAddr
      * @param {Array.<Transaction>} transactions
      * @param {Uint8Array} [extraData]
-     * @param {Map.<Address, Account>} prunedAccounts
+     * @param {Array.<PrunedAccount>} prunedAccounts
      */
-    constructor(minerAddr, transactions, extraData = new Uint8Array(0), prunedAccounts = new Map()) {
+    constructor(minerAddr, transactions, extraData = new Uint8Array(0), prunedAccounts = []) {
         if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
         if (!Array.isArray(transactions) || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
         if (!(extraData instanceof Uint8Array) || !NumberUtils.isUint8(extraData.byteLength)) throw 'Malformed extraData';
@@ -27,7 +27,7 @@ class BlockBody {
         this._extraData = extraData;
         /** @type {Array.<Transaction>} */
         this._transactions = transactions;
-        /** @type {Map.<Address, Account>} */
+        /** @type {Array.<PrunedAccount>} */
         this._prunedAccounts = prunedAccounts;
         /** @type {Hash} */
         this._hash = null;
@@ -47,9 +47,9 @@ class BlockBody {
             transactions[i] = Transaction.unserialize(buf);
         }
         const numPrunedAccounts = buf.readUint16();
-        const prunedAccounts = new Map();
+        const prunedAccounts = [];
         for (let i = 0; i < numPrunedAccounts; i++) {
-            prunedAccounts.put(Address.unserialize(buf), Account.unserialize(buf));
+            prunedAccounts.push(PrunedAccount.unserialize(buf));
         }
         return new BlockBody(minerAddr, transactions, extraData, prunedAccounts);
     }
@@ -68,9 +68,8 @@ class BlockBody {
             tx.serialize(buf);
         }
         buf.writeUint16(this._prunedAccounts.length);
-        for (const addr of this._prunedAccounts.keys()) {
-            addr.serialize(buf);
-            this._prunedAccounts.get(addr).serialize(buf);
+        for (const acc of this._prunedAccounts) {
+            acc.serialize(buf);
         }
         return buf;
     }
@@ -87,8 +86,7 @@ class BlockBody {
         for (const tx of this._transactions) {
             size += tx.serializedSize;
         }
-        size += Array.from(this._prunedAccounts.keys()).reduce((sum, addr) => sum + addr.serializedSize, 0);
-        size += Array.from(this._prunedAccounts.values()).reduce((sum, acc) => sum + acc.serializedSize, 0);
+        size += this._prunedAccounts.reduce((sum, acc) => sum + acc.serializedSize, 0);
         return size;
     }
 
@@ -122,7 +120,7 @@ class BlockBody {
      */
     async hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot([this._minerAddr, this._extraData, ...this._transactions, ...this.prunedAccounts.keys(), ...this.prunedAccounts.values()]);
+            this._hash = await MerkleTree.computeRoot([this._minerAddr, this._extraData, ...this._transactions, ...this.prunedAccounts]);
         }
         return this._hash;
     }
@@ -159,7 +157,7 @@ class BlockBody {
         return this._transactions.length;
     }
 
-    /** @type {Map.<Address, Account>} */
+    /** @type {Array.<PrunedAccount>} */
     get prunedAccounts() {
         return this._prunedAccounts;
     }

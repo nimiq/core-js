@@ -139,6 +139,22 @@ class VestingContract extends Contract {
     }
 
     /**
+     * Check if two Accounts are the same.
+     * @param {Account} o Object to compare with.
+     * @return {boolean} Set if both objects describe the same data.
+     */
+    equals(o) {
+        return o instanceof VestingContract
+            && this._type === o._type
+            && this._balance === o._balance
+            && this._owner.equals(o._owner)
+            && this._vestingStart === o._vestingStart
+            && this._vestingStepBlocks === o._vestingStepBlocks
+            && this._vestingStepAmount === o._vestingStepAmount
+            && this._vestingTotalAmount === o._vestingTotalAmount;
+    }
+
+    /**
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
      */

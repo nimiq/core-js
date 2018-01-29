@@ -90,11 +90,10 @@ class Accounts extends Observable {
      * @param {Array.<Transaction>} transactions
      * @param {number} blockHeight
      * @param {TransactionCache} transactionsCache
-     * @return {Promise<Map.<Address, Account>>}
+     * @return {Promise<Array.<PrunedAccount>>}
      */
     async gatherToBePrunedAccounts(transactions, blockHeight, transactionsCache) {
         const tree = await this._tree.transaction();
-        const toBePruned = new Map();
         for (const tx of transactions) {
             try {
                 await tree.putBatch(tx.sender, (await this.get(tx.sender, tx.senderType, tree)).withOutgoingTransaction(tx, blockHeight, transactionsCache, false));
@@ -109,11 +108,19 @@ class Accounts extends Observable {
                 // Ignore account errors.
             }
         }
+        for (const tx of transactions) {
+            try {
+                await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
+            } catch (e) {
+                // Ignore account errors.
+            }
+        }
 
+        const toBePruned = [];
         for (const tx of transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
             if (senderAccount.isToBePruned()) {
-                toBePruned.set(tx.sender, senderAccount);
+                toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
             }
         }
         await tree.abort();
@@ -229,11 +236,15 @@ class Accounts extends Observable {
         for (const tx of body.transactions) {
             await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withIncomingTransaction(tx, blockHeight, false));
         }
+        for (const tx of body.transactions) {
+            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
+        }
 
         for (const tx of body.transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
             if (senderAccount.isToBePruned()) {
-                if (!senderAccount.equals(body.prunedAccounts.get(tx.sender))) {
+                const acc = body.prunedAccounts.filter((acc) => acc.address.equals(tx.sender)).pop();
+                if (!acc || !senderAccount.equals(acc.account)) {
                     throw new Error('Account was not pruned correctly');
                 } else {
                     // Pruned accounts are reset to their initial state
@@ -256,11 +267,14 @@ class Accounts extends Observable {
     async _revertBlockBody(tree, body, blockHeight, transactionsCache) {
         await this._rewardMiner(tree, body, blockHeight, true);
 
-        for (const addr of body.prunedAccounts.keys()) {
-            tree.putBatch(addr, body.prunedAccounts.get(addr));
+        for (const acc of body.prunedAccounts) {
+            tree.putBatch(acc.address, acc.account);
         }
 
         // Execute transactions in reverse order.
+        for (const tx of body.transactions.slice().reverse()) {
+            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
+        }
         for (const tx of body.transactions.slice().reverse()) {
             await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withIncomingTransaction(tx, blockHeight, true));
         }

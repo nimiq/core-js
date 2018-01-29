@@ -364,7 +364,7 @@ class TestBlockchain extends FullChain {
 }
 TestBlockchain._miningPool = new MinerWorkerPool(4);
 
-TestBlockchain.MINE_ON_DEMAND = true;
+TestBlockchain.MINE_ON_DEMAND = false;
 
 TestBlockchain.BLOCKS = {};
 TestBlockchain.USERS = [ // ed25519 keypairs

@@ -69,9 +69,7 @@ class Account {
      * @return {boolean} Set if both objects describe the same data.
      */
     equals(o) {
-        return o instanceof Account
-            && this._type === o._type
-            && this._balance === o._balance;
+        return BufferUtils.equals(this.serialize(), o.serialize());
     }
 
     toString() {
@@ -183,6 +181,16 @@ class Account {
             }
             return this.withBalance(newBalance);
         }
+    }
+
+    /**
+     * @param {Transaction} transaction
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
+     * @return {Account}
+     */
+    withContractCommand(transaction, blockHeight, revert = false) {
+        throw new Error('Not yet implemented');
     }
 
     /**

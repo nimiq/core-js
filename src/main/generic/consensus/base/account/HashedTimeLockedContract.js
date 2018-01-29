@@ -137,6 +137,23 @@ class HashedTimeLockedContract extends Contract {
     }
 
     /**
+     * Check if two Accounts are the same.
+     * @param {Account} o Object to compare with.
+     * @return {boolean} Set if both objects describe the same data.
+     */
+    equals(o) {
+        return o instanceof HashedTimeLockedContract
+            && this._type === o._type
+            && this._balance === o._balance
+            && this._sender.equals(o._sender)
+            && this._recipient.equals(o._recipient)
+            && this._hashRoot.equals(o._hashRoot)
+            && this._hashCount.equals(o._hashCount)
+            && this._timeout.equals(o._timeout)
+            && this._totalAmount.equals(o._totalAmount);
+    }
+
+    /**
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
      */
@@ -204,10 +221,12 @@ class HashedTimeLockedContract extends Contract {
         try {
             const buf = new SerialBuffer(transaction.data);
 
-            buf.readPos += Address.SERIALIZED_SIZE * 2;
+            Address.unserialize(buf); // sender address
+            Address.unserialize(buf); // recipient address
             const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
             Hash.unserialize(buf, hashAlgorithm);
-            buf.readPos += 5;
+            buf.readUint8(); // hash count
+            buf.readUint32(); // timeout
 
             if (buf.readPos !== buf.byteLength) {
                 return Promise.resolve(false);

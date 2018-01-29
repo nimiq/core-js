@@ -170,7 +170,7 @@ describe('VestingContract', () => {
             buf.writeUint32(1000);
             let creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, buf);
             creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            let account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1);
+            let account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
             let transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, new Uint8Array(0));
             transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
             expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
@@ -185,7 +185,7 @@ describe('VestingContract', () => {
             buf.writeUint64(50);
             creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, buf);
             creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1);
+            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
             transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, new Uint8Array(0));
             transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
             expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
@@ -207,7 +207,7 @@ describe('VestingContract', () => {
             buf.writeUint64(80);
             creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, buf);
             creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1);
+            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
             transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 20, 0, 2, new Uint8Array(0));
             transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
             expect(account.withOutgoingTransaction(transaction, 2, cache).balance).toBe(80);
@@ -251,7 +251,7 @@ describe('VestingContract', () => {
             const clearTransaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, user1.address, Account.Type.BASIC, 100, 0, 0, new Uint8Array(0));
             clearTransaction.proof = SignatureProof.singleSig(user1.publicKey, await Signature.create(user1.privateKey, user1.publicKey, clearTransaction.serializeContent())).serialize();
             block = await testBlockchain.createBlock({transactions: [clearTransaction]});
-            expect(block.body.prunedAccounts.size).toBe(1);
+            expect(block.body.prunedAccounts.length).toBe(1);
 
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
 

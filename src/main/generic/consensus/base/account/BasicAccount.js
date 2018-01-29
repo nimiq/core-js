@@ -31,10 +31,21 @@ class BasicAccount extends Account {
         return new BasicAccount(balance);
     }
 
+    /**
+     * Check if two Accounts are the same.
+     * @param {Account} o Object to compare with.
+     * @return {boolean} Set if both objects describe the same data.
+     */
+    equals(o) {
+        return o instanceof BasicAccount
+            && this._type === o._type
+            && this._balance === o._balance;
+    }
+
     toString() {
         return `BasicAccount{balance=${this._balance}}`;
     }
-    
+
     /**
      * @param {Transaction} transaction
      * @return {Promise.<boolean>}
@@ -66,19 +77,24 @@ class BasicAccount extends Account {
      * @return {Account}
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
-        if (!revert) {
-            if (transaction.recipientType !== this._type) {
-                // Contract creation
-                return Account.TYPE_MAP.get(transaction.recipientType).create(this._balance + transaction.value, blockHeight, transaction);
-            }
-            return this.withBalance(this._balance + transaction.value);
-        } else {
-            const newBalance = this._balance - transaction.value;
-            if (newBalance < 0) {
-                throw new Error('Balance Error!');
-            }
-            return this.withBalance(newBalance);
+        if (!revert && transaction.recipientType === this._type && transaction.data.length > 0) {
+            throw new Error('Data Error!');
         }
+        return super.withIncomingTransaction(transaction, blockHeight, revert);
+    }
+
+    /**
+     * @param {Transaction} transaction
+     * @param {number} blockHeight
+     * @param {boolean} [revert]
+     * @return {Account}
+     */
+    withContractCommand(transaction, blockHeight, revert = false) {
+        if (!revert && transaction.recipientType !== this._type) {
+            // Contract creation
+            return Account.TYPE_MAP.get(transaction.recipientType).create(this._balance, blockHeight, transaction);
+        }
+        return this;
     }
 
     /**
@@ -88,6 +104,7 @@ class BasicAccount extends Account {
         return this._balance === 0;
     }
 }
+
 Account.INITIAL = new BasicAccount(0);
 Account.TYPE_MAP.set(Account.Type.BASIC, BasicAccount);
 Class.register(BasicAccount);

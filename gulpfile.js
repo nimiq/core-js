@@ -74,6 +74,7 @@ const sources = {
         './src/main/generic/consensus/base/primitive/PartialSignature.js',
         './src/main/generic/consensus/base/account/Address.js',
         './src/main/generic/consensus/base/account/Account.js',
+        './src/main/generic/consensus/base/account/PrunedAccount.js',
         './src/main/generic/consensus/base/account/BasicAccount.js',
         './src/main/generic/consensus/base/account/Contract.js',
         './src/main/generic/consensus/base/account/HashedTimeLockedContract.js',

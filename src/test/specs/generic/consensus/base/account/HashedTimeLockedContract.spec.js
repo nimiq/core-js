@@ -375,7 +375,7 @@ describe('HashedTimeLockedContract', () => {
             data.writeUint32(1000);
             const transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeTruthy();
-            const contract = /** @type {HashedTimeLockedContract} */ Account.INITIAL.withIncomingTransaction(transaction, 1);
+            const contract = /** @type {HashedTimeLockedContract} */ Account.INITIAL.withIncomingTransaction(transaction, 1).withContractCommand(transaction, 1);
 
             expect(contract.balance).toBe(100);
             expect(contract.sender.equals(sender)).toBeTruthy();

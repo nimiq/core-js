@@ -116,10 +116,11 @@ class Mempool extends Observable {
     async getTransactionsForBlock(maxSize) {
         const transactions = this.getTransactions(maxSize);
         const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache);
-        const prunedAccountsSize = Array.from(prunedAccounts.keys()).reduce((sum, addr) => sum + addr.serializedSize, 0)
-            + Array.from(prunedAccounts.values()).reduce((sum, acc) => sum + acc.serializedSize, 0);
-        while (prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0) > maxSize) {
-            transactions.pop();
+        const prunedAccountsSize = prunedAccounts.reduce((sum, acc) => sum + acc.serializedSize, 0);
+
+        let size = prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0); 
+        while (size > maxSize) {
+            size -= transactions.pop().serializedSize;
         }
 
         transactions.sort((a, b) => a.compareBlockOrder(b));
