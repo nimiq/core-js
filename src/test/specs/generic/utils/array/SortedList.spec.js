@@ -76,11 +76,7 @@ describe('SortedList', () => {
     });
 
     it('can remove elements', () => {
-        const s = new SortedList();
-
-        s.add(3);
-        s.add(1);
-        s.add(2);
+        const s = new SortedList([1, 2, 3]);
 
         expect(s.length).toBe(3);
         expect(s.values()).toEqual([1,2,3]);
@@ -88,5 +84,23 @@ describe('SortedList', () => {
         s.remove(5);
         expect(s.length).toBe(2);
         expect(s.values()).toEqual([1,3]);
+    });
+
+    it('can be copied', () => {
+        const s1 = new SortedList([1, 2, 3]);
+        const s2 = s1.copy();
+
+        expect(s1.length).toBe(3);
+        expect(s1.values()).toEqual([1,2,3]);
+        expect(s2.length).toBe(3);
+        expect(s2.values()).toEqual([1,2,3]);
+
+        s1.remove(1);
+        s2.add(4);
+
+        expect(s1.length).toBe(2);
+        expect(s1.values()).toEqual([2,3]);
+        expect(s2.length).toBe(4);
+        expect(s2.values()).toEqual([1,2,3,4]);
     });
 });

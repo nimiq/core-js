@@ -1,14 +1,10 @@
 class MempoolTransactionSet {
     /**
-     * @param {Array.<Transaction>} [transactions]
+     * @param {Array.<Transaction>} [sortedTransactions]
      */
-    constructor(transactions) {
+    constructor(sortedTransactions) {
         /** @type {SortedList.<Transaction>} */
-        this._transactions = new SortedList();
-
-        if (transactions) {
-            transactions.forEach(tx => this._transactions.add(tx));
-        }
+        this._transactions = new SortedList(sortedTransactions);
     }
 
     /**
@@ -22,12 +18,12 @@ class MempoolTransactionSet {
 
     /**
      * @param {Transaction} transaction
-     * @return {Array.<Transaction>}
+     * @return {MempoolTransactionSet}
      */
-    testAdd(transaction) {
-        let transactions = this._transactions.values().slice();
-        transactions.splice(this._transactions.insertionIndex(transaction), 0, transaction);
-        return transactions;
+    copyAndAdd(transaction) {
+        const transactions = this._transactions.copy();
+        transactions.add(transaction);
+        return new MempoolTransactionSet(transactions.values());
     }
 
     /** @type {Array.<Transaction>} */

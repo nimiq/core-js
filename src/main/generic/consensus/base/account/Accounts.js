@@ -46,13 +46,13 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise}
      */
-    async commitBlock(block, transactionsCache) {
+    async commitBlock(block, transactionCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._commitBlockBody(tree, block.body, block.height, transactionsCache);
+            await this._commitBlockBody(tree, block.body, block.height, transactionCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -71,13 +71,13 @@ class Accounts extends Observable {
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise}
      */
-    async commitBlockBody(body, blockHeight, transactionsCache) {
+    async commitBlockBody(body, blockHeight, transactionCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._commitBlockBody(tree, body, blockHeight, transactionsCache);
+            await this._commitBlockBody(tree, body, blockHeight, transactionCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -89,14 +89,14 @@ class Accounts extends Observable {
     /**
      * @param {Array.<Transaction>} transactions
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise<Array.<PrunedAccount>>}
      */
-    async gatherToBePrunedAccounts(transactions, blockHeight, transactionsCache) {
+    async gatherToBePrunedAccounts(transactions, blockHeight, transactionCache) {
         const tree = await this._tree.transaction();
-        await this._processSenderAccounts(transactions, tree, blockHeight, transactionsCache);
-        await this._processRecipientAccounts(transactions, tree, blockHeight, transactionsCache);
-        await this._processContractCommands(transactions, tree, blockHeight, transactionsCache);
+        await this._processSenderAccounts(transactions, tree, blockHeight, transactionCache);
+        await this._processRecipientAccounts(transactions, tree, blockHeight, transactionCache);
+        await this._processContractCommands(transactions, tree, blockHeight, transactionCache);
 
         const toBePruned = [];
         for (const tx of transactions) {
@@ -111,29 +111,29 @@ class Accounts extends Observable {
 
     /**
      * @param {Block} block
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise}
      */
-    async revertBlock(block, transactionsCache) {
+    async revertBlock(block, transactionCache) {
         if (!block) throw new Error('block undefined');
 
         const hash = await this._tree.root();
         if (!block.accountsHash.equals(hash)) {
             throw new Error('AccountsHash mismatch');
         }
-        return this.revertBlockBody(block.body, block.height, transactionsCache);
+        return this.revertBlockBody(block.body, block.height, transactionCache);
     }
 
     /**
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise}
      */
-    async revertBlockBody(body, blockHeight, transactionsCache) {
+    async revertBlockBody(body, blockHeight, transactionCache) {
         const tree = await this._tree.transaction();
         try {
-            await this._revertBlockBody(tree, body, blockHeight, transactionsCache);
+            await this._revertBlockBody(tree, body, blockHeight, transactionCache);
         } catch (e) {
             await tree.abort();
             throw e;
@@ -208,18 +208,15 @@ class Accounts extends Observable {
      * @param {Array.<Transaction>} transactions
      * @param {AccountsTree} tree
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @param {boolean} [revert]
      * @returns {Promise<void>}
      * @private
      */
-    async _processSenderAccounts(transactions, tree, blockHeight, transactionsCache, revert = false) {
-        if (revert) {
-            transactions = transactions.slice().reverse();
-        }
+    async _processSenderAccounts(transactions, tree, blockHeight, transactionCache, revert = false) {
         for (const tx of transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
-            await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, transactionsCache, revert));
+            await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, transactionCache, revert));
         }
     }
 
@@ -228,15 +225,12 @@ class Accounts extends Observable {
      * @param {Array.<Transaction>} transactions
      * @param {AccountsTree} tree
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @param {boolean} [revert]
      * @returns {Promise<void>}
      * @private
      */
-    async _processRecipientAccounts(transactions, tree, blockHeight, transactionsCache, revert = false) {
-        if (revert) {
-            transactions = transactions.slice().reverse();
-        }
+    async _processRecipientAccounts(transactions, tree, blockHeight, transactionCache, revert = false) {
         for (const tx of transactions) {
             const recipientAccount = await this.get(tx.recipient, undefined, tree);
             await tree.putBatch(tx.recipient, recipientAccount.withIncomingTransaction(tx, blockHeight, revert));
@@ -248,14 +242,15 @@ class Accounts extends Observable {
      * @param {Array.<Transaction>} transactions
      * @param {AccountsTree} tree
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @param {boolean} [revert]
      * @returns {Promise<void>}
      * @private
      */
-    async _processContractCommands(transactions, tree, blockHeight, transactionsCache, revert = false) {
+    async _processContractCommands(transactions, tree, blockHeight, transactionCache, revert = false) {
+        // TODO: Filter & sort contract command.
         if (revert) {
-            transactions = transactions.slice().reverse();
+            transactions = transactions.reverse();
         }
         for (const tx of transactions) {
             const recipientAccount = await this.get(tx.recipient, undefined, tree);
@@ -267,14 +262,14 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise.<void>}
      * @private
      */
-    async _commitBlockBody(tree, body, blockHeight, transactionsCache) {
-        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionsCache);
-        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionsCache);
-        await this._processContractCommands(body.transactions, tree, blockHeight, transactionsCache);
+    async _commitBlockBody(tree, body, blockHeight, transactionCache) {
+        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionCache);
+        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionCache);
+        await this._processContractCommands(body.transactions, tree, blockHeight, transactionCache);
 
         for (const tx of body.transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
@@ -296,11 +291,11 @@ class Accounts extends Observable {
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
+     * @param {TransactionCache} transactionCache
      * @return {Promise.<void>}
      * @private
      */
-    async _revertBlockBody(tree, body, blockHeight, transactionsCache) {
+    async _revertBlockBody(tree, body, blockHeight, transactionCache) {
         await this._rewardMiner(tree, body, blockHeight, true);
 
         for (const acc of body.prunedAccounts) {
@@ -308,9 +303,9 @@ class Accounts extends Observable {
         }
 
         // Execute transactions in reverse order.
-        await this._processContractCommands(body.transactions, tree, blockHeight, transactionsCache, true);
-        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionsCache, true);
-        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionsCache, true);
+        await this._processContractCommands(body.transactions, tree, blockHeight, transactionCache, true);
+        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionCache, true);
+        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionCache, true);
     }
 
     /**

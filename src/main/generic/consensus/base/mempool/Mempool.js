@@ -45,6 +45,13 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.KNOWN;
         }
 
+        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
+        // Check limit for free transactions.
+        if (transaction.fee / transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
+            && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
+            return Mempool.ReturnCode.FEE_TOO_LOW;
+        }
+
         // Intrinsic transaction verification
         if (!(await transaction.verify())) {
             return Mempool.ReturnCode.INVALID;
@@ -61,11 +68,10 @@ class Mempool extends Observable {
         }
 
         // Fully verify the transaction against the current accounts state + Mempool.
-        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
-        const transactions = set.testAdd(transaction);
+        const newSet = set.copyAndAdd(transaction);
         let tmpAccount = senderAccount;
         try {
-            for (const tx of transactions) {
+            for (const tx of newSet.transactions) {
                 tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionsCache);
             }
         } catch (e) {
@@ -84,16 +90,9 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.INVALID;
         }
 
-        // Check limit for free transactions.
-        if (transaction.fee / transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
-            && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
-            return Mempool.ReturnCode.FEE_TOO_LOW;
-        }
-
         // Transaction is valid, add it to the mempool.
-        set.add(transaction);
         this._transactionsByHash.put(hash, transaction);
-        this._transactionSetByAddress.put(transaction.sender, set);
+        this._transactionSetByAddress.put(transaction.sender, newSet);
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);

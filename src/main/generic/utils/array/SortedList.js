@@ -1,6 +1,6 @@
 class SortedList {
-    constructor(compare) {
-        this._list = [];
+    constructor(sortedList = [], compare) {
+        this._list = sortedList;
         this._compare = compare || SortedList._compare;
     }
 
@@ -31,7 +31,7 @@ class SortedList {
         return -1;
     }
 
-    insertionIndex(o) {
+    _insertionIndex(o) {
         let a = 0, b = this._list.length - 1;
         let currentIndex = null;
         let currentElement = null;
@@ -55,7 +55,7 @@ class SortedList {
     }
 
     add(value) {
-        this._list.splice(this.insertionIndex(value), 0, value);
+        this._list.splice(this._insertionIndex(value), 0, value);
     }
 
     shift() {
@@ -79,6 +79,10 @@ class SortedList {
 
     values() {
         return this._list;
+    }
+
+    copy() {
+        return new SortedList(this._list.slice(), this._compare);
     }
 
     /** @type {number} */
