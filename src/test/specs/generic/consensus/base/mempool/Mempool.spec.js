@@ -60,7 +60,6 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to insufficient funds
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(Mempool.ReturnCode.INVALID);
-            expect(Log.w).toHaveBeenCalledWith(Account, 'Rejected transaction - insufficient funds', transaction);
 
             // Set the balance to a higher number than the transaction amount, but change the
             // nonce to an incorrect value
@@ -70,7 +69,6 @@ describe('Mempool', () => {
             transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 3);
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(Mempool.ReturnCode.INVALID);
-            expect(Log.d).toHaveBeenCalledWith(Account, 'Rejected transaction - outside validity window', transaction);
 
         })().then(done, done.fail);
     });

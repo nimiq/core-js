@@ -62,8 +62,25 @@ class Mempool extends Observable {
 
         // Fully verify the transaction against the current accounts state + Mempool.
         const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
-        const senderAccountAfterApply = await senderAccount.verifyOutgoingTransactionSet([...set.transactions, transaction], this._blockchain.height + 1, this._blockchain.transactionsCache);
-        if (!senderAccountAfterApply) {
+        const transactions = set.testAdd(transaction);
+        let tmpAccount = senderAccount;
+        try {
+            for (const tx of transactions) {
+                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionsCache);
+            }
+        } catch (e) {
+            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+            return Mempool.ReturnCode.INVALID;
+        }
+
+        // Retrieve recipient account and test incoming transaction.
+        /** @type {Account} */
+        let recipientAccount;
+        try {
+            recipientAccount = await this._accounts.get(transaction.recipient);
+            await recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
+        } catch (e) {
+            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -167,21 +184,25 @@ class Mempool extends Observable {
                 // If a transaction in the set is not valid anymore,
                 // we try to construct a new set based on the heuristic of including
                 // high fee/byte transactions first.
-                if (!(await senderAccount.verifyOutgoingTransactionSet(set.transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
-                    const transactions = [];
-                    for (const tx of set.transactions) {
-                        transactions.push(tx);
+                const transactions = [];
+                let account = senderAccount;
+                for (const tx of set.transactions) {
+                    try {
+                        const tmpAccount = await account.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionsCache);
 
-                        if (!(await senderAccount.verifyOutgoingTransactionSet(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache, true))) {
-                            transactions.pop();
-                            this._transactionsByHash.remove(await tx.hash());
-                        }
+                        const recipientAccount = await this._accounts.get(tx.recipient);
+                        await recipientAccount.withIncomingTransaction(tx, this._blockchain.height + 1);
+
+                        transactions.push(tx);
+                        account = tmpAccount;
+                    } catch (e) {
+                        this._transactionsByHash.remove(await tx.hash());
                     }
-                    if (transactions.length === 0) {
-                        this._transactionSetByAddress.remove(sender);
-                    } else {
-                        this._transactionSetByAddress.put(sender, new MempoolTransactionSet(transactions));
-                    }
+                }
+                if (transactions.length === 0) {
+                    this._transactionSetByAddress.remove(sender);
+                } else {
+                    this._transactionSetByAddress.put(sender, new MempoolTransactionSet(transactions));
                 }
             } catch (e) {
                 // In case of an error, remove all transactions of this set.

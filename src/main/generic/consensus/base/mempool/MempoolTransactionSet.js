@@ -20,6 +20,16 @@ class MempoolTransactionSet {
         return this;
     }
 
+    /**
+     * @param {Transaction} transaction
+     * @return {Array.<Transaction>}
+     */
+    testAdd(transaction) {
+        let transactions = this._transactions.values().slice();
+        transactions.splice(this._transactions.insertionIndex(transaction), 0, transaction);
+        return transactions;
+    }
+
     /** @type {Array.<Transaction>} */
     get transactions() {
         return this._transactions.values();

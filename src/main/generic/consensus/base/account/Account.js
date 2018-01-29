@@ -89,44 +89,6 @@ class Account {
     }
 
     /**
-     * @param {Array.<Transaction>} transactions
-     * @param {number} blockHeight
-     * @param {TransactionCache} transactionsCache
-     * @param {boolean} silent
-     * @return {Promise.<boolean|Account>}
-     */
-    verifyOutgoingTransactionSet(transactions, blockHeight, transactionsCache, silent = false) {
-        let account = this;
-        for (let i = 0; i < transactions.length; ++i) {
-            const tx = transactions[i];
-            if (account._type !== tx.senderType) {
-                if (!silent) Log.w(Account, 'Rejected transaction - sender type must match account type');
-                return Promise.resolve(false);
-            }
-            if (blockHeight < tx.validityStartHeight
-                || blockHeight >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
-                if (!silent) Log.d(Account, 'Rejected transaction - outside validity window', tx);
-                return Promise.resolve(false);
-            }
-            if (transactionsCache.containsTransaction(tx)) {
-                if (!silent) Log.d(Account, 'Rejected transaction - already spent', tx);
-                return Promise.resolve(false);
-            }
-            if (account._balance < tx.value + tx.fee) {
-                if (!silent) Log.w(Account, 'Rejected transaction - insufficient funds', tx);
-                return Promise.resolve(false);
-            }
-            try {
-                account = account.withOutgoingTransaction(tx, blockHeight, transactionsCache);
-            } catch (e) {
-                if (!silent) Log.w(Account, `Rejected transaction - ${e.message || e}`, tx);
-                return Promise.resolve(false);
-            }
-        }
-        return Promise.resolve(account);
-    }
-
-    /**
      * @param {number} balance
      * @return {Account|*}
      */

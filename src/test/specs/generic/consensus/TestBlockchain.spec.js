@@ -140,7 +140,11 @@ class TestBlockchain extends FullChain {
         }
         let prunedAccounts = options.prunedAccounts;
         if (!prunedAccounts) {
-            prunedAccounts = await this.accounts.gatherToBePrunedAccounts(transactions, height, this._transactionsCache);
+            try {
+                prunedAccounts = await this.accounts.gatherToBePrunedAccounts(transactions, height, this._transactionsCache);
+            } catch (e) {
+                prunedAccounts = [];
+            }
         }
 
         const minerAddr = options.minerAddr || this.users[this.height % this._users.length].address;     // user[0] created genesis, hence we start with user[1]

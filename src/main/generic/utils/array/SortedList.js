@@ -31,7 +31,7 @@ class SortedList {
         return -1;
     }
 
-    _insertionIndex(o) {
+    insertionIndex(o) {
         let a = 0, b = this._list.length - 1;
         let currentIndex = null;
         let currentElement = null;
@@ -55,7 +55,7 @@ class SortedList {
     }
 
     add(value) {
-        this._list.splice(this._insertionIndex(value), 0, value);
+        this._list.splice(this.insertionIndex(value), 0, value);
     }
 
     shift() {

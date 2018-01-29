@@ -94,27 +94,9 @@ class Accounts extends Observable {
      */
     async gatherToBePrunedAccounts(transactions, blockHeight, transactionsCache) {
         const tree = await this._tree.transaction();
-        for (const tx of transactions) {
-            try {
-                await tree.putBatch(tx.sender, (await this.get(tx.sender, tx.senderType, tree)).withOutgoingTransaction(tx, blockHeight, transactionsCache, false));
-            } catch (e) {
-                // Ignore account errors.
-            }
-        }
-        for (const tx of transactions) {
-            try {
-                await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withIncomingTransaction(tx, blockHeight, false));
-            } catch (e) {
-                // Ignore account errors.
-            }
-        }
-        for (const tx of transactions) {
-            try {
-                await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
-            } catch (e) {
-                // Ignore account errors.
-            }
-        }
+        await this._processSenderAccounts(transactions, tree, blockHeight, transactionsCache);
+        await this._processRecipientAccounts(transactions, tree, blockHeight, transactionsCache);
+        await this._processContractCommands(transactions, tree, blockHeight, transactionsCache);
 
         const toBePruned = [];
         for (const tx of transactions) {
@@ -172,7 +154,7 @@ class Accounts extends Observable {
         const account = await tree.get(address);
         if (!account) {
             if (typeof accountType === 'undefined') {
-                return null;
+                return Account.INITIAL;
             }
             if (!Account.TYPE_MAP.has(accountType)) {
                 throw new Error('Invalid account type');
@@ -222,6 +204,66 @@ class Accounts extends Observable {
     }
 
     /**
+     * Step 1)
+     * @param {Array.<Transaction>} transactions
+     * @param {AccountsTree} tree
+     * @param {number} blockHeight
+     * @param {TransactionCache} transactionsCache
+     * @param {boolean} [revert]
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _processSenderAccounts(transactions, tree, blockHeight, transactionsCache, revert = false) {
+        if (revert) {
+            transactions = transactions.slice().reverse();
+        }
+        for (const tx of transactions) {
+            const senderAccount = await this.get(tx.sender, tx.senderType, tree);
+            await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, transactionsCache, revert));
+        }
+    }
+
+    /**
+     * Step 2)
+     * @param {Array.<Transaction>} transactions
+     * @param {AccountsTree} tree
+     * @param {number} blockHeight
+     * @param {TransactionCache} transactionsCache
+     * @param {boolean} [revert]
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _processRecipientAccounts(transactions, tree, blockHeight, transactionsCache, revert = false) {
+        if (revert) {
+            transactions = transactions.slice().reverse();
+        }
+        for (const tx of transactions) {
+            const recipientAccount = await this.get(tx.recipient, undefined, tree);
+            await tree.putBatch(tx.recipient, recipientAccount.withIncomingTransaction(tx, blockHeight, revert));
+        }
+    }
+
+    /**
+     * Step 3)
+     * @param {Array.<Transaction>} transactions
+     * @param {AccountsTree} tree
+     * @param {number} blockHeight
+     * @param {TransactionCache} transactionsCache
+     * @param {boolean} [revert]
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _processContractCommands(transactions, tree, blockHeight, transactionsCache, revert = false) {
+        if (revert) {
+            transactions = transactions.slice().reverse();
+        }
+        for (const tx of transactions) {
+            const recipientAccount = await this.get(tx.recipient, undefined, tree);
+            await tree.putBatch(tx.recipient, recipientAccount.withContractCommand(tx, blockHeight, revert));
+        }
+    }
+
+    /**
      * @param {AccountsTree} tree
      * @param {BlockBody} body
      * @param {number} blockHeight
@@ -230,15 +272,9 @@ class Accounts extends Observable {
      * @private
      */
     async _commitBlockBody(tree, body, blockHeight, transactionsCache) {
-        for (const tx of body.transactions) {
-            await tree.putBatch(tx.sender, (await this.get(tx.sender, tx.senderType, tree)).withOutgoingTransaction(tx, blockHeight, transactionsCache, false));
-        }
-        for (const tx of body.transactions) {
-            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withIncomingTransaction(tx, blockHeight, false));
-        }
-        for (const tx of body.transactions) {
-            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
-        }
+        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionsCache);
+        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionsCache);
+        await this._processContractCommands(body.transactions, tree, blockHeight, transactionsCache);
 
         for (const tx of body.transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
@@ -248,7 +284,7 @@ class Accounts extends Observable {
                     throw new Error('Account was not pruned correctly');
                 } else {
                     // Pruned accounts are reset to their initial state
-                    tree.putBatch(tx.sender, Account.INITIAL);
+                    await tree.putBatch(tx.sender, Account.INITIAL);
                 }
             }
         }
@@ -268,19 +304,13 @@ class Accounts extends Observable {
         await this._rewardMiner(tree, body, blockHeight, true);
 
         for (const acc of body.prunedAccounts) {
-            tree.putBatch(acc.address, acc.account);
+            await tree.putBatch(acc.address, acc.account);
         }
 
         // Execute transactions in reverse order.
-        for (const tx of body.transactions.slice().reverse()) {
-            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withContractCommand(tx, blockHeight, false));
-        }
-        for (const tx of body.transactions.slice().reverse()) {
-            await tree.putBatch(tx.recipient, (await this.get(tx.recipient, undefined, tree) || Account.INITIAL).withIncomingTransaction(tx, blockHeight, true));
-        }
-        for (const tx of body.transactions.slice().reverse()) {
-            await tree.putBatch(tx.sender, (await this.get(tx.sender, tx.senderType, tree)).withOutgoingTransaction(tx, blockHeight, transactionsCache, true));
-        }
+        await this._processContractCommands(body.transactions, tree, blockHeight, transactionsCache, true);
+        await this._processRecipientAccounts(body.transactions, tree, blockHeight, transactionsCache, true);
+        await this._processSenderAccounts(body.transactions, tree, blockHeight, transactionsCache, true);
     }
 
     /**
@@ -298,7 +328,7 @@ class Accounts extends Observable {
         // "Coinbase transaction"
         const coinbaseTransaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, body.minerAddr, Account.Type.BASIC, txFees + Policy.blockRewardAt(blockHeight), 0, 0, new Uint8Array(0));
 
-        const recipientAccount = await this.get(body.minerAddr, undefined, tree) || Account.INITIAL;
+        const recipientAccount = await this.get(body.minerAddr, undefined, tree);
         await tree.putBatch(body.minerAddr, recipientAccount.withIncomingTransaction(coinbaseTransaction, blockHeight, revert));
     }
 
@@ -311,7 +341,7 @@ class Accounts extends Observable {
      * @private
      */
     async _addBalance(tree, address, value) {
-        const account = await this.get(address, undefined, tree) || Account.INITIAL;
+        const account = await this.get(address, undefined, tree);
         await tree.putBatch(address, account.withBalance(account.balance + value));
     }
 
