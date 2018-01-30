@@ -92,6 +92,25 @@ class WalletStore {
     }
 
     /**
+     * @param {Address} address
+     * @returns {Promise}
+     */
+    async remove(address) {
+        const base64Address = address.toBase64();
+        const tx = this._walletStore.transaction();
+        await tx.remove(base64Address);
+        // Remove default address as well if they coincide.
+        let defaultAddress = await this._walletStore.get('default');
+        if (defaultAddress) {
+            defaultAddress = Address.unserialize(defaultAddress);
+            if (address.equals(defaultAddress)) {
+                await tx.remove('default');
+            }
+        }
+        return tx.commit();
+    }
+
+    /**
      * @returns {Promise<Array.<Address>>}
      */
     async list() {
@@ -128,6 +147,15 @@ class WalletStore {
             buf = wallet.exportPlain();
         }
         return this._multisigStore.put(base64Address, buf);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise}
+     */
+    removeMultiSig(address) {
+        const base64Address = address.toBase64();
+        return this._multisigStore.remove(base64Address);
     }
 
     /**
