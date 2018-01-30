@@ -111,6 +111,22 @@ class BlockBody {
             }
         }
 
+        let previousAcc = null;
+        for (const acc of this._prunedAccounts) {
+            // Ensure pruned accounts are ordered
+            if (previousAcc && acc.compare(previousAcc) > 0) {
+                Log.w(BlockBody, 'Invalid block - pruned accounts not ordered.');
+                return false;
+            }
+            previousAcc = acc;
+            
+            // Check that pruned accounts are actually supposed to be pruned
+            if (!acc.account.isToBePruned()) {
+                Log.w(BlockBody, 'Invalid block - invalid pruned account');
+                return false;
+            }
+        }
+
         // Everything checks out.
         return true;
     }

@@ -4,6 +4,8 @@ class PrunedAccount {
      * @param {Account} account
      */
     constructor(address, account) {
+        if (!(address instanceof Address)) throw new Error('Malformed address');
+
         /** @type {Address} */
         this._address = address;
         /** @type {Account} */
@@ -16,6 +18,14 @@ class PrunedAccount {
      */
     static unserialize(buf) {
         return new PrunedAccount(Address.unserialize(buf), Account.unserialize(buf));
+    }
+
+    /**
+     * @param {PrunedAccount} o
+     * @return {number} negative if this is smaller than o, positive if this is larger than o, zero if equal.
+     */
+    compare(o) {
+        return this._address.compare(a._address);
     }
 
     /**

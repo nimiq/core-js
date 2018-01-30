@@ -106,7 +106,7 @@ class Accounts extends Observable {
                     toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
                 }
             }
-            return toBePruned;
+            return toBePruned.sort((a, b) => a.compare(b));
         } finally {
             await tree.abort();
         }
@@ -272,17 +272,22 @@ class Accounts extends Observable {
         await this._processRecipientAccounts(tree, body.transactions, blockHeight);
         await this._processContracts(tree, body.transactions, blockHeight);
 
+        const prunedAccounts = body.prunedAccounts.slice();
         for (const tx of body.transactions) {
             const senderAccount = await this.get(tx.sender, tx.senderType, tree);
             if (senderAccount.isToBePruned()) {
-                const acc = body.prunedAccounts.filter((acc) => acc.address.equals(tx.sender)).pop();
-                if (!acc || !senderAccount.equals(acc.account)) {
+                const accIdx = prunedAccounts.findIndex((acc) => acc.address.equals(tx.sender));
+                if (accIdx === -1 || !senderAccount.equals(prunedAccounts[accIdx].account)) {
                     throw new Error('Account was not pruned correctly');
                 } else {
                     // Pruned accounts are reset to their initial state
                     await tree.putBatch(tx.sender, Account.INITIAL);
+                    prunedAccounts.splice(accIdx, 1);
                 }
             }
+        }
+        if (prunedAccounts.length > 0) {
+            throw new Error('Account was invalidly pruned');
         }
 
         await this._rewardMiner(tree, body, blockHeight, false);
