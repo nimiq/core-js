@@ -20,6 +20,15 @@ class MempoolTransactionSet {
      * @param {Transaction} transaction
      * @return {MempoolTransactionSet}
      */
+    remove(transaction) {
+        this._transactions.remove(transaction);
+        return this;
+    }
+
+    /**
+     * @param {Transaction} transaction
+     * @return {MempoolTransactionSet}
+     */
     copyAndAdd(transaction) {
         const transactions = this._transactions.copy();
         transactions.add(transaction);

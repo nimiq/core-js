@@ -10,7 +10,9 @@ class NanoMempool extends Observable {
 
         // Our pool of transactions.
         /** @type {HashMap.<Hash, Transaction>} */
-        this._transactions = new HashMap();
+        this._transactionsByHash = new HashMap();
+        /** @type {HashMap.<Address, MempoolTransactionSet>} */
+        this._transactionSetByAddress = new HashMap();
     }
 
     /**
@@ -21,7 +23,7 @@ class NanoMempool extends Observable {
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = transaction.hash();
-        if (this._transactions.contains(hash)) {
+        if (this._transactionsByHash.contains(hash)) {
             Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
             return false;
         }
@@ -38,7 +40,10 @@ class NanoMempool extends Observable {
         }
 
         // Transaction is valid, add it to the mempool.
-        this._transactions.put(hash, transaction);
+        this._transactionsByHash.put(hash, transaction);
+        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
+        set.add(transaction);
+        this._transactionSetByAddress.put(transaction.sender, set);
 
         // Tell listeners about the new transaction we received.
         this.fire('transaction-added', transaction);
@@ -51,7 +56,7 @@ class NanoMempool extends Observable {
      * @returns {Transaction}
      */
     getTransaction(hash) {
-        return this._transactions.get(hash);
+        return this._transactionsByHash.get(hash);
     }
 
     /**
@@ -59,7 +64,19 @@ class NanoMempool extends Observable {
      * @returns {Array.<Transaction>}
      */
     getTransactions(maxCount = 5000) {
-        return this._transactions.values().sort((a, b) => a.compare(b)).slice(0, maxCount);
+        return this._transactionsByHash.values().sort((a, b) => a.compare(b)).slice(0, maxCount);
+    }
+
+    /**
+     * @param {Address} address
+     * @return {Array.<Transaction>}
+     */
+    getPendingTransactions(address) {
+        if (this._transactionSetByAddress.contains(address)) {
+            return this._transactionSetByAddress.get(address).transactions;
+        } else {
+            return [];
+        }
     }
 
     /**
@@ -67,7 +84,7 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      */
     updateHead(block, transactions) {
-        this._evictTransactions(block.height, transactions).catch(Log.logException(Log.Level.WARNING, NanoMempool));
+        this._evictTransactions(block.height, transactions);
     }
 
     /**
@@ -75,20 +92,26 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      * @private
      */
-    async _evictTransactions(block, transactions) {
+    _evictTransactions(block, transactions) {
         // Remove expired transactions.
-        for (const /** @type {Transaction} */ tx of this._transactions.values()) {
-            const txHash = await tx.hash();
+        for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
+            const txHash = tx.hash();
             if (block.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
-                this._transactions.remove(txHash);
+                this._transactionsByHash.remove(txHash);
+                /** @type {MempoolTransactionSet} */
+                const set = this._transactionSetByAddress.get(tx.sender);
+                set.remove(tx);
                 this.fire('transaction-expired', tx);
             }
         }
         // Remove mined transactions.
         for (const /** @type {Transaction} */ tx of transactions) {
-            const txHash = await tx.hash();
-            if (this._transactions.contains(txHash)) {
-                this._transactions.remove(txHash);
+            const txHash = tx.hash();
+            if (this._transactionsByHash.contains(txHash)) {
+                this._transactionsByHash.remove(txHash);
+                /** @type {MempoolTransactionSet} */
+                const set = this._transactionSetByAddress.get(tx.sender);
+                set.remove(tx);
                 this.fire('transaction-mined', tx);
             }
         }

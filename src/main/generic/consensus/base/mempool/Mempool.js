@@ -147,7 +147,7 @@ class Mempool extends Observable {
      * @param {Address} address
      * @return {Array.<Transaction>}
      */
-    getWaitingTransactions(address) {
+    getPendingTransactions(address) {
         if (this._transactionSetByAddress.contains(address)) {
             return this._transactionSetByAddress.get(address).transactions;
         } else {

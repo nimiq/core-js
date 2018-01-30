@@ -303,7 +303,7 @@
                 value = Nimiq.Policy.coinsToSatoshis(value);
                 fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-                var waitingTransactions = $.mempool.getWaitingTransactions($.wallet.publicKey.toAddress());
+                var waitingTransactions = $.mempool.getPendingTransactions($.wallet.publicKey.toAddress());
 
                 if (!account || account.balance < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
                     elValue.className = 'error';

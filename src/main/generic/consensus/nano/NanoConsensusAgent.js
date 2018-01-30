@@ -43,19 +43,19 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Subscribe to all announcements from the peer.
         /** @type {Subscription} */
-        this._subscription = Subscription.BLOCKS_ONLY;
-        this._peer.channel.subscribe(this._subscription);
+        this._localSubscription = Subscription.BLOCKS_ONLY;
+        this._peer.channel.subscribe(this._localSubscription);
     }
 
     /**
      * @param {Array.<Address>} addresses
      */
     subscribeAccounts(addresses) {
-        this._subscription = Subscription.fromAddresses(addresses);
+        this._localSubscription = Subscription.fromAddresses(addresses);
         this._peer.channel.subscribe(Subscription.BLOCKS_ONLY);
         
         this._timers.resetTimeout('subscription-change', () => {
-            this._peer.channel.subscribe(this._subscription);
+            this._peer.channel.subscribe(this._localSubscription);
         }, NanoConsensusAgent.SUBSCRIPTION_CHANGE_TIMEOUT);
     }
 
@@ -234,7 +234,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @override
      */
     _processTransaction(hash, transaction) {
-        if (!this._subscription.matchesTransaction(transaction)) {
+        if (!this._localSubscription.matchesTransaction(transaction)) {
             this._peer.channel.ban('received transaction not matching our subscription');
         }
         return this._mempool.pushTransaction(transaction);

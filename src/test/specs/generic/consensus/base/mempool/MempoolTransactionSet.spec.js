@@ -10,7 +10,7 @@ describe('MempoolTransactionSet', () => {
         })().then(done, done.fail);
     });
 
-    it('can add transactions', () => {
+    it('can add/remove transactions', () => {
         const set = new MempoolTransactionSet();
 
         set.add(tx1);
@@ -21,6 +21,13 @@ describe('MempoolTransactionSet', () => {
         expect(set.length).toBe(2);
         expect(set.transactions[0]).toBe(tx2);
         expect(set.transactions[1]).toBe(tx1);
+
+        set.remove(tx1);
+        expect(set.length).toBe(1);
+        expect(set.transactions[0]).toBe(tx2);
+
+        set.remove(tx2);
+        expect(set.length).toBe(0);
     });
 
     it('correctly adds getter values', () => {

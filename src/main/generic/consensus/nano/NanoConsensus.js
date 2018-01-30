@@ -137,11 +137,11 @@ class NanoConsensus extends Observable {
         if (!this._established) return;
 
         for (const agent of this._agents.values()) {
-            agent.relayBlock(head).catch(Log.logException(Log.Level.WARNING, NanoConsensusAgent));
+            agent.relayBlock(head);
         }
 
-        const includedTransactions = await this.getTransactionsProof(this._addresses, await head.hash());
-        this._mempool.updateHead(head, includedTransactions).catch(Log.logException(Log.Level.WARNING, NanoMempool));
+        const includedTransactions = await this.getTransactionsProof(this._addresses, head.hash());
+        this._mempool.updateHead(head, includedTransactions);
     }
 
     /**

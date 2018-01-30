@@ -37,7 +37,7 @@ class LightConsensus extends Observable {
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                agent.relayBlock(head).catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
+                agent.relayBlock(head);
             }
         });
 
@@ -47,7 +47,7 @@ class LightConsensus extends Observable {
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                agent.relayTransaction(tx).catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
+                agent.relayTransaction(tx);
             }
         });
     }

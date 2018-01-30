@@ -39,7 +39,7 @@ class BaseConsensusAgent extends Observable {
         // A Subscription object specifying which objects should be announced to the peer.
         // Initially, we don't announce anything to the peer until it tells us otherwise.
         /** @type {Subscription} */
-        this._subscription = Subscription.NONE;
+        this._remoteSubscription = Subscription.NONE;
 
         // Helper object to keep track of timeouts & intervals.
         /** @type {Timers} */
@@ -80,7 +80,7 @@ class BaseConsensusAgent extends Observable {
         }
 
         // Only relay block if it matches the peer's subscription.
-        if (!this._subscription.matchesBlock(block)) {
+        if (!this._remoteSubscription.matchesBlock(block)) {
             return false;
         }
 
@@ -130,7 +130,7 @@ class BaseConsensusAgent extends Observable {
      */
     relayTransaction(transaction) {
         // Only relay transaction if it matches the peer's subscription.
-        if (!this._subscription.matchesTransaction(transaction)) {
+        if (!this._remoteSubscription.matchesTransaction(transaction)) {
             return false;
         }
 
@@ -171,7 +171,7 @@ class BaseConsensusAgent extends Observable {
      */
     _onSubscribe(msg) {
         Log.d(BaseConsensusAgent, `[SUBSCRIBE] ${this._peer.peerAddress} ${msg.subscription}`);
-        this._subscription = msg.subscription;
+        this._remoteSubscription = msg.subscription;
     }
 
     /**
