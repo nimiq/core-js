@@ -51,9 +51,12 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {Array.<Address>} addresses
      */
     subscribeAccounts(addresses) {
-        // TODO: changing this takes time and might lead to a ban
         this._subscription = Subscription.fromAddresses(addresses);
-        this._peer.channel.subscribe(this._subscription);
+        this._peer.channel.subscribe(Subscription.BLOCKS_ONLY);
+        
+        this._timers.resetTimeout('subscription-change', () => {
+            this._peer.channel.subscribe(this._subscription);
+        }, NanoConsensusAgent.SUBSCRIPTION_CHANGE_TIMEOUT);
     }
 
     /**
@@ -633,4 +636,5 @@ NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 30;
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
 NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT = 1000 * 10;
 NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT = 1000 * 15;
+NanoConsensusAgent.SUBSCRIPTION_CHANGE_TIMEOUT = 1000 * 2;
 Class.register(NanoConsensusAgent);
