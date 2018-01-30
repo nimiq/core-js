@@ -8,7 +8,7 @@ class WalletStore {
         /** @type {ObjectStore} */
         this._walletStore = null;
         /** @type {ObjectStore} */
-        this._multisigStore = null;
+        this._multiSigStore = null;
 
         return this._init();
     }
@@ -19,7 +19,7 @@ class WalletStore {
     async _init() {
         // Initialize object stores.
         this._walletStore = this._jdb.createObjectStore(WalletStore.WALLET_DATABASE, new WalletStoreCodec());
-        this._multisigStore = this._jdb.createObjectStore(WalletStore.MULTISIG_WALLET_DATABASE, new WalletStoreCodec());
+        this._multiSigStore = this._jdb.createObjectStore(WalletStore.MULTISIG_WALLET_DATABASE, new WalletStoreCodec());
 
         // Establish connection to database.
         await this._jdb.connect();
@@ -125,7 +125,7 @@ class WalletStore {
      */
     async getMultiSig(address, key) {
         const base64Address = address.toBase64();
-        const buf = await this._multisigStore.get(base64Address);
+        const buf = await this._multiSigStore.get(base64Address);
         if (key) {
             return MultiSigWallet.loadEncrypted(buf, key);
         }
@@ -146,7 +146,7 @@ class WalletStore {
         } else {
             buf = wallet.exportPlain();
         }
-        return this._multisigStore.put(base64Address, buf);
+        return this._multiSigStore.put(base64Address, buf);
     }
 
     /**
@@ -155,14 +155,14 @@ class WalletStore {
      */
     removeMultiSig(address) {
         const base64Address = address.toBase64();
-        return this._multisigStore.remove(base64Address);
+        return this._multiSigStore.remove(base64Address);
     }
 
     /**
      * @returns {Promise<Array.<Address>>}
      */
     async listMultiSig() {
-        const keys = await this._multisigStore.keys();
+        const keys = await this._multiSigStore.keys();
         return Array.from(keys).map(key => Address.fromBase64(key));
     }
 

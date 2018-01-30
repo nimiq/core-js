@@ -52,7 +52,7 @@ const $ = {};
     // TODO: Wallet key.
     $.walletStore = await new Nimiq.WalletStore();
     if (!walletAddress && !walletSeed) {
-        // Load or create main wallet.
+        // Load or create default wallet.
         $.wallet = await $.walletStore.getDefault();
     } else if (walletSeed) {
         // Load wallet from seed.
