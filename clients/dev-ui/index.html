@@ -202,13 +202,9 @@
 
     class DevUI {
         constructor($) {
-            $.blockchain.on('head-changed', function(head, rebranching) {
-                this._headChanged(head, rebranching);
-            }.bind(this));
+            $.blockchain.on('head-changed', this._headChanged.bind(this));
 
-            $.network.on('peers-changed', function() {
-                this._networkChanged();
-            }.bind(this));
+            $.network.on('peers-changed', this._networkChanged.bind(this));
 
             $.mempool.on('transaction-added', function (tx) {
                 if ($.clientType !== CLIENT_NANO) {
@@ -219,23 +215,11 @@
                 }
             }.bind(this));
             if ($.clientType !== CLIENT_NANO) {
-                $.mempool.on('transactions-ready', function () {
-                    this._rerenderMempool();
-                }.bind(this));
-
-                $.miner.on('start', function () {
-                    this._minerChanged()
-                }.bind(this));
-
-                $.miner.on('stop', function () {
-                    this._minerChanged()
-                }.bind(this));
-                $.miner.on('hashrate-changed', function () {
-                    this._minerChanged()
-                }.bind(this));
-                $.miner.on('block-mined', function () {
-                    this._blockMined()
-                }.bind(this));
+                $.mempool.on('transactions-ready', this._rerenderMempool.bind(this));
+                $.miner.on('start', this._minerChanged.bind(this));
+                $.miner.on('stop', this._minerChanged.bind(this));
+                $.miner.on('hashrate-changed', this._minerChanged.bind(this));
+                $.miner.on('block-mined', this._blockMined.bind(this));
             }
 
             var bcTitle = document.querySelector('#bcTitle');
@@ -329,9 +313,7 @@
 
             this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
 
-            txSubmitBtn.onclick = function (e) {
-                this._submitTransaction(e);
-            }.bind(this);
+            txSubmitBtn.onclick = this._submitTransaction.bind(this);
 
             // Mempool
             /** @type {HTMLElement} */
@@ -413,9 +395,8 @@
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
-                    this._broadcastTransaction(tx);
-                }.bind(this));
+                $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1)
+                    .then(this._broadcastTransaction.bind(this));
             }.bind(this));
 
             e.preventDefault();
@@ -611,6 +592,7 @@
             alert('Please navigate to /#nano, /#light or /#full to select a client type.');
             return;
         }
+        document.body.setAttribute('client', clientType);
 
         const bcTitle = document.querySelector('#bcTitle');
         bcTitle.classList.add('initializing');

@@ -229,6 +229,16 @@ hash {
 
 /* The order of these consensus classes is important to enable overwriting */
 
+#bcTitle:after {
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.65;
+    font-weight: 400;
+}
+
 .not-connected {
     background: crimson;
     opacity: 0.6;
@@ -236,13 +246,6 @@ hash {
 
 .not-connected::after {
     content: "Not connected";
-    position: absolute;
-    top: 8px;
-    right: 20px;
-    font-style: italic;
-    font-size: 12px;
-    opacity: 0.6;
-    font-weight: 400;
 }
 
 .initializing {
@@ -252,22 +255,10 @@ hash {
 
 .initializing::after {
     content: "Initializing...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
 .connecting::after {
     content: "Connecting...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
 .syncing {
@@ -276,48 +267,18 @@ hash {
 }
 .syncing::after {
     content: "Syncronizing...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .sync-chain-proof::after {
     content: "Downloading proof...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .verify-chain-proof::after {
     content: "Verifying proof...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .sync-accounts-tree::after {
     content: "Downloading accounts...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .verify-accounts-tree::after {
     content: "Verifying accounts...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 
 .consensus-established {
@@ -327,12 +288,6 @@ hash {
 
 .consensus-established::after {
     content: "Consensus established";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
 #newWallet {
