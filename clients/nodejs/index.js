@@ -56,7 +56,7 @@ const $ = {};
         $.wallet = await $.walletStore.getDefault();
     } else if (walletSeed) {
         // Load wallet from seed.
-        const mainWallet = await Nimiq.Wallet.load(walletSeed);
+        const mainWallet = await Nimiq.Wallet.loadPlain(walletSeed);
         await $.walletStore.put(mainWallet);
         await $.walletStore.setDefault(mainWallet.address);
         $.wallet = mainWallet;
