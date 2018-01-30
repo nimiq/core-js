@@ -28,6 +28,17 @@ class Wallet {
     }
 
     /**
+     * Clears a wallet from persistent storage backend.
+     * @returns {Promise}
+     */
+    async clearPersistent() {
+        await Crypto.prepareSyncCryptoWorker();
+        const db = await new WalletStore();
+        await db.remove('keys');
+        await db.close();
+    }
+
+    /**
      * Create a Wallet that will lose its data after this session.
      * @returns {Promise.<Wallet>} Newly created Wallet.
      */

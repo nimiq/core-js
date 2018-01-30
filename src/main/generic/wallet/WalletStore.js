@@ -40,6 +40,15 @@ class WalletStore {
         return store.put(key, keyPair);
     }
 
+    /**
+     * @param {string} key
+     * @returns {Promise.<KeyPair>}
+     */
+    remove(key) {
+        const store = this._jdb.getObjectStore(WalletStore.KEY_DATABASE);
+        return store.remove(key);
+    }
+
     close() {
         return this._jdb.close();
     }
