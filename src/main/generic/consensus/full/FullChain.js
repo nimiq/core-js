@@ -454,7 +454,7 @@ class FullChain extends BaseChain {
                 matches.push(transaction);
             }
         }
-        const proof = await MerkleProof.compute([block.minerAddr, block.body.extraData, ...block.transactions], matches);
+        const proof = await MerkleProof.compute(block.body.getMerkleLeafs(), matches);
         return new TransactionsProof(matches, proof);
     }
 

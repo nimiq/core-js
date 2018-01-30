@@ -116,11 +116,18 @@ class BlockBody {
     }
 
     /**
+     * @returns {Array}
+     */
+    getMerkleLeafs() {
+        return [this._minerAddr, this._extraData, ...this._transactions, ...this.prunedAccounts];
+    }
+
+    /**
      * @return {Promise.<Hash>}
      */
     async hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot([this._minerAddr, this._extraData, ...this._transactions, ...this.prunedAccounts]);
+            this._hash = await MerkleTree.computeRoot(this.getMerkleLeafs());
         }
         return this._hash;
     }

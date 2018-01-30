@@ -94,19 +94,22 @@ class Accounts extends Observable {
      */
     async gatherToBePrunedAccounts(transactions, blockHeight, transactionCache) {
         const tree = await this._tree.transaction();
-        await this._processSenderAccounts(tree, transactions, blockHeight, transactionCache);
-        await this._processRecipientAccounts(tree, transactions, blockHeight);
-        await this._processContracts(tree, transactions, blockHeight);
+        try {
+            await this._processSenderAccounts(tree, transactions, blockHeight, transactionCache);
+            await this._processRecipientAccounts(tree, transactions, blockHeight);
+            await this._processContracts(tree, transactions, blockHeight);
 
-        const toBePruned = [];
-        for (const tx of transactions) {
-            const senderAccount = await this.get(tx.sender, tx.senderType, tree);
-            if (senderAccount.isToBePruned()) {
-                toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
+            const toBePruned = [];
+            for (const tx of transactions) {
+                const senderAccount = await this.get(tx.sender, tx.senderType, tree);
+                if (senderAccount.isToBePruned()) {
+                    toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
+                }
             }
+            return toBePruned;
+        } finally {
+            await tree.abort();
         }
-        await tree.abort();
-        return toBePruned;
     }
 
     /**
