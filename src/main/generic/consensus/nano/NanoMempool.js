@@ -1,6 +1,12 @@
 class NanoMempool extends Observable {
-    constructor() {
+    /**
+     * @param {IBlockchain} blockchain
+     */
+    constructor(blockchain) {
         super();
+
+        /** @type {IBlockchain} */
+        this._blockchain = blockchain;
 
         // Our pool of transactions.
         /** @type {HashMap.<Hash, Transaction>} */
@@ -20,14 +26,15 @@ class NanoMempool extends Observable {
             return false;
         }
 
-        // Verify transaction.
-        if (!(await transaction.verify())) {
+        // Check validity based on startHeight.
+        if (this._blockchain.height >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+            Log.v(Mempool, () => `Ignoring expired transaction ${hash.toBase64()}`);
             return false;
         }
 
-        // Evict the oldest transactions from the mempool if it grows too large.
-        if (this._transactions.length >= NanoMempool.TRANSACTIONS_MAX_COUNT) {
-            this._evictTransactions();
+        // Verify transaction.
+        if (!(await transaction.verify())) {
+            return false;
         }
 
         // Transaction is valid, add it to the mempool.
@@ -52,29 +59,39 @@ class NanoMempool extends Observable {
      * @returns {Array.<Transaction>}
      */
     getTransactions(maxCount = 5000) {
-        // TODO Add logic here to pick the "best" transactions.
-        const transactions = [];
-        for (const transaction of this._transactions.values()) {
-            if (transactions.length >= maxCount) break;
-            transactions.push(transaction);
-        }
-        return transactions;
+        return this._transactions.values().sort((a, b) => a.compare(b)).slice(0, maxCount);
     }
 
     /**
+     * @param {Block} block
+     * @param {Array.<Transaction>} transactions
+     */
+    updateHead(block, transactions) {
+        this._evictTransactions(block.height, transactions).catch(Log.logException(Log.Level.WARNING, NanoMempool));
+    }
+
+    /**
+     * @param {number} blockHeight
+     * @param {Array.<Transaction>} transactions
      * @private
      */
-    _evictTransactions() {
-        const keyIterator = this._transactions.keyIterator();
-        let {value:hash, done} = keyIterator.next();
-        for (let i = 0; !done && i < NanoMempool.TRANSACTIONS_EVICT_COUNT; i++) {
-            /** @type {Transaction} */
-            this._transactions.remove(hash);
-
-            ({value:hash, done} = keyIterator.next());
+    async _evictTransactions(block, transactions) {
+        // Remove expired transactions.
+        for (const /** @type {Transaction} */ tx of this._transactions.values()) {
+            const txHash = await tx.hash();
+            if (block.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+                this._transactions.remove(txHash);
+                this.fire('transaction-expired', tx);
+            }
+        }
+        // Remove mined transactions.
+        for (const /** @type {Transaction} */ tx of transactions) {
+            const txHash = await tx.hash();
+            if (this._transactions.contains(txHash)) {
+                this._transactions.remove(txHash);
+                this.fire('transaction-mined', tx);
+            }
         }
     }
 }
-NanoMempool.TRANSACTIONS_MAX_COUNT = 50000;
-NanoMempool.TRANSACTIONS_EVICT_COUNT = 5000;
 Class.register(NanoMempool);

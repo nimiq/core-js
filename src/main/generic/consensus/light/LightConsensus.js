@@ -37,7 +37,7 @@ class LightConsensus extends Observable {
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                agent.relayBlock(head);
+                agent.relayBlock(head).catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
             }
         });
 
@@ -47,7 +47,7 @@ class LightConsensus extends Observable {
             if (!this._established) return;
 
             for (const agent of this._agents.values()) {
-                agent.relayTransaction(tx);
+                agent.relayTransaction(tx).catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
             }
         });
     }
@@ -130,7 +130,7 @@ class LightConsensus extends Observable {
             }
 
             Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-            agent.syncBlockchain();
+            agent.syncBlockchain().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
         });
     }
 

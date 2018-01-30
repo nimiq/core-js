@@ -126,7 +126,7 @@ class LightConsensusAgent extends FullConsensusAgent {
                         this.fire('sync-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.PROVE_BLOCKS:
-                        this._requestProofBlocks();
+                        this._requestProofBlocks().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
                         this.fire('verify-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.COMPLETE:
@@ -247,7 +247,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // TODO add all blocks from the chain proof to knownObjects.
         this._busy = false;
-        this.syncBlockchain();
+        this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
     }
 
     // Stage 2: Request AccountsTree.
@@ -349,7 +349,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         this._busy = false;
-        this.syncBlockchain();
+        this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
     }
 
     // Stage 3: Request proof blocks.
@@ -409,7 +409,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
             this._onMainChain = false;
             await this._initChainProofSync();
-            this.syncBlockchain();
+            this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
             return;
         } else {
             this._onMainChain = true;
@@ -548,7 +548,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     _onClose() {
         if (this._partialChain) {
-            this._partialChain.abort();
+            this._partialChain.abort().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
         }
 
         super._onClose();

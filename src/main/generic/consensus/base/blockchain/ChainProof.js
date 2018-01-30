@@ -39,7 +39,7 @@ class ChainProof {
      */
     async verify() {
         // Check that the prefix chain is anchored.
-        if (!this._prefix.isAnchored()) {
+        if (!(await this._prefix.isAnchored())) {
             return false;
         }
 

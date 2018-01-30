@@ -166,5 +166,6 @@ Subscription.Type = {
     MIN_FEE: 3
 };
 Subscription.NONE = new Subscription(Subscription.Type.NONE);
+Subscription.BLOCKS_ONLY = new Subscription(Subscription.Type.ADDRESSES, []);
 Subscription.ANY = new Subscription(Subscription.Type.ANY);
 Class.register(Subscription);

@@ -164,11 +164,11 @@ class PeerConnector extends Observable {
                             .catch(error => this._errorLog(error));
                     }
 
-                    this._handleCandidateQueue();
+                    this._handleCandidateQueue().catch(Log.logException(Log.Level.WARNING, PeerConnector));
                 })
                 .catch(error => this._errorLog(error));
         } else if (signal.candidate) {
-            this._addIceCandidate(signal);
+            this._addIceCandidate(signal).catch(Log.logException(Log.Level.WARNING, PeerConnector));
         }
     }
 
@@ -216,7 +216,7 @@ class PeerConnector extends Observable {
 
     _onIceCandidate(event) {
         if (event.candidate !== null) {
-            this._signal(event.candidate);
+            this._signal(event.candidate).catch(Log.logException(Log.Level.WARNING, PeerConnector));
         }
     }
 

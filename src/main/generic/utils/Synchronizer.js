@@ -15,7 +15,7 @@ class Synchronizer extends Observable {
         return new Promise((resolve, reject) => {
             this._queue.push({fn: fn, resolve: resolve, reject: reject});
             if (!this._working) {
-                this._doWork();
+                this._doWork().catch(Log.logException(Log.Level.WARNING, Synchronizer));
             }
         });
     }

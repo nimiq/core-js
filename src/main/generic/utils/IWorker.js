@@ -147,12 +147,12 @@ class IWorker {
                 });
             }
 
-            async eval(code) {
+            eval(code) {
                 return this._invoke('eval', [code]);
             }
 
-            async destroy() {
-                this._invoke('destroy');
+            destroy() {
+                return this._invoke('destroy');
             }
         };
         for (const funcName of Object.getOwnPropertyNames(clazz.prototype)) {
@@ -359,12 +359,12 @@ class IWorker {
 
             set poolSize(_size) {
                 this._poolSize = _size;
-                this._updateToSize();
+                this._updateToSize().catch(Log.logException(Log.Level.WARNING, IWorker));
             }
 
-            async destroy() {
+            destroy() {
                 this._poolSize = 0;
-                this._updateToSize();
+                return this._updateToSize();
             }
 
             /**
@@ -377,7 +377,7 @@ class IWorker {
                     this._waitingCalls.push({name, args, resolve, error});
                     const worker = this._freeWorkers.shift();
                     if (worker) {
-                        this._step(worker);
+                        this._step(worker).catch(Log.logException(Log.Level.WARNING, IWorker));
                     }
                 });
             }
@@ -414,7 +414,7 @@ class IWorker {
                 const createdWorkers = await Promise.all(workerPromises);
                 for (const worker of createdWorkers) {
                     this._workers.push(worker);
-                    this._step(worker);
+                    this._step(worker).catch(Log.logException(Log.Level.WARNING, IWorker));
                 }
 
                 while (this._workers.length > this._poolSize) {

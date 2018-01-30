@@ -38,6 +38,15 @@ class Log {
     /**
      * @param {Log.Level} level
      * @param {string|{name:string}} tag
+     * @returns {function(exception:Error): void}
+     */
+    static logException(level, tag) {
+        return exception => Log.instance.msg(level, tag, exception.message || exception);
+    }
+
+    /**
+     * @param {Log.Level} level
+     * @param {string|{name:string}} tag
      * @param {Array} args
      */
     msg(level, tag, args) {

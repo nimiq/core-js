@@ -42,7 +42,18 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
         // Subscribe to all announcements from the peer.
-        this._peer.channel.subscribe(Subscription.ANY);
+        /** @type {Subscription} */
+        this._subscription = Subscription.BLOCKS_ONLY;
+        this._peer.channel.subscribe(this._subscription);
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     */
+    subscribeAccounts(addresses) {
+        // TODO: changing this takes time and might lead to a ban
+        this._subscription = Subscription.fromAddresses(addresses);
+        this._peer.channel.subscribe(this._subscription);
     }
 
     /**
@@ -220,7 +231,9 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @override
      */
     _processTransaction(hash, transaction) {
-        // TODO send reject message if we don't like the transaction
+        if (!this._subscription.matchesTransaction(transaction)) {
+            this._peer.channel.ban('received transaction not matching our subscription');
+        }
         return this._mempool.pushTransaction(transaction);
     }
 

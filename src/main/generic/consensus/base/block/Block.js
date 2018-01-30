@@ -293,7 +293,7 @@ class Block {
      */
     async isSuccessorOf(predecessor) {
         // TODO Improve this! Lots of duplicate checks.
-        return await this.isImmediateSuccessorOf(predecessor) || this.isInterlinkSuccessorOf(predecessor);
+        return (await this.isImmediateSuccessorOf(predecessor)) || (await this.isInterlinkSuccessorOf(predecessor));
     }
 
     /**

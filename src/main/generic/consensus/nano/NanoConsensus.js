@@ -25,18 +25,14 @@ class NanoConsensus extends Observable {
         /** @type {Peer} */
         this._syncPeer = null;
 
+        /** @type {Array.<Address>} */
+        this._addresses = [];
+
         network.on('peer-joined', peer => this._onPeerJoined(peer));
         network.on('peer-left', peer => this._onPeerLeft(peer));
 
         // Notify peers when our blockchain head changes.
-        blockchain.on('head-changed', head => {
-            // Don't announce head changes if we are not synced yet.
-            if (!this._established) return;
-
-            for (const agent of this._agents.values()) {
-                agent.relayBlock(head);
-            }
-        });
+        blockchain.on('head-changed', head => this._onHeadChanged(head));
     }
 
     /**
@@ -115,7 +111,7 @@ class NanoConsensus extends Observable {
         }
 
         Log.v(NanoConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-        agent.syncBlockchain();
+        agent.syncBlockchain().catch(Log.logException(Log.Level.WARNING, NanoConsensusAgent));
     }
 
     /**
@@ -130,6 +126,22 @@ class NanoConsensus extends Observable {
             this.fire('sync-finished', peer.peerAddress);
         }
         this._syncBlockchain();
+    }
+
+    /**
+     * @param {Block} head
+     * @private
+     */
+    async _onHeadChanged(head) {
+        // Don't announce head changes if we are not synced yet.
+        if (!this._established) return;
+
+        for (const agent of this._agents.values()) {
+            agent.relayBlock(head).catch(Log.logException(Log.Level.WARNING, NanoConsensusAgent));
+        }
+
+        const includedTransactions = await this.getTransactionsProof(this._addresses, await head.hash());
+        this._mempool.updateHead(head, includedTransactions).catch(Log.logException(Log.Level.WARNING, NanoMempool));
     }
 
     /**
@@ -165,6 +177,16 @@ class NanoConsensus extends Observable {
 
         // No peer supplied the requested account, fail.
         throw new Error(`Failed to retrieve accounts ${addresses}`);
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     */
+    subscribeAccounts(addresses) {
+        this._addresses = addresses;
+        for (const /** @type {NanoConsensusAgent} */ agent of this._agents.values()) {
+            agent.subscribeAccounts(this._addresses);
+        }
     }
 
     /**
