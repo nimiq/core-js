@@ -77,7 +77,7 @@ class BasicAccount extends Account {
      * @return {Account}
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
-        if (!revert && transaction.recipientType === this._type && transaction.data.length > 0) {
+        if (!revert && transaction.recipientType === this._type && transaction.hasFlag(Transaction.Flag.CONTRACT_CREATION)) {
             throw new Error('Data Error!');
         }
         return super.withIncomingTransaction(transaction, blockHeight, revert);

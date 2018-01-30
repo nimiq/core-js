@@ -45,7 +45,6 @@ class HashedTimeLockedContract extends Contract {
         const hashRoot = Hash.unserialize(buf, hashAlgorithm);
         const hashCount = buf.readUint8();
         const timeout = buf.readUint32();
-        if (blockHeight > timeout) throw new Error('Data Error!');
 
         return new HashedTimeLockedContract(balance, sender, recipient, hashRoot, hashCount, timeout);
     }

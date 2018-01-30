@@ -24,7 +24,7 @@ class Transaction {
         if (!NumberUtils.isUint64(value) || value === 0) throw new Error('Malformed value');
         if (!NumberUtils.isUint64(fee)) throw new Error('Malformed fee');
         if (!NumberUtils.isUint32(validityStartHeight)) throw new Error('Malformed validityStartHeight');
-        if (!NumberUtils.isUint8(flags) && (flags && ~(Transaction.Flag.ALL)) > 0) throw new Error('Malformed flags');
+        if (!NumberUtils.isUint8(flags) && (flags & ~(Transaction.Flag.ALL)) > 0) throw new Error('Malformed flags');
         if (!(data instanceof Uint8Array) || !(NumberUtils.isUint16(data.byteLength))) throw new Error('Malformed data');
         if (proof && (!(proof instanceof Uint8Array) || !(NumberUtils.isUint16(proof.byteLength)))) throw new Error('Malformed proof');
 
