@@ -1,8 +1,8 @@
 class MerkleTree {
     /**
      * @param {Array} values
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<Hash>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {Hash}
      */
     static computeRoot(values, fnHash = MerkleTree._hash) {
         return MerkleTree._computeRoot(values, fnHash);
@@ -10,8 +10,8 @@ class MerkleTree {
 
     /**
      * @param {Array} values
-     * @param {function(o: *):Promise.<Hash>} fnHash
-     * @returns {Promise.<Hash>}
+     * @param {function(o: *):Hash} fnHash
+     * @returns {Hash}
      * @private
      */
     static _computeRoot(values, fnHash) {
@@ -26,22 +26,19 @@ class MerkleTree {
         const mid = Math.round(len / 2);
         const left = values.slice(0, mid);
         const right = values.slice(mid);
-        return Promise.all([
-            MerkleTree._computeRoot(left, fnHash),
-            MerkleTree._computeRoot(right, fnHash)
-        ]).then(hashes => {
-            return Hash.light(BufferUtils.concatTypedArrays(hashes[0].serialize(), hashes[1].serialize()));
-        });
+        const leftHash = MerkleTree._computeRoot(left, fnHash);
+        const rightHash = MerkleTree._computeRoot(right, fnHash);
+        return Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
     }
 
     /**
-     * @param {Hash|Uint8Array|{hash: function():Promise.<Hash>}|{serialize: function():Uint8Array}} o
-     * @returns {Promise.<Hash>}
+     * @param {Hash|Uint8Array|{hash: function():Hash}|{serialize: function():Uint8Array}} o
+     * @returns {Hash}
      * @private
      */
     static _hash(o) {
         if (o instanceof Hash) {
-            return Promise.resolve(o);
+            return o;
         }
         if (typeof o.hash === 'function') {
             return o.hash();

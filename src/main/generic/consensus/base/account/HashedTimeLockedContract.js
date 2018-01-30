@@ -277,7 +277,8 @@ class HashedTimeLockedContract extends Contract {
                 // Ignore the preImage.
                 Hash.unserialize(buf, hashAlgorithm);
 
-                if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._recipient)) {
+                // Verify that the transaction is signed by the authorized recipient.
+                if (!SignatureProof.unserialize(buf).isSignedBy(this._recipient)) {
                     throw new Error('Proof Error!');
                 }
 
@@ -286,11 +287,11 @@ class HashedTimeLockedContract extends Contract {
                 break;
             }
             case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: {
-                if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._recipient)) {
+                if (!SignatureProof.unserialize(buf).isSignedBy(this._recipient)) {
                     throw new Error('Proof Error!');
                 }
 
-                if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._sender)) {
+                if (!SignatureProof.unserialize(buf).isSignedBy(this._sender)) {
                     throw new Error('Proof Error!');
                 }
 
@@ -301,7 +302,7 @@ class HashedTimeLockedContract extends Contract {
                     throw new Error('Proof Error!');
                 }
 
-                if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._sender)) {
+                if (!SignatureProof.unserialize(buf).isSignedBy(this._sender)) {
                     throw new Error('Proof Error!');
                 }
 

@@ -69,7 +69,7 @@ class Wallet {
         this._keyPair = keyPair;
         /** @type {Address} */
         this._address = undefined;
-        this._address = this._keyPair.publicKey.toAddressSync();
+        this._address = this._keyPair.publicKey.toAddress();
     }
 
     /**

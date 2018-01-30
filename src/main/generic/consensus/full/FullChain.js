@@ -106,7 +106,7 @@ class FullChain extends BaseChain {
      */
     async _pushBlock(block) {
         // Check if we already know this block.
-        const hash = await block.hash();
+        const hash = block.hash();
         const knownBlock = await this._store.getBlock(hash);
         if (knownBlock) {
             Log.v(FullChain, `Ignoring known block ${hash}`);
@@ -454,7 +454,8 @@ class FullChain extends BaseChain {
                 matches.push(transaction);
             }
         }
-        const proof = await MerkleProof.compute(block.body.getMerkleLeafs(), matches);
+
+        const proof = MerkleProof.compute(block.body.getMerkleLeafs(), matches);
         return new TransactionsProof(matches, proof);
     }
 

@@ -51,9 +51,9 @@ class AccountsProof {
      * Assumes nodes to be in post order and hashes nodes to check internal consistency of proof.
      * XXX Abuse this method to index the nodes contained in the proof. This forces callers to explicitly verify()
      * the proof before retrieving accounts.
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async verify() {
+    verify() {
         /** @type {Array.<AccountsTreeNode>} */
         let children = [];
         this._index = new HashMap();
@@ -63,7 +63,7 @@ class AccountsProof {
                 let child;
                 while (child = children.pop()) { // eslint-disable-line no-cond-assign
                     if (child.isChildOf(node)) {
-                        const hash = await child.hash(); // eslint-disable-line no-await-in-loop
+                        const hash = child.hash();
                         // If the child is not valid, return false.
                         if (!node.getChildHash(child.prefix).equals(hash) || node.getChild(child.prefix) !== child.prefix) {
                             return false;
@@ -137,7 +137,7 @@ class AccountsProof {
     }
 
     /**
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     root() {
         return this._nodes[this._nodes.length - 1].hash();

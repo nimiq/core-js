@@ -10,7 +10,6 @@ describe('PeerChannel', () => {
             // We need this to prevent a race condition where a new
             // VersionMessage would be created before Block.GENESIS.HASH
             // is set in the object
-            await Block.GENESIS.hash();
             const spy = new SpyConnection(msg => {
                 const vMsg = VersionMessage.unserialize(msg);
                 expect(vMsg.version).toBe(Version.CODE);

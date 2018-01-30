@@ -49,7 +49,7 @@ class ChainProof {
         }
 
         // Check that the suffix connects to the prefix.
-        if (this._suffix.length > 0 && !(await this._suffix.tail.isImmediateSuccessorOf(this._prefix.head.header))) {
+        if (this._suffix.length > 0 && !this._suffix.tail.isImmediateSuccessorOf(this._prefix.head.header)) {
             return false;
         }
 
@@ -69,7 +69,7 @@ class ChainProof {
     async _verifyDifficulty() {
         // Extract the dense suffix of the prefix.
         /** Array.<BlockHeader> */
-        const denseSuffix = (await this.prefix.denseSuffix()).map(block => block.header);
+        const denseSuffix = this.prefix.denseSuffix().map(block => block.header);
         /** Array.<BlockHeader> */
         const denseChain = denseSuffix.concat(this.suffix.headers);
 

@@ -273,13 +273,9 @@ class Crypto {
 
 
     // Light hash implementation using blake2b via WebAssembly WebWorker
-    static async blake2b(arr) {
+    static async blake2bAsync(arr) {
         const worker = await Crypto._cryptoWorkerSync();
         return worker.computeBlake2b(arr);
-    }
-
-    static get blake2bSize() {
-        return 32;
     }
 
     /**
@@ -290,6 +286,10 @@ class Crypto {
         const worker = Crypto._cryptoWorkerResolvedSync;
         if (!worker) throw new Error('Synchronous crypto worker not yet prepared');
         return worker.computeBlake2b(arr);
+    }
+
+    static get blake2bSize() {
+        return 32;
     }
 
     static async argon2d(arr) {

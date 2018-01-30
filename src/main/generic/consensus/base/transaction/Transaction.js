@@ -137,20 +137,20 @@ class Transaction {
     }
 
     /**
-     * @return {Promise.<Hash>}
+     * @return {Hash}
      */
-    async hash() {
+    hash() {
         // Exclude the signature, we don't want transactions to be malleable.
-        this._hash = this._hash || await Hash.light(this.serializeContent());
+        this._hash = this._hash || Hash.light(this.serializeContent());
         return this._hash;
     }
 
     /**
-     * @return {Hash}
+     * @return {Promise.<Hash>}
      */
-    hashSync() {
+    async hashAsync() {
         // Exclude the signature, we don't want transactions to be malleable.
-        this._hash = this._hash || Hash.lightSync(this.serializeContent());
+        this._hash = this._hash || await Hash.lightAsync(this.serializeContent());
         return this._hash;
     }
 
@@ -225,7 +225,7 @@ class Transaction {
         const tx = Transaction.unserialize(this.serialize());
         tx._recipient = Address.NULL;
         tx._hash = null;
-        return Address.fromHash(tx.hashSync());
+        return Address.fromHash(tx.hash());
     }
 
     /** @type {Address} */

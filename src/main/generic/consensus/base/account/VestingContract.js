@@ -219,7 +219,7 @@ class VestingContract extends Contract {
             }
 
             const buf = new SerialBuffer(transaction.proof);
-            if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._owner)) {
+            if (!SignatureProof.unserialize(buf).isSignedBy(this._owner)) {
                 throw new Error('Proof Error!');
             }
         }

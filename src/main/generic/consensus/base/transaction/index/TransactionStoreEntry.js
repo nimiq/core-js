@@ -20,20 +20,17 @@ class TransactionStoreEntry {
 
     /**
      * @param {Block} block
-     * @returns {Promise.<Array.<TransactionStoreEntry>>}
+     * @returns {Array.<TransactionStoreEntry>}
      */
-    static async fromBlock(block) {
-        const blockHash = await block.hash();
-        /** @type {Array.<Promise.<TransactionStoreEntry>>} */
-        const entryPromises = [];
-        for (let i=0; i<block.transactions.length; ++i) {
+    static fromBlock(block) {
+        const blockHash = block.hash();
+        /** @type {Array.<TransactionStoreEntry>} */
+        const entries = [];
+        for (let i = 0; i < block.transactions.length; ++i) {
             const transaction = block.transactions[i];
-            const entryPromise = transaction.hash().then(transactionHash =>
-                new TransactionStoreEntry(transactionHash, transaction.sender, transaction.recipient, block.height, blockHash, i)
-            );
-            entryPromises.push(entryPromise);
+            entries.push(new TransactionStoreEntry(transaction.hash(), transaction.sender, transaction.recipient, block.height, blockHash, i));
         }
-        return Promise.all(entryPromises);
+        return entries;
     }
 
     /**

@@ -95,7 +95,7 @@ class SignalMessage extends Message {
         if (!this._signature) {
             return false;
         }
-        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(await this._senderPubKey.toSignalId());
+        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(this._senderPubKey.toSignalId());
     }
 
     /** @type {SignalId} */

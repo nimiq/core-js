@@ -1,7 +1,6 @@
-
 describe('ExtendedTransaction', () => {
     const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
-    let senderAddress = null;
+    let senderAddress;
     const recipientAddress = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 1;
@@ -9,11 +8,8 @@ describe('ExtendedTransaction', () => {
     const proof = BufferUtils.fromAscii('ABCD');
     const data = BufferUtils.fromAscii('EFGH');
 
-    beforeAll((done) => {
-        (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-            senderAddress = senderPubKey.toAddressSync();
-        })().then(done, done.fail);
+    beforeAll(() => {
+        senderAddress = senderPubKey.toAddress();
     });
 
     it('is correctly created', () => {

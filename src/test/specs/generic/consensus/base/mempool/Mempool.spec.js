@@ -91,7 +91,7 @@ describe('Mempool', () => {
             expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transaction and check that it is the same one we pushed before
-            const hash = await referenceTransaction.hash();
+            const hash = referenceTransaction.hash();
             const transaction = await mempool.getTransaction(hash);
             expect(transaction).toBe(referenceTransaction);
         })().then(done, done.fail);
@@ -119,8 +119,8 @@ describe('Mempool', () => {
             expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transactions and check that they are the same one we pushed before
-            expect(await mempool.getTransaction(await t1.hash())).toBe(t1);
-            expect(await mempool.getTransaction(await t2.hash())).toBe(t2);
+            expect(await mempool.getTransaction(t1.hash())).toBe(t1);
+            expect(await mempool.getTransaction(t2.hash())).toBe(t2);
         })().then(done, done.fail);
     });
 

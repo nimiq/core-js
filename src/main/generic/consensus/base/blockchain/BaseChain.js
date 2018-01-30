@@ -37,7 +37,7 @@ class BaseChain extends IBlockchain {
         /** @type {ChainData} */
         let headData;
         if (block) {
-            const hash = await block.hash();
+            const hash = block.hash();
             headData = await this._store.getChainData(hash);
             Assert.that(!!headData);
         } else {

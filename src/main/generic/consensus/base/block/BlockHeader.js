@@ -117,9 +117,9 @@ class BlockHeader {
 
     /**
      * @param {BlockHeader} prevHeader
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async isImmediateSuccessorOf(prevHeader) {
+    isImmediateSuccessorOf(prevHeader) {
         // Check that the height is one higher than the previous height.
         if (this.height !== prevHeader.height + 1) {
             return false;
@@ -131,7 +131,7 @@ class BlockHeader {
         }
 
         // Check that the hash of the predecessor block equals prevHash.
-        const prevHash = await prevHeader.hash();
+        const prevHash = prevHeader.hash();
         if (!this.prevHash.equals(prevHash)) {
             return false;
         }
@@ -149,19 +149,19 @@ class BlockHeader {
 
     /**
      * @param {SerialBuffer} [buf]
-     * @return {Promise.<Hash>}
+     * @return {Hash}
      */
-    async hash(buf) {
-        this._hash = this._hash || await Hash.light(this.serialize(buf));
+    hash(buf) {
+        this._hash = this._hash || Hash.light(this.serialize(buf));
         return this._hash;
     }
 
     /**
      * @param {SerialBuffer} [buf]
-     * @return {Hash}
+     * @return {Promise.<Hash>}
      */
-    hashSync(buf) {
-        this._hash = this._hash || Hash.lightSync(this.serialize(buf));
+    async hashAsync(buf) {
+        this._hash = this._hash || await Hash.lightAsync(this.serialize(buf));
         return this._hash;
     }
     

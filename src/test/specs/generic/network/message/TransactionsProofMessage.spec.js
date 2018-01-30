@@ -12,16 +12,13 @@ describe('TransactionsProofMessage', () => {
     let tx1, tx2, txProof;
 
 
-    beforeAll((done) => {
-        (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-            senderAddress = senderPubKey.toAddressSync();
+    beforeAll(() => {
+        senderAddress = senderPubKey.toAddress();
 
-            tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
-            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, Transaction.Flag.NONE, data, proof);
+        tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, nonce, signature);
+        tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, nonce, Transaction.Flag.NONE, data, proof);
 
-            txProof = new TransactionsProof([tx1], await MerkleProof.compute([tx1, tx2], [tx1]));
-        })().then(done, done.fail);
+        txProof = new TransactionsProof([tx1], MerkleProof.compute([tx1, tx2], [tx1]));
     });
 
     it('is correctly constructed', () => {

@@ -71,9 +71,9 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Block} block
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async relayBlock(block) {
+    relayBlock(block) {
         // Don't relay block if have not synced with the peer yet.
         if (!this._synced) {
             return false;
@@ -85,8 +85,7 @@ class BaseConsensusAgent extends Observable {
         }
 
         // Create InvVector.
-        const hash = await block.hash();
-        const vector = new InvVector(InvVector.Type.BLOCK, hash);
+        const vector = InvVector.fromBlock(block);
 
         // Don't relay block to this peer if it already knows it.
         if (this._knownObjects.contains(vector)) {
@@ -127,17 +126,16 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
-    async relayTransaction(transaction) {
+    relayTransaction(transaction) {
         // Only relay transaction if it matches the peer's subscription.
         if (!this._subscription.matchesTransaction(transaction)) {
             return false;
         }
 
         // Create InvVector.
-        const hash = await transaction.hash();
-        const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+        const vector = InvVector.fromTransaction(transaction);
 
         // Don't relay transaction to this peer if it already knows it.
         if (this._knownObjects.contains(vector)) {
@@ -356,7 +354,7 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     async _onBlock(msg) {
-        const hash = await msg.block.hash();
+        const hash = msg.block.hash();
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
@@ -391,7 +389,7 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     async _onHeader(msg) {
-        const hash = await msg.header.hash();
+        const hash = msg.header.hash();
 
         // Check if we have requested this header.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
@@ -426,7 +424,7 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     async _onTx(msg) {
-        const hash = await msg.transaction.hash();
+        const hash = msg.transaction.hash();
         //Log.d(BaseConsensusAgent, () => `[TX] Received transaction ${hash} from ${this._peer.peerAddress}`);
 
         // Check if we have requested this transaction.

@@ -195,7 +195,7 @@ class NanoConsensus extends Observable {
 
     /**
      * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<void>}
      */
     async relayTransaction(transaction) {
         // Fail if we are not connected to at least one full/light node.
@@ -209,17 +209,15 @@ class NanoConsensus extends Observable {
         }
 
         // Relay transaction to all connected peers.
-        const promises = [];
+        let relayed = false;
         for (const agent of this._agents.values()) {
-            promises.push(agent.relayTransaction(transaction));
+            relayed = agent.relayTransaction(transaction) || relayed;
         }
 
         // Fail if the transaction was not relayed.
-        return Promise.all(promises).then(results => {
-            if (!results.some(it => !!it)) {
-                throw new Error('Failed to relay transaction - no agent relayed transaction');
-            }
-        });
+        if (!relayed) {
+            throw new Error('Failed to relay transaction - no agent relayed transaction');
+        }
     }
 
     /**

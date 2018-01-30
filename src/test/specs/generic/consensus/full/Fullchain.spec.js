@@ -226,7 +226,7 @@ describe('Blockchain', () => {
             for (let i = 0; i < 10; ++i) {
                 timestamp = testBlockchain.height * Policy.BLOCK_TIME;
                 const block = await testBlockchain.createBlock({timestamp: timestamp});
-                const hash = await block.hash();
+                const hash = block.hash();
                 const status = await testBlockchain.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
@@ -241,7 +241,7 @@ describe('Blockchain', () => {
             // all timestamps are explicitly set to trigger an increase in difficulty after the last block
             for (let i = 0; i < 10; ++i) {
                 const block = await testBlockchain.createBlock({timestamp: 10 * Policy.BLOCK_TIME + i});
-                const hash = await block.hash();
+                const hash = block.hash();
                 const status = await testBlockchain.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
@@ -266,7 +266,7 @@ describe('Blockchain', () => {
             for (let i = 0; i < 20; ++i) {
                 let timestamp = testBlockchain.height * Math.floor(Policy.BLOCK_TIME / 2);
                 const block = await testBlockchain.createBlock({timestamp: timestamp});
-                const hash = await block.hash();
+                const hash = block.hash();
                 const status = await testBlockchain.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
@@ -496,7 +496,7 @@ describe('Blockchain', () => {
             expect(testBlockchain.head.equals(block)).toBe(true);
             expect(testBlockchain.totalDifficulty).toBe(2);
             expect(testBlockchain.height).toBe(2);
-            expect(testBlockchain.headHash.equals(await block.hash())).toBe(true);
+            expect(testBlockchain.headHash.equals(block.hash())).toBe(true);
 
             // Push some more blocks
             block = await testBlockchain.createBlock();
@@ -513,7 +513,7 @@ describe('Blockchain', () => {
             expect(testBlockchain.head).toBe(block);
             expect(testBlockchain.totalDifficulty).toBe(4);
             expect(testBlockchain.height).toBe(4);
-            expect(testBlockchain.headHash.equals(await block.hash())).toBe(true);
+            expect(testBlockchain.headHash.equals(block.hash())).toBe(true);
 
             // Asynchronously test the busy getter
             testBlockchain._synchronizer.on('work-start', function () {
@@ -544,7 +544,7 @@ describe('Blockchain', () => {
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
 
-            const blockHash = await block.hash();
+            const blockHash = block.hash();
             const bodyHash = block.bodyHash;
 
             let receivedTxs = new HashSet();

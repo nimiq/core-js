@@ -27,7 +27,7 @@ class Hash extends Primitive {
     /**
      * @deprecated
      * @param {Uint8Array} arr
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     static light(arr) {
         return Hash.blake2b(arr);
@@ -35,27 +35,27 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
-    static async blake2b(arr) {
-        return new Hash(await Crypto.blake2b(arr), Hash.Algorithm.BLAKE2B);
+    static blake2b(arr) {
+        return new Hash(Crypto.blake2bSync(arr), Hash.Algorithm.BLAKE2B);
     }
 
     /**
      * @deprecated
      * @param {Uint8Array} arr
-     * @returns {Hash}
+     * @returns {Promise.<Hash>}
      */
-    static lightSync(arr) {
-        return Hash.blake2bSync(arr);
+    static lightAsync(arr) {
+        return Hash.blake2bAsync(arr);
     }
 
     /**
      * @param {Uint8Array} arr
-     * @returns {Hash}
+     * @returns {Promise.<Hash>}
      */
-    static blake2bSync(arr) {
-        return new Hash(Crypto.blake2bSync(arr), Hash.Algorithm.BLAKE2B);
+    static async blake2bAsync(arr) {
+        return new Hash(await Crypto.blake2bAsync(arr), Hash.Algorithm.BLAKE2B);
     }
 
     /**

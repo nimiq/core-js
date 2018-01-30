@@ -120,11 +120,11 @@ class BlockInterlink {
     }
 
     /**
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
-    async hash() {
+    hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot([this._repeatBits, Block.GENESIS.HASH, ...this._compressed]);
+            this._hash = MerkleTree.computeRoot([this._repeatBits, Block.GENESIS.HASH, ...this._compressed]);
         }
         return this._hash;
     }

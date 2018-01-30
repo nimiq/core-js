@@ -124,10 +124,11 @@ class BlockBody {
 
     /**
      * @return {Promise.<Hash>}
+     * @return {Hash}
      */
-    async hash() {
+    hash() {
         if (!this._hash) {
-            this._hash = await MerkleTree.computeRoot(this.getMerkleLeafs());
+            this._hash = MerkleTree.computeRoot(this.getMerkleLeafs());
         }
         return this._hash;
     }

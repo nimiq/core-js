@@ -60,7 +60,7 @@ describe('VestingContract', () => {
 
             expect(await VestingContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
-            transaction = new ExtendedTransaction(await keyPair.publicKey.toAddress(), Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
+            transaction = new ExtendedTransaction(keyPair.publicKey.toAddress(), Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
             const sigProof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(sigProof.serializedSize + 1);
             sigProof.serialize(proof);
@@ -82,7 +82,7 @@ describe('VestingContract', () => {
     it('can apply outgoing transaction', (done) => {
         (async () => {
             const keyPair = await KeyPair.generate();
-            const address = await keyPair.publicKey.toAddress();
+            const address = keyPair.publicKey.toAddress();
 
             let account = new VestingContract(100, address, 0, 100, 50);
 
@@ -112,7 +112,7 @@ describe('VestingContract', () => {
     it('refuses to apply invalid outgoing transaction', (done) => {
         (async () => {
             const keyPair = await KeyPair.generate();
-            const address = await keyPair.publicKey.toAddress();
+            const address = keyPair.publicKey.toAddress();
 
             const account = new VestingContract(100, address, 0, 100, 50);
 
@@ -138,7 +138,7 @@ describe('VestingContract', () => {
     it('can revert outgoing transaction', (done) => {
         (async () => {
             const keyPair = await KeyPair.generate();
-            const address = await keyPair.publicKey.toAddress();
+            const address = keyPair.publicKey.toAddress();
 
             let account = new VestingContract(100, address);
 
@@ -161,7 +161,7 @@ describe('VestingContract', () => {
     it('can create vesting account via transaction and vest it', (done) => {
         (async () => {
             const keyPair = await KeyPair.generate();
-            const address = await keyPair.publicKey.toAddress();
+            const address = keyPair.publicKey.toAddress();
 
             const cache = new TransactionCache();
 

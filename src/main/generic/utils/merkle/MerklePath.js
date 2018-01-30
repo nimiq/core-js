@@ -15,13 +15,13 @@ class MerklePath {
     /**
      * @param {Array} values
      * @param {*} leafValue
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<MerklePath>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {MerklePath}
      */
-    static async compute(values, leafValue, fnHash = MerkleTree._hash) {
-        const leafHash = await fnHash(leafValue);
+    static compute(values, leafValue, fnHash = MerkleTree._hash) {
+        const leafHash = fnHash(leafValue);
         const path = [];
-        await MerklePath._compute(values, leafHash, path, fnHash);
+        MerklePath._compute(values, leafHash, path, fnHash);
         return new MerklePath(path);
     }
 
@@ -29,28 +29,28 @@ class MerklePath {
      * @param {Array} values
      * @param {Hash} leafHash
      * @param {Array.<MerklePathNode>} path
-     * @param {function(o: *):Promise.<Hash>} fnHash
-     * @returns {Promise.<{containsLeaf:boolean, inner:Hash}>}
+     * @param {function(o: *):Hash} fnHash
+     * @returns {{containsLeaf:boolean, inner:Hash}}
      * @private
      */
-    static async _compute(values, leafHash, path, fnHash) {
+    static _compute(values, leafHash, path, fnHash) {
         const len = values.length;
         let hash;
         if (len === 0) {
-            hash = await Hash.light(new Uint8Array(0));
+            hash = Hash.light(new Uint8Array(0));
             return {containsLeaf: false, inner: hash};
         }
         if (len === 1) {
-            hash = await fnHash(values[0]);
+            hash = fnHash(values[0]);
             return {containsLeaf: hash.equals(leafHash), inner: hash};
         }
 
         const mid = Math.round(len / 2);
         const left = values.slice(0, mid);
         const right = values.slice(mid);
-        const {containsLeaf: leftLeaf, inner: leftHash} = await MerklePath._compute(left, leafHash, path, fnHash);
-        const {containsLeaf: rightLeaf, inner: rightHash} = await MerklePath._compute(right, leafHash, path, fnHash);
-        hash = await Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
+        const {containsLeaf: leftLeaf, inner: leftHash} = MerklePath._compute(left, leafHash, path, fnHash);
+        const {containsLeaf: rightLeaf, inner: rightHash} = MerklePath._compute(right, leafHash, path, fnHash);
+        hash = Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
 
         if (leftLeaf) {
             path.push(new MerklePathNode(rightHash, false));
@@ -65,12 +65,12 @@ class MerklePath {
 
     /**
      * @param {*} leafValue
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<Hash>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {Hash}
      */
-    async computeRoot(leafValue, fnHash = MerkleTree._hash) {
+    computeRoot(leafValue, fnHash = MerkleTree._hash) {
         /** @type {Hash} */
-        let root = await fnHash(leafValue);
+        let root = fnHash(leafValue);
         for (const node of this._nodes) {
             const left = node.left;
             const hash = node.hash;
@@ -78,7 +78,7 @@ class MerklePath {
             if (left) hash.serialize(concat);
             root.serialize(concat);
             if (!left) hash.serialize(concat);
-            root = await Hash.light(concat);
+            root = Hash.light(concat);
         }
         return root;
     }

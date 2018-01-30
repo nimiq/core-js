@@ -17,16 +17,16 @@ describe('TransactionStoreEntry', () => {
             transactions.sort((a, b) => a.compareBlockOrder(b));
 
             const block = await blockchain.createBlock({ transactions });
-            const blockHash = await block.hash();
+            const blockHash = block.hash();
 
             /** @type {Array.<TransactionStoreEntry>} */
-            const entries = await TransactionStoreEntry.fromBlock(block);
+            const entries = TransactionStoreEntry.fromBlock(block);
             expect(entries.length).toBe(3);
 
             for (let i=0; i<entries.length; ++i) {
                 /** @type {TransactionStoreEntry} */
                 const entry = entries[i];
-                expect(entry.transactionHash.equals(await transactions[i].hash())).toBeTruthy();
+                expect(entry.transactionHash.equals(transactions[i].hash())).toBeTruthy();
                 expect(entry.sender.equals(transactions[i].sender)).toBeTruthy();
                 expect(entry.recipient.equals(transactions[i].recipient)).toBeTruthy();
                 expect(entry.blockHeight).toBe(block.height);

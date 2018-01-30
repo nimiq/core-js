@@ -155,8 +155,8 @@ class TestBlockchain extends FullChain {
         const interlink = options.interlink || await this.head.getNextInterlink(BlockUtils.compactToTarget(nBits), version);
 
         const prevHash = options.prevHash || this.headHash;
-        const interlinkHash = options.interlinkHash || await interlink.hash();
-        const bodyHash = options.bodyHash || await body.hash();
+        const interlinkHash = options.interlinkHash || interlink.hash();
+        const bodyHash = options.bodyHash || body.hash();
 
         let accountsHash = options.accountsHash;
         if (!accountsHash) {
@@ -186,7 +186,7 @@ class TestBlockchain extends FullChain {
     }
 
     async setOrMineBlockNonce(block, superblockLevel) {
-        let id = (await block.hash()).toBase64();
+        let id = block.hash().toBase64();
         const mineSuperblock = typeof superblockLevel === 'number';
         if (mineSuperblock) {
             id += `@${superblockLevel}`;
@@ -247,7 +247,7 @@ class TestBlockchain extends FullChain {
         const keyPairs = TestBlockchain.USERS.slice(0, count)
             .map(encodedKeyPair => KeyPair.unserialize(BufferUtils.fromBase64(encodedKeyPair)));
         for (const keyPair of keyPairs) {
-            const address = await keyPair.publicKey.toAddress(); // eslint-disable-line no-await-in-loop
+            const address = keyPair.publicKey.toAddress(); // eslint-disable-line no-await-in-loop
             users.push(TestBlockchain.generateUser(keyPair, address));
         }
         return users;
@@ -260,12 +260,12 @@ class TestBlockchain extends FullChain {
         // genesis block will send the first miner reward to it.
         // This keypair is the one that the miner address of the test genesis block in DummyData.spec.js belongs to.
         const keys = KeyPair.unserialize(BufferUtils.fromBase64(TestBlockchain.USERS[0]));
-        const address = await keys.publicKey.toAddress();
+        const address = keys.publicKey.toAddress();
         users.push(TestBlockchain.generateUser(keys, address));
 
         for (let i = 1; i < count; i++) {
             const keyPair = await KeyPair.generate(); //eslint-disable-line no-await-in-loop
-            const address = await keyPair.publicKey.toAddress(); //eslint-disable-line no-await-in-loop
+            const address = keyPair.publicKey.toAddress(); //eslint-disable-line no-await-in-loop
 
             users.push(TestBlockchain.generateUser(keyPair, address));
         }

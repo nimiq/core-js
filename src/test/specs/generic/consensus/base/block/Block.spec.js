@@ -100,10 +100,8 @@ describe('Block', () => {
         })().then(done, done.fail);
     });
 
-    it('GENESIS.HASH matches GENESIS.hash() (testing)', (done) => {
-        (async () => {
-            expect(Block.GENESIS.HASH.equals(await Block.GENESIS.hash())).toBeTruthy();
-        })().then(done, done.fail);
+    it('GENESIS.HASH matches GENESIS.hash() (testing)', () => {
+        expect(Block.GENESIS.HASH.equals(Block.GENESIS.hash())).toBeTruthy();
     });
 
     it('GENESIS is valid (real)', (done) => {
@@ -113,9 +111,7 @@ describe('Block', () => {
         })().then(done, done.fail);
     });
 
-    it('GENESIS.HASH matches GENESIS.hash() (real)', (done) => {
-        (async () => {
-            expect(Block.OLD_GENESIS.HASH.equals(await Block.OLD_GENESIS.hash())).toBeTruthy();
-        })().then(done, done.fail);
+    it('GENESIS.HASH matches GENESIS.hash() (real)', () => {
+        expect(Block.OLD_GENESIS.HASH.equals(Block.OLD_GENESIS.hash())).toBeTruthy();
     });
 });

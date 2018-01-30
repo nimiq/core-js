@@ -42,7 +42,7 @@ class PartialLightChain extends LightChain {
         const toDo = [];
         for (let i = 0; i < proof.prefix.length; ++i) {
             const block = proof.prefix.blocks[i];
-            const hash = await block.hash();
+            const hash = block.hash();
             const knownBlock = await this._store.getBlock(hash);
             if (!knownBlock && !block.header._pow) {
                 toDo.push(block.header);
@@ -50,7 +50,7 @@ class PartialLightChain extends LightChain {
         }
         for (let i = 0; i < proof.suffix.length; ++i) {
             const header = proof.suffix.headers[i];
-            const hash = await header.hash();
+            const hash = header.hash();
             const knownBlock = await this._store.getBlock(hash);
             if (!knownBlock && !header._pow) {
                 toDo.push(header);
@@ -61,7 +61,7 @@ class PartialLightChain extends LightChain {
         // Verify all prefix blocks that we don't know yet.
         for (let i = 0; i < proof.prefix.length; i++) {
             const block = proof.prefix.blocks[i];
-            const hash = await block.hash();
+            const hash = block.hash();
             const knownBlock = await this._store.getBlock(hash);
             if (knownBlock) {
                 proof.prefix.blocks[i] = knownBlock.toLight();
@@ -74,7 +74,7 @@ class PartialLightChain extends LightChain {
         // Verify all suffix headers that we don't know yet.
         for (let i = 0; i < proof.suffix.length; i++) {
             const header = proof.suffix.headers[i];
-            const hash = await header.hash();
+            const hash = header.hash();
             const knownBlock = await this._store.getBlock(hash);
             if (knownBlock) {
                 proof.suffix.headers[i] = knownBlock.header;
@@ -101,7 +101,7 @@ class PartialLightChain extends LightChain {
         let head = proof.prefix.head;
         for (const header of proof.suffix.headers) {
             const interlink = await head.getNextInterlink(header.target, header.version);
-            const interlinkHash = await interlink.hash();
+            const interlinkHash = interlink.hash();
             if (!header.interlinkHash.equals(interlinkHash)) {
                 Log.w(PartialLightChain, 'Rejecting proof - invalid interlink hash in proof suffix');
                 return false;
@@ -132,27 +132,27 @@ class PartialLightChain extends LightChain {
         // If the proof prefix head is not part of our current dense chain suffix, reset store and start over.
         // TODO use a store transaction here?
         const head = proof.prefix.head;
-        const headHash = await head.hash();
+        const headHash = head.hash();
         const headData = await this._store.getChainData(headHash);
         if (!headData || headData.totalDifficulty <= 0) {
             // Delete our current chain.
             await this._store.truncate();
 
             /** @type {Array.<Block>} */
-            const denseSuffix = await proof.prefix.denseSuffix();
+            const denseSuffix = proof.prefix.denseSuffix();
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
             for (let i = 0; i < proof.prefix.length - denseSuffix.length; i++) {
                 const block = proof.prefix.blocks[i];
-                const hash = await block.hash();
+                const hash = block.hash();
                 const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
                 await this._store.putChainData(hash, data);
             }
 
             // Set the tail end of the dense suffix of the prefix as the new chain head.
             const tailEnd = denseSuffix[0];
-            this._headHash = await tailEnd.hash();
+            this._headHash = tailEnd.hash();
             this._mainChain = new ChainData(tailEnd, tailEnd.difficulty, BlockUtils.realDifficulty(await tailEnd.pow()), true);
             await this._store.putChainData(this._headHash, this._mainChain);
 
@@ -166,7 +166,7 @@ class PartialLightChain extends LightChain {
 
         // Push all suffix blocks.
         for (const block of suffix) {
-            const result = await this._pushLightBlock(block, false); // eslint-disable-line no-await-in-loop
+            const result = await this._pushLightBlock(block); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
 
@@ -178,9 +178,14 @@ class PartialLightChain extends LightChain {
         this._proof = proof;
     }
 
+    /**
+     * @param {Block} block
+     * @returns {Promise.<number>}
+     * @private
+     */
     async _pushLightBlock(block) {
         // Check if we already know this header/block.
-        const hash = await block.hash();
+        const hash = block.hash();
         const knownBlock = await this._store.getBlock(hash);
         if (knownBlock) {
             return NanoChain.OK_KNOWN;
@@ -196,6 +201,13 @@ class PartialLightChain extends LightChain {
         return this._pushBlockInternal(block, hash, prevData);
     }
 
+    /**
+     * @param {Block} block
+     * @param {Hash} blockHash
+     * @param {ChainData} prevData
+     * @returns {Promise.<number>}
+     * @private
+     */
     async _pushBlockInternal(block, blockHash, prevData) {
         // Block looks good, create ChainData.
         const totalDifficulty = prevData.totalDifficulty + block.difficulty;
@@ -214,7 +226,7 @@ class PartialLightChain extends LightChain {
 
             // Append new block to chain proof.
             if (this._proof) {
-                const proofHeadHash = await this._proof.head.hash();
+                const proofHeadHash = this._proof.head.hash();
                 if (block.prevHash.equals(proofHeadHash)) {
                     this._proof = await this._extendChainProof(this._proof, block.header);
                 }
@@ -246,13 +258,13 @@ class PartialLightChain extends LightChain {
      * @param {Block} block
      * @returns {Promise.<number>}
      */
-    async _pushBlock(block) {
+    _pushBlock(block) {
         // Queue new blocks while syncing.
         if (this._state === PartialLightChain.State.PROVE_BLOCKS) {
-            const blockHash = await block.hash();
+            const blockHash = block.hash();
             if (this._proofHead.head.prevHash.equals(blockHash)) {
                 return this._pushBlockBackwards(block);
-            } else if ((await this._proofHead.head.hash()).equals(blockHash)) {
+            } else if (this._proofHead.head.hash().equals(blockHash)) {
                 return this._pushHeadBlock(block);
             }
         }
@@ -267,7 +279,7 @@ class PartialLightChain extends LightChain {
      */
     async _pushHeadBlock(block) {
         // Check if we already know this block.
-        const hash = await block.hash();
+        const hash = block.hash();
 
         // Check that the given block is a full block (includes block body).
         if (!block.isFull()) {
@@ -341,7 +353,7 @@ class PartialLightChain extends LightChain {
      */
     async _pushBlockBackwards(block) {
         // Check if we already know this block.
-        const hash = await block.hash();
+        const hash = block.hash();
 
         // Check that the given block is a full block (includes block body).
         if (!block.isFull()) {
@@ -499,10 +511,10 @@ class PartialLightChain extends LightChain {
     }
 
     /**
-     * @returns {Promise.<Array.<Hash>>}
+     * @returns {Array.<Hash>}
      */
-    async getBlockLocators() {
-        return this._proofHead ? [await this._proofHead.head.hash()] : [this.headHash];
+    getBlockLocators() {
+        return this._proofHead ? [this._proofHead.head.hash()] : [this.headHash];
     }
 
     /**

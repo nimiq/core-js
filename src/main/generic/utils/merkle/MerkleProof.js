@@ -17,12 +17,12 @@ class MerkleProof {
     /**
      * @param {Array} values
      * @param {Array.<*>} leafValues
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<MerkleProof>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {MerkleProof}
      */
-    static async compute(values, leafValues, fnHash = MerkleTree._hash) {
-        const leafHashes = await Promise.all(leafValues.map(fnHash));
-        const {containsLeaf, operations, path, inner} = await MerkleProof._compute(values, leafHashes, fnHash);
+    static compute(values, leafValues, fnHash = MerkleTree._hash) {
+        const leafHashes = leafValues.map(fnHash);
+        const {containsLeaf, operations, path, inner} = MerkleProof._compute(values, leafHashes, fnHash);
         return new MerkleProof(path, operations);
     }
 
@@ -31,8 +31,8 @@ class MerkleProof {
      * @param {Array} values
      * @param {Array.<*>} leafValues
      * @param {function(a: *, b: *):number} fnCompare
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<MerkleProof>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {MerkleProof}
      */
     static computeWithAbsence(values, leafValues, fnCompare, fnHash = MerkleTree._hash) {
         const leaves = new Set();
@@ -74,19 +74,19 @@ class MerkleProof {
     /**
      * @param {Array} values
      * @param {Array.<Hash>} leafHashes
-     * @param {function(o: *):Promise.<Hash>} fnHash
-     * @returns {Promise.<{containsLeaf:boolean, inner:Hash}>}
+     * @param {function(o: *):Hash} fnHash
+     * @returns {{containsLeaf:boolean, inner:Hash}}
      * @private
      */
-    static async _compute(values, leafHashes, fnHash) {
+    static _compute(values, leafHashes, fnHash) {
         const len = values.length;
         let hash;
         if (len === 0) {
-            hash = await Hash.light(new Uint8Array(0));
+            hash = Hash.light(new Uint8Array(0));
             return {containsLeaf: false, operations: [MerkleProof.Operation.CONSUME_PROOF], path: [hash], inner: hash};
         }
         if (len === 1) {
-            hash = await fnHash(values[0]);
+            hash = fnHash(values[0]);
             const isLeaf = leafHashes.some(h => hash.equals(h));
             return {
                 containsLeaf: isLeaf,
@@ -99,9 +99,9 @@ class MerkleProof {
         const mid = Math.round(len / 2);
         const left = values.slice(0, mid);
         const right = values.slice(mid);
-        const {containsLeaf: leftLeaf, operations: leftOps, path: leftPath, inner: leftHash} = await MerkleProof._compute(left, leafHashes, fnHash);
-        const {containsLeaf: rightLeaf, operations: rightOps, path: rightPath, inner: rightHash} = await MerkleProof._compute(right, leafHashes, fnHash);
-        hash = await Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
+        const {containsLeaf: leftLeaf, operations: leftOps, path: leftPath, inner: leftHash} = MerkleProof._compute(left, leafHashes, fnHash);
+        const {containsLeaf: rightLeaf, operations: rightOps, path: rightPath, inner: rightHash} = MerkleProof._compute(right, leafHashes, fnHash);
+        hash = Hash.light(BufferUtils.concatTypedArrays(leftHash.serialize(), rightHash.serialize()));
 
         // If a branch does not contain a leaf, we can directly use its hash and discard any inner operations.
         if (!leftLeaf && !rightLeaf) {
@@ -121,12 +121,12 @@ class MerkleProof {
 
     /**
      * @param {Array.<*>} leafValues
-     * @param {function(o: *):Promise.<Hash>} [fnHash]
-     * @returns {Promise.<Hash>}
+     * @param {function(o: *):Hash} [fnHash]
+     * @returns {Hash}
      */
-    async computeRoot(leafValues, fnHash = MerkleTree._hash) {
+    computeRoot(leafValues, fnHash = MerkleTree._hash) {
         /** @type {Array.<Hash>} */
-        const inputs = await Promise.all(leafValues.map(fnHash));
+        const inputs = leafValues.map(fnHash);
         const stack = [];
         const proofNodes = this._nodes.slice();
         for (const op of this._operations) {
@@ -152,17 +152,19 @@ class MerkleProof {
                     const [left, right] = hashStack;
                     left.serialize(concat);
                     right.serialize(concat);
-                    stack.push(await Hash.light(concat));
+                    stack.push(Hash.light(concat));
                     break;
                 }
                 default:
                     throw new Error('Invalid operation.');
             }
         }
+
         // Everything but the root needs to be consumed.
         if (stack.length !== 1 || proofNodes.length !== 0 || inputs.length !== 0) {
             throw Error('Did not consume all nodes.');
         }
+
         return stack[0];
     }
 

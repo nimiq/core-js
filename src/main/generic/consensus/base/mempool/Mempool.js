@@ -39,7 +39,7 @@ class Mempool extends Observable {
      */
     async _pushTransaction(transaction) {
         // Check if we already know this transaction.
-        const hash = await transaction.hash();
+        const hash = transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
             Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
             return Mempool.ReturnCode.KNOWN;
@@ -195,7 +195,7 @@ class Mempool extends Observable {
                         transactions.push(tx);
                         account = tmpAccount;
                     } catch (e) {
-                        this._transactionsByHash.remove(await tx.hash());
+                        this._transactionsByHash.remove(tx.hash());
                     }
                 }
                 if (transactions.length === 0) {
@@ -206,7 +206,7 @@ class Mempool extends Observable {
             } catch (e) {
                 // In case of an error, remove all transactions of this set.
                 for (const tx of set.transactions) {
-                    this._transactionsByHash.remove(await tx.hash());
+                    this._transactionsByHash.remove(tx.hash());
                 }
                 this._transactionSetByAddress.remove(sender);
             }

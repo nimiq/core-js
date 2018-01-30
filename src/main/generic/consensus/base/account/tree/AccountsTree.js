@@ -229,6 +229,7 @@ class AccountsTree extends Observable {
         if (node.isTerminal()) {
             return node.hash();
         }
+
         const zeroHash = new Hash(null);
         // Compute sub hashes if necessary.
         const subHashes = await Promise.all(node.getChildren().map(async child => {
@@ -239,6 +240,7 @@ class AccountsTree extends Observable {
             const childNode = await this._store.get(child);
             return this._updateHashes(childNode);
         }));
+
         // Then prepare new node and update.
         let newNode = node;
         node.getChildren().forEach((child, i) => {
@@ -284,14 +286,14 @@ class AccountsTree extends Observable {
         if (commonPrefix.length !== node.prefix.length) {
             // Insert the new account node.
             const newChild = AccountsTreeNode.terminalNode(prefix, account);
-            const newChildHash = await newChild.hash();
+            const newChildHash = newChild.hash();
             await this._store.put(newChild);
 
             // Insert the new parent node.
             const newParent = AccountsTreeNode.branchNode(commonPrefix)
-                .withChild(node.prefix, await node.hash())
+                .withChild(node.prefix, node.hash())
                 .withChild(newChild.prefix, newChildHash);
-            const newParentHash = await newParent.hash();
+            const newParentHash = newParent.hash();
             await this._store.put(newParent);
 
             return this._updateKeys(newParent.prefix, newParentHash, rootPath);
@@ -312,7 +314,7 @@ class AccountsTree extends Observable {
 
             // Update the account.
             node = node.withAccount(account);
-            const nodeHash = await node.hash();
+            const nodeHash = node.hash();
             await this._store.put(node);
 
             return this._updateKeys(node.prefix, nodeHash, rootPath);
@@ -329,11 +331,11 @@ class AccountsTree extends Observable {
 
         // If no matching child exists, add a new child account node to the current node.
         const newChild = AccountsTreeNode.terminalNode(prefix, account);
-        const newChildHash = await newChild.hash();
+        const newChildHash = newChild.hash();
         await this._store.put(newChild);
 
         node = node.withChild(newChild.prefix, newChildHash);
-        const nodeHash = await node.hash();
+        const nodeHash = node.hash();
         await this._store.put(node);
 
         return this._updateKeys(node.prefix, nodeHash, rootPath);
@@ -362,14 +364,14 @@ class AccountsTree extends Observable {
                 const childNode = await this._store.get(childPrefix); // eslint-disable-line no-await-in-loop
 
                 await this._store.put(childNode); // eslint-disable-line no-await-in-loop
-                const childHash = await childNode.hash();
+                const childHash = childNode.hash();
                 return this._updateKeys(childNode.prefix, childHash, rootPath.slice(0, i));
             }
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
             else if (node.hasChildren() || node.prefix === '') {
-                const nodeHash = await node.hash();
+                const nodeHash = node.hash();
                 await this._store.put(node); // eslint-disable-line no-await-in-loop
                 return this._updateKeys(node.prefix, nodeHash, rootPath.slice(0, i));
             }
@@ -398,7 +400,7 @@ class AccountsTree extends Observable {
 
             node = node.withChild(prefix, nodeHash);
             await this._store.put(node); // eslint-disable-line no-await-in-loop
-            nodeHash = await node.hash(); // eslint-disable-line no-await-in-loop
+            nodeHash = node.hash();
             prefix = node.prefix;
         }
 

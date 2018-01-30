@@ -266,11 +266,11 @@ class AccountsTreeNode {
     }
 
     /**
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
-    async hash() {
+    hash() {
         if (!this._hash) {
-            this._hash = await Hash.light(this.serialize());
+            this._hash = Hash.light(this.serialize());
         }
         return this._hash;
     }

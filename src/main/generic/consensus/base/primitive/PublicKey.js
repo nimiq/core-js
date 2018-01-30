@@ -64,17 +64,17 @@ class PublicKey extends Primitive {
     }
 
     /**
-     * @return {Promise.<Hash>}
+     * @return {Hash}
      */
     hash() {
         return Hash.light(this.serialize());
     }
 
     /**
-     * @return {Hash}
+     * @return {Promise.<Hash>}
      */
-    hashSync() {
-        return Hash.lightSync(this.serialize());
+    hashAsync() {
+        return Hash.lightAsync(this.serialize());
     }
 
     /**
@@ -86,24 +86,17 @@ class PublicKey extends Primitive {
     }
 
     /**
-     * @return {Promise.<Address>}
-     */
-    async toAddress() {
-        return Address.fromHash(await this.hash());
-    }
-
-    /**
      * @return {Address}
      */
-    toAddressSync() {
-        return Address.fromHash(Hash.lightSync(this.serialize()));
+    toAddress() {
+        return Address.fromHash(this.hash());
     }
 
     /**
-     * @return {Promise.<SignalId>}
+     * @return {SignalId}
      */
-    async toSignalId() {
-        return new SignalId((await this.hash()).subarray(0, 16));
+    toSignalId() {
+        return new SignalId(this.hash().subarray(0, 16));
     }
 }
 

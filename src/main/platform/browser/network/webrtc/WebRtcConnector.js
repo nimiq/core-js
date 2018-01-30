@@ -201,7 +201,7 @@ class PeerConnector extends Observable {
     async _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._webRtcConfig.keyPair;
-        const signalId = await keyPair.publicKey.toSignalId();
+        const signalId = keyPair.publicKey.toSignalId();
         this._signalChannel.signal(
             signalId,
             this._signalId,

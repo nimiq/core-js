@@ -485,7 +485,7 @@ describe('AccountsTree', () => {
 
                 // and recreate node that should be stored
                 const T1 = AccountsTreeNode.terminalNode(prefixT1.join(''), account1);
-                const T1Hash = await T1.hash();
+                const T1Hash = T1.hash();
                 const R2 = AccountsTreeNode.branchNode('', [prefixT1.join('')], [T1Hash]);
 
                 await expectDefined([T1, R2], 'One address.');
@@ -514,11 +514,11 @@ describe('AccountsTree', () => {
 
                 // new root node, new branch node and two terminal nodes appeared
                 const T2 = AccountsTreeNode.terminalNode(prefixT1.join(''), account1);
-                const T2Hash = await T2.hash();
+                const T2Hash = T2.hash();
                 const T3 = AccountsTreeNode.terminalNode(prefixT3.join(''), account2);
-                const T3Hash = await T3.hash();
+                const T3Hash = T3.hash();
                 const B1 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T2Hash, T3Hash]);
-                const B1Hash = await B1.hash();
+                const B1Hash = B1.hash();
                 const R3 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B1Hash]);
 
                 await expectDefined([T2, T3, B1, R3], 'Second address added.');
@@ -545,9 +545,9 @@ describe('AccountsTree', () => {
 
                 // recreate new root, branch and terminal nodes for checking
                 const T4 = T3.withAccount(account3);
-                const T4Hash = await T4.hash();
+                const T4Hash = T4.hash();
                 const B2 = AccountsTreeNode.branchNode(prefixB1.join(''), [prefixT1.join('').substr(4), prefixT3.join('').substr(4)], [T2Hash, T4Hash]);
-                const B2Hash = await B2.hash();
+                const B2Hash = B2.hash();
                 const R4 = AccountsTreeNode.branchNode('', [prefixB1.join('')], [B2Hash]);
 
                 await expectDefined([T2, T4, B2, R4], 'Second address updated.');
@@ -573,7 +573,7 @@ describe('AccountsTree', () => {
 
                 // recreate new single terminal node with the full address as its prefix
                 const T6 = AccountsTreeNode.terminalNode(address2.toHex(), account3);
-                const T6Hash = await T6.hash();
+                const T6Hash = T6.hash();
                 // and the new root
                 const R6 = AccountsTreeNode.branchNode('', [address2.toHex()], [T6Hash]);
 
@@ -620,13 +620,13 @@ describe('AccountsTree', () => {
 
                 // create nodes for checking
                 const T7 = AccountsTreeNode.terminalNode(prefixT7.join(''), account6);
-                const T7Hash = await T7.hash();
+                const T7Hash = T7.hash();
                 const T8 = AccountsTreeNode.terminalNode(prefixT8.join(''), account7);
-                const T8Hash = await T8.hash();
+                const T8Hash = T8.hash();
                 const T9 = AccountsTreeNode.terminalNode(prefixT9.join(''), account8);
-                const T9Hash = await T9.hash();
+                const T9Hash = T9.hash();
                 const B4 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, prefixT7.join('').substr(prefixB4.length), prefixT8.join('').substr(prefixB4.length), prefixT9.join('').substr(prefixB4.length)], [undefined, T7Hash, T8Hash, T9Hash]);
-                const B4Hash = await B4.hash();
+                const B4Hash = B4.hash();
                 const R7 = AccountsTreeNode.branchNode('', [prefixB4.join('')], [B4Hash]);
                 await expectDefined([T7, T8, T9, B4, R7], 'Three addresses.');
 
@@ -656,13 +656,13 @@ describe('AccountsTree', () => {
 
                 // recreate nodes for checking
                 const T10 = AccountsTreeNode.terminalNode(prefixT10.join(''), account7);
-                const T10Hash = await T10.hash();
+                const T10Hash = T10.hash();
                 const T11 = AccountsTreeNode.terminalNode(prefixT11.join(''), account9);
-                const T11Hash = await T11.hash();
+                const T11Hash = T11.hash();
                 const B6 = AccountsTreeNode.branchNode(prefixB6.join(''), [prefixT10.join('').substr(prefixB6.length), undefined, prefixT11.join('').substr(prefixB6.length)], [T10Hash, undefined, T11Hash]);
-                const B6Hash = await B6.hash();
+                const B6Hash = B6.hash();
                 const B5 = AccountsTreeNode.branchNode(prefixB4.join(''), [undefined, prefixT7.join('').substr(prefixB4.length), prefixB6.join('').substr(prefixB4.length), prefixT9.join('').substr(prefixB4.length)], [undefined, T7Hash, B6Hash, T9Hash]);
-                const B5Hash = await B5.hash();
+                const B5Hash = B5.hash();
                 const R8 = AccountsTreeNode.branchNode('', [prefixB4.join('')], [B5Hash]);
 
                 await expectDefined([T10, T11, T7, B6, T9, B5, R8], 'Four addresses.');

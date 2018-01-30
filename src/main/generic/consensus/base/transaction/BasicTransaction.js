@@ -13,7 +13,7 @@ class BasicTransaction extends Transaction {
         if (signature !== undefined && !(signature instanceof Signature)) throw new Error('Malformed signature');
 
         const proof = SignatureProof.singleSig(senderPubKey, signature);
-        super(Transaction.Format.BASIC, senderPubKey.toAddressSync(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0), proof.serialize());
+        super(Transaction.Format.BASIC, senderPubKey.toAddress(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0), proof.serialize());
 
         /**
          * @type {SignatureProof}

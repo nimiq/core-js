@@ -22,7 +22,7 @@ class WebRtcConfig {
         this._keyPair = keys;
 
         // Configure our peer address.
-        netconfig.signalId = await keys.publicKey.toSignalId();
+        netconfig.signalId = keys.publicKey.toSignalId();
 
         // If browser does not support WebRTC, use an empty config.
         if (!PlatformUtils.supportsWebRTC()) {

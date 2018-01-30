@@ -78,7 +78,7 @@ describe('TransactionStore', () => {
             const blockHash = await block.hash();
 
             for (let i=0; i<transactions.length; ++i) {
-                const hash = await transactions[i].hash();
+                const hash = transactions[i].hash();
                 const entry = await transactionStore.get(hash);
                 expect(entry.transactionHash.equals(hash)).toBeTruthy('wrong transactionHash');
                 expect(entry.sender.equals(transactions[i].sender)).toBeTruthy('wrong sender');

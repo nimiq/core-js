@@ -16,42 +16,40 @@ describe('AccountsProof', () => {
      * The second proof proves the 2 leftmost terminal nodes (T1 and T3)
      * The third proof just proves T4
      */
-    beforeEach(function (done) {
-        (async function () {
-            const account1 = new BasicAccount(25);
-            const account2 = new BasicAccount(1);
-            const account3 = new BasicAccount(1322);
-            const account4 = new BasicAccount(93);
+    beforeEach(() => {
+        const account1 = new BasicAccount(25);
+        const account2 = new BasicAccount(1);
+        const account3 = new BasicAccount(1322);
+        const account4 = new BasicAccount(93);
 
-            const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
-            const t1Hash = await t1.hash();
+        const t1 = AccountsTreeNode.terminalNode('0011111111111111111111111111111111111111', account1);
+        const t1Hash = t1.hash();
 
-            const t2 = AccountsTreeNode.terminalNode('0033333333333333333333333333333333333333', account2);
-            const t2Hash = await t2.hash();
+        const t2 = AccountsTreeNode.terminalNode('0033333333333333333333333333333333333333', account2);
+        const t2Hash = t2.hash();
 
-            const t3 = AccountsTreeNode.terminalNode('0020000000000000000000000000000000000000', account3);
-            const t3Hash = await t3.hash();
+        const t3 = AccountsTreeNode.terminalNode('0020000000000000000000000000000000000000', account3);
+        const t3Hash = t3.hash();
 
-            const t4 = AccountsTreeNode.terminalNode('0022222222222222222222222222222222222222', account4);
-            const t4Hash = await t4.hash();
+        const t4 = AccountsTreeNode.terminalNode('0022222222222222222222222222222222222222', account4);
+        const t4Hash = t4.hash();
 
-            const b2 = AccountsTreeNode.branchNode('002', ['0000000000000000000000000000000000000', undefined, '2222222222222222222222222222222222222'], [t3Hash, undefined, t4Hash]);
-            const b2Hash = await b2.hash();
+        const b2 = AccountsTreeNode.branchNode('002', ['0000000000000000000000000000000000000', undefined, '2222222222222222222222222222222222222'], [t3Hash, undefined, t4Hash]);
+        const b2Hash = b2.hash();
 
-            const b1 = AccountsTreeNode.branchNode('00', [undefined, '11111111111111111111111111111111111111', '2', '33333333333333333333333333333333333333'], [undefined, t1Hash, b2Hash, t2Hash]);
-            const b1Hash = await b1.hash();
+        const b1 = AccountsTreeNode.branchNode('00', [undefined, '11111111111111111111111111111111111111', '2', '33333333333333333333333333333333333333'], [undefined, t1Hash, b2Hash, t2Hash]);
+        const b1Hash = b1.hash();
 
-            const r1 = AccountsTreeNode.branchNode('', ['00'], [b1Hash]);
+        const r1 = AccountsTreeNode.branchNode('', ['00'], [b1Hash]);
 
-            const nodes1 = [t1, t3, t4, b2, t2, b1, r1];
-            const nodes2 = [t1, t3, b2, b1, r1];
-            const nodes3 = [t4, b2, b1, r1];
+        const nodes1 = [t1, t3, t4, b2, t2, b1, r1];
+        const nodes2 = [t1, t3, b2, b1, r1];
+        const nodes3 = [t4, b2, b1, r1];
 
-            sizesArray = [7, 5, 4];
-            accountsArray = [account2, account3, account4];
-            prefixesArray = [t2.prefix.split(''), t3.prefix.split(''), t4.prefix.split('')];
-            testNodesArray = [nodes1, nodes2, nodes3];
-        })().then(done, done.fail);
+        sizesArray = [7, 5, 4];
+        accountsArray = [account2, account3, account4];
+        prefixesArray = [t2.prefix.split(''), t3.prefix.split(''), t4.prefix.split('')];
+        testNodesArray = [nodes1, nodes2, nodes3];
     });
 
     it('must have a well defined nodes array', () => {
@@ -100,39 +98,35 @@ describe('AccountsProof', () => {
         })().then(done, done.fail);
     });
 
-    it('must be able to correctly return an account after verify() has been run', (done) => {
-        (async () => {
-            for (const nodes of testNodesArray) {
-                const accountsProof1 = new AccountsProof(nodes);
-                const address = TestUtils.raw2address(prefixesArray.shift());
+    it('must be able to correctly return an account after verify() has been run', () => {
+        for (const nodes of testNodesArray) {
+            const accountsProof1 = new AccountsProof(nodes);
+            const address = TestUtils.raw2address(prefixesArray.shift());
 
-                const verified = await accountsProof1.verify();
-                expect(verified).toBe(true);
-                const account = accountsProof1.getAccount(address);
-                expect(account.equals(accountsArray.shift())).toBe(true);
-            }
-        })().then(done, done.fail);
+            const verified = accountsProof1.verify();
+            expect(verified).toBe(true);
+            const account = accountsProof1.getAccount(address);
+            expect(account.equals(accountsArray.shift())).toBe(true);
+        }
     });
 
-    it('must not verify successfully neither return an account if it contains a tainted AccountTreeNode', (done) => {
-        (async () => {
-            for (const nodes of testNodesArray) {
-                const node = nodes[0]; // get the first node
-                node._account = accountsArray[0]; // change its account to a different one
-                nodes[0] = node; // set it back
-                const accountsProof1 = new AccountsProof(nodes);
-                const address = TestUtils.raw2address(prefixesArray.shift());
+    it('must not verify successfully neither return an account if it contains a tainted AccountTreeNode', () => {
+        for (const nodes of testNodesArray) {
+            const node = nodes[0]; // get the first node
+            node._account = accountsArray[0]; // change its account to a different one
+            nodes[0] = node; // set it back
+            const accountsProof1 = new AccountsProof(nodes);
+            const address = TestUtils.raw2address(prefixesArray.shift());
 
-                // Since hashes of AccountTreeNodes are cached locally, we need to simulate
-                // sending the node through the network by serializing and unserializing it
-                // for this to work
-                const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
+            // Since hashes of AccountTreeNodes are cached locally, we need to simulate
+            // sending the node through the network by serializing and unserializing it
+            // for this to work
+            const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
 
-                const verified = await accountsProof2.verify();
-                expect(verified).toBe(false);
-                expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
-            }
-        })().then(done, done.fail);
+            const verified = accountsProof2.verify();
+            expect(verified).toBe(false);
+            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
+        }
     });
 
     it('must not verify successfully if it contains any node before the Root Node', (done) => {
@@ -154,56 +148,50 @@ describe('AccountsProof', () => {
         })().then(done, done.fail);
     });
 
-    it('must not verify successfully if it contains a node that is not part of the Tree at the end', (done) => {
-        (async () => {
-            for (const nodes of testNodesArray) {
-                const fakeAccount = new BasicAccount(42);
-                const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
-                nodes.unshift(fakeTreeNode);
-                const accountsProof1 = new AccountsProof(nodes);
+    it('must not verify successfully if it contains a node that is not part of the Tree at the end', () => {
+        for (const nodes of testNodesArray) {
+            const fakeAccount = new BasicAccount(42);
+            const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
+            nodes.unshift(fakeTreeNode);
+            const accountsProof1 = new AccountsProof(nodes);
 
-                // Since hashes of AccountTreeNodes are cached locally, we need to simulate
-                // sending the node through the network by serializing and unserializing it
-                // for this to work
-                const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
+            // Since hashes of AccountTreeNodes are cached locally, we need to simulate
+            // sending the node through the network by serializing and unserializing it
+            // for this to work
+            const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
 
-                const verified = await accountsProof2.verify();
-                expect(verified).toBe(false);
-            }
-        })().then(done, done.fail);
+            const verified = accountsProof2.verify();
+            expect(verified).toBe(false);
+        }
     });
 
-    it('must not verify successfully neither return the account if it contains a node that is not part of the Tree', (done) => {
-        (async () => {
-            for (const nodes of testNodesArray) {
-                const fakeAccount = new BasicAccount(42);
-                const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
-                nodes.splice(2, 0, fakeTreeNode);
-                const accountsProof1 = new AccountsProof(nodes);
-                const address = TestUtils.raw2address('0020000000000000345000000000000000000000'.split(''));
+    it('must not verify successfully neither return the account if it contains a node that is not part of the Tree', () => {
+        for (const nodes of testNodesArray) {
+            const fakeAccount = new BasicAccount(42);
+            const fakeTreeNode = AccountsTreeNode.terminalNode('0020000000000000345000000000000000000000', fakeAccount);
+            nodes.splice(2, 0, fakeTreeNode);
+            const accountsProof1 = new AccountsProof(nodes);
+            const address = TestUtils.raw2address('0020000000000000345000000000000000000000'.split(''));
 
-                // Since hashes of AccountTreeNodes are cached locally, we need to simulate
-                // sending the node through the network by serializing and unserializing it
-                // for this to work
-                const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
+            // Since hashes of AccountTreeNodes are cached locally, we need to simulate
+            // sending the node through the network by serializing and unserializing it
+            // for this to work
+            const accountsProof2 = AccountsProof.unserialize(accountsProof1.serialize());
 
-                const verified = await accountsProof2.verify();
-                expect(verified).toBe(false);
-                expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
-            }
-        })().then(done, done.fail);
+            const verified = accountsProof2.verify();
+            expect(verified).toBe(false);
+            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
+        }
     });
 
-    it('must return the correct root hash', (done) => {
-        (async () => {
-            for (const nodes of testNodesArray) {
-                const accountsProof1 = new AccountsProof(nodes);
-                const rootHash = new Hash(BufferUtils.fromBase64('2YcmtlVU+aO61ZGIh/tJ8WOR04f29e3B9bfFVwH8c4M='));
+    it('must return the correct root hash', () => {
+        for (const nodes of testNodesArray) {
+            const accountsProof1 = new AccountsProof(nodes);
+            const rootHash = new Hash(BufferUtils.fromBase64('2YcmtlVU+aO61ZGIh/tJ8WOR04f29e3B9bfFVwH8c4M='));
 
-                const hash = await accountsProof1.root();
-                expect(hash.equals(rootHash)).toBe(true);
-            }
-        })().then(done, done.fail);
+            const hash = accountsProof1.root();
+            expect(hash.equals(rootHash)).toBe(true);
+        }
     });
 
     it('must return the correct length', () => {

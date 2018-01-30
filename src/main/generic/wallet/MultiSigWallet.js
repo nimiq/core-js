@@ -18,7 +18,7 @@ class MultiSigWallet {
      * @param {KeyPair} keyPair KeyPair owning this Wallet.
      * @param {number} minSignatures Number of signatures required.
      * @param {Array.<PublicKey>} publicKeys A list of all aggregated public keys.
-     * @returns {Promise.<MultiSigWallet>} A newly generated MultiSigWallet.
+     * @returns {MultiSigWallet} A newly generated MultiSigWallet.
      */
     constructor(keyPair, minSignatures, publicKeys) {
         /** @type {KeyPair} */
@@ -28,15 +28,10 @@ class MultiSigWallet {
         /** @type {Array.<PublicKey>} publicKeys */
         this._publicKeys = publicKeys;
         this._publicKeys.sort((a, b) => a.compare(b));
-        /** @type {Address} */
-        this._address = undefined;
-        return this._init();
-    }
 
-    async _init() {
-        const merkleRoot = await MerkleTree.computeRoot(this._publicKeys);
+        const merkleRoot = MerkleTree.computeRoot(this._publicKeys);
+        /** @type {Address} */
         this._address = Address.fromHash(merkleRoot);
-        return this;
     }
 
     /**
@@ -69,7 +64,7 @@ class MultiSigWallet {
      * @returns {Promise.<PartialSignature>}
      */
     async signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
-        return await PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
+        return PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
             secret, aggregatedCommitment, transaction.serializeContent());
     }
 
@@ -86,7 +81,7 @@ class MultiSigWallet {
         }
 
         const signature = await Signature.fromPartialSignatures(aggregatedCommitment, signatures);
-        const proof = await SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
+        const proof = SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
         transaction.proof = proof.serialize();
         return transaction;
     }

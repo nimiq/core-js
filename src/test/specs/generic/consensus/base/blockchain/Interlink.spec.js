@@ -24,7 +24,7 @@ describe('Interlink', () => {
                 const status = await bc.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
-                prevHash = await block.hash();
+                prevHash = block.hash();
             }
         })().then(done, done.fail);
     });
@@ -48,7 +48,7 @@ describe('Interlink', () => {
                 const status = await bc.pushBlock(block);
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
-                prevHash = await block.hash();
+                prevHash = block.hash();
             }
         })().then(done, done.fail);
     });
@@ -67,7 +67,7 @@ describe('Interlink', () => {
                     superblockLevel: levels[i]
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -92,7 +92,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -117,7 +117,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -143,7 +143,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -169,7 +169,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -195,7 +195,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -221,7 +221,7 @@ describe('Interlink', () => {
                     timestamp: Block.GENESIS.timestamp + i + 1
                 });
 
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);
@@ -249,7 +249,7 @@ describe('Interlink', () => {
                 });
 
                 ts = block.timestamp;
-                hashes.push(await block.hash());
+                hashes.push(block.hash());
 
                 const interlink = interlinks[i].map(index => hashes[index]);
                 expect(block.interlink.length).toBe(interlink.length);

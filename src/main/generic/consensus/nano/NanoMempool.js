@@ -14,7 +14,7 @@ class NanoMempool extends Observable {
      */
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
-        const hash = await transaction.hash();
+        const hash = transaction.hash();
         if (this._transactions.contains(hash)) {
             Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
             return false;

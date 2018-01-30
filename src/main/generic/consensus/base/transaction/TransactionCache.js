@@ -5,7 +5,7 @@ class TransactionCache {
      */
     constructor(transactions = [], blockOrder = []) {
         /** @type {HashSet.<Transaction>} */
-        this._transactions = new HashSet(tx => tx.hashSync().toBase64());
+        this._transactions = new HashSet(tx => tx.hash().toBase64());
         this._transactions.addAll(transactions);
         /** @type {Array.<Block>} */
         this._blockOrder = blockOrder;

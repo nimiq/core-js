@@ -53,7 +53,7 @@ class KeyPair extends Primitive {
 
         const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
         const keyPair = await KeyPair.fromPrivateKey(privateKey);
-        const pubHash = await keyPair.publicKey.hash();
+        const pubHash = keyPair.publicKey.hash();
         if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
             throw new Error('Invalid key');
         }
@@ -147,7 +147,7 @@ class KeyPair extends Primitive {
         const buf = new SerialBuffer(this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH);
         buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
         buf.write(salt);
-        buf.write((await this.publicKey.hash()).subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
+        buf.write(this.publicKey.hash().subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
 
         if (wasLocked) this.relock();
 

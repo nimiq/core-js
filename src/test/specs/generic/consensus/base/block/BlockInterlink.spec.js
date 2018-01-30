@@ -56,7 +56,7 @@ describe('BlockInterlink', () => {
         /* eslint-enable no-unused-vars */
     });
 
-    it('is serializable and unserializable', (done) => {
+    it('is serializable and unserializable', () => {
         let buf = blockInterlink1.serialize();
         const blockInterlink2 = BlockInterlink.unserialize(buf, zeroHash);
         expect(buf.readPos).toBe(buf.buffer.byteLength);
@@ -67,10 +67,8 @@ describe('BlockInterlink', () => {
         expect(buf.readPos).toBe(buf.buffer.byteLength);
         expect(longInterlink.equals(longInterlink2)).toBe(true);
 
-        (async () => {
-            expect((await blockInterlink1.hash()).equals(await blockInterlink2.hash())).toBe(true);
-            expect((await longInterlink.hash()).equals(await longInterlink2.hash())).toBe(true);
-        })().then(done, done.fail);
+        expect(blockInterlink1.hash().equals(blockInterlink2.hash())).toBe(true);
+        expect(longInterlink.hash().equals(longInterlink2.hash())).toBe(true);
     });
 
     it('has the correct serialized size', () => {
@@ -78,12 +76,10 @@ describe('BlockInterlink', () => {
         expect(longInterlink.serializedSize).toBe(1 + 4 + hashes.length * Crypto.hashSize);
     });
 
-    it('must return the correct root hash', (done) => {
+    it('must return the correct root hash', () => {
         const rootHash = new Hash(BufferUtils.fromBase64('F68A+8WVtrq9qZlUkVPMrcSworh6OLq6ELNv114T9xQ='));
-        (async () => {
-            const hash = await blockInterlink1.hash();
-            expect(hash.equals(rootHash)).toBe(true);
-        })().then(done, done.fail);
+        const hash = blockInterlink1.hash();
+        expect(hash.equals(rootHash)).toBe(true);
     });
 
     it('must return the correct hash array', () => {

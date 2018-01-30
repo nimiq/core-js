@@ -225,7 +225,7 @@ class Miner extends Observable {
      */
     async _getNextHeader(nextTarget, interlink, body) {
         const prevHash = this._blockchain.headHash;
-        const interlinkHash = await interlink.hash();
+        const interlinkHash = interlink.hash();
         const height = this._blockchain.height + 1;
 
         // Compute next accountsHash.
@@ -240,7 +240,7 @@ class Miner extends Observable {
             throw new Error(`Invalid block body: ${e.message}`);
         }
 
-        const bodyHash = await body.hash();
+        const bodyHash = body.hash();
         const timestamp = this._getNextTimestamp();
         const nBits = BlockUtils.targetToCompact(nextTarget);
         const nonce = Math.round(Math.random() * 100000);

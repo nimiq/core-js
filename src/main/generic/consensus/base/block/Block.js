@@ -98,7 +98,7 @@ class Block {
         }
 
         // Verify that the interlink is valid.
-        if (!(await this._verifyInterlink())) {
+        if (!this._verifyInterlink()) {
             return false;
         }
 
@@ -112,17 +112,17 @@ class Block {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      * @private
      */
-    async _verifyInterlink() {
+    _verifyInterlink() {
         // Skip check for genesis block due to the cyclic dependency (since the interlink hash contains the genesis block hash).
         if (this.height === 1 && this._header.interlinkHash.equals(new Hash(null))) {
             return true;
         }
 
         // Check that the interlinkHash given in the header matches the actual interlinkHash.
-        const interlinkHash = await this._interlink.hash();
+        const interlinkHash = this._interlink.hash();
         if (!this._header.interlinkHash.equals(interlinkHash)) {
             Log.w(Block, 'Invalid block - interlink hash mismatch');
             return false;
@@ -143,7 +143,7 @@ class Block {
         }
 
         // Check that bodyHash given in the header matches the actual body hash.
-        const bodyHash = await this._body.hash();
+        const bodyHash = this._body.hash();
         if (!this._header.bodyHash.equals(bodyHash)) {
             Log.w(Block, 'Invalid block - body hash mismatch');
             return false;
@@ -159,7 +159,7 @@ class Block {
      */
     async isImmediateSuccessorOf(predecessor) {
         // Check the header.
-        if (!(await this._header.isImmediateSuccessorOf(predecessor.header))) {
+        if (!this._header.isImmediateSuccessorOf(predecessor.header)) {
             return false;
         }
 
@@ -191,7 +191,7 @@ class Block {
         }
 
         // Check that the predecessor is contained in this block's interlink and verify its position.
-        const prevHash = await predecessor.hash();
+        const prevHash = predecessor.hash();
         if (!Block.GENESIS.HASH.equals(prevHash)) {
             const prevPow = await predecessor.pow();
             const targetHeight = BlockUtils.getTargetHeight(this.target);
@@ -224,7 +224,7 @@ class Block {
             }
 
             const interlink = await predecessor.getNextInterlink(this.target, this.version);
-            const interlinkHash = await interlink.hash();
+            const interlinkHash = interlink.hash();
             if (!this._header.interlinkHash.equals(interlinkHash)) {
                 Log.v(Block, 'No interlink successor - immediate interlink');
                 return false;
@@ -311,7 +311,7 @@ class Block {
         // Start constructing the next interlink.
         /** @type {Array.<Hash>} */
         const hashes = [];
-        const hash = await this.hash();
+        const hash = this.hash();
 
         // Push the current blockHash depth + 1 times onto the next interlink. If depth < 0, it won't be pushed.
         for (let i = 0; i <= depth; i++) {
@@ -487,7 +487,7 @@ class Block {
 
     /**
      * @param {SerialBuffer} [buf]
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     hash(buf) {
         return this._header.hash(buf);
@@ -495,10 +495,10 @@ class Block {
 
     /**
      * @param {SerialBuffer} [buf]
-     * @returns {Hash}
+     * @returns {Promise.<Hash>}
      */
-    hashSync(buf) {
-        return this._header.hashSync(buf);
+    hashAsync(buf) {
+        return this._header.hashAsync(buf);
     }
 
     /**

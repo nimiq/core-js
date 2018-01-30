@@ -120,28 +120,15 @@ class BlockChain {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {Array.<Block>}
      */
-    async isDense() {
-        for (let i = this._blocks.length - 1; i >= 1; i--) {
-            const prevHash = await this._blocks[i - 1].hash(); // eslint-disable-line no-await-in-loop
-            if (!prevHash.equals(this._blocks[i].prevHash)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * @returns {Promise.<Array.<Block>>}
-     */
-    async denseSuffix() {
+    denseSuffix() {
         // Compute the dense suffix.
         const denseSuffix = [this.head];
         let denseSuffixHead = this.head;
         for (let i = this.length - 2; i >= 0; i--) {
             const block = this.blocks[i];
-            const hash = await block.hash();
+            const hash = block.hash();
             if (!hash.equals(denseSuffixHead.prevHash)) {
                 break;
             }
@@ -154,10 +141,10 @@ class BlockChain {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async isAnchored() {
-        return Block.GENESIS.HASH.equals(await this.tail.hash());
+    isAnchored() {
+        return Block.GENESIS.HASH.equals(this.tail.hash());
     }
 
     /**

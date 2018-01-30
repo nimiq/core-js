@@ -51,14 +51,15 @@ class AccountsTreeChunk {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async verify() {
-        if (!(await this._proof.verify())) {
+    verify() {
+        if (!this._proof.verify()) {
             return false;
         }
+
         let lastPrefix = null;
-        for (let i=0; i<=this._nodes.length; ++i) {
+        for (let i = 0; i <= this._nodes.length; ++i) {
             const node = i < this._nodes.length ? this._nodes[i] : this.tail;
             if (lastPrefix && lastPrefix >= node.prefix) {
                 return false;
@@ -76,7 +77,7 @@ class AccountsTreeChunk {
     }
 
     /**
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     root() {
         return this._proof.root();

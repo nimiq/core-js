@@ -84,7 +84,7 @@ class TransactionStore {
         const tx = this._store.transaction();
         const promises = [];
         for (const transaction of block.transactions) {
-            promises.push(transaction.hash().then(transactionHash => tx.remove(transactionHash.toBase64())));
+            promises.push(tx.remove(transaction.hash().toBase64()));
         }
         await Promise.all(promises);
         return tx.commit();

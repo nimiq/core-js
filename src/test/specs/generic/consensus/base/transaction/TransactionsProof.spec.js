@@ -1,6 +1,6 @@
 describe('TransactionsProof', () => {
     const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
-    let senderAddress = null;
+    let senderAddress;
     const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 1;
     const fee = 1;
@@ -10,19 +10,15 @@ describe('TransactionsProof', () => {
     const data = BufferUtils.fromAscii('EFGH');
     let tx1, tx2, tx1Proof, tx2Proof, root;
 
+    beforeAll(() => {
+        senderAddress = senderPubKey.toAddress();
 
-    beforeAll((done) => {
-        (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-            senderAddress = senderPubKey.toAddressSync();
+        tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
+        tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, data, proof);
 
-            tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
-            tx2 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, data, proof);
-
-            tx1Proof = await MerkleProof.compute([tx1, tx2], [tx1]);
-            tx2Proof = await MerkleProof.compute([tx1, tx2], [tx2]);
-            root = await MerkleTree.computeRoot([tx1, tx2]);
-        })().then(done, done.fail);
+        tx1Proof = MerkleProof.compute([tx1, tx2], [tx1]);
+        tx2Proof = MerkleProof.compute([tx1, tx2], [tx2]);
+        root = MerkleTree.computeRoot([tx1, tx2]);
     });
 
     it('is serializable and unserializable', () => {

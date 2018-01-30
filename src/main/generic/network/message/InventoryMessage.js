@@ -1,28 +1,28 @@
 class InvVector {
     /**
      * @param {Block} block
-     * @returns {Promise.<InvVector>}
+     * @returns {InvVector}
      */
-    static async fromBlock(block) {
-        const hash = await block.hash();
+    static fromBlock(block) {
+        const hash = block.hash();
         return new InvVector(InvVector.Type.BLOCK, hash);
     }
 
     /**
      * @param {BlockHeader} header
-     * @returns {Promise.<InvVector>}
+     * @returns {InvVector}
      */
-    static async fromHeader(header) {
-        const hash = await header.hash();
+    static fromHeader(header) {
+        const hash = header.hash();
         return new InvVector(InvVector.Type.BLOCK, hash);
     }
 
     /**
      * @param {Transaction} tx
-     * @returns {Promise.<InvVector>}
+     * @returns {InvVector}
      */
-    static async fromTransaction(tx) {
-        const hash = await tx.hash();
+    static fromTransaction(tx) {
+        const hash = tx.hash();
         return new InvVector(InvVector.Type.TRANSACTION, hash);
     }
 

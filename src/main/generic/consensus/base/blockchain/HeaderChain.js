@@ -51,7 +51,7 @@ class HeaderChain {
 
         // Check that all headers in the chain are valid successors of one another.
         for (let i = this._headers.length - 1; i >= 1; i--) {
-            if (!(await this._headers[i].isImmediateSuccessorOf(this._headers[i - 1]))) { // eslint-disable-line no-await-in-loop
+            if (!this._headers[i].isImmediateSuccessorOf(this._headers[i - 1])) {
                 return false;
             }
         }

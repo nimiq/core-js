@@ -16,7 +16,7 @@ class PartialAccountsTree extends AccountsTree {
      */
     async pushChunk(chunk) {
         // First verify the proof.
-        if (!(await chunk.verify())) {
+        if (!chunk.verify()) {
             return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
         }
 
