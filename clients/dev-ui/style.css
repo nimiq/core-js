@@ -1,0 +1,420 @@
+html {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    background-color: #042146;
+    letter-spacing: 0.3px;
+    color: #333;
+    margin: auto;
+    max-width: 1200px;
+    min-height: 100%;
+}
+
+[client="nano"] [hide-nano] {
+    display: none;
+}
+
+[client="light"] [hide-light] {
+    display: none;
+}
+
+[client="full"] [hide-full] {
+    display: none;
+}
+
+header {
+    width: 100%;
+    max-width: 100%;
+    margin: auto;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+header .name {
+    color: #FFF;
+    line-height: 85px;
+    font-size: 62px;
+    font-weight: lighter;
+    font-family: sans-serif;
+}
+
+header .name span {
+    color: #FFC107;
+    margin-right: 10px;
+    font-size: 42px;
+}
+
+header .icon-nimiq::before {
+    color: #FFC107;
+    margin-right: 10px;
+    font-size: 54px;
+}
+
+header .subtitle {
+    color: #FFF;
+    font-size: 15px;
+    letter-spacing: 2px;
+}
+
+header a.headerlink {
+    float: right;
+    margin-right: 15px;
+    margin-top: 48px;
+    color: #FFF;
+    text-decoration: none;
+}
+
+input {
+    border-radius: 3px;
+    padding: 10px 10px;
+    line-height: 1;
+    background-color: #FFF;
+    border: 1px solid #EEE;
+    font-size: 14px;
+}
+
+button {
+    border: 0;
+    border-radius: 3px;
+    display: block;
+    text-align: center;
+    background: #FFC107;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 1;
+    padding: 12px 50px;
+    box-sizing: border-box;
+    outline: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2dad2d;
+    color: #FFF;
+}
+
+button:disabled {
+    pointer-events: none;
+    opacity: 0.4;
+    cursor: auto;
+}
+
+button.greenbutton {
+    background-color: #2dad2d;
+    opacity: 0.8;
+    transition: all 0.2s;
+}
+
+button.greenbutton:hover {
+    opacity: 1;
+}
+
+input.error {
+    border: 1px solid #f44336;
+}
+
+hash {
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.f-left {
+    float: left;
+}
+
+.f-right {
+    float: right;
+}
+
+.clr-both {
+    clear: both;
+}
+
+
+/* Main UI */
+
+.left, .right {
+    float: left;
+    width: 50%;
+}
+
+@media screen and (max-width: 760px) {
+    .left, .right {
+        width: 100%;
+    }
+}
+
+.info {
+    margin: 0 10px 15px 10px;
+    font-size: 15px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    overflow: hidden;
+}
+
+.info hr {
+    padding: 0;
+    margin: 0;
+    border: 3px solid rgba(255, 255, 255, 0.89);
+}
+
+.info hr.morespace {
+    border: 6px solid rgba(255, 255, 255, 0.89);
+}
+
+.info-block {
+    padding: 6px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background-color: rgba(255, 255, 255, 0.89);
+    color: #000;
+    letter-spacing: 0.3px;
+}
+
+.info-block:empty {
+    padding: 0;
+}
+
+.info-block strong {
+    display: inline-block;
+}
+
+.info-title {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 7px 10px;
+    background: rgba(255, 255, 255, 0.42);
+    color: #FFF;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.input-group {
+    padding: 3px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background-color: rgba(255, 255, 255, 0.89);
+    color: #000;
+}
+
+.input-group label {
+    width: 75px;
+    display: inline-block;
+    font-weight: bold;
+    vertical-align: bottom;
+    padding-bottom: 8px;
+}
+
+.input-group-button {
+    padding: 0;
+}
+
+.input-group.input-group-button button {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding: 14px 0;
+    width: 100%;
+}
+
+
+/* The order of these consensus classes is important to enable overwriting */
+
+.not-connected {
+    background: crimson;
+    opacity: 0.6;
+}
+
+.not-connected::after {
+    content: "Not connected";
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    font-style: italic;
+    font-size: 12px;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+.initializing {
+    background: #FFC107;
+    opacity: 0.8;
+}
+
+.initializing::after {
+    content: "Initializing...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.connecting::after {
+    content: "Connecting...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.syncing {
+    background: orange;
+    opacity: 0.8;
+}
+.syncing::after {
+    content: "Syncronizing...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.sync-chain-proof::after {
+    content: "Downloading proof...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.verify-chain-proof::after {
+    content: "Verifying proof...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.sync-accounts-tree::after {
+    content: "Downloading accounts...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+.verify-accounts-tree::after {
+    content: "Verifying accounts...";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.consensus-established {
+    background: #2dad2d;
+    opacity: 1.0;
+}
+
+.consensus-established::after {
+    content: "Consensus established";
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+#newWallet {
+    padding: 20px 0px;
+    text-align: center;
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 18px;
+}
+
+#newWallet button {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+#loadWalletFromSeed {
+    padding: 5px 0px;
+}
+
+#walletSeed {
+    width: 200px;
+}
+
+.wallet-address, .wallet-balance, .wallet-nonce {
+    /*display:none;*/
+}
+
+.wallet-address span {
+    font-family: monospace;
+}
+
+.copy-wallet-seed {
+    display: none;
+}
+
+.get-seed-hint {
+    display: block;
+    padding: 15px 0px;
+}
+
+#mnrWorking {
+    font-weight: 600;
+}
+
+#mnrWorking.mining {
+    color: #2dad2d;
+}
+
+#mnrWorking.notmining {
+    color: #777;
+}
+
+#blockchain-title {
+    transition: background ease 0.5s;
+}
+
+#blockHistory {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+#blockHistory>div {
+    margin: 5px 0;
+}
+
+#content {
+    position: relative;
+}
+
+#overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    background: rgba(239, 239, 239, 0.95);
+}
+
+#overlay .message {
+    font-size: 18pt;
+    text-align: center;
+    margin-top: 15%;
+    padding: 15px;
+}
