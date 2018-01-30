@@ -229,7 +229,7 @@ class Miner extends Observable {
         const height = this._blockchain.height + 1;
 
         // Compute next accountsHash.
-        const accounts = await this._blockchain.accounts.transaction();
+        const accounts = await this._accounts.transaction();
         let accountsHash;
         try {
             await accounts.commitBlockBody(body, height, this._blockchain.transactionsCache);

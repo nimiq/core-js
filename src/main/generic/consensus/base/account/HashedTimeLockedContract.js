@@ -162,38 +162,40 @@ class HashedTimeLockedContract extends Contract {
             const type = buf.readUint8();
             switch (type) {
                 case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
-                    // pre-image
                     const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
                     const hashDepth = buf.readUint8();
-                    const rootHash = Hash.unserialize(buf, hashAlgorithm);
-                    let hashTmp = Hash.unserialize(buf, hashAlgorithm);
+                    const hashRoot = Hash.unserialize(buf, hashAlgorithm);
+                    const preImage = Hash.unserialize(buf, hashAlgorithm);
+
+                    // Verify that the preImage hashed hashDepth times matches the _provided_ hashRoot.
+                    let hashTmp = preImage;
                     for (let i = 0; i < hashDepth; ++i) {
                         hashTmp = await Hash.compute(hashTmp.array, hashAlgorithm);
                     }
-                    if (!rootHash.equals(hashTmp)) {
+                    if (!hashRoot.equals(hashTmp)) {
                         return false;
                     }
 
-                    // signature proof of the htlc recipient
+                    // Signature proof of the HTLC recipient
                     if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
                         return false;
                     }
                     break;
                 }
                 case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: {
-                    // signature proof of the htlc recipient
+                    // Signature proof of the HTLC recipient
                     if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
                         return false;
                     }
 
-                    // signature proof of the htlc creator
+                    // Signature proof of the HTLC creator
                     if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
                         return false;
                     }
                     break;
                 }
                 case HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE:
-                    // signature proof of the htlc creator
+                    // Signature proof of the HTLC creator
                     if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
                         return false;
                     }
@@ -202,6 +204,7 @@ class HashedTimeLockedContract extends Contract {
                     return false;
             }
 
+            // Reject overlong proof.
             if (buf.readPos !== buf.byteLength) {
                 return false;
             }
@@ -258,16 +261,21 @@ class HashedTimeLockedContract extends Contract {
         let minCap = 0;
         switch (type) {
             case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
+                // Check that the contract has not expired yet.
                 if (this._timeout < blockHeight) {
                     throw new Error('Proof Error!');
                 }
 
+                // Check that the provided hashRoot is correct.
                 const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
                 const hashDepth = buf.readUint8();
-                if (!Hash.unserialize(buf, hashAlgorithm).equals(this._hashRoot)) {
+                const hashRoot = Hash.unserialize(buf, hashAlgorithm);
+                if (!hashRoot.equals(this._hashRoot)) {
                     throw new Error('Proof Error!');
                 }
-                const hashBase = Hash.unserialize(buf, hashAlgorithm); // Just skipping the hash
+
+                // Ignore the preImage.
+                Hash.unserialize(buf, hashAlgorithm);
 
                 if (!SignatureProof.unserialize(buf).publicKey.toAddressSync().equals(this._recipient)) {
                     throw new Error('Proof Error!');
@@ -302,12 +310,14 @@ class HashedTimeLockedContract extends Contract {
             default:
                 throw new Error('Proof Error!');
         }
+
         if (!revert) {
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < minCap) {
                 throw new Error('Balance Error!');
             }
         }
+
         return super.withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert);
     }
 

@@ -31,21 +31,6 @@ class MempoolTransactionSet {
         return this._transactions.values();
     }
 
-    /** @type {number} */
-    get serializedSize() {
-        return this._transactions.values().map(t => t.serializedSize).reduce((a, b) => a + b, 0);
-    }
-
-    /** @type {number} */
-    get value() {
-        return this._transactions.values().map(t => t.value).reduce((a, b) => a + b, 0);
-    }
-
-    /** @type {number} */
-    get fee() {
-        return this._transactions.values().map(t => t.fee).reduce((a, b) => a + b, 0);
-    }
-
     /** @type {Address} */
     get sender() {
         return this._transactions.length > 0 ? this._transactions.values()[0].sender : null;
@@ -66,25 +51,11 @@ class MempoolTransactionSet {
      * @return {number}
      */
     numBelowFeePerByte(feePerByte) {
-        return this._transactions.values().filter(t => t.fee/t.serializedSize < feePerByte).length;
-    }
-
-    /**
-     * @return {Transaction}
-     */
-    shift() {
-        return this._transactions.shift();
-    }
-
-    /**
-     * @return {Transaction}
-     */
-    pop() {
-        return this._transactions.pop();
+        return this._transactions.values().filter(t => t.fee / t.serializedSize < feePerByte).length;
     }
 
     toString() {
-        return `MempoolTransactionSet{length=${this.length}, value=${this.value}, fee=${this.fee}}`;
+        return `MempoolTransactionSet{length=${this.length}}`;
     }
 }
 

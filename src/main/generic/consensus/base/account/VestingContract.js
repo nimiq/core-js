@@ -100,9 +100,8 @@ class VestingContract extends Contract {
      * @return {number}
      */
     get serializedSize() {
-        return /*type*/ 1
-            + /*balance*/ 8
-            + Address.SERIALIZED_SIZE
+        return super.serializedSize
+            + this._owner.serializedSize
             + /*vestingStart*/ 4
             + /*vestingStepBlocks*/ 4
             + /*vestingStepAmount*/ 8
@@ -210,7 +209,10 @@ class VestingContract extends Contract {
      */
     withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         if (!revert) {
-            const minCap = this._vestingStepBlocks && this._vestingStepAmount > 0 ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount) : 0;
+            const minCap = this._vestingStepBlocks && this._vestingStepAmount > 0
+                ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount)
+                : 0;
+
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < minCap) {
                 throw new Error('Balance Error!');

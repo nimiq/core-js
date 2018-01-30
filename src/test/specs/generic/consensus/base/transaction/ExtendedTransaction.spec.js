@@ -19,7 +19,7 @@ describe('ExtendedTransaction', () => {
     it('is correctly created', () => {
         const tx1 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, data, proof);
 
-        expect(tx1.type).toEqual(Transaction.Format.EXTENDED);
+        expect(tx1._format).toEqual(Transaction.Format.EXTENDED);
         expect(tx1.sender.equals(senderAddress)).toEqual(true);
         expect(tx1.senderType).toEqual(Account.Type.BASIC);
         expect(tx1.recipient.equals(recipientAddress)).toEqual(true);
@@ -35,7 +35,7 @@ describe('ExtendedTransaction', () => {
         const tx1 = new ExtendedTransaction(senderAddress, Account.Type.BASIC, recipientAddress, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, data, proof);
         const tx2 = Transaction.unserialize(tx1.serialize());
 
-        expect(tx2.type).toEqual(Transaction.Format.EXTENDED);
+        expect(tx2._format).toEqual(Transaction.Format.EXTENDED);
         expect(tx2.sender.equals(senderAddress)).toEqual(true);
         expect(tx2.senderType).toEqual(Account.Type.BASIC);
         expect(tx2.recipient.equals(recipientAddress)).toEqual(true);

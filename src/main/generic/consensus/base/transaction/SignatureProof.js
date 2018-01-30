@@ -122,13 +122,9 @@ class SignatureProof {
      * @returns {Promise.<boolean>}
      */
     async verify(sender, data) {
-        if (sender !== null) {
-            const merkleRoot = await this._merklePath.computeRoot(this._publicKey);
-            const signerAddr = Address.fromHash(merkleRoot);
-            if (!signerAddr.equals(sender)) {
-                Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
-                return false;
-            }
+        if (sender !== null && !(await this.isSignedBy(sender))) {
+            Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
+            return false;
         }
 
         if (!this._signature) {
@@ -142,6 +138,16 @@ class SignatureProof {
         }
 
         return true;
+    }
+
+    /**
+     * @param {Address} sender
+     * @returns {Promise.<boolean>}
+     */
+    async isSignedBy(sender) {
+        const merkleRoot = await this._merklePath.computeRoot(this._publicKey);
+        const signerAddr = Address.fromHash(merkleRoot);
+        return signerAddr.equals(sender);
     }
 
     /** @type {PublicKey} */

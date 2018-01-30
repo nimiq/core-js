@@ -562,7 +562,7 @@
 
             // XXX Legacy components
             $.wallet = await Nimiq.Wallet.getPersistent();
-            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
+            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
 
             $.network.connect();
 

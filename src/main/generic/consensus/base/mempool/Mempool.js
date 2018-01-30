@@ -205,9 +205,8 @@ class Mempool extends Observable {
                 }
             } catch (e) {
                 // In case of an error, remove all transactions of this set.
-                let transaction;
-                while ((transaction = set.pop())) {
-                    this._transactionsByHash.remove(await transaction.hash());
+                for (const tx of set.transactions) {
+                    this._transactionsByHash.remove(await tx.hash());
                 }
                 this._transactionSetByAddress.remove(sender);
             }

@@ -1,6 +1,6 @@
 /**
- * This is a classic account that can send all his funds or receive any transaction.
- * All outgoing transactions are signed using the any key corresponding to this address.
+ * This is a classic account that can send all his funds and receive any transaction.
+ * All outgoing transactions are signed using the key corresponding to this address.
  */
 class BasicAccount extends Account {
     /**

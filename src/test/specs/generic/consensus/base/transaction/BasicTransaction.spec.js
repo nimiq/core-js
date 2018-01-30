@@ -17,7 +17,7 @@ describe('BasicTransaction', () => {
     it('is correctly created', () => {
         const tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
 
-        expect(tx1.type).toEqual(Transaction.Format.BASIC);
+        expect(tx1._format).toEqual(Transaction.Format.BASIC);
         expect(tx1.senderPubKey.equals(senderPubKey)).toEqual(true);
         expect(tx1.recipient.equals(recipientAddr)).toEqual(true);
         expect(tx1.value).toEqual(value);
@@ -30,7 +30,7 @@ describe('BasicTransaction', () => {
         const tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
         const tx2 = Transaction.unserialize(tx1.serialize());
 
-        expect(tx2.type).toEqual(Transaction.Format.BASIC);
+        expect(tx2._format).toEqual(Transaction.Format.BASIC);
         expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
         expect(tx2.recipient.equals(recipientAddr)).toEqual(true);
         expect(tx2.value).toEqual(value);

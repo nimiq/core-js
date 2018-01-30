@@ -30,35 +30,8 @@ describe('MempoolTransactionSet', () => {
         set.add(tx2);
 
         expect(set.length).toBe(2);
-        expect(set.serializedSize).toBe(tx1.serializedSize + tx2.serializedSize);
-        expect(set.value).toBe(tx1.value + tx2.value);
-        expect(set.fee).toBe(tx1.fee + tx2.fee);
         expect(set.sender.equals(tx1.sender)).toBe(true);
         expect(set.senderType).toBe(tx1.senderType);
-    });
-
-    it('can shift transactions', () => {
-        const set = new MempoolTransactionSet();
-
-        set.add(tx1);
-        set.add(tx2);
-        set.add(tx3);
-
-        expect(set.length).toBe(3);
-        expect(set.shift()).toBe(tx3); // Highest fee
-        expect(set.length).toBe(2);
-    });
-
-    it('can pop transactions', () => {
-        const set = new MempoolTransactionSet();
-
-        set.add(tx1);
-        set.add(tx2);
-        set.add(tx3);
-
-        expect(set.length).toBe(3);
-        expect(set.pop()).toBe(tx1); // Lowest fee
-        expect(set.length).toBe(2);
     });
 
     it('correctly filters by fee/byte', () => {

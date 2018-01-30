@@ -386,7 +386,7 @@ describe('HashedTimeLockedContract', () => {
             expect(contract.hashCount).toBe(2);
             expect(contract.timeout).toBe(1000);
 
-            expect(contract.withIncomingTransaction(transaction, 1, true).isInitial()).toBeTruthy();
+            expect(contract.withContractCommand(transaction, 1, true).withIncomingTransaction(transaction, 1, true).isInitial()).toBeTruthy();
         })().then(done, done.fail);
     });
 

@@ -141,7 +141,7 @@ class TestBlockchain extends FullChain {
         let prunedAccounts = options.prunedAccounts;
         if (!prunedAccounts) {
             try {
-                prunedAccounts = await this.accounts.gatherToBePrunedAccounts(transactions, height, this._transactionsCache);
+                prunedAccounts = await this.accounts.gatherToBePrunedAccounts(transactions, height, this._transactionCache);
             } catch (e) {
                 prunedAccounts = [];
             }
@@ -162,7 +162,7 @@ class TestBlockchain extends FullChain {
         if (!accountsHash) {
             const accountsTx = await this._accounts.transaction();
             try {
-                await accountsTx.commitBlockBody(body, height, this._transactionsCache);
+                await accountsTx.commitBlockBody(body, height, this._transactionCache);
                 accountsHash = await accountsTx.hash();
             } catch (e) {
                 // The block is invalid, fill with broken accountsHash
