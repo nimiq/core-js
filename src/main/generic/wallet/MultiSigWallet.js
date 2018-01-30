@@ -138,7 +138,8 @@ class MultiSigWallet extends Wallet {
      */
     createTransaction(recipientAddr, value, fee, validityStartHeight) {
         const transaction = new ExtendedTransaction(this._address, Account.Type.BASIC,
-            recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight, new Uint8Array(0));
+            recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight,
+            Transaction.Flag.NONE, new Uint8Array(0));
         return Promise.resolve(transaction);
     }
 
