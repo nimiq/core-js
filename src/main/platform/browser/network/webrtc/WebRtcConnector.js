@@ -161,12 +161,12 @@ class PeerConnector extends Observable {
                     if (signal.type === 'offer') {
                         this._rtcConnection.createAnswer()
                             .then(description => this._onDescription(description))
-                            .catch(error => this._errorLog(error));
+                            .catch(Log.e.tag(PeerConnector));
                     }
 
                     this._handleCandidateQueue().catch(Log.w.tag(PeerConnector));
                 })
-                .catch(error => this._errorLog(error));
+                .catch(Log.e.tag(PeerConnector));
         } else if (signal.candidate) {
             this._addIceCandidate(signal).catch(Log.w.tag(PeerConnector));
         }
@@ -187,7 +187,7 @@ class PeerConnector extends Observable {
         }
 
         return this._rtcConnection.addIceCandidate(this._lastIceCandidate)
-            .catch(error => this._errorLog(error));
+            .catch(Log.e.tag(PeerConnector));
     }
 
     async _handleCandidateQueue() {
@@ -198,7 +198,7 @@ class PeerConnector extends Observable {
         this._iceCandidateQueue = [];
     }
 
-    async _signal(signal) {
+    _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._webRtcConfig.keyPair;
         const signalId = keyPair.publicKey.toSignalId();
@@ -210,20 +210,20 @@ class PeerConnector extends Observable {
             0, /*flags*/
             payload,
             keyPair.publicKey,
-            await Signature.create(keyPair.privateKey, keyPair.publicKey, payload)
+            Signature.create(keyPair.privateKey, keyPair.publicKey, payload)
         );
     }
 
     _onIceCandidate(event) {
         if (event.candidate !== null) {
-            this._signal(event.candidate).catch(Log.w.tag(PeerConnector));
+            this._signal(event.candidate);
         }
     }
 
     _onDescription(description) {
         this._rtcConnection.setLocalDescription(description)
             .then(() => this._signal(this._rtcConnection.localDescription))
-            .catch(error => this._errorLog(error));
+            .catch(Log.e.tag(PeerConnector));
     }
 
     _onDataChannel(event) {
@@ -248,10 +248,6 @@ class PeerConnector extends Observable {
         this.fire('connection', conn);
     }
 
-    _errorLog(error) {
-        Log.e(PeerConnector, error);
-    }
-
     get nonce() {
         return this._nonce;
     }
@@ -273,7 +269,7 @@ class OutboundPeerConnector extends PeerConnector {
         channel.onopen = e => this._onDataChannel(e);
         this._rtcConnection.createOffer()
             .then(description => this._onDescription(description))
-            .catch(error => this._errorLog(error));
+            .catch(Log.e.tag(OutboundPeerConnector));
     }
 }
 Class.register(OutboundPeerConnector);

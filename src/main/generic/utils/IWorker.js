@@ -24,7 +24,7 @@ class IWorker {
 
     static async stubBaseOnMessage(msg) {
         try {
-            if (msg.data.command == 'init') {
+            if (msg.data.command === 'init') {
                 if (IWorker._workerImplementation[msg.data.args[0]]) {
                     const res = await IWorker._workerImplementation[msg.data.args[0]].init(msg.data.args[1]);
                     self.postMessage({status: 'OK', result: res, id: msg.data.id});
@@ -390,8 +390,12 @@ class IWorker {
             async _step(worker) {
                 let call = this._waitingCalls.shift();
                 while (call) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await worker[call.name].apply(worker, call.args).then(call.resolve).catch(call.error);
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        call.resolve(await worker[call.name].apply(worker, call.args));
+                    } catch (e) {
+                        call.error(e);
+                    }
                     if (this._workers.indexOf(worker) === -1) {
                         worker.destroy();
                         return;

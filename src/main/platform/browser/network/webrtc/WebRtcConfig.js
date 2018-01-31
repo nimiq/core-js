@@ -15,7 +15,7 @@ class WebRtcConfig {
         const db = await new WebRtcStore();
         let keys = await db.get('keys');
         if (!keys) {
-            keys = await KeyPair.generate();
+            keys = KeyPair.generate();
             await db.put('keys', keys);
         }
         await db.close();

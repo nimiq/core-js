@@ -13,23 +13,23 @@ class KeyPair extends Primitive {
         this._lockedInternally = locked;
         /** @type {Uint8Array} */
         this._lockSalt = lockSalt;
-
+        /** @type {PrivateKey} */
         this._internalPrivateKey = new PrivateKey(Crypto.keyPairPrivate(this._obj));
     }
 
     /**
-     * @return {Promise.<KeyPair>}
+     * @return {KeyPair}
      */
-    static async generate() {
-        return new KeyPair(await Crypto.keyPairGenerate());
+    static generate() {
+        return new KeyPair(Crypto.keyPairGenerate());
     }
 
     /**
      * @param {PrivateKey} privateKey
-     * @return {Promise.<KeyPair>}
+     * @return {KeyPair}
      */
-    static async fromPrivateKey(privateKey) {
-        return new KeyPair(await Crypto.keyPairDerive(privateKey._obj));
+    static fromPrivateKey(privateKey) {
+        return new KeyPair(Crypto.keyPairDerive(privateKey._obj));
     }
 
     /**
@@ -52,7 +52,7 @@ class KeyPair extends Primitive {
         const check = buf.read(KeyPair.EXPORT_CHECKSUM_LENGTH);
 
         const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
-        const keyPair = await KeyPair.fromPrivateKey(privateKey);
+        const keyPair = KeyPair.fromPrivateKey(privateKey);
         const pubHash = keyPair.publicKey.hash();
         if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
             throw new Error('Invalid key');
@@ -185,7 +185,7 @@ class KeyPair extends Primitive {
         if (!this._locked) throw new Error('KeyPair not locked');
 
         const privateKey = await this._otpPrivateKey(key);
-        const verifyPub = await PublicKey.derive(privateKey);
+        const verifyPub = PublicKey.derive(privateKey);
         if (verifyPub.equals(this.publicKey)) {
             // Only set this._internalPrivateKey, but keep this._obj locked.
             this._unlockedPrivateKey = privateKey;

@@ -1,20 +1,18 @@
 describe('KeyPair', () => {
     const catcher = {catcher: () => 0};
 
-    it('can serialize and unserialize', (done) => {
-        (async () => {
-            const pair1 = await KeyPair.generate();
-            const pair2 = KeyPair.unserialize(pair1.serialize());
-            expect(pair1.privateKey).toEqual(pair2.privateKey);
-            expect(pair1.publicKey).toEqual(pair2.publicKey);
-            expect(pair1.isLocked).toEqual(pair2.isLocked);
-        })().then(done, done.fail);
+    it('can serialize and unserialize', () => {
+        const pair1 = KeyPair.generate();
+        const pair2 = KeyPair.unserialize(pair1.serialize());
+        expect(pair1.privateKey).toEqual(pair2.privateKey);
+        expect(pair1.publicKey).toEqual(pair2.publicKey);
+        expect(pair1.isLocked).toEqual(pair2.isLocked);
     });
 
     it('can encrypt and decrypt after locked serialization', (done) => {
         (async () => {
             const key = new Uint8Array([1, 2, 3, 4]);
-            const pair1 = await KeyPair.generate();
+            const pair1 = KeyPair.generate();
             const privateKeyBak = PrivateKey.unserialize(pair1.privateKey.serialize());
 
             await pair1.lock(key);
@@ -31,7 +29,7 @@ describe('KeyPair', () => {
     it('can lock, unlock and relock', (done) => {
         (async () => {
             const key = new Uint8Array([1, 2, 3, 4]);
-            const pair = await KeyPair.generate();
+            const pair = KeyPair.generate();
             const privateKeyBak = PrivateKey.unserialize(pair.privateKey.serialize());
 
             await pair.lock(key);
@@ -59,7 +57,7 @@ describe('KeyPair', () => {
         (async () => {
             const key = new Uint8Array([1, 2, 3, 4]);
             const key2 = new Uint8Array([1, 2, 3, 3]);
-            const pair1 = await KeyPair.generate();
+            const pair1 = KeyPair.generate();
 
             await pair1.lock(key);
             await pair1.unlock(key2).catch(catcher.catcher);
@@ -76,7 +74,7 @@ describe('KeyPair', () => {
             const key1 = new Uint8Array([1, 2, 3, 4]);
             const key2 = new Uint8Array([4, 3, 2, 1]);
 
-            const pair = await KeyPair.generate();
+            const pair = KeyPair.generate();
             const privateKeyBak = PrivateKey.unserialize(pair.privateKey.serialize());
 
             await pair.lock(key1);

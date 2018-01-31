@@ -310,9 +310,8 @@
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
-                    $.consensus.relayTransaction(tx);
-                });
+                var tx = $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1)
+                $.consensus.relayTransaction(tx).catch(alert);
             });
 
             e.preventDefault();

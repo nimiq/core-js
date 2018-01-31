@@ -1,7 +1,7 @@
 class SignatureProof {
     /**
      * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
     static verifyTransaction(transaction) {
         try {
@@ -11,13 +11,13 @@ class SignatureProof {
             // Reject proof if it is longer than needed.
             if (buffer.readPos !== buffer.byteLength) {
                 Log.w(SignatureProof, 'Invalid SignatureProof - overlong');
-                return Promise.resolve(false);
+                return false;
             }
 
             return proof.verify(transaction.sender, transaction.serializeContent());
         } catch (e) {
             Log.w(SignatureProof, `Failed to verify transaction: ${e.message || e}`, e);
-            return Promise.resolve(false);
+            return false;
         }
     }
 
@@ -119,9 +119,9 @@ class SignatureProof {
     /**
      * @param {?Address} sender
      * @param {Uint8Array} data
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async verify(sender, data) {
+    verify(sender, data) {
         if (sender !== null && !this.isSignedBy(sender)) {
             Log.w(SignatureProof, 'Invalid SignatureProof - signer does not match sender address');
             return false;
@@ -132,7 +132,7 @@ class SignatureProof {
             return false;
         }
 
-        if (!(await this._signature.verify(this._publicKey, data))) {
+        if (!this._signature.verify(this._publicKey, data)) {
             Log.w(SignatureProof, 'Invalid SignatureProof - signature is invalid');
             return false;
         }

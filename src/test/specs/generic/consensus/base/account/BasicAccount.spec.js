@@ -76,10 +76,10 @@ describe('BasicAccount', () => {
 
     it('can verify valid outgoing transaction', (done) => {
         (async () => {
-            const keyPair = await KeyPair.generate();
+            const keyPair = KeyPair.generate();
 
             const transaction = new BasicTransaction(keyPair.publicKey, recipient, 100, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+            transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
 
             expect(await BasicAccount.verifyOutgoingTransaction(transaction)).toBeTruthy();
         })().then(done, done.fail);

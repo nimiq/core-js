@@ -15,25 +15,25 @@ describe('MultiSigWallet', () => {
 
     it('can create a signed transaction', (done) => {
         (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
 
-            const wallet1 = await MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
-            const wallet2 = await MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
+            const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
+            const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
 
-            const commitmentPair1 = await wallet1.createCommitment();
-            const commitmentPair2 = await wallet2.createCommitment();
-            const aggregatedCommitment = await Commitment.sum([commitmentPair1.commitment, commitmentPair2.commitment]);
-            const aggregatedPublicKey = await PublicKey.sum([keyPair1.publicKey, keyPair2.publicKey]);
+            const commitmentPair1 = wallet1.createCommitment();
+            const commitmentPair2 = wallet2.createCommitment();
+            const aggregatedCommitment = Commitment.sum([commitmentPair1.commitment, commitmentPair2.commitment]);
+            const aggregatedPublicKey = PublicKey.sum([keyPair1.publicKey, keyPair2.publicKey]);
 
-            let transaction = await wallet1.createTransaction(recipient, value, fee, 1);
+            let transaction = wallet1.createTransaction(recipient, value, fee, 1);
 
-            const partialSignature1 = await wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
+            const partialSignature1 = wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
                 aggregatedCommitment, commitmentPair1.secret);
-            const partialSignature2 = await wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
+            const partialSignature2 = wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
                 aggregatedCommitment, commitmentPair2.secret);
 
-            transaction = await wallet1.completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment,
+            transaction = wallet1.completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment,
                 [partialSignature1, partialSignature2]);
             const isValid = await transaction.verify();
             expect(isValid).toBe(true);
@@ -54,28 +54,26 @@ describe('MultiSigWallet', () => {
         }).toThrowError('Invalid wallet seed');
     });
 
-    it('can export & import a plaintext wallet', (done) => {
-        (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
-            const wallet = await MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
-            const wallet2 = MultiSigWallet.loadPlain(wallet.exportPlain());
+    it('can export & import a plaintext wallet', () => {
+        const keyPair1 = KeyPair.generate();
+        const keyPair2 = KeyPair.generate();
+        const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+        const wallet2 = MultiSigWallet.loadPlain(wallet.exportPlain());
 
-            expect(wallet.keyPair.equals(wallet2.keyPair)).toBeTruthy();
-            expect(wallet.address.equals(wallet2.address)).toBeTruthy();
-            expect(wallet2.minSignatures).toBe(wallet.minSignatures);
-            expect(wallet2.publicKeys.length).toBe(wallet.publicKeys.length);
-            for (let i = 0; i < wallet2.publicKeys.length; ++i) {
-                expect(wallet2.publicKeys[i].equals(wallet.publicKeys[i])).toBeTruthy();
-            }
-        })().then(done, done.fail);
+        expect(wallet.keyPair.equals(wallet2.keyPair)).toBeTruthy();
+        expect(wallet.address.equals(wallet2.address)).toBeTruthy();
+        expect(wallet2.minSignatures).toBe(wallet.minSignatures);
+        expect(wallet2.publicKeys.length).toBe(wallet.publicKeys.length);
+        for (let i = 0; i < wallet2.publicKeys.length; ++i) {
+            expect(wallet2.publicKeys[i].equals(wallet.publicKeys[i])).toBeTruthy();
+        }
     });
 
     it('can lock, unlock and relock itself', (done) => {
         (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
-            const wallet = await MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
+            const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
             const key = 'password';
 
             expect(wallet.isLocked).toBeFalsy();
@@ -90,9 +88,9 @@ describe('MultiSigWallet', () => {
 
     it('can export an encrypted wallet and import it', (done) => {
         (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
-            const wallet = await MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
+            const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
             const key = 'password';
 
             const encryptedWallet = await wallet.exportEncrypted(key);
@@ -109,9 +107,9 @@ describe('MultiSigWallet', () => {
 
     it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
-            const wallet = await MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
+            const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
             const key = 'password';
             const key2 = '123456';
 
@@ -128,9 +126,9 @@ describe('MultiSigWallet', () => {
 
     it('can detect wrong key on an encrypted wallet', (done) => {
         (async () => {
-            const keyPair1 = await KeyPair.generate();
-            const keyPair2 = await KeyPair.generate();
-            const wallet = await MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
+            const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
             const key = 'password';
             const key2 = '123456';
 

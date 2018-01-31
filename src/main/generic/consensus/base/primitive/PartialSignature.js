@@ -14,10 +14,10 @@ class PartialSignature extends Primitive {
      * @param {RandomSecret} secret
      * @param {Commitment} aggregateCommitment
      * @param {Uint8Array} data
-     * @return {Promise.<PartialSignature>}
+     * @return {PartialSignature}
      */
-    static async create(privateKey, publicKey, publicKeys, secret, aggregateCommitment, data) {
-        return new PartialSignature(await Crypto.delinearizedPartialSignatureCreate(privateKey._obj, publicKey._obj,
+    static create(privateKey, publicKey, publicKeys, secret, aggregateCommitment, data) {
+        return new PartialSignature(Crypto.delinearizedPartialSignatureCreate(privateKey._obj, publicKey._obj,
             publicKeys.map(o => o._obj), secret._obj, aggregateCommitment._obj, data));
     }
 

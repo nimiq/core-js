@@ -8,10 +8,10 @@ class CommitmentPair extends Primitive {
     }
 
     /**
-     * @return {Promise.<CommitmentPair>}
+     * @return {CommitmentPair}
      */
-    static async generate() {
-        return new CommitmentPair(await Crypto.commitmentPairGenerate());
+    static generate() {
+        return new CommitmentPair(Crypto.commitmentPairGenerate());
     }
 
     /**

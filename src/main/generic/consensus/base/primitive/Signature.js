@@ -22,19 +22,19 @@ class Signature extends Primitive {
      * @param {PrivateKey} privateKey
      * @param {PublicKey} publicKey
      * @param {Uint8Array} data
-     * @return {Promise.<Signature>}
+     * @return {Signature}
      */
-    static async create(privateKey, publicKey, data) {
-        return new Signature(await Crypto.signatureCreate(privateKey._obj, publicKey._obj, data));
+    static create(privateKey, publicKey, data) {
+        return new Signature(Crypto.signatureCreate(privateKey._obj, publicKey._obj, data));
     }
 
     /**
      * @param {Commitment} commitment
      * @param {Array.<PartialSignature>} signatures
-     * @return {Promise.<Signature>}
+     * @return {Signature}
      */
-    static async fromPartialSignatures(commitment, signatures) {
-        return new Signature(await Crypto.combinePartialSignatures(commitment._obj, signatures.map(s => s._obj)));
+    static fromPartialSignatures(commitment, signatures) {
+        return new Signature(Crypto.combinePartialSignatures(commitment._obj, signatures.map(s => s._obj)));
     }
 
     /**
@@ -63,7 +63,7 @@ class Signature extends Primitive {
     /**
      * @param {PublicKey} publicKey
      * @param {Uint8Array} data
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
     verify(publicKey, data) {
         return Crypto.signatureVerify(publicKey._obj, data, this._obj);

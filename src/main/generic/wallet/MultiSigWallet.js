@@ -4,11 +4,11 @@ class MultiSigWallet extends Wallet {
      * @param {KeyPair} keyPair KeyPair owning this Wallet.
      * @param {number} minSignatures Number of signatures required.
      * @param {Array.<PublicKey>} publicKeys A list of all owners' public keys.
-     * @returns {Promise.<MultiSigWallet>} A newly generated MultiSigWallet.
+     * @returns {MultiSigWallet} A newly generated MultiSigWallet.
      */
-    static async fromPublicKeys(keyPair, minSignatures, publicKeys) {
+    static fromPublicKeys(keyPair, minSignatures, publicKeys) {
         const combinations = [...ArrayUtils.k_combinations(publicKeys, minSignatures)];
-        const multiSigKeys = await Promise.all(combinations.map(arr => PublicKey.sum(arr)));
+        const multiSigKeys = combinations.map(arr => PublicKey.sum(arr));
         return new MultiSigWallet(keyPair, minSignatures, multiSigKeys);
     }
 
@@ -133,19 +133,18 @@ class MultiSigWallet extends Wallet {
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
      * @param {number} validityStartHeight The validityStartHeight for the transaction.
-     * @returns {Promise.<Transaction>} A prepared Transaction object.
+     * @returns {Transaction} A prepared Transaction object.
      * @override
      */
     createTransaction(recipientAddr, value, fee, validityStartHeight) {
-        const transaction = new ExtendedTransaction(this._address, Account.Type.BASIC,
+        return new ExtendedTransaction(this._address, Account.Type.BASIC,
             recipientAddr, Account.Type.BASIC, value, fee, validityStartHeight,
             Transaction.Flag.NONE, new Uint8Array(0));
-        return Promise.resolve(transaction);
     }
 
     /**
      * Creates a commitment pair for signing a transaction.
-     * @returns {Promise.<CommitmentPair>} The commitment pair.
+     * @returns {CommitmentPair} The commitment pair.
      */
     createCommitment() {
         return CommitmentPair.generate();
@@ -156,9 +155,9 @@ class MultiSigWallet extends Wallet {
      * @param {Array.<PublicKey>} publicKeys
      * @param {Commitment} aggregatedCommitment
      * @param {RandomSecret} secret
-     * @returns {Promise.<PartialSignature>}
+     * @returns {PartialSignature}
      */
-    async signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
+    signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
         return PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
             secret, aggregatedCommitment, transaction.serializeContent());
     }
@@ -168,14 +167,14 @@ class MultiSigWallet extends Wallet {
      * @param {PublicKey} aggregatedPublicKey
      * @param {Commitment} aggregatedCommitment
      * @param {Array.<PartialSignature>} signatures
-     * @returns {Promise.<Transaction>}
+     * @returns {Transaction}
      */
-    async completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
+    completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
         if (signatures.length !== this._minSignatures) {
             throw 'Not enough signatures to complete this transaction';
         }
 
-        const signature = await Signature.fromPartialSignatures(aggregatedCommitment, signatures);
+        const signature = Signature.fromPartialSignatures(aggregatedCommitment, signatures);
         const proof = SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
         transaction.proof = proof.serialize();
         return transaction;

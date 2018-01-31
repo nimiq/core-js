@@ -18,18 +18,18 @@ class PublicKey extends Primitive {
 
     /**
      * @param {PrivateKey} privateKey
-     * @return {Promise.<PublicKey>}
+     * @return {PublicKey}
      */
-    static async derive(privateKey) {
-        return new PublicKey(await Crypto.publicKeyDerive(privateKey._obj));
+    static derive(privateKey) {
+        return new PublicKey(Crypto.publicKeyDerive(privateKey._obj));
     }
 
     /**
      * @param {Array.<PublicKey>} publicKeys
-     * @return {Promise.<PublicKey>}
+     * @return {PublicKey}
      */
-    static async sum(publicKeys) {
-        return new PublicKey(await Crypto.delinearizeAndAggregatePublicKeys(publicKeys.map(key => key._obj)));
+    static sum(publicKeys) {
+        return new PublicKey(Crypto.delinearizeAndAggregatePublicKeys(publicKeys.map(key => key._obj)));
     }
 
     /**

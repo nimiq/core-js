@@ -177,26 +177,26 @@ class HashedTimeLockedContract extends Contract {
                     }
 
                     // Signature proof of the HTLC recipient
-                    if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
+                    if (!SignatureProof.unserialize(buf).verify(null, transaction.serializeContent())) {
                         return false;
                     }
                     break;
                 }
                 case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: {
                     // Signature proof of the HTLC recipient
-                    if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
+                    if (!SignatureProof.unserialize(buf).verify(null, transaction.serializeContent())) {
                         return false;
                     }
 
                     // Signature proof of the HTLC creator
-                    if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
+                    if (!SignatureProof.unserialize(buf).verify(null, transaction.serializeContent())) {
                         return false;
                     }
                     break;
                 }
                 case HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE:
                     // Signature proof of the HTLC creator
-                    if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
+                    if (!SignatureProof.unserialize(buf).verify(null, transaction.serializeContent())) {
                         return false;
                     }
                     break;

@@ -53,7 +53,7 @@ describe('VestingContract', () => {
 
     it('can falsify invalid outgoing transaction', (done) => {
         (async () => {
-            const keyPair = await KeyPair.generate();
+            const keyPair = KeyPair.generate();
             const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
 
             let transaction = new BasicTransaction(pubKey, recipient, 100, 0, 0, signature);
@@ -61,7 +61,7 @@ describe('VestingContract', () => {
             expect(await VestingContract.verifyOutgoingTransaction(transaction)).toBeFalsy();
 
             transaction = new ExtendedTransaction(keyPair.publicKey.toAddress(), Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
-            const sigProof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+            const sigProof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
             const proof = new SerialBuffer(sigProof.serializedSize + 1);
             sigProof.serialize(proof);
             transaction.proof = proof;
@@ -70,167 +70,157 @@ describe('VestingContract', () => {
 
     it('can verify valid outgoing transaction', (done) => {
         (async () => {
-            const keyPair = await KeyPair.generate();
+            const keyPair = KeyPair.generate();
 
             const transaction = new BasicTransaction(keyPair.publicKey, recipient, 100, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+            transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
 
             expect(await VestingContract.verifyOutgoingTransaction(transaction)).toBeTruthy();
         })().then(done, done.fail);
     });
 
-    it('can apply outgoing transaction', (done) => {
-        (async () => {
-            const keyPair = await KeyPair.generate();
-            const address = keyPair.publicKey.toAddress();
+    it('can apply outgoing transaction', () => {
+        const keyPair = KeyPair.generate();
+        const address = keyPair.publicKey.toAddress();
 
-            let account = new VestingContract(100, address, 0, 100, 50);
+        let account = new VestingContract(100, address, 0, 100, 50);
 
-            expect(account.balance).toBe(100);
+        expect(account.balance).toBe(100);
 
-            const cache = new TransactionCache();
-            let transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 110);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            account = account.withOutgoingTransaction(transaction, 110, cache);
+        const cache = new TransactionCache();
+        let transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 110);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        account = account.withOutgoingTransaction(transaction, 110, cache);
 
-            expect(account.balance).toBe(99);
+        expect(account.balance).toBe(99);
 
-            transaction = new BasicTransaction(keyPair.publicKey, recipient, 50, 0, 220);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            account = account.withOutgoingTransaction(transaction, 220, cache);
+        transaction = new BasicTransaction(keyPair.publicKey, recipient, 50, 0, 220);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        account = account.withOutgoingTransaction(transaction, 220, cache);
 
-            expect(account.balance).toBe(49);
+        expect(account.balance).toBe(49);
 
-            transaction = new BasicTransaction(keyPair.publicKey, recipient, 49, 0, 230);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            account = account.withOutgoingTransaction(transaction, 230, cache);
+        transaction = new BasicTransaction(keyPair.publicKey, recipient, 49, 0, 230);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        account = account.withOutgoingTransaction(transaction, 230, cache);
 
-            expect(account.balance).toBe(0);
-        })().then(done, done.fail);
+        expect(account.balance).toBe(0);
     });
 
-    it('refuses to apply invalid outgoing transaction', (done) => {
-        (async () => {
-            const keyPair = await KeyPair.generate();
-            const address = keyPair.publicKey.toAddress();
+    it('refuses to apply invalid outgoing transaction', () => {
+        const keyPair = KeyPair.generate();
+        const address = keyPair.publicKey.toAddress();
 
-            const account = new VestingContract(100, address, 0, 100, 50);
+        const account = new VestingContract(100, address, 0, 100, 50);
 
-            const cache = new TransactionCache();
-            let transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 1);
+        const cache = new TransactionCache();
+        let transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 1);
 
-            transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 0);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Balance Error!');
 
-            transaction = new BasicTransaction(keyPair.publicKey, recipient, 75, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            expect(() => account.withOutgoingTransaction(transaction, 150, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(keyPair.publicKey, recipient, 75, 0, 0);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        expect(() => account.withOutgoingTransaction(transaction, 150, cache)).toThrowError('Balance Error!');
 
-            transaction = new BasicTransaction(keyPair.publicKey, recipient, 101, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            expect(() => account.withOutgoingTransaction(transaction, 1500, cache)).toThrowError('Balance Error!');
+        transaction = new BasicTransaction(keyPair.publicKey, recipient, 101, 0, 0);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        expect(() => account.withOutgoingTransaction(transaction, 1500, cache)).toThrowError('Balance Error!');
 
-            // TODO: more tests
-        })().then(done, done.fail);
+        // TODO: more tests
     });
 
-    it('can revert outgoing transaction', (done) => {
-        (async () => {
-            const keyPair = await KeyPair.generate();
-            const address = keyPair.publicKey.toAddress();
+    it('can revert outgoing transaction', () => {
+        const keyPair = KeyPair.generate();
+        const address = keyPair.publicKey.toAddress();
 
-            let account = new VestingContract(100, address);
+        let account = new VestingContract(100, address);
 
-            expect(account.balance).toBe(100);
+        expect(account.balance).toBe(100);
 
-            const cache = new TransactionCache();
-            const transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 0);
-            transaction.signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
-            account = account.withOutgoingTransaction(transaction, 1, cache);
+        const cache = new TransactionCache();
+        const transaction = new BasicTransaction(keyPair.publicKey, recipient, 1, 0, 0);
+        transaction.signature = Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent());
+        account = account.withOutgoingTransaction(transaction, 1, cache);
 
-            expect(account.balance).toBe(99);
-            cache.transactions.add(transaction);
+        expect(account.balance).toBe(99);
+        cache.transactions.add(transaction);
 
-            account = account.withOutgoingTransaction(transaction, 1, cache, true);
+        account = account.withOutgoingTransaction(transaction, 1, cache, true);
 
-            expect(account.balance).toBe(100);
-        })().then(done, done.fail);
+        expect(account.balance).toBe(100);
     });
 
-    it('can create vesting account via transaction and vest it', (done) => {
-        (async () => {
-            const keyPair = await KeyPair.generate();
-            const address = keyPair.publicKey.toAddress();
+    it('can create vesting account via transaction and vest it', () => {
+        const keyPair = KeyPair.generate();
+        const address = keyPair.publicKey.toAddress();
 
-            const cache = new TransactionCache();
+        const cache = new TransactionCache();
 
-            let buf = new SerialBuffer(4 + Address.SERIALIZED_SIZE);
-            address.serialize(buf);
-            buf.writeUint32(1000);
-            let creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
-            creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            let account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
-            let transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 1001, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 1001, cache).balance).toBe(99);
+        let buf = new SerialBuffer(4 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(1000);
+        let creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        let account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
+        let transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 1001, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 1001, cache).balance).toBe(99);
 
-            buf = new SerialBuffer(16 + Address.SERIALIZED_SIZE);
-            address.serialize(buf);
-            buf.writeUint32(0);
-            buf.writeUint32(100);
-            buf.writeUint64(50);
-            creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
-            creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(99);
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 51, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 51, 0, 201, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(49);
+        buf = new SerialBuffer(16 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(0);
+        buf.writeUint32(100);
+        buf.writeUint64(50);
+        creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 1, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(99);
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 51, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 51, 0, 201, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(49);
 
-            buf = new SerialBuffer(24 + Address.SERIALIZED_SIZE);
-            address.serialize(buf);
-            buf.writeUint32(0);
-            buf.writeUint32(100);
-            buf.writeUint64(40);
-            buf.writeUint64(80);
-            creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
-            creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 20, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 2, cache).balance).toBe(80);
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 60, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 60, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(40);
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
-            transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 201, Transaction.Flag.NONE, new Uint8Array(0));
-            transaction.proof = SignatureProof.singleSig(keyPair.publicKey, await Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
-            expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(0);
-        })().then(done, done.fail);
+        buf = new SerialBuffer(24 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(0);
+        buf.writeUint32(100);
+        buf.writeUint64(40);
+        buf.writeUint64(80);
+        creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        account = Account.INITIAL.withIncomingTransaction(creationTransaction, 1).withContractCommand(creationTransaction, 1);
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 20, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 2, cache).balance).toBe(80);
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 60, 0, 2, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(() => account.withOutgoingTransaction(transaction, 2, cache)).toThrowError('Balance Error!');
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 60, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 101, cache).balance).toBe(40);
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 101, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(() => account.withOutgoingTransaction(transaction, 101, cache)).toThrowError('Balance Error!');
+        transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 201, Transaction.Flag.NONE, new Uint8Array(0));
+        transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(0);
     });
 
-    it('has toString method', (done) => {
-        (async function () {
-            const account = new VestingContract(100);
-            expect(() => account.toString()).not.toThrow();
-        })().then(done, done.fail);
+    it('has toString method', () => {
+        const account = new VestingContract(100);
+        expect(() => account.toString()).not.toThrow();
     });
 
     it('can be pruned', (done) => {
@@ -242,14 +232,14 @@ describe('VestingContract', () => {
             user1.address.serialize(buf);
             buf.writeUint32(0);
             const creationTransaction = new ExtendedTransaction(user1.address, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
-            creationTransaction.proof = SignatureProof.singleSig(user1.publicKey, await Signature.create(user1.privateKey, user1.publicKey, creationTransaction.serializeContent())).serialize();
+            creationTransaction.proof = SignatureProof.singleSig(user1.publicKey, Signature.create(user1.privateKey, user1.publicKey, creationTransaction.serializeContent())).serialize();
 
             let block = await testBlockchain.createBlock({transactions: [creationTransaction]});
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
             const oldAccount = await testBlockchain.accounts.get(creationTransaction.recipient);
 
             const clearTransaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, user1.address, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
-            clearTransaction.proof = SignatureProof.singleSig(user1.publicKey, await Signature.create(user1.privateKey, user1.publicKey, clearTransaction.serializeContent())).serialize();
+            clearTransaction.proof = SignatureProof.singleSig(user1.publicKey, Signature.create(user1.privateKey, user1.publicKey, clearTransaction.serializeContent())).serialize();
             block = await testBlockchain.createBlock({transactions: [clearTransaction]});
             expect(block.body.prunedAccounts.length).toBe(1);
 

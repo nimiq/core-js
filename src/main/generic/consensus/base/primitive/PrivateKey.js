@@ -8,10 +8,10 @@ class PrivateKey extends Primitive {
     }
 
     /**
-     * @return {Promise.<PrivateKey>}
+     * @return {PrivateKey}
      */
-    static async generate() {
-        return new PrivateKey(await Crypto.privateKeyGenerate());
+    static generate() {
+        return new PrivateKey(Crypto.privateKeyGenerate());
     }
 
     /**

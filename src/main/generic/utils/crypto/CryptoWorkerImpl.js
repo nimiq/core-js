@@ -61,9 +61,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} input
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async computeArgon2d(input) {
+    computeArgon2d(input) {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
@@ -87,9 +87,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Array.<Uint8Array>} inputs
-     * @returns {Promise.<Array.<Uint8Array>>}
+     * @returns {Array.<Uint8Array>}
      */
-    async computeArgon2dBatch(inputs) {
+    computeArgon2dBatch(inputs) {
         const hashes = [];
         let stackPtr;
         try {
@@ -144,9 +144,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} key
      * @param {Uint8Array} salt
      * @param {number} iterations
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async kdf(key, salt, iterations) {
+    kdf(key, salt, iterations) {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
@@ -172,9 +172,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} privateKey
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async publicKeyDerive(privateKey) {
+    publicKeyDerive(privateKey) {
         const publicKey = new Uint8Array(CryptoWorker.PUBLIC_KEY_SIZE);
         if (privateKey.byteLength !== CryptoWorker.PRIVATE_KEY_SIZE) {
             throw Error('Wrong buffer size.');
@@ -188,9 +188,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} randomness
-     * @returns {Promise.<{commitment:Uint8Array, secret:Uint8Array}>}
+     * @returns {{commitment:Uint8Array, secret:Uint8Array}}
      */
-    async commitmentCreate(randomness) {
+    commitmentCreate(randomness) {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
@@ -200,7 +200,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, randomness.length).set(randomness);
             const res = Module._ed25519_create_commitment(wasmOutSecret, wasmOutCommitment, wasmIn);
             if (res !== 1) {
-                throw new Error('Secret must not be 0 or 1: ' + res);
+                throw new Error(`Secret must not be 0 or 1: ${res}`);
             }
             const commitment = new Uint8Array(CryptoWorker.PUBLIC_KEY_SIZE);
             const secret = new Uint8Array(CryptoWorker.PRIVATE_KEY_SIZE);
@@ -246,9 +246,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Array.<Uint8Array>} commitments
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async commitmentsAggregate(commitments) {
+    commitmentsAggregate(commitments) {
         if (commitments.some(commitment => commitment.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE)) {
             throw Error('Wrong buffer size.');
         }
@@ -276,9 +276,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Array.<Uint8Array>} publicKeys
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async publicKeysHash(publicKeys) {
+    publicKeysHash(publicKeys) {
         if (publicKeys.some(publicKey => publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE)) {
             throw Error('Wrong buffer size.');
         }
@@ -307,9 +307,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     /**
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} publicKeysHash
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async publicKeyDelinearize(publicKey, publicKeysHash) {
+    publicKeyDelinearize(publicKey, publicKeysHash) {
         if (publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE
             || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
             throw Error('Wrong buffer size.');
@@ -337,9 +337,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     /**
      * @param {Array.<Uint8Array>} publicKeys
      * @param {Uint8Array} publicKeysHash
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash) {
+    publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash) {
         if (publicKeys.some(publicKey => publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE)
             || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
             throw Error('Wrong buffer size.');
@@ -372,9 +372,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} privateKey
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} publicKeysHash
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async privateKeyDelinearize(privateKey, publicKey, publicKeysHash) {
+    privateKeyDelinearize(privateKey, publicKey, publicKeysHash) {
         if (privateKey.byteLength !== CryptoWorker.PRIVATE_KEY_SIZE
             || publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE
             || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
@@ -409,9 +409,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} secret
      * @param {Uint8Array} aggregateCommitment
      * @param {Uint8Array} message
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, aggregateCommitment, message) {
+    delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, aggregateCommitment, message) {
         if (publicKeys.some(publicKey => publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE)
             || privateKey.byteLength !== CryptoWorker.PRIVATE_KEY_SIZE
             || publicKey.byteLength !== CryptoWorker.PUBLIC_KEY_SIZE
@@ -455,9 +455,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} privateKey
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} message
-     * @returns {Promise.<Uint8Array>}
+     * @returns {Uint8Array}
      */
-    async signatureCreate(privateKey, publicKey, message) {
+    signatureCreate(privateKey, publicKey, message) {
         const signature = new Uint8Array(CryptoWorker.SIGNATURE_SIZE);
         const messageLength = message.byteLength;
         if (messageLength > this._messageBuffer.byteLength
@@ -479,9 +479,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} publicKey
      * @param {Uint8Array} message
      * @param {Uint8Array} signature
-     * @returns {Promise.<bool>}
+     * @returns {boolean}
      */
-    async signatureVerify(publicKey, message, signature) {
+    signatureVerify(publicKey, message, signature) {
         const messageLength = message.byteLength;
         if (signature.byteLength !== CryptoWorker.SIGNATURE_SIZE
             || message.byteLength > this._messageBuffer.byteLength

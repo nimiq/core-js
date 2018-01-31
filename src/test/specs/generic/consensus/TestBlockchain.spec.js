@@ -43,9 +43,9 @@ class TestBlockchain extends FullChain {
      * @param {number} validityStartHeight
      * @param {PrivateKey} [senderPrivKey]
      * @param {Signature} [signature]
-     * @return {Promise.<BasicTransaction>}
+     * @return {BasicTransaction}
      */
-    static async createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
+    static createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
         const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
 
         // allow to hardcode a signature
@@ -54,7 +54,7 @@ class TestBlockchain extends FullChain {
             if (!senderPrivKey) {
                 throw 'Signature computation requested, but no sender private key provided';
             }
-            signature = await Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
+            signature = Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
         }
         transaction.signature = signature;
 
@@ -69,10 +69,10 @@ class TestBlockchain extends FullChain {
      * @param {number} validityStartHeight
      * @param {PrivateKey} [senderPrivKey]
      * @param {Signature} [signature]
-     * @return {Promise.<LegacyTransaction>}
+     * @return {LegacyTransaction}
      * @deprecated
      */
-    static async createLegacyTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
+    static createLegacyTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
         const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
 
         // allow to hardcode a signature
@@ -81,7 +81,7 @@ class TestBlockchain extends FullChain {
             if (!senderPrivKey) {
                 throw 'Signature computation requested, but no sender private key provided';
             }
-            signature = await Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
+            signature = Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
         }
         transaction.signature = signature;
 
@@ -118,7 +118,7 @@ class TestBlockchain extends FullChain {
             const amount = Math.floor(account.balance / 10) || 1;
             const fee = Math.floor(amount / 2);
 
-            const transaction = await TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, this.height, sender.privateKey);// eslint-disable-line no-await-in-loop
+            const transaction = TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, this.height, sender.privateKey);// eslint-disable-line no-await-in-loop
 
             transactions.push(transaction);
         }
@@ -264,8 +264,8 @@ class TestBlockchain extends FullChain {
         users.push(TestBlockchain.generateUser(keys, address));
 
         for (let i = 1; i < count; i++) {
-            const keyPair = await KeyPair.generate(); //eslint-disable-line no-await-in-loop
-            const address = keyPair.publicKey.toAddress(); //eslint-disable-line no-await-in-loop
+            const keyPair = KeyPair.generate();
+            const address = keyPair.publicKey.toAddress();
 
             users.push(TestBlockchain.generateUser(keyPair, address));
         }

@@ -5,7 +5,7 @@ class Wallet {
      */
     static async generate() {
         await Crypto.prepareSyncCryptoWorker();
-        return new Wallet(await KeyPair.generate());
+        return new Wallet(KeyPair.generate());
     }
 
     /**
@@ -49,20 +49,11 @@ class Wallet {
      * @param {number} value Number of Satoshis to send.
      * @param {number} fee Number of Satoshis to donate to the Miner.
      * @param {number} validityStartHeight The validityStartHeight for the transaction.
-     * @returns {Promise.<Transaction>} A prepared and signed Transaction object. This still has to be sent to the network.
+     * @returns {Transaction} A prepared and signed Transaction object. This still has to be sent to the network.
      */
     createTransaction(recipient, value, fee, validityStartHeight) {
         const transaction = new BasicTransaction(this._keyPair.publicKey, recipient, value, fee, validityStartHeight);
-        return this._signTransaction(transaction);
-    }
-
-    /**
-     * @param {BasicTransaction} transaction
-     * @returns {Promise.<Transaction>}
-     * @private
-     */
-    async _signTransaction(transaction) {
-        transaction.signature = await Signature.create(this._keyPair.privateKey, this._keyPair.publicKey, transaction.serializeContent());
+        transaction.signature = Signature.create(this._keyPair.privateKey, this._keyPair.publicKey, transaction.serializeContent());
         return transaction;
     }
 

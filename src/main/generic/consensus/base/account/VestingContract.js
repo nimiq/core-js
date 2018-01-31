@@ -160,7 +160,7 @@ class VestingContract extends Contract {
     static async verifyOutgoingTransaction(transaction) {
         const buf = new SerialBuffer(transaction.proof);
 
-        if (!(await SignatureProof.unserialize(buf).verify(null, transaction.serializeContent()))) {
+        if (!SignatureProof.unserialize(buf).verify(null, transaction.serializeContent())) {
             return false;
         }
 

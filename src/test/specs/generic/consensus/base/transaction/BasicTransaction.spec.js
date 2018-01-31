@@ -46,7 +46,7 @@ describe('BasicTransaction', () => {
     it('can verify a valid signature', (done) => {
         (async function () {
             const users = await TestBlockchain.getUsers(2);
-            const tx = await TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
+            const tx = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
             expect(await tx.verify()).toBeTruthy();
         })().then(done, done.fail);
     });

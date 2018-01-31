@@ -39,12 +39,10 @@ describe('Signature', () => {
     });
 
     it('can be used to sign and verify with a given public key', (done) => {
-        (async function () {
-            const keyPair = await KeyPair.generate();
-            const data = new Uint8Array([1, 2, 3, 4, 5, 6]);
-            const signature = await Signature.create(keyPair.privateKey, keyPair.publicKey, data);
-            expect(await signature.verify(keyPair.publicKey, data)).toBe(true);
-            done();
-        })();
+        const keyPair = KeyPair.generate();
+        const data = new Uint8Array([1, 2, 3, 4, 5, 6]);
+        const signature = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
+        expect(signature.verify(keyPair.publicKey, data)).toBe(true);
+        done();
     });
 });

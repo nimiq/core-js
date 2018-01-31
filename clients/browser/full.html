@@ -387,9 +387,8 @@
                     return;
                 }
 
-                $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
-                    $.mempool.pushTransaction(tx);
-                });
+                var tx = $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1);
+                $.mempool.pushTransaction(tx);
             });
 
             e.preventDefault();

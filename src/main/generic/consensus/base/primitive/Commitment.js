@@ -10,10 +10,10 @@ class Commitment extends Primitive {
 
     /**
      * @param {Array.<Commitment>} commitments
-     * @return {Promise.<Commitment>}
+     * @return {Commitment}
      */
-    static async sum(commitments) {
-        return new Commitment(await Crypto.aggregateCommitments(commitments.map(c => c._obj)));
+    static sum(commitments) {
+        return new Commitment(Crypto.aggregateCommitments(commitments.map(c => c._obj)));
     }
 
     /**

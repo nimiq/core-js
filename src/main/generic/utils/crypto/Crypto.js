@@ -2,46 +2,44 @@ class Crypto {
     static get lib() { return CryptoLib.instance; }
 
     /**
-     * @returns {Promise.<CryptoWorker>}
+     * @returns {Promise.<CryptoWorkerImpl>}
+     */
+    static async prepareSyncCryptoWorker() {
+        const impl = IWorker._workerImplementation[CryptoWorker.name];
+        await impl.init('crypto');
+        Crypto._workerSync = impl;
+        return impl;
+    }
+
+    /**
+     * @returns {CryptoWorkerImpl}
      * @private
      */
     static _cryptoWorkerSync() {
-        if (!Crypto._cryptoWorkerPromiseSync) {
-            Crypto._cryptoWorkerPromiseSync = new Promise(async (resolve) => {
-                const impl = IWorker._workerImplementation[CryptoWorker.name];
-                await impl.init('crypto');
-                Crypto._cryptoWorkerResolvedSync = impl;
-                resolve(impl);
-            });
-        }
-        return Crypto._cryptoWorkerPromiseSync;
-    }
-
-    /**
-     * @return {Promise}
-     */
-    static async prepareSyncCryptoWorker() {
-        await Crypto._cryptoWorkerSync();
+        if (Crypto._workerSync === null) throw new Error('Synchronous crypto worker not yet prepared');
+        return Crypto._workerSync;
     }
 
     /**
      * @returns {Promise.<CryptoWorker>}
      * @private
      */
-    static _cryptoWorkerAsync() {
-        if (!Crypto._cryptoWorkerPromiseAsync) {
-            Crypto._cryptoWorkerPromiseAsync = IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
+    static async _cryptoWorkerAsync() {
+        if (!Crypto._workerAsync) {
+            Crypto._workerAsync = await IWorker.startWorkerPoolForProxy(CryptoWorker, 'crypto', 4);
         }
-        return Crypto._cryptoWorkerPromiseAsync;
+        return Crypto._workerAsync;
     }
 
-    // Signature implementation using ED25519 through WebAssembly
-    static get publicKeySize() {
-        return 32;
-    }
+
+    /* Public Key */
 
     static get publicKeyType() {
         return Uint8Array;
+    }
+
+    static get publicKeySize() {
+        return 32;
     }
 
     static publicKeySerialize(key) {
@@ -53,17 +51,24 @@ class Crypto {
         return key;
     }
 
-    static async publicKeyDerive(privateKey) {
-        const worker = await Crypto._cryptoWorkerSync();
+    /**
+     * @param {Uint8Array} privateKey
+     * @returns {Uint8Array}
+     */
+    static publicKeyDerive(privateKey) {
+        const worker = Crypto._cryptoWorkerSync();
         return worker.publicKeyDerive(privateKey);
+    }
+
+
+    /* Private Key */
+
+    static get privateKeyType() {
+        return Uint8Array;
     }
 
     static get privateKeySize() {
         return 32;
-    }
-
-    static get privateKeyType() {
-        return Uint8Array;
     }
 
     static privateKeySerialize(key) {
@@ -75,24 +80,37 @@ class Crypto {
         return key;
     }
 
+    /**
+     * @returns {Uint8Array}
+     */
     static privateKeyGenerate() {
         const privateKey = new Uint8Array(Crypto.privateKeySize);
         Crypto.lib.getRandomValues(privateKey);
         return privateKey;
     }
 
+
+    /* Key Pair */
+
     static get keyPairType() {
         return Object;
     }
 
-    static async keyPairGenerate() {
+    /**
+     * @returns {{privateKey: Uint8Array, publicKey: Uint8Array}}
+     */
+    static keyPairGenerate() {
         return Crypto.keyPairDerive(Crypto.privateKeyGenerate());
     }
 
-    static async keyPairDerive(privateKey) {
+    /**
+     * @param {Uint8Array} privateKey
+     * @returns {{privateKey: Uint8Array, publicKey: Uint8Array}}
+     */
+    static keyPairDerive(privateKey) {
         return {
             privateKey,
-            publicKey: await Crypto.publicKeyDerive(privateKey)
+            publicKey: Crypto.publicKeyDerive(privateKey)
         };
     }
 
@@ -108,14 +126,127 @@ class Crypto {
         return { privateKey, publicKey };
     }
 
+
+    /* Simple Signature */
+
+    static get signatureType() {
+        return Uint8Array;
+    }
+
+    static get signatureSize() {
+        return 64;
+    }
+
+    static signatureSerialize(obj) {
+        return obj;
+    }
+
+    static signatureUnserialize(arr) {
+        return arr;
+    }
+
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} data
+     * @returns {Uint8Array}
+     */
+    static signatureCreate(privateKey, publicKey, data) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.signatureCreate(privateKey, publicKey, data);
+    }
+
+    /**
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} data
+     * @param {Uint8Array} signature
+     * @returns {boolean}
+     */
+    static signatureVerify(publicKey, data, signature) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.signatureVerify(publicKey, data, signature);
+    }
+
+
+    /* Hash Functions */
+
+    static get hashType() {
+        return Uint8Array;
+    }
+
+    /**
+     * @deprecated
+     */
+    static get hashSize() {
+        return 32;
+    }
+
+    static get blake2bSize() {
+        return 32;
+    }
+
+    /**
+     * @param {Uint8Array} data
+     * @returns {Uint8Array}
+     */
+    static blake2bSync(data) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.computeBlake2b(data);
+    }
+
+    /**
+     * @param {Uint8Array} data
+     * @returns {Promise.<Uint8Array>}
+     */
+    static async blake2bAsync(data) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        return worker.computeBlake2b(data);
+    }
+
+    static get argon2dSize() {
+        return 32;
+    }
+
+    /**
+     * @param {Uint8Array} data
+     * @returns {Promise.<Uint8Array>}
+     */
+    static async argon2d(data) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        return worker.computeArgon2d(data);
+    }
+
+    static get sha256Size() {
+        return 32;
+    }
+
+    /**
+     * @param {Uint8Array} data
+     * @returns {Uint8Array}
+     */
+    static sha256(data) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.computeSha256(data);
+    }
+
+
+    /* Multi Signature */
+
     static get randomnessSize() {
         return 32;
     }
 
-    static async commitmentPairGenerate() {
+    static get commitmentPairType() {
+        return Object;
+    }
+
+    /**
+     * @returns {{commitment: Uint8Array, secret: Uint8Array}}
+     */
+    static commitmentPairGenerate() {
         const randomness = new Uint8Array(Crypto.randomnessSize);
         Crypto.lib.getRandomValues(randomness);
-        const worker = await Crypto._cryptoWorkerSync();
+        const worker = Crypto._cryptoWorkerSync();
         return worker.commitmentCreate(randomness);
     }
 
@@ -131,16 +262,12 @@ class Crypto {
         return obj.commitment;
     }
 
-    static get commitmentPairType() {
-        return Object;
+    static get randomSecretType() {
+        return Uint8Array;
     }
 
     static get randomSecretSize() {
         return 32;
-    }
-
-    static get randomSecretType() {
-        return Uint8Array;
     }
 
     static randomSecretSerialize(key) {
@@ -152,12 +279,12 @@ class Crypto {
         return key;
     }
 
-    static get commitmentSize() {
-        return 32;
-    }
-
     static get commitmentType() {
         return Uint8Array;
+    }
+
+    static get commitmentSize() {
+        return 32;
     }
 
     static commitmentSerialize(key) {
@@ -169,57 +296,12 @@ class Crypto {
         return key;
     }
 
-    static async hashPublicKeys(publicKeys) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.publicKeysHash(publicKeys);
+    static get partialSignatureType() {
+        return Uint8Array;
     }
 
-    static async delinearizePublicKey(publicKeys, publicKey) {
-        const worker = await Crypto._cryptoWorkerSync();
-        const publicKeysHash = await worker.publicKeysHash(publicKeys);
-        return worker.publicKeyDelinearize(publicKey, publicKeysHash);
-    }
-
-    static async delinearizePrivateKey(publicKeys, publicKey, privateKey) {
-        const worker = await Crypto._cryptoWorkerSync();
-        const publicKeysHash = await worker.publicKeysHash(publicKeys);
-        return worker.privateKeyDelinearize(privateKey, publicKey, publicKeysHash);
-    }
-
-    static async delinearizeAndAggregatePublicKeys(publicKeys) {
-        const worker = await Crypto._cryptoWorkerSync();
-        const publicKeysHash = await worker.publicKeysHash(publicKeys);
-        return worker.publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash);
-    }
-
-    static async delinearizedPartialSignatureCreate(privateKey, publicKey, publicKeys, secret, combinedCommitment, data) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, combinedCommitment, data);
-    }
-
-    static async aggregateCommitments(commitments) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.commitmentsAggregate(commitments);
-    }
-
-    static async aggregatePartialSignatures(partialSignatures) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return partialSignatures.reduce((sigA, sigB) => worker.scalarsAdd(sigA, sigB));
-    }
-
-    static async combinePartialSignatures(combinedCommitment, partialSignatures) {
-        const combinedSignature = await Crypto.aggregatePartialSignatures(partialSignatures);
-        return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
-    }
-
-    static async signatureCreate(privateKey, publicKey, data) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.signatureCreate(privateKey, publicKey, data);
-    }
-
-    static async signatureVerify(publicKey, data, signature) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.signatureVerify(publicKey, data, signature);
+    static get partialSignatureSize() {
+        return 32;
     }
 
     static partialSignatureSerialize(obj) {
@@ -230,85 +312,92 @@ class Crypto {
         return arr;
     }
 
-    static get partialSignatureSize() {
-        return 32;
-    }
-
-    static get partialSignatureType() {
-        return Uint8Array;
-    }
-
-    static signatureSerialize(obj) {
-        return obj;
-    }
-
-    static signatureUnserialize(arr) {
-        return arr;
-    }
-
-    static get signatureSize() {
-        return 64;
-    }
-
-    static get signatureType() {
-        return Uint8Array;
-    }
-
-    // Light hash implementation using SHA-256 with WebCrypto API and fast-sha256 fallback
-    //
-    // static get sha256() { return require('fast-sha256'); }
-    //
-    // static async hashLight(arr) {
-    //     if (Crypto.lib) {
-    //         return new Uint8Array(await Crypto.lib.digest('SHA-256', arr));
-    //     } else {
-    //         return new Promise((res) => {
-    //             // Performs badly, but better than a dead UI
-    //             setTimeout(() => {
-    //                 res(new Crypto.sha256.Hash().update(arr).digest());
-    //             });
-    //         });
-    //     }
-    // }
-
-
-    // Light hash implementation using blake2b via WebAssembly WebWorker
-    static async blake2bAsync(arr) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.computeBlake2b(arr);
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @returns {Uint8Array}
+     */
+    static hashPublicKeys(publicKeys) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.publicKeysHash(publicKeys);
     }
 
     /**
-     * @param arr
-     * @return {Uint8Array}
+     * @param {Array.<Uint8Array>} publicKeys
+     * @param {Uint8Array} publicKey
+     * @returns {Uint8Array}
      */
-    static blake2bSync(arr) {
-        const worker = Crypto._cryptoWorkerResolvedSync;
-        if (!worker) throw new Error('Synchronous crypto worker not yet prepared');
-        return worker.computeBlake2b(arr);
+    static delinearizePublicKey(publicKeys, publicKey) {
+        const worker = Crypto._cryptoWorkerSync();
+        const publicKeysHash = worker.publicKeysHash(publicKeys);
+        return worker.publicKeyDelinearize(publicKey, publicKeysHash);
     }
 
-    static get blake2bSize() {
-        return 32;
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} privateKey
+     * @returns {Uint8Array}
+     */
+    static delinearizePrivateKey(publicKeys, publicKey, privateKey) {
+        const worker = Crypto._cryptoWorkerSync();
+        const publicKeysHash = worker.publicKeysHash(publicKeys);
+        return worker.privateKeyDelinearize(privateKey, publicKey, publicKeysHash);
     }
 
-    static async argon2d(arr) {
-        const worker = await Crypto._cryptoWorkerAsync();
-        return worker.computeArgon2d(arr);
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @returns {Uint8Array}
+     */
+    static delinearizeAndAggregatePublicKeys(publicKeys) {
+        const worker = Crypto._cryptoWorkerSync();
+        const publicKeysHash = worker.publicKeysHash(publicKeys);
+        return worker.publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash);
     }
 
-    static get argon2dSize() {
-        return 32;
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Array.<Uint8Array>} publicKeys
+     * @param {Uint8Array} secret
+     * @param {Uint8Array} combinedCommitment
+     * @param {Uint8Array} data
+     * @returns {Uint8Array}
+     */
+    static delinearizedPartialSignatureCreate(privateKey, publicKey, publicKeys, secret, combinedCommitment, data) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.delinearizedPartialSignatureCreate(publicKeys, privateKey, publicKey, secret, combinedCommitment, data);
     }
 
-    static async sha256(arr) {
-        const worker = await Crypto._cryptoWorkerSync();
-        return worker.computeSha256(arr);
+    /**
+     * @param {Array.<Uint8Array>} commitments
+     * @returns {Uint8Array}
+     */
+    static aggregateCommitments(commitments) {
+        const worker = Crypto._cryptoWorkerSync();
+        return worker.commitmentsAggregate(commitments);
     }
 
-    static get sha256Size() {
-        return 32;
+    /**
+     * @param {Array.<Uint8Array>} partialSignatures
+     * @returns {Uint8Array}
+     */
+    static aggregatePartialSignatures(partialSignatures) {
+        const worker = Crypto._cryptoWorkerSync();
+        return partialSignatures.reduce((sigA, sigB) => worker.scalarsAdd(sigA, sigB));
     }
+
+    /**
+     * @param {Uint8Array} combinedCommitment
+     * @param {Array.<Uint8Array>} partialSignatures
+     * @returns {Uint8Array}
+     */
+    static combinePartialSignatures(combinedCommitment, partialSignatures) {
+        const combinedSignature = Crypto.aggregatePartialSignatures(partialSignatures);
+        return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
+    }
+
+
+    /* Utils */
 
     /**
      * @param {Uint8Array} key
@@ -328,7 +417,7 @@ class Crypto {
     static async manyPow(headers) {
         const worker = await Crypto._cryptoWorkerAsync();
         const size = worker.poolSize || 1;
-        let partitions = [];
+        const partitions = [];
         let j = 0;
         for (let i = 0; i < size; ++i) {
             partitions.push([]);
@@ -345,24 +434,11 @@ class Crypto {
             headers[i]._pow = new Hash(pows[i]);
         }
     }
-
-    /**
-     * @deprecated
-     * @return {number}
-     */
-    static get hashSize() {
-        return 32;
-    }
-
-    static get hashType() {
-        return Uint8Array;
-    }
 }
 
-/** @type {Promise.<CryptoWorker>} */
-Crypto._cryptoWorkerPromise = null;
-/** @type {Promise.<CryptoWorker>} */
-Crypto._cryptoWorkerPromiseSync = null;
 /** @type {CryptoWorkerImpl} */
-Crypto._cryptoWorkerResolvedSync = null;
+Crypto._workerSync = null;
+/** @type {CryptoWorker} */
+Crypto._workerAsync = null;
+
 Class.register(Crypto);

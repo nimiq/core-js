@@ -51,7 +51,7 @@ class CryptoWorker {
      * @param {Uint8Array} b
      * @returns {Uint8Array}
      */
-    scalarsAdd(a, b) {}
+    async scalarsAdd(a, b) {}
 
     /**
      * @param {Array.<Uint8Array>} commitments

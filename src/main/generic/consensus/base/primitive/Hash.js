@@ -77,10 +77,10 @@ class Hash extends Primitive {
 
     /**
      * @param {Uint8Array} arr
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
-    static async sha256(arr) {
-        return new Hash(await Crypto.sha256(arr), Hash.Algorithm.SHA256);
+    static sha256(arr) {
+        return new Hash(Crypto.sha256(arr), Hash.Algorithm.SHA256);
     }
 
     /**
@@ -90,9 +90,9 @@ class Hash extends Primitive {
      */
     static compute(arr, algorithm) {
         switch (algorithm) {
-            case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
+            case Hash.Algorithm.BLAKE2B: return Promise.resolve(Hash.blake2b(arr));
             case Hash.Algorithm.ARGON2D: return Hash.argon2d(arr);
-            case Hash.Algorithm.SHA256: return Hash.sha256(arr);
+            case Hash.Algorithm.SHA256: return Promise.resolve(Hash.sha256(arr));
             default: throw new Error('Invalid hash algorithm');
         }
     }

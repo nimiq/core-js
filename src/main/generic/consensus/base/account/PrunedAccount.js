@@ -25,7 +25,7 @@ class PrunedAccount {
      * @return {number} negative if this is smaller than o, positive if this is larger than o, zero if equal.
      */
     compare(o) {
-        return this._address.compare(a._address);
+        return this._address.compare(o._address);
     }
 
     /**
