@@ -98,6 +98,11 @@ class NetworkAgent extends Observable {
                 return false;
             }
 
+            // Exclude private net addresses.
+            if (addr.netAddress && addr.netAddress.isPrivate()) {
+                return false;
+            }
+
             const knownAddress = this._knownAddresses.get(addr);
             return !addr.isSeed() // Never relay seed addresses.
                 && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
@@ -299,6 +304,11 @@ class NetworkAgent extends Observable {
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+                return false;
+            }
+
+            // Exclude addresses with private netAddress.
+            if (addr.netAddress && addr.netAddress.isPrivate()) {
                 return false;
             }
 
