@@ -95,20 +95,33 @@ class NanoMempool extends Observable {
             const txHash = tx.hash();
             if (blockHeight >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this._transactionsByHash.remove(txHash);
+
                 /** @type {MempoolTransactionSet} */
                 const set = this._transactionSetByAddress.get(tx.sender);
                 set.remove(tx);
+
+                if (set.length === 0) {
+                    this._transactionSetByAddress.remove(tx.sender);
+                }
+
                 this.fire('transaction-expired', tx);
             }
         }
+
         // Remove mined transactions.
         for (const /** @type {Transaction} */ tx of transactions) {
             const txHash = tx.hash();
             if (this._transactionsByHash.contains(txHash)) {
                 this._transactionsByHash.remove(txHash);
+
                 /** @type {MempoolTransactionSet} */
                 const set = this._transactionSetByAddress.get(tx.sender);
                 set.remove(tx);
+
+                if (set.length === 0) {
+                    this._transactionSetByAddress.remove(tx.sender);
+                }
+
                 this.fire('transaction-mined', tx);
             }
         }
