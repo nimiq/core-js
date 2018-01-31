@@ -207,9 +207,9 @@ hash {
     color: #000;
 }
 
-.input-group label {
-    width: 75px;
+.input-group label > span {
     display: inline-block;
+    width: 75px;
     font-weight: bold;
 }
 
@@ -374,37 +374,37 @@ hash {
 
 /* Account Lookup */
 
-[account-info] [clear-button] {
+[account-info-ui] [clear-button] {
     display: inline-block;
     height: 38px;
 }
 
-[account-info] [account-details],
-[account-info] [vesting-account-details],
-[account-info] [htlc-details] {
+[account-info-ui] [account-details],
+[account-info-ui] [vesting-account-details],
+[account-info-ui] [htlc-details] {
     display: none;
 }
 
-[account-info][account-type="basic"] [account-details],
-[account-info][account-type="vesting"] [account-details],
-[account-info][account-type="vesting"] [vesting-account-details],
-[account-info][account-type="htlc"] [account-details],
-[account-info][account-type="htlc"] [htlc-account-details] {
+[account-info-ui][account-type="basic"] [account-details],
+[account-info-ui][account-type="vesting"] [account-details],
+[account-info-ui][account-type="vesting"] [vesting-account-details],
+[account-info-ui][account-type="htlc"] [account-details],
+[account-info-ui][account-type="htlc"] [htlc-account-details] {
     display: block;
 }
 
-[account-info][account-type="not-found"] [account-type]:after {
+[account-info-ui][account-type="not-found"] [account-type]:after {
     content: 'Account not found.';
 }
-[account-info][account-type="unknown"] [account-type]:after {
+[account-info-ui][account-type="unknown"] [account-type]:after {
     content: 'Unknown account type.';
 }
-[account-info][account-type="basic"] [account-type]:after {
+[account-info-ui][account-type="basic"] [account-type]:after {
     content: 'Basic';
 }
-[account-info][account-type="vesting"] [account-type]:after {
+[account-info-ui][account-type="vesting"] [account-type]:after {
     content: 'Vesting';
 }
-[account-info][account-type="htlc"] [account-type]:after {
+[account-info-ui][account-type="htlc"] [account-type]:after {
     content: 'HTLC';
 }

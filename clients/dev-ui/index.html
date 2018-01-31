@@ -45,25 +45,31 @@
             <hr/>
         </div>
 
-        <div class="info">
+        <div class="info" transaction-ui>
             <div class="info-title">Transaction</div>
             <hr class="morespace"/>
             <form>
                 <div class="input-group">
-                    <label for="txRecipientAddr">Recipient</label>
-                    <input id="txRecipientAddr" name="recipientAddr" maxlength="45" size="42">
+                    <label>
+                        <span>Recipient</span>
+                        <input transaction-recipient name="transaction-recipient" maxlength="45" size="45">
+                    </label>
                 </div>
                 <div class="input-group">
-                    <label for="txValue">Value</label>
-                    <input id="txValue" name="value" type="number" step="any">
+                    <label>
+                        <span>Value</span>
+                        <input transaction-value name="transaction-value" type="number" step="any">
+                    </label>
                 </div>
                 <div class="input-group">
-                    <label for="txFee">Fee</label>
-                    <input id="txFee" name="fee" type="number" step="0.01">
+                    <label>
+                        <span>Fee</span>
+                        <input transaction-fee name="transaction-fee" type="number" step="0.01">
+                    </label>
                 </div>
                 <hr class="morespace"/>
                 <div class="input-group">
-                    <button type="button" id="txSubmitBtn" disabled>Send</button>
+                    <button transaction-send type="button" disabled>Send</button>
                 </div>
                 <hr/>
             </form>
@@ -195,7 +201,7 @@
     </div>
 
     <!-- Account Lookup -->
-    <div class="info" account-info>
+    <div class="info" account-info-ui>
         <div class="info-title">Account Info</div>
         <hr/>
 
@@ -276,6 +282,7 @@
 
 <script type="text/javascript" src="Utils.js"></script>
 <script type="text/javascript" src="AccountInfoUi.js"></script>
+<script type="text/javascript" src="TransactionUi.js"></script>
 <script type="text/javascript" src="script.js"></script>
 </body>
 </html>
