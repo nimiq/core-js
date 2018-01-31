@@ -148,11 +148,8 @@ class Mempool extends Observable {
      * @return {Array.<Transaction>}
      */
     getPendingTransactions(address) {
-        if (this._transactionSetByAddress.contains(address)) {
-            return this._transactionSetByAddress.get(address).transactions;
-        } else {
-            return [];
-        }
+        const set = this._transactionSetByAddress.get(address);
+        return set ? set.transactions : [];
     }
 
     /**

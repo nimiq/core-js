@@ -119,7 +119,7 @@ describe('NanoMempool', () => {
             referenceTransactions.sort((a, b) => a.compareBlockOrder(b));
             expect(transactions).toEqual(referenceTransactions);
 
-            mempool.updateHead({height: 1}, referenceTransactions);
+            mempool.changeHead({height: 1}, referenceTransactions);
 
             // Check that all the transactions were evicted
             mempool.on('transactions-ready', async function() {
@@ -149,7 +149,7 @@ describe('NanoMempool', () => {
             }
             referenceTransactions.sort((a, b) => a.compare(b));
 
-            mempool.updateHead({height: 1}, [referenceTransactions[2]]);
+            mempool.changeHead({height: 1}, [referenceTransactions[2]]);
 
             // Check that all the transactions were evicted
             mempool.on('transactions-ready', async function() {
@@ -187,7 +187,7 @@ describe('NanoMempool', () => {
             }
             referenceTransactions.sort((a, b) => a.compare(b));
 
-            mempool.updateHead({height: 10000}, []);
+            mempool.changeHead({height: 10000}, []);
 
             // Check that all the transactions were evicted
             mempool.on('transactions-ready', async function() {

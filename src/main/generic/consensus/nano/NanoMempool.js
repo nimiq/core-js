@@ -72,18 +72,15 @@ class NanoMempool extends Observable {
      * @return {Array.<Transaction>}
      */
     getPendingTransactions(address) {
-        if (this._transactionSetByAddress.contains(address)) {
-            return this._transactionSetByAddress.get(address).transactions;
-        } else {
-            return [];
-        }
+        const set = this._transactionSetByAddress.get(address);
+        return set ? set.transactions : [];
     }
 
     /**
      * @param {Block} block
      * @param {Array.<Transaction>} transactions
      */
-    updateHead(block, transactions) {
+    changeHead(block, transactions) {
         this._evictTransactions(block.height, transactions);
     }
 

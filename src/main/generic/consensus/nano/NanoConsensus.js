@@ -141,7 +141,7 @@ class NanoConsensus extends Observable {
         }
 
         const includedTransactions = await this.getTransactionsProof(this._addresses, head.hash());
-        this._mempool.updateHead(head, includedTransactions);
+        this._mempool.changeHead(head, includedTransactions);
     }
 
     /**

@@ -56,7 +56,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         
         this._timers.resetTimeout('subscription-change', () => {
             this._peer.channel.subscribe(this._localSubscription);
-        }, NanoConsensusAgent.SUBSCRIPTION_CHANGE_TIMEOUT);
+        }, NanoConsensusAgent.SUBSCRIPTION_CHANGE_THROTTLE);
     }
 
     /**
@@ -636,5 +636,5 @@ NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 30;
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
 NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT = 1000 * 10;
 NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT = 1000 * 15;
-NanoConsensusAgent.SUBSCRIPTION_CHANGE_TIMEOUT = 1000 * 2;
+NanoConsensusAgent.SUBSCRIPTION_CHANGE_THROTTLE = 1000 * 2;
 Class.register(NanoConsensusAgent);
