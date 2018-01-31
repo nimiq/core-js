@@ -211,8 +211,6 @@ hash {
     width: 75px;
     display: inline-block;
     font-weight: bold;
-    vertical-align: bottom;
-    padding-bottom: 8px;
 }
 
 .input-group-button {
@@ -314,7 +312,7 @@ hash {
     /*display:none;*/
 }
 
-.wallet-address span {
+.address {
     font-family: monospace;
 }
 
@@ -372,4 +370,41 @@ hash {
     text-align: center;
     margin-top: 15%;
     padding: 15px;
+}
+
+/* Account Lookup */
+
+[account-info] [clear-button] {
+    display: inline-block;
+    height: 38px;
+}
+
+[account-info] [account-details],
+[account-info] [vesting-account-details],
+[account-info] [htlc-details] {
+    display: none;
+}
+
+[account-info][account-type="basic"] [account-details],
+[account-info][account-type="vesting"] [account-details],
+[account-info][account-type="vesting"] [vesting-account-details],
+[account-info][account-type="htlc"] [account-details],
+[account-info][account-type="htlc"] [htlc-account-details] {
+    display: block;
+}
+
+[account-info][account-type="not-found"] [account-type]:after {
+    content: 'Account not found.';
+}
+[account-info][account-type="unknown"] [account-type]:after {
+    content: 'Unknown account type.';
+}
+[account-info][account-type="basic"] [account-type]:after {
+    content: 'Basic';
+}
+[account-info][account-type="vesting"] [account-type]:after {
+    content: 'Vesting';
+}
+[account-info][account-type="htlc"] [account-type]:after {
+    content: 'HTLC';
 }
