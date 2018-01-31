@@ -1,6 +1,7 @@
 class DevUI {
     constructor($) {
-        this._accountInfoUi = new AccountInfoUi(document.querySelector('[account-info]'), $);
+        this._accountInfoUi = new AccountInfoUi(document.querySelector('[account-info-ui]'), $);
+        this._transactionUi = new TransactionUi(document.querySelector('[transaction-ui]'), $);
         $.blockchain.on('head-changed', this._headChanged.bind(this));
 
         $.network.on('peers-changed', this._networkChanged.bind(this));
@@ -22,7 +23,6 @@ class DevUI {
         }
 
         var bcTitle = document.querySelector('#bcTitle');
-        var txSubmitBtn = document.querySelector('#txSubmitBtn');
         $.consensus.on('syncing', function() {
             bcTitle.classList.add('syncing');
         }.bind(this));
@@ -41,7 +41,6 @@ class DevUI {
 
         $.consensus.on('established', function() {
             bcTitle.classList.add('consensus-established');
-            txSubmitBtn.removeAttribute('disabled');
             this._headChanged($.blockchain.head);
             //document.getElementById('mnrStartBtn').removeAttribute('disabled');
         }.bind(this));
@@ -52,7 +51,6 @@ class DevUI {
             }
             bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'sync-chain-proof', 'verify-chain-proof',
                 'sync-accounts-tree', 'verify-accounts-tree', 'consensus-established');
-            txSubmitBtn.setAttribute('disabled', '');
             //document.getElementById('mnrStartBtn').setAttribute('disabled', '');
         }.bind(this));
 
@@ -112,8 +110,6 @@ class DevUI {
 
         this._wltAddress.innerText = $.wallet.address.toUserFriendlyAddress();
 
-        txSubmitBtn.onclick = this._submitTransaction.bind(this);
-
         // Mempool
         /** @type {HTMLElement} */
         this._mplTransactionCount = document.querySelector('#mplTransactionCount');
@@ -146,63 +142,6 @@ class DevUI {
         }
     }
 
-    _submitTransaction(e) {
-        /** @var {HTMLInputElement} */
-        var elRecipientAddr = document.querySelector('#txRecipientAddr');
-        /** @var {HTMLInputElement} */
-        var elValue = document.querySelector('#txValue');
-        /** @var {HTMLInputElement} */
-        var elFee = document.querySelector('#txFee');
-        elRecipientAddr.className = null;
-        elValue.className = null;
-        elFee.className = null;
-
-        var recipientAddr = elRecipientAddr.value;
-        var value = parseFloat(elValue.value);
-        var fee = parseFloat(elFee.value);
-
-        if (!recipientAddr) {
-            elRecipientAddr.className = 'error';
-            return;
-        }
-        var address;
-        try {
-            address = Nimiq.Address.fromUserFriendlyAddress(recipientAddr);
-        } catch (e) {
-            elRecipientAddr.className = 'error';
-            return;
-        }
-
-        if (isNaN(value) || value <= 0) {
-            elValue.className = 'error';
-            return;
-        }
-
-        if (isNaN(fee) || fee < 0) {
-            elFee.className = 'error';
-            return;
-        }
-
-        Utils.getAccount($, $.wallet.address).then(function(account) {
-            value = Nimiq.Policy.coinsToSatoshis(value);
-            fee = Nimiq.Policy.coinsToSatoshis(fee);
-
-            var waitingTransactions = $.mempool.getWaitingTransactions($.wallet.publicKey.toAddressSync());
-
-            if (!account || account.balance < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
-                elValue.className = 'error';
-                return;
-            }
-
-            $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
-                Utils.broadcastTransaction($, tx);
-            });
-        });
-
-        e.preventDefault();
-        return false;
-    }
-
     _headChanged(head, rebranching) {
         this._bcHeight.innerText = $.blockchain.height;
         this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
@@ -212,7 +151,6 @@ class DevUI {
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
         }
-
 
         this._hdHash.innerText = $.blockchain.headHash.toBase64();
         this._hdPrevHash.innerText = $.blockchain.head.prevHash.toBase64();
