@@ -159,10 +159,7 @@ class Accounts extends Observable {
             if (typeof accountType === 'undefined') {
                 return Account.INITIAL;
             }
-            if (!Account.TYPE_MAP.has(accountType)) {
-                throw new Error('Invalid account type');
-            }
-            return Account.TYPE_MAP.get(accountType).INITIAL;
+            throw new Error('Account type was given but account not present');
         } else if (typeof accountType !== 'undefined' && account.type !== accountType) {
             throw new Error('Account type does match actual account');
         }
@@ -188,7 +185,7 @@ class Accounts extends Observable {
     /**
      * @returns {Promise.<PartialAccountsTree>}
      */
-    async partialAccountsTree() {
+    partialAccountsTree() {
         return this._tree.partialTree();
     }
 

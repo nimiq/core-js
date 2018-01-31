@@ -3,17 +3,6 @@
  */
 class Account {
     /**
-     * @param {Account} o
-     * @returns {Account}
-     */
-    static copy(o) {
-        if (!o) return o;
-        let type = o._type;
-        if (!type) type = Account.Type.BASIC;
-        return Account.TYPE_MAP.get(type).copy(o);
-    }
-
-    /**
      * @param {Account.Type} type
      * @param {number} balance
      */

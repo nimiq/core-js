@@ -2,7 +2,6 @@
  * @abstract
  */
 class Transaction {
-
     /**
      * @param {Transaction.Format} format
      * @param {Address} sender
@@ -59,11 +58,11 @@ class Transaction {
      * @return {Transaction}
      */
     static unserialize(buf) {
-        // We currently only support one transaction type: Basic.
-        const type = /** @type {Transaction.Format} */ buf.readUint8();
+        const format = /** @type {Transaction.Format} */ buf.readUint8();
         buf.readPos--;
-        if (!Transaction.FORMAT_MAP.has(type)) throw new Error('Invalid transaction type');
-        return Transaction.FORMAT_MAP.get(type).unserialize(buf);
+
+        if (!Transaction.FORMAT_MAP.has(format)) throw new Error('Invalid transaction type');
+        return Transaction.FORMAT_MAP.get(format).unserialize(buf);
     }
 
     /**

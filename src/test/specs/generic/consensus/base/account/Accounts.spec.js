@@ -1,6 +1,4 @@
-
 describe('Accounts', () => {
-
     it('cannot commit a wrong block', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
@@ -99,11 +97,11 @@ describe('Accounts', () => {
         (async function () {
             const account = await Accounts.createVolatile();
             await account._tree.put(accountAddress, accountState1);
-            const state1 = await account.get(accountAddress, Account.Type.BASIC);
+            const state1 = await account.get(accountAddress);
             expect(state1.balance).toBe(accountState1.balance);
 
             // Verify that get() returns Account.INITIAL when called with an unknown address
-            const state2 = await account.get(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)), Account.Type.BASIC);
+            const state2 = await account.get(Address.unserialize(BufferUtils.fromBase64(Dummy.address3)));
             expect(Account.INITIAL.equals(state2)).toBe(true);
         })().then(done, done.fail);
     });
@@ -118,7 +116,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
 
             // initial setup: user1 mined genesis block with no transactions, user2 has a balance of 0
-            let balance = (await accounts.get(user2.address, Account.Type.BASIC)).balance;
+            let balance = (await accounts.get(user2.address)).balance;
             expect(balance).toBe(0);
 
             const amount1 = 20;
@@ -169,8 +167,8 @@ describe('Accounts', () => {
                 await accounts.commitBlock(block);
             } catch (e) {
                 const balance1 = (await accounts.get(user1.address, Account.Type.BASIC)).balance;
-                const balance3 = (await accounts.get(user3.address, Account.Type.BASIC)).balance;
-                const balance4 = (await accounts.get(user4.address, Account.Type.BASIC)).balance;
+                const balance3 = (await accounts.get(user3.address)).balance;
+                const balance4 = (await accounts.get(user4.address)).balance;
                 expect(balance1).toBe(Policy.blockRewardAt(block.height - 1));
                 expect(balance3).toBe(0);
                 expect(balance4).toBe(0);

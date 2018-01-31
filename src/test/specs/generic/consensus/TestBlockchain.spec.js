@@ -114,7 +114,7 @@ class TestBlockchain extends FullChain {
             const recipient = this.users[(j + 1) % numUsers];
 
             // 10% transaction + 5% fee
-            const account = await this.accounts.get(sender.address, Account.Type.BASIC);
+            const account = await this.accounts.get(sender.address);
             const amount = Math.floor(account.balance / 10) || 1;
             const fee = Math.floor(amount / 2);
 
