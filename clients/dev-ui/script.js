@@ -1,22 +1,19 @@
-var CLIENT_NANO = 'nano';
-var CLIENT_LIGHT = 'light';
-var CLIENT_FULL = 'full';
-
 class DevUI {
     constructor($) {
+        this._accountInfoUi = new AccountInfoUi(document.querySelector('[account-info]'), $);
         $.blockchain.on('head-changed', this._headChanged.bind(this));
 
         $.network.on('peers-changed', this._networkChanged.bind(this));
 
         $.mempool.on('transaction-added', function (tx) {
-            if ($.clientType !== CLIENT_NANO) {
+            if ($.clientType !== DevUI.CLIENT_NANO) {
                 this._mempoolTransactionAdded(tx);
             } else {
                 // on nano rerender complete mempool as it doesn't fire a separate transactions-ready
                 this._rerenderMempool(true);
             }
         }.bind(this));
-        if ($.clientType !== CLIENT_NANO) {
+        if ($.clientType !== DevUI.CLIENT_NANO) {
             $.mempool.on('transactions-ready', this._rerenderMempool.bind(this));
             $.miner.on('start', this._minerChanged.bind(this));
             $.miner.on('stop', this._minerChanged.bind(this));
@@ -50,7 +47,7 @@ class DevUI {
         }.bind(this));
 
         $.consensus.on('lost', function() {
-            if ($.clientType !== CLIENT_NANO) {
+            if ($.clientType !== DevUI.CLIENT_NANO) {
                 $.miner.stopWork();
             }
             bcTitle.classList.remove('initializing', 'connecting', 'syncing', 'sync-chain-proof', 'verify-chain-proof',
@@ -134,7 +131,7 @@ class DevUI {
         /** @type {HTMLElement} */
         this._mnrStartBtn = document.querySelector('#mnrStartBtn');
 
-        if ($.clientType !== CLIENT_NANO) {
+        if ($.clientType !== DevUI.CLIENT_NANO) {
             this._mnrStartBtn.onclick = this._toggleMining.bind(this);
         }
 
@@ -142,9 +139,9 @@ class DevUI {
         this._headChanged($.blockchain.head, true);
         this._updateBalance();
         this._networkChanged();
-        this._rerenderMempool($.clientType === CLIENT_NANO);
+        this._rerenderMempool($.clientType === DevUI.CLIENT_NANO);
 
-        if ($.clientType !== CLIENT_NANO) {
+        if ($.clientType !== DevUI.CLIENT_NANO) {
             this._minerChanged();
         }
     }
@@ -186,7 +183,7 @@ class DevUI {
             return;
         }
 
-        this._getAccount($.wallet.address).then(function(account) {
+        Utils.getAccount($, $.wallet.address).then(function(account) {
             value = Nimiq.Policy.coinsToSatoshis(value);
             fee = Nimiq.Policy.coinsToSatoshis(fee);
 
@@ -197,9 +194,10 @@ class DevUI {
                 return;
             }
 
-            $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1)
-                .then(this._broadcastTransaction.bind(this));
-        }.bind(this));
+            $.wallet.createTransaction(address, value, fee, $.blockchain.height + 1).then(function(tx) {
+                Utils.broadcastTransaction($, tx);
+            });
+        });
 
         e.preventDefault();
         return false;
@@ -210,7 +208,7 @@ class DevUI {
         this._bcAccountsHash.innerText = $.blockchain.head.accountsHash.toBase64();
         this._showBlockTime();
 
-        if ($.clientType !== CLIENT_NANO) {
+        if ($.clientType !== DevUI.CLIENT_NANO) {
             this._bcTotalDifficulty.innerText = $.blockchain.totalDifficulty;
             this._bcTotalWork.innerText = $.blockchain.totalWork;
         }
@@ -239,8 +237,8 @@ class DevUI {
 
         var txPromises = [];
         head.transactions.forEach(function(tx) {
-            var value = DevUI.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.value));
-            var fee = DevUI.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.fee));
+            var value = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.value));
+            var fee = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.fee));
             return `<div>&nbsp;-&gt; from=<hash>${tx.sender.toBase64()}</hash>, to=<hash>${tx.recipient.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
         });
 
@@ -277,8 +275,8 @@ class DevUI {
         this._netPeerCount.innerText = $.network.peerCount;
         this._netPeerCountWs.innerText = $.network.peerCountWebSocket;
         this._netPeerCountRtc.innerText = $.network.peerCountWebRtc;
-        this._netBytesReceived.innerText = DevUI._humanBytes($.network.bytesReceived);
-        this._netBytesSent.innerText = DevUI._humanBytes($.network.bytesSent);
+        this._netBytesReceived.innerText = Utils.humanBytes($.network.bytesReceived);
+        this._netBytesSent.innerText = Utils.humanBytes($.network.bytesSent);
     }
 
     _minerChanged() {
@@ -298,29 +296,13 @@ class DevUI {
         this._minerChanged();
     }
 
-    _getAccount(address) {
-        if ($.clientType !== CLIENT_NANO) {
-            return $.accounts.get(address);
-        } else {
-            return $.consensus.getAccount(address); // TODO can fail
-        }
-    }
-
-    _broadcastTransaction(tx) {
-        if ($.clientType !== CLIENT_NANO) {
-            $.mempool.pushTransaction(tx);
-        } else {
-            $.consensus.relayTransaction(tx); // TODO can fail
-        }
-    }
-
     _updateBalance() {
-        if ($.clientType === CLIENT_NANO && !$.consensus.established) {
+        if ($.clientType === DevUI.CLIENT_NANO && !$.consensus.established) {
             return;
         }
-        this._getAccount($.wallet.address).then(function(account) {
+        Utils.getAccount($, $.wallet.address).then(function(account) {
             account = account || Nimiq.BasicAccount.INITIAL;
-            this._wltBalance.innerText = DevUI._toFixedPrecision(Nimiq.Policy.satoshisToCoins(account.balance));
+            this._wltBalance.innerText = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(account.balance));
         }.bind(this));
     }
 
@@ -373,29 +355,17 @@ class DevUI {
             this._bcLastBlockTime.innerText = (prevBlock ? (headBlock.timestamp - prevBlock.timestamp) : 0) + 's';
         }.bind(this));
     }
-
-    static _humanBytes(bytes) {
-        var i = 0;
-        var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-        while (bytes > 1024) {
-            bytes /= 1024;
-            i++;
-        }
-        return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
-    }
-
-    static _toFixedPrecision(value, precision) {
-        precision = precision === undefined? Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN) : precision;
-        return value.toFixed(precision);
-    }
 }
+DevUI.CLIENT_NANO = 'nano';
+DevUI.CLIENT_LIGHT = 'light';
+DevUI.CLIENT_FULL = 'full';
 
 // Safari quirks: don't use the same var name in global scope as id of html element
 var overlay_ = document.querySelector('#overlay');
 
 function startNimiq() {
     var clientType = location.hash.substr(1);
-    if (clientType!==CLIENT_NANO && clientType!==CLIENT_LIGHT && clientType!==CLIENT_FULL) {
+    if (clientType!==DevUI.CLIENT_NANO && clientType!==DevUI.CLIENT_LIGHT && clientType!==DevUI.CLIENT_FULL) {
         alert('Please navigate to /#nano, /#light or /#full to select a client type.');
         return;
     }
@@ -419,7 +389,7 @@ function startNimiq() {
         // XXX Legacy components
         $.wallet = await Nimiq.Wallet.getPersistent();
 
-        if (clientType !== CLIENT_NANO) {
+        if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
             $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
         }
