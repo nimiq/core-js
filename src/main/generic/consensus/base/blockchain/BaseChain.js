@@ -90,7 +90,7 @@ class BaseChain extends IBlockchain {
         const snapshot = this._store.snapshot();
         const chain = new BaseChainSnapshot(snapshot, this.head);
         const proof = await chain._prove(Policy.M, Policy.K, Policy.DELTA);
-        snapshot.abort().catch(Log.logException(Log.Level.WARNING, BaseChain));
+        snapshot.abort().catch(Log.w.tag(BaseChain));
         return proof;
     }
 

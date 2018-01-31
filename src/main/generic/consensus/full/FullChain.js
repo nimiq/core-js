@@ -215,7 +215,7 @@ class FullChain extends BaseChain {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
             Log.w(FullChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
-            accountsTx.abort().catch(Log.logException(Log.Level.WARNING, FullChain));
+            accountsTx.abort().catch(Log.w.tag(FullChain));
             return false;
         }
 
@@ -310,9 +310,9 @@ class FullChain extends BaseChain {
                 }
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
-                accountsTx.abort().catch(Log.logException(Log.Level.WARNING, FullChain));
+                accountsTx.abort().catch(Log.w.tag(FullChain));
                 if (this._transactionStore) {
-                    transactionStoreTx.abort().catch(Log.logException(Log.Level.WARNING, FullChain));
+                    transactionStoreTx.abort().catch(Log.w.tag(FullChain));
                 }
                 return false;
             }
@@ -342,9 +342,9 @@ class FullChain extends BaseChain {
                 // A fork block is invalid.
                 // TODO delete invalid block and its successors from store.
                 Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
-                accountsTx.abort().catch(Log.logException(Log.Level.WARNING, FullChain));
+                accountsTx.abort().catch(Log.w.tag(FullChain));
                 if (this._transactionStore) {
-                    transactionStoreTx.abort().catch(Log.logException(Log.Level.WARNING, FullChain));
+                    transactionStoreTx.abort().catch(Log.w.tag(FullChain));
                 }
                 return false;
             }

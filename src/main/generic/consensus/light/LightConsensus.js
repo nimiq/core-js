@@ -130,7 +130,7 @@ class LightConsensus extends Observable {
             }
 
             Log.v(LightConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-            agent.syncBlockchain().catch(Log.logException(Log.Level.WARNING, LightConsensusAgent));
+            agent.syncBlockchain().catch(Log.w.tag(LightConsensusAgent));
         });
     }
 

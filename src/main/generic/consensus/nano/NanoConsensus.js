@@ -111,7 +111,7 @@ class NanoConsensus extends Observable {
         }
 
         Log.v(NanoConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-        agent.syncBlockchain().catch(Log.logException(Log.Level.WARNING, NanoConsensusAgent));
+        agent.syncBlockchain().catch(Log.w.tag(NanoConsensusAgent));
     }
 
     /**

@@ -122,7 +122,7 @@ class FullConsensus extends Observable {
         }
 
         Log.v(FullConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
-        agent.syncBlockchain().catch(Log.logException(Log.Level.WARNING, FullConsensusAgent));
+        agent.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
     }
 
     /**

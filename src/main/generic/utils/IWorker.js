@@ -359,7 +359,7 @@ class IWorker {
 
             set poolSize(_size) {
                 this._poolSize = _size;
-                this._updateToSize().catch(Log.logException(Log.Level.WARNING, IWorker));
+                this._updateToSize().catch(Log.w.tag(IWorker));
             }
 
             destroy() {
@@ -377,7 +377,7 @@ class IWorker {
                     this._waitingCalls.push({name, args, resolve, error});
                     const worker = this._freeWorkers.shift();
                     if (worker) {
-                        this._step(worker).catch(Log.logException(Log.Level.WARNING, IWorker));
+                        this._step(worker).catch(Log.w.tag(IWorker));
                     }
                 });
             }
@@ -414,7 +414,7 @@ class IWorker {
                 const createdWorkers = await Promise.all(workerPromises);
                 for (const worker of createdWorkers) {
                     this._workers.push(worker);
-                    this._step(worker).catch(Log.logException(Log.Level.WARNING, IWorker));
+                    this._step(worker).catch(Log.w.tag(IWorker));
                 }
 
                 while (this._workers.length > this._poolSize) {

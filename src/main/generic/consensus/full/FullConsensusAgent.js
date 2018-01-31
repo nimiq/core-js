@@ -80,7 +80,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         }
 
         // We don't know the peer's head block, request blocks from it.
-        this._requestBlocks().catch(Log.logException(Log.Level.WARNING, FullConsensusAgent));
+        this._requestBlocks().catch(Log.w.tag(FullConsensusAgent));
     }
 
     _syncFinished() {
@@ -233,7 +233,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onNoUnknownObjects() {
         // The peer does not have any new inv vectors for us.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, FullConsensusAgent));
+            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
         }
     }
 
@@ -244,7 +244,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onAllObjectsReceived() {
         // If all objects have been received, request more if we're syncing the blockchain.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, FullConsensusAgent));
+            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
         }
     }
 
@@ -370,7 +370,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onAllObjectsProcessed() {
         // If all objects have been processed, request more if we're syncing the blockchain.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.logException(Log.Level.WARNING, FullConsensusAgent));
+            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
         }
     }
 

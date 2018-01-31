@@ -139,7 +139,7 @@ class Miner extends Observable {
         this.fire('start', this);
 
         // Kick off the mining process.
-        this._startWork().catch(Log.logException(Log.Level.WARNING, Miner));
+        this._startWork().catch(Log.w.tag(Miner));
     }
 
     async _startWork() {
@@ -157,7 +157,7 @@ class Miner extends Observable {
 
             Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
-            this._workerPool.startMiningOnBlock(block).catch(Log.logException(Log.Level.WARNING, Miner));
+            this._workerPool.startMiningOnBlock(block).catch(Log.w.tag(Miner));
         } finally {
             this._restarting = false;
         }
@@ -181,7 +181,7 @@ class Miner extends Observable {
                     // Push block into blockchain.
                     if ((await this._blockchain.pushBlock(obj.block)) < 0) {
                         this._submittingBlock = false;
-                        this._startWork().catch(Log.logException(Log.Level.WARNING, Miner));
+                        this._startWork().catch(Log.w.tag(Miner));
                         return;
                     } else {
                         this._submittingBlock = false;
@@ -192,7 +192,7 @@ class Miner extends Observable {
             }
         }
         if (this._mempoolChanged && this._lastRestart + Miner.MIN_TIME_ON_BLOCK < Date.now()) {
-            this._startWork().catch(Log.logException(Log.Level.WARNING, Miner));
+            this._startWork().catch(Log.w.tag(Miner));
         }
     }
 

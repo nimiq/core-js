@@ -92,11 +92,11 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      * @private
      */
-    _evictTransactions(block, transactions) {
+    _evictTransactions(blockHeight, transactions) {
         // Remove expired transactions.
         for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
             const txHash = tx.hash();
-            if (block.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+            if (blockHeight >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this._transactionsByHash.remove(txHash);
                 /** @type {MempoolTransactionSet} */
                 const set = this._transactionSetByAddress.get(tx.sender);
