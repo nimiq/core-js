@@ -103,7 +103,7 @@ class Block {
         }
 
         // XXX Verify the body only if it is present.
-        if (this.isFull() && !(await this._verifyBody())) {
+        if (this.isFull() && !this._verifyBody()) {
             return false;
         }
 
@@ -133,12 +133,12 @@ class Block {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      * @private
      */
-    async _verifyBody() {
+    _verifyBody() {
         // Check that the body is valid.
-        if (!(await this._body.verify())) {
+        if (!this._body.verify()) {
             return false;
         }
 

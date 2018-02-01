@@ -1,12 +1,23 @@
 describe('Blockchain', () => {
-
-    it('verifies block transaction limit', (done) => {
+    it('verifies block size limit', (done) => {
         (async function () {
-            // Now try to push a block which exceeds the maximum block size
-            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
-            const numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS + 1;
-            const transactions = await testBlockchain.generateTransactions(numTransactions, false, false);
-            const block = await testBlockchain.createBlock({transactions: transactions});
+            await Crypto.prepareSyncCryptoWorker();
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 1);
+            const sender = testBlockchain.users[0];
+            const numTransactions = 8000;
+
+            const transactions = [];
+            for (let i = 0; i < numTransactions; i++) {
+                const recipient = Address.fromHash(Hash.blake2b(BufferUtils.fromAscii(`tx${i}`)));
+                transactions.push(TestBlockchain.createTransaction(sender.publicKey, recipient, 1, 1, 1, sender.privateKey));
+            }
+            transactions.sort((a, b) => a.compareBlockOrder(b));
+
+            const block = await testBlockchain.createBlock({
+                transactions: transactions,
+                prunedAccounts: [],
+                accountsHash: Hash.fromBase64('2nnH1sSFvM2ADcJhk9Tq4DuZctVkYX5VOH4B3ZswD54=')
+            });
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
         })().then(done).catch(done.fail);
@@ -392,7 +403,7 @@ describe('Blockchain', () => {
 
     it('updates transactions cache on rebranch', (done) => {
         (async function () {
-            const users = await TestBlockchain.getUsers(2);
+            const users = TestBlockchain.getUsers(2);
             const tx1 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 20, 1, users[0].privateKey);
             const tx2 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 1, users[0].privateKey);
             const tx3 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 500, 20, 2, users[0].privateKey);

@@ -48,18 +48,18 @@ class BasicAccount extends Account {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
     static verifyOutgoingTransaction(transaction) {
-        return Promise.resolve(SignatureProof.verifyTransaction(transaction));
+        return SignatureProof.verifyTransaction(transaction);
     }
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
     static verifyIncomingTransaction(transaction) {
-        return Promise.resolve(true); // Accept everything
+        return true; // Accept everything
     }
 
     /**

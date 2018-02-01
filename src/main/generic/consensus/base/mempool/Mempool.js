@@ -53,7 +53,7 @@ class Mempool extends Observable {
         }
 
         // Intrinsic transaction verification
-        if (!(await transaction.verify())) {
+        if (!transaction.verify()) {
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -84,7 +84,7 @@ class Mempool extends Observable {
         let recipientAccount;
         try {
             recipientAccount = await this._accounts.get(transaction.recipient);
-            await recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
+            recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
         } catch (e) {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
             return Mempool.ReturnCode.INVALID;

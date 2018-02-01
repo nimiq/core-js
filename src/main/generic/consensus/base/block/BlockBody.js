@@ -91,21 +91,21 @@ class BlockBody {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async verify() {
+    verify() {
         /** @type {Transaction} */
         let previousTx = null;
         for (const tx of this._transactions) {
-            // Ensure transactions are ordered.
-            if (previousTx && previousTx.compareBlockOrder(tx) > 0) {
+            // Ensure transactions are ordered and unique.
+            if (previousTx && previousTx.compareBlockOrder(tx) >= 0) {
                 Log.w(BlockBody, 'Invalid block - transactions not ordered.');
                 return false;
             }
             previousTx = tx;
 
             // Check that all transactions are valid.
-            if (!(await tx.verify())) { // eslint-disable-line no-await-in-loop
+            if (!tx.verify()) {
                 Log.w(BlockBody, 'Invalid block - invalid transaction');
                 return false;
             }
@@ -113,8 +113,8 @@ class BlockBody {
 
         let previousAcc = null;
         for (const acc of this._prunedAccounts) {
-            // Ensure pruned accounts are ordered
-            if (previousAcc && acc.compare(previousAcc) > 0) {
+            // Ensure pruned accounts are ordered and unique.
+            if (previousAcc && previousAcc.compare(acc) >= 0) {
                 Log.w(BlockBody, 'Invalid block - pruned accounts not ordered.');
                 return false;
             }

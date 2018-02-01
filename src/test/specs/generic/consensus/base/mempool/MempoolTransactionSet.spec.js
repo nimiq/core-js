@@ -1,13 +1,11 @@
 describe('MempoolTransactionSet', () => {
     let tx1, tx2, tx3;
 
-    beforeAll((done) => {
-        (async () => {
-            const users = await TestBlockchain.getUsers(2);
-            tx1 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 5, 1, users[0].privateKey);
-            tx2 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 500, 1, users[0].privateKey);
-            tx3 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 3000, 500, 2, users[0].privateKey);
-        })().then(done, done.fail);
+    beforeAll(() => {
+        const users = TestBlockchain.getUsers(2);
+        tx1 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 5, 1, users[0].privateKey);
+        tx2 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 500, 1, users[0].privateKey);
+        tx3 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 3000, 500, 2, users[0].privateKey);
     });
 
     it('can add/remove transactions', () => {

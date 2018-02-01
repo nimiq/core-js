@@ -99,9 +99,9 @@ class Transaction {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
-    async verify() {
+    verify() {
         // Check that sender != recipient.
         if (this._recipient.equals(this._sender)) {
             Log.w(Transaction, 'Sender and recipient must not match', this);
@@ -111,11 +111,11 @@ class Transaction {
             Log.w(Transaction, 'Invalid account type', this);
             return false;
         }
-        if (!(await Account.TYPE_MAP.get(this._senderType).verifyOutgoingTransaction(this))) {
+        if (!Account.TYPE_MAP.get(this._senderType).verifyOutgoingTransaction(this)) {
             Log.w(Transaction, 'Invalid for sender', this);
             return false;
         }
-        if (!(await Account.TYPE_MAP.get(this._recipientType).verifyIncomingTransaction(this))) {
+        if (!Account.TYPE_MAP.get(this._recipientType).verifyIncomingTransaction(this)) {
             Log.w(Transaction, 'Invalid for recipient', this);
             return false;
         }
@@ -174,6 +174,7 @@ class Transaction {
      * @return {number}
      */
     compareBlockOrder(o) {
+        // This function must return 0 iff this.equals(o).
         const recCompare = this._recipient.compare(o._recipient);
         if (recCompare !== 0) return recCompare;
         if (this._validityStartHeight < o._validityStartHeight) return -1;
@@ -182,7 +183,16 @@ class Transaction {
         if (this._fee < o._fee) return 1;
         if (this._value > o._value) return -1;
         if (this._value < o._value) return 1;
-        return this._sender.compare(o._sender);
+        const senderCompare = this._sender.compare(o._sender);
+        if (senderCompare !== 0) return senderCompare;
+        if (this._recipientType < o._recipientType) return -1;
+        if (this._recipientType > o._recipientType) return 1;
+        if (this._senderType < o._senderType) return -1;
+        if (this._senderType > o._senderType) return 1;
+        if (this._flags < o._flags) return -1;
+        if (this._flags > o._flags) return 1;
+        Assert.that(this.equals(o));
+        return 0;
     }
 
     /**
@@ -190,8 +200,9 @@ class Transaction {
      * @return {boolean}
      */
     equals(o) {
+        // This ignores format and proof to be consistent with hash():
+        //   tx1.hash() == tx2.hash() iff tx1.equals(t2)
         return o instanceof Transaction
-            && this._format === o._format
             && this._sender.equals(o._sender)
             && this._senderType === o._senderType
             && this._recipient.equals(o._recipient)
@@ -200,8 +211,7 @@ class Transaction {
             && this._fee === o._fee
             && this._validityStartHeight === o._validityStartHeight
             && this._flags === o._flags
-            && BufferUtils.equals(this._data, o._data)
-            && BufferUtils.equals(this._proof, o._proof);
+            && BufferUtils.equals(this._data, o._data);
     }
 
     /**

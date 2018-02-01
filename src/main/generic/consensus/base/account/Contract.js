@@ -9,13 +9,13 @@ class Contract extends Account {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
     static verifyIncomingTransaction(transaction) {
         if (!transaction.recipient.equals(transaction.getContractCreationAddress())) {
-            return Promise.resolve(false);
+            return false;
         }
-        return Promise.resolve(true);
+        return true;
     }
 
     /**

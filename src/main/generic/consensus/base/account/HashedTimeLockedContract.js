@@ -154,9 +154,9 @@ class HashedTimeLockedContract extends Contract {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
-    static async verifyOutgoingTransaction(transaction) {
+    static verifyOutgoingTransaction(transaction) {
         try {
             const buf = new SerialBuffer(transaction.proof);
             const type = buf.readUint8();
@@ -165,14 +165,13 @@ class HashedTimeLockedContract extends Contract {
                     const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
                     const hashDepth = buf.readUint8();
                     const hashRoot = Hash.unserialize(buf, hashAlgorithm);
-                    const preImage = Hash.unserialize(buf, hashAlgorithm);
+                    let preImage = Hash.unserialize(buf, hashAlgorithm);
 
                     // Verify that the preImage hashed hashDepth times matches the _provided_ hashRoot.
-                    let hashTmp = preImage;
                     for (let i = 0; i < hashDepth; ++i) {
-                        hashTmp = await Hash.compute(hashTmp.array, hashAlgorithm);
+                        preImage = Hash.compute(preImage.array, hashAlgorithm);
                     }
-                    if (!hashRoot.equals(hashTmp)) {
+                    if (!hashRoot.equals(preImage)) {
                         return false;
                     }
 
@@ -217,7 +216,7 @@ class HashedTimeLockedContract extends Contract {
 
     /**
      * @param {Transaction} transaction
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
     static verifyIncomingTransaction(transaction) {
         try {
@@ -230,13 +229,18 @@ class HashedTimeLockedContract extends Contract {
             buf.readUint8(); // hash count
             buf.readUint32(); // timeout
 
+            // Blacklist Argon2 hash function.
+            if (hashAlgorithm === Hash.Algorithm.ARGON2D) {
+                return false;
+            }
+
             if (buf.readPos !== buf.byteLength) {
-                return Promise.resolve(false);
+                return false;
             }
 
             return Contract.verifyIncomingTransaction(transaction);
         } catch (e) {
-            return Promise.resolve(false);
+            return false;
         }
     }
 

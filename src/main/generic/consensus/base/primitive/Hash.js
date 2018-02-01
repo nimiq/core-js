@@ -86,13 +86,13 @@ class Hash extends Primitive {
     /**
      * @param {Uint8Array} arr
      * @param {Hash.Algorithm} algorithm
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     static compute(arr, algorithm) {
         switch (algorithm) {
-            case Hash.Algorithm.BLAKE2B: return Promise.resolve(Hash.blake2b(arr));
-            case Hash.Algorithm.ARGON2D: return Hash.argon2d(arr);
-            case Hash.Algorithm.SHA256: return Promise.resolve(Hash.sha256(arr));
+            case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
+            case Hash.Algorithm.SHA256: return Hash.sha256(arr);
+            // Hash.Algorithm.ARGON2 intentionally omitted
             default: throw new Error('Invalid hash algorithm');
         }
     }
@@ -103,7 +103,7 @@ class Hash extends Primitive {
      * @returns {Hash}
      */
     static unserialize(buf, algorithm = Hash.Algorithm.BLAKE2B) {
-        return new Hash(buf.read(Hash.SIZE.get(algorithm)), algorithm);
+        return new Hash(buf.read(Hash.getSize(algorithm)), algorithm);
     }
 
     /**

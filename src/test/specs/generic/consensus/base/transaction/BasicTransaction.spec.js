@@ -39,15 +39,13 @@ describe('BasicTransaction', () => {
     it('can falsify an invalid signature', (done) => {
         (async function () {
             const tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
-            expect(await tx1.verify()).toBeFalsy();
+            expect(tx1.verify()).toBeFalsy();
         })().then(done, done.fail);
     });
 
-    it('can verify a valid signature', (done) => {
-        (async function () {
-            const users = await TestBlockchain.getUsers(2);
-            const tx = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
-            expect(await tx.verify()).toBeTruthy();
-        })().then(done, done.fail);
+    it('can verify a valid signature', () => {
+        const users = TestBlockchain.getUsers(2);
+        const tx = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 1000, 20, 0, users[0].privateKey);
+        expect(tx.verify()).toBeTruthy();
     });
 });

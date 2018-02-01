@@ -77,9 +77,6 @@ class FullChain extends BaseChain {
             // Initialize TransactionCache.
             const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks, false);
             this._transactionCache.prependBlocks(blocks);
-            if (this._transactionCache.missingBlocks > 0) {
-                Log.e(FullChain, `Missing ${this._transactionCache.missingBlocks} blocks for TransactionCache`);
-            }
         } else {
             // Initialize chain & accounts with Genesis block.
             this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(await Block.GENESIS.pow()), true);

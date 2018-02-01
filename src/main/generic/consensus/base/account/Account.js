@@ -88,7 +88,7 @@ class Account {
      * @param {number} blockHeight
      * @param {TransactionCache} transactionsCache
      * @param {boolean} [revert]
-     * @return {Account|*}
+     * @return {Account}
      */
     withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         if (!revert) {

@@ -13,31 +13,29 @@ describe('MultiSigWallet', () => {
         KeyPair.EXPORT_KDF_ROUNDS = deepLockRounds;
     });
 
-    it('can create a signed transaction', (done) => {
-        (async () => {
-            const keyPair1 = KeyPair.generate();
-            const keyPair2 = KeyPair.generate();
+    it('can create a signed transaction', () => {
+        const keyPair1 = KeyPair.generate();
+        const keyPair2 = KeyPair.generate();
 
-            const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
-            const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
+        const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
+        const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
 
-            const commitmentPair1 = wallet1.createCommitment();
-            const commitmentPair2 = wallet2.createCommitment();
-            const aggregatedCommitment = Commitment.sum([commitmentPair1.commitment, commitmentPair2.commitment]);
-            const aggregatedPublicKey = PublicKey.sum([keyPair1.publicKey, keyPair2.publicKey]);
+        const commitmentPair1 = wallet1.createCommitment();
+        const commitmentPair2 = wallet2.createCommitment();
+        const aggregatedCommitment = Commitment.sum([commitmentPair1.commitment, commitmentPair2.commitment]);
+        const aggregatedPublicKey = PublicKey.sum([keyPair1.publicKey, keyPair2.publicKey]);
 
-            let transaction = wallet1.createTransaction(recipient, value, fee, 1);
+        let transaction = wallet1.createTransaction(recipient, value, fee, 1);
 
-            const partialSignature1 = wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
-                aggregatedCommitment, commitmentPair1.secret);
-            const partialSignature2 = wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
-                aggregatedCommitment, commitmentPair2.secret);
+        const partialSignature1 = wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
+            aggregatedCommitment, commitmentPair1.secret);
+        const partialSignature2 = wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
+            aggregatedCommitment, commitmentPair2.secret);
 
-            transaction = wallet1.completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment,
-                [partialSignature1, partialSignature2]);
-            const isValid = await transaction.verify();
-            expect(isValid).toBe(true);
-        })().then(done, done.fail);
+        transaction = wallet1.completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment,
+            [partialSignature1, partialSignature2]);
+        const isValid = transaction.verify();
+        expect(isValid).toBe(true);
     });
 
     it('can reject invalid wallet seed', () => {

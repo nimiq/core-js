@@ -1,13 +1,4 @@
 class TestBlockchain extends FullChain {
-    static get MAX_NUM_TRANSACTIONS() {
-        return Math.floor(              // round off
-            (Policy.BLOCK_SIZE_MAX -    // block size limit
-            150 -                       // header size
-            20) /                       // miner address size
-            165);                       // transaction size
-
-    }
-
     constructor(store, accounts, users, time, ignorePoW = false) {
         // XXX Set a large timeout when mining on demand.
         if (TestBlockchain.MINE_ON_DEMAND && jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
@@ -61,46 +52,14 @@ class TestBlockchain extends FullChain {
         return transaction;
     }
 
-    /**
-     * @param {PublicKey} senderPubKey
-     * @param {Address} recipientAddr
-     * @param {number} amount
-     * @param {number} fee
-     * @param {number} validityStartHeight
-     * @param {PrivateKey} [senderPrivKey]
-     * @param {Signature} [signature]
-     * @return {LegacyTransaction}
-     * @deprecated
-     */
-    static createLegacyTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
-        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
-
-        // allow to hardcode a signature
-        if (!signature) {
-            // if no signature is provided, the secret key is required
-            if (!senderPrivKey) {
-                throw 'Signature computation requested, but no sender private key provided';
-            }
-            signature = Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
-        }
-        transaction.signature = signature;
-
-        return transaction;
-    }
-
     // TODO can still run into balance problems: block height x and subsequent `mining` means that only the first x
     // users are guaranteed to have a non-zero balance. Depending on the existing transactions, this can improve a bit...
-    async generateTransactions(numTransactions, noDuplicateSenders = true, sizeLimit = true) {
+    async generateTransactions(numTransactions, noDuplicateSenders = true) {
         const numUsers = this.users.length;
 
         if (noDuplicateSenders && numTransactions > numUsers) {
             // only one transaction per user
             numTransactions = numUsers;
-        }
-
-        if (sizeLimit && numTransactions > TestBlockchain.MAX_NUM_TRANSACTIONS) {
-            Log.w(`Reducing transactions from ${numTransactions} to ${TestBlockchain.MAX_NUM_TRANSACTIONS} to avoid exceeding the size limit.`);
-            numTransactions = TestBlockchain.MAX_NUM_TRANSACTIONS;
         }
 
         /* Note on transactions and balances:
@@ -118,7 +77,7 @@ class TestBlockchain extends FullChain {
             const amount = Math.floor(account.balance / 10) || 1;
             const fee = Math.floor(amount / 2);
 
-            const transaction = TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, this.height, sender.privateKey);// eslint-disable-line no-await-in-loop
+            const transaction = TestBlockchain.createTransaction(sender.publicKey, recipient.address, amount, fee, this.height, sender.privateKey);
 
             transactions.push(transaction);
         }
@@ -222,7 +181,7 @@ class TestBlockchain extends FullChain {
     static async createVolatileTest(numBlocks, numUsers = 2, ignorePoW = false) {
         const accounts = await Accounts.createVolatile();
         const store = ChainDataStore.createVolatile();
-        const users = await TestBlockchain.getUsers(numUsers);
+        const users = TestBlockchain.getUsers(numUsers);
         const time = new Time();
         const testBlockchain = await new TestBlockchain(store, accounts, users, time, ignorePoW);
 
@@ -238,7 +197,7 @@ class TestBlockchain extends FullChain {
         return testBlockchain;
     }
 
-    static async getUsers(count) {
+    static getUsers(count) {
         if (count > TestBlockchain.USERS.length) {
             throw `Too many users ${count} requested, ${TestBlockchain.USERS.length} available`;
         }

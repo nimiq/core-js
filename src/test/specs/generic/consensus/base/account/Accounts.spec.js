@@ -183,20 +183,22 @@ describe('Accounts', () => {
         (async function test() {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
-            const numTransactions = Math.floor(TestBlockchain.MAX_NUM_TRANSACTIONS / 20);
-            const users = await TestBlockchain.getUsers(2);
+            const numTransactions = 7000;
+            const sender = testBlockchain.users[0];
 
             const transactions = [];
-            const treeTx = await accounts._tree.transaction();
-            // create users, raise their balance, create transaction
-            for (let i = 1; i < numTransactions; i++) {
-                await accounts._addBalance(treeTx, users[0].address, Policy.coinsToSatoshis(5)); //eslint-disable-line no-await-in-loop
-                transactions.push(TestBlockchain.createTransaction(users[0].publicKey, users[1].address, Policy.coinsToSatoshis(i/100), 0, 1, users[0].privateKey));
+            for (let i = 0; i < numTransactions; i++) {
+                const recipient = Address.fromHash(Hash.blake2b(BufferUtils.fromAscii(`tx${i}`)));
+                transactions.push(TestBlockchain.createTransaction(sender.publicKey, recipient, 1, 1, 1, sender.privateKey));
             }
             transactions.sort((a, b) => a.compareBlockOrder(b));
-            expect(await treeTx.commit()).toBeTruthy();
+
             const time = new Time();
-            const block = await testBlockchain.createBlock({transactions: transactions});
+            const block = await testBlockchain.createBlock({
+                transactions: transactions,
+                prunedAccounts: [],
+                accountsHash: Hash.fromBase64('oNZL6ELgX1TSHboXMGN3iwiBljB2F/8ZoqsJzQVD5gE=')
+            });
             expect(await block.verify(time)).toBeTruthy();
             expect(await accounts.commitBlock(block, testBlockchain.transactionCache)).toBeTruthy();
         })().then(done, done.fail);

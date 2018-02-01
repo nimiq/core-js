@@ -35,7 +35,7 @@ class NanoMempool extends Observable {
         }
 
         // Verify transaction.
-        if (!(await transaction.verify())) {
+        if (!transaction.verify()) {
             return false;
         }
 
