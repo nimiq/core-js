@@ -72,7 +72,7 @@ class Mempool extends Observable {
         let tmpAccount = senderAccount;
         try {
             for (const tx of newSet.transactions) {
-                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionsCache);
+                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
             }
         } catch (e) {
             Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
@@ -131,7 +131,7 @@ class Mempool extends Observable {
      */
     async getTransactionsForBlock(maxSize) {
         const transactions = this.getTransactions(maxSize);
-        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache);
+        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionCache);
         const prunedAccountsSize = prunedAccounts.reduce((sum, acc) => sum + acc.serializedSize, 0);
 
         let size = prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0); 
@@ -184,10 +184,10 @@ class Mempool extends Observable {
                 let account = senderAccount;
                 for (const tx of set.transactions) {
                     try {
-                        const tmpAccount = await account.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionsCache);
+                        const tmpAccount = account.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
 
                         const recipientAccount = await this._accounts.get(tx.recipient);
-                        await recipientAccount.withIncomingTransaction(tx, this._blockchain.height + 1);
+                        recipientAccount.withIncomingTransaction(tx, this._blockchain.height + 1);
 
                         transactions.push(tx);
                         account = tmpAccount;

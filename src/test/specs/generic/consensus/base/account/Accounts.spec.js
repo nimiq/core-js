@@ -21,14 +21,14 @@ describe('Accounts', () => {
 
             const accountsHash1 = await accounts.hash();
             const block = await testBlockchain.createBlock();
-            await accounts.commitBlock(block, testBlockchain.transactionsCache);
-            testBlockchain.transactionsCache.pushBlock(block);
+            await accounts.commitBlock(block, testBlockchain.transactionCache);
+            testBlockchain.transactionCache.pushBlock(block);
 
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
 
-            await accounts.revertBlock(block, testBlockchain.transactionsCache);
-            testBlockchain.transactionsCache.revertBlock(block);
+            await accounts.revertBlock(block, testBlockchain.transactionCache);
+            testBlockchain.transactionCache.revertBlock(block);
             accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         })().then(done, done.fail);
@@ -41,8 +41,8 @@ describe('Accounts', () => {
 
             const accountsHash1 = await accounts.hash();
             let block = await testBlockchain.createBlock();
-            await accounts.commitBlock(block, testBlockchain.transactionsCache);
-            testBlockchain.transactionsCache.pushBlock(block);
+            await accounts.commitBlock(block, testBlockchain.transactionCache);
+            testBlockchain.transactionCache.pushBlock(block);
 
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
@@ -51,8 +51,8 @@ describe('Accounts', () => {
 
             let threw = false;
             try {
-                await accounts.revertBlock(block, testBlockchain.transactionsCache);
-                testBlockchain.transactionsCache.revertBlock(block);
+                await accounts.revertBlock(block, testBlockchain.transactionCache);
+                testBlockchain.transactionCache.revertBlock(block);
             } catch (e) {
                 threw = true;
             }
@@ -83,7 +83,7 @@ describe('Accounts', () => {
             let accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(false);
 
-            await accounts.revertBlock(block, testBlockchain.transactionsCache);
+            await accounts.revertBlock(block, testBlockchain.transactionCache);
             accountsHash2 = await accounts.hash();
             expect(accountsHash1.equals(accountsHash2)).toEqual(true);
         })().then(done, done.fail);
@@ -132,7 +132,7 @@ describe('Accounts', () => {
                 minerAddr: user2.address
             });
 
-            await accounts.commitBlock(block, testBlockchain.transactionsCache);
+            await accounts.commitBlock(block, testBlockchain.transactionCache);
 
             // now: expect user2 to have received the transaction fees and block reward
             balance = (await testBlockchain.accounts.get(user2.address, Account.Type.BASIC)).balance;
@@ -198,7 +198,7 @@ describe('Accounts', () => {
             const time = new Time();
             const block = await testBlockchain.createBlock({transactions: transactions});
             expect(await block.verify(time)).toBeTruthy();
-            expect(await accounts.commitBlock(block, testBlockchain.transactionsCache)).toBeTruthy();
+            expect(await accounts.commitBlock(block, testBlockchain.transactionCache)).toBeTruthy();
         })().then(done, done.fail);
     });
 

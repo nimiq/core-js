@@ -224,7 +224,7 @@ class Miner extends Observable {
         const accounts = await this._accounts.transaction();
         let accountsHash;
         try {
-            await accounts.commitBlockBody(body, height, this._blockchain.transactionsCache);
+            await accounts.commitBlockBody(body, height, this._blockchain.transactionCache);
             accountsHash = await accounts.hash();
             await accounts.abort();
         } catch (e) {
@@ -259,7 +259,7 @@ class Miner extends Observable {
             - interlinkSize
             - BlockBody.getMetadataSize(this._extraData);
         const transactions = await this._mempool.getTransactionsForBlock(maxSize);
-        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionsCache);
+        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionCache);
         return new BlockBody(this._address, transactions, this._extraData, prunedAccounts);
     }
 

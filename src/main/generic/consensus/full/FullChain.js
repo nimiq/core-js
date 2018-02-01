@@ -73,6 +73,13 @@ class FullChain extends BaseChain {
 
             // TODO Check if chain/accounts state is consistent!
             Assert.that(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
+
+            // Initialize TransactionCache.
+            const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks, false);
+            this._transactionCache.prependBlocks(blocks);
+            if (this._transactionCache.missingBlocks > 0) {
+                Log.e(FullChain, `Missing ${this._transactionCache.missingBlocks} blocks for TransactionCache`);
+            }
         } else {
             // Initialize chain & accounts with Genesis block.
             this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(await Block.GENESIS.pow()), true);
@@ -292,7 +299,7 @@ class FullChain extends BaseChain {
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
-        const transactionsTx = this._transactionCache.clone();
+        const transactionCacheTx = this._transactionCache.clone();
         // Also update transactions in index.
         const transactionStoreTx = this._transactionStore ? this._transactionStore.transaction() : null;
 
@@ -301,8 +308,8 @@ class FullChain extends BaseChain {
         while (!headHash.equals(curHash)) {
             try {
                 // This only works if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
-                await accountsTx.revertBlock(head, transactionsTx);
-                transactionsTx.revertBlock(head);
+                await accountsTx.revertBlock(head, transactionCacheTx);
+                transactionCacheTx.revertBlock(head);
 
                 // Also update transactions in index.
                 if (this._transactionStore) {
@@ -324,15 +331,15 @@ class FullChain extends BaseChain {
         }
 
         // Try to fetch missing transactions for the cache.
-        const numMissingBlocks = transactionsTx.missingBlocks;
+        const numMissingBlocks = transactionCacheTx.missingBlocks;
         const blocks = await this.getBlocks(head.height, numMissingBlocks, false);
-        transactionsTx.prependBlocks(blocks);
+        transactionCacheTx.prependBlocks(blocks);
 
         // Try to apply all fork blocks.
         for (let i = forkChain.length - 1; i >= 0; i--) {
             try {
-                await accountsTx.commitBlock(forkChain[i].head, transactionsTx);
-                transactionsTx.pushBlock(forkChain[i].head);
+                await accountsTx.commitBlock(forkChain[i].head, transactionCacheTx);
+                transactionCacheTx.pushBlock(forkChain[i].head);
 
                 // Also update transactions in index.
                 if (this._transactionStore) {
@@ -377,7 +384,7 @@ class FullChain extends BaseChain {
         } else {
             await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
         }
-        this._transactionCache = transactionsTx;
+        this._transactionCache = transactionCacheTx;
 
         // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
         // TODO modify chain proof directly, don't recompute.
@@ -601,7 +608,7 @@ class FullChain extends BaseChain {
     }
 
     /** @type {TransactionCache} */
-    get transactionsCache() {
+    get transactionCache() {
         return this._transactionCache;
     }
 

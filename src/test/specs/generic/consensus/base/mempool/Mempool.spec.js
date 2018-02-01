@@ -197,7 +197,7 @@ describe('Mempool', () => {
             referenceTransactions.sort((a, b) => a.compare(b));
 
             // Pretend to have one of the transactions mined
-            blockchain.transactionsCache.transactions.add(referenceTransactions[2]);
+            blockchain.transactionCache.transactions.add(referenceTransactions[2]);
             await accounts._tree.put(wallets[0].address, new BasicAccount(4));
 
             // Fire a 'head-change' event to evict all transactions
@@ -244,7 +244,7 @@ describe('Mempool', () => {
             const largeTransaction = await wallets[0].createTransaction(wallets[2].address, 4, 0, 1); // eslint-disable-line no-await-in-loop
 
             // Pretend to have one of the transactions mined
-            blockchain.transactionsCache.transactions.add(largeTransaction);
+            blockchain.transactionCache.transactions.add(largeTransaction);
             await accounts._tree.put(wallets[0].address, new BasicAccount(1));
 
             // Fire a 'head-change' event to evict all transactions

@@ -245,11 +245,11 @@ describe('VestingContract', () => {
 
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
 
-            await testBlockchain.accounts.revertBlock(block, testBlockchain.transactionsCache);
-            await testBlockchain.transactionsCache.revertBlock(block);
+            await testBlockchain.accounts.revertBlock(block, testBlockchain.transactionCache);
+            await testBlockchain.transactionCache.revertBlock(block);
             expect(oldAccount.equals(await testBlockchain.accounts.get(creationTransaction.recipient))).toBeTruthy();
-            await testBlockchain.accounts.commitBlock(block, testBlockchain.transactionsCache);
-            await testBlockchain.transactionsCache.pushBlock(block);
+            await testBlockchain.accounts.commitBlock(block, testBlockchain.transactionCache);
+            await testBlockchain.transactionCache.pushBlock(block);
         })().then(done, done.fail);
     });
 });

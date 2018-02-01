@@ -8,15 +8,15 @@ describe('TransactionCache', () => {
             const tx = block.transactions[0];
 
             // Duplicate
-            expect(testBlockchain.transactionsCache.missingBlocks).toBe(Policy.TRANSACTION_VALIDITY_WINDOW - 5);
-            const cache = testBlockchain.transactionsCache.clone();
+            expect(testBlockchain.transactionCache.missingBlocks).toBe(Policy.TRANSACTION_VALIDITY_WINDOW - 5);
+            const cache = testBlockchain.transactionCache.clone();
             expect(cache.missingBlocks).toBe(Policy.TRANSACTION_VALIDITY_WINDOW - 5);
-            expect(cache.transactions.length).toBe(testBlockchain.transactionsCache.transactions.length);
+            expect(cache.transactions.length).toBe(testBlockchain.transactionCache.transactions.length);
 
             // New block
             expect(cache.containsTransaction(tx)).toBeFalsy();
             cache.pushBlock(block);
-            expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+            expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeFalsy();
             expect(cache.containsTransaction(tx)).toBeTruthy();
 
             // Revert

@@ -408,7 +408,7 @@ describe('Blockchain', () => {
 
             const transactions = block.transactions.slice();
             for (const tx of transactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeTruthy();
             }
 
             block = await testBlockchain.createBlock({transactions: [tx2, tx3]});
@@ -417,7 +417,7 @@ describe('Blockchain', () => {
 
             block.transactions.forEach(tx => transactions.push(tx));
             for (const tx of transactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeTruthy();
             }
 
             // Create second chain (3 blocks)
@@ -433,7 +433,7 @@ describe('Blockchain', () => {
 
             const forkTransactions = block.transactions.slice();
             for (const tx of forkTransactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeFalsy();
             }
 
             block = await fork.createBlock({
@@ -451,10 +451,10 @@ describe('Blockchain', () => {
 
             block.transactions.forEach(tx => forkTransactions.push(tx));
             for (const tx of forkTransactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeTruthy();
             }
             for (const tx of transactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeFalsy();
             }
 
             block = await fork.createBlock({
@@ -470,10 +470,10 @@ describe('Blockchain', () => {
 
             block.transactions.forEach(tx => forkTransactions.push(tx));
             for (const tx of forkTransactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeTruthy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeTruthy();
             }
             for (const tx of transactions) {
-                expect(testBlockchain.transactionsCache.containsTransaction(tx)).toBeFalsy();
+                expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeFalsy();
             }
         })().then(done, done.fail);
     });
