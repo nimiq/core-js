@@ -44,16 +44,15 @@ class TransactionUi {
             value = Nimiq.Policy.coinsToSatoshis(value);
             fee = Nimiq.Policy.coinsToSatoshis(fee);
 
-            const waitingTransactions = this.$.mempool.getWaitingTransactions(this.$.wallet.publicKey.toAddressSync());
+            const waitingTransactions = this.$.mempool.getPendingTransactions(this.$.wallet.publicKey.toAddress());
 
             if (!account || account.balance < value + fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
                 this.$transactionValue.classList.add('error');
                 return;
             }
 
-            this.$.wallet.createTransaction(address, value, fee, this.$.blockchain.height + 1).then(tx => {
-                Utils.broadcastTransaction(this.$, tx);
-            });
+            const tx = this.$.wallet.createTransaction(address, value, fee, this.$.blockchain.height + 1);
+            Utils.broadcastTransaction(this.$, tx);
         });
 
         e.preventDefault();
