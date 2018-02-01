@@ -170,8 +170,8 @@ class DevUI {
 
         var txPromises = [];
         head.transactions.forEach(function(tx) {
-            var value = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.value));
-            var fee = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(tx.fee));
+            var value = Utils.satoshisToCoins(tx.value);
+            var fee = Utils.satoshisToCoins(tx.fee);
             return `<div>&nbsp;-&gt; from=<hash>${tx.sender.toBase64()}</hash>, to=<hash>${tx.recipient.toBase64()}</hash>, value=${value}, fee=${fee}, nonce=${tx.nonce}</div>`;
         });
 
@@ -235,7 +235,7 @@ class DevUI {
         }
         Utils.getAccount($, $.wallet.address).then(function(account) {
             account = account || Nimiq.Account.INITIAL;
-            this._wltBalance.innerText = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(account.balance));
+            this._wltBalance.innerText = Utils.satoshisToCoins(account.balance);
         }.bind(this));
     }
 
@@ -325,7 +325,7 @@ function startNimiq() {
 
         if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
-            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
+            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
         } else {
             $.consensus.subscribeAccounts([$.wallet.address]);
         }

@@ -68,7 +68,7 @@ class AccountInfoUi {
                 this.$el.setAttribute(AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE, AccountInfoUi.AccountType.NOT_FOUND);
                 return;
             }
-            this.$balance.textContent = Utils.toFixedPrecision(account.balance);
+            this.$balance.textContent = Utils.satoshisToCoins(account.balance);
             switch (account.type) {
                 case Nimiq.Account.Type.BASIC:
                     this.$el.setAttribute(AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE, AccountInfoUi.AccountType.BASIC);
@@ -90,13 +90,13 @@ class AccountInfoUi {
     _updateVestingDetails(account) {
         this.$vestingStart.textContent = account.vestingStart;
         this.$vestingStepBlocks.textContent = account.vestingStepBlocks;
-        this.$vestingStepAmount.textContent = Utils.toFixedPrecision(account.vestingStepAmount);
-        this.$vestingTotalAmount.textContent = Utils.toFixedPrecision(account.vestingTotalAmount);
+        this.$vestingStepAmount.textContent = Utils.satoshisToCoins(account.vestingStepAmount);
+        this.$vestingTotalAmount.textContent = Utils.satoshisToCoins(account.vestingTotalAmount);
         const currrentMinCap = account._vestingStepBlocks && account._vestingStepAmount > 0
             ? Math.max(0, account._vestingTotalAmount - Math.floor((this.$.blockchain.height - account._vestingStart) / account._vestingStepBlocks) * account._vestingStepAmount)
             : 0; // TODO there should be a method in VestingAccount.js that calculates this value
-        this.$vestingCurrentCap.textContent = Utils.toFixedPrecision(currrentMinCap);
-        this.$vestingCurrentlyTransferable.textContent = Utils.toFixedPrecision(Math.max(0, account.balance - currrentMinCap));
+        this.$vestingCurrentCap.textContent = Utils.satoshisToCoins(currrentMinCap);
+        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, account.balance - currrentMinCap));
     }
 
     _updateHtlcDetails(account) {
@@ -105,7 +105,7 @@ class AccountInfoUi {
         this.$htlcHashRoot.textContent = account.hashRoot.toBase64();
         this.$htlcHashCount.textContent = account.hashCount;
         this.$htlcTimeout.textContent = account.timeout;
-        this.$htlcTotalAmount.textContent = Utils.toFixedPrecision(account.totalAmount);
+        this.$htlcTotalAmount.textContent = Utils.satoshisToCoins(account.totalAmount);
     }
 }
 AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE = 'account-type';

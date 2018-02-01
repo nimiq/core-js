@@ -25,8 +25,7 @@ class Utils {
         return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
     }
 
-    static toFixedPrecision(value, precision) {
-        precision = precision === undefined? Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN) : precision;
-        return value.toFixed(precision);
+    static satoshisToCoins(value) {
+        return Nimiq.Policy.satoshisToCoins(value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
     }
 }
