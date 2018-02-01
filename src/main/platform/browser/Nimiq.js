@@ -104,7 +104,7 @@ class Nimiq {
      */
     static async loadToScope(...classes) {
         await Nimiq.load();
-        for(let clazz of classes) {
+        for (const clazz of classes) {
             self[clazz] = Nimiq[clazz];
         }
     } 
@@ -171,6 +171,7 @@ class Nimiq {
         WindowDetector.get().waitForSingleWindow(async function () {
             try {
                 await Nimiq.load();
+                await Crypto.prepareSyncCryptoWorker();
                 console.log('Nimiq engine loaded.');
                 if (ready) ready();
             } catch (e) {

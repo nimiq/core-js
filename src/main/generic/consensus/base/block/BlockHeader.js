@@ -136,13 +136,6 @@ class BlockHeader {
             return false;
         }
 
-        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
-        const adjustmentFactor = this.target / prevHeader.target;
-        if (adjustmentFactor > Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR
-            || adjustmentFactor < 1 / Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR) {
-            return false;
-        }
-
         // Everything checks out.
         return true;
     }

@@ -274,15 +274,6 @@ class Block {
             }
         }
 
-        // Check that the target adjustment between the blocks does not exceed the theoretical limit.
-        const adjustmentFactor = this._header.target / predecessor.header.target;
-        const heightDiff = this._header.height - predecessor.header.height;
-        if (adjustmentFactor > Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, heightDiff)
-                || adjustmentFactor < Math.pow(Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR, -heightDiff)) {
-            Log.v(Block, 'No interlink successor - target adjustment out of bounds');
-            return false;
-        }
-
         // Everything checks out.
         return true;
     }
