@@ -101,7 +101,7 @@ class Accounts extends Observable {
 
             const toBePruned = [];
             for (const tx of transactions) {
-                const senderAccount = await this.get(tx.sender, tx.senderType, tree);
+                const senderAccount = await this.get(tx.sender, undefined, tree);
                 if (senderAccount.isToBePruned()) {
                     toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
                 }
@@ -271,7 +271,7 @@ class Accounts extends Observable {
 
         const prunedAccounts = body.prunedAccounts.slice();
         for (const tx of body.transactions) {
-            const senderAccount = await this.get(tx.sender, tx.senderType, tree);
+            const senderAccount = await this.get(tx.sender, undefined, tree);
             if (senderAccount.isToBePruned()) {
                 const accIdx = prunedAccounts.findIndex((acc) => acc.address.equals(tx.sender));
                 if (accIdx === -1 || !senderAccount.equals(prunedAccounts[accIdx].account)) {
