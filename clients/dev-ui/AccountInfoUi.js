@@ -6,6 +6,7 @@ class AccountInfoUi {
         this.$address = this.$el.querySelector('[address]');
         this.$balance = this.$el.querySelector('[balance]');
 
+        this.$vestingOwner = this.$el.querySelector('[vesting-owner]');
         this.$vestingStart = this.$el.querySelector('[vesting-start]');
         this.$vestingStepBlocks = this.$el.querySelector('[vesting-step-blocks]');
         this.$vestingStepAmount = this.$el.querySelector('[vesting-step-amount]');
@@ -87,25 +88,26 @@ class AccountInfoUi {
         });
     }
 
-    _updateVestingDetails(account) {
-        this.$vestingStart.textContent = account.vestingStart;
-        this.$vestingStepBlocks.textContent = account.vestingStepBlocks;
-        this.$vestingStepAmount.textContent = Utils.satoshisToCoins(account.vestingStepAmount);
-        this.$vestingTotalAmount.textContent = Utils.satoshisToCoins(account.vestingTotalAmount);
-        const currrentMinCap = account._vestingStepBlocks && account._vestingStepAmount > 0
-            ? Math.max(0, account._vestingTotalAmount - Math.floor((this.$.blockchain.height - account._vestingStart) / account._vestingStepBlocks) * account._vestingStepAmount)
+    _updateVestingDetails(contract) {
+        this.$vestingOwner.textContent = contract.owner.toUserFriendlyAddress();
+        this.$vestingStart.textContent = contract.vestingStart;
+        this.$vestingStepBlocks.textContent = contract.vestingStepBlocks;
+        this.$vestingStepAmount.textContent = Utils.satoshisToCoins(contract.vestingStepAmount);
+        this.$vestingTotalAmount.textContent = Utils.satoshisToCoins(contract.vestingTotalAmount);
+        const currrentMinCap = contract._vestingStepBlocks && contract._vestingStepAmount > 0
+            ? Math.max(0, contract._vestingTotalAmount - Math.floor((this.$.blockchain.height - contract._vestingStart) / contract._vestingStepBlocks) * contract._vestingStepAmount)
             : 0; // TODO there should be a method in VestingAccount.js that calculates this value
         this.$vestingCurrentCap.textContent = Utils.satoshisToCoins(currrentMinCap);
-        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, account.balance - currrentMinCap));
+        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, contract.balance - currrentMinCap));
     }
 
-    _updateHtlcDetails(account) {
-        this.$htlcSender.textContent = account.sender.toUserFriendlyAddress();
-        this.$htlcRecipient.textContent = account.recipient.toUserFriendlyAddress();
-        this.$htlcHashRoot.textContent = account.hashRoot.toBase64();
-        this.$htlcHashCount.textContent = account.hashCount;
-        this.$htlcTimeout.textContent = account.timeout;
-        this.$htlcTotalAmount.textContent = Utils.satoshisToCoins(account.totalAmount);
+    _updateHtlcDetails(contract) {
+        this.$htlcSender.textContent = contract.sender.toUserFriendlyAddress();
+        this.$htlcRecipient.textContent = contract.recipient.toUserFriendlyAddress();
+        this.$htlcHashRoot.textContent = contract.hashRoot.toBase64();
+        this.$htlcHashCount.textContent = contract.hashCount;
+        this.$htlcTimeout.textContent = contract.timeout;
+        this.$htlcTotalAmount.textContent = Utils.satoshisToCoins(contract.totalAmount);
     }
 }
 AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE = 'account-type';
