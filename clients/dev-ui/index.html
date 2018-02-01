@@ -45,31 +45,78 @@
             <hr/>
         </div>
 
-        <div class="info" transaction-ui>
+        <div class="info" transaction-ui tx-type="basic">
             <div class="info-title">Transaction</div>
             <hr class="morespace"/>
             <form>
                 <div class="input-group">
                     <label>
+                        <span>Type</span>
+                        <select tx-type-selector name="transaction-type">
+                            <option value="basic" selected>Basic</option>
+                            <option value="extended">Plain Extended</option>
+                            <option value="vesting-contract-creation">Vesting Contract Creation</option>
+                            <option value="htlc-contract-creation">HTLC Contract Creation</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="input-group">
+                    <label>
                         <span>Recipient</span>
-                        <input transaction-recipient name="transaction-recipient" maxlength="45" size="45">
+                        <input tx-recipient name="transaction-recipient" maxlength="45" size="45">
+                    </label>
+                </div>
+                <div class="input-group" show="extended">
+                    <label>
+                        <span>Recipient Type</span>
+                        <input tx-recipient-type name="transaction-recipient-type" type="number" step="1">
                     </label>
                 </div>
                 <div class="input-group">
                     <label>
                         <span>Value</span>
-                        <input transaction-value name="transaction-value" type="number" step="any">
+                        <input tx-value name="transaction-value" type="number" step="any">
                     </label>
                 </div>
                 <div class="input-group">
                     <label>
                         <span>Fee</span>
-                        <input transaction-fee name="transaction-fee" type="number" step="0.01">
+                        <input tx-fee name="transaction-fee" type="number" step="0.01">
                     </label>
                 </div>
+                <div class="input-group">
+                    <label>
+                        <span>Validity Start</span>
+                        <input tx-validity-start name="transaction-validity-start" type="number" step="1">
+                    </label>
+                </div>
+                <div class="input-group" show="extended">
+                    <label>
+                        <span>Flags</span>
+                        <input tx-flags name="transaction-flags" type="number">
+                    </label>
+                </div>
+                <div class="input-group" show="extended">
+                    <label>
+                        <span>Data</span>
+                        <input tx-data name="transaction-data" pattern="^[A-Za-z0-9+/]*$">
+                    </label>
+                </div>
+                <div class="input-group" show="extended">
+                    <label>
+                        <span>Proof</span>
+                        <input tx-proof name="transaction-proof" pattern="^[A-Za-z0-9+/]*$">
+                    </label>
+                </div>
+                <div class="info-block" show="extended vesting-contract-creation htlc-contract-creation">
+                    <strong>Contract</strong>
+                    <span contract-address></span>
+                </div>
+
                 <hr class="morespace"/>
                 <div class="input-group">
-                    <button transaction-send type="button" disabled>Send</button>
+                    <button tx-clear type="button">Clear</button>
+                    <button tx-send type="button" disabled>Send</button>
                 </div>
                 <hr/>
             </form>

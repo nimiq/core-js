@@ -69,7 +69,8 @@ header a.headerlink {
     text-decoration: none;
 }
 
-input {
+input,
+select {
     border-radius: 3px;
     padding: 10px 10px;
     line-height: 1;
@@ -78,10 +79,14 @@ input {
     font-size: 14px;
 }
 
+select {
+    padding: 9px 6px;
+}
+
 button {
     border: 0;
     border-radius: 3px;
-    display: block;
+    display: inline-block;
     text-align: center;
     background: #FFC107;
     color: white;
@@ -372,7 +377,7 @@ hash {
     padding: 15px;
 }
 
-/* Account Lookup */
+/* Account Info UI */
 
 [account-info-ui] [clear-button] {
     display: inline-block;
@@ -381,7 +386,7 @@ hash {
 
 [account-info-ui] [account-details],
 [account-info-ui] [vesting-account-details],
-[account-info-ui] [htlc-details] {
+[account-info-ui] [htlc-account-details] {
     display: none;
 }
 
@@ -407,4 +412,13 @@ hash {
 }
 [account-info-ui][account-type="htlc"] [account-type]:after {
     content: 'HTLC';
+}
+
+/* Transaction UI */
+
+[transaction-ui][tx-type="basic"] [show]:not([show~="basic"]),
+[transaction-ui][tx-type="extended"] [show]:not([show~="extended"]),
+[transaction-ui][tx-type="vesting-contract-creation"] [show]:not([show~="vesting-contract-creation"]),
+[transaction-ui][tx-type="htlc-contract-creation"] [show]:not([show~="htlc-contract-creation"]) {
+    display: none;
 }
