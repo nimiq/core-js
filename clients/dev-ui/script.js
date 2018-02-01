@@ -6,20 +6,15 @@ class DevUI {
 
         $.network.on('peers-changed', this._networkChanged.bind(this));
 
-        $.mempool.on('transaction-added', function (tx) {
-            if ($.clientType !== DevUI.CLIENT_NANO) {
-                this._mempoolTransactionAdded(tx);
-            } else {
-                // on nano rerender complete mempool as it doesn't fire a separate transactions-ready
-                this._rerenderMempool(true);
-            }
-        }.bind(this));
         if ($.clientType !== DevUI.CLIENT_NANO) {
             $.mempool.on('transactions-ready', this._rerenderMempool.bind(this));
+            $.mempool.on('transaction-added', this._mempoolTransactionAdded.bind(this));
             $.miner.on('start', this._minerChanged.bind(this));
             $.miner.on('stop', this._minerChanged.bind(this));
             $.miner.on('hashrate-changed', this._minerChanged.bind(this));
             $.miner.on('block-mined', this._blockMined.bind(this));
+        } else {
+            $.mempool.on('*', () => this._rerenderMempool(true));
         }
 
         var bcTitle = document.querySelector('#bcTitle');
@@ -239,7 +234,7 @@ class DevUI {
             return;
         }
         Utils.getAccount($, $.wallet.address).then(function(account) {
-            account = account || Nimiq.BasicAccount.INITIAL;
+            account = account || Nimiq.Account.INITIAL;
             this._wltBalance.innerText = Utils.toFixedPrecision(Nimiq.Policy.satoshisToCoins(account.balance));
         }.bind(this));
     }
@@ -261,7 +256,7 @@ class DevUI {
 
         txs.forEach(function(tx) {
             if (filter && !$.wallet.address.equals(tx.sender) && !$.wallet.address.equals(tx.recipient)) {
-                return;
+                return; // TODO filtering still needed with $.consensus.subscribeAccounts?
             }
             this._renderMempoolTransaction(tx);
         }.bind(this));
@@ -325,11 +320,14 @@ function startNimiq() {
         $.network = $.consensus.network;
 
         // XXX Legacy components
-        $.wallet = await Nimiq.Wallet.getPersistent();
+        const walletStore = await new Nimiq.WalletStore();
+        $.wallet = await walletStore.getDefault();
 
         if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
             $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.network.time, $.wallet.address);
+        } else {
+            $.consensus.subscribeAccounts([$.wallet.address]);
         }
 
         bcTitle.classList.add('connecting');
