@@ -50,7 +50,7 @@ class AccountInfoUi {
         }
         let address;
         try {
-            address = Address.fromUserFriendlyAddress(userFriendlyAddress);
+            address = Nimiq.Address.fromUserFriendlyAddress(userFriendlyAddress);
         } catch(e) {
             this.$addressInput.classList.add('error');
             return;
