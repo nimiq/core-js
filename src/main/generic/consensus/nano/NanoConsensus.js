@@ -47,8 +47,10 @@ class NanoConsensus extends Observable {
         // Register agent event listeners.
         agent.on('close', () => this._onPeerLeft(agent.peer));
         agent.on('sync', () => this._onPeerSynced(agent.peer));
-
         this.bubble(agent, 'sync-chain-proof', 'verify-chain-proof');
+
+        // Subscribe to transaction announcements for our accounts.
+        agent.subscribeAccounts(this._addresses);
 
         // If no more peers connect within the specified timeout, start syncing.
         this._timers.resetTimeout('sync', this._syncBlockchain.bind(this), NanoConsensus.SYNC_THROTTLE);

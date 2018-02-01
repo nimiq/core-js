@@ -200,7 +200,7 @@
                 txSubmitBtn.setAttribute('disabled', '');
             }.bind(this));
 
-            $.mempool.on('transaction-added', function() {
+            $.mempool.on('*', function() {
                 this._mempoolChanged();
             }.bind(this));
 
@@ -411,6 +411,8 @@
             $.walletStore = await new Nimiq.WalletStore();
             // Load or create main wallet.
             $.wallet = await $.walletStore.getDefault();
+
+            $.consensus.subscribeAccounts([$.wallet.address]);
 
             bcTitle.classList.add('connecting');
             $.network.connect();
