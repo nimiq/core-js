@@ -1,22 +1,23 @@
 class WebRtcConnector extends Observable {
     /**
      * @constructor
-     * @param {NetworkConfig} netconfig
+     * @param {NetworkConfig} networkConfig
      */
-    constructor(netconfig) {
+    constructor(networkConfig) {
         super();
-        return this._init(netconfig);
+        return this._init(networkConfig);
     }
 
     /**
-     * @param {NetworkConfig} netconfig
+     * @param {NetworkConfig} networkConfig
      * @return {WebRtcConnector}
      */
-    async _init(netconfig) {
-        /** @type {HashMap.<SignalId,PeerConnector>} */
+    async _init(networkConfig) {
+        /** @type {HashMap.<PeerId,PeerConnector>} */
         this._connectors = new HashMap();
-        /** @type {WebRtcConfig} */
-        this._webRtcConfig = await new WebRtcConfig(netconfig);
+        /** @type {NetworkConfig} */
+        this._networkConfig = networkConfig;
+        /** @type {Timers} */
         this._timers = new Timers();
 
         return this;
@@ -25,19 +26,19 @@ class WebRtcConnector extends Observable {
     connect(peerAddress, signalChannel) {
         if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
 
-        const signalId = peerAddress.signalId;
-        if (this._connectors.contains(signalId)) {
-            Log.w(WebRtcConnector, `WebRtc: Already connecting/connected to ${signalId}`);
+        const peerId = peerAddress.peerId;
+        if (this._connectors.contains(peerId)) {
+            Log.w(WebRtcConnector, `WebRtc: Already connecting/connected to ${peerId}`);
             return false;
         }
 
-        const connector = new OutboundPeerConnector(this._webRtcConfig, peerAddress, signalChannel);
-        connector.on('connection', conn => this._onConnection(conn, signalId));
-        this._connectors.put(signalId, connector);
+        const connector = new OutboundPeerConnector(this._networkConfig, peerAddress, signalChannel);
+        connector.on('connection', conn => this._onConnection(conn, peerId));
+        this._connectors.put(peerId, connector);
 
-        this._timers.setTimeout(`connect_${signalId}`, () => {
-            this._connectors.remove(signalId);
-            this._timers.clearTimeout(`connect_${signalId}`);
+        this._timers.setTimeout(`connect_${peerId}`, () => {
+            this._connectors.remove(peerId);
+            this._timers.clearTimeout(`connect_${peerId}`);
             this.fire('error', peerAddress, 'timeout');
         }, WebRtcConnector.CONNECT_TIMEOUT);
 
@@ -83,7 +84,7 @@ class WebRtcConnector extends Observable {
             // Check if we have received an offer on an ongoing connection.
             // This can happen if two peers initiate connections to one another
             // simultaneously. Resolve this by having the peer with the higher
-            // signalId discard the offer while the one with the lower signalId
+            // peerId discard the offer while the one with the lower peerId
             // accepts it.
             if (this._connectors.contains(msg.senderId)) {
                 if (msg.recipientId.compare(msg.senderId) === 1) {
@@ -99,7 +100,7 @@ class WebRtcConnector extends Observable {
             }
 
             // Accept the offer.
-            const connector = new InboundPeerConnector(this._webRtcConfig, channel, msg.senderId, payload);
+            const connector = new InboundPeerConnector(this._networkConfig, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors.put(msg.senderId, connector);
 
@@ -118,36 +119,48 @@ class WebRtcConnector extends Observable {
         // If none of the above conditions is met, the signal is invalid and we discard it.
     }
 
-    _onConnection(conn, signalId) {
+    _onConnection(conn, peerId) {
         // Clear the connect timeout.
-        this._timers.clearTimeout(`connect_${signalId}`);
+        this._timers.clearTimeout(`connect_${peerId}`);
 
         // Clean up when this connection closes.
-        conn.on('close', () => this._onClose(signalId));
+        conn.on('close', () => this._onClose(peerId));
 
         // Tell listeners about the new connection.
         this.fire('connection', conn);
     }
 
-    _onClose(signalId) {
-        this._connectors.remove(signalId);
-        this._timers.clearTimeout(`connect_${signalId}`);
+    _onClose(peerId) {
+        this._connectors.remove(peerId);
+        this._timers.clearTimeout(`connect_${peerId}`);
     }
 }
 WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
-    constructor(webRtcConfig, signalChannel, signalId, peerAddress) {
+    /**
+     * @param {NetworkConfig} networkConfig
+     * @param {PeerChannel} signalChannel
+     * @param {PeerId} peerId
+     * @param {PeerAddress} peerAddress
+     */
+    constructor(networkConfig, signalChannel, peerId, peerAddress) {
         super();
-        this._webRtcConfig = webRtcConfig;
+        /** @type {NetworkConfig} */
+        this._networkConfig = networkConfig;
+        /** @type {PeerChannel} */
         this._signalChannel = signalChannel;
-        this._signalId = signalId;
+        /** @type {PeerId} */
+        this._peerId = peerId;
+        /** @type {PeerAddress} */
         this._peerAddress = peerAddress; // null for inbound connections
 
+        /** @type {number} */
         this._nonce = NumberUtils.randomUint32();
 
-        this._rtcConnection = new RTCPeerConnection(this._webRtcConfig.config);
+        /** @type {RTCPeerConnection} */
+        this._rtcConnection = new RTCPeerConnection(this._networkConfig.rtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
 
         this._lastIceCandidate = null;
@@ -200,11 +213,11 @@ class PeerConnector extends Observable {
 
     _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
-        const keyPair = this._webRtcConfig.keyPair;
-        const signalId = keyPair.publicKey.toSignalId();
+        const keyPair = this._networkConfig.keyPair;
+        const peerId = keyPair.publicKey.toPeerId();
         this._signalChannel.signal(
-            signalId,
-            this._signalId,
+            peerId,
+            this._peerId,
             this._nonce,
             Network.SIGNAL_TTL_INITIAL,
             0, /*flags*/
@@ -260,7 +273,7 @@ Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
     constructor(webRtcConfig, peerAddress, signalChannel) {
-        super(webRtcConfig, signalChannel, peerAddress.signalId, peerAddress);
+        super(webRtcConfig, signalChannel, peerAddress.peerId, peerAddress);
         this._peerAddress = peerAddress;
 
         // Create offer.
@@ -275,8 +288,8 @@ class OutboundPeerConnector extends PeerConnector {
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
-    constructor(webRtcConfig, signalChannel, signalId, offer) {
-        super(webRtcConfig, signalChannel, signalId, null);
+    constructor(webRtcConfig, signalChannel, peerId, offer) {
+        super(webRtcConfig, signalChannel, peerId, null);
         this._rtcConnection.ondatachannel = event => {
             event.channel.onopen = e => this._onDataChannel(e);
         };

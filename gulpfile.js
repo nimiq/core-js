@@ -20,9 +20,6 @@ const sources = {
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
-            './src/main/platform/browser/network/NetworkConfig.js',
-            './src/main/platform/browser/network/webrtc/WebRtcStore.js',
-            './src/main/platform/browser/network/webrtc/WebRtcConfig.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
@@ -34,8 +31,7 @@ const sources = {
             './src/main/generic/utils/Observable.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
-            './src/main/platform/nodejs/network/NetworkConfig.js'
+            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js'
         ]
     },
     generic: [
@@ -129,7 +125,7 @@ const sources = {
         './src/main/generic/network/address/NetAddress.js',
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddresses.js',
-        './src/main/generic/network/address/SignalId.js',
+        './src/main/generic/network/address/PeerId.js',
         './src/main/generic/network/message/Message.js',
         './src/main/generic/network/message/AddrMessage.js',
         './src/main/generic/network/message/BlockMessage.js',
@@ -157,10 +153,12 @@ const sources = {
         './src/main/generic/network/message/TransactionReceiptsMessage.js',
         './src/main/generic/network/message/MessageFactory.js',
         './src/main/generic/network/NetworkAgent.js',
+        './src/main/generic/network/NetworkConfig.js',
         './src/main/generic/network/Network.js',
         './src/main/generic/network/NetUtils.js',
         './src/main/generic/network/PeerChannel.js',
         './src/main/generic/network/PeerConnection.js',
+        './src/main/generic/network/PeerKeyStore.js',
         './src/main/generic/network/Peer.js',
         './src/main/generic/miner/Miner.js',
         './src/main/generic/wallet/Wallet.js',

@@ -1,5 +1,5 @@
 describe('VersionMessage', () => {
-    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), 0);
+    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), PeerId.NULL, 0);
     const blockHash = Hash.fromBase64(Dummy.hash1);
 
     it('is correctly constructed', () => {

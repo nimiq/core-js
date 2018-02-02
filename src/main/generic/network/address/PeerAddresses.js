@@ -15,11 +15,11 @@ class PeerAddresses extends Observable {
         this._store = new HashSet();
 
         /**
-         * Map from signalIds to RTC peerAddresses.
-         * @type {HashMap.<SignalId,PeerAddressState>}
+         * Map from peerIds to RTC peerAddresses.
+         * @type {HashMap.<PeerId,PeerAddressState>}
          * @private
          */
-        this._signalIds = new HashMap();
+        this._peerIds = new HashMap();
 
         /**
          * @type {NetworkConfig}
@@ -168,21 +168,21 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * @param {SignalId} signalId
+     * @param {PeerId} peerId
      * @returns {PeerAddress|null}
      */
-    getBySignalId(signalId) {
+    getByPeerId(peerId) {
         /** @type {PeerAddressState} */
-        const peerAddressState = this._signalIds.get(signalId);
+        const peerAddressState = this._peerIds.get(peerId);
         return peerAddressState ? peerAddressState.peerAddress : null;
     }
 
     /**
-     * @param {SignalId} signalId
+     * @param {PeerId} peerId
      * @returns {PeerChannel}
      */
-    getChannelBySignalId(signalId) {
-        const peerAddressState = this._signalIds.get(signalId);
+    getChannelByPeerId(peerId) {
+        const peerAddressState = this._peerIds.get(peerId);
         if (peerAddressState && peerAddressState.bestRoute) {
             return peerAddressState.bestRoute.signalChannel;
         }
@@ -338,8 +338,8 @@ class PeerAddresses extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
             if (peerAddress.protocol === Protocol.RTC) {
-                // Index by signalId.
-                this._signalIds.put(peerAddress.signalId, peerAddressState);
+                // Index by peerId.
+                this._peerIds.put(peerAddress.peerId, peerAddressState);
             }
         }
 
@@ -402,7 +402,7 @@ class PeerAddresses extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
 
             if (peerAddress.protocol === Protocol.RTC) {
-                this._signalIds.put(peerAddress.signalId, peerAddressState);
+                this._peerIds.put(peerAddress.peerId, peerAddressState);
             }
 
             this._store.add(peerAddressState);
@@ -605,9 +605,9 @@ class PeerAddresses extends Observable {
             return;
         }
 
-        // Delete from signalId index.
+        // Delete from peerId index.
         if (peerAddress.protocol === Protocol.RTC) {
-            this._signalIds.remove(peerAddress.signalId);
+            this._peerIds.remove(peerAddress.peerId);
         }
 
         if (peerAddressState.state === PeerAddressState.CONNECTING) {

@@ -93,10 +93,10 @@ class PublicKey extends Primitive {
     }
 
     /**
-     * @return {SignalId}
+     * @return {PeerId}
      */
-    toSignalId() {
-        return new SignalId(this.hash().subarray(0, 16));
+    toPeerId() {
+        return new PeerId(this.hash().subarray(0, 16));
     }
 }
 

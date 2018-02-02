@@ -1,19 +1,19 @@
-class WebRtcStore {
+class PeerKeyStore {
     /**
-     * @returns {Promise.<WebRtcStore>}
+     * @returns {Promise.<PeerKeyStore>}
      */
     constructor() {
-        this._jdb = new JDB.JungleDB('webrtc', WebRtcStore.VERSION);
+        this._jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION);
         return this._init();
     }
 
     /**
-     * @returns {Promise.<WebRtcStore>}
+     * @returns {Promise.<PeerKeyStore>}
      * @private
      */
     async _init() {
         // Initialize object stores.
-        this._jdb.createObjectStore(WebRtcStore.KEY_DATABASE, new WebRtcStoreCodec());
+        this._jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
 
         // Establish connection to database.
         await this._jdb.connect();
@@ -26,7 +26,7 @@ class WebRtcStore {
      * @returns {Promise.<KeyPair>}
      */
     get(key) {
-        const store = this._jdb.getObjectStore(WebRtcStore.KEY_DATABASE);
+        const store = this._jdb.getObjectStore(PeerKeyStore.KEY_DATABASE);
         return store.get(key);
     }
 
@@ -36,7 +36,7 @@ class WebRtcStore {
      * @returns {Promise}
      */
     put(key, keyPair) {
-        const store = this._jdb.getObjectStore(WebRtcStore.KEY_DATABASE);
+        const store = this._jdb.getObjectStore(PeerKeyStore.KEY_DATABASE);
         return store.put(key, keyPair);
     }
 
@@ -44,15 +44,15 @@ class WebRtcStore {
         return this._jdb.close();
     }
 }
-WebRtcStore._instance = null;
-WebRtcStore.VERSION = 2;
-WebRtcStore.KEY_DATABASE = 'keys';
-Class.register(WebRtcStore);
+PeerKeyStore._instance = null;
+PeerKeyStore.VERSION = 2;
+PeerKeyStore.KEY_DATABASE = 'keys';
+Class.register(PeerKeyStore);
 
 /**
  * @implements {ICodec}
  */
-class WebRtcStoreCodec {
+class PeerKeyStoreCodec {
     /**
      * @param {*} obj The object to encode before storing it.
      * @returns {*} Encoded object.

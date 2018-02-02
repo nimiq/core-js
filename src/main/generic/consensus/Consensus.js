@@ -14,6 +14,8 @@ class Consensus {
         const services = new Services(Services.FULL, Services.FULL);
         netconfig.services = services;
 
+        await netconfig.init();
+
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getFull();
         /** @type {Accounts} */
@@ -45,6 +47,8 @@ class Consensus {
         const services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
         netconfig.services = services;
 
+        await netconfig.init();
+
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getLight();
         /** @type {Accounts} */
@@ -74,6 +78,8 @@ class Consensus {
         const services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
         netconfig.services = services;
 
+        await netconfig.init();
+
         /** @type {NanoChain} */
         const blockchain = await new NanoChain(time);
         /** @type {NanoMempool} */
@@ -84,4 +90,5 @@ class Consensus {
         return new NanoConsensus(blockchain, mempool, network);
     }
 }
+
 Class.register(Consensus);

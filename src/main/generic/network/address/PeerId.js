@@ -1,25 +1,25 @@
-class SignalId extends Primitive {
+class PeerId extends Primitive {
     /**
-     * @param {SignalId} o
-     * @returns {SignalId}
+     * @param {PeerId} o
+     * @returns {PeerId}
      */
     static copy(o) {
         if (!o) return o;
         const obj = new Uint8Array(o._obj);
-        return new SignalId(obj);
+        return new PeerId(obj);
     }
 
     constructor(arg) {
-        super(arg, Uint8Array, SignalId.SERIALIZED_SIZE);
+        super(arg, Uint8Array, PeerId.SERIALIZED_SIZE);
     }
 
     /**
      * Create Address object from binary form.
      * @param {SerialBuffer} buf Buffer to read from.
-     * @return {SignalId} Newly created Account object.
+     * @return {PeerId} Newly created Account object.
      */
     static unserialize(buf) {
-        return new SignalId(buf.read(SignalId.SERIALIZED_SIZE));
+        return new PeerId(buf.read(PeerId.SERIALIZED_SIZE));
     }
 
     /**
@@ -41,7 +41,7 @@ class SignalId extends Primitive {
      * @type {number}
      */
     get serializedSize() {
-        return SignalId.SERIALIZED_SIZE;
+        return PeerId.SERIALIZED_SIZE;
     }
 
     /**
@@ -49,7 +49,7 @@ class SignalId extends Primitive {
      * @return {boolean}
      */
     equals(o) {
-        return o instanceof SignalId
+        return o instanceof PeerId
             && super.equals(o);
     }
 
@@ -63,20 +63,21 @@ class SignalId extends Primitive {
 
     /**
      * @param {string} base64
-     * @return {SignalId}
+     * @return {PeerId}
      */
     static fromBase64(base64) {
-        return new SignalId(BufferUtils.fromBase64(base64));
+        return new PeerId(BufferUtils.fromBase64(base64));
     }
 
     /**
      * @param {string} hex
-     * @return {SignalId}
+     * @return {PeerId}
      */
     static fromHex(hex) {
-        return new SignalId(BufferUtils.fromHex(hex));
+        return new PeerId(BufferUtils.fromHex(hex));
     }
 }
 
-SignalId.SERIALIZED_SIZE = 16;
-Class.register(SignalId);
+PeerId.SERIALIZED_SIZE = 16;
+PeerId.NULL = new PeerId(new Uint8Array(PeerId.SERIALIZED_SIZE));
+Class.register(PeerId);

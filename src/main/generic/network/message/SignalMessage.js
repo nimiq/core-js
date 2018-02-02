@@ -1,7 +1,7 @@
 class SignalMessage extends Message {
     /**
-     * @param {SignalId} senderId
-     * @param {SignalId} recipientId
+     * @param {PeerId} senderId
+     * @param {PeerId} recipientId
      * @param {number} nonce
      * @param {number} ttl
      * @param {SignalMessage.Flags|number} flags
@@ -11,8 +11,8 @@ class SignalMessage extends Message {
      */
     constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array(0), senderPubKey, signature) {
         super(Message.Type.SIGNAL);
-        if (!(senderId instanceof SignalId)) throw 'Malformed senderId';
-        if (!(recipientId instanceof SignalId)) throw 'Malformed recipientId';
+        if (!(senderId instanceof PeerId)) throw 'Malformed senderId';
+        if (!(recipientId instanceof PeerId)) throw 'Malformed recipientId';
         if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
         if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
         if (!NumberUtils.isUint8(flags)) throw 'Malformed flags';
@@ -40,8 +40,8 @@ class SignalMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const senderId = SignalId.unserialize(buf);
-        const recipientId = SignalId.unserialize(buf);
+        const senderId = PeerId.unserialize(buf);
+        const recipientId = PeerId.unserialize(buf);
         const nonce = buf.readUint32();
         const ttl = buf.readUint8();
         const flags = buf.readUint8();
@@ -95,15 +95,15 @@ class SignalMessage extends Message {
         if (!this._signature) {
             return false;
         }
-        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(this._senderPubKey.toSignalId());
+        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(this._senderPubKey.toPeerId());
     }
 
-    /** @type {SignalId} */
+    /** @type {PeerId} */
     get senderId() {
         return this._senderId;
     }
 
-    /** @type {SignalId} */
+    /** @type {PeerId} */
     get recipientId() {
         return this._recipientId;
     }
