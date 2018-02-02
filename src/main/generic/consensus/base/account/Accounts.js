@@ -231,7 +231,7 @@ class Accounts extends Observable {
      */
     async _processRecipientAccounts(tree, transactions, blockHeight, revert = false) {
         for (const tx of transactions) {
-            const recipientAccount = await this.get(tx.recipient, !revert ? undefined : tx.recipientType, tree);
+            const recipientAccount = await this.get(tx.recipient, undefined, tree);
             await tree.putBatch(tx.recipient, recipientAccount.withIncomingTransaction(tx, blockHeight, revert));
         }
     }
