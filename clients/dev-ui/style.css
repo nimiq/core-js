@@ -212,10 +212,15 @@ hash {
     color: #000;
 }
 
-.input-group label > span {
+.input-group label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.input-group label > strong {
     display: inline-block;
     width: 75px;
-    font-weight: bold;
 }
 
 .input-group-button {
@@ -418,7 +423,7 @@ hash {
 
 [transaction-ui][tx-type="basic"] [show]:not([show~="basic"]),
 [transaction-ui][tx-type="extended"] [show]:not([show~="extended"]),
-[transaction-ui][tx-type="vesting-contract-creation"] [show]:not([show~="vesting-contract-creation"]),
-[transaction-ui][tx-type="htlc-contract-creation"] [show]:not([show~="htlc-contract-creation"]) {
+[transaction-ui][tx-type="vesting-creation"] [show]:not([show~="vesting-creation"]),
+[transaction-ui][tx-type="htlc-creation"] [show]:not([show~="htlc-creation"]) {
     display: none;
 }
