@@ -203,10 +203,7 @@ class VestingContract extends Contract {
      */
     withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert = false) {
         if (!revert) {
-            const minCap = this._vestingStepBlocks && this._vestingStepAmount > 0
-                ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount)
-                : 0;
-
+            const minCap = this.getMinCap(blockHeight);
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < minCap) {
                 throw new Error('Balance Error!');
@@ -228,6 +225,16 @@ class VestingContract extends Contract {
      */
     withIncomingTransaction(transaction, blockHeight, revert = false) {
         throw new Error('Illegal incoming transaction');
+    }
+
+    /**
+     * @param {number} blockHeight
+     * @returns {number}
+     */
+    getMinCap(blockHeight) {
+        return this._vestingStepBlocks && this._vestingStepAmount > 0
+            ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount)
+            : 0;
     }
 }
 
