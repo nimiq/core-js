@@ -28,7 +28,7 @@ class AccountInfoUi {
 
         this.$addressInput.addEventListener('input', () => this._onAddressInput());
         this.$clearButton.addEventListener('click', () => this._reset());
-        this.$.blockchain.on('head-changed', () => this._update());
+        this.$.blockchain.on('head-changed', (head, rebranching) => this._update(head, rebranching));
         this.$.consensus.on('established', () => this._update());
     }
 
@@ -60,8 +60,8 @@ class AccountInfoUi {
         this._setAddress(address);
     }
 
-    _update() {
-        if (this.$.clientType === DevUI.CLIENT_NANO && !$.consensus.established) {
+    _update(head, rebranching) {
+        if (this.$.clientType === DevUI.CLIENT_NANO && rebranching) {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {
@@ -94,11 +94,9 @@ class AccountInfoUi {
         this.$vestingStepBlocks.textContent = contract.vestingStepBlocks;
         this.$vestingStepAmount.textContent = Utils.satoshisToCoins(contract.vestingStepAmount);
         this.$vestingTotalAmount.textContent = Utils.satoshisToCoins(contract.vestingTotalAmount);
-        const currrentMinCap = contract._vestingStepBlocks && contract._vestingStepAmount > 0
-            ? Math.max(0, contract._vestingTotalAmount - Math.floor((this.$.blockchain.height - contract._vestingStart) / contract._vestingStepBlocks) * contract._vestingStepAmount)
-            : 0; // TODO there should be a method in VestingAccount.js that calculates this value
-        this.$vestingCurrentCap.textContent = Utils.satoshisToCoins(currrentMinCap);
-        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, contract.balance - currrentMinCap));
+        const currentMinCap = contract.getMinCap(this.$.blockchain.height);
+        this.$vestingCurrentCap.textContent = Utils.satoshisToCoins(currentMinCap);
+        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, contract.balance - currentMinCap));
     }
 
     _updateHtlcDetails(contract) {
