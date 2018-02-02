@@ -411,7 +411,8 @@ class PartialLightChain extends LightChain {
      */
     async _prepend(blockHash, chainData) {
         try {
-            await this._accountsTx.revertBlock(chainData.head);
+            const transactionCache = new TransactionCache(chainData.head.transactions);
+            await this._accountsTx.revertBlock(chainData.head, transactionCache);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling

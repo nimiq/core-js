@@ -215,7 +215,7 @@ class Accounts extends Observable {
      */
     async _processSenderAccounts(tree, transactions, blockHeight, transactionCache, revert = false) {
         for (const tx of transactions) {
-            const senderAccount = await this.get(tx.sender, tx.senderType, tree);
+            const senderAccount = await this.get(tx.sender, !revert ? tx.senderType : undefined, tree);
             await tree.putBatch(tx.sender, senderAccount.withOutgoingTransaction(tx, blockHeight, transactionCache, revert));
         }
     }
@@ -231,7 +231,7 @@ class Accounts extends Observable {
      */
     async _processRecipientAccounts(tree, transactions, blockHeight, revert = false) {
         for (const tx of transactions) {
-            const recipientAccount = await this.get(tx.recipient, undefined, tree);
+            const recipientAccount = await this.get(tx.recipient, !revert ? undefined : tx.recipientType, tree);
             await tree.putBatch(tx.recipient, recipientAccount.withIncomingTransaction(tx, blockHeight, revert));
         }
     }
@@ -251,7 +251,7 @@ class Accounts extends Observable {
             transactions = transactions.slice().reverse();
         }
         for (const tx of transactions) {
-            const recipientAccount = await this.get(tx.recipient, undefined, tree);
+            const recipientAccount = await this.get(tx.recipient, !revert ? undefined : tx.recipientType, tree);
             await tree.putBatch(tx.recipient, recipientAccount.withContractCommand(tx, blockHeight, revert));
         }
     }
@@ -335,19 +335,6 @@ class Accounts extends Observable {
 
         const recipientAccount = await this.get(body.minerAddr, undefined, tree);
         await tree.putBatch(body.minerAddr, recipientAccount.withIncomingTransaction(coinbaseTransaction, blockHeight, revert));
-    }
-
-    /**
-     * @param {AccountsTree} tree
-     * @param {Address} address
-     * @param {number} value
-     * @returns {Promise.<void>}
-     * @deprecated
-     * @private
-     */
-    async _addBalance(tree, address, value) {
-        const account = await this.get(address, undefined, tree);
-        await tree.putBatch(address, account.withBalance(account.balance + value));
     }
 
     /**

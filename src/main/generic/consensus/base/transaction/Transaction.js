@@ -191,7 +191,6 @@ class Transaction {
         if (this._senderType > o._senderType) return 1;
         if (this._flags < o._flags) return -1;
         if (this._flags > o._flags) return 1;
-        Assert.that(this.equals(o));
         return 0;
     }
 
