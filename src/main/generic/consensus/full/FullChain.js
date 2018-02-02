@@ -75,8 +75,8 @@ class FullChain extends BaseChain {
             Assert.that(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
 
             // Initialize TransactionCache.
-            const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks, false);
-            this._transactionCache.prependBlocks(blocks);
+            const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks - 1, false);
+            this._transactionCache.prependBlocks([...blocks.reverse(), this._mainChain.head]);
         } else {
             // Initialize chain & accounts with Genesis block.
             this._mainChain = new ChainData(Block.GENESIS, Block.GENESIS.difficulty, BlockUtils.realDifficulty(await Block.GENESIS.pow()), true);
@@ -288,6 +288,7 @@ class FullChain extends BaseChain {
             forkHashes.push(curHash);
 
             curHash = curData.head.prevHash;
+            // TODO FIXME This can fail in the light client. It might not have the requested block at all or only the light block.
             curData = await this._store.getChainData(curHash); // eslint-disable-line no-await-in-loop
             Assert.that(!!curData, 'Corrupted store: Failed to find fork predecessor while rebranching');
         }
@@ -328,9 +329,10 @@ class FullChain extends BaseChain {
         }
 
         // Try to fetch missing transactions for the cache.
+        // TODO FIXME The light client might not have all necessary blocks.
         const numMissingBlocks = transactionCacheTx.missingBlocks;
         const blocks = await this.getBlocks(head.height, numMissingBlocks, false);
-        transactionCacheTx.prependBlocks(blocks);
+        transactionCacheTx.prependBlocks(blocks.reverse());
 
         // Try to apply all fork blocks.
         for (let i = forkChain.length - 1; i >= 0; i--) {

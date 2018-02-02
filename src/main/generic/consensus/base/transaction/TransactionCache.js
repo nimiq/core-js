@@ -43,12 +43,17 @@ class TransactionCache {
      * @returns {number}
      */
     revertBlock(block) {
+        if (this._transactions.isEmpty()) {
+            return this.missingBlocks;
+        }
+
         const blockFromOrder = this._blockOrder.pop();
-        Assert.that(blockFromOrder.equals(block), 'Invalid block to revert.');
+        Assert.that(blockFromOrder.equals(block), 'Invalid block to revert');
         if (block) {
             this._transactions.removeAll(block.transactions);
         }
-        return Policy.TRANSACTION_VALIDITY_WINDOW - this._blockOrder.length;
+
+        return this.missingBlocks;
     }
 
     /**

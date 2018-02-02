@@ -109,9 +109,6 @@ class Account {
                 || blockHeight >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 throw new Error('Validity Error!');
             }
-            if (!transactionsCache.containsTransaction(transaction)) {
-                throw new Error('Unknown Transaction Error!');
-            }
             return this.withBalance(this._balance + transaction.value + transaction.fee);
         }
     }
