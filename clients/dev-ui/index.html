@@ -13,9 +13,6 @@
 <header>
     <span class="name icon-nimiq">nimiq</span>
     <span class="subtitle">Blockchain Cockpit &mdash; Luna</span>
-    <a class="headerlink" href="https://github.com/nimiq-network" target="_blank">GitHub</a>
-    <a class="headerlink" href="https://nimiq.com/" target="_blank">Website</a>
-    <a class="headerlink" href="https://nimiq.watch/" target="_blank">Explorer</a>
 </header>
 
 <script src="../../dist/nimiq.js"></script>
@@ -30,17 +27,85 @@
     </div>
 
     <div class="left">
-        <div class="info">
-            <div class="info-title">Wallet</div>
+        <!-- Account Lookup -->
+        <div class="info" account-info-ui>
+            <div class="info-title">Account Info</div>
             <hr/>
 
+            <div class="input-group">
+                <input address-input name="lookupAddr" maxlength="45" size="45">
+                <button clear-button>Clear</button>
+            </div>
+            <hr/>
             <div class="info-block">
                 <strong>Address</strong>
-                <span id="wltAddress" class="address"></span>
+                <span address class="address"></span>
             </div>
-            <div class="info-block wallet-balance">
-                <strong>Balance</strong>
-                <span id="wltBalance" class="icon-nimiq"></span>
+            <div class="info-block">
+                <strong>Account Type</strong>
+                <span account-type></span>
+            </div>
+            <div account-details>
+                <div class="info-block">
+                    <strong>Balance</strong>
+                    <span balance></span>
+                </div>
+                <div vesting-account-details>
+                    <div class="info-block">
+                        <strong>Owner</strong>
+                        <span vesting-owner class="address"></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Vesting Start</strong>
+                        <span vesting-start></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Vesting Step Blocks</strong>
+                        <span vesting-step-blocks></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Vesting Step Amount</strong>
+                        <span vesting-step-amount></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Vesting Total Amount</strong>
+                        <span vesting-total-amount></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Vesting Current Cap</strong>
+                        <span vesting-current-cap></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>Currently Transferable</strong>
+                        <span vesting-currently-transferable></span>
+                    </div>
+                </div>
+                <div htlc-account-details>
+                    <div class="info-block">
+                        <strong>HTLC Sender</strong>
+                        <span htlc-sender class="address"></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>HTLC Recipient</strong>
+                        <span htlc-recipient class="address"></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>HTLC Hash Root</strong>
+                        <hash htlc-hash-root></hash>
+                    </div>
+                    <div class="info-block">
+                        <strong>HTLC Hash Count</strong>
+                        <span htlc-hash-count></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>HTLC Timeout</strong>
+                        <span htlc-timeout></span>
+                    </div>
+                    <div class="info-block">
+                        <strong>HTLC Total Amount</strong>
+                        <span htlc-total-amount></span>
+                    </div>
+                </div>
             </div>
             <hr/>
         </div>
@@ -194,218 +259,141 @@
             </form>
         </div>
 
-        <div class="info" hide-nano>
+        <div class="info" hide-nano miner-ui>
             <div class="info-title">Miner</div>
             <hr/>
 
             <div class="info-block">
                 <strong>Working</strong>
-                <span id="mnrWorking"></span>
+                <span working></span>
             </div>
             <div class="info-block">
                 <strong>Hashrate</strong>
-                <span id="mnrHashrate"></span> H/s
+                <span hashrate></span> H/s
             </div>
             <div class="info-block">
                 <strong>Last block mined at</strong>
-                <span id="mnrLastBlockTs"></span>
+                <span last-mined-block-timestamp></span>
             </div>
             <div class="input-group">
-                <button id="mnrStartBtn">Start Mining</button>
+                <button start-button>Start Mining</button>
             </div>
             <hr/>
         </div>
     </div>
 
     <div class="right">
-        <div class="info">
-            <div class="info-title not-connected" id="bcTitle">Blockchain</div>
-            <hr/>
+        <div blockchain-ui>
+            <div class="info">
+                <div class="info-title not-connected" title>Blockchain</div>
+                <hr/>
 
-            <div class="info-block">
-                <strong>Height</strong>
-                <span id="bcHeight"></span>
+                <div class="info-block">
+                    <strong>Height</strong>
+                    <span chain-height></span>
+                </div>
+                <div class="info-block" hide-nano>
+                    <strong>Work</strong>
+                    <span total-difficulty></span> / <span total-work></span>
+                </div>
+                <div class="info-block">
+                    <strong>Block Time</strong>
+                    <span average-block-time></span> <small>average</small> /
+                    <span last-block-time></span> <small>last</small>
+                </div>
+                <div class="info-block">
+                    <strong>Accounts Hash</strong>
+                    <hash chain-accounts-hash></hash>
+                </div>
+                <hr/>
             </div>
-            <div class="info-block" hide-nano>
-                <strong>Work</strong>
-                <span id="bcTotalDifficulty"></span> / <span id="bcTotalWork"></span>
+
+            <div class="info">
+                <div class="info-title">Head Block</div>
+                <hr/>
+
+                <div class="info-block">
+                    <strong>Hash</strong>
+                    <hash head-hash></hash>
+                </div>
+                <div class="info-block">
+                    <strong>PoW Hash</strong>
+                    <hash head-pow-hash></hash>
+                </div>
+                <div class="info-block">
+                    <strong>Prev Hash</strong>
+                    <hash head-prev-hash></hash>
+                </div>
+                <div class="info-block">
+                    <strong>Accounts Hash</strong>
+                    <hash head-accounts-hash></hash>
+                </div>
+                <div class="info-block">
+                    <strong>Difficulty</strong>
+                    <span head-difficulty></span>
+                </div>
+                <div class="info-block">
+                    <strong>Timestamp</strong>
+                    <span head-timestamp></span>
+                </div>
+                <div class="info-block">
+                    <strong>Nonce</strong>
+                    <span head-nonce></span>
+                </div>
+                <div class="info-block">
+                    <strong>Interlink</strong>
+                    <span head-interlink></span>
+                </div>
+                <hr/>
             </div>
-            <div class="info-block">
-                <strong>Block Time</strong>
-                <span id="bcAverageBlockTime"></span> <small>average</small> /
-                <span id="bcLastBlockTime"></span> <small>last</small>
-            </div>
-            <div class="info-block">
-                <strong>Accounts Hash</strong>
-                <hash id="bcAccountsHash"></hash>
-            </div>
-            <hr/>
         </div>
 
-        <div class="info">
-            <div class="info-title">Head Block</div>
-            <hr/>
-
-            <div class="info-block">
-                <strong>Hash</strong>
-                <hash id="hdHash"></hash>
-            </div>
-            <div class="info-block">
-                <strong>PoW Hash</strong>
-                <hash id="hdPoW"></hash>
-            </div>
-            <div class="info-block">
-                <strong>Prev Hash</strong>
-                <hash id="hdPrevHash"></hash>
-            </div>
-            <div class="info-block">
-                <strong>Accounts Hash</strong>
-                <hash id="hdAccountsHash"></hash>
-            </div>
-            <div class="info-block">
-                <strong>Difficulty</strong>
-                <span id="hdDifficulty"></span>
-            </div>
-            <div class="info-block">
-                <strong>Timestamp</strong>
-                <span id="hdTimestamp"></span>
-            </div>
-            <div class="info-block">
-                <strong>Nonce</strong>
-                <span id="hdNonce"></span>
-            </div>
-            <div class="info-block">
-                <strong>Interlink</strong>
-                <span id="hdInterlink"></span>
-            </div>
-            <hr/>
-        </div>
-
-        <div class="info">
+        <div class="info" network-ui>
             <div class="info-title">Network</div>
             <hr/>
 
             <div class="info-block">
                 <strong>Peer address</strong>
-                <span id="netPeerAddress"></span>
+                <span peer-address></span>
             </div>
             <div class="info-block">
                 <strong>Peers</strong>
-                <span id="netPeerCount"></span>
+                <span peer-count></span>
                 &nbsp;
-                <small>(<span id="netPeerCountWs"></span> WS / <span id="netPeerCountRtc"></span> RTC)</small>
+                <small>(<span peer-count-ws></span> WS / <span peer-count-rtc></span> RTC)</small>
             </div>
             <div class="info-block">
                 <strong>Received</strong>
-                <span id="netBytesReceived"></span>
+                <span bytes-received></span>
             </div>
             <div class="info-block">
                 <strong>Sent</strong>
-                <span id="netBytesSent"></span>
+                <span bytes-sent></span>
             </div>
             <hr/>
         </div>
     </div>
 
-    <div class="info" style="clear: left;">
+    <div class="info" style="clear: left;" mempool-ui>
         <div class="info-title">Mempool</div>
         <hr/>
 
         <div class="info-block">
             <strong>Transaction Count</strong>
-            <span id="mplTransactionCount"></span>
+            <span transaction-count></span>
         </div>
-        <div class="info-block" id="mplTransactions"></div>
-        <hr/>
-    </div>
-
-    <!-- Account Lookup -->
-    <div class="info" account-info-ui>
-        <div class="info-title">Account Info</div>
-        <hr/>
-
-        <div class="input-group">
-            <input address-input name="lookupAddr" maxlength="45" size="45">
-            <button clear-button>Clear</button>
-        </div>
-        <hr/>
-        <div class="info-block">
-            <strong>Address</strong>
-            <span address class="address"></span>
-        </div>
-        <div class="info-block">
-            <strong>Account Type</strong>
-            <span account-type></span>
-        </div>
-        <div account-details>
-            <div class="info-block">
-                <strong>Balance</strong>
-                <span balance></span>
-            </div>
-            <div vesting-account-details>
-                <div class="info-block">
-                    <strong>Owner</strong>
-                    <span vesting-owner class="address"></span>
-                </div>
-                <div class="info-block">
-                    <strong>Vesting Start</strong>
-                    <span vesting-start></span>
-                </div>
-                <div class="info-block">
-                    <strong>Vesting Step Blocks</strong>
-                    <span vesting-step-blocks></span>
-                </div>
-                <div class="info-block">
-                    <strong>Vesting Step Amount</strong>
-                    <span vesting-step-amount></span>
-                </div>
-                <div class="info-block">
-                    <strong>Vesting Total Amount</strong>
-                    <span vesting-total-amount></span>
-                </div>
-                <div class="info-block">
-                    <strong>Vesting Current Cap</strong>
-                    <span vesting-current-cap></span>
-                </div>
-                <div class="info-block">
-                    <strong>Currently Transferable</strong>
-                    <span vesting-currently-transferable></span>
-                </div>
-            </div>
-            <div htlc-account-details>
-                <div class="info-block">
-                    <strong>HTLC Sender</strong>
-                    <span htlc-sender class="address"></span>
-                </div>
-                <div class="info-block">
-                    <strong>HTLC Recipient</strong>
-                    <span htlc-recipient class="address"></span>
-                </div>
-                <div class="info-block">
-                    <strong>HTLC Hash Root</strong>
-                    <hash htlc-hash-root></hash>
-                </div>
-                <div class="info-block">
-                    <strong>HTLC Hash Count</strong>
-                    <span htlc-hash-count></span>
-                </div>
-                <div class="info-block">
-                    <strong>HTLC Timeout</strong>
-                    <span htlc-timeout></span>
-                </div>
-                <div class="info-block">
-                    <strong>HTLC Total Amount</strong>
-                    <span htlc-total-amount></span>
-                </div>
-            </div>
-        </div>
+        <div class="info-block" transactions></div>
         <hr/>
     </div>
 </div>
 
 <script type="text/javascript" src="Utils.js"></script>
+<script type="text/javascript" src="BlockchainUi.js"></script>
 <script type="text/javascript" src="AccountInfoUi.js"></script>
 <script type="text/javascript" src="TransactionUi.js"></script>
+<script type="text/javascript" src="MempoolUi.js"></script>
+<script type="text/javascript" src="MinerUi.js"></script>
+<script type="text/javascript" src="NetworkUi.js"></script>
 <script type="text/javascript" src="script.js"></script>
 </body>
 </html>

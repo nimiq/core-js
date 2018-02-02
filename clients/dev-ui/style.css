@@ -61,14 +61,6 @@ header .subtitle {
     letter-spacing: 2px;
 }
 
-header a.headerlink {
-    float: right;
-    margin-right: 15px;
-    margin-top: 48px;
-    color: #FFF;
-    text-decoration: none;
-}
-
 input,
 select {
     border-radius: 3px;
@@ -238,7 +230,11 @@ hash {
 
 /* The order of these consensus classes is important to enable overwriting */
 
-#bcTitle:after {
+[blockchain-ui] [title] {
+    transition: background ease 0.5s;
+}
+
+[blockchain-ui] [title]:after {
     position: absolute;
     top: 7px;
     right: 20px;
@@ -299,66 +295,8 @@ hash {
     content: "Consensus established";
 }
 
-#newWallet {
-    padding: 20px 0px;
-    text-align: center;
-    border-bottom: 1px solid #aaa;
-    margin-bottom: 18px;
-}
-
-#newWallet button {
-    display: inline-block;
-    margin-top: 10px;
-}
-
-#loadWalletFromSeed {
-    padding: 5px 0px;
-}
-
-#walletSeed {
-    width: 200px;
-}
-
-.wallet-address, .wallet-balance, .wallet-nonce {
-    /*display:none;*/
-}
-
 .address {
     font-family: monospace;
-}
-
-.copy-wallet-seed {
-    display: none;
-}
-
-.get-seed-hint {
-    display: block;
-    padding: 15px 0px;
-}
-
-#mnrWorking {
-    font-weight: 600;
-}
-
-#mnrWorking.mining {
-    color: #2dad2d;
-}
-
-#mnrWorking.notmining {
-    color: #777;
-}
-
-#blockchain-title {
-    transition: background ease 0.5s;
-}
-
-#blockHistory {
-    display: flex;
-    flex-direction: column-reverse;
-}
-
-#blockHistory>div {
-    margin: 5px 0;
 }
 
 #content {
