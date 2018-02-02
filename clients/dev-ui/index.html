@@ -142,6 +142,44 @@
                     </label>
                 </div>
 
+                <!-- HTLC creation -->
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Sender</strong>
+                        <input tx-htlc-sender name="tx-htlc-sender" maxlength="45" size="45">
+                    </label>
+                </div>
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Recipient</strong>
+                        <input tx-htlc-recipient name="tx-htlc-recipient" maxlength="45" size="45">
+                    </label>
+                </div>
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Hash Algo</strong>
+                        <input tx-htlc-hash-algo name="tx-htlc-hash-algo" type="number">
+                    </label>
+                </div>
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Hash Root</strong>
+                        <input tx-htlc-hash-root name="tx-htlc-hash-root" pattern="^[A-Za-z0-9+/]*$">
+                    </label>
+                </div>
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Hash Count</strong>
+                        <input tx-htlc-hash-count name="tx-htlc-hash-count" type="number">
+                    </label>
+                </div>
+                <div class="input-group" show="htlc-creation">
+                    <label>
+                        <strong>HTLC Timeout</strong>
+                        <input tx-htlc-timeout name="tx-htlc-timeout" type="number">
+                    </label>
+                </div>
+
                 <div class="info-block" show="extended vesting-creation htlc-creation">
                     <strong>Contract</strong>
                     <span contract-address class="address"></span>

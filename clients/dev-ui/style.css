@@ -220,7 +220,8 @@ hash {
 
 .input-group label > strong {
     display: inline-block;
-    width: 75px;
+    width: 80px;
+    padding-right: 8px;
 }
 
 .input-group-button {
