@@ -147,9 +147,9 @@ class HashedTimeLockedContract extends Contract {
             && this._sender.equals(o._sender)
             && this._recipient.equals(o._recipient)
             && this._hashRoot.equals(o._hashRoot)
-            && this._hashCount.equals(o._hashCount)
-            && this._timeout.equals(o._timeout)
-            && this._totalAmount.equals(o._totalAmount);
+            && this._hashCount === o._hashCount
+            && this._timeout === o._timeout
+            && this._totalAmount === o._totalAmount;
     }
 
     /**
