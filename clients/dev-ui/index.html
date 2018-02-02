@@ -51,66 +51,100 @@
             <form>
                 <div class="input-group">
                     <label>
-                        <span>Type</span>
-                        <select tx-type-selector name="transaction-type">
+                        <strong>Type</strong>
+                        <select tx-type-selector name="tx-type">
                             <option value="basic" selected>Basic</option>
                             <option value="extended">Plain Extended</option>
-                            <option value="vesting-contract-creation">Vesting Contract Creation</option>
-                            <option value="htlc-contract-creation">HTLC Contract Creation</option>
+                            <option value="vesting-creation">Vesting Contract Creation</option>
+                            <option value="htlc-creation">HTLC Contract Creation</option>
                         </select>
                     </label>
                 </div>
-                <div class="input-group">
+                <div class="input-group" show="basic extended">
                     <label>
-                        <span>Recipient</span>
-                        <input tx-recipient name="transaction-recipient" maxlength="45" size="45">
+                        <strong>Recipient</strong>
+                        <input tx-recipient name="tx-recipient" maxlength="45" size="45">
                     </label>
                 </div>
                 <div class="input-group" show="extended">
                     <label>
-                        <span>Recipient Type</span>
-                        <input tx-recipient-type name="transaction-recipient-type" type="number" step="1">
+                        <strong>Recipient Type</strong>
+                        <input tx-recipient-type name="tx-recipient-type" type="number" step="1">
                     </label>
                 </div>
                 <div class="input-group">
                     <label>
-                        <span>Value</span>
-                        <input tx-value name="transaction-value" type="number" step="any">
+                        <strong>Value</strong>
+                        <input tx-value name="tx-value" type="number" step="any">
                     </label>
                 </div>
                 <div class="input-group">
                     <label>
-                        <span>Fee</span>
-                        <input tx-fee name="transaction-fee" type="number" step="0.01">
+                        <strong>Fee</strong>
+                        <input tx-fee name="tx-fee" type="number" step="0.01">
                     </label>
                 </div>
                 <div class="input-group">
                     <label>
-                        <span>Validity Start</span>
-                        <input tx-validity-start name="transaction-validity-start" type="number" step="1">
+                        <strong>Validity Start</strong>
+                        <input tx-validity-start name="tx-validity-start" type="number" step="1">
+                    </label>
+                </div>
+                <!-- Extended transaction -->
+                <div class="input-group" show="extended">
+                    <label>
+                        <strong>Flags</strong>
+                        <input tx-flags name="tx-flags" type="number">
                     </label>
                 </div>
                 <div class="input-group" show="extended">
                     <label>
-                        <span>Flags</span>
-                        <input tx-flags name="transaction-flags" type="number">
+                        <strong>Data</strong>
+                        <input tx-data name="tx-data" pattern="^[A-Za-z0-9+/]*$">
                     </label>
                 </div>
                 <div class="input-group" show="extended">
                     <label>
-                        <span>Data</span>
-                        <input tx-data name="transaction-data" pattern="^[A-Za-z0-9+/]*$">
+                        <strong>Proof</strong>
+                        <input tx-proof name="tx-proof" pattern="^[A-Za-z0-9+/]*$">
                     </label>
                 </div>
-                <div class="input-group" show="extended">
+
+                <!-- Vesting contract creation -->
+                <div class="input-group" show="vesting-creation">
                     <label>
-                        <span>Proof</span>
-                        <input tx-proof name="transaction-proof" pattern="^[A-Za-z0-9+/]*$">
+                        <strong>Vesting Owner</strong>
+                        <input tx-vesting-owner name="tx-vesting-creation-owner" maxlength="45" size="45">
                     </label>
                 </div>
-                <div class="info-block" show="extended vesting-contract-creation htlc-contract-creation">
+                <div class="input-group" show="vesting-creation">
+                    <label>
+                        <strong>Vesting Step Blocks</strong>
+                        <input tx-vesting-step-blocks name="tx-vesting-step-blocks" type="number" step="1">
+                    </label>
+                </div>
+                <div class="input-group" show="vesting-creation">
+                    <label>
+                        <strong>Vesting Step Amount</strong>
+                        <input tx-vesting-step-amount name="tx-vesting-step-amount" type="number" placeholder="optional">
+                    </label>
+                </div>
+                <div class="input-group" show="vesting-creation">
+                    <label>
+                        <strong>Vesting Start</strong>
+                        <input tx-vesting-start name="tx-vesting-creation-start" type="number" step="1" placeholder="optional">
+                    </label>
+                </div>
+                <div class="input-group" show="vesting-creation">
+                    <label>
+                        <strong>Vesting Total Amount</strong>
+                        <input tx-vesting-total-amount name="tx-vesting-total-amount" type="number" placeholder="optional">
+                    </label>
+                </div>
+
+                <div class="info-block" show="extended vesting-creation htlc-creation">
                     <strong>Contract</strong>
-                    <span contract-address></span>
+                    <span contract-address class="address"></span>
                 </div>
 
                 <hr class="morespace"/>
@@ -272,7 +306,7 @@
             </div>
             <div vesting-account-details>
                 <div class="info-block">
-                    <strong>Vesting Owner</strong>
+                    <strong>Owner</strong>
                     <span vesting-owner class="address"></span>
                 </div>
                 <div class="info-block">
@@ -297,7 +331,7 @@
                 </div>
                 <div class="info-block">
                     <strong>Currently Transferable</strong>
-                    <span vesting-currently-transferrable></span>
+                    <span vesting-currently-transferable></span>
                 </div>
             </div>
             <div htlc-account-details>
