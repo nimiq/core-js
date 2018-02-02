@@ -4,7 +4,7 @@ if (PlatformUtils.isBrowser()) {
 
         beforeAll(() => {
             netconfig = new NetworkConfig();
-            netconfig.signalId = new SignalId(new Uint8Array(SignalId.SERIALIZED_SIZE));
+            netconfig.peerId = new PeerId(new Uint8Array(PeerId.SERIALIZED_SIZE));
         });
 
         it('can instantiate a nano consensus', (done) => {

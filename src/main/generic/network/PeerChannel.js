@@ -217,8 +217,8 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {SignalId} senderId
-     * @param {SignalId} recipientId
+     * @param {PeerId} senderId
+     * @param {PeerId} recipientId
      * @param {number} nonce
      * @param {number} ttl
      * @param {SignalMessage.Flags|number} flags

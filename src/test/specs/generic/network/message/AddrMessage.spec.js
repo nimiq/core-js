@@ -1,5 +1,5 @@
 describe('AddrMessage', () => {
-    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), 0);
+    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), PeerId.NULL, 0);
 
     it('is correctly constructed', () => {
         const msg1 = new AddrMessage([addr]);
