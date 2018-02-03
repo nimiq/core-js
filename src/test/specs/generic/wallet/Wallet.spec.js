@@ -4,12 +4,12 @@ describe('Wallet', () => {
     const fee = 888;
     const nonce = 8;
     const deepLockRounds = KeyPair.EXPORT_KDF_ROUNDS;
-    
+
     beforeAll(() => {
         // Temporarily reduce deep lock rounds.
         KeyPair.EXPORT_KDF_ROUNDS = KeyPair.LOCK_KDF_ROUNDS;
     });
-    
+
     afterAll(() => {
         KeyPair.EXPORT_KDF_ROUNDS = deepLockRounds;
     });
@@ -44,8 +44,7 @@ describe('Wallet', () => {
             const wallet = await Wallet.generate();
             const wallet2 = await Wallet.loadPlain(wallet.exportPlain());
 
-            expect(wallet.keyPair.equals(wallet2.keyPair)).toBeTruthy();
-            expect(wallet.address.equals(wallet2.address)).toBeTruthy();
+            expect(wallet.equals(wallet2)).toBeTruthy();
         })().then(done, done.fail);
     });
 
