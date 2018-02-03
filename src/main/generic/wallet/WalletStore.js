@@ -3,8 +3,8 @@ class WalletStore {
     /**
      * @returns {Promise.<WalletStore>}
      */
-    constructor() {
-        this._jdb = new JDB.JungleDB('wallet', WalletStore.VERSION);
+    constructor(dbName = 'wallet') {
+        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION);
         /** @type {ObjectStore} */
         this._walletStore = null;
         /** @type {ObjectStore} */
@@ -102,7 +102,7 @@ class WalletStore {
         // Remove default address as well if they coincide.
         let defaultAddress = await this._walletStore.get('default');
         if (defaultAddress) {
-            defaultAddress = Address.unserialize(defaultAddress);
+            defaultAddress = new Address(defaultAddress);
             if (address.equals(defaultAddress)) {
                 await tx.remove('default');
             }

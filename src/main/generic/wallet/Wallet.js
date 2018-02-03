@@ -103,6 +103,14 @@ class Wallet {
     }
 
     /**
+     * @param {Wallet} o
+     * @return {boolean}
+     */
+    equals(o) {
+        return o instanceof Wallet && this.keyPair.equals(o.keyPair) && this.address.equals(o.address);
+    }
+
+    /**
      * The address of the Wallet owner.
      * @type {Address}
      */
