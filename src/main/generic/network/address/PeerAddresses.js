@@ -25,7 +25,7 @@ class PeerAddresses extends Observable {
          * @type {NetworkConfig}
          * @private
          */
-        this._netconfig = netconfig;
+        this._networkConfig = netconfig;
 
         // Number of WebSocket/WebRTC peers.
         /** @type {number} */
@@ -276,7 +276,7 @@ class PeerAddresses extends Observable {
      */
     _add(channel, peerAddress) {
         // Ignore our own address.
-        if (this._netconfig.peerAddress.equals(peerAddress)) {
+        if (this._networkConfig.peerAddress.equals(peerAddress)) {
             return false;
         }
 

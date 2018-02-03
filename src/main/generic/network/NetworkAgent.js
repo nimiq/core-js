@@ -2,24 +2,25 @@ class NetworkAgent extends Observable {
     /**
      * @param {IBlockchain} blockchain
      * @param {PeerAddresses} addresses
-     * @param {NetworkConfig} netconfig
+     * @param {NetworkConfig} networkConfig
      * @param {PeerChannel} channel
      *
      * @listens PeerChannel#version
+     * @listens PeerChannel#verack
      * @listens PeerChannel#addr
      * @listens PeerChannel#getAddr
      * @listens PeerChannel#ping
      * @listens PeerChannel#pong
      * @listens PeerChannel#close
      */
-    constructor(blockchain, addresses, netconfig, channel) {
+    constructor(blockchain, addresses, networkConfig, channel) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
         /** @type {PeerAddresses} */
         this._addresses = addresses;
         /** @type {NetworkConfig} */
-        this._netconfig = netconfig;
+        this._networkConfig = networkConfig;
         /** @type {PeerChannel} */
         this._channel = channel;
 
@@ -52,11 +53,25 @@ class NetworkAgent extends Observable {
         this._versionReceived = false;
 
         /**
+         * True if we have received the peer's verack message.
+         * @type {boolean}
+         * @private
+         */
+        this._verackReceived = false;
+
+        /**
          * True if we have successfully sent our version message.
          * @type {boolean}
          * @private
          */
         this._versionSent = false;
+
+        /**
+         * True if we have successfully sent our verack message.
+         * @type {boolean}
+         * @private
+         */
+        this._verackSent = false;
 
         /**
          * Number of times we have tried to send out the version message.
@@ -65,8 +80,13 @@ class NetworkAgent extends Observable {
          */
         this._versionAttempts = 0;
 
+        /** @type {Uint8Array} */
+        this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
+        Crypto.lib.getRandomValues(this._challengeNonce);
+
         // Listen to network/control messages from the peer.
         channel.on('version', msg => this._onVersion(msg));
+        channel.on('verack', msg => this._onVerAck(msg));
         channel.on('addr', msg => this._onAddr(msg));
         channel.on('get-addr', msg => this._onGetAddr(msg));
         channel.on('ping', msg => this._onPing(msg));
@@ -117,10 +137,15 @@ class NetworkAgent extends Observable {
     /* Handshake */
 
     handshake() {
+        if (this._versionSent) {
+            // Version already sent, no need to handshake again.
+            return;
+        }
+
         // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(this._netconfig.peerAddress, this._blockchain.headHash)) {
+        if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
                 this._channel.close('sending of version message failed');
@@ -141,10 +166,12 @@ class NetworkAgent extends Observable {
                 this._timers.clearTimeout('version');
                 this._channel.close('version timeout');
             }, NetworkAgent.HANDSHAKE_TIMEOUT);
-        } else {
-            // The peer has sent us his version message already.
-            this._finishHandshake();
         }
+
+        this._timers.setTimeout('verack', () => {
+            this._timers.clearTimeout('verack');
+            this._channel.close('verack timeout');
+        }, NetworkAgent.HANDSHAKE_TIMEOUT);
     }
 
     /**
@@ -212,12 +239,55 @@ class NetworkAgent extends Observable {
             peerAddress.timestamp - now
         );
 
-        // Remember that the peer has sent us this address.
-        this._knownAddresses.add(peerAddress);
-
         this._versionReceived = true;
 
-        if (this._versionSent) {
+        if (!this._versionSent) {
+            this.handshake();
+        }
+
+        this._channel.verack(this._networkConfig.keyPair.publicKey, Signature.create(this._networkConfig.keyPair.privateKey, this._networkConfig.keyPair.publicKey, msg.challengeNonce));
+
+        this._verackSent = true;
+
+        if (this._verackReceived) {
+            this._finishHandshake();
+        }
+    }
+
+    /**
+     * @param {VerAckMessage} msg
+     * @private
+     */
+    _onVerAck(msg) {
+        Log.d(NetworkAgent, () => `[VERACK] from ${this._peer.peerAddress}`);
+
+        // Make sure this is a valid message in our current state.
+        if (!this._canAcceptMessage(msg)) {
+            return;
+        }
+
+        // Clear the verack timeout.
+        this._timers.clearTimeout('verack');
+
+        // Verify public key
+        if (!msg.publicKey.toPeerId().equals(this._peer.peerAddress.peerId)) {
+            this._channel.close('Invalid public in verack message');
+            return;
+        }
+
+        // Verify signature
+        if (!msg.signature.verify(msg.publicKey, this._challengeNonce)) {
+            this._channel.close('Invalid signature in verack message');
+            return;
+        }
+
+
+        // Remember that the peer has sent us this address.
+        this._knownAddresses.add(this._channel.peerAddress);
+
+        this._verackReceived = true;
+
+        if (this._verackSent) {
             this._finishHandshake();
         }
     }
@@ -231,7 +301,7 @@ class NetworkAgent extends Observable {
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([this._netconfig.peerAddress]),
+            () => this._channel.addr([this._networkConfig.peerAddress]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Tell listeners about the new peer that connected.
@@ -246,7 +316,7 @@ class NetworkAgent extends Observable {
 
     _requestAddresses() {
         // Request addresses from peer.
-        this._channel.getAddr(this._netconfig.protocolMask, this._netconfig.services.accepted);
+        this._channel.getAddr(this._networkConfig.protocolMask, this._networkConfig.services.accepted);
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.
@@ -382,6 +452,11 @@ class NetworkAgent extends Observable {
                 + ' - no version message received previously');
             return false;
         }
+        if (this._verackReceived && !this._verackReceived && msg.type !== Message.Type.VERACK) {
+            Log.w(NetworkAgent, `Discarding ${msg.type} message from ${this._channel}`
+                + ' - no verack message received previously');
+            return false;
+        }
         return true;
     }
 
@@ -395,6 +470,7 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
+
 NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
 NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
 NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute

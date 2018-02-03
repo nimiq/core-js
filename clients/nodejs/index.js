@@ -1,8 +1,49 @@
 const Nimiq = require('../../dist/node.js');
+const START = Date.now();
+/**
+ * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean}}
+ */
 const argv = require('minimist')(process.argv.slice(2));
 
-if (!argv.host || !argv.port || !argv.key || !argv.cert) {
-    console.log('Usage: node index.js --host=<hostname> --port=<port> --key=<ssl-key> --cert=<ssl-cert> [--wallet-seed=<wallet-seed>] [--wallet-address=<address>] [--miner[=<thread-num>[:<throttle-after>[:<throttle-wait>]]]] [--statistics[=<interval>]] [--passive] [--log=LEVEL] [--log-tag=TAG[:LEVEL]]');
+const type = typeof argv.type === 'string' ? argv.type : 'full';
+
+if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.help || (type !== 'full' && type !== 'light' && type !== 'nano')) {
+    console.log(
+        'Nimiq NodeJS client\n' +
+        '\n' +
+        'Usage:\n' +
+        '    node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]\n' +
+        '    node index.js --dumb [options]\n' +
+        '\n' +
+        'Configuration:\n' +
+        '  --cert=SSL_CERT_FILE       Certificate file to use. CN should match HOSTNAME.\n' +
+        '  --dumb                     Set up a dumb node. Other nodes will not be able\n' +
+        '                             to connect to this node, but you may connect to\n' +
+        '                             others.\n' +
+        '  --host=HOSTNAME            Configure hostname.\n' +
+        '  --key=SSL_KEY_FILE         Private key file to use.\n' +
+        '  --port=PORT                Specifies which port to listen on for connections.\n' +
+        '\n' +
+        'Options:\n' +
+        '  --help                     Show this usage instructions.\n' +
+        '  --log[=LEVEL]              Configure global log level. Not specifying a log\n' +
+        '                             level will enable verbose log output.\n' +
+        '  --log-tag=TAG[:LEVEL]      Configure log level for a specific tag.\n' +
+        '  --miner[=THREADS           Activate mining on this node. The miner will be set\n' +
+        '         [:THROTTLE_AFTER    up to use THREADS parallel threads and can be\n' +
+        '         [:THROTTLE_WAIT]]]  throttled using THROTTLE_AFTER and _WAIT arguments.\n' +
+        '  --passive                  Do not actively connect to the network and do not\n' +
+        '                             wait for connection establishment.\n' +
+        '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
+        '                             account balance and mempool size every INTERVAL\n' +
+        '                             seconds.\n' +
+        '  --type=TYPE                Configure the consensus type to establish, one of\n' +
+        '                             full (default), light or nano.\n' +
+        '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
+        '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
+        '                             The wallet cannot be used to sign transactions when\n' +
+        '                             using this option.');
+
     process.exit();
 }
 
@@ -15,6 +56,12 @@ const key = argv.key;
 const cert = argv.cert;
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
+const isNano = argv.type === 'nano';
+
+if (isNano && minerOptions) {
+    console.error('Cannot mine when running a nano client.');
+    process.exit(1);
+}
 
 if (argv['log']) {
     Nimiq.Log.instance.level = argv['log'] === true ? Nimiq.Log.VERBOSE : argv['log'];
@@ -34,7 +81,7 @@ if (walletSeed && walletAddress) {
     process.exit(1);
 }
 
-console.log(`Nimiq NodeJS Client starting (host=${host}, port=${port}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive})`);
+console.log(`Nimiq NodeJS Client starting (${host && port ? `host=${host}, port=${port}` : 'dumb'}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive})`);
 
 const TAG = 'Node';
 
@@ -42,7 +89,17 @@ const $ = {};
 
 (async () => {
     const netconfig = new Nimiq.NetworkConfig(host, port, key, cert);
-    $.consensus = await Nimiq.Consensus.full(netconfig);
+    switch (type) {
+        case 'full':
+            $.consensus = await Nimiq.Consensus.full(netconfig);
+            break;
+        case 'light':
+            $.consensus = await Nimiq.Consensus.light(netconfig);
+            break;
+        case 'nano':
+            $.consensus = await Nimiq.Consensus.nano(netconfig);
+            break;
+    }
 
     $.blockchain = $.consensus.blockchain;
     $.accounts = $.blockchain.accounts;
@@ -74,9 +131,9 @@ const $ = {};
     const addresses = await $.walletStore.list();
     Nimiq.Log.i(TAG, `Managing addresses [${addresses.map(address => address.toUserFriendlyAddress())}]`);
 
-    const account = await $.accounts.get($.wallet.address);
+    const account = !isNano ? await $.accounts.get($.wallet.address) : null;
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
-                  + ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`);
+        + (!isNano ? ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : ''));
 
     $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
 
@@ -113,7 +170,7 @@ const $ = {};
     }
 
     $.consensus.on('established', () => {
-        Nimiq.Log.i(TAG, 'Blockchain consensus established');
+        Nimiq.Log.i(TAG, `Blockchain ${argv.type}-consensus established in ${(Date.now() - START) / 1000}s.`);
     });
 
     $.miner.on('block-mined', (block) => {
@@ -132,8 +189,8 @@ const $ = {};
                 const account = await $.accounts.get($.wallet.address);
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
                 Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(Math.log10(hashrates.length)).padStart(7)} H/s`
-                            + ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`
-                            + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
+                    + (!isNano ? ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : '')
+                    + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
                 hashrates.length = 0;
             }
         });

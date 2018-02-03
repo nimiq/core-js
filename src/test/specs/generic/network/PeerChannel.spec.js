@@ -6,6 +6,7 @@ describe('PeerChannel', () => {
     const addr = new WsPeerAddress(Services.DEFAULT, Date.now(), NetAddress.UNSPECIFIED, PeerId.NULL, 1, 'node1.nimiq.com', 8443);
 
     it('can send a VersionMessage', (done) => {
+        const challenge = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         (async function () {
             // We need this to prevent a race condition where a new
             // VersionMessage would be created before Block.GENESIS.HASH
@@ -15,9 +16,10 @@ describe('PeerChannel', () => {
                 expect(vMsg.version).toBe(Version.CODE);
                 expect(vMsg.peerAddress.equals(addr)).toBe(true);
                 expect(vMsg.headHash.equals(hash)).toBe(true);
+                expect(BufferUtils.equals(vMsg.challengeNonce, challenge)).toBe(true);
             });
             const client = new PeerChannel(spy);
-            client.version(addr, hash);
+            client.version(addr, hash, challenge);
         })().then(done, done.fail);
     });
 
