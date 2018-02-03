@@ -7,6 +7,13 @@ class SynchronousAccountsTreeStore {
     }
 
     /**
+     * @param {Array.<string>} keys
+     */
+    async preload(keys) {
+        await this._store.preload(keys);
+    }
+
+    /**
      * @param {string} key
      * @returns {Promise.<AccountsTreeNode>}
      */

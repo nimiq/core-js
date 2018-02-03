@@ -25,21 +25,20 @@ class SynchronousAccountsTree extends AccountsTree {
         // We sort the addresses to simplify traversal in post order (leftmost addresses first).
         prefixes.sort();
 
-        const nodes = [];
-        await this._preloadAddresses(rootNode, prefixes, nodes);
-        return new AccountsProof(nodes);
+        await this._preloadAddresses(rootNode, prefixes);
     }
 
     /**
      * @param {AccountsTreeNode} node
      * @param {Array.<string>} prefixes
-     * @param {Array.<AccountsTreeNode>} nodes
-     * @returns {Promise.<*>}
      * @private
      */
-    async _preloadAddresses(node, prefixes, nodes) {
+    async _preloadAddresses(node, prefixes) {
+        if (node.hasChildren()) {
+            await this._store.preload(node.getChildren());
+        }
+        
         // For each prefix, descend the tree individually.
-        let includeNode = false;
         for (let i = 0; i < prefixes.length; ) {
             let prefix = prefixes[i];
 
@@ -50,7 +49,6 @@ class SynchronousAccountsTree extends AccountsTree {
             // If the prefix does not fully match, the requested address is not part of this node.
             // Include the node in the proof nevertheless to prove that the account doesn't exist.
             if (commonPrefix.length !== node.prefix.length || node.prefix === prefix) {
-                includeNode = true;
                 i++;
                 continue;
             }
@@ -58,7 +56,7 @@ class SynchronousAccountsTree extends AccountsTree {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = await this._store.getAndPreload(childKey); // eslint-disable-line no-await-in-loop
+                const childNode = this._store.getSync(childKey); // eslint-disable-line no-await-in-loop
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -77,21 +75,13 @@ class SynchronousAccountsTree extends AccountsTree {
                 // we continue from there in the next iteration.
                 i = j;
 
-                includeNode = (await this._preloadAddresses(childNode, subPrefixes, nodes)) || includeNode; // eslint-disable-line no-await-in-loop
+                await this._preloadAddresses(childNode, subPrefixes); // eslint-disable-line no-await-in-loop
             }
             // No child node exists with the requested prefix. Include the current node to prove the absence of the requested account.
             else {
-                includeNode = true;
                 i++;
             }
         }
-
-        // If this branch contained at least one account, we add this node.
-        if (includeNode) {
-            nodes.push(node);
-        }
-
-        return includeNode;
     }
 
 
