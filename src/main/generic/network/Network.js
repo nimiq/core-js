@@ -477,11 +477,14 @@ class Network extends Observable {
         const offsetsLength = offsets.length;
         offsets.sort((a, b) => a - b);
 
+        let timeOffset;
         if ((offsetsLength % 2) === 0) {
-            this._time.offset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
+            timeOffset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
         } else {
-            this._time.offset = offsets[(offsetsLength - 1) / 2];
+            timeOffset = offsets[(offsetsLength - 1) / 2];
         }
+
+        this._time.offset = Math.max(Math.min(timeOffset, Network.TIME_OFFSET_MAX), -Network.TIME_OFFSET_MAX);
     }
 
     /* Signaling */
@@ -620,6 +623,7 @@ Network.SIGNAL_TTL_INITIAL = 3;
 Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
 Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
 Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
+Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
 Class.register(Network);
 
 class SignalStore {
