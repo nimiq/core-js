@@ -33,7 +33,7 @@
     "atob": "^2.0.3",
     "btoa": "^1.1.2",
     "chalk": "^1.1.3",
-    "jungle-db": "nimiq-network/jungle-db#v0.3.7-alpha.1",
+    "jungle-db": "nimiq-network/jungle-db#paberr/refactoring",
     "leveldown": "^1.6.0",
     "levelup": "^1.3.5",
     "nan": "^2.7.0",

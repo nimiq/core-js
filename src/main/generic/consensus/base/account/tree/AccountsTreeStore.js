@@ -112,6 +112,15 @@ class AccountsTreeStore {
     }
 
     /**
+     * @param {boolean} [enableWatchdog]
+     * @returns {SynchronousAccountsTreeStore}
+     */
+    synchronousTransaction(enableWatchdog = true) {
+        const tx = this._store.synchronousTransaction(enableWatchdog);
+        return new SynchronousAccountsTreeStore(tx);
+    }
+
+    /**
      * @returns {Promise}
      */
     truncate() {

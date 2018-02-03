@@ -529,6 +529,15 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @param {boolean} [enableWatchdog]
+     * @returns {Promise.<SynchronousAccountsTree>}
+     */
+    synchronousTransaction(enableWatchdog = true) {
+        const tree = new SynchronousAccountsTree(this._store.synchronousTransaction(enableWatchdog));
+        return tree._init();
+    }
+
+    /**
      * @returns {Promise.<PartialAccountsTree>}
      */
     async partialTree() {

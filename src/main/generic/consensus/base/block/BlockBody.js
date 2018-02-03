@@ -161,6 +161,17 @@ class BlockBody {
             && this._transactions.every((tx, i) => tx.equals(o.transactions[i]));
     }
 
+    /**
+     * @return {Array.<Address>}
+     */
+    getAddresses() {
+        const addresses = [this._minerAddr];
+        for (const tx of this._transactions) {
+            addresses.push(tx.sender, tx.recipient);
+        }
+        return addresses;
+    }
+
     /** @type {Uint8Array} */
     get extraData() {
         return this._extraData;
