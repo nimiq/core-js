@@ -15,22 +15,24 @@ class WebSocketConnector extends Observable {
         const port = netconfig.peerAddress.port;
         const sslConfig = netconfig.sslConfig;
 
-        const options = {
-            key: fs.readFileSync(sslConfig.key),
-            cert: fs.readFileSync(sslConfig.cert)
-        };
+        if (port && sslConfig) {
+            const options = {
+                key: fs.readFileSync(sslConfig.key),
+                cert: fs.readFileSync(sslConfig.cert)
+            };
 
-        const httpsServer = https.createServer(options, (req, res) => {
-            res.writeHead(200);
-            res.end('Nimiq NodeJS Client\n');
-        }).listen(port);
+            const httpsServer = https.createServer(options, (req, res) => {
+                res.writeHead(200);
+                res.end('Nimiq NodeJS Client\n');
+            }).listen(port);
 
-        this._wss = new WebSocket.Server({server: httpsServer});
-        this._wss.on('connection', ws => this._onConnection(ws));
+            this._wss = new WebSocket.Server({server: httpsServer});
+            this._wss.on('connection', ws => this._onConnection(ws));
+
+            Log.d(WebSocketConnector, `WebSocketConnector listening on port ${port}`);
+        }
 
         this._timers = new Timers();
-
-        Log.d(WebSocketConnector, `WebSocketConnector listening on port ${port}`);
     }
 
     connect(peerAddress) {
@@ -43,7 +45,8 @@ class WebSocketConnector extends Observable {
         }
 
         const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`, {
-            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
+            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT,
+            rejectUnauthorized: false
         });
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);

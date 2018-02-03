@@ -152,6 +152,8 @@ Message.Type = {
     GET_TRANSACTIONS_PROOF:     47,
     TRANSACTIONS_PROOF:         48,
     GET_TRANSACTION_RECEIPTS:           49,
-    TRANSACTION_RECEIPTS:        50
+    TRANSACTION_RECEIPTS:        50,
+
+    VERACK:   90
 };
 Class.register(Message);

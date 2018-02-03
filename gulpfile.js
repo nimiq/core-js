@@ -141,6 +141,7 @@ const sources = {
         './src/main/generic/network/message/SubscribeMessage.js',
         './src/main/generic/network/message/TxMessage.js',
         './src/main/generic/network/message/VersionMessage.js',
+        './src/main/generic/network/message/VerAckMessage.js',
         './src/main/generic/network/message/AccountsProofMessage.js',
         './src/main/generic/network/message/GetAccountsProofMessage.js',
         './src/main/generic/network/message/ChainProofMessage.js',

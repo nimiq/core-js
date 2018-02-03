@@ -241,7 +241,7 @@ class WsPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `wss://${this._host}:${this._port}`;
+        return `wss://${this._host}:${this._port}/${this._peerId ? this._peerId : ''}`;
     }
 
     /** @type {string} */
@@ -315,7 +315,7 @@ class RtcPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `rtc://${this._peerId}`;
+        return `rtc:///${this._peerId}`;
     }
 }
 
@@ -379,7 +379,7 @@ class DumbPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `dumb://${this._peerId}`;
+        return `dumb:///${this._peerId}`;
     }
 }
 
