@@ -6,7 +6,7 @@ class FullChain extends BaseChain {
      * @param {JungleDB} jdb
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionStore} transactionStore
+     * @param {TransactionStore} [transactionStore]
      * @returns {Promise.<FullChain>}
      */
     static getPersistent(jdb, accounts, time, transactionStore) {
@@ -18,7 +18,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Accounts} accounts
      * @param {Time} time
-     * @param {TransactionStore} transactionStore
+     * @param {TransactionStore} [transactionStore]
      * @returns {Promise.<FullChain>}
      */
     static createVolatile(accounts, time, transactionStore) {

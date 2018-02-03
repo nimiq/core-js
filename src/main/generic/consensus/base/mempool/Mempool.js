@@ -57,28 +57,6 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.INVALID;
         }
 
-        // Retrieve sender account.
-        /** @type {Account} */
-        let senderAccount;
-        try {
-            senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
-        } catch (e) {
-            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
-            return Mempool.ReturnCode.INVALID;
-        }
-
-        // Fully verify the transaction against the current accounts state + Mempool.
-        const newSet = set.copyAndAdd(transaction);
-        let tmpAccount = senderAccount;
-        try {
-            for (const tx of newSet.transactions) {
-                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
-            }
-        } catch (e) {
-            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
-            return Mempool.ReturnCode.INVALID;
-        }
-
         // Retrieve recipient account and test incoming transaction.
         /** @type {Account} */
         let recipientAccount;
@@ -90,9 +68,40 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.INVALID;
         }
 
+        // Retrieve sender account.
+        /** @type {Account} */
+        let senderAccount;
+        try {
+            senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
+        } catch (e) {
+            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+            return Mempool.ReturnCode.INVALID;
+        }
+
+        // Add new transaction to the sender's pending transaction set. Then re-check all transactions in the set
+        // in fee/byte order against the sender account state. Adding high fee transactions may thus invalidate
+        // low fee transactions in the set.
+        const transactions = [];
+        let tmpAccount = senderAccount;
+        for (const tx of set.copyAndAdd(transaction).transactions) {
+            try {
+                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
+                transactions.push(tx);
+            } catch (e) {
+                // If the rejected transaction is the one we're pushing, fail.
+                // Otherwise, evict the rejected transaction from the mempool.
+                if (tx.equals(transaction)) {
+                    Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+                    return Mempool.ReturnCode.INVALID;
+                } else {
+                    this._transactionsByHash.remove(tx.hash());
+                }
+            }
+        }
+
         // Transaction is valid, add it to the mempool.
         this._transactionsByHash.put(hash, transaction);
-        this._transactionSetByAddress.put(transaction.sender, newSet);
+        this._transactionSetByAddress.put(transaction.sender, new MempoolTransactionSet(transactions));
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);

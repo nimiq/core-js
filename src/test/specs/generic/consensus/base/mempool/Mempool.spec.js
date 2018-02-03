@@ -2,7 +2,7 @@ describe('Mempool', () => {
     it('will not push the same transaction twice', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.generate();
 
@@ -25,7 +25,7 @@ describe('Mempool', () => {
     it('will always verify a transaction before accepting it', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.generate();
 
@@ -76,7 +76,7 @@ describe('Mempool', () => {
     it('can push and get a valid transaction', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.generate();
 
@@ -100,7 +100,7 @@ describe('Mempool', () => {
     it('can push 2 transactions from same user', (done) => {
         (async () => {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
             const wallet = await Wallet.generate();
 
@@ -127,7 +127,7 @@ describe('Mempool', () => {
     it('can get a list of its transactions and can evict them', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
 
             // How many transactions should be used in this test
@@ -176,7 +176,7 @@ describe('Mempool', () => {
     it('can evict mined transactions', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
 
             const wallets = [];
@@ -222,7 +222,7 @@ describe('Mempool', () => {
     it('can evict non-mined transactions to restore validity', (done) => {
         (async function () {
             const accounts = await Accounts.createVolatile();
-            const blockchain = await FullChain.createVolatile(accounts);
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
 
             const wallets = [];
@@ -233,12 +233,10 @@ describe('Mempool', () => {
             }
 
             // Push a bunch of transactions into the mempool
-            const referenceTransactions = [];
             for (let i = 1; i < 6; i++) {
                 const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
-                referenceTransactions.push(transaction);
             }
 
             const largeTransaction = await wallets[0].createTransaction(wallets[2].address, 4, 0, 1); // eslint-disable-line no-await-in-loop
@@ -251,10 +249,75 @@ describe('Mempool', () => {
             blockchain.fire('head-changed');
 
             // Check that all the transactions were evicted
-            mempool.on('transactions-ready', async function() {
-                const transactions = await mempool.getTransactions();
+            mempool.on('transactions-ready', function() {
+                const transactions = mempool.getTransactions();
                 expect(transactions.length).toEqual(1);
             });
+        })().then(done, done.fail);
+    });
+
+    it('prefers high fee transactions over low fee transactions', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallets = [];
+            for (let i = 0; i < 6; i++) {
+                const wallet = await Wallet.generate();
+                await accounts._tree.put(wallet.address, new BasicAccount(10));
+                wallets.push(wallet);
+            }
+
+            // Push a bunch of transactions into the mempool
+            for (let i = 1; i < 6; i++) {
+                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 1, 1); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+            }
+
+            // Try to push a low fee transaction
+            const lowFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 1, 0, 1);
+            let result = await mempool.pushTransaction(lowFeeTransaction);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
+
+            // Push a higher fee transaction
+            const highFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 1, 9, 1);
+            result = await mempool.pushTransaction(highFeeTransaction);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+
+            const transactions = mempool.getTransactions();
+            expect(transactions.length).toEqual(1);
+            expect(transactions[0].equals(highFeeTransaction)).toBe(true);
+        })().then(done, done.fail);
+    });
+
+    it('rejects free transactions beyond the free transaction limit', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
+            const mempool = new Mempool(blockchain, accounts);
+
+            const wallets = [];
+            for (let i = 0; i < Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 1; i++) {
+                const wallet = await Wallet.generate();
+                await accounts._tree.put(wallet.address, new BasicAccount(Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 2));
+                wallets.push(wallet);
+            }
+
+            // Push a bunch of free transactions into the mempool
+            for (let i = 1; i < Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 1; i++) {
+                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+            }
+
+            expect(mempool.getTransactions().length).toBe(Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX);
+
+            // Try to push another free transaction
+            const lowFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 2, 0, 1);
+            const result = await mempool.pushTransaction(lowFeeTransaction);
+            expect(result).toBe(Mempool.ReturnCode.FEE_TOO_LOW);
         })().then(done, done.fail);
     });
 });
