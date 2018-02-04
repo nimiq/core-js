@@ -533,8 +533,7 @@ class AccountsTree extends Observable {
      * @returns {Promise.<SynchronousAccountsTree>}
      */
     synchronousTransaction(enableWatchdog = true) {
-        const tree = new SynchronousAccountsTree(this._store.synchronousTransaction(enableWatchdog));
-        return tree._init();
+        return new SynchronousAccountsTree(this._store.synchronousTransaction(enableWatchdog));
     }
 
     /**

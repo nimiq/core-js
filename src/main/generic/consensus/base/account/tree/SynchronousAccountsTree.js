@@ -1,13 +1,26 @@
-class SynchronousAccountsTree extends AccountsTree {
+class SynchronousAccountsTree {
     /**
      * @private
      * @param {SynchronousAccountsTreeStore} store
-     * @returns {AccountsTree}
+     * @returns {Promise.<SynchronousAccountsTree>}
      */
     constructor(store) {
-        super();
         /** @type {SynchronousAccountsTreeStore} */
         this._store = store;
+        return this._init();
+    }
+
+    /**
+     * @returns {Promise.<SynchronousAccountsTree>}
+     * @protected
+     */
+    async _init() {
+        let rootNode = await this._store.getRootNode();
+        if (!rootNode) {
+            rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*childrenSuffixes*/ [], /*childrenHashes*/ []);
+            await this._store.put(rootNode);
+        }
+        return this;
     }
 
     /**
@@ -84,6 +97,16 @@ class SynchronousAccountsTree extends AccountsTree {
         }
     }
 
+    /**
+     * @param {Address} address
+     * @param {Account} account
+     * @private
+     */
+    put(address, account) {
+        this.putBatch(address, account);
+        this.finalizeBatch();
+    }
+
     finalizeBatch() {
         const rootNode = this._store.getRootNodeSync();
         this._updateHashes(rootNode);
@@ -95,7 +118,7 @@ class SynchronousAccountsTree extends AccountsTree {
      * @private
      */
     putBatch(address, account) {
-        if (account.isInitial() && !this.getSync(address, false)) {
+        if (account.isInitial() && !this.get(address, false)) {
             return;
         }
 
@@ -266,7 +289,7 @@ class SynchronousAccountsTree extends AccountsTree {
      * @param {boolean} [expectedToBePresent]
      * @returns {?Account}
      */
-    getSync(address, expectedToBePresent = true) {
+    get(address, expectedToBePresent = true) {
         const node = this._store.getSync(address.toHex(), expectedToBePresent);
         return node !== undefined ? node.account : null;
     }

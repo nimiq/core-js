@@ -184,7 +184,7 @@ class Accounts extends Observable {
      * @return {Account}
      */
     _getSync(address, accountType, tree) {
-        const account = tree.getSync(address, false);
+        const account = tree.get(address, false);
         if (!account) {
             if (typeof accountType === 'undefined') {
                 return Account.INITIAL;
