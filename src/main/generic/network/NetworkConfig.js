@@ -1,116 +1,80 @@
 class NetworkConfig {
     /**
-     * @constructor
-     * @todo This should probably be a structure, not 4 arguments
-     * @param {?string} [host]
-     * @param {?number} [port]
-     * @param {?string} [key]
-     * @param {?string} [cert]
+     * @returns {NetworkConfig}
      */
-    constructor(host, port, key, cert) {
-        this._host = host;
-        this._port = port;
-        this._key = key;
-        this._cert = cert;
+    static getDefault() {
+        return PlatformUtils.supportsWebRTC()
+            ? new RtcNetworkConfig()
+            : new DumbNetworkConfig();
+    }
 
+    /**
+     * @constructor
+     * @param {number} protocolMask
+     */
+    constructor(protocolMask) {
         /** @type {number} */
-        this._protocolMask = Protocol.WS;
-        if (PlatformUtils.supportsWebRTC()) this._protocolMask |= Protocol.RTC;
+        this._protocolMask = protocolMask;
+
+        /**
+         * @type {KeyPair}
+         * @protected
+         */
+        this._keyPair = null;
+
+        /**
+         * @type {PeerId}
+         * @protected
+         */
+        this._peerId = null;
+
+        /**
+         * @type {Services}
+         * @protected
+         */
+        this._services = null;
     }
 
     async init() {
         const db = await new PeerKeyStore();
+        /** @type {KeyPair} */
         let keys = await db.get('keys');
         if (!keys) {
             keys = KeyPair.generate();
             await db.put('keys', keys);
         }
         await db.close();
-        /** @type {KeyPair} */
         this._keyPair = keys;
-    }
-
-    /**
-     * @return {Services}
-     */
-    get services() {
-        return this._services;
+        this._peerId = keys.publicKey.toPeerId();
     }
 
     /**
      * Used for filtering peer addresses by protocols.
-     * @return {number}
+     * @type {number}
      */
     get protocolMask() {
         return this._protocolMask;
     }
 
     /**
-     * @return {?{key: string, cert: string}}
-     */
-    get sslConfig() {
-        if (this._key) {
-            return {
-                key: this._key,
-                cert: this._cert
-            };
-        }
-        return null;
-    }
-
-    /**
-     * @returns {?RTCConfiguration}
-     */
-    get rtcConfig() {
-        if (PlatformUtils.supportsWebRTC()) {
-            return {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun.nimiq-network.com:19302' }
-                ]
-            };
-        }
-        return null;
-    }
-
-    /**
-     * @returns {PeerId}
-     */
-    get peerId() {
-        return this._keyPair.publicKey.toPeerId();
-    }
-
-    /**
-     * @return {KeyPair}
+     * @type {KeyPair}
      */
     get keyPair() {
         return this._keyPair;
     }
 
     /**
-     * @return {PeerAddress}
+     * @type {PeerId}
      */
-    get peerAddress() {
-        if (!this._time || !this._services || !this._keyPair) {
-            throw 'PeerAddress is not configured.';
-        }
+    get peerId() {
+        return this._peerId;
+    }
 
-        if (this._host && this._port && this._cert) {
-            return new WsPeerAddress(
-                this.services.provided, this._time.now(), NetAddress.UNSPECIFIED,
-                this.peerId, /*distance*/ 0,
-                this._host, this._port);
-        }
-
-        if (PlatformUtils.supportsWebRTC()) {
-            return new RtcPeerAddress(
-                this.services.provided, this._time.now(), NetAddress.UNSPECIFIED,
-                this.peerId, /*distance*/ 0);
-        }
-
-        return new DumbPeerAddress(
-            this.services.provided, this._time.now(), NetAddress.UNSPECIFIED,
-            this.peerId, /*distance*/ 0);
+    /**
+     * @type {Services}
+     */
+    get services() {
+        return this._services;
     }
 
     /**
@@ -121,27 +85,125 @@ class NetworkConfig {
     }
 
     /**
-     * @param {Time} time
+     * @type {PeerAddress}
      */
-    set time(time) {
-        this._time = time;
+    get peerAddress() {
+        throw new Error('Not implemented');
     }
 
     /**
      * @param {number} protocol
-     * @return {boolean}
+     * @returns {boolean}
      */
-    static canConnect(protocol) {
-        switch (protocol) {
-            case Protocol.WS:
-                return true;
-            case Protocol.RTC:
-                return PlatformUtils.supportsWebRTC();
-            case Protocol.DUMB:
-            default:
-                return false;
-        }
+    canConnect(protocol) {
+        return (protocol & this._protocolMask) !== 0;
     }
 }
-
 Class.register(NetworkConfig);
+
+class WsNetworkConfig extends NetworkConfig {
+    /**
+     * @constructor
+     * @param {string} host
+     * @param {number} port
+     * @param {string} key
+     * @param {string} cert
+     */
+    constructor(host, port, key, cert) {
+        super(Protocol.WS);
+        this._host = host;
+        this._port = port;
+        this._key = key;
+        this._cert = cert;
+
+        /* @type {{key: string, cert: string}} */
+        this._sslConfig = {
+            key: this._key,
+            cert: this._cert
+        };
+    }
+
+    /**
+     * @type {{key: string, cert: string}}
+     */
+    get sslConfig() {
+        return this._sslConfig;
+    }
+
+    /**
+     * @type {WsPeerAddress}
+     * @override
+     */
+    get peerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw 'PeerAddress is not configured.';
+        }
+
+        return new WsPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this._peerId, /*distance*/ 0,
+            this._host, this._port);
+    }
+}
+Class.register(WsNetworkConfig);
+
+class RtcNetworkConfig extends NetworkConfig {
+    /**
+     * @constructor
+     */
+    constructor() {
+        super(Protocol.WS | Protocol.RTC);
+        this._rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.nimiq-network.com:19302' }
+            ]
+        };
+    }
+
+    /**
+     * @returns {?RTCConfiguration}
+     */
+    get rtcConfig() {
+        return this._rtcConfig;
+    }
+
+    /**
+     * @type {RtcPeerAddress}
+     * @override
+     */
+    get peerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw 'PeerAddress is not configured.';
+        }
+
+        return new RtcPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this._peerId, /*distance*/ 0);
+    }
+}
+Class.register(RtcNetworkConfig);
+
+class DumbNetworkConfig extends NetworkConfig {
+    /**
+     * @constructor
+     */
+    constructor() {
+        super(Protocol.WS);
+    }
+
+    /**
+     * @type {DumbPeerAddress}
+     * @override
+     */
+    get peerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw 'PeerAddress is not configured.';
+        }
+
+        return new DumbPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this._peerId, /*distance*/ 0);
+    }
+}
+Class.register(DumbNetworkConfig);

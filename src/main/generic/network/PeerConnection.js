@@ -55,7 +55,7 @@ class PeerConnection extends Observable {
             this._bytesReceived += msg.byteLength || msg.length;
             this.fire('message', msg, this);
         } else {
-            Log.e(PeerConnection, `Converting blob to ArrayBuffer on ${this._channel}`);
+            Log.e(PeerConnection, `Converting blob to ArrayBuffer on ${this._channel.toString()}`);
             // Browser only
             // TODO FileReader is slow and this is ugly anyways. Improve!
             const reader = new FileReader();

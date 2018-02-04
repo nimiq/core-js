@@ -24,32 +24,37 @@ class Network extends Observable {
     }
 
     /**
+     * @constructor
      * @param {IBlockchain} blockchain
      * @param {NetworkConfig} netconfig
      * @param {Time} time
-     * @return {Promise.<Network>}
-     */
-    constructor(blockchain, netconfig, time) {
-        super();
-        /** @type {IBlockchain} */
-        this._blockchain = blockchain;
-        /** @type {NetworkConfig} */
-        this._networkConfig = netconfig;
-        /** @type {Time} */
-        this._time = time;
-        return this._init();
-    }
-
-    /**
      * @listens PeerAddresses#added
      * @listens WebSocketConnector#connection
      * @listens WebSocketConnector#error
      * @listens WebRtcConnector#connection
      * @listens WebRtcConnector#error
-     * @return {Promise.<Network>}
-     * @private
      */
-    async _init() {
+    constructor(blockchain, netconfig, time) {
+        super();
+
+        /**
+         * @type {IBlockchain}
+         * @private
+         */
+        this._blockchain = blockchain;
+
+        /**
+         * @type {NetworkConfig}
+         * @private
+         */
+        this._networkConfig = netconfig;
+
+        /**
+         * @type {Time}
+         * @private
+         */
+        this._time = time;
+
         /**
          * Flag indicating whether we should actively connect to other peers
          * if our peer count is below PEER_COUNT_DESIRED.
@@ -91,7 +96,7 @@ class Network extends Observable {
         this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
 
         /** @type {WebRtcConnector} */
-        this._rtcConnector = await new WebRtcConnector(this._networkConfig);
+        this._rtcConnector = new WebRtcConnector(this._networkConfig);
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
@@ -111,8 +116,6 @@ class Network extends Observable {
 
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
-
-        return this;
     }
 
     connect() {

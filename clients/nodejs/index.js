@@ -49,11 +49,11 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
 
 const host = argv.host;
 const port = parseInt(argv.port);
+const key = argv.key;
+const cert = argv.cert;
 const minerOptions = argv.miner;
 const statisticsOptions = argv.statistics;
 const passive = argv.passive;
-const key = argv.key;
-const cert = argv.cert;
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
 const isNano = argv.type === 'nano';
@@ -88,16 +88,19 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
-    const netconfig = new Nimiq.NetworkConfig(host, port, key, cert);
+    const networkConfig = argv.dumb
+        ? new Nimiq.DumbNetworkConfig()
+        : new Nimiq.WsNetworkConfig(host, port, key, cert);
+
     switch (type) {
         case 'full':
-            $.consensus = await Nimiq.Consensus.full(netconfig);
+            $.consensus = await Nimiq.Consensus.full(networkConfig);
             break;
         case 'light':
-            $.consensus = await Nimiq.Consensus.light(netconfig);
+            $.consensus = await Nimiq.Consensus.light(networkConfig);
             break;
         case 'nano':
-            $.consensus = await Nimiq.Consensus.nano(netconfig);
+            $.consensus = await Nimiq.Consensus.nano(networkConfig);
             break;
     }
 

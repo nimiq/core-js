@@ -5,24 +5,22 @@ class WebRtcConnector extends Observable {
      */
     constructor(networkConfig) {
         super();
-        return this._init(networkConfig);
+
+        /** @type {NetworkConfig} */
+        this._networkConfig = networkConfig;
+
+        /** @type {HashMap.<PeerId,PeerConnector>} */
+        this._connectors = new HashMap();
+
+        /** @type {Timers} */
+        this._timers = new Timers();
     }
 
     /**
-     * @param {NetworkConfig} networkConfig
-     * @return {WebRtcConnector}
+     * @param {PeerAddress} peerAddress
+     * @param {PeerChannel} signalChannel
+     * @returns {boolean}
      */
-    async _init(networkConfig) {
-        /** @type {HashMap.<PeerId,PeerConnector>} */
-        this._connectors = new HashMap();
-        /** @type {NetworkConfig} */
-        this._networkConfig = networkConfig;
-        /** @type {Timers} */
-        this._timers = new Timers();
-
-        return this;
-    }
-
     connect(peerAddress, signalChannel) {
         if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
 
@@ -160,7 +158,7 @@ class PeerConnector extends Observable {
         this._nonce = NumberUtils.randomUint32();
 
         /** @type {RTCPeerConnection} */
-        this._rtcConnection = new RTCPeerConnection(this._networkConfig.rtcConfig);
+        this._rtcConnection = WebRtcFactory.newPeerConnection(this._networkConfig.rtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
 
         this._lastIceCandidate = null;
@@ -169,7 +167,7 @@ class PeerConnector extends Observable {
 
     onSignal(signal) {
         if (signal.sdp) {
-            this._rtcConnection.setRemoteDescription(new RTCSessionDescription(signal))
+            this._rtcConnection.setRemoteDescription(WebRtcFactory.newSessionDescription(signal))
                 .then(() => {
                     if (signal.type === 'offer') {
                         this._rtcConnection.createAnswer()
@@ -191,7 +189,7 @@ class PeerConnector extends Observable {
      * @private
      */
     _addIceCandidate(signal) {
-        this._lastIceCandidate = new RTCIceCandidate(signal);
+        this._lastIceCandidate = WebRtcFactory.newIceCandidate(signal);
 
         // Do not try to add ICE candidates before the remote description is set.
         if (!this._rtcConnection.remoteDescription || !this._rtcConnection.remoteDescription.type) {
@@ -214,7 +212,7 @@ class PeerConnector extends Observable {
     _signal(signal) {
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._networkConfig.keyPair;
-        const peerId = keyPair.publicKey.toPeerId();
+        const peerId = this._networkConfig.peerId;
         this._signalChannel.signal(
             peerId,
             this._peerId,
