@@ -94,7 +94,7 @@ class PeerAddresses extends Observable {
         const peerAddress = peerAddressState.peerAddress;
 
         // Filter addresses that we cannot connect to.
-        if (!NetworkConfig.canConnect(peerAddress.protocol)) {
+        if (!this._networkConfig.canConnect(peerAddress.protocol)) {
             return -1;
         }
 
@@ -117,7 +117,8 @@ class PeerAddresses extends Observable {
                 return score;
 
             case PeerAddressState.FAILED:
-                return (1 - (peerAddressState.failedAttempts / peerAddressState.maxFailedAttempts)) * score;
+                // Don't pick failed addresses when they have failed the maximum number of times.
+                return (1 - ((peerAddressState.failedAttempts + 1) / peerAddressState.maxFailedAttempts)) * score;
 
             default:
                 return -1;
@@ -430,6 +431,7 @@ class PeerAddresses extends Observable {
         peerAddressState.state = PeerAddressState.CONNECTED;
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
+        peerAddressState.bannedUntil = -1;
         peerAddressState.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
 
         peerAddressState.peerAddress = peerAddress;
@@ -506,7 +508,7 @@ class PeerAddresses extends Observable {
             if (peerAddressState.banBackoff >= PeerAddresses.MAX_FAILED_BACKOFF) {
                 this._remove(peerAddress);
             } else {
-                this.ban(peerAddress, peerAddressState.banBackoff);
+                peerAddressState.bannedUntil = Date.now() + peerAddressState.banBackoff;
                 peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
             }
         }
@@ -683,6 +685,16 @@ class PeerAddresses extends Observable {
                         Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
                         this._remove(addr);
                     }
+
+                    // Reset failed attempts after bannedUntil has expired.
+                    if (peerAddressState.state === PeerAddressState.FAILED
+                        && peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts
+                        && peerAddressState.bannedUntil > 0 && peerAddressState.bannedUntil <= now) {
+
+                        peerAddressState.bannedUntil = -1;
+                        peerAddressState.failedAttempts = 0;
+                    }
+
                     break;
 
                 case PeerAddressState.BANNED:

@@ -9,7 +9,7 @@ class PeerAddress {
      */
     constructor(protocol, services, timestamp, netAddress, peerId, distance) {
         if (!NumberUtils.isUint8(distance)) throw new Error('Malformed distance');
-        if (peerId != null && !(peerId instanceof PeerId)) throw new Error('Malformed peerId');
+        if (peerId !== null && !(peerId instanceof PeerId)) throw new Error('Malformed peerId');
 
         /** @type {number} */
         this._protocol = protocol;
@@ -233,6 +233,9 @@ class WsPeerAddress extends PeerAddress {
             && this._port === o.port;
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this.toString();
     }
@@ -254,7 +257,6 @@ class WsPeerAddress extends PeerAddress {
         return this._port;
     }
 }
-
 Class.register(WsPeerAddress);
 
 class RtcPeerAddress extends PeerAddress {
@@ -307,6 +309,9 @@ class RtcPeerAddress extends PeerAddress {
             && o instanceof RtcPeerAddress;
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this.toString();
     }
@@ -318,7 +323,6 @@ class RtcPeerAddress extends PeerAddress {
         return `rtc:///${this._peerId}`;
     }
 }
-
 Class.register(RtcPeerAddress);
 
 class DumbPeerAddress extends PeerAddress {
@@ -371,6 +375,9 @@ class DumbPeerAddress extends PeerAddress {
             && o instanceof DumbPeerAddress;
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this.toString();
     }
@@ -382,5 +389,4 @@ class DumbPeerAddress extends PeerAddress {
         return `dumb:///${this._peerId}`;
     }
 }
-
 Class.register(DumbPeerAddress);

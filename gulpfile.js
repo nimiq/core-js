@@ -20,6 +20,7 @@ const sources = {
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
+            './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',

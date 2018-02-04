@@ -3,19 +3,14 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<FullConsensus>}
      */
-    static async full(netconfig = new NetworkConfig()) {
+    static async full(netconfig = NetworkConfig.getDefault()) {
         await Crypto.prepareSyncCryptoWorker();
+
+        netconfig.services = new Services(Services.FULL, Services.FULL);
+        await netconfig.init();
 
         /** @type {Time} */
         const time = new Time();
-        netconfig.time = time;
-
-        /** @type {Services} */
-        const services = new Services(Services.FULL, Services.FULL);
-        netconfig.services = services;
-
-        await netconfig.init();
-
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getFull();
         /** @type {Accounts} */
@@ -27,7 +22,7 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain, netconfig, time);
+        const network = new Network(blockchain, netconfig, time);
 
         return new FullConsensus(blockchain, mempool, network);
     }
@@ -36,19 +31,14 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<LightConsensus>}
      */
-    static async light(netconfig = new NetworkConfig()) {
+    static async light(netconfig = NetworkConfig.getDefault()) {
         await Crypto.prepareSyncCryptoWorker();
+
+        netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
+        await netconfig.init();
 
         /** @type {Time} */
         const time = new Time();
-        netconfig.time = time;
-
-        /** @type {Services} */
-        const services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
-        netconfig.services = services;
-
-        await netconfig.init();
-
         /** @type {ConsensusDB} */
         const db = await ConsensusDB.getLight();
         /** @type {Accounts} */
@@ -58,7 +48,7 @@ class Consensus {
         /** @type {Mempool} */
         const mempool = new Mempool(blockchain, accounts);
         /** @type {Network} */
-        const network = await new Network(blockchain, netconfig, time);
+        const network = new Network(blockchain, netconfig, time);
 
         return new LightConsensus(blockchain, mempool, network);
     }
@@ -67,25 +57,20 @@ class Consensus {
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<NanoConsensus>}
      */
-    static async nano(netconfig = new NetworkConfig()) {
+    static async nano(netconfig = NetworkConfig.getDefault()) {
         await Crypto.prepareSyncCryptoWorker();
+
+        netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
+        await netconfig.init();
 
         /** @type {Time} */
         const time = new Time();
-        netconfig.time = time;
-
-        /** @type {Services} */
-        const services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
-        netconfig.services = services;
-
-        await netconfig.init();
-
         /** @type {NanoChain} */
         const blockchain = await new NanoChain(time);
         /** @type {NanoMempool} */
         const mempool = new NanoMempool(blockchain);
         /** @type {Network} */
-        const network = await new Network(blockchain, netconfig, time);
+        const network = new Network(blockchain, netconfig, time);
 
         return new NanoConsensus(blockchain, mempool, network);
     }
