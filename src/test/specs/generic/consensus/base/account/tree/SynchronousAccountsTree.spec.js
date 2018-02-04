@@ -39,7 +39,7 @@ describe('SynchronousAccountsTree', () => {
 
             (async function () {
                 const tree = await treeBuilder.builder();
-                tree.put(address, account1);
+                tree.putSync(address, account1);
 
                 const root = tree.rootSync();
                 expect(root._obj.byteLength).toEqual(32);
@@ -53,9 +53,9 @@ describe('SynchronousAccountsTree', () => {
 
             (async function () {
                 const tree = await treeBuilder.builder();
-                tree.put(address, account1);
+                tree.putSync(address, account1);
 
-                const account2 = tree.get(address);
+                const account2 = tree.getSync(address);
 
                 expect(account2).not.toBeUndefined();
                 expect(account2.balance).toEqual(value);
@@ -69,18 +69,18 @@ describe('SynchronousAccountsTree', () => {
 
             (async function () {
                 const tree = await treeBuilder.builder();
-                tree.put(address, account);
+                tree.putSync(address, account);
 
-                let result = tree.get(address);
+                let result = tree.getSync(address);
 
                 expect(result).not.toBeUndefined();
                 expect(result.balance).toEqual(value);
 
                 value = 50;
                 account = new BasicAccount(value);
-                tree.put(address, account);
+                tree.putSync(address, account);
 
-                result = tree.get(address);
+                result = tree.getSync(address);
 
                 expect(result).not.toBeUndefined();
                 expect(result.balance).toEqual(value);
@@ -105,19 +105,19 @@ describe('SynchronousAccountsTree', () => {
             (async function () {
                 const tree = await treeBuilder.builder();
 
-                tree.put(address1, account1);
-                tree.put(address2, account2);
-                tree.put(address3, account3);
+                tree.putSync(address1, account1);
+                tree.putSync(address2, account2);
+                tree.putSync(address3, account3);
 
-                const accountTest1 = tree.get(address1);
+                const accountTest1 = tree.getSync(address1);
                 expect(accountTest1).not.toBeUndefined();
                 expect(accountTest1.balance).toEqual(value1);
 
-                const accountTest2 = tree.get(address2);
+                const accountTest2 = tree.getSync(address2);
                 expect(accountTest2).not.toBeUndefined();
                 expect(accountTest2.balance).toEqual(value2);
 
-                const accountTest3 = tree.get(address3);
+                const accountTest3 = tree.getSync(address3);
                 expect(accountTest3).not.toBeUndefined();
                 expect(accountTest3.balance).toEqual(value3);
             })().then(done, done.fail);
@@ -131,14 +131,14 @@ describe('SynchronousAccountsTree', () => {
             (async function () {
                 const tree = await treeBuilder.builder();
 
-                tree.put(address, account1);
+                tree.putSync(address, account1);
                 const state1 = tree.rootSync();
 
-                tree.put(address, account2);
+                tree.putSync(address, account2);
                 const state2 = tree.rootSync();
                 expect(state2.toBase64()).not.toBe(state1.toBase64());
 
-                tree.put(address, account1);
+                tree.putSync(address, account1);
                 const state3 = tree.rootSync();
                 expect(state3.toBase64()).toBe(state1.toBase64());
             })().then(done, done.fail);
@@ -153,40 +153,40 @@ describe('SynchronousAccountsTree', () => {
                 const tree = await treeBuilder.builder();
 
                 // order1
-                tree.put(address1, new BasicAccount(8));
-                tree.put(address2, new BasicAccount(8));
-                tree.put(address3, new BasicAccount(8));
+                tree.putSync(address1, new BasicAccount(8));
+                tree.putSync(address2, new BasicAccount(8));
+                tree.putSync(address3, new BasicAccount(8));
                 const state1 = tree.rootSync();
 
                 // "reset"
-                tree.put(address1, new BasicAccount());
-                tree.put(address3, new BasicAccount());
-                tree.put(address2, new BasicAccount());
+                tree.putSync(address1, new BasicAccount());
+                tree.putSync(address3, new BasicAccount());
+                tree.putSync(address2, new BasicAccount());
 
                 // order2
-                tree.put(address1, new BasicAccount(8));
-                tree.put(address3, new BasicAccount(8));
-                tree.put(address2, new BasicAccount(8));
+                tree.putSync(address1, new BasicAccount(8));
+                tree.putSync(address3, new BasicAccount(8));
+                tree.putSync(address2, new BasicAccount(8));
                 const state2 = tree.rootSync();
 
                 // "reset"
-                tree.put(address1, new BasicAccount());
-                tree.put(address3, new BasicAccount());
-                tree.put(address2, new BasicAccount());
+                tree.putSync(address1, new BasicAccount());
+                tree.putSync(address3, new BasicAccount());
+                tree.putSync(address2, new BasicAccount());
                 // order3
-                tree.put(address2, new BasicAccount(8));
-                tree.put(address1, new BasicAccount(8));
-                tree.put(address3, new BasicAccount(8));
+                tree.putSync(address2, new BasicAccount(8));
+                tree.putSync(address1, new BasicAccount(8));
+                tree.putSync(address3, new BasicAccount(8));
                 const state3 = tree.rootSync();
 
                 // "reset"
-                tree.put(address1, new BasicAccount());
-                tree.put(address3, new BasicAccount());
-                tree.put(address2, new BasicAccount());
+                tree.putSync(address1, new BasicAccount());
+                tree.putSync(address3, new BasicAccount());
+                tree.putSync(address2, new BasicAccount());
                 // order4
-                tree.put(address2, new BasicAccount(8));
-                tree.put(address3, new BasicAccount(8));
-                tree.put(address1, new BasicAccount(8));
+                tree.putSync(address2, new BasicAccount(8));
+                tree.putSync(address3, new BasicAccount(8));
+                tree.putSync(address1, new BasicAccount(8));
                 const state4 = tree.rootSync();
 
                 expect(state2.toBase64()).toBe(state1.toBase64());
@@ -212,20 +212,20 @@ describe('SynchronousAccountsTree', () => {
                 const tree = await treeBuilder.builder();
 
                 await Promise.all([
-                    tree.put(address1, account1),
-                    tree.put(address2, account2),
-                    tree.put(address3, account3)
+                    tree.putSync(address1, account1),
+                    tree.putSync(address2, account2),
+                    tree.putSync(address3, account3)
                 ]);
 
-                const accountTest1 = tree.get(address1);
+                const accountTest1 = tree.getSync(address1);
                 expect(accountTest1).not.toBeUndefined();
                 expect(accountTest1.balance).toEqual(value1);
 
-                const accountTest2 = tree.get(address2);
+                const accountTest2 = tree.getSync(address2);
                 expect(accountTest2).not.toBeUndefined();
                 expect(accountTest2.balance).toEqual(value2);
 
-                const accountTest3 = tree.get(address3);
+                const accountTest3 = tree.getSync(address3);
                 expect(accountTest3).not.toBeUndefined();
                 expect(accountTest3.balance).toEqual(value3);
 
@@ -248,11 +248,11 @@ describe('SynchronousAccountsTree', () => {
                 const address2 = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
 
-                tree.put(address1, account1);
+                tree.putSync(address1, account1);
                 const root1 = tree.rootSync();
 
-                tree.put(address2, account2);
-                tree.put(address2, new BasicAccount(0));
+                tree.putSync(address2, account2);
+                tree.putSync(address2, new BasicAccount(0));
 
                 const root2 = tree.rootSync();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
@@ -269,13 +269,13 @@ describe('SynchronousAccountsTree', () => {
                 const address2 = new Address(new Uint8Array([1, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
                 const address3 = new Address(new Uint8Array([1, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 
-                tree.put(address1, new BasicAccount(50));
+                tree.putSync(address1, new BasicAccount(50));
                 const root1 = tree.rootSync();
 
-                tree.put(address2, new BasicAccount(50));
-                tree.put(address3, new BasicAccount(50));
-                tree.put(address2, new BasicAccount(0));
-                tree.put(address3, new BasicAccount(0));
+                tree.putSync(address2, new BasicAccount(50));
+                tree.putSync(address3, new BasicAccount(50));
+                tree.putSync(address2, new BasicAccount(0));
+                tree.putSync(address3, new BasicAccount(0));
 
                 const root2 = tree.rootSync();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
@@ -289,18 +289,18 @@ describe('SynchronousAccountsTree', () => {
                 const value1 = 1234;
                 const address = new Address(BufferUtils.fromBase64(Dummy.address1));
 
-                tree.put(address, new BasicAccount(value1));
+                tree.putSync(address, new BasicAccount(value1));
 
-                const balance2 = tree.get(address);
+                const balance2 = tree.getSync(address);
 
                 const value4 = balance2.balance;
                 expect(value4).toBe(value1);
 
                 const value2 = 0;
 
-                tree.put(address, new BasicAccount(value2));
+                tree.putSync(address, new BasicAccount(value2));
 
-                const balance3 = tree.get(address);
+                const balance3 = tree.getSync(address);
 
                 expect(balance3).toBe(null);
             })().then(done, done.fail);
@@ -324,7 +324,7 @@ describe('SynchronousAccountsTree', () => {
                  */
                 const tree = await treeBuilder.builder();
                 let current = new Array(40).fill(0);
-                tree.put(TestUtils.raw2address(current), new BasicAccount(1));
+                tree.putSync(TestUtils.raw2address(current), new BasicAccount(1));
 
                 for (let i = 1; i < 40; i++) {
                     const nibble = i % 16;
@@ -336,15 +336,15 @@ describe('SynchronousAccountsTree', () => {
                     // now combine and set current
                     current = prefix.concat(diverging);
 
-                    tree.put(TestUtils.raw2address(current), new BasicAccount(1));
+                    tree.putSync(TestUtils.raw2address(current), new BasicAccount(1));
                 }
 
 
                 // check two balances
                 const address1 = TestUtils.raw2address(new Array(40).fill(0));
                 const address2 = TestUtils.raw2address([0, 1, 2, 3].concat(new Array(36).fill(4)));
-                const account1 = tree.get(address1);
-                const account2 = tree.get(address2);
+                const account1 = tree.getSync(address1);
+                const account2 = tree.getSync(address2);
 
                 expect(account1).toBeDefined();
                 expect(account2).toBeDefined();
@@ -366,15 +366,15 @@ describe('SynchronousAccountsTree', () => {
                 for (let i = 0; i < 16; i++) {
                     for (let j = 0; j < 16; j++) {
                         const address = TestUtils.raw2address([i, j].concat(new Array(38).fill(0)));
-                        tree.put(address, new BasicAccount(1));
+                        tree.putSync(address, new BasicAccount(1));
                     }
                 }
 
                 // check two balances
                 const address1 = TestUtils.raw2address(new Array(40).fill(0));
                 const address2 = TestUtils.raw2address([15].concat(new Array(39).fill(0)));
-                const account1 = tree.get(address1);
-                const account2 = tree.get(address2);
+                const account1 = tree.getSync(address1);
+                const account2 = tree.getSync(address2);
 
                 expect(account1).toBeDefined();
                 expect(account2).toBeDefined();
@@ -436,7 +436,7 @@ describe('SynchronousAccountsTree', () => {
                 const prefixT1 = new Array(40).fill(0); // 00000...
                 const address1 = TestUtils.raw2address(prefixT1);
                 const account1 = new BasicAccount(12);
-                tree.put(address1, account1);
+                tree.putSync(address1, account1);
                 /* current tree:
                  *            R2
                  *            |
@@ -462,7 +462,7 @@ describe('SynchronousAccountsTree', () => {
                 const prefixT3 = prefixB1.concat([1]).concat(new Array(35).fill(0));   // second terminal node prefix 00001000...
                 const address2 = TestUtils.raw2address(prefixT3);
                 const account2 = new BasicAccount(642);
-                tree.put(address2, account2);
+                tree.putSync(address2, account2);
 
                 /* current tree:
                  *            R3
@@ -491,7 +491,7 @@ describe('SynchronousAccountsTree', () => {
                 // now update the second address with a new balance
 
                 const account3 = new BasicAccount(77);
-                tree.put(address2, account3);
+                tree.putSync(address2, account3);
 
                 /* current tree:
                  *            R4
@@ -521,7 +521,7 @@ describe('SynchronousAccountsTree', () => {
                 // third branch node disappear and the fourth terminal node receives its full address as the prefix
                 // (and becomes the sixth terminal node)
                 const account5 = new BasicAccount(0);
-                tree.put(address1, account5);
+                tree.putSync(address1, account5);
 
                 /* current tree:
                  *            R6
@@ -545,7 +545,7 @@ describe('SynchronousAccountsTree', () => {
                 expectDefined([T6, R6], 'Prune node.');
 
                 // prune T6 so that we have an empty tree
-                tree.put(address2, new BasicAccount(0));
+                tree.putSync(address2, new BasicAccount(0));
 
                 undefinedNodes.push(T6);
                 // do NOT test initial root (first entry) as it is defined for the special case of an empty tree
@@ -569,9 +569,9 @@ describe('SynchronousAccountsTree', () => {
                 const account7 = new BasicAccount(1322);
                 const account8 = new BasicAccount(1);
 
-                tree.put(address3, account6);
-                tree.put(address4, account7);
-                tree.put(address5, account8);
+                tree.putSync(address3, account6);
+                tree.putSync(address4, account7);
+                tree.putSync(address5, account8);
                 /* current tree:
                  *            R7
                  *            |
@@ -603,7 +603,7 @@ describe('SynchronousAccountsTree', () => {
                 const account9 = new BasicAccount(93);
 
                 // split on the second level
-                tree.put(address6, account9);
+                tree.putSync(address6, account9);
                 /* current tree:
                  *            R8
                  *            |

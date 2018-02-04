@@ -1,4 +1,10 @@
 describe('PartialAccountsTree', () => {
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
+        })().then(done, done.fail);
+    });
+
     it('can be used to recreate an existing accounts tree', (done) => {
         (async () => {
             const accountsTree = await AccountsTree.createVolatile();

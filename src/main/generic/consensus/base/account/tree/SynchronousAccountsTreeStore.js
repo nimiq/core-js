@@ -1,25 +1,17 @@
-class SynchronousAccountsTreeStore {
+class SynchronousAccountsTreeStore extends AccountsTreeStore {
     /**
      * @param {SynchronousTransaction} store
      */
     constructor(store) {
-        this._store = store;
+        super(store);
+        this._syncStore = store;
     }
 
     /**
      * @param {Array.<string>} keys
      */
     async preload(keys) {
-        await this._store.preload(keys);
-    }
-
-    /**
-     * @param {string} key
-     * @returns {Promise.<AccountsTreeNode>}
-     */
-    async getAndPreload(key) {
-        await this._store.preload([key]);
-        return this._store.getSync(key);
+        await this._syncStore.preload(keys);
     }
 
     /**
@@ -28,7 +20,7 @@ class SynchronousAccountsTreeStore {
      * @returns {AccountsTreeNode}
      */
     getSync(key, expectedToBePresent = true) {
-        return this._store.getSync(key, expectedToBePresent);
+        return this._syncStore.getSync(key, expectedToBePresent);
     }
 
     /**
@@ -37,7 +29,7 @@ class SynchronousAccountsTreeStore {
      */
     putSync(node) {
         const key = node.prefix;
-        this._store.putSync(key, node);
+        this._syncStore.putSync(key, node);
         return key;
     }
 
@@ -47,15 +39,8 @@ class SynchronousAccountsTreeStore {
      */
     removeSync(node) {
         const key = node.prefix;
-        this._store.removeSync(key);
+        this._syncStore.removeSync(key);
         return key;
-    }
-
-    /**
-     * @returns {Promise.<AccountsTreeNode>}
-     */
-    getRootNode() {
-        return this.getAndPreload('');
     }
 
     /**
@@ -63,35 +48,6 @@ class SynchronousAccountsTreeStore {
      */
     getRootNodeSync() {
         return this.getSync('');
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    truncate() {
-        return this._store.truncate();
-    }
-
-    /**
-     * @returns {Promise.<boolean>}
-     */
-    commit() {
-        return this._store.commit();
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    abort() {
-        return this._store.abort();
-    }
-
-    /** @type {Transaction} */
-    get tx() {
-        if (this._store instanceof JDB.Transaction) {
-            return this._store;
-        }
-        return undefined;
     }
 }
 Class.register(SynchronousAccountsTreeStore);

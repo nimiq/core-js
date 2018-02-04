@@ -1,5 +1,11 @@
 describe('Miner', () => {
 
+    beforeAll((done) => {
+        (async () => {
+            await Crypto.prepareSyncCryptoWorker();
+        })().then(done, done.fail);
+    });
+
     it('creates valid blocks', (done) => {
         (async () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(5, 10);

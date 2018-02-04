@@ -1,7 +1,7 @@
-class PartialAccountsTree extends AccountsTree {
+class PartialAccountsTree extends SynchronousAccountsTree {
     /**
      * @private
-     * @param {AccountsTreeStore} store
+     * @param {SynchronousAccountsTreeStore} store
      */
     constructor(store) {
         super(store);
@@ -20,13 +20,13 @@ class PartialAccountsTree extends AccountsTree {
             return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
         }
 
-        const tx = await this.transaction();
+        const tx = this.synchronousTransaction();
         // Then apply all
-        await tx._putLight(chunk.terminalNodes);
+        tx._putLight(chunk.terminalNodes);
 
 
         // Check if proof can be merged.
-        if (!(await tx._mergeProof(chunk.proof, chunk.tail.prefix))) {
+        if (!tx._mergeProof(chunk.proof, chunk.tail.prefix)) {
             await tx.abort();
             return PartialAccountsTree.Status.ERR_UNMERGEABLE;
         }
@@ -45,12 +45,12 @@ class PartialAccountsTree extends AccountsTree {
     /**
      * @param {AccountsProof} proof
      * @param {string} upperBound
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      * @private
      */
-    async _mergeProof(proof, upperBound) {
+    _mergeProof(proof, upperBound) {
         // Retrieve rightmost path of the in-memory tree.
-        let node = await this._store.getRootNode();
+        let node = this._store.getRootNodeSync();
         let nodeChildren = node.getChildren();
         let complete = true;
 
@@ -127,7 +127,7 @@ class PartialAccountsTree extends AccountsTree {
                 if (node.isTerminal()) {
                     return false;
                 }
-                node = await this._store.get(node.getLastChild());
+                node = this._store.getSync(node.getLastChild());
                 nodeChildren = node.getChildren();
                 if (node.isTerminal()) {
                     break;
@@ -149,20 +149,20 @@ class PartialAccountsTree extends AccountsTree {
      * @returns {Promise}
      * @private
      */
-    async _putLight(nodes) {
+    _putLight(nodes) {
         Assert.that(nodes.every(node => node.isTerminal()), 'Can only build tree from terminal nodes');
 
         // Fetch the root node.
-        let rootNode = await this._store.getRootNode();
+        let rootNode = this._store.getRootNodeSync();
         Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         // TODO: Bulk insertion instead of sequential insertion!
         for (const node of nodes) {
-            await this._insertBatch(rootNode, node.prefix, node.account, []);
-            rootNode = await this._store.getRootNode();
+            this._insertBatch(rootNode, node.prefix, node.account, []);
+            rootNode = this._store.getRootNodeSync();
             Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
         }
-        await this._updateHashes(rootNode);
+        this._updateHashes(rootNode);
     }
 
     /** @type {boolean} */
@@ -177,13 +177,26 @@ class PartialAccountsTree extends AccountsTree {
 
     /**
      * @param {boolean} [enableWatchdog]
-     * @returns {Promise.<PartialAccountsTree>}
+     * @returns {PartialAccountsTree}
      */
-    transaction(enableWatchdog=true) {
-        const tree = new PartialAccountsTree(this._store.transaction(enableWatchdog));
+    synchronousTransaction(enableWatchdog=true) {
+        const tree = new PartialAccountsTree(this._store.synchronousTransaction(enableWatchdog));
         tree._complete = this._complete;
         tree._lastPrefix = this._lastPrefix;
-        return tree._init();
+        return tree;
+    }
+
+    /**
+     * @param {boolean} [enableWatchdog]
+     * @returns {AccountsTree}
+     */
+    transaction(enableWatchdog=true) {
+        if (!this.complete) {
+            throw new Error('Can only construct AccountsTree from complete PartialAccountsTree');
+        }
+        // Use a synchronous transaction here to enable better caching.
+        const tree = new AccountsTree(this._store.synchronousTransaction(enableWatchdog));
+        return tree;
     }
 
     /**

@@ -1,26 +1,13 @@
-class SynchronousAccountsTree {
+class SynchronousAccountsTree extends AccountsTree {
     /**
      * @private
      * @param {SynchronousAccountsTreeStore} store
-     * @returns {Promise.<SynchronousAccountsTree>}
+     * @returns {SynchronousAccountsTree}
      */
     constructor(store) {
+        super(store);
         /** @type {SynchronousAccountsTreeStore} */
-        this._store = store;
-        return this._init();
-    }
-
-    /**
-     * @returns {Promise.<SynchronousAccountsTree>}
-     * @protected
-     */
-    async _init() {
-        let rootNode = await this._store.getRootNode();
-        if (!rootNode) {
-            rootNode = AccountsTreeNode.branchNode(/*prefix*/ '', /*childrenSuffixes*/ [], /*childrenHashes*/ []);
-            await this._store.put(rootNode);
-        }
-        return this;
+        this._syncStore = store;
     }
 
     /**
@@ -28,7 +15,7 @@ class SynchronousAccountsTree {
      * @returns {Promise}
      */
     async preloadAddresses(addresses) {
-        const rootNode = await this._store.getRootNode();
+        const rootNode = await this._syncStore.getRootNode();
         Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         const prefixes = [];
@@ -48,7 +35,7 @@ class SynchronousAccountsTree {
      */
     async _preloadAddresses(node, prefixes) {
         if (node.hasChildren()) {
-            await this._store.preload(node.getChildren());
+            await this._syncStore.preload(node.getChildren());
         }
         
         // For each prefix, descend the tree individually.
@@ -69,7 +56,7 @@ class SynchronousAccountsTree {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = this._store.getSync(childKey); // eslint-disable-line no-await-in-loop
+                const childNode = this._syncStore.getSync(childKey); // eslint-disable-line no-await-in-loop
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -102,13 +89,13 @@ class SynchronousAccountsTree {
      * @param {Account} account
      * @private
      */
-    put(address, account) {
+    putSync(address, account) {
         this.putBatch(address, account);
         this.finalizeBatch();
     }
 
     finalizeBatch() {
-        const rootNode = this._store.getRootNodeSync();
+        const rootNode = this._syncStore.getRootNodeSync();
         this._updateHashes(rootNode);
     }
 
@@ -118,12 +105,12 @@ class SynchronousAccountsTree {
      * @private
      */
     putBatch(address, account) {
-        if (account.isInitial() && !this.get(address, false)) {
+        if (account.isInitial() && !this.getSync(address, false)) {
             return;
         }
 
         // Fetch the root node.
-        const rootNode = this._store.getRootNodeSync();
+        const rootNode = this._syncStore.getRootNodeSync();
         Assert.that(!!rootNode, 'Corrupted store: Failed to fetch AccountsTree root node');
 
         // Insert account into the tree at address.
@@ -146,13 +133,13 @@ class SynchronousAccountsTree {
         if (commonPrefix.length !== node.prefix.length) {
             // Insert the new account node.
             const newChild = AccountsTreeNode.terminalNode(prefix, account);
-            this._store.putSync(newChild);
+            this._syncStore.putSync(newChild);
 
             // Insert the new parent node.
             const newParent = AccountsTreeNode.branchNode(commonPrefix)
                 .withChild(node.prefix, new Hash(null))
                 .withChild(newChild.prefix, new Hash(null));
-            this._store.putSync(newParent);
+            this._syncStore.putSync(newParent);
 
             return this._updateKeysBatch(newParent.prefix, rootPath);
         }
@@ -165,14 +152,14 @@ class SynchronousAccountsTree {
             // (i.e. balance=0, nonce=0), it is like the account never existed
             // in the first place. Delete the node in this case.
             if (account.isInitial()) {
-                this._store.removeSync(node);
+                this._syncStore.removeSync(node);
                 // We have already deleted the node, remove the subtree it was on.
                 return this._pruneBatch(node.prefix, rootPath);
             }
 
             // Update the account.
             node = node.withAccount(account);
-            this._store.putSync(node);
+            this._syncStore.putSync(node);
 
             return this._updateKeysBatch(node.prefix, rootPath);
         }
@@ -181,17 +168,17 @@ class SynchronousAccountsTree {
         // the matching child node if one exists.
         const childPrefix = node.getChild(prefix);
         if (childPrefix) {
-            const childNode = this._store.getSync(childPrefix);
+            const childNode = this._syncStore.getSync(childPrefix);
             rootPath.push(node);
             return this._insertBatch(childNode, prefix, account, rootPath);
         }
 
         // If no matching child exists, add a new child account node to the current node.
         const newChild = AccountsTreeNode.terminalNode(prefix, account);
-        this._store.putSync(newChild);
+        this._syncStore.putSync(newChild);
 
         node = node.withChild(newChild.prefix, new Hash(null));
-        this._store.putSync(node);
+        this._syncStore.putSync(node);
 
         return this._updateKeysBatch(node.prefix, rootPath);
     }
@@ -212,19 +199,19 @@ class SynchronousAccountsTree {
 
             // If the node has only a single child, merge it with the next node.
             if (node.hasSingleChild() && node.prefix !== '') {
-                this._store.removeSync(node); // eslint-disable-line no-await-in-loop
+                this._syncStore.removeSync(node); // eslint-disable-line no-await-in-loop
 
                 const childPrefix = node.getFirstChild();
-                const childNode = this._store.getSync(childPrefix); // eslint-disable-line no-await-in-loop
+                const childNode = this._syncStore.getSync(childPrefix); // eslint-disable-line no-await-in-loop
 
-                this._store.putSync(childNode); // eslint-disable-line no-await-in-loop
+                this._syncStore.putSync(childNode); // eslint-disable-line no-await-in-loop
                 return this._updateKeysBatch(childNode.prefix, rootPath.slice(0, i));
             }
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
             else if (node.hasChildren() || node.prefix === '') {
-                this._store.putSync(node); // eslint-disable-line no-await-in-loop
+                this._syncStore.putSync(node); // eslint-disable-line no-await-in-loop
                 return this._updateKeysBatch(node.prefix, rootPath.slice(0, i));
             }
 
@@ -249,7 +236,7 @@ class SynchronousAccountsTree {
             let node = rootPath[i];
 
             node = node.withChild(prefix, new Hash(null));
-            this._store.putSync(node); // eslint-disable-line no-await-in-loop
+            this._syncStore.putSync(node); // eslint-disable-line no-await-in-loop
             prefix = node.prefix;
         }
     }
@@ -271,7 +258,7 @@ class SynchronousAccountsTree {
             if (!currentHash.equals(zeroHash)) {
                 return currentHash;
             }
-            const childNode = this._store.getSync(child);
+            const childNode = this._syncStore.getSync(child);
             return this._updateHashes(childNode);
         });
 
@@ -280,7 +267,7 @@ class SynchronousAccountsTree {
         node.getChildren().forEach((child, i) => {
             newNode = newNode.withChild(child, subHashes[i]);
         });
-        this._store.putSync(newNode);
+        this._syncStore.putSync(newNode);
         return newNode.hash();
     }
 
@@ -289,45 +276,17 @@ class SynchronousAccountsTree {
      * @param {boolean} [expectedToBePresent]
      * @returns {?Account}
      */
-    get(address, expectedToBePresent = true) {
-        const node = this._store.getSync(address.toHex(), expectedToBePresent);
+    getSync(address, expectedToBePresent = true) {
+        const node = this._syncStore.getSync(address.toHex(), expectedToBePresent);
         return node !== undefined ? node.account : null;
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    async commit() {
-        Assert.that(!(await this.root()).equals(new Hash(null)));
-        return this._store.commit();
-    }
-
-    /**
-     * @returns {Promise}
-     */
-    abort() {
-        return this._store.abort();
-    }
-
-    /**
-     * @returns {Promise.<Hash>}
-     */
-    async root() {
-        const rootNode = await this._store.getRootNode();
-        return rootNode && rootNode.hash();
     }
 
     /**
      * @returns {Hash}
      */
     rootSync() {
-        const rootNode = this._store.getRootNodeSync();
+        const rootNode = this._syncStore.getRootNodeSync();
         return rootNode && rootNode.hash();
-    }
-
-    /** @type {Transaction} */
-    get tx() {
-        return this._store.tx;
     }
 }
 Class.register(SynchronousAccountsTree);
