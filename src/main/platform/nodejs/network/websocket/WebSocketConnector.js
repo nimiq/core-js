@@ -45,8 +45,7 @@ class WebSocketConnector extends Observable {
         }
 
         const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`, {
-            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT,
-            rejectUnauthorized: false
+            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
         });
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);

@@ -452,7 +452,7 @@ class NetworkAgent extends Observable {
                 + ' - no version message received previously');
             return false;
         }
-        if (this._verackReceived && !this._verackReceived && msg.type !== Message.Type.VERACK) {
+        if (this._versionReceived && !this._verackReceived && msg.type !== Message.Type.VERACK) {
             Log.w(NetworkAgent, `Discarding ${msg.type} message from ${this._channel}`
                 + ' - no verack message received previously');
             return false;
