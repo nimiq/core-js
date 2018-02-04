@@ -27,6 +27,32 @@
     </div>
 
     <div class="left">
+        <!-- Accounts Ui -->
+        <div class="info" accounts-ui>
+            <div class="info-title">Accounts</div>
+            <hr/>
+            <div class="info-block">
+                <strong>Wallets</strong>
+                <div wallet-list></div>
+            </div>
+            <div class="info-block">
+                <button wallet-add-button>Add</button>
+            </div>
+            <div class="info-block">
+                <strong>Vesting Accounts</strong>
+                <div vesting-account-list></div>
+            </div>
+            <div class="info-block">
+                <strong>HTLC Accounts</strong>
+                <div htlc-account-list></div>
+            </div>
+            <div class="info-block">
+                <strong>Pending Contracts</strong>
+                <div pending-contracts-list></div>
+            </div>
+            <hr/>
+        </div>
+
         <!-- Account Lookup -->
         <div class="info" account-info-ui>
             <div class="info-title">Account Info</div>
@@ -387,13 +413,6 @@
     </div>
 </div>
 
-<script type="text/javascript" src="Utils.js"></script>
-<script type="text/javascript" src="BlockchainUi.js"></script>
-<script type="text/javascript" src="AccountInfoUi.js"></script>
-<script type="text/javascript" src="TransactionUi.js"></script>
-<script type="text/javascript" src="MempoolUi.js"></script>
-<script type="text/javascript" src="MinerUi.js"></script>
-<script type="text/javascript" src="NetworkUi.js"></script>
 <script type="text/javascript" src="script.js"></script>
 </body>
 </html>

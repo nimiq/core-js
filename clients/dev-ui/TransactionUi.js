@@ -1,5 +1,6 @@
-class TransactionUi {
+class TransactionUi extends Nimiq.Observable {
     constructor(el, $) {
+        super();
         this.$el = el;
         this.$ = $;
         this._transactionType = null;
@@ -60,11 +61,7 @@ class TransactionUi {
 
         const wallet = this.$.wallet;
         Utils.getAccount(this.$, wallet.address).then(account => {
-            if (!account) {
-                // sender account doesn't exist and thus has value 0
-                this.$value.classList.add('error');
-                return;
-            }
+            if (!account) return;
 
             const sender = {
                 address: wallet.address,
@@ -74,18 +71,15 @@ class TransactionUi {
             const tx = this._createTransaction(sender);
             if (!tx) return;
 
-            const waitingTransactions = this.$.mempool.getPendingTransactions(sender.address);
-            if (account.balance < tx.value + tx.fee + waitingTransactions.map(t => t.value + t.fee).reduce((a, b) => a + b, 0)) {
-                this.$value.classList.add('error');
-                return;
-            }
-
             this._signTransaction(sender, tx);
-            if (tx.hasFlag(Nimiq.Transaction.Flag.CONTRACT_CREATION)) {
-                this.$contractAddress.textContent = tx.getContractCreationAddress().toUserFriendlyAddress();
-            }
 
-            Utils.broadcastTransaction(this.$, tx);
+            Utils.broadcastTransaction(this.$, tx).then(() => {
+                if (tx.hasFlag(Nimiq.Transaction.Flag.CONTRACT_CREATION)) {
+                    const contractAddress = tx.getContractCreationAddress();
+                    this.$contractAddress.textContent = contractAddress.toUserFriendlyAddress();
+                    this.fire('contract-created', contractAddress);
+                }
+            });
         });
     }
 
