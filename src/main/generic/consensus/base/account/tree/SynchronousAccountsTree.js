@@ -84,15 +84,6 @@ class SynchronousAccountsTree extends AccountsTree {
         }
     }
 
-
-    /**
-     * @param {Address} address
-     * @param {Account} account
-     */
-    putBatch(address, account) {
-        return this._putBatch(address, account);
-    }
-
     finalizeBatch() {
         const rootNode = this._store.getRootNodeSync();
         this._updateHashes(rootNode);
@@ -103,7 +94,7 @@ class SynchronousAccountsTree extends AccountsTree {
      * @param {Account} account
      * @private
      */
-    _putBatch(address, account) {
+    putBatch(address, account) {
         if (account.isInitial() && !this.getSync(address, false)) {
             return;
         }

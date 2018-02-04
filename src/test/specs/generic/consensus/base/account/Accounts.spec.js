@@ -179,7 +179,7 @@ describe('Accounts', () => {
         })().then(done, done.fail);
     });
 
-    xit('can handle a large amount of block transactions', (done) => {
+    it('can handle a large amount of block transactions', (done) => {
         (async function test() {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;

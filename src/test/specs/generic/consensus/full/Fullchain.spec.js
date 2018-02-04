@@ -14,9 +14,9 @@ describe('Blockchain', () => {
             transactions.sort((a, b) => a.compareBlockOrder(b));
 
             const block = await testBlockchain.createBlock({
-                transactions: transactions,
-                prunedAccounts: [],
-                accountsHash: Hash.fromBase64('2nnH1sSFvM2ADcJhk9Tq4DuZctVkYX5VOH4B3ZswD54=')
+                transactions: transactions
+                // prunedAccounts: [],
+                // accountsHash: Hash.fromBase64('2nnH1sSFvM2ADcJhk9Tq4DuZctVkYX5VOH4B3ZswD54=')
             });
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
