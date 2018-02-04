@@ -32,6 +32,10 @@ class AccountInfoUi {
         this.$.consensus.on('established', () => this._update());
     }
 
+    set address(address) {
+        this._setAddress(address);
+    }
+
     _reset() {
         this.$addressInput.value = '';
         this._setAddress($.wallet.address);
@@ -116,3 +120,5 @@ AccountInfoUi.AccountType = {
     VESTING: 'vesting',
     HTLC: 'htlc'
 };
+
+// TODO change $.wallet to $.walletStore.getDefault and also handle the case that there is no default wallet

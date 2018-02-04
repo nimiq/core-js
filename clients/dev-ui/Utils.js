@@ -9,9 +9,9 @@ class Utils {
 
     static broadcastTransaction($, tx) {
         if ($.clientType !== DevUI.CLIENT_NANO) {
-            $.mempool.pushTransaction(tx);
+            return $.mempool.pushTransaction(tx);
         } else {
-            $.consensus.relayTransaction(tx); // TODO can fail
+            return $.consensus.relayTransaction(tx); // TODO can fail
         }
     }
 

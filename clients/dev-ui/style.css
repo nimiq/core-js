@@ -299,6 +299,29 @@ hash {
     font-family: monospace;
 }
 
+.list-entry {
+    display: flex;
+    padding-top: 8px;
+}
+
+.list-entry > :first-child {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.list-entry .list-entry-delete {
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.list-entry .list-entry-delete:before {
+    content: 'X';
+}
+
+.list-entry .list-entry-delete:hover {
+    color: red;
+}
+
 #content {
     position: relative;
 }
