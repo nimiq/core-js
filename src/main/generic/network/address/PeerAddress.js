@@ -166,10 +166,12 @@ class WsPeerAddress extends PeerAddress {
     /**
      * @param {string} host
      * @param {number} port
+     * @param {string} [peerIdHex]
      * @returns {WsPeerAddress}
      */
-    static seed(host, port) {
-        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, null, 0, host, port);
+    static seed(host, port, peerIdHex) {
+        const peerId = peerIdHex ? PeerId.fromHex(peerIdHex) : null;
+        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, peerId, 0, host, port);
     }
 
     /**
