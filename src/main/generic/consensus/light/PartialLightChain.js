@@ -96,6 +96,15 @@ class PartialLightChain extends LightChain {
             return false;
         }
 
+        // Check that the dense suffix of the prefix is long enough.
+        // The paper doesn't require this, we however need a sufficiently long dense suffix
+        // to be able to verify block difficulties.
+        const denseSuffix = proof.prefix.denseSuffix();
+        if (denseSuffix.length < Policy.M && proof.prefix.length > 0 && proof.prefix.head.height >= Policy.M) {
+            Log.w(NanoChain, 'Rejecting proof - dense suffix too short');
+            return false;
+        }
+
         // Compute and verify interlinks for the suffix.
         const suffixBlocks = [];
         let head = proof.prefix.head;

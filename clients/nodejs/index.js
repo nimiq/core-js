@@ -173,7 +173,7 @@ const $ = {};
     }
 
     $.consensus.on('established', () => {
-        Nimiq.Log.i(TAG, `Blockchain ${argv.type}-consensus established in ${(Date.now() - START) / 1000}s.`);
+        Nimiq.Log.i(TAG, `Blockchain ${type}-consensus established in ${(Date.now() - START) / 1000}s.`);
     });
 
     $.miner.on('block-mined', (block) => {

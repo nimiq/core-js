@@ -54,7 +54,7 @@ class ChainProof {
         }
 
         // Verify the block targets where possible.
-        if (!(await this._verifyDifficulty())) {
+        if (!this._verifyDifficulty()) {
             return false;
         }
 
@@ -63,10 +63,10 @@ class ChainProof {
     }
 
     /**
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      * @private
      */
-    async _verifyDifficulty() {
+    _verifyDifficulty() {
         // Extract the dense suffix of the prefix.
         /** Array.<BlockHeader> */
         const denseSuffix = this.prefix.denseSuffix().map(block => block.header);

@@ -87,10 +87,12 @@ class PeerAddress {
      */
     equals(o) {
         return o instanceof PeerAddress
-            && this._protocol === o.protocol;
-        /* services is ignored */
-        /* timestamp is ignored */
-        /* netAddress is ignored */
+            && this._protocol === o.protocol
+            && (!this._peerId || this._peerId.equals(o.peerId));
+            /* services is ignored */
+            /* timestamp is ignored */
+            /* netAddress is ignored */
+            /* distance is ignored */
     }
 
     /** @type {number} */
@@ -147,7 +149,7 @@ class PeerAddress {
      * @returns {boolean}
      */
     isSeed() {
-        return this.isLocal() && this._timestamp === 0;
+        return this._timestamp === 0;
     }
 
     /**

@@ -155,18 +155,19 @@ class BaseChain extends IBlockchain {
         }
 
         // Follow the interlink pointers back at the requested depth.
-        let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 0);
+        let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), -1);
         while (j < head.interlink.hashes.length && head.height > tailHeight) {
-            head = await this.getBlock(head.interlink.hashes[j]); // eslint-disable-line no-await-in-loop
+            const reference = j < 0 ? head.prevHash : head.interlink.hashes[j];
+            head = await this.getBlock(reference); // eslint-disable-line no-await-in-loop
             if (!head) {
                 // This can happen in the light/nano client if chain superquality is harmed.
                 // Return a best-effort chain in this case.
-                Log.w(BaseChain, `Failed to find block ${head.interlink.hashes[j]} while constructing SuperChain at depth ${depth} - returning truncated chain`);
+                Log.w(BaseChain, `Failed to find block ${reference} while constructing SuperChain at depth ${depth} - returning truncated chain`);
                 break;
             }
             blocks.push(head.toLight());
 
-            j = Math.max(depth - BlockUtils.getTargetDepth(head.target), 0);
+            j = Math.max(depth - BlockUtils.getTargetDepth(head.target), -1);
         }
 
         if ((blocks.length === 0 || blocks[blocks.length - 1].height > 1) && tailHeight === 1) {

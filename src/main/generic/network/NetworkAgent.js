@@ -327,7 +327,7 @@ class NetworkAgent extends Observable {
      * @return {Promise}
      * @private
      */
-    async _onAddr(msg) {
+    _onAddr(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
@@ -346,7 +346,7 @@ class NetworkAgent extends Observable {
         }
 
         // Put the new addresses in the address pool.
-        await this._addresses.add(this._channel, msg.addresses);
+        this._addresses.add(this._channel, msg.addresses);
 
         // Tell listeners that we have received new addresses.
         this.fire('addr', msg.addresses, this);
