@@ -3,7 +3,7 @@ class Utils {
         if ($.clientType !== DevUI.CLIENT_NANO) {
             return $.accounts.get(address);
         } else {
-            return $.consensus.getAccount(address); // TODO can fail
+            return $.consensus.getAccount(address);
         }
     }
 
@@ -11,7 +11,7 @@ class Utils {
         if ($.clientType !== DevUI.CLIENT_NANO) {
             return $.mempool.pushTransaction(tx);
         } else {
-            return $.consensus.relayTransaction(tx); // TODO can fail
+            return $.consensus.relayTransaction(tx);
         }
     }
 
@@ -27,5 +27,38 @@ class Utils {
 
     static satoshisToCoins(value) {
         return Nimiq.Policy.satoshisToCoins(value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
+    }
+
+    static readAddress(input) {
+        try {
+            const address =  Nimiq.Address.fromUserFriendlyAddress(input.value);
+            input.classList.remove('error');
+            return address;
+        } catch (e) {
+            input.classList.add('error');
+            return null;
+        }
+    }
+
+    static readNumber(input) {
+        const value = parseFloat(input.value);
+        if (isNaN(value)) {
+            input.classList.add('error');
+            return null;
+        } else {
+            input.classList.remove('error');
+            return value;
+        }
+    }
+
+    static readBase64(input) {
+        try {
+            const buffer = Nimiq.BufferUtils.fromBase64(input.value);
+            input.classList.remove('error');
+            return buffer;
+        } catch(e) {
+            input.classList.add('error');
+            return null;
+        }
     }
 }
