@@ -390,7 +390,7 @@ hash {
 
 [transaction-ui][tx-type="basic"] [show~="basic"],
 [transaction-ui][tx-type="general"] [show~="general"],
-[transaction-ui][tx-type="extended"] [show~="extended"],
+[transaction-ui][tx-type="plain"] [show~="plain"],
 [transaction-ui][tx-type="vesting-creation"] [show~="vesting-creation"],
 [transaction-ui][tx-type="htlc-creation"] [show~="htlc-creation"] {
     display: block;

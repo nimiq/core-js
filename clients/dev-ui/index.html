@@ -148,7 +148,7 @@
                             <option value="general">General (Any Account to Any Account)</option>
                             <option value="vesting-creation">Vesting Contract Creation</option>
                             <option value="htlc-creation">HTLC Contract Creation</option>
-                            <option value="extended">Plain Extended</option>
+                            <option value="plain">Plain Extended</option>
                         </select>
                     </label>
                 </div>
@@ -222,20 +222,28 @@
                     </div>
                 </div>
 
-                <div class="input-group" show="basic general extended">
+                <div class="input-group" show="plain">
+                    <label>
+                        <strong>Sender</strong>
+                        <input tx-plain-sender name="tx-recipient" maxlength="45" size="45">
+                    </label>
+                </div>
+                <div class="input-group" show="plain">
+                    <label>
+                        <strong>Sender Type</strong>
+                        <input tx-plain-sender-type name="tx-plain-sender-type" type="number" step="1">
+                    </label>
+                </div>
+                <div class="input-group" show="basic general plain">
                     <label>
                         <strong>Recipient</strong>
                         <input tx-recipient name="tx-recipient" maxlength="45" size="45">
                     </label>
                 </div>
-                <div class="input-group" show="basic general extended">
+                <div class="input-group" show="plain">
                     <label>
                         <strong>Recipient Type</strong>
-                        <select tx-recipient-type>
-                            <option value="basic" selected>Basic Account</option>
-                            <option value="vesting">Vesting Account</option>
-                            <option value="htlc">HTLC Account</option>
-                        </select>
+                        <input tx-recipient-type name="tx-recipient-type" type="number" step="1">
                     </label>
                 </div>
                 <div class="input-group">
@@ -256,23 +264,23 @@
                         <input tx-validity-start name="tx-validity-start" type="number" step="1">
                     </label>
                 </div>
-                <!-- Extended transaction -->
-                <div class="input-group" show="extended">
+                <!-- plain transaction -->
+                <div class="input-group" show="plain">
                     <label>
                         <strong>Flags</strong>
-                        <input tx-flags name="tx-flags" type="number">
+                        <input tx-plain-flags name="tx-flags" type="number">
                     </label>
                 </div>
-                <div class="input-group" show="extended">
+                <div class="input-group" show="plain">
                     <label>
                         <strong>Data</strong>
-                        <input tx-data name="tx-data" pattern="^[A-Za-z0-9+/]*$">
+                        <input tx-plain-data name="tx-data" pattern="^[A-Za-z0-9+/]*$" size="45">
                     </label>
                 </div>
-                <div class="input-group" show="extended">
+                <div class="input-group" show="plain">
                     <label>
                         <strong>Proof</strong>
-                        <input tx-proof name="tx-proof" pattern="^[A-Za-z0-9+/]*$">
+                        <input tx-plain-proof name="tx-proof" pattern="^[A-Za-z0-9+/]*$" size="45">
                     </label>
                 </div>
 
@@ -349,7 +357,7 @@
                     </label>
                 </div>
 
-                <div class="info-block" show="extended vesting-creation htlc-creation">
+                <div class="info-block" style="display:none">
                     <strong>Contract</strong>
                     <span contract-address class="address"></span>
                 </div>
@@ -357,6 +365,7 @@
                 <hr class="morespace"/>
                 <div class="input-group">
                     <button tx-clear type="button">Clear</button>
+                    <button tx-generate type="button">Generate</button>
                     <button tx-send type="button" disabled>Send</button>
                 </div>
                 <hr/>
