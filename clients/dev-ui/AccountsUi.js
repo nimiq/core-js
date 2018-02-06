@@ -36,18 +36,24 @@ class AccountsUi extends Nimiq.Observable {
             const account = promiseResults[0];
             const isWalletAddress = promiseResults[1];
 
-            const list = this._getList(isWalletAddress, account.type);
             const userFriendlyAddress = address.toUserFriendlyAddress();
             if (add) {
+                const list = this._getList(isWalletAddress, account.type);
                 this._addToList(list.listEl, address);
                 if (list.localStorageList) list.localStorageList.add(userFriendlyAddress);
                 if (account.isInitial() && !isWalletAddress) this._checkPendingContract(address);
                 return Promise.resolve();
+            } else if (isWalletAddress) {
+                this._removeFromList(this.$walletList, address);
+                return this.$.walletStore.remove(address);
             } else {
-                this._removeFromList(list.listEl, address);
-                if (list.localStorageList) list.localStorageList.remove(userFriendlyAddress);
-                if (isWalletAddress) return this.$.walletStore.remove(address);
-                else return Promise.resolve();
+                // removal of a contract. try to remove from all lists because after a contract moved to another
+                // category (e.g. if not pending anymore or if pruned after emptied out) we don't know the previous list
+                [this.$vestingAccountList, this.$htlcAccountList, this.$pendingContractsList].forEach(list =>
+                    this._removeFromList(list, address));
+                [this._vestingAccountList, this._htlcAccountList, this._pendingContractsList].forEach(list =>
+                    list.remove(userFriendlyAddress));
+                return Promise.resolve();
             }
         }).then(() => this.fire('accounts-changed'));
     }
@@ -149,15 +155,18 @@ class AccountsUi extends Nimiq.Observable {
             this._fillList(this.$walletList, addresses);
         }).catch(alert);
 
-        this._fillList(this.$vestingAccountList,
-            this._vestingAccountList.get().map(userFriendly => Nimiq.Address.fromUserFriendlyAddress(userFriendly)));
-        this._fillList(this.$htlcAccountList,
-            this._htlcAccountList.get().map(userFriendly => Nimiq.Address.fromUserFriendlyAddress(userFriendly)));
+        this._fillList(this.$vestingAccountList, this._userFriendlyAddressesToAddresses(this._vestingAccountList.get()));
+        this._fillList(this.$htlcAccountList, this._userFriendlyAddressesToAddresses(this._htlcAccountList.get()));
 
-        const pendingContractAddresses =
-            this._pendingContractsList.get().map(userFriendly => Nimiq.Address.fromUserFriendlyAddress(userFriendly));
+        const pendingContractAddresses = this._userFriendlyAddressesToAddresses(this._pendingContractsList.get());
         this._fillList(this.$pendingContractsList, pendingContractAddresses);
         pendingContractAddresses.forEach(address => this._checkPendingContract(address));
+
+        this._checkForPrunedContracts();
+    }
+
+    _userFriendlyAddressesToAddresses(userFriendlyAddresses) {
+        return userFriendlyAddresses.map(userFriendly => Nimiq.Address.fromUserFriendlyAddress(userFriendly));
     }
 
     _checkPendingContract(address) {
@@ -165,14 +174,24 @@ class AccountsUi extends Nimiq.Observable {
             Utils.getAccount(this.$, address).then(account => {
                 if (account.isInitial()) return; // still not mined
                 // readd the account to sort it into the correct category
-                this._removeFromList(this.$pendingContractsList, address);
-                this._pendingContractsList.remove(address.toUserFriendlyAddress());
-                this.addAccount(address);
+                this.removeAccount(address).then(() => this.addAccount(address));
                 this.$.blockchain.off('head-changed', check);
             });
         };
         this.$.blockchain.on('head-changed', check);
         check();
+    }
+
+    _checkForPrunedContracts() {
+        // remove contracts that were emptied out and then got pruned (and thus are basic accounts now)
+        [].concat(
+            this._userFriendlyAddressesToAddresses(this._vestingAccountList.get()),
+            this._userFriendlyAddressesToAddresses(this._htlcAccountList.get())
+        ).forEach(address => {
+            Utils.getAccount($, address).then(account => {
+                if (!account || account.isInitial()) this.removeAccount(address);
+            });
+        });
     }
 }
 
