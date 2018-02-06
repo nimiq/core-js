@@ -1,9 +1,18 @@
 class WebSocketConnector extends Observable {
+    /**
+     * @constructor
+     */
     constructor() {
         super();
         this._timers = new Timers();
     }
 
+    /**
+     * @fires WebSocketConnector#connection
+     * @fires WebSocketConnector#error
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     */
     connect(peerAddress) {
         if (peerAddress.protocol !== Protocol.WS) throw 'Malformed peerAddress';
 
@@ -13,17 +22,27 @@ class WebSocketConnector extends Observable {
             return false;
         }
 
-        const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
+        const ws = WebSocketFactory.newWebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
         ws.binaryType = 'arraybuffer';
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
             // There is no way to determine the remote IP ... thanks for nothing, WebSocket API.
             const conn = new PeerConnection(ws, Protocol.WS, /*netAddress*/ null, peerAddress);
+
+            /**
+             * Tell listeners that an initial connection to a peer has been established.
+             * @event WebSocketConnector#connection
+             */
             this.fire('connection', conn);
         };
         ws.onerror = e => {
             this._timers.clearTimeout(timeoutKey);
+
+            /**
+             * Tell listeners that an error has ocurred.
+             * @event WebSocketConnector#error
+             */
             this.fire('error', peerAddress, e);
         };
 
@@ -41,6 +60,10 @@ class WebSocketConnector extends Observable {
                 ws.close();
             };
 
+            /**
+             * Tell listeners that a timeout error has ocurred.
+             * @event WebSocketConnector#error
+             */
             this.fire('error', peerAddress, 'timeout');
         }, WebSocketConnector.CONNECT_TIMEOUT);
 

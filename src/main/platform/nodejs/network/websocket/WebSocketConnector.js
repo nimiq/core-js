@@ -1,41 +1,29 @@
-// XXX Should we do this here or in a higher-level script?
-const WebSocket = require('ws');
-Class.register(WebSocket);
-
-const https = require('https');
-const fs = require('fs');
-
 class WebSocketConnector extends Observable {
     /**
      * @constructor
      * @param {NetworkConfig} networkConfig
+     * @listens WebSocketServer#connection
      */
     constructor(networkConfig) {
         super();
 
         if (networkConfig.peerAddress.protocol === Protocol.WS) {
-            const port = networkConfig.peerAddress.port;
-            const sslConfig = networkConfig.sslConfig;
 
-            const options = {
-                key: fs.readFileSync(sslConfig.key),
-                cert: fs.readFileSync(sslConfig.cert)
-            };
-
-            const httpsServer = https.createServer(options, (req, res) => {
-                res.writeHead(200);
-                res.end('Nimiq NodeJS Client\n');
-            }).listen(port);
-
-            this._wss = new WebSocket.Server({server: httpsServer});
+            this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
             this._wss.on('connection', ws => this._onConnection(ws));
 
-            Log.d(WebSocketConnector, `WebSocketConnector listening on port ${port}`);
+            Log.d(WebSocketConnector, `WebSocketConnector listening on port ${networkConfig.peerAddress.port}`);
         }
 
         this._timers = new Timers();
     }
 
+    /**
+     * @fires WebSocketConnector#connection
+     * @fires WebSocketConnector#error
+     * @param {PeerAddress} peerAddress
+     * @return {boolean}
+     */
     connect(peerAddress) {
         if (peerAddress.protocol !== Protocol.WS) throw 'Malformed peerAddress';
 
@@ -45,18 +33,26 @@ class WebSocketConnector extends Observable {
             return false;
         }
 
-        const ws = new WebSocket(`wss://${peerAddress.host}:${peerAddress.port}`, {
-            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
-        });
+        const ws = WebSocketFactory.newWebSocket(`wss://${peerAddress.host}:${peerAddress.port}`);
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
             const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
             const conn = new PeerConnection(ws, Protocol.WS, netAddress, peerAddress);
+
+            /**
+             * Tell listeners that an initial connection to a peer has been established.
+             * @event WebSocketConnector#connection
+             */
             this.fire('connection', conn);
         };
         ws.onerror = e => {
             this._timers.clearTimeout(timeoutKey);
+
+            /**
+             * Tell listeners that an error has ocurred.
+             * @event WebSocketConnector#error
+             */
             this.fire('error', peerAddress, e);
         };
 
@@ -72,15 +68,29 @@ class WebSocketConnector extends Observable {
                 ws.close();
             };
 
-            this.fire('error', peerAddress);
+            /**
+             * Tell listeners that a timeout error has ocurred.
+             * @event WebSocketConnector#error
+             */
+            this.fire('error', peerAddress, 'timeout');
         }, WebSocketConnector.CONNECT_TIMEOUT);
 
         return true;
     }
 
+    /**
+     * @fires WebSocketConnector#connection
+     * @param {WebSocket} ws
+     * @return {void}
+     */
     _onConnection(ws) {
         const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
         const conn = new PeerConnection(ws, Protocol.WS, netAddress, /*peerAddress*/ null);
+
+        /**
+        * Tell listeners that an initial connection to a peer has been established.
+        * @event WebSocketConnector#connection
+        */
         this.fire('connection', conn);
     }
 }

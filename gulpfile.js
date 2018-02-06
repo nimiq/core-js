@@ -24,6 +24,7 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
+            './src/main/platform/browser/network/websocket/WebSocketFactory.js',
             './src/main/platform/browser/network/websocket/WebSocketConnector.js'
         ],
         node: [
@@ -32,6 +33,7 @@ const sources = {
             './src/main/generic/utils/Observable.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
+            './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
             './src/main/platform/nodejs/network/websocket/WebSocketConnector.js'
         ]
     },
