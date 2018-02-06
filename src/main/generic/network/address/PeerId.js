@@ -79,5 +79,4 @@ class PeerId extends Primitive {
 }
 
 PeerId.SERIALIZED_SIZE = 16;
-PeerId.NULL = new PeerId(new Uint8Array(PeerId.SERIALIZED_SIZE));
 Class.register(PeerId);

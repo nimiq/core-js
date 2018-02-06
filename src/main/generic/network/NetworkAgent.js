@@ -376,6 +376,10 @@ class NetworkAgent extends Observable {
 
         // Remember that the peer has sent us these addresses.
         for (const addr of msg.addresses) {
+            if (!addr.verifySignature()) {
+                this._channel.ban('invalid addr');
+                return;
+            }
             this._knownAddresses.add(addr);
         }
 
