@@ -80,6 +80,24 @@ class NetworkAgent extends Observable {
          */
         this._versionAttempts = 0;
 
+        /**
+         * @type {PeerAddress}
+         * @private
+         */
+        this._observedPeerAddress = null;
+
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._peerAddressVerified = false;
+
+        /**
+         * @type {Uint8Array}
+         * @private
+         */
+        this._peerChallengeNonce = null;
+
         /** @type {Uint8Array} */
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         Crypto.lib.getRandomValues(this._challengeNonce);
@@ -216,18 +234,18 @@ class NetworkAgent extends Observable {
                 this._channel.close('unexpected peerAddress in version message');
                 return;
             }
+            this._peerAddressVerified = true;
         }
 
         // The client might not send its netAddress. Set it from our address database if we have it.
-        const peerAddress = msg.peerAddress;
-        if (!peerAddress.netAddress) {
+        this._observedPeerAddress = msg.peerAddress;
+        if (!this._observedPeerAddress.netAddress) {
             /** @type {PeerAddress} */
-            const storedAddress = this._addresses.get(peerAddress);
+            const storedAddress = this._addresses.get(this._observedPeerAddress);
             if (storedAddress && storedAddress.netAddress) {
-                peerAddress.netAddress = storedAddress.netAddress;
+                this._observedPeerAddress.netAddress = storedAddress.netAddress;
             }
         }
-        this._channel.peerAddress = peerAddress;
 
         // Create peer object. Since the initial version message received from the
         // peer contains their local timestamp, we can use it to calculate their
@@ -236,22 +254,32 @@ class NetworkAgent extends Observable {
             this._channel,
             msg.version,
             msg.headHash,
-            peerAddress.timestamp - now
+            this._observedPeerAddress.timestamp - now
         );
 
+        this._peerChallengeNonce = msg.challengeNonce;
         this._versionReceived = true;
 
         if (!this._versionSent) {
             this.handshake();
         }
 
-        this._channel.verack(this._networkConfig.keyPair.publicKey, Signature.create(this._networkConfig.keyPair.privateKey, this._networkConfig.keyPair.publicKey, msg.challengeNonce));
+        if (this._peerAddressVerified) {
+            this._sendVerAck();
+        }
 
         this._verackSent = true;
 
         if (this._verackReceived) {
             this._finishHandshake();
         }
+    }
+
+    _sendVerAck() {
+        Assert.that(this._peerAddressVerified);
+        const data = BufferUtils.concatTypedArrays(this._observedPeerAddress.peerId.serialize(), this._peerChallengeNonce);
+        const signature = Signature.create(this._networkConfig.keyPair.privateKey, this._networkConfig.keyPair.publicKey, data);
+        this._channel.verack(this._networkConfig.keyPair.publicKey, signature);
     }
 
     /**
@@ -270,17 +298,23 @@ class NetworkAgent extends Observable {
         this._timers.clearTimeout('verack');
 
         // Verify public key
-        if (!msg.publicKey.toPeerId().equals(this._peer.peerAddress.peerId)) {
+        if (!msg.publicKey.toPeerId().equals(this._observedPeerAddress.peerId)) {
             this._channel.close('Invalid public in verack message');
             return;
         }
 
         // Verify signature
-        if (!msg.signature.verify(msg.publicKey, this._challengeNonce)) {
+        if (!msg.signature.verify(msg.publicKey, BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce))) {
             this._channel.close('Invalid signature in verack message');
             return;
         }
 
+        if (!this._peerAddressVerified) {
+            this._peerAddressVerified = true;
+            this._sendVerAck();
+        }
+
+        this._channel.peerAddress = this._observedPeerAddress;
 
         // Remember that the peer has sent us this address.
         this._knownAddresses.add(this._channel.peerAddress);
