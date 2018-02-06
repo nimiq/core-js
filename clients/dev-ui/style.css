@@ -212,7 +212,7 @@ hash {
 
 .input-group label > strong {
     display: inline-block;
-    width: 80px;
+    width: 100px;
     padding-right: 8px;
 }
 
@@ -383,9 +383,41 @@ hash {
 
 /* Transaction UI */
 
-[transaction-ui][tx-type="basic"] [show]:not([show~="basic"]),
-[transaction-ui][tx-type="extended"] [show]:not([show~="extended"]),
-[transaction-ui][tx-type="vesting-creation"] [show]:not([show~="vesting-creation"]),
-[transaction-ui][tx-type="htlc-creation"] [show]:not([show~="htlc-creation"]) {
+[transaction-ui] [show] {
+    /* hide elements by default that should only be visible in specific states */
     display: none;
+}
+
+[transaction-ui][tx-type="basic"] [show~="basic"],
+[transaction-ui][tx-type="general"] [show~="general"],
+[transaction-ui][tx-type="extended"] [show~="extended"],
+[transaction-ui][tx-type="vesting-creation"] [show~="vesting-creation"],
+[transaction-ui][tx-type="htlc-creation"] [show~="htlc-creation"] {
+    display: block;
+}
+
+/* Sender UI */
+
+[sender-ui] [show] {
+    /* hide elements by default that should only be visible in specific states */
+    display: none;
+}
+
+[sender-ui][sender-type="wallet"] [show~="wallet"],
+[sender-ui][sender-type="vesting-account"] [show~="vesting-account"],
+[sender-ui][sender-type="htlc-account"] [show~="htlc-account"] {
+    display: block;
+}
+
+/* HTLC Proof UI */
+
+[htlc-proof-ui] [show] {
+    /* hide elements by default that should only be visible in specific states */
+    display: none;
+}
+
+[htlc-proof-ui][htlc-proof-type="regular-transfer"] [show~="regular-transfer"],
+[htlc-proof-ui][htlc-proof-type="early-resolve"] [show~="early-resolve"],
+[htlc-proof-ui][htlc-proof-type="timeout-resolve"] [show~="timeout-resolve"] {
+    display: block;
 }

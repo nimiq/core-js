@@ -49,7 +49,7 @@ class AccountsUi extends Nimiq.Observable {
                 if (isWalletAddress) return this.$.walletStore.remove(address);
                 else return Promise.resolve();
             }
-        });
+        }).then(() => this.fire('accounts-changed'));
     }
 
     _addToList($list, address) {

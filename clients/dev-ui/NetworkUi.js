@@ -17,7 +17,7 @@ class NetworkUi {
     }
     
     _networkChanged() {
-        this.$peerAddress.textContent = this.$.network._netconfig.peerAddress;
+        this.$peerAddress.textContent = this.$.network._networkConfig.peerAddress;
         this.$peerCount.textContent = this.$.network.peerCount;
         this.$peerCountWs.textContent = this.$.network.peerCountWebSocket;
         this.$peerCountRtc.textContent = this.$.network.peerCountWebRtc;

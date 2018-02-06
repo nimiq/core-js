@@ -11,6 +11,7 @@ class DevUI {
         this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), $);
 
         this._accountsUi.on('account-selected', address => this._accountInfoUi.address = address);
+        this._accountsUi.on('accounts-changed', () => this._transactionUi.notifyAccountsChanged());
         this._transactionUi.on('contract-created', address => this._accountsUi.addAccount(address));
     }
 }
@@ -34,7 +35,7 @@ function loadScript(scriptSrc) {
 
 function loadUi($) {
     const scripts = ['Utils.js', 'BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
-        'MinerUi.js', 'NetworkUi.js', 'AccountsUi.js'];
+        'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'HtlcProofUi.js', 'Sender.js', 'SenderUi.js', 'AccountsUi.js'];
     const promises = [];
     scripts.forEach(script => {
         promises.push(loadScript(script));
@@ -92,5 +93,7 @@ function startNimiq() {
         }
     });
 }
+
+window.addEventListener('unhandledrejection', event => alert('Unhandled Promise Rejection: ' + event.reason));
 
 startNimiq();
