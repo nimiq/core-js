@@ -798,7 +798,7 @@ PeerAddresses.SEED_PEERS = [
     // WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
     // WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
     // WsPeerAddress.seed('emily.nimiq-network.com', 443)
-    WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'a6368d731eb7f03a0c01403828ab9fb1')
+    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
 ];
 Class.register(PeerAddresses);
 

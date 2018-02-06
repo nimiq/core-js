@@ -4,12 +4,13 @@ class PeerAddress {
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
-     * @param {?PeerId} peerId
+     * @param {PublicKey} publicKey
      * @param {number} distance
+     * @param {Signature} [signature]
      */
-    constructor(protocol, services, timestamp, netAddress, peerId, distance) {
+    constructor(protocol, services, timestamp, netAddress, publicKey, distance, signature) {
         if (!NumberUtils.isUint8(distance)) throw new Error('Malformed distance');
-        if (peerId !== null && !(peerId instanceof PeerId)) throw new Error('Malformed peerId');
+        if (publicKey !== null && !(publicKey instanceof PublicKey)) throw new Error('Malformed publicKey');
 
         /** @type {number} */
         this._protocol = protocol;
@@ -19,10 +20,12 @@ class PeerAddress {
         this._timestamp = timestamp;
         /** @type {NetAddress} */
         this._netAddress = netAddress || NetAddress.UNSPECIFIED;
-        /** @type {?PeerId} */
-        this._peerId = peerId;
+        /** @type {PublicKey} */
+        this._publicKey = publicKey;
         /** @type {number} */
         this._distance = distance;
+        /** @type {?Signature} */
+        this._signature = signature;
     }
 
     /**
@@ -51,7 +54,8 @@ class PeerAddress {
      * @returns {SerialBuffer}
      */
     serialize(buf) {
-        if (!this._peerId) throw new Error('PeerAddress without PeerId may not be serialized.');
+        if (!this._publicKey) throw new Error('PeerAddress without publicKey may not be serialized.');
+        if (!this._signature) throw new Error('PeerAddress without signature may not be serialized.');
 
         buf = buf || new SerialBuffer(this.serializedSize);
         buf.writeUint8(this._protocol);
@@ -65,8 +69,19 @@ class PeerAddress {
             this._netAddress.serialize(buf);
         }
 
-        this._peerId.serialize(buf);
+        this._publicKey.serialize(buf);
         buf.writeUint8(this._distance);
+        this._signature.serialize(buf);
+
+        return buf;
+    }
+
+    serializeContent(buf) {
+        buf = buf || new SerialBuffer(this.serializedContentSize);
+
+        buf.writeUint8(this._protocol);
+        buf.writeUint32(this._services);
+        buf.writeUint64(this._timestamp);
 
         return buf;
     }
@@ -77,8 +92,16 @@ class PeerAddress {
             + /*services*/ 4
             + /*timestamp*/ 8
             + this._netAddress.serializedSize
-            + PeerId.SERIALIZED_SIZE
-            + /*distance*/ 1;
+            + this._publicKey.serializedSize
+            + /*distance*/ 1
+            + this._signature.serializedSize;
+    }
+
+    /** @type {number} */
+    get serializedContentSize() {
+        return /*protocol*/ 1
+            + /*services*/ 4
+            + /*timestamp*/ 8;
     }
 
     /**
@@ -88,11 +111,18 @@ class PeerAddress {
     equals(o) {
         return o instanceof PeerAddress
             && this._protocol === o.protocol
-            && (!this._peerId || this._peerId.equals(o.peerId));
-            /* services is ignored */
-            /* timestamp is ignored */
-            /* netAddress is ignored */
-            /* distance is ignored */
+            && (!this._publicKey || this._publicKey.equals(o.publicKey));
+        /* services is ignored */
+        /* timestamp is ignored */
+        /* netAddress is ignored */
+        /* distance is ignored */
+    }
+
+    verifySignature() {
+        if (this._verifiedSignature === undefined) {
+            this._verifiedSignature = this.signature.verify(this.publicKey, this.serializeContent());
+        }
+        return this._verifiedSignature;
     }
 
     /** @type {number} */
@@ -129,14 +159,34 @@ class PeerAddress {
         this._netAddress = value || NetAddress.UNSPECIFIED;
     }
 
+    /** @type {PublicKey} */
+    get publicKey() {
+        return this._publicKey;
+    }
+
     /** @type {PeerId} */
     get peerId() {
-        return this._peerId;
+        return this._publicKey ? this._publicKey.toPeerId() : null;
     }
 
     /** @type {number} */
     get distance() {
         return this._distance;
+    }
+
+    /** @type {Signature} */
+    get signature() {
+        return this._signature;
+    }
+
+    /** @type {Signature} */
+    set signature(s) {
+        // Never change the signature of a remote address.
+        if (this._distance !== 0) {
+            return;
+        }
+        this._verifiedSignature = undefined;
+        this._signature = s;
     }
 
     // Changed when passed on to other peers.
@@ -156,7 +206,7 @@ class PeerAddress {
      * @returns {boolean}
      */
     isLocal() {
-        return this._peerId === null;
+        return this._publicKey === null;
     }
 }
 
@@ -166,25 +216,26 @@ class WsPeerAddress extends PeerAddress {
     /**
      * @param {string} host
      * @param {number} port
-     * @param {string} [peerIdHex]
+     * @param {string} [publicKeyHex]
      * @returns {WsPeerAddress}
      */
-    static seed(host, port, peerIdHex) {
-        const peerId = peerIdHex ? PeerId.fromHex(peerIdHex) : null;
-        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, peerId, 0, host, port);
+    static seed(host, port, publicKeyHex) {
+        const publicKey = publicKeyHex ? new PublicKey(BufferUtils.fromHex(publicKeyHex)) : null;
+        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
     }
 
     /**
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
-     * @param {PeerId} peerId
+     * @param {PublicKey} publicKey
      * @param {number} distance
      * @param {string} host
      * @param {number} port
+     * @param {Signature} [signature]
      */
-    constructor(services, timestamp, netAddress, peerId, distance, host, port) {
-        super(Protocol.WS, services, timestamp, netAddress, peerId, distance);
+    constructor(services, timestamp, netAddress, publicKey, distance, host, port, signature) {
+        super(Protocol.WS, services, timestamp, netAddress, publicKey, distance, signature);
         if (!host) throw new Error('Malformed host');
         if (!NumberUtils.isUint16(port)) throw new Error('Malformed port');
         this._host = host;
@@ -199,11 +250,12 @@ class WsPeerAddress extends PeerAddress {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const netAddress = NetAddress.unserialize(buf);
-        const peerId = PeerId.unserialize(buf);
+        const publicKey = PublicKey.unserialize(buf);
         const distance = buf.readUint8();
+        const signature = Signature.unserialize(buf);
         const host = buf.readVarLengthString();
         const port = buf.readUint16();
-        return new WsPeerAddress(services, timestamp, netAddress, peerId, distance, host, port);
+        return new WsPeerAddress(services, timestamp, netAddress, publicKey, distance, host, port, signature);
     }
 
     /**
@@ -218,9 +270,28 @@ class WsPeerAddress extends PeerAddress {
         return buf;
     }
 
+    /**
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
+    serializeContent(buf) {
+        buf = buf || new SerialBuffer(this.serializedContentSize);
+        super.serializeContent(buf);
+        buf.writeVarLengthString(this._host);
+        buf.writeUint16(this._port);
+        return buf;
+    }
+
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
+            + SerialBuffer.varLengthStringSize(this._host)
+            + /*port*/ 2;
+    }
+
+    /** @type {number} */
+    get serializedContentSize() {
+        return super.serializedContentSize
             + SerialBuffer.varLengthStringSize(this._host)
             + /*port*/ 2;
     }
@@ -248,7 +319,7 @@ class WsPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `wss://${this._host}:${this._port}/${this._peerId ? this._peerId : ''}`;
+        return `wss://${this._host}:${this._port}/${this.peerId ? this.peerId : ''}`;
     }
 
     /** @type {string} */
@@ -261,6 +332,7 @@ class WsPeerAddress extends PeerAddress {
         return this._port;
     }
 }
+
 Class.register(WsPeerAddress);
 
 class RtcPeerAddress extends PeerAddress {
@@ -268,11 +340,12 @@ class RtcPeerAddress extends PeerAddress {
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
-     * @param {PeerId} peerId
+     * @param {PublicKey} publicKey
      * @param {number} distance
+     * @param {Signature} [signature]
      */
-    constructor(services, timestamp, netAddress, peerId, distance) {
-        super(Protocol.RTC, services, timestamp, netAddress, peerId, distance);
+    constructor(services, timestamp, netAddress, publicKey, distance, signature) {
+        super(Protocol.RTC, services, timestamp, netAddress, publicKey, distance, signature);
     }
 
     /**
@@ -283,9 +356,10 @@ class RtcPeerAddress extends PeerAddress {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const netAddress = NetAddress.unserialize(buf);
-        const peerId = PeerId.unserialize(buf);
+        const publicKey = PublicKey.unserialize(buf);
         const distance = buf.readUint8();
-        return new RtcPeerAddress(services, timestamp, netAddress, peerId, distance);
+        const signature = Signature.unserialize(buf);
+        return new RtcPeerAddress(services, timestamp, netAddress, publicKey, distance, signature);
     }
 
     /**
@@ -324,9 +398,10 @@ class RtcPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `rtc:///${this._peerId}`;
+        return `rtc:///${this.peerId}`;
     }
 }
+
 Class.register(RtcPeerAddress);
 
 class DumbPeerAddress extends PeerAddress {
@@ -334,11 +409,12 @@ class DumbPeerAddress extends PeerAddress {
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
-     * @param {PeerId} peerId
+     * @param {PublicKey} publicKey
      * @param {number} distance
+     * @param {Signature} [signature]
      */
-    constructor(services, timestamp, netAddress, peerId, distance) {
-        super(Protocol.DUMB, services, timestamp, netAddress, peerId, distance);
+    constructor(services, timestamp, netAddress, publicKey, distance, signature) {
+        super(Protocol.DUMB, services, timestamp, netAddress, publicKey, distance, signature);
     }
 
     /**
@@ -349,9 +425,10 @@ class DumbPeerAddress extends PeerAddress {
         const services = buf.readUint32();
         const timestamp = buf.readUint64();
         const netAddress = NetAddress.unserialize(buf);
-        const peerId = PeerId.unserialize(buf);
+        const publicKey = PublicKey.unserialize(buf);
         const distance = buf.readUint8();
-        return new DumbPeerAddress(services, timestamp, netAddress, peerId, distance);
+        const signature = Signature.unserialize(buf);
+        return new DumbPeerAddress(services, timestamp, netAddress, publicKey, distance, signature);
     }
 
     /**
@@ -390,7 +467,8 @@ class DumbPeerAddress extends PeerAddress {
      * @returns {string}
      */
     toString() {
-        return `dumb:///${this._peerId}`;
+        return `dumb:///${this.peerId}`;
     }
 }
+
 Class.register(DumbPeerAddress);

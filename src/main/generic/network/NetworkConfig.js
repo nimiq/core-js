@@ -64,6 +64,13 @@ class NetworkConfig {
     }
 
     /**
+     * @type {PublicKey}
+     */
+    get publicKey() {
+        return this._keyPair.publicKey;
+    }
+
+    /**
      * @type {PeerId}
      */
     get peerId() {
@@ -99,6 +106,7 @@ class NetworkConfig {
         return (protocol & this._protocolMask) !== 0;
     }
 }
+
 Class.register(NetworkConfig);
 
 class WsNetworkConfig extends NetworkConfig {
@@ -139,12 +147,15 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        return new WsPeerAddress(
+        const peerAddress = new WsPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-            this._peerId, /*distance*/ 0,
+            this.publicKey, /*distance*/ 0,
             this._host, this._port);
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
     }
 }
+
 Class.register(WsNetworkConfig);
 
 class RtcNetworkConfig extends NetworkConfig {
@@ -155,8 +166,8 @@ class RtcNetworkConfig extends NetworkConfig {
         super(Protocol.WS | Protocol.RTC);
         this._rtcConfig = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun.nimiq-network.com:19302' }
+                {urls: 'stun:stun.l.google.com:19302'},
+                {urls: 'stun:stun.nimiq-network.com:19302'}
             ]
         };
     }
@@ -177,11 +188,14 @@ class RtcNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        return new RtcPeerAddress(
+        const peerAddress = new RtcPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-            this._peerId, /*distance*/ 0);
+            this.publicKey, /*distance*/ 0);
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
     }
 }
+
 Class.register(RtcNetworkConfig);
 
 class DumbNetworkConfig extends NetworkConfig {
@@ -201,9 +215,12 @@ class DumbNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        return new DumbPeerAddress(
+        const peerAddress = new DumbPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-            this._peerId, /*distance*/ 0);
+            this.publicKey, /*distance*/ 0);
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
     }
 }
+
 Class.register(DumbNetworkConfig);

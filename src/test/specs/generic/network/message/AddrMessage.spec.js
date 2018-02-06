@@ -1,5 +1,5 @@
 describe('AddrMessage', () => {
-    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), PeerId.NULL, 0);
+    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), 0, Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1)));
 
     it('is correctly constructed', () => {
         const msg1 = new AddrMessage([addr]);
