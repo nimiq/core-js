@@ -29,6 +29,15 @@ class Utils {
         return Nimiq.Policy.satoshisToCoins(value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
     }
 
+    static hash(data, algorithm) {
+        switch (algorithm) {
+            case Nimiq.Hash.Algorithm.BLAKE2B: return Nimiq.Crypto.blake2bSync(data);
+            case Nimiq.Hash.Algorithm.SHA256: return Nimiq.Crypto.sha256(data);
+            // case Nimiq.Hash.Algorithm.ARGON2D intentionally omitted
+            default: throw new Error('Invalid hash algorithm');
+        }
+    }
+
     static readAddress(input) {
         try {
             const address =  Nimiq.Address.fromUserFriendlyAddress(input.value);

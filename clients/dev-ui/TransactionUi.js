@@ -18,16 +18,16 @@ class TransactionUi extends Nimiq.Observable {
         this.$data = this.$el.querySelector('[tx-data]');
         this.$proof = this.$el.querySelector('[tx-proof]');
 
-        this.$vestingOwner = this.$el.querySelector('[tx-vesting-owner]');
+        this._vestingOwner = new AccountSelector(this.$el.querySelector('[tx-vesting-owner]'), $);
         this.$vestingStepBlocks = this.$el.querySelector('[tx-vesting-step-blocks]');
         this.$vestingStepAmount = this.$el.querySelector('[tx-vesting-step-amount]');
         this.$vestingStart = this.$el.querySelector('[tx-vesting-start]');
         this.$vestingTotalAmount = this.$el.querySelector('[tx-vesting-total-amount]');
 
-        this.$htlcSender = this.$el.querySelector('[tx-htlc-sender]');
-        this.$htlcRecipient = this.$el.querySelector('[tx-htlc-recipient]');
+        this._htlcSender = new AccountSelector(this.$el.querySelector('[tx-htlc-sender]'), $);
+        this._htlcRecipient = new AccountSelector(this.$el.querySelector('[tx-htlc-recipient]'), $);
         this.$htlcHashAlgo = this.$el.querySelector('[tx-htlc-hash-algo]');
-        this.$htlcHashRoot = this.$el.querySelector('[tx-htlc-hash-root]');
+        this.$htlcHashPreImage = this.$el.querySelector('[tx-htlc-hash-pre-image]');
         this.$htlcHashCount = this.$el.querySelector('[tx-htlc-hash-count]');
         this.$htlcTimeout = this.$el.querySelector('[tx-htlc-timeout]');
 
@@ -51,6 +51,9 @@ class TransactionUi extends Nimiq.Observable {
 
     notifyAccountsChanged() {
         this._senderUi.notifyAccountsChanged();
+        this._vestingOwner.notifyAccountsChanged();
+        this._htlcSender.notifyAccountsChanged();
+        this._htlcRecipient.notifyAccountsChanged();
     }
 
     _onTransactionTypeSelected() {
@@ -68,8 +71,12 @@ class TransactionUi extends Nimiq.Observable {
     _onRecipientChanged() {
         const recipient = Utils.readAddress(this.$recipient);
         if (recipient === null) return;
-        Utils.getAccount($, recipient)
-            .then(account => this.$recipientType.value = account.type)
+        Utils.getAccount($, recipient).then(account => {
+            const type = Object.keys(Nimiq.Account.Type)
+                .filter(key => Nimiq.Account.Type[key] === account.type)[0]
+                .toLowerCase();
+            this.$recipientType.value = type;
+        });
     }
 
     _sendTransaction(e) {
@@ -88,18 +95,6 @@ class TransactionUi extends Nimiq.Observable {
                 this.fire('contract-created', contractAddress);
             }
         });
-    }
-
-    _readHash(input, hashAlgo) {
-        const buffer = Utils.readBase64(input);
-        if (buffer === null) return null;
-        try {
-            return Nimiq.Hash.unserialize(buffer, hashAlgo);
-            // no need to remove error class, as already done in _readBase64
-        } catch(e) {
-            input.classList.add('error');
-            return null;
-        }
     }
 
     _readTransactionCanonicals() {
@@ -164,8 +159,8 @@ class TransactionUi extends Nimiq.Observable {
     _createGeneralTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const recipient = Utils.readAddress(this.$recipient);
-        const recipientType = Utils.readNumber(this.$recipientType);
-        if (canonicals === null || recipient === null || recipientType === null) return null;
+        const recipientType = Nimiq.Account.Type[this.$recipientType.value.toUpperCase()];
+        if (canonicals === null || recipient === null || recipientType === undefined) return null;
         return new Nimiq.ExtendedTransaction(sender.address, sender.type, recipient, recipientType, canonicals.value,
             canonicals.fee, canonicals.validityStart, Nimiq.Transaction.Flag.NONE, new Uint8Array(0));
     }
@@ -173,12 +168,12 @@ class TransactionUi extends Nimiq.Observable {
     _createPlainExtendedTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const recipient = Utils.readAddress(this.$recipient);
-        const recipientType = Utils.readNumber(this.$recipientType);
+        const recipientType = Nimiq.Account.Type[this.$recipientType.value.toUpperCase()];
         const flags = Utils.readNumber(this.$flags);
         const data = Utils.readBase64(this.$data);
         const proof = Utils.readBase64(this.$proof);
-        if (canonicals === null || recipient === null || recipientType === null || flags === null || data === null
-            || proof === null) {
+        if (canonicals === null || recipient === null || recipientType === undefined || flags === null
+            || data === null || proof === null) {
             return null;
         }
         return new Nimiq.ExtendedTransaction(sender.address, sender.type, recipient, recipientType,
@@ -187,7 +182,7 @@ class TransactionUi extends Nimiq.Observable {
 
     _createVestingCreationTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
-        const vestingOwner = Utils.readAddress(this.$vestingOwner);
+        const vestingOwner = this._vestingOwner.selectedAddress;
         const vestingStepBlocks = Utils.readNumber(this.$vestingStepBlocks);
         if (canonicals === null || vestingOwner === null || vestingStepBlocks === null) return null;
 
@@ -236,26 +231,30 @@ class TransactionUi extends Nimiq.Observable {
 
     _createHtlcCreationTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
-        const htlcSender = Utils.readAddress(this.$htlcSender);
-        const htlcRecipient = Utils.readAddress(this.$htlcRecipient);
-        const hashAlgo = Utils.readNumber(this.$htlcHashAlgo);
-        const hashRoot = this._readHash(this.$htlcHashRoot, hashAlgo);
+        const htlcSender = this._htlcSender.selectedAddress;
+        const htlcRecipient = this._htlcRecipient.selectedAddress;
+        const hashAlgo = Nimiq.Hash.Algorithm[this.$htlcHashAlgo.value.toUpperCase()];
         const hashCount = Utils.readNumber(this.$htlcHashCount);
         const timeout = Utils.readNumber(this.$htlcTimeout);
-        if (canonicals === null || htlcSender === null || htlcRecipient === null || hashAlgo === null
-            || hashRoot === null || hashCount === null || timeout === null) return null;
+        if (canonicals === null || htlcSender === null || htlcRecipient === null || hashAlgo === undefined
+            || hashCount === null || timeout === null) return null;
+
+        let hashRoot = Nimiq.BufferUtils.fromAscii(this.$htlcHashPreImage.value);
+        for (let i = 0; i < hashCount; ++i) {
+            hashRoot = Utils.hash(hashRoot, hashAlgo);
+        }
 
         const bufferSize = htlcSender.serializedSize
             + htlcRecipient.serializedSize
             + /* hashAlgo */ 1
-            + hashRoot.serializedSize
+            + hashRoot.byteLength
             + /* hashCount */ 1
             + /* timeout */ 4;
         const buffer =  new Nimiq.SerialBuffer(bufferSize);
         htlcSender.serialize(buffer);
         htlcRecipient.serialize(buffer);
         buffer.writeUint8(hashAlgo);
-        hashRoot.serialize(buffer);
+        buffer.write(hashRoot);
         buffer.writeUint8(hashCount);
         buffer.writeUint32(timeout);
 

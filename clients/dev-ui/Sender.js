@@ -138,11 +138,11 @@ class HtlcSender extends Sender {
             if (this._proofType === Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER) {
                 let hash = Nimiq.BufferUtils.fromAscii(this._proofHashPreImage);
                 for (let i = 0; i < this._proofHashCount - this._proofHashDepth; ++i) {
-                    hash = this._hash(hash, this._proofHashAlgorithm);
+                    hash = Utils.hash(hash, this._proofHashAlgorithm);
                 }
                 let root = hash;
                 for (let i = 0; i < this._proofHashDepth; i++) {
-                    root = this._hash(hash, this._proofHashAlgorithm);
+                    root = Utils.hash(root, this._proofHashAlgorithm);
                 }
 
                 proof.writeUint8(this._proofHashAlgorithm);
@@ -175,15 +175,6 @@ class HtlcSender extends Sender {
                 + /* signature proof */ signatureProofsSize;
         } else {
             return /* proof type */ 1 + signatureProofsSize;
-        }
-    }
-
-    _hash(data, algorithm) {
-        switch (algorithm) {
-            case Nimiq.Hash.Algorithm.BLAKE2B: return Nimiq.Crypto.blake2bSync(data);
-            case Nimiq.Hash.Algorithm.SHA256: return Nimiq.Crypto.sha256(data);
-            // case Nimiq.Hash.Algorithm.ARGON2D intentionally omitted
-            default: throw new Error('Invalid hash algorithm');
         }
     }
 }
