@@ -9,14 +9,16 @@ class TransactionUi extends Nimiq.Observable {
 
         this._senderUi = new SenderUi(el.querySelector('[sender-ui]'), $);
 
+        this.$plainSender = this.$el.querySelector('[tx-plain-sender]');
+        this.$plainSenderType = this.$el.querySelector('[tx-plain-sender-type]');
         this.$recipient = this.$el.querySelector('[tx-recipient]');
         this.$recipientType = this.$el.querySelector('[tx-recipient-type]');
         this.$value = this.$el.querySelector('[tx-value]');
         this.$fee = this.$el.querySelector('[tx-fee]');
         this.$validityStart = this.$el.querySelector('[tx-validity-start]');
-        this.$flags = this.$el.querySelector('[tx-flags]');
-        this.$data = this.$el.querySelector('[tx-data]');
-        this.$proof = this.$el.querySelector('[tx-proof]');
+        this.$plainFlags = this.$el.querySelector('[tx-plain-flags]');
+        this.$plainData = this.$el.querySelector('[tx-plain-data]');
+        this.$plainProof = this.$el.querySelector('[tx-plain-proof]');
 
         this._vestingOwner = new AccountSelector(this.$el.querySelector('[tx-vesting-owner]'), $);
         this.$vestingStepBlocks = this.$el.querySelector('[tx-vesting-step-blocks]');
@@ -33,13 +35,15 @@ class TransactionUi extends Nimiq.Observable {
 
         this.$contractAddress = this.$el.querySelector('[contract-address]');
         this.$sendButton = this.$el.querySelector('[tx-send]');
+        this.$generateButton = this.$el.querySelector('[tx-generate]');
         this.$clearButton = this.$el.querySelector('[tx-clear]');
 
         $.consensus.on('established', () => this.$sendButton.removeAttribute('disabled'));
         $.consensus.on('lost', () => this.$sendButton.setAttribute('disabled', ''));
         this.$typeSelector.addEventListener('change', () => this._onTransactionTypeSelected());
-        this.$sendButton.addEventListener('click', e => this._sendTransaction(e));
-        this.$clearButton.addEventListener('click', e => this._clear(e));
+        this.$sendButton.addEventListener('click', e => this._onSendTransactionClick(e));
+        this.$generateButton.addEventListener('click', e => this._onGenerateTransactionClick(e));
+        this.$clearButton.addEventListener('click', e => this._onClearClick(e));
         this.$recipient.addEventListener('input', () => this._onRecipientChanged());
 
         this.$validityStart.setAttribute('placeholder', this._getDefaultValidityStart());
@@ -71,30 +75,54 @@ class TransactionUi extends Nimiq.Observable {
     _onRecipientChanged() {
         const recipient = Utils.readAddress(this.$recipient);
         if (recipient === null) return;
-        Utils.getAccount($, recipient).then(account => {
-            const type = Object.keys(Nimiq.Account.Type)
-                .filter(key => Nimiq.Account.Type[key] === account.type)[0]
-                .toLowerCase();
-            this.$recipientType.value = type;
+        Utils.getAccount($, recipient).then(account => this.$recipientType.value = account.type);
+    }
+
+    _onGenerateTransactionClick(e) {
+        if (e) e.preventDefault();
+
+        this._generateSignedTransaction().then(tx => {
+            this.$typeSelector.value = TransactionUi.TxType.PLAIN;
+            this._onTransactionTypeSelected();
+            this.$plainSender.value = tx.sender.toUserFriendlyAddress();
+            this.$plainSenderType.value = tx.senderType;
+            this.$recipient.value = tx.recipient.toUserFriendlyAddress();
+            this.$recipientType.value = tx.recipientType;
+            this.$value.value = Nimiq.Policy.satoshisToCoins(tx.value);
+            this.$fee.value = Nimiq.Policy.satoshisToCoins(tx.fee);
+            this.$validityStart.value = tx.validityStartHeight;
+            this.$plainFlags.value = tx.flags;
+            this.$plainData.value = Nimiq.BufferUtils.toBase64(tx.data);
+            this.$plainProof.value = Nimiq.BufferUtils.toBase64(tx.proof);
         });
     }
 
-    _sendTransaction(e) {
+    _onSendTransactionClick(e) {
         e.preventDefault();
 
-        let tx;
-        this._senderUi.getSender().then(sender => {
-            if (!sender) throw Error('Failed to retrieve sender.');
-            tx = this._createTransaction(sender);
-            if (!tx) throw Error('Failed to generate transaction.');
-            return sender.sign(tx);
-        }).then(() => Utils.broadcastTransaction(this.$, tx)).then(() => {
-            if (tx.hasFlag(Nimiq.Transaction.Flag.CONTRACT_CREATION)) {
-                const contractAddress = tx.getContractCreationAddress();
+        let transaction;
+        this._generateSignedTransaction().then(tx => {
+            transaction = tx;
+            return Utils.broadcastTransaction(this.$, transaction);
+        }).then(() => {
+            if (transaction.hasFlag(Nimiq.Transaction.Flag.CONTRACT_CREATION)) {
+                const contractAddress = transaction.getContractCreationAddress();
+                this.$contractAddress.parentNode.style.display = 'block';
                 this.$contractAddress.textContent = contractAddress.toUserFriendlyAddress();
                 this.fire('contract-created', contractAddress);
+            } else {
+                this.$contractAddress.parentNode.style.display = 'none';
             }
         });
+    }
+
+    _onClearClick(e) {
+        e.preventDefault();
+        Array.prototype.forEach.call(this.$el.querySelectorAll('input,select'), input => {
+            input.value = '';
+            input.classList.remove('error');
+        });
+        this.$contractAddress.textContent = '';
     }
 
     _readTransactionCanonicals() {
@@ -121,34 +149,40 @@ class TransactionUi extends Nimiq.Observable {
         return this.$.blockchain.height + 1;
     }
 
-    _clear(e) {
-        e.preventDefault();
-        Array.prototype.forEach.call(this.$el.querySelectorAll('input,select'), input => {
-            input.value = '';
-            input.classList.remove('error');
-        });
-        this.$contractAddress.textContent = '';
+    /* async */
+    _generateSignedTransaction() {
+        if (this._transactionType === TransactionUi.TxType.PLAIN) {
+            // for plain transactions the user has to provide the signature proof
+            return Promise.resolve(this._generatePlainExtendedTransaction());
+        } else {
+            return this._senderUi.getSender().then(sender => {
+                if (!sender) throw Error('Failed to retrieve sender.');
+                const tx = this._generateTransaction(sender);
+                if (!tx) throw Error('Failed to generate transaction.');
+                return sender.sign(tx).then(() => tx);
+            });
+        }
     }
 
-    _createTransaction(sender) {
+    _generateTransaction(sender) {
         switch(this._transactionType) {
             case TransactionUi.TxType.BASIC:
-                return this._createBasicTransaction(sender);
+                return this._generateBasicTransaction(sender);
             case TransactionUi.TxType.GENERAL:
-                return this._createGeneralTransaction(sender);
-            case TransactionUi.TxType.EXTENDED:
-                return this._createPlainExtendedTransaction(sender);
+                return this._generateGeneralTransaction(sender);
             case TransactionUi.TxType.VESTING:
-                return this._createVestingCreationTransaction(sender);
+                return this._generateVestingCreationTransaction(sender);
             case TransactionUi.TxType.HTLC:
-                return this._createHtlcCreationTransaction(sender);
+                return this._generateHtlcCreationTransaction(sender);
+            case TransactionUi.TxType.PLAIN:
+                return this._generatePlainExtendedTransaction();
             default:
                 alert('Transaction Type not implemented yet');
                 return null;
         }
     }
 
-    _createBasicTransaction(sender) {
+    _generateBasicTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const recipient = Utils.readAddress(this.$recipient);
         if (canonicals === null || recipient === null) return null;
@@ -156,31 +190,33 @@ class TransactionUi extends Nimiq.Observable {
             canonicals.value, canonicals.fee, canonicals.validityStart);
     }
 
-    _createGeneralTransaction(sender) {
+    _generateGeneralTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const recipient = Utils.readAddress(this.$recipient);
-        const recipientType = Nimiq.Account.Type[this.$recipientType.value.toUpperCase()];
-        if (canonicals === null || recipient === null || recipientType === undefined) return null;
+        const recipientType = Utils.readNumber(this.$recipientType);
+        if (canonicals === null || recipient === null || recipientType === null) return null;
         return new Nimiq.ExtendedTransaction(sender.address, sender.type, recipient, recipientType, canonicals.value,
             canonicals.fee, canonicals.validityStart, Nimiq.Transaction.Flag.NONE, new Uint8Array(0));
     }
 
-    _createPlainExtendedTransaction(sender) {
+    _generatePlainExtendedTransaction() {
         const canonicals = this._readTransactionCanonicals();
+        const sender = Utils.readAddress(this.$plainSender);
+        const senderType = Utils.readNumber(this.$plainSenderType);
         const recipient = Utils.readAddress(this.$recipient);
-        const recipientType = Nimiq.Account.Type[this.$recipientType.value.toUpperCase()];
-        const flags = Utils.readNumber(this.$flags);
-        const data = Utils.readBase64(this.$data);
-        const proof = Utils.readBase64(this.$proof);
-        if (canonicals === null || recipient === null || recipientType === undefined || flags === null
-            || data === null || proof === null) {
+        const recipientType = Utils.readNumber(this.$recipientType);
+        const flags = Utils.readNumber(this.$plainFlags);
+        const data = Utils.readBase64(this.$plainData);
+        const proof = Utils.readBase64(this.$plainProof);
+        if (canonicals === null || sender === null || senderType === null || recipient === null ||
+            recipientType === null || flags === null || data === null || proof === null) {
             return null;
         }
-        return new Nimiq.ExtendedTransaction(sender.address, sender.type, recipient, recipientType,
+        return new Nimiq.ExtendedTransaction(sender, senderType, recipient, recipientType,
             canonicals.value, canonicals.fee, canonicals.validityStart, flags, data, proof);
     }
 
-    _createVestingCreationTransaction(sender) {
+    _generateVestingCreationTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const vestingOwner = this._vestingOwner.selectedAddress;
         const vestingStepBlocks = Utils.readNumber(this.$vestingStepBlocks);
@@ -229,7 +265,7 @@ class TransactionUi extends Nimiq.Observable {
             canonicals.value, canonicals.fee, canonicals.validityStart, flags, buffer);
     }
 
-    _createHtlcCreationTransaction(sender) {
+    _generateHtlcCreationTransaction(sender) {
         const canonicals = this._readTransactionCanonicals();
         const htlcSender = this._htlcSender.selectedAddress;
         const htlcRecipient = this._htlcRecipient.selectedAddress;
@@ -267,7 +303,7 @@ class TransactionUi extends Nimiq.Observable {
 }
 TransactionUi.ATTRIBUTE_TX_TYPE = 'tx-type';
 TransactionUi.TxType = {
-    EXTENDED: 'extended',
+    PLAIN: 'plain',
     BASIC: 'basic',
     GENERAL: 'general',
     VESTING: 'vesting-creation',
