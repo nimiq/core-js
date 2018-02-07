@@ -43,6 +43,7 @@ describe('SynchronousAccountsTree', () => {
 
                 const root = tree.rootSync();
                 expect(root._obj.byteLength).toEqual(32);
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -59,6 +60,7 @@ describe('SynchronousAccountsTree', () => {
 
                 expect(account2).not.toBeUndefined();
                 expect(account2.balance).toEqual(value);
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -84,6 +86,7 @@ describe('SynchronousAccountsTree', () => {
 
                 expect(result).not.toBeUndefined();
                 expect(result.balance).toEqual(value);
+                tree.abort();
             })().then(done, done.fail);
 
 
@@ -120,6 +123,8 @@ describe('SynchronousAccountsTree', () => {
                 const accountTest3 = tree.getSync(address3);
                 expect(accountTest3).not.toBeUndefined();
                 expect(accountTest3.balance).toEqual(value3);
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -141,6 +146,8 @@ describe('SynchronousAccountsTree', () => {
                 tree.putSync(address, account1);
                 const state3 = tree.rootSync();
                 expect(state3.toBase64()).toBe(state1.toBase64());
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -192,6 +199,8 @@ describe('SynchronousAccountsTree', () => {
                 expect(state2.toBase64()).toBe(state1.toBase64());
                 expect(state3.toBase64()).toBe(state1.toBase64());
                 expect(state4.toBase64()).toBe(state1.toBase64());
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -230,6 +239,7 @@ describe('SynchronousAccountsTree', () => {
                 expect(accountTest3.balance).toEqual(value3);
 
                 //TODO: remove await from tree.get call
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -256,6 +266,8 @@ describe('SynchronousAccountsTree', () => {
 
                 const root2 = tree.rootSync();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -279,6 +291,8 @@ describe('SynchronousAccountsTree', () => {
 
                 const root2 = tree.rootSync();
                 expect(root2.toBase64()).toEqual(root1.toBase64());
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -303,6 +317,8 @@ describe('SynchronousAccountsTree', () => {
                 const balance3 = tree.getSync(address);
 
                 expect(balance3).toBe(null);
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -351,6 +367,7 @@ describe('SynchronousAccountsTree', () => {
                 expect(account1.balance).toBe(1);
                 expect(account2.balance).toBe(1);
 
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -381,6 +398,7 @@ describe('SynchronousAccountsTree', () => {
                 expect(account1.balance).toBe(1);
                 expect(account2.balance).toBe(1);
 
+                tree.abort();
             })().then(done, done.fail);
 
         });
@@ -632,6 +650,8 @@ describe('SynchronousAccountsTree', () => {
                 expectDefined([T10, T11, T7, B6, T9, B5, R8], 'Four addresses.');
 
                 expect(true).toBeTruthy();
+
+                tree.abort();
             })().then(done, done.fail);
         });
 
@@ -889,6 +909,8 @@ describe('SynchronousAccountsTree', () => {
                 expectDefined([T10, T11, T7, B6, T9, B5, R8], 'Four addresses.');
 
                 expect(true).toBeTruthy();
+
+                tree.abort();
             })().then(done, done.fail);
         });
     });
