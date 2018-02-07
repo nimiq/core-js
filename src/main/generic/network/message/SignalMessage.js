@@ -24,13 +24,21 @@ class SignalMessage extends Message {
         // Note that the signature is NOT verified here.
         // Callers must explicitly invoke verifySignature() to check it.
 
+        /** @type {PeerId} */
         this._senderId = senderId;
+        /** @type {PeerId} */
         this._recipientId = recipientId;
+        /** @type {number} */
         this._nonce = nonce;
+        /** @type {number} */
         this._ttl = ttl;
+        /** @type {SignalMessage.Flags|number} */
         this._flags = flags;
+        /** @type {Uint8Array} */
         this._payload = payload;
+        /** @type {PublicKey} */
         this._senderPubKey = hasPayload ? senderPubKey : undefined;
+        /** @type {Signature} */
         this._signature = hasPayload ? signature : undefined;
     }
 
@@ -89,13 +97,15 @@ class SignalMessage extends Message {
     }
 
     /**
-     * @return {Promise.<boolean>}
+     * @return {boolean}
      */
-    async verifySignature() {
+    verifySignature() {
         if (!this._signature) {
             return false;
         }
-        return (await this._signature.verify(this._senderPubKey, this._payload)) && this._senderId.equals(this._senderPubKey.toPeerId());
+
+        return this._signature.verify(this._senderPubKey, this._payload)
+            && this._senderId.equals(this._senderPubKey.toPeerId());
     }
 
     /** @type {PeerId} */

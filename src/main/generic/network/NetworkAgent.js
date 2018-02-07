@@ -268,8 +268,6 @@ class NetworkAgent extends Observable {
             this._sendVerAck();
         }
 
-        this._verackSent = true;
-
         if (this._verackReceived) {
             this._finishHandshake();
         }
@@ -277,9 +275,12 @@ class NetworkAgent extends Observable {
 
     _sendVerAck() {
         Assert.that(this._peerAddressVerified);
+
         const data = BufferUtils.concatTypedArrays(this._observedPeerAddress.peerId.serialize(), this._peerChallengeNonce);
         const signature = Signature.create(this._networkConfig.keyPair.privateKey, this._networkConfig.keyPair.publicKey, data);
         this._channel.verack(this._networkConfig.keyPair.publicKey, signature);
+
+        this._verackSent = true;
     }
 
     /**
@@ -304,7 +305,8 @@ class NetworkAgent extends Observable {
         }
 
         // Verify signature
-        if (!msg.signature.verify(msg.publicKey, BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce))) {
+        const data = BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce);
+        if (!msg.signature.verify(msg.publicKey, data)) {
             this._channel.close('Invalid signature in verack message');
             return;
         }

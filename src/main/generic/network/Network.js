@@ -499,7 +499,7 @@ class Network extends Observable {
      * @returns {void}
      * @private
      */
-    async _onSignal(channel, msg) {
+    _onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
             channel.ban('invalid signal ttl');
@@ -507,7 +507,7 @@ class Network extends Observable {
         }
 
         // Discard signals that have a payload, which is not properly signed.
-        if (msg.hasPayload() && !(await msg.verifySignature())) {
+        if (msg.hasPayload() && !msg.verifySignature()) {
             channel.ban('invalid signature');
             return;
         }
