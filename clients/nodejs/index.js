@@ -109,6 +109,8 @@ const $ = {};
     $.mempool = $.consensus.mempool;
     $.network = $.consensus.network;
 
+    Nimiq.Log.i(TAG, `Peer address: ${networkConfig.peerAddress.toString()} - public key: ${networkConfig.keyPair.publicKey.toHex()}`);
+
     // TODO: Wallet key.
     $.walletStore = await new Nimiq.WalletStore();
     if (!walletAddress && !walletSeed) {
@@ -132,7 +134,7 @@ const $ = {};
     }
 
     const addresses = await $.walletStore.list();
-    Nimiq.Log.i(TAG, `Managing addresses [${addresses.map(address => address.toUserFriendlyAddress())}]`);
+    Nimiq.Log.i(TAG, `Managing wallets [${addresses.map(address => address.toUserFriendlyAddress())}]`);
 
     const account = !isNano ? await $.accounts.get($.wallet.address) : null;
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
