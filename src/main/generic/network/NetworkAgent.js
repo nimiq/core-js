@@ -222,6 +222,12 @@ class NetworkAgent extends Observable {
             return;
         }
 
+        // Check that the given peerAddress is correctly signed.
+        if (!msg.peerAddress.verifySignature()) {
+            this._channel.close('invalid peerAddress in version message');
+            return;
+        }
+
         // TODO check services?
 
         // Check that the given peerAddress matches the one we expect.

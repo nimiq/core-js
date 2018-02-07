@@ -122,11 +122,14 @@ class PeerAddress {
             /* distance is ignored */
     }
 
+    /**
+     * @returns {boolean}
+     */
     verifySignature() {
-        if (this._verifiedSignature === undefined) {
-            this._verifiedSignature = this.signature.verify(this.publicKey, this.serializeContent());
+        if (this._signatureVerified === undefined) {
+            this._signatureVerified = this.signature.verify(this.publicKey, this.serializeContent());
         }
-        return this._verifiedSignature;
+        return this._signatureVerified;
     }
 
     /** @type {number} */
@@ -175,13 +178,14 @@ class PeerAddress {
     }
 
     /** @type {Signature} */
-    set signature(s) {
+    set signature(signature) {
         // Never change the signature of a remote address.
         if (this._distance !== 0) {
             return;
         }
-        this._verifiedSignature = undefined;
-        this._signature = s;
+
+        this._signature = signature;
+        this._signatureVerified = undefined;
     }
 
     // Changed when passed on to other peers.
