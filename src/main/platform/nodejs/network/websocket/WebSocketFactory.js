@@ -29,12 +29,11 @@ class WebSocketFactory {
 
     /**
      * @param {string} url
+     * @param {*} [options]
      * @return {WebSocket}
      */
-    static newWebSocket(url) {
-        return new WebSocket(url, {
-            handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
-        });
+    static newWebSocket(url, options) {
+        return new WebSocket(url, options);
     }
 }
 Class.register(WebSocketFactory);
