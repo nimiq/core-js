@@ -2,7 +2,9 @@
 
 **[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
 
-For a high-level introduction checkout the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
+For a high-level introduction check out the [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084).
+
+To dive into the details of the protocol architecture check out the [Nimiq Developer Reference](https://nimiq.com/developer-reference).
 
 ## Library Demo
 Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](https://nimiq.com/wallet).
