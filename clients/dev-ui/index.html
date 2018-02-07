@@ -225,7 +225,7 @@
                 <div class="input-group" show="plain">
                     <label>
                         <strong>Sender</strong>
-                        <input tx-plain-sender name="tx-recipient" maxlength="45" size="45">
+                        <input tx-plain-sender name="tx-plain-sender" maxlength="45" size="45">
                     </label>
                 </div>
                 <div class="input-group" show="plain">
@@ -264,23 +264,29 @@
                         <input tx-validity-start name="tx-validity-start" type="number" step="1">
                     </label>
                 </div>
+                <div class="input-group" show="general">
+                    <label>
+                        <strong>Freeform Data</strong>
+                        <input tx-freeform-data name="tx-freeform-data" size="45">
+                    </label>
+                </div>
                 <!-- plain transaction -->
                 <div class="input-group" show="plain">
                     <label>
                         <strong>Flags</strong>
-                        <input tx-plain-flags name="tx-flags" type="number">
+                        <input tx-plain-flags name="tx-plain-flags" type="number">
                     </label>
                 </div>
                 <div class="input-group" show="plain">
                     <label>
                         <strong>Data</strong>
-                        <input tx-plain-data name="tx-data" pattern="^[A-Za-z0-9+/]*$" size="45">
+                        <input tx-plain-data name="tx-plain-data" pattern="^[A-Za-z0-9+/]*$" size="45">
                     </label>
                 </div>
                 <div class="input-group" show="plain">
                     <label>
                         <strong>Proof</strong>
-                        <input tx-plain-proof name="tx-proof" pattern="^[A-Za-z0-9+/]*$" size="45">
+                        <input tx-plain-proof name="tx-plain-proof" pattern="^[A-Za-z0-9+/]*$" size="45">
                     </label>
                 </div>
 
@@ -371,32 +377,6 @@
                 <hr/>
             </form>
         </div>
-
-        <div class="info" hide-nano miner-ui>
-            <div class="info-title">Miner</div>
-            <hr/>
-
-            <div class="info-block">
-                <strong>Miner Address</strong>
-                <select miner-address></select>
-            </div>
-            <div class="info-block">
-                <strong>Working</strong>
-                <span working></span>
-            </div>
-            <div class="info-block">
-                <strong>Hashrate</strong>
-                <span hashrate></span> H/s
-            </div>
-            <div class="info-block">
-                <strong>Last block mined at</strong>
-                <span last-mined-block-timestamp></span>
-            </div>
-            <div class="input-group">
-                <button start-button>Start Mining</button>
-            </div>
-            <hr/>
-        </div>
     </div>
 
     <div class="right">
@@ -486,6 +466,33 @@
             <div class="info-block">
                 <strong>Sent</strong>
                 <span bytes-sent></span>
+            </div>
+            <hr/>
+        </div>
+
+
+        <div class="info" hide-nano miner-ui>
+            <div class="info-title">Miner</div>
+            <hr/>
+
+            <div class="info-block">
+                <strong>Miner Address</strong>
+                <select miner-address></select>
+            </div>
+            <div class="info-block">
+                <strong>Working</strong>
+                <span working></span>
+            </div>
+            <div class="info-block">
+                <strong>Hashrate</strong>
+                <span hashrate></span> H/s
+            </div>
+            <div class="info-block">
+                <strong>Last block mined at</strong>
+                <span last-mined-block-timestamp></span>
+            </div>
+            <div class="input-group">
+                <button start-button>Start Mining</button>
             </div>
             <hr/>
         </div>

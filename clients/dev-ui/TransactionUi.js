@@ -16,6 +16,7 @@ class TransactionUi extends Nimiq.Observable {
         this.$value = this.$el.querySelector('[tx-value]');
         this.$fee = this.$el.querySelector('[tx-fee]');
         this.$validityStart = this.$el.querySelector('[tx-validity-start]');
+        this.$freeformData = this.$el.querySelector('[tx-freeform-data]');
         this.$plainFlags = this.$el.querySelector('[tx-plain-flags]');
         this.$plainData = this.$el.querySelector('[tx-plain-data]');
         this.$plainProof = this.$el.querySelector('[tx-plain-proof]');
@@ -195,8 +196,9 @@ class TransactionUi extends Nimiq.Observable {
         const recipient = Utils.readAddress(this.$recipient);
         const recipientType = Utils.readNumber(this.$recipientType);
         if (canonicals === null || recipient === null || recipientType === null) return null;
+        const freeformData = Nimiq.BufferUtils.fromAscii(this.$freeformData.value);
         return new Nimiq.ExtendedTransaction(sender.address, sender.type, recipient, recipientType, canonicals.value,
-            canonicals.fee, canonicals.validityStart, Nimiq.Transaction.Flag.NONE, new Uint8Array(0));
+            canonicals.fee, canonicals.validityStart, Nimiq.Transaction.Flag.NONE, freeformData);
     }
 
     _generatePlainExtendedTransaction() {
