@@ -361,15 +361,6 @@ class PeerAddresses extends Observable {
             peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
         }
 
-        // If we are currently connected, allow only updates to the netAddress and only if we don't know it yet.
-        if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            if (!peerAddressState.peerAddress.netAddress && peerAddress.netAddress) {
-                peerAddressState.peerAddress.netAddress = peerAddress.netAddress;
-            }
-
-            return false;
-        }
-
         // Update the address.
         peerAddressState.peerAddress = peerAddress;
 
