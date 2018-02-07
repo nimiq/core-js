@@ -332,7 +332,7 @@ class PeerAddresses extends Observable {
                 return false;
             }
 
-            // Never update the seed peers.
+            // Never update seed peers.
             if (knownAddress.isSeed()) {
                 return false;
             }
