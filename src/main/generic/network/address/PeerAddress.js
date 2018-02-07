@@ -304,6 +304,13 @@ class WsPeerAddress extends PeerAddress {
     }
 
     /**
+     * @returns {WsPeerAddress}
+     */
+    withoutId() {
+        return new WsPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
+    }
+
+    /**
      * @returns {string}
      */
     toString() {

@@ -160,11 +160,24 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
+     * @returns {?PeerAddressState}
+     * @private
+     */
+    _get(peerAddress) {
+        if (peerAddress instanceof WsPeerAddress) {
+            const localPeerAddress = this._store.get(peerAddress.withoutId());
+            if (localPeerAddress) return localPeerAddress;
+        }
+        return this._store.get(peerAddress);
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
      * @returns {PeerAddress|null}
      */
     get(peerAddress) {
         /** @type {PeerAddressState} */
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         return peerAddressState ? peerAddressState.peerAddress : null;
     }
 
@@ -301,7 +314,7 @@ class PeerAddresses extends Observable {
             if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
                 Log.d(PeerAddresses, `Ignoring address ${peerAddress} - max distance exceeded`);
                 // Drop any route to this peer over the current channel. This may prevent loops.
-                const peerAddressState = this._store.get(peerAddress);
+                const peerAddressState = this._get(peerAddress);
                 if (peerAddressState) {
                     peerAddressState.deleteRoute(channel);
                 }
@@ -310,7 +323,7 @@ class PeerAddresses extends Observable {
         }
 
         // Check if we already know this address.
-        let peerAddressState = this._store.get(peerAddress);
+        let peerAddressState = this._get(peerAddress);
         if (peerAddressState) {
             const knownAddress = peerAddressState.peerAddress;
 
@@ -369,7 +382,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      */
     connecting(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
@@ -396,7 +409,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      */
     connected(channel, peerAddress) {
-        let peerAddressState = this._store.get(peerAddress);
+        let peerAddressState = this._get(peerAddress);
         
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
@@ -406,11 +419,6 @@ class PeerAddresses extends Observable {
             }
 
             this._store.add(peerAddressState);
-        } else {
-            // Never update the timestamp of seed peers.
-            if (peerAddressState.peerAddress.isSeed()) {
-                peerAddress.timestamp = 0;
-            }
         }
 
         if (peerAddressState.state === PeerAddressState.BANNED
@@ -449,7 +457,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      */
     disconnected(channel, peerAddress, closedByRemote) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
@@ -487,7 +495,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      */
     failure(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
@@ -523,7 +531,7 @@ class PeerAddresses extends Observable {
             return;
         }
 
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
@@ -545,7 +553,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      */
     ban(peerAddress, duration = PeerAddresses.DEFAULT_BAN_TIME) {
-        let peerAddressState = this._store.get(peerAddress);
+        let peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
@@ -569,7 +577,7 @@ class PeerAddresses extends Observable {
      * @returns {boolean}
      */
     isConnected(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         return peerAddressState && peerAddressState.state === PeerAddressState.CONNECTED;
     }
 
@@ -578,7 +586,7 @@ class PeerAddresses extends Observable {
      * @returns {boolean}
      */
     isBanned(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         return peerAddressState
             && peerAddressState.state === PeerAddressState.BANNED
             // XXX Never consider seed peers to be banned. This allows us to use
@@ -594,7 +602,7 @@ class PeerAddresses extends Observable {
      * @private
      */
     _remove(peerAddress) {
-        const peerAddressState = this._store.get(peerAddress);
+        const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
