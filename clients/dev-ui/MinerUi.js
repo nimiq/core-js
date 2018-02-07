@@ -10,11 +10,13 @@ class MinerUi {
         this.$  = $;
         this._lastMinedBlockTimestamp = null;
 
+        this._minerAddress = new AccountSelector(this.$el.querySelector('[miner-address]'), $);
         this.$working = this.$el.querySelector('[working]');
         this.$hashrate = this.$el.querySelector('[hashrate]');
         this.$lastMinedBlockTimeStamp = this.$el.querySelector('[last-mined-block-timestamp]');
         this.$startButton = this.$el.querySelector('[start-button]');
 
+        $.miner._address = this._minerAddress.selectedAddress;
         $.miner.on('start', () => this._minerChanged());
         $.miner.on('stop', () => this._minerChanged());
         $.miner.on('hashrate-changed', () => this._minerChanged());
@@ -22,8 +24,13 @@ class MinerUi {
         $.consensus.on('established', () => this._onConsensusEstablished());
         $.consensus.on('lost', () => this._onConsensusLost());
         this.$startButton.addEventListener('click', () => this._toggleMining());
+        this._minerAddress.on('account-selected', address => $.miner._address = address);
 
         this._minerChanged();
+    }
+
+    notifyAccountsChanged() {
+        this._minerAddress.notifyAccountsChanged();
     }
 
     _onConsensusEstablished() {
@@ -40,7 +47,7 @@ class MinerUi {
         //    console.warn('Not starting miner - consensus not established');
         //    return;
         //}
-        if (!this.$.miner.working) {
+        if (!this.$.miner.working && this.$.miner._address) {
             this.$.miner.startWork();
         } else {
             this.$.miner.stopWork();

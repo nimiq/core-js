@@ -1,11 +1,14 @@
-class AccountSelector {
+class AccountSelector extends Nimiq.Observable {
     constructor(el, $) {
+        super();
         if (el.nodeName.toLowerCase() !== 'select') {
             throw Error('AccountSelector must be a <select> node');
         }
 
         this.$el = el;
         this.$ = $;
+
+        this.$el.addEventListener('change', () => this.fire('account-selected', this.selectedAddress));
 
         this._refreshList();
     }
@@ -21,6 +24,7 @@ class AccountSelector {
     set selectedAddress(address) {
         const userFriendlyAddress = address.toUserFriendlyAddress();
         this.$el.value = userFriendlyAddress;
+        this.fire('account-selected', this.selectedAddress);
     }
 
     set includedTypes(types) {
@@ -60,7 +64,8 @@ class AccountSelector {
                 const pendingAddresses = this._getAddressesFromLocalStorage(LocalStorageList.KEY_PENDING_CONTRACTS_LIST);
                 this._createOptGroup(pendingAddresses, 'Pending Contracts');
             }
-            this.$el.value = selected;
+            if (selected) this.$el.value = selected;
+            else this._selectDefaultWallet();
         });
     }
 
@@ -82,5 +87,12 @@ class AccountSelector {
 
     _getAddressesFromLocalStorage(key) {
         return new LocalStorageList(key).get().map(userFriendly => Nimiq.Address.fromUserFriendlyAddress(userFriendly));
+    }
+
+    _selectDefaultWallet() {
+        this.$.walletStore.hasDefault().then(hasDefault => {
+            if (!hasDefault) return;
+            this.$.walletStore.getDefault().then(wallet => this.selectedAddress = wallet.address);
+        });
     }
 }

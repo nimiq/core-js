@@ -11,7 +11,10 @@ class DevUI {
         this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), $);
 
         this._accountsUi.on('account-selected', address => this._accountInfoUi.address = address);
-        this._accountsUi.on('accounts-changed', () => this._transactionUi.notifyAccountsChanged());
+        this._accountsUi.on('accounts-changed', () => {
+            this._transactionUi.notifyAccountsChanged();
+            this._minerUi.notifyAccountsChanged();
+        });
         this._transactionUi.on('contract-created', address => this._accountsUi.addAccount(address));
     }
 }
@@ -66,13 +69,14 @@ function startNimiq() {
 
         // XXX Legacy components
         $.walletStore = await new Nimiq.WalletStore();
-        $.wallet = await $.walletStore.getDefault();
 
         if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
-            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
+            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, null);
         } else {
-            $.consensus.subscribeAccounts([$.wallet.address]);
+            $.walletStore.list().then(wallets => {
+                $.consensus.subscribeAccounts(wallets.map(wallet => wallet.address));
+            });
         }
 
         $.network.connect();
