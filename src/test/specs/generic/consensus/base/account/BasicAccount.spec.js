@@ -28,8 +28,21 @@ describe('BasicAccount', () => {
 
     it('can accept incoming transactions', (done) => {
         (async () => {
-            const transaction = new BasicTransaction(pubKey, recipient, 100, 0, 0);
+            let transaction = new BasicTransaction(pubKey, recipient, 100, 0, 0);
             expect(await BasicAccount.verifyIncomingTransaction(transaction)).toBeTruthy();
+
+            transaction = new ExtendedTransaction(recipient, Account.Type.BASIC, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(60));
+            expect(await BasicAccount.verifyIncomingTransaction(transaction)).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
+    it('can deny incoming transactions', (done) => {
+        (async () => {
+            let transaction = new ExtendedTransaction(recipient, Account.Type.BASIC, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(65));
+            expect(await BasicAccount.verifyIncomingTransaction(transaction)).toBeFalsy();
+
+            transaction = new ExtendedTransaction(recipient, Account.Type.BASIC, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(1000));
+            expect(await BasicAccount.verifyIncomingTransaction(transaction)).toBeFalsy();
         })().then(done, done.fail);
     });
 

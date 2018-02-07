@@ -59,7 +59,8 @@ class BasicAccount extends Account {
      * @return {boolean}
      */
     static verifyIncomingTransaction(transaction) {
-        return true; // Accept everything
+        if (transaction.data.byteLength > 64) return false;
+        return true;
     }
 
     /**
