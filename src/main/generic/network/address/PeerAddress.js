@@ -109,9 +109,13 @@ class PeerAddress {
      * @returns {boolean}
      */
     equals(o) {
+        // We consider peer addresses to be equal if the public key or peer id is not known on one of them:
+        // Peers from the network always contain a peer id and public key, peers without peer id or public key
+        // are always set by the user.
         return o instanceof PeerAddress
-            && this._protocol === o.protocol
-            && (!this._publicKey || this._publicKey.equals(o.publicKey));
+            && this.protocol === o.protocol
+            && (!this.publicKey || !o.publicKey || this.publicKey.equals(o.publicKey))
+            && (!this.peerId || !o.peerId || this.peerId.equals(o.peerId));
         /* services is ignored */
         /* timestamp is ignored */
         /* netAddress is ignored */
@@ -138,15 +142,6 @@ class PeerAddress {
     /** @type {number} */
     get timestamp() {
         return this._timestamp;
-    }
-
-    /** @type {number} */
-    set timestamp(value) {
-        // Never change the timestamp of a seed address.
-        if (this.isSeed()) {
-            return;
-        }
-        this._timestamp = value;
     }
 
     /** @type {NetAddress} */
@@ -200,13 +195,6 @@ class PeerAddress {
      */
     isSeed() {
         return this._timestamp === 0;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    isLocal() {
-        return this._publicKey === null;
     }
 }
 
