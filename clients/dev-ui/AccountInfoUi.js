@@ -22,8 +22,7 @@ class AccountInfoUi {
         this.$htlcTotalAmount = this.$el.querySelector('[htlc-total-amount]');
 
         this.$ = $;
-        this._address = $.wallet.address;
-        this.$addressInput.setAttribute('placeholder', $.wallet.address.toUserFriendlyAddress());
+        this._address = null;
         this._reset();
 
         this.$addressInput.addEventListener('input', () => this._onAddressInput());
@@ -38,7 +37,17 @@ class AccountInfoUi {
 
     _reset() {
         this.$addressInput.value = '';
-        this._setAddress($.wallet.address);
+        this.$.walletStore.hasDefault().then(hasDefault => {
+            if (hasDefault) {
+                this.$.walletStore.getDefault().then(defaultWallet => {
+                    this._setAddress(defaultWallet.address);
+                    this.$addressInput.setAttribute('placeholder', defaultWallet.address.toUserFriendlyAddress());
+                });
+            } else {
+                this._address = null;
+                this.$addressInput.setAttribute('placeholder', 'Enter Address');
+            }
+        });
     }
 
     _setAddress(address) {
@@ -50,7 +59,7 @@ class AccountInfoUi {
     _onAddressInput() {
         const userFriendlyAddress = this.$addressInput.value;
         if (userFriendlyAddress === '') {
-            this._setAddress(this.$.wallet.address);
+            this._reset();
             return;
         }
         let address;
@@ -65,7 +74,7 @@ class AccountInfoUi {
     }
 
     _update(head, rebranching) {
-        if (this.$.clientType === DevUI.CLIENT_NANO && rebranching) {
+        if (!this._address || this.$.clientType === DevUI.CLIENT_NANO && rebranching) {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {
@@ -121,4 +130,3 @@ AccountInfoUi.AccountType = {
     HTLC: 'htlc'
 };
 
-// TODO change $.wallet to $.walletStore.getDefault and also handle the case that there is no default wallet

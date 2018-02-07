@@ -31,9 +31,9 @@ class MempoolUi {
         this.$transactions.innerHTML = '';
 
         txs.forEach(tx => {
-            if (filter && !this.$.wallet.address.equals(tx.sender) && !this.$.wallet.address.equals(tx.recipient)) {
-                return; // TODO filtering still needed with $.consensus.subscribeAccounts?
-            }
+            /*if (filter && !this.$.wallet.address.equals(tx.sender) && !this.$.wallet.address.equals(tx.recipient)) {
+                return;
+            }*/
             this._renderTransaction(tx);
         });
     }
