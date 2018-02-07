@@ -201,7 +201,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     _requestChainProof() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
-        Assert.that(!this._timers.timeoutExists('getChainProof'));
+        Assert.that(!this._peer.channel.isExpectingMessage(Message.Type.CHAIN_PROOF));
         this._busy = true;
 
         // Request ChainProof from peer.
@@ -209,9 +209,9 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Drop the peer if it doesn't send the chain proof within the timeout.
         // TODO should we ban here instead?
-        this._timers.setTimeout('getChainProof', () => {
+        this._peer.channel.expectMessage('chain-proof', Message.Type.CHAIN_PROOF, () => {
             this._peer.channel.close('getChainProof timeout');
-        }, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT);
+        }, undefined, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT);
     }
 
     /**
@@ -224,14 +224,12 @@ class LightConsensusAgent extends FullConsensusAgent {
         Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
-        if (!this._timers.timeoutExists('getChainProof')) {
+        // FIXME
+        if (!this._peer.channel.isExpectingMessage(Message.Type.CHAIN_PROOF)) {
             Log.w(LightConsensusAgent, `Unsolicited chain proof received from ${this._peer.peerAddress}`);
             // TODO close/ban?
             return;
         }
-
-        // Clear timeout.
-        this._timers.clearTimeout('getChainProof');
 
         if (this._syncing) {
             this.fire('verify-chain-proof', this._peer.peerAddress);
@@ -256,7 +254,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     _requestAccountsTree() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
-        Assert.that(!this._timers.timeoutExists('getAccountsTreeChunk'));
+        Assert.that(!this._peer.channel.isExpectingMessage(Message.Type.ACCOUNTS_TREE_CHUNK));
         this._busy = true;
 
         const startPrefix = this._partialChain.getMissingAccountsPrefix();
@@ -272,9 +270,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._peer.channel.getAccountsTreeChunk(headHash, startPrefix);
 
         // Drop the peer if it doesn't send the accounts proof within the timeout.
-        this._timers.setTimeout('getAccountsTreeChunk', () => {
+        this._peer.channel.expectMessage('accounts-tree-chunk', Message.Type.ACCOUNTS_TREE_CHUNK, () => {
             this._peer.channel.close('getAccountsTreeChunk timeout');
-        }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
+        }, undefined, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
 
     /**
@@ -293,9 +291,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
-
-        // Clear the request timeout.
-        this._timers.clearTimeout('getAccountsTreeChunk');
 
         const startPrefix = this._accountsRequest.startPrefix;
         const blockHash = this._accountsRequest.blockHash;
@@ -367,17 +362,16 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._lastChainHeight = this._partialChain.proofHeadHeight;
 
         // XXX Only one getBlocks request at a time.
-        if (this._timers.timeoutExists('getBlocks')) {
+        if (this._peer.channel.isExpectingMessage(Message.Type.INV)) {
             Log.e(LightConsensusAgent, 'Duplicate _requestProofBlocks()');
             return;
         }
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // TODO should we ban here instead?
-        this._timers.setTimeout('getBlocks', () => {
-            this._timers.clearTimeout('getBlocks');
+        this._peer.channel.expectMessage('inv', Message.Type.INV, () => {
             this._peer.channel.close('getBlocks timeout');
-        }, BaseConsensusAgent.REQUEST_TIMEOUT);
+        }, undefined, BaseConsensusAgent.REQUEST_TIMEOUT);
 
         // Request blocks from peer.
         this._peer.channel.getBlocks(this._partialChain.getBlockLocators(), this._partialChain.numBlocksNeeded(), false);
@@ -498,11 +492,11 @@ class LightConsensusAgent extends FullConsensusAgent {
             this._peer.channel.getHeader([vector]);
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
-            this._timers.setTimeout('getHeader', () => {
+            this._peer.channel.expectMessage('header', Message.Type.HEADER, () => {
                 this._headerRequest = null;
                 this._peer.channel.close('getHeader timeout');
                 reject(new Error('timeout')); // TODO error handling
-            }, BaseConsensusAgent.REQUEST_TIMEOUT);
+            }, undefined, BaseConsensusAgent.REQUEST_TIMEOUT);
         });
     }
 
@@ -522,9 +516,6 @@ class LightConsensusAgent extends FullConsensusAgent {
             // TODO What should happen here? ban? drop connection?
             return;
         }
-
-        // Clear the request timeout.
-        this._timers.clearTimeout('getHeader');
 
         const requestedHash = this._headerRequest.hash;
         const resolve = this._headerRequest.resolve;

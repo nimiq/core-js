@@ -106,17 +106,16 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
     async _requestBlocks(maxInvSize) {
         // Only one getBlocks request at a time.
-        if (this._timers.timeoutExists('getBlocks')) {
+        if (this._peer.channel.isExpectingMessage(Message.Type.INV)) {
             Log.e(FullConsensusAgent, 'Duplicate _requestBlocks()');
             return;
         }
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // Set timeout early to prevent re-entering the method.
-        this._timers.setTimeout('getBlocks', () => {
-            this._timers.clearTimeout('getBlocks');
+        this._peer.channel.expectMessage('inv', Message.Type.INV, () => {
             this._peer.channel.close('getBlocks timeout');
-        }, BaseConsensusAgent.REQUEST_TIMEOUT);
+        }, undefined, BaseConsensusAgent.REQUEST_TIMEOUT);
 
         // Check if the peer is sending us a fork.
         const onFork = this._forkHead && this._numBlocksExtending === 0 && this._numBlocksForking > 0;
@@ -170,8 +169,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @override
      */
     _onInv(msg) {
-        // Clear the getBlocks timeout.
-        this._timers.clearTimeout('getBlocks');
         return super._onInv(msg);
     }
 

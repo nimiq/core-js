@@ -144,6 +144,25 @@ class PeerConnection extends Observable {
     }
 
     /**
+     * @param {string} identifier
+     * @param {Message.Type|Array.<Message.Type>} types
+     * @param {function()} timeoutCallback
+     * @param {number} [chunkTimeout]
+     * @param {number} [msgTimeout]
+     */
+    expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout) {
+        this._channel.expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout);
+    }
+
+    /**
+     * @param {Message.Type} type
+     * @returns {boolean}
+     */
+    isExpectingMessage(type) {
+        return this._channel.isExpectingMessage(type);
+    }
+
+    /**
      * @param {string} [reason]
      */
     close(reason) {

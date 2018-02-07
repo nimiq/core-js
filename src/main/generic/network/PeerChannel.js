@@ -52,6 +52,25 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {string} identifier
+     * @param {Message.Type|Array.<Message.Type>} types
+     * @param {function()} timeoutCallback
+     * @param {number} [chunkTimeout]
+     * @param {number} [msgTimeout]
+     */
+    expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout) {
+        this._conn.expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout);
+    }
+
+    /**
+     * @param {Message.Type} type
+     * @returns {boolean}
+     */
+    isExpectingMessage(type) {
+        return this._conn.isExpectingMessage(type);
+    }
+
+    /**
      * @param {Message} msg
      * @return {boolean}
      * @private

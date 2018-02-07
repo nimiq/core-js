@@ -20,13 +20,35 @@ class Message {
         // Set read position past the magic to the beginning of the type string.
         buf.readPos = 4;
 
-        // Read the type string.
+        // Read the type.
         const type = buf.readVarUint();
 
         // Reset the read position to original.
         buf.readPos = pos;
 
         return type;
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {number}
+     */
+    static peekLength(buf) {
+        // Store current read position.
+        const pos = buf.readPos;
+
+        // Set read position past the magic to the beginning of the type string.
+        buf.readPos = 4;
+
+        // Read the type and ignore it.
+        buf.readVarUint();
+        // Read the length.
+        const length = buf.readUint32();
+
+        // Reset the read position to original.
+        buf.readPos = pos;
+
+        return length;
     }
 
     /**
