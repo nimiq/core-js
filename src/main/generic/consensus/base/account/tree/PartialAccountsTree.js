@@ -21,9 +21,9 @@ class PartialAccountsTree extends SynchronousAccountsTree {
         }
 
         const tx = this.synchronousTransaction();
+
         // Then apply all
         tx._putLight(chunk.terminalNodes);
-
 
         // Check if proof can be merged.
         if (!tx._mergeProof(chunk.proof, chunk.tail.prefix)) {
@@ -146,7 +146,6 @@ class PartialAccountsTree extends SynchronousAccountsTree {
 
     /**
      * @param {Array.<AccountsTreeNode>} nodes
-     * @returns {Promise}
      * @private
      */
     _putLight(nodes) {
@@ -179,7 +178,7 @@ class PartialAccountsTree extends SynchronousAccountsTree {
      * @param {boolean} [enableWatchdog]
      * @returns {PartialAccountsTree}
      */
-    synchronousTransaction(enableWatchdog=true) {
+    synchronousTransaction(enableWatchdog = true) {
         const tree = new PartialAccountsTree(this._store.synchronousTransaction(enableWatchdog));
         tree._complete = this._complete;
         tree._lastPrefix = this._lastPrefix;
@@ -190,13 +189,12 @@ class PartialAccountsTree extends SynchronousAccountsTree {
      * @param {boolean} [enableWatchdog]
      * @returns {AccountsTree}
      */
-    transaction(enableWatchdog=true) {
+    transaction(enableWatchdog = true) {
         if (!this.complete) {
             throw new Error('Can only construct AccountsTree from complete PartialAccountsTree');
         }
         // Use a synchronous transaction here to enable better caching.
-        const tree = new AccountsTree(this._store.synchronousTransaction(enableWatchdog));
-        return tree;
+        return new AccountsTree(this._store.synchronousTransaction(enableWatchdog));
     }
 
     /**

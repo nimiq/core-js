@@ -457,7 +457,7 @@ class PartialLightChain extends LightChain {
         // If we're done, prepare next phase.
         if (result === PartialAccountsTree.Status.OK_COMPLETE) {
             this._state = PartialLightChain.State.PROVE_BLOCKS;
-            this._accountsTx = new Accounts(await this._partialTree.transaction(false));
+            this._accountsTx = new Accounts(this._partialTree.transaction(false));
         }
 
         return result;

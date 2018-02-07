@@ -316,7 +316,7 @@ class AccountsTree extends Observable {
         if (lastNode) {
             proof = await this.getAccountsProof([Address.fromHex(lastNode.prefix)]);
         } else {
-            // The proof that the last address does not exist is suitable to proof there is no such chunk.
+            // The proof that the last address does not exist is sufficient to prove that there is no such chunk.
             proof = await this.getAccountsProof([Address.fromHex('ffffffffffffffffffffffffffffffffffffffff')]);
         }
         return new AccountsTreeChunk(chunk, proof);

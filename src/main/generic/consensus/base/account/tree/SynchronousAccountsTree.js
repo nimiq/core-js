@@ -40,7 +40,7 @@ class SynchronousAccountsTree extends AccountsTree {
         
         // For each prefix, descend the tree individually.
         for (let i = 0; i < prefixes.length; ) {
-            let prefix = prefixes[i];
+            const prefix = prefixes[i];
 
             // Find common prefix between node and the current requested prefix.
             const commonPrefix = StringUtils.commonPrefix(node.prefix, prefix);
@@ -56,7 +56,7 @@ class SynchronousAccountsTree extends AccountsTree {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
-                const childNode = this._syncStore.getSync(childKey); // eslint-disable-line no-await-in-loop
+                const childNode = this._syncStore.getSync(childKey);
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -199,19 +199,19 @@ class SynchronousAccountsTree extends AccountsTree {
 
             // If the node has only a single child, merge it with the next node.
             if (node.hasSingleChild() && node.prefix !== '') {
-                this._syncStore.removeSync(node); // eslint-disable-line no-await-in-loop
+                this._syncStore.removeSync(node);
 
                 const childPrefix = node.getFirstChild();
-                const childNode = this._syncStore.getSync(childPrefix); // eslint-disable-line no-await-in-loop
+                const childNode = this._syncStore.getSync(childPrefix);
 
-                this._syncStore.putSync(childNode); // eslint-disable-line no-await-in-loop
+                this._syncStore.putSync(childNode);
                 return this._updateKeysBatch(childNode.prefix, rootPath.slice(0, i));
             }
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
             // XXX Special case: We start with an empty root node. Don't delete it.
             else if (node.hasChildren() || node.prefix === '') {
-                this._syncStore.putSync(node); // eslint-disable-line no-await-in-loop
+                this._syncStore.putSync(node);
                 return this._updateKeysBatch(node.prefix, rootPath.slice(0, i));
             }
 
@@ -236,7 +236,7 @@ class SynchronousAccountsTree extends AccountsTree {
             let node = rootPath[i];
 
             node = node.withChild(prefix, new Hash(null));
-            this._syncStore.putSync(node); // eslint-disable-line no-await-in-loop
+            this._syncStore.putSync(node);
             prefix = node.prefix;
         }
     }
