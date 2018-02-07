@@ -296,22 +296,16 @@ class WsPeerAddress extends PeerAddress {
     equals(o) {
         return super.equals(o)
             && o instanceof WsPeerAddress
-            && this._host === o.host
-            && this._port === o.port;
+            && ((!!this.peerId && !!o.peerId) || (this._host === o.host && this._port === o.port));
     }
 
     /**
      * @returns {string}
      */
     hashCode() {
-        return this.toString();
-    }
-
-    /**
-     * @returns {WsPeerAddress}
-     */
-    withoutId() {
-        return new WsPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
+        return this.peerId
+            ? `wss:///${this.peerId}`
+            : `wss://${this._host}:${this._port}/`;
     }
 
     /**
@@ -319,6 +313,13 @@ class WsPeerAddress extends PeerAddress {
      */
     toString() {
         return `wss://${this._host}:${this._port}/${this.peerId ? this.peerId : ''}`;
+    }
+
+    /**
+     * @returns {WsPeerAddress}
+     */
+    withoutId() {
+        return new WsPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
     }
 
     /** @type {string} */
