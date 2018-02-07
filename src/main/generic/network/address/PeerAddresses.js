@@ -226,7 +226,6 @@ class PeerAddresses extends Observable {
 
             // Update timestamp for connected peers.
             if (peerAddressState.state === PeerAddressState.CONNECTED) {
-                address.timestamp = now;
                 // Also update timestamp for RTC connections
                 if (peerAddressState.bestRoute) {
                     peerAddressState.bestRoute.timestamp = now;
@@ -320,9 +319,9 @@ class PeerAddresses extends Observable {
                 return false;
             }
 
-            // Never update the timestamp of seed peers.
+            // Never the seed peers.
             if (knownAddress.isSeed()) {
-                peerAddress.timestamp = 0;
+                return false;
             }
 
             // Never erase NetAddresses.
@@ -435,7 +434,6 @@ class PeerAddresses extends Observable {
         peerAddressState.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
 
         peerAddressState.peerAddress = peerAddress;
-        peerAddressState.peerAddress.timestamp = Date.now();
 
         // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
@@ -714,8 +712,6 @@ class PeerAddresses extends Observable {
                     break;
 
                 case PeerAddressState.CONNECTED:
-                    // Keep timestamp up-to-date while we are connected.
-                    addr.timestamp = now;
                     // Also update timestamp for RTC connections
                     if (peerAddressState.bestRoute) {
                         peerAddressState.bestRoute.timestamp = now;

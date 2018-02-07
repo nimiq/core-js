@@ -287,7 +287,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVerAck(msg) {
-        Log.d(NetworkAgent, () => `[VERACK] from ${this._peer.peerAddress}`);
+        Log.d(NetworkAgent, () => `[VERACK] from ${this._observedPeerAddress}`);
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -358,7 +358,6 @@ class NetworkAgent extends Observable {
 
     /**
      * @param {AddrMessage} msg
-     * @return {Promise}
      * @private
      */
     _onAddr(msg) {
