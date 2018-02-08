@@ -37,7 +37,7 @@ class JsonRpcServer {
         this._methods.set('sendRawTransaction', async (txhex) => {
             const tx = Nimiq.Transaction.unserialize(BufferUtils.fromHex(txhex));
             const ret = await mempool.pushTransaction(tx);
-            if (ret > 0) {
+            if (ret < 0) {
                 const e = new Error(`Transaction not accepted: ${ret}`);
                 e.code = ret;
                 throw e;
@@ -52,15 +52,26 @@ class JsonRpcServer {
             const value = parseInt(tx.value);
             const fee = parseInt(tx.fee);
             const data = tx.data ? Nimiq.BufferUtils.fromHex(tx.data) : null;
+            /** @type {Wallet} */
             const wallet = await walletStore.get(from);
-            if (!wallet) {
+            if (!wallet || !(wallet instanceof Nimiq.Wallet)) {
                 throw new Error(`"${tx.from}" can not sign transactions using this node.`);
             }
-            if (fromType !== Nimiq.Account.Type.BASIC || toType !== Nimiq.Account.Type.BASIC || data) {
+            let transaction;
+            if (fromType !== Nimiq.Account.Type.BASIC) {
                 throw new Error('Only basic transactions may be sent using "sendTransaction".');
+            } else if (toType !== Nimiq.Account.Type.BASIC || data != null) {
+                transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, blockchain.height, Nimiq.Transaction.Flag.NONE, data);
+                transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
+            } else {
+                transaction = wallet.createTransaction(to, value, fee, blockchain.height);
             }
-            const transaction = wallet.createTransaction(to, value, fee, blockchain.height);
-            mempool.pushTransaction(transaction);
+            const ret = await mempool.pushTransaction(transaction);
+            if (ret < 0) {
+                const e = new Error(`Transaction not accepted: ${ret}`);
+                e.code = ret;
+                throw e;
+            }
             return transaction.hash().toHex();
         });
         this._methods.set('getTransactionByBlockHashAndIndex', async (blockHash, txIndex) => {
@@ -100,6 +111,9 @@ class JsonRpcServer {
                 blockHash: entry.blockHash.toHex(),
                 timestamp: blk ? blk.timestamp : undefined
             };
+        });
+        this._methods.set('mempool', (includeTransactions) => {
+            return Promise.all(mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex()));
         });
 
         // Miner
@@ -152,7 +166,7 @@ class JsonRpcServer {
     static async _blockToObj(block, includeTransactions = false) {
         return {
             number: block.height,
-            hash: (await block.hash()).toHex(),
+            hash: block.hash().toHex(),
             pow: (await block.pow()).toHex(),
             parentHash: block.prevHash.toHex(),
             nonce: block.nonce,
@@ -170,14 +184,14 @@ class JsonRpcServer {
 
     /**
      * @param {Transaction} tx
-     * @param {Block} block
-     * @param {number} i
+     * @param {Block} [block]
+     * @param {number} [i]
      * @private
      */
     static async _transactionToObj(tx, block, i) {
         return {
-            hash: (await tx.hash()).toHex(),
-            blockHash: block ? (await block.hash()).toHex() : undefined,
+            hash: tx.hash().toHex(),
+            blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
             transactionIndex: i,
             from: tx.sender.toHex(),
@@ -186,7 +200,7 @@ class JsonRpcServer {
             toString: tx.recipient.toUserFriendlyAddress(),
             value: tx.value,
             fee: tx.fee,
-            input: Nimiq.BufferUtils.toHex(tx.data) || null
+            data: Nimiq.BufferUtils.toHex(tx.data) || null
         };
     }
 
