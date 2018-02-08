@@ -7,6 +7,9 @@ class MultiSigWallet extends Wallet {
      * @returns {MultiSigWallet} A newly generated MultiSigWallet.
      */
     static fromPublicKeys(keyPair, minSignatures, publicKeys) {
+        if (publicKeys.length === 0) throw new Error('publicKeys may not be empty');
+        if (minSignatures <= 0) throw new Error('minSignatures must be greater than 0');
+
         const combinations = [...ArrayUtils.k_combinations(publicKeys, minSignatures)];
         const multiSigKeys = combinations.map(arr => PublicKey.sum(arr));
         return new MultiSigWallet(keyPair, minSignatures, multiSigKeys);

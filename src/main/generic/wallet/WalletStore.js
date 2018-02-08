@@ -80,11 +80,12 @@ class WalletStore {
      * @param {Uint8Array|string} [unlockKey]
      * @returns {Promise}
      */
-    put(wallet, key, unlockKey) {
+    async put(wallet, key, unlockKey) {
         const base64Address = wallet.address.toBase64();
+        /** @type {Uint8Array} */
         let buf = null;
         if (key) {
-            buf = wallet.exportEncrypted(key, unlockKey);
+            buf = await wallet.exportEncrypted(key, unlockKey);
         } else {
             buf = wallet.exportPlain();
         }
@@ -138,11 +139,12 @@ class WalletStore {
      * @param {Uint8Array|string} [unlockKey]
      * @returns {Promise}
      */
-    putMultiSig(wallet, key, unlockKey) {
+    async putMultiSig(wallet, key, unlockKey) {
         const base64Address = wallet.address.toBase64();
+        /** @type {Uint8Array} */
         let buf = null;
         if (key) {
-            buf = wallet.exportEncrypted(key, unlockKey);
+            buf = await wallet.exportEncrypted(key, unlockKey);
         } else {
             buf = wallet.exportPlain();
         }
