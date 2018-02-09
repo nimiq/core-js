@@ -7,7 +7,7 @@ class IWorker {
     }
 
     static async startWorkerForProxy(clazz, name, workerScript) {
-        if (typeof Worker === 'undefined') {
+        if (!IWorker._workersSupported) {
             await IWorker._workerImplementation[clazz.name].init(name);
             return IWorker._workerImplementation[clazz.name];
         } else {
@@ -39,8 +39,12 @@ class IWorker {
         }
     }
 
-    static get areWorkersAsync() {
+    static get _workersSupported() {
         return typeof Worker !== 'undefined';
+    }
+
+    static get areWorkersAsync() {
+        return IWorker._workersSupported;
     }
 
     static get _insideWebWorker() {
@@ -185,7 +189,7 @@ class IWorker {
                         this._result(msg, 'OK', res);
                     }
                 } catch (e) {
-                    this._result(msg, 'error', e);
+                    this._result(msg, 'error', e.message || e);
                 }
             }
 
@@ -364,13 +368,17 @@ class IWorker {
              * @returns {Promise}
              */
             _invoke(name, args) {
-                return new Promise((resolve, error) => {
-                    this._waitingCalls.push({name, args, resolve, error});
-                    const worker = this._freeWorkers.shift();
-                    if (worker) {
-                        this._step(worker).catch(Log.w.tag(IWorker));
-                    }
-                });
+                if (IWorker._workersSupported) {
+                    return new Promise((resolve, error) => {
+                        this._waitingCalls.push({name, args, resolve, error});
+                        const worker = this._freeWorkers.shift();
+                        if (worker) {
+                            this._step(worker).catch(Log.w.tag(IWorker));
+                        }
+                    });
+                } else {
+                    return this._workers[0][name].apply(this._workers[0], args);
+                }
             }
 
             /**

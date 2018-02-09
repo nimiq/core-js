@@ -48,7 +48,7 @@ jobs:
 #      osx_image: xcode8.3
 #      script: ./travis-script.sh
     - stage: test
-      env: TO_TEST=Karma/SauceLabs/Edge_15
+      env: TO_TEST=Karma/SauceLabs/Edge_16
       addons:
         sauce_connect:
           username: nimiq

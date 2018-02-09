@@ -6,6 +6,10 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     }
 
     async init(name) {
+        if (IWorker._insideWebWorker) {
+            Crypto._workerSync = this;
+            Crypto._workerAsync = this;
+        }
         await this._superInit.call(this, name);
 
         if (await this.importWasm('worker-wasm.wasm')) {
@@ -493,6 +497,22 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
         this._pubKeyBuffer.set(publicKey);
         return !!Module._ed25519_verify(this._signaturePointer, this._messagePointer, messageLength,
             this._pubKeyPointer);
+    }
+
+    /**
+     * @param {Uint8Array} blockSerialized
+     * @param {number} timeNow
+     * @param {Uint8Array} genesisHash
+     * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
+     */
+    async blockVerify(blockSerialized, timeNow, genesisHash) {
+        Block.GENESIS.HASH = Hash.unserialize(new SerialBuffer(genesisHash));
+        const block = Block.unserialize(new SerialBuffer(blockSerialized));
+        const valid = await block.computeVerify(timeNow);
+        const pow = await block.header.pow();
+        const interlinkHash = await block.interlink.hash();
+        const bodyHash = await block.body.hash();
+        return { valid: valid, pow: pow.serialize(), interlinkHash: interlinkHash.serialize(), bodyHash: bodyHash.serialize() };
     }
 }
 
