@@ -73,7 +73,7 @@ function startNimiq() {
 
         if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
-            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, null);
+            $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, null);
         } else {
             $.walletStore.list().then(wallets => {
                 $.consensus.subscribeAccounts(wallets.map(wallet => wallet.address));
