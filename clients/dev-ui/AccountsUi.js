@@ -7,15 +7,24 @@ class AccountsUi extends Nimiq.Observable {
         this._htlcAccountList = new LocalStorageList(LocalStorageList.KEY_HTLC_ACCOUNT_LIST);
         this._pendingContractsList = new LocalStorageList(LocalStorageList.KEY_PENDING_CONTRACTS_LIST);
 
-        this.$walletList = this.$el.querySelector('[wallet-list]');
+        this.$basicWalletList = this.$el.querySelector('[basic-wallet-list]');
+        this.$multiSigWalletList = this.$el.querySelector('[multi-sig-wallet-list]');
         this.$vestingAccountList = this.$el.querySelector('[vesting-account-list]');
         this.$htlcAccountList = this.$el.querySelector('[htlc-account-list]');
         this.$pendingContractsList = this.$el.querySelector('[pending-contracts-list]');
 
-        this.$walletAddButton = this.$el.querySelector('[wallet-add-button]');
-        this.$walletAddButton.addEventListener('click', () => this._addWallet());
+        this.$addBasicWallet = this.$el.querySelector('[add-basic-wallet]');
+        this.$addBasicWallet.addEventListener('click', () => this._addWallet());
+
+        this._multiSigWalletCreationUi =
+            new MultiSigWalletCreationUi(el.querySelector('[multi-sig-wallet-creation-ui'), $);
+        this._multiSigWalletCreationUi.on('multi-sig-wallet-created', wallet => this.addAccount(wallet.address));
 
         this._initLists();
+    }
+
+    notifyAccountsChanged() {
+        this._multiSigWalletCreationUi.notifyAccountsChanged();
     }
 
     /** @async */
@@ -28,34 +37,58 @@ class AccountsUi extends Nimiq.Observable {
         return this._addOrRemoveAccount(address, false);
     }
 
+    /** @async */
     _addOrRemoveAccount(address, add) {
         return Promise.all([
-            Utils.getAccount(this.$, address),
-            this._isWalletAddress(address)
+            Utils.isBasicWalletAddress(this.$, address),
+            Utils.isMultiSigWalletAddress(this.$, address)
         ]).then(promiseResults => {
-            const account = promiseResults[0];
-            const isWalletAddress = promiseResults[1];
+            const isBasicWalletAddress = promiseResults[0];
+            const isMultiSigWalletAddress = promiseResults[1];
 
-            const userFriendlyAddress = address.toUserFriendlyAddress();
             if (add) {
-                const list = this._getList(isWalletAddress, account.type);
-                this._addToList(list.listEl, address);
-                if (list.localStorageList) list.localStorageList.add(userFriendlyAddress);
-                if (account.isInitial() && !isWalletAddress) this._checkPendingContract(address);
-                return Promise.resolve();
-            } else if (isWalletAddress) {
-                this._removeFromList(this.$walletList, address);
-                return this.$.walletStore.remove(address);
+                return this._addAccount(address, isBasicWalletAddress, isMultiSigWalletAddress);
             } else {
-                // removal of a contract. try to remove from all lists because after a contract moved to another
-                // category (e.g. if not pending anymore or if pruned after emptied out) we don't know the previous list
-                [this.$vestingAccountList, this.$htlcAccountList, this.$pendingContractsList].forEach(list =>
-                    this._removeFromList(list, address));
-                [this._vestingAccountList, this._htlcAccountList, this._pendingContractsList].forEach(list =>
-                    list.remove(userFriendlyAddress));
-                return Promise.resolve();
+                return this._removeAccount(address, isBasicWalletAddress, isMultiSigWalletAddress);
             }
         }).then(() => this.fire('accounts-changed'));
+    }
+
+    _addAccount(address, isBasicWalletAddress, isMultiSigWalletAddress) {
+        if (isBasicWalletAddress) {
+            this._addToList(this.$basicWalletList, address);
+            return Promise.resolve(); // already added to wallet store
+        }
+        if (isMultiSigWalletAddress) {
+            this._addToList(this.$multiSigWalletList, address);
+            return Promise.resolve(); // already added to wallet store
+        }
+        // address is a contract
+        return Utils.getAccount(this.$, address).then(account => {
+            const list = this._getContractList(account.type);
+            this._addToList(list.listEl, address);
+            list.localStorageList.add(address.toUserFriendlyAddress());
+            if (account.isInitial()) this._checkPendingContract(address);
+        });
+    }
+
+    _removeAccount(address, isBasicWalletAddress, isMultiSigWalletAddress) {
+        if (isBasicWalletAddress) {
+            this._removeFromList(this.$basicWalletList, address);
+            return this.$.walletStore.remove(address);
+        }
+        if (isMultiSigWalletAddress) {
+            this._removeFromList(this.$multiSigWalletList, address);
+            return this.$.walletStore.removeMultiSig(address);
+        }
+        // removal of a contract. try to remove from all lists because after a contract moved to another
+        // category (e.g. if not pending anymore or if pruned after emptied out) we don't know the previous list
+        const userFriendlyAddress = address.toUserFriendlyAddress();
+        [this._vestingAccountList, this._htlcAccountList, this._pendingContractsList].forEach(list =>
+            list.remove(userFriendlyAddress));
+        [this.$vestingAccountList, this.$htlcAccountList, this.$pendingContractsList].forEach(list =>
+            this._removeFromList(list, address));
+        return Promise.resolve();
     }
 
     _addToList($list, address) {
@@ -95,9 +128,9 @@ class AccountsUi extends Nimiq.Observable {
         addresses.forEach(address => this._addToList($list, address));
     }
 
-    _getList(isWalletAddress, accountType) {
-        let localStorageList = null, listEl = null;
-        switch (accountType) {
+    _getContractList(contractType) {
+        let localStorageList, listEl;
+        switch (contractType) {
             case Nimiq.Account.Type.VESTING:
                 localStorageList = this._vestingAccountList;
                 listEl = this.$vestingAccountList;
@@ -107,12 +140,8 @@ class AccountsUi extends Nimiq.Observable {
                 listEl = this.$htlcAccountList;
                 break;
             case Nimiq.Account.Type.BASIC:
-                if (isWalletAddress) {
-                    listEl = this.$walletList;
-                } else {
-                    localStorageList = this._pendingContractsList;
-                    listEl = this.$pendingContractsList;
-                }
+                localStorageList = this._pendingContractsList;
+                listEl = this.$pendingContractsList;
                 break;
         }
         return {
@@ -140,20 +169,13 @@ class AccountsUi extends Nimiq.Observable {
             .catch(alert);
     }
 
-    /** async */
-    _isWalletAddress(address) {
-        return this.$.walletStore.list().then(walletAddresses => {
-            for (let i=0; i<walletAddresses.length; ++i) {
-                if (address.equals(walletAddresses[i])) return true;
-            }
-            return false;
-        });
-    }
-
     _initLists() {
         this.$.walletStore.list().then(addresses => {
-            this._fillList(this.$walletList, addresses);
-        }).catch(alert);
+            this._fillList(this.$basicWalletList, addresses);
+        });
+        this.$.walletStore.listMultiSig().then(addresses => {
+            this._fillList(this.$multiSigWalletList, addresses);
+        });
 
         this._fillList(this.$vestingAccountList, this._userFriendlyAddressesToAddresses(this._vestingAccountList.get()));
         this._fillList(this.$htlcAccountList, this._userFriendlyAddressesToAddresses(this._htlcAccountList.get()));

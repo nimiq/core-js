@@ -70,4 +70,16 @@ class Utils {
             return null;
         }
     }
+
+    /** async */
+    static isBasicWalletAddress($, address) {
+        return $.walletStore.list()
+            .then(walletAddresses => walletAddresses.some(walletAddress => address.equals(walletAddress)));
+    }
+
+    /** async */
+    static isMultiSigWalletAddress($, address) {
+        return $.walletStore.listMultiSig()
+            .then(walletAddresses => walletAddresses.some(walletAddress => address.equals(walletAddress)));
+    }
 }

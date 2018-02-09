@@ -14,6 +14,7 @@ class DevUI {
         this._accountsUi.on('accounts-changed', () => {
             this._transactionUi.notifyAccountsChanged();
             this._minerUi.notifyAccountsChanged();
+            this._accountsUi.notifyAccountsChanged();
         });
         this._transactionUi.on('contract-created', address => this._accountsUi.addAccount(address));
     }
@@ -38,14 +39,14 @@ function loadScript(scriptSrc) {
 
 function loadUi($) {
     const scripts = ['Utils.js', 'BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
-        'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'HtlcProofUi.js', 'Sender.js', 'SenderUi.js', 'AccountsUi.js'];
+        'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'Signer.js', 'HtlcSignerUi.js', 'SignerUi.js',
+        'AccountsUi.js', 'MultiSigWalletCreationUi.js', 'MultiSigSignerUi.js'];
     const promises = [];
     scripts.forEach(script => {
         promises.push(loadScript(script));
     });
     Promise.all(promises)
-        .then(() => window.ui = new DevUI(document.getElementById('content'), $))
-        .catch(e => alert('Failed to load UI.' + (e? ' Error: ' + e.message : '')));
+        .then(() => window.ui = new DevUI(document.getElementById('content'), $));
 }
 
 function startNimiq() {
