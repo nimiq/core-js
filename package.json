@@ -37,7 +37,7 @@
     "leveldown": "^1.6.0",
     "levelup": "^1.3.5",
     "nan": "^2.7.0",
-    "ws": ""
+    "ws": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

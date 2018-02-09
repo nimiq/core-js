@@ -1,6 +1,5 @@
 describe('DataChannel', () => {
     it('can chunk large messages', (done) => {
-        const addr = Address.fromBase64(Dummy.address1);
         const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
         const largeArray = new SerialBuffer(new Uint8Array(100000));
         largeArray.writePos = /*magic*/ 4;
@@ -19,7 +18,7 @@ describe('DataChannel', () => {
     it('can set custom timeouts', (done) => {
         const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
         expect(second.isExpectingMessage(Message.Type.BLOCK)).toBe(false);
-        second.expectMessage('test', Message.Type.BLOCK, () => {
+        second.expectMessage(Message.Type.BLOCK, () => {
             expect(second.isExpectingMessage(Message.Type.BLOCK)).toBe(false);
             done();
         }, 100, 150);
@@ -36,7 +35,7 @@ describe('DataChannel', () => {
 
         expect(second.isExpectingMessage(Message.Type.BLOCK)).toBe(false);
         expect(second.isExpectingMessage(Message.Type.INV)).toBe(false);
-        second.expectMessage('test', [Message.Type.BLOCK, Message.Type.INV], () => {
+        second.expectMessage([Message.Type.BLOCK, Message.Type.INV], () => {
             done.fail();
         }, 1000, 1500);
         expect(second.isExpectingMessage(Message.Type.BLOCK)).toBe(true);

@@ -52,14 +52,13 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {string} identifier
      * @param {Message.Type|Array.<Message.Type>} types
      * @param {function()} timeoutCallback
-     * @param {number} [chunkTimeout]
      * @param {number} [msgTimeout]
+     * @param {number} [chunkTimeout]
      */
-    expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout) {
-        this._conn.expectMessage(identifier, types, errorCallback, chunkTimeout, msgTimeout);
+    expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout) {
+        this._conn.expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout);
     }
 
     /**
@@ -354,6 +353,9 @@ class PeerChannel extends Observable {
             && this._conn.equals(o.connection);
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
         return this._conn.hashCode();
     }

@@ -55,7 +55,7 @@ class AccountsProof {
      */
     verify() {
         /** @type {Array.<AccountsTreeNode>} */
-        let children = [];
+        const children = [];
         this._index = new HashMap();
         for (const node of this._nodes) {
             // If node is a branch node, validate its children.

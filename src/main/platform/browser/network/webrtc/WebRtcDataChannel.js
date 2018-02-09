@@ -10,7 +10,7 @@ class WebRtcDataChannel extends DataChannel {
         this._channel = nativeChannel;
 
         this._channel.onmessage = msg => this._onMessage(msg.data || msg);
-        this._channel.onclose = () => this.fire('close', this);
+        this._channel.onclose = () => this._onClose();
         this._channel.onerror = e => this.fire('error', e, this);
     }
 

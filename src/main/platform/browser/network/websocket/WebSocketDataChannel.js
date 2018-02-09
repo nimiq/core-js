@@ -7,7 +7,7 @@ class WebSocketDataChannel extends DataChannel {
         /** @type {WebSocket} */
         this._ws = ws;
         this._ws.onmessage = msg => this._onMessage(msg.data || msg);
-        this._ws.onclose = () => this.fire('close');
+        this._ws.onclose = () => this._onClose();
         this._ws.onerror = e => this.fire('error', e);
     }
 

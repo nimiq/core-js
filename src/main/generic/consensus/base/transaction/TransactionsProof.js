@@ -57,7 +57,7 @@ class TransactionsProof {
     }
 
     /**
-     * @returns {Promise.<Hash>}
+     * @returns {Hash}
      */
     root() {
         return this._proof.computeRoot(this._transactions);

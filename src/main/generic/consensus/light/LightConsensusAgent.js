@@ -31,6 +31,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
 
+        // Flag to track chain proof requests.
+        this._requestedChainProof = false;
+
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
@@ -201,17 +204,18 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     _requestChainProof() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
-        Assert.that(!this._peer.channel.isExpectingMessage(Message.Type.CHAIN_PROOF));
+        Assert.that(!this._requestedChainProof);
         this._busy = true;
 
         // Request ChainProof from peer.
         this._peer.channel.getChainProof();
+        this._requestedChainProof = true;
 
         // Drop the peer if it doesn't send the chain proof within the timeout.
         // TODO should we ban here instead?
-        this._peer.channel.expectMessage('chain-proof', Message.Type.CHAIN_PROOF, () => {
+        this._peer.channel.expectMessage(Message.Type.CHAIN_PROOF, () => {
             this._peer.channel.close('getChainProof timeout');
-        }, undefined, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT);
+        }, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT, LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT);
     }
 
     /**
@@ -224,12 +228,12 @@ class LightConsensusAgent extends FullConsensusAgent {
         Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
-        // FIXME
-        if (!this._peer.channel.isExpectingMessage(Message.Type.CHAIN_PROOF)) {
+        if (!this._requestedChainProof) {
             Log.w(LightConsensusAgent, `Unsolicited chain proof received from ${this._peer.peerAddress}`);
             // TODO close/ban?
             return;
         }
+        this._requestedChainProof = false;
 
         if (this._syncing) {
             this.fire('verify-chain-proof', this._peer.peerAddress);
@@ -254,7 +258,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     _requestAccountsTree() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
-        Assert.that(!this._peer.channel.isExpectingMessage(Message.Type.ACCOUNTS_TREE_CHUNK));
+        Assert.that(!this._accountsRequest);
         this._busy = true;
 
         const startPrefix = this._partialChain.getMissingAccountsPrefix();
@@ -270,9 +274,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._peer.channel.getAccountsTreeChunk(headHash, startPrefix);
 
         // Drop the peer if it doesn't send the accounts proof within the timeout.
-        this._peer.channel.expectMessage('accounts-tree-chunk', Message.Type.ACCOUNTS_TREE_CHUNK, () => {
+        this._peer.channel.expectMessage(Message.Type.ACCOUNTS_TREE_CHUNK, () => {
             this._peer.channel.close('getAccountsTreeChunk timeout');
-        }, undefined, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
+        }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
 
     /**
@@ -349,10 +353,9 @@ class LightConsensusAgent extends FullConsensusAgent {
 
     // Stage 3: Request proof blocks.
     /**
-     * @returns {Promise.<void>}
      * @private
      */
-    async _requestProofBlocks() {
+    _requestProofBlocks() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
 
         // If nothing happend since the last request, increase failed syncs.
@@ -368,10 +371,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
-        // TODO should we ban here instead?
-        this._peer.channel.expectMessage('inv', Message.Type.INV, () => {
+        this._peer.channel.expectMessage(Message.Type.INV, () => {
             this._peer.channel.close('getBlocks timeout');
-        }, undefined, BaseConsensusAgent.REQUEST_TIMEOUT);
+        }, BaseConsensusAgent.REQUEST_TIMEOUT);
 
         // Request blocks from peer.
         this._peer.channel.getBlocks(this._partialChain.getBlockLocators(), this._partialChain.numBlocksNeeded(), false);
@@ -492,11 +494,11 @@ class LightConsensusAgent extends FullConsensusAgent {
             this._peer.channel.getHeader([vector]);
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
-            this._peer.channel.expectMessage('header', Message.Type.HEADER, () => {
+            this._peer.channel.expectMessage(Message.Type.HEADER, () => {
                 this._headerRequest = null;
                 this._peer.channel.close('getHeader timeout');
                 reject(new Error('timeout')); // TODO error handling
-            }, undefined, BaseConsensusAgent.REQUEST_TIMEOUT);
+            }, BaseConsensusAgent.REQUEST_TIMEOUT);
         });
     }
 
@@ -554,15 +556,20 @@ class LightConsensusAgent extends FullConsensusAgent {
     }
 }
 /**
- * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
+ * Maximum time (ms) to wait for chain-proof after sending out get-chain-proof before dropping the peer.
  * @type {number}
  */
-LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 20;
+LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT = 1000 * 45;
 /**
- * Maximum time (ms) to wait for chainProof after sending out getChainProof before dropping the peer.
+ * Maximum time (ms) to wait for between chain-proof chunks before dropping the peer.
  * @type {number}
  */
-LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 5;
+LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
+/**
+ * Maximum time (ms) to wait for accounts-tree-chunk after sending out get-accounts-tree-chunk before dropping the peer.
+ * @type {number}
+ */
+LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 8;
 /**
  * Maximum number of blockchain sync retries before closing the connection.
  * XXX If the peer is on a long fork, it will count as a failed sync attempt

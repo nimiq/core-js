@@ -81,7 +81,7 @@ class WebSocketConnector extends Observable {
      */
     _onConnection(ws) {
         const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
-        const conn = new PeerConnection(ws, Protocol.WS, netAddress, /*peerAddress*/ null);
+        const conn = new PeerConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
 
         /**
         * Tell listeners that an initial connection to a peer has been established.

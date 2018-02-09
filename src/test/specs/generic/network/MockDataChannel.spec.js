@@ -1,5 +1,4 @@
 class MockDataChannel extends DataChannel {
-    
     constructor() {
         super();
         this._readyState = DataChannel.ReadyState.CONNECTING;
@@ -27,5 +26,4 @@ class MockDataChannel extends DataChannel {
         return {first, second};
     }
 }
-
 Class.register(MockDataChannel);

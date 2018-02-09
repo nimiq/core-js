@@ -49,6 +49,7 @@ class BaseConsensusAgent extends Observable {
         /** @type {Queue.<InvVector>} */
         this._waitingInvVectors = new Queue();
         this._timers.setInterval('invVectors', () => this._sendWaitingInvVectors(), BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL);
+
         // Queue of "free" transaction inv vectors waiting to be sent out
         /** @type {Queue.<{serializedSize:number, vector:InvVector}>} */
         this._waitingFreeInvVectors = new Queue();
