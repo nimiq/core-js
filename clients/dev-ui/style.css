@@ -210,7 +210,7 @@ hash {
     flex-wrap: wrap;
 }
 
-.input-group label > strong {
+.input-group strong {
     display: inline-block;
     width: 100px;
     padding-right: 8px;
@@ -383,6 +383,10 @@ hash {
 
 /* Transaction UI */
 
+[transaction-ui] select {
+    display: block;
+}
+
 [transaction-ui] [show] {
     /* hide elements by default that should only be visible in specific states */
     display: none;
@@ -393,31 +397,5 @@ hash {
 [transaction-ui][tx-type="plain"] [show~="plain"],
 [transaction-ui][tx-type="vesting-creation"] [show~="vesting-creation"],
 [transaction-ui][tx-type="htlc-creation"] [show~="htlc-creation"] {
-    display: block;
-}
-
-/* Sender UI */
-
-[sender-ui] [show] {
-    /* hide elements by default that should only be visible in specific states */
-    display: none;
-}
-
-[sender-ui][sender-type="wallet"] [show~="wallet"],
-[sender-ui][sender-type="vesting-account"] [show~="vesting-account"],
-[sender-ui][sender-type="htlc-account"] [show~="htlc-account"] {
-    display: block;
-}
-
-/* HTLC Proof UI */
-
-[htlc-proof-ui] [show] {
-    /* hide elements by default that should only be visible in specific states */
-    display: none;
-}
-
-[htlc-proof-ui][htlc-proof-type="regular-transfer"] [show~="regular-transfer"],
-[htlc-proof-ui][htlc-proof-type="early-resolve"] [show~="early-resolve"],
-[htlc-proof-ui][htlc-proof-type="timeout-resolve"] [show~="timeout-resolve"] {
     display: block;
 }

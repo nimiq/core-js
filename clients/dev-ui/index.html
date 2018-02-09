@@ -33,11 +33,16 @@
             <hr/>
             <div class="info-block">
                 <strong>Wallets</strong>
-                <div wallet-list></div>
+                <div basic-wallet-list></div>
             </div>
             <div class="info-block">
-                <button wallet-add-button>Add</button>
+                <button add-basic-wallet>Add</button>
             </div>
+            <div class="info-block">
+                <strong>MultiSig Wallets</strong>
+                <div multi-sig-wallet-list></div>
+            </div>
+            <div class="info-block" multi-sig-wallet-creation-ui></div>
             <div class="info-block">
                 <strong>Vesting Accounts</strong>
                 <div vesting-account-list></div>
@@ -153,74 +158,7 @@
                     </label>
                 </div>
 
-                <div sender-ui sender-type="wallet" show="basic vesting-creation htlc-creation general">
-                    <div class="input-group">
-                        <label>
-                            <strong>Sender</strong>
-                            <select sender-account include="wallet"></select>
-                        </label>
-                    </div>
-                    <div class="input-group" show="vesting-account">
-                        <label>
-                            <strong>Signing Vesting Owner</strong>
-                            <select sender-vesting-owner include="wallet"></select>
-                        </label>
-                    </div>
-
-                    <div htlc-proof-ui htlc-proof-type="regular-transfer" show="htlc-account">
-                        <div class="input-group">
-                            <label>
-                                <strong>HTLC Proof Type</strong>
-                                <select htlc-proof-type>
-                                    <option value="regular-transfer" selected>Regular Transfer</option>
-                                    <option value="early-resolve">Early Resolve</option>
-                                    <option value="timeout-resolve">Timeout Resolve</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="input-group" show="timeout-resolve early-resolve">
-                            <label>
-                                <strong>Signing HTLC Sender</strong>
-                                <select htlc-proof-sender include="wallet"></select>
-                            </label>
-                        </div>
-                        <div class="input-group" show="regular-transfer early-resolve">
-                            <label>
-                                <strong>Signing HTLC Recipient</strong>
-                                <select htlc-proof-recipient include="wallet"></select>
-                            </label>
-                        </div>
-                        <div show="regular-transfer">
-                            <div class="input-group">
-                                <label>
-                                    <strong>Proof Hash Algorithm</strong>
-                                    <select htlc-proof-hash-algo>
-                                        <option value="blake2b" selected>Blake2b</option>
-                                        <option value="sha256">Sha256</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div class="input-group">
-                                <label>
-                                    <strong>Proof Hash Pre-Image</strong>
-                                    <input htlc-proof-hash-pre-image name="htlc-proof-hash-pre-image" size="45">
-                                </label>
-                            </div>
-                            <div class="input-group">
-                                <label>
-                                    <strong>Proof Hash Depth</strong>
-                                    <input htlc-proof-hash-depth name="htlc-proof-hash-depth" type="number">
-                                </label>
-                            </div>
-                            <div class="input-group">
-                                <label>
-                                    <strong>Proof Hash Count</strong>
-                                    <input htlc-proof-hash-count name="htlc-proof-hash-count" type="number">
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div sender-ui label="Sender" show="basic vesting-creation htlc-creation general"></div>
 
                 <div class="input-group" show="plain">
                     <label>

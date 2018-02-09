@@ -7,7 +7,7 @@ class TransactionUi extends Nimiq.Observable {
 
         this.$typeSelector = this.$el.querySelector('[tx-type-selector]');
 
-        this._senderUi = new SenderUi(el.querySelector('[sender-ui]'), $);
+        this._senderUi = new SignerUi(el.querySelector('[sender-ui]'), $);
 
         this.$plainSender = this.$el.querySelector('[tx-plain-sender]');
         this.$plainSenderType = this.$el.querySelector('[tx-plain-sender-type]');
@@ -69,8 +69,10 @@ class TransactionUi extends Nimiq.Observable {
         }
         this._transactionType = txType;
         this.$el.setAttribute(TransactionUi.ATTRIBUTE_TX_TYPE, txType);
-        this._senderUi.setSenderTypesToOffer(txType === TransactionUi.TxType.BASIC? [SenderUi.SenderType.WALLET]
-            : [SenderUi.SenderType.WALLET, SenderUi.SenderType.VESTING_ACCOUNT, SenderUi.SenderType.HTLC_ACCOUNT]);
+        this._senderUi.signerTypesToOffer = txType === TransactionUi.TxType.BASIC
+            ? [SignerUi.SignerType.SINGLE_SIG, SignerUi.SignerType.MULTI_SIG]
+            : [SignerUi.SignerType.SINGLE_SIG, SignerUi.SignerType.MULTI_SIG, SignerUi.SignerType.VESTING,
+                SignerUi.SignerType.HTLC];
     }
 
     _onRecipientChanged() {
@@ -156,11 +158,14 @@ class TransactionUi extends Nimiq.Observable {
             // for plain transactions the user has to provide the signature proof
             return Promise.resolve(this._generatePlainExtendedTransaction());
         } else {
-            return this._senderUi.getSender().then(sender => {
+            return this._senderUi.getSigner().then(sender => {
                 if (!sender) throw Error('Failed to retrieve sender.');
                 const tx = this._generateTransaction(sender);
                 if (!tx) throw Error('Failed to generate transaction.');
-                return sender.sign(tx).then(() => tx);
+                const signResult = sender.sign(tx);
+                tx.signature = signResult.signature;
+                tx.proof = signResult.proof;
+                return tx;
             });
         }
     }
