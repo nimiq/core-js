@@ -41,20 +41,26 @@ To run a Node.js client you will need a **publicly routable IP**, **Domain** and
 
 ```bash
 cd clients/nodejs/
-node index.js --host <hostname> --port <port> --key <ssl-key> --cert <ssl-certificate> [--wallet-seed <seed>] [--wallet-address <address>] [--miner [<threads>]] [--statistics[=<interval>]]
+node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]
 ```
 
-| Argument | Description |
-| --- | --- |
-| **_host_** | Hostname of the Node.js client. |
-| **_port_** | Port used to communicate with the peers. |  
-| **_key_** | SSL private key for your domain. |
-| **_cert_** | SSL certificate of your domain. |
-| **_wallet-seed_** | Your wallet seed (optional). |
-| **_wallet-address_** | Your wallet address for mining (optional, can only be used without _wallet-seed_). |
-| **_miner_** | The number of threads to start for mining (optional). |
-| **_statistics_** | The interval in seconds to output miner statistics (optional, default: 10). |
-
+| **Configuration** | |
+| :--- | :--- |
+| `--host=HOSTNAME` | Hostname of the Node.js client. |
+| `--port=PORT` | Port to listen on for connections. |  
+| `--cert=SSL_CERT_FILE` | SSL certificate file for your domain. CN should match HOSTNAME. |
+| `--key=SSL_KEY_FILE` | SSL private key file for your domain. |
+| **Options** | |
+| `--help` | Show usage instructions. |
+| `--log[=LEVEL]` | Configure global log level. |
+| `--log-tag=TAG[:LEVEL]` | Configure log level for a specific tag. |
+| `--miner[=THREADS]` | Activate mining on this node with THREADS parallel threads. |
+| `--passive` | Do not actively connect to the network. |
+| `--rpc[=PORT]` | Start JSON-RPC server on port PORT (default: 8648). |
+| `--statistics[=INTERVAL]` | Output miner statistics every INTERVAL seconds. |
+| `--type=TYPE` | Configure the consensus type, one of full (default), light or nano. |
+| `--wallet-seed=SEED` | Initialize wallet using SEED as a wallet seed. |
+| `--wallet-address=ADDRESS` | Initialize wallet using ADDRESS as a wallet address. |
 
 ### Build your own Browser client
 Just include `<script src="dist/nimiq.js"></script>` in your project.
