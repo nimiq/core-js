@@ -35,15 +35,34 @@ class NetworkConfig {
         this._services = null;
     }
 
-    async init() {
-        const db = await new PeerKeyStore();
+    /**
+     * @returns {void}
+     */
+    async initPersistent() {
+        const db = await PeerKeyStore.getPersistent();
+        await this._init(db);
+    }
+
+    /**
+     * @returns {void}
+     */
+    async initVolatile() {
+        const db = PeerKeyStore.createVolatile();
+        await this._init(db);
+    }
+
+    /**
+     * @private
+     * @param {PeerKeyStore} db
+     * @returns {void}
+     */
+    async _init(db) {
         /** @type {KeyPair} */
         let keys = await db.get('keys');
         if (!keys) {
             keys = KeyPair.generate();
             await db.put('keys', keys);
         }
-        await db.close();
         this._keyPair = keys;
         this._peerId = keys.publicKey.toPeerId();
     }
