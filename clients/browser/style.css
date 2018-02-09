@@ -1,16 +1,13 @@
 html {
     min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 body {
-    background: #FFF;
-    background-image: url(img/map.svg);
     background-color: #042146;
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-attachment: fixed;
-    background-size: contain;
-    font-family: 'Source Sans Pro', sans-serif;
     letter-spacing: 0.3px;
     color: #333;
     margin: auto;
@@ -18,30 +15,16 @@ body {
     min-height: 100%;
 }
 
-@font-face {
-    font-family: 'font-icons';
-    src: url('fonts/icon-font.eot');
-    src: url('fonts/icon-font.eot#iefix') format('embedded-opentype'), url('fonts/icon-font.ttf') format('truetype'), url('fonts/icon-font.woff') format('woff'), url('fonts/icon-font.eot#icomoon') format('svg');
-    font-weight: normal;
-    font-style: normal;
+[client="nano"] [hide-nano] {
+    display: none;
 }
 
-[class^="icon-"]::before, [class*=" icon-"]::before {
-    /* use !important to prevent issues with browser extensions that change fonts */
-    font-family: 'font-icons' !important;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1 !important;
-    /* Better Font Rendering =========== */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+[client="light"] [hide-light] {
+    display: none;
 }
 
-.icon-nimiq::before {
-    content: "\e900";
+[client="full"] [hide-full] {
+    display: none;
 }
 
 header {
@@ -78,15 +61,8 @@ header .subtitle {
     letter-spacing: 2px;
 }
 
-header a.headerlink {
-    float: right;
-    margin-right: 15px;
-    margin-top: 48px;
-    color: #FFF;
-    text-decoration: none;
-}
-
-input {
+input,
+select {
     border-radius: 3px;
     padding: 10px 10px;
     line-height: 1;
@@ -95,10 +71,14 @@ input {
     font-size: 14px;
 }
 
+select {
+    padding: 9px 6px;
+}
+
 button {
     border: 0;
     border-radius: 3px;
-    display: block;
+    display: inline-block;
     text-align: center;
     background: #FFC107;
     color: white;
@@ -216,11 +196,6 @@ hash {
     border-top-right-radius: 3px;
 }
 
-.info-block .icon-nimiq::before {
-    font-size: 12px;
-    margin-right: 2px;
-}
-
 .input-group {
     padding: 3px 8px;
     overflow: hidden;
@@ -230,11 +205,15 @@ hash {
 }
 
 .input-group label {
-    width: 75px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.input-group strong {
     display: inline-block;
-    font-weight: bold;
-    vertical-align: bottom;
-    padding-bottom: 8px;
+    width: 100px;
+    padding-right: 8px;
 }
 
 .input-group-button {
@@ -251,6 +230,20 @@ hash {
 
 /* The order of these consensus classes is important to enable overwriting */
 
+[blockchain-ui] [title] {
+    transition: background ease 0.5s;
+}
+
+[blockchain-ui] [title]:after {
+    position: absolute;
+    top: 7px;
+    right: 20px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.65;
+    font-weight: 400;
+}
+
 .not-connected {
     background: crimson;
     opacity: 0.6;
@@ -258,13 +251,6 @@ hash {
 
 .not-connected::after {
     content: "Not connected";
-    position: absolute;
-    top: 8px;
-    right: 20px;
-    font-style: italic;
-    font-size: 12px;
-    opacity: 0.6;
-    font-weight: 400;
 }
 
 .initializing {
@@ -274,22 +260,10 @@ hash {
 
 .initializing::after {
     content: "Initializing...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
 .connecting::after {
     content: "Connecting...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
 .syncing {
@@ -298,48 +272,18 @@ hash {
 }
 .syncing::after {
     content: "Syncronizing...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .sync-chain-proof::after {
     content: "Downloading proof...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .verify-chain-proof::after {
     content: "Verifying proof...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .sync-accounts-tree::after {
     content: "Downloading accounts...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 .verify-accounts-tree::after {
     content: "Verifying accounts...";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.7;
 }
 
 .consensus-established {
@@ -349,74 +293,33 @@ hash {
 
 .consensus-established::after {
     content: "Consensus established";
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
 }
 
-#newWallet {
-    padding: 20px 0px;
-    text-align: center;
-    border-bottom: 1px solid #aaa;
-    margin-bottom: 18px;
-}
-
-#newWallet button {
-    display: inline-block;
-    margin-top: 10px;
-}
-
-#loadWalletFromSeed {
-    padding: 5px 0px;
-}
-
-#walletSeed {
-    width: 200px;
-}
-
-.wallet-address, .wallet-balance, .wallet-nonce {
-    /*display:none;*/
-}
-
-.wallet-address span {
+.address {
     font-family: monospace;
 }
 
-.copy-wallet-seed {
-    display: none;
-}
-
-.get-seed-hint {
-    display: block;
-    padding: 15px 0px;
-}
-
-#mnrWorking {
-    font-weight: 600;
-}
-
-#mnrWorking.mining {
-    color: #2dad2d;
-}
-
-#mnrWorking.notmining {
-    color: #777;
-}
-
-#blockchain-title {
-    transition: background ease 0.5s;
-}
-
-#blockHistory {
+.list-entry {
     display: flex;
-    flex-direction: column-reverse;
+    padding-top: 8px;
 }
 
-#blockHistory>div {
-    margin: 5px 0;
+.list-entry > :first-child {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.list-entry .list-entry-delete {
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.list-entry .list-entry-delete:before {
+    content: 'X';
+}
+
+.list-entry .list-entry-delete:hover {
+    color: red;
 }
 
 #content {
@@ -439,4 +342,60 @@ hash {
     text-align: center;
     margin-top: 15%;
     padding: 15px;
+}
+
+/* Account Info UI */
+
+[account-info-ui] [clear-button] {
+    display: inline-block;
+    height: 38px;
+}
+
+[account-info-ui] [account-details],
+[account-info-ui] [vesting-account-details],
+[account-info-ui] [htlc-account-details] {
+    display: none;
+}
+
+[account-info-ui][account-type="basic"] [account-details],
+[account-info-ui][account-type="vesting"] [account-details],
+[account-info-ui][account-type="vesting"] [vesting-account-details],
+[account-info-ui][account-type="htlc"] [account-details],
+[account-info-ui][account-type="htlc"] [htlc-account-details] {
+    display: block;
+}
+
+[account-info-ui][account-type="not-found"] [account-type]:after {
+    content: 'Account not found.';
+}
+[account-info-ui][account-type="unknown"] [account-type]:after {
+    content: 'Unknown account type.';
+}
+[account-info-ui][account-type="basic"] [account-type]:after {
+    content: 'Basic';
+}
+[account-info-ui][account-type="vesting"] [account-type]:after {
+    content: 'Vesting';
+}
+[account-info-ui][account-type="htlc"] [account-type]:after {
+    content: 'HTLC';
+}
+
+/* Transaction UI */
+
+[transaction-ui] select {
+    display: block;
+}
+
+[transaction-ui] [show] {
+    /* hide elements by default that should only be visible in specific states */
+    display: none;
+}
+
+[transaction-ui][tx-type="basic"] [show~="basic"],
+[transaction-ui][tx-type="general"] [show~="general"],
+[transaction-ui][tx-type="plain"] [show~="plain"],
+[transaction-ui][tx-type="vesting-creation"] [show~="vesting-creation"],
+[transaction-ui][tx-type="htlc-creation"] [show~="htlc-creation"] {
+    display: block;
 }
