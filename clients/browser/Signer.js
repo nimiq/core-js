@@ -71,14 +71,18 @@ class MultiSigSigner extends Signer {
         return super($, address, enforcedType)
             .then(instance => {
                 _this = instance;
-                return Promise.all(signingAddresses.map(address => $.walletStore.get(address)));
-            })
-            .then(wallets => wallets.map(wallet => wallet.keyPair))
-            .then(keyPairs => {
-                _this._publicKeys = keyPairs.map(keyPair => keyPair.publicKey);
-                _this._signingWallets =  keyPairs.map(keyPair =>
-                    Nimiq.MultiSigWallet.fromPublicKeys(keyPair, signingAddresses.length, _this._publicKeys));
-                _this._aggregatedPublicKey = Nimiq.PublicKey.sum(_this._publicKeys);
+                return Promise.all([
+                    $.walletStore.getMultiSig(address),
+                    Promise.all(signingAddresses.map(address => $.walletStore.get(address).then(w => w.keyPair)))
+                ]);
+            }).then(promiseResults => {
+                const storedMultiSigWallet = promiseResults[0];
+                const signingKeyPairs = promiseResults[1];
+                // public keys of all the m out of n combinations of all n public keys where m = signingAddresses.length
+                _this._combinationsPublicKeys = storedMultiSigWallet.publicKeys;
+                _this._signingPublicKeys = signingKeyPairs.map(keyPair => keyPair.publicKey);
+                _this._signingWallets = signingKeyPairs.map(keyPair =>
+                    new Nimiq.MultiSigWallet(keyPair, signingAddresses.length, _this._combinationsPublicKeys));
                 return _this;
             });
     }
@@ -88,16 +92,18 @@ class MultiSigSigner extends Signer {
     }
 
     get publicKey() {
-        return this._aggregatedPublicKey;
+        return Nimiq.PublicKey.sum(this._combinationsPublicKeys);
     }
 
     sign(tx) {
         const commitmentPairs = this._signingWallets.map(wallet => wallet.createCommitment());
         const aggregatedCommitment = Nimiq.Commitment.sum(commitmentPairs.map(pair => pair.commitment));
         const partialSignatures = this._signingWallets.map((wallet, index) =>
-            wallet.signTransaction(tx, this._publicKeys, aggregatedCommitment, commitmentPairs[index].secret));
+            wallet.signTransaction(tx, this._signingPublicKeys, aggregatedCommitment, commitmentPairs[index].secret));
         const signature = Nimiq.Signature.fromPartialSignatures(aggregatedCommitment, partialSignatures);
-        const proof = Nimiq.SignatureProof.multiSig(this._aggregatedPublicKey, this._publicKeys, signature).serialize();
+        const aggregatedSigningPublicKey = Nimiq.PublicKey.sum(this._signingPublicKeys);
+        const proof = Nimiq.SignatureProof.multiSig(aggregatedSigningPublicKey, this._combinationsPublicKeys,
+            signature).serialize();
         return {
             signature: signature,
             proof: proof
