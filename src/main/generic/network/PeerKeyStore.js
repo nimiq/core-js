@@ -2,23 +2,34 @@ class PeerKeyStore {
     /**
      * @returns {Promise.<PeerKeyStore>}
      */
-    constructor() {
-        this._jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION);
-        return this._init();
+    static async getPersistent() {
+        if (!PeerKeyStore._instance) {
+            const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION);
+
+            // Initialize object stores.
+            jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
+
+            // Establish connection to database.
+            await jdb.connect();
+
+            PeerKeyStore._instance = new PeerKeyStore(jdb.getObjectStore(PeerKeyStore.KEY_DATABASE));
+        }
+        return PeerKeyStore._instance;
     }
 
     /**
-     * @returns {Promise.<PeerKeyStore>}
-     * @private
+     * @returns {PeerKeyStore}
      */
-    async _init() {
-        // Initialize object stores.
-        this._jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
+    static createVolatile() {
+        const store = JDB.JungleDB.createVolatileObjectStore();
+        return new PeerKeyStore(store);
+    }
 
-        // Establish connection to database.
-        await this._jdb.connect();
-
-        return this;
+    /**
+     * @param {IObjectStore} store
+     */
+    constructor(store) {
+        this._store = store;
     }
 
     /**
@@ -26,8 +37,7 @@ class PeerKeyStore {
      * @returns {Promise.<KeyPair>}
      */
     get(key) {
-        const store = this._jdb.getObjectStore(PeerKeyStore.KEY_DATABASE);
-        return store.get(key);
+        return this._store.get(key);
     }
 
     /**
@@ -36,12 +46,7 @@ class PeerKeyStore {
      * @returns {Promise}
      */
     put(key, keyPair) {
-        const store = this._jdb.getObjectStore(PeerKeyStore.KEY_DATABASE);
-        return store.put(key, keyPair);
-    }
-
-    close() {
-        return this._jdb.close();
+        return this._store.put(key, keyPair);
     }
 }
 PeerKeyStore._instance = null;

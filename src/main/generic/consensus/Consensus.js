@@ -7,7 +7,7 @@ class Consensus {
         await Crypto.prepareSyncCryptoWorker();
 
         netconfig.services = new Services(Services.FULL, Services.FULL);
-        await netconfig.init();
+        await netconfig.initPersistent();
 
         /** @type {Time} */
         const time = new Time();
@@ -35,7 +35,7 @@ class Consensus {
         await Crypto.prepareSyncCryptoWorker();
 
         netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
-        await netconfig.init();
+        await netconfig.initPersistent();
 
         /** @type {Time} */
         const time = new Time();
@@ -61,7 +61,7 @@ class Consensus {
         await Crypto.prepareSyncCryptoWorker();
 
         netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
-        await netconfig.init();
+        await netconfig.initPersistent();
 
         /** @type {Time} */
         const time = new Time();
