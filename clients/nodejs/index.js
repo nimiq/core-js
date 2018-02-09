@@ -143,7 +143,7 @@ const $ = {};
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
         + (!isNano ? ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : ''));
 
-    $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
+    $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address);
 
     $.blockchain.on('head-changed', (head) => {
         if ($.consensus.established || head.height % 100 === 0) {
@@ -205,7 +205,7 @@ const $ = {};
 
     if (rpc) {
         $.rpcServer = new JsonRpcServer(rpc ? 8648 : undefined);
-        $.rpcServer.init($.network, $.mempool, $.blockchain, $.miner, $.accounts, $.walletStore);
+        $.rpcServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
 })().catch(e => {
     console.error(e);

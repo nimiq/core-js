@@ -563,7 +563,7 @@
             $.walletStore = await new Nimiq.WalletStore();
             // Load or create main wallet.
             $.wallet = await $.walletStore.getDefault();
-            $.miner = new Nimiq.Miner($.blockchain, $.mempool, $.accounts, $.network.time, $.wallet.address);
+            $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address);
 
             $.network.connect();
 

@@ -3,7 +3,7 @@ const Nimiq = require('../../dist/node.js');
 
 class JsonRpcServer {
     constructor(rpcPort = 8648) {
-        const httpServer = http.createServer((req, res) => {
+        http.createServer((req, res) => {
             if (req.method === 'GET') {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
@@ -20,14 +20,14 @@ class JsonRpcServer {
     }
 
     /**
-     * @param {Network} network
-     * @param {Mempool} mempool
      * @param {FullChain} blockchain
-     * @param {Miner} miner
      * @param {Accounts} accounts
+     * @param {Mempool} mempool
+     * @param {Network} network
+     * @param {Miner} miner
      * @param {WalletStore} walletStore
      */
-    init(network, mempool, blockchain, miner, accounts, walletStore) {
+    init(blockchain, accounts, mempool, network, miner, walletStore) {
         // Network
         this._methods.set('peerCount', () => {
             return network.peerCount;
@@ -42,7 +42,7 @@ class JsonRpcServer {
                 e.code = ret;
                 throw e;
             }
-            return (await tx.hash()).toHex();
+            return tx.hash().toHex();
         });
         this._methods.set('sendTransaction', async (tx) => {
             const from = Nimiq.Address.fromString(tx.from);
@@ -60,7 +60,7 @@ class JsonRpcServer {
             let transaction;
             if (fromType !== Nimiq.Account.Type.BASIC) {
                 throw new Error('Only basic transactions may be sent using "sendTransaction".');
-            } else if (toType !== Nimiq.Account.Type.BASIC || data != null) {
+            } else if (toType !== Nimiq.Account.Type.BASIC || data !== null) {
                 transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, blockchain.height, Nimiq.Transaction.Flag.NONE, data);
                 transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
             } else {
@@ -75,24 +75,24 @@ class JsonRpcServer {
             return transaction.hash().toHex();
         });
         this._methods.set('getTransactionByBlockHashAndIndex', async (blockHash, txIndex) => {
-            const blk = await blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
-            if (blk && blk.transactions.length > txIndex) {
-                return JsonRpcServer._transactionToObj(blk.transactions[txIndex], blk, txIndex);
+            const block = await blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+            if (block && block.transactions.length > txIndex) {
+                return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex);
             }
             return null;
         });
         this._methods.set('getTransactionByBlockNumberAndIndex', async (number, txIndex) => {
-            const blk = await blockchain.getBlockAt(number);
-            if (blk && blk.transactions.length > txIndex) {
-                return JsonRpcServer._transactionToObj(blk.transactions[txIndex], blk, txIndex);
+            const block = await blockchain.getBlockAt(number);
+            if (block && block.transactions.length > txIndex) {
+                return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex);
             }
             return null;
         });
         this._methods.set('getTransactionByHash', async (hash) => {
             const entry = await blockchain.getTransactionInfoByHash(Nimiq.Hash.fromString(hash));
             if (entry) {
-                const blk = await blockchain.getBlock(entry.blockHash);
-                return JsonRpcServer._transactionToObj(blk.transactions[entry.index], blk, entry.index);
+                const block = await blockchain.getBlock(entry.blockHash);
+                return JsonRpcServer._transactionToObj(block.transactions[entry.index], block, entry.index);
             }
             const mempoolTx = mempool.getTransaction(Nimiq.Hash.fromString(hash));
             if (mempoolTx) {
@@ -103,17 +103,17 @@ class JsonRpcServer {
         this._methods.set('getTransactionReceipt', async (hash) => {
             const entry = await blockchain.getTransactionInfoByHash(Nimiq.Hash.fromString(hash));
             if (!entry) return null;
-            const blk = await blockchain.getBlock(entry.blockHash);
+            const block = await blockchain.getBlock(entry.blockHash);
             return {
                 transactionHash: entry.transactionHash.toHex(),
                 transactionIndex: entry.index,
                 blockNumber: entry.blockHeight,
                 blockHash: entry.blockHash.toHex(),
-                timestamp: blk ? blk.timestamp : undefined
+                timestamp: block ? block.timestamp : undefined
             };
         });
         this._methods.set('mempool', (includeTransactions) => {
-            return Promise.all(mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex()));
+            return mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex());
         });
 
         // Miner
@@ -137,7 +137,7 @@ class JsonRpcServer {
         });
         this._methods.set('getBalance', async (addrString, atBlock) => {
             if (atBlock && atBlock !== 'latest') throw new Error(`Cannot calculate balance at block ${atBlock}`);
-            return ((await accounts.get(Nimiq.Address.fromString(addrString))) || Nimiq.BasicAccount.INITIAL).balance;
+            return (await accounts.get(Nimiq.Address.fromString(addrString))).balance;
         });
 
         // Blockchain
@@ -145,16 +145,20 @@ class JsonRpcServer {
             return blockchain.height;
         });
         this._methods.set('getBlockTransactionCountByHash', async (blockHash) => {
-            return (await blockchain.getBlock(Nimiq.Hash.fromString(blockHash))).transactionCount;
+            const block = await blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+            return block ? block.transactionCount : null;
         });
         this._methods.set('getBlockTransactionCountByNumber', async (number) => {
-            return (await blockchain.getBlockAt(number)).transactionCount;
+            const block = await blockchain.getBlockAt(number);
+            return block ? block.transactionCount : null;
         });
         this._methods.set('getBlockByHash', async (blockHash, includeTransactions) => {
-            return JsonRpcServer._blockToObj(await blockchain.getBlock(Nimiq.Hash.fromString(blockHash)), includeTransactions);
+            const block = await blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+            return block ? JsonRpcServer._blockToObj(block, includeTransactions) : null;
         });
         this._methods.set('getBlockByNumber', async (number, includeTransactions) => {
-            return JsonRpcServer._blockToObj(await blockchain.getBlockAt(number), includeTransactions);
+            const block = await blockchain.getBlockAt(number);
+            return block ? JsonRpcServer._blockToObj(block, includeTransactions) : null;
         });
     }
 
@@ -178,7 +182,9 @@ class JsonRpcServer {
             extraData: Nimiq.BufferUtils.toHex(block.body.extraData),
             size: block.serializedSize,
             timestamp: block.timestamp,
-            transactions: await Promise.all(includeTransactions ? block.transactions.map((tx, i) => JsonRpcServer._transactionToObj(tx, block, i)) : block.transactions.map((tx) => tx.hash().then(h => h.toHex())))
+            transactions: includeTransactions
+                ? block.transactions.map((tx, i) => JsonRpcServer._transactionToObj(tx, block, i))
+                : block.transactions.map((tx) => tx.hash().toHex())
         };
     }
 
@@ -188,7 +194,7 @@ class JsonRpcServer {
      * @param {number} [i]
      * @private
      */
-    static async _transactionToObj(tx, block, i) {
+    static _transactionToObj(tx, block, i) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,

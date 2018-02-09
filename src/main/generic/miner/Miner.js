@@ -1,8 +1,8 @@
 class Miner extends Observable {
     /**
      * @param {IBlockchain} blockchain
-     * @param {Mempool} mempool
      * @param {Accounts} accounts
+     * @param {Mempool} mempool
      * @param {Time} time
      * @param {Address} minerAddress
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
@@ -10,14 +10,14 @@ class Miner extends Observable {
      * @listens Mempool#transaction-added
      * @listens Mempool#transaction-ready
      */
-    constructor(blockchain, mempool, accounts, time, minerAddress, extraData = new Uint8Array(0)) {
+    constructor(blockchain, accounts, mempool, time, minerAddress, extraData = new Uint8Array(0)) {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
-        /** @type {Mempool} */
-        this._mempool = mempool;
         /** @type {Accounts} */
         this._accounts = accounts;
+        /** @type {Mempool} */
+        this._mempool = mempool;
         /** @type {Time} */
         this._time = time;
         /** @type {Address} */
