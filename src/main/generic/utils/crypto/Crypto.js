@@ -167,6 +167,16 @@ class Crypto {
         return worker.signatureVerify(publicKey, data, signature);
     }
 
+    /**
+     * @param {Uint8Array} block
+     * @param {number} timeNow
+     * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
+     */
+    static async blockVerify(block, timeNow) {
+        const worker = await Crypto._cryptoWorkerAsync();
+        return worker.blockVerify(block, timeNow, Block.GENESIS.HASH.serialize());
+    }
+
 
     /* Hash Functions */
 

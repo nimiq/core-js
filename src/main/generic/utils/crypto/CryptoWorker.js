@@ -113,6 +113,14 @@ class CryptoWorker {
      * @returns {Promise.<bool>}
      */
     async signatureVerify(publicKey, message, signature) {}
+
+    /**
+     * @param {Uint8Array} block
+     * @param {number} timeNow
+     * @param {Uint8Array} genesisHash
+     * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
+     */
+    async blockVerify(block, timeNow, genesisHash) {}
 }
 CryptoWorker.ARGON2_HASH_SIZE = 32;
 CryptoWorker.BLAKE2_HASH_SIZE = 32;
