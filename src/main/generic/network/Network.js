@@ -11,16 +11,8 @@ class Network extends Observable {
      * @type {number}
      * @constant
      */
-    static get PEER_COUNT_PER_IP_WS_MAX() {
-        return PlatformUtils.isBrowser() ? 1 : 25;
-    }
-
-    /**
-     * @type {number}
-     * @constant
-     */
-    static get PEER_COUNT_PER_IP_RTC_MAX() {
-        return 2;
+    static get PEER_COUNT_PER_IP_MAX() {
+        return PlatformUtils.isBrowser() ? 2 : 25;
     }
 
     /**
@@ -324,6 +316,9 @@ class Network extends Observable {
 
         // Close connection if we are already connected to this peer.
         if (this._addresses.isConnected(peer.peerAddress)) {
+            // XXX Clear channel.peerAddress to prevent _onClose() from changing
+            // the PeerAddressState of the connected peer.
+            agent.channel.peerAddress = null;
             agent.channel.close('duplicate connection (post handshake)');
             return;
         }
@@ -337,12 +332,9 @@ class Network extends Observable {
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
             const numConnections = this._agents.values().filter(
-                agent => peer.netAddress.equals(agent.channel.netAddress));
-            const maxConnections = peer.channel.connection.protocol === Protocol.WS ?
-                Network.PEER_COUNT_PER_IP_WS_MAX : Network.PEER_COUNT_PER_IP_RTC_MAX;
-
-            if (numConnections > maxConnections) {
-                agent.channel.close(`connection limit per ip (${maxConnections}) reached`);
+                agent => peer.netAddress.equals(agent.channel.netAddress)).length;
+            if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
+                agent.channel.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return;
             }
         }
@@ -398,7 +390,8 @@ class Network extends Observable {
         this._bytesSent += channel.connection.bytesSent;
         this._bytesReceived += channel.connection.bytesReceived;
 
-        // peerAddress is undefined for incoming connections pre-handshake.
+        // channel.peerAddress is undefined for incoming connections pre-handshake.
+        // It is also cleared before closing duplicate connections post-handshake.
         if (channel.peerAddress) {
             // Check if the handshake with this peer has completed.
             if (this._addresses.isConnected(channel.peerAddress)) {

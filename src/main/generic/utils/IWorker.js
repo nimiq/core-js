@@ -147,10 +147,6 @@ class IWorker {
                 });
             }
 
-            eval(code) {
-                return this._invoke('eval', [code]);
-            }
-
             destroy() {
                 return this._invoke('destroy');
             }
@@ -193,12 +189,7 @@ class IWorker {
                 }
             }
 
-            eval(code) {
-                // eslint-disable-next-line no-eval
-                return eval(code);
-            }
-
-            async importScript(script, module = 'Module') {
+            importScript(script, module = 'Module') {
                 if (module && IWorker._global[module] && IWorker._global[module].asm) return false;
                 if (typeof Nimiq !== 'undefined' && Nimiq._path) script = `${Nimiq._path}${script}`;
                 if (typeof __dirname === 'string' && script.indexOf('/') === -1) script = `${__dirname}/${script}`;

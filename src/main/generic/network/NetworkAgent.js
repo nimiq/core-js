@@ -306,7 +306,7 @@ class NetworkAgent extends Observable {
 
         // Verify public key
         if (!msg.publicKey.toPeerId().equals(this._observedPeerAddress.peerId)) {
-            this._channel.close('Invalid public in verack message');
+            this._channel.close('Invalid public key in verack message');
             return;
         }
 
