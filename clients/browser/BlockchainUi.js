@@ -3,7 +3,6 @@ class BlockchainUi {
         this.$el = el;
         this.$ = $;
 
-        this.$title = this.$el.querySelector('[title]');
         this.$chainHeight = this.$el.querySelector('[chain-height]');
         this.$totalDifficulty = this.$el.querySelector('[total-difficulty]');
         this.$totalWork = this.$el.querySelector('[total-work]');
@@ -21,20 +20,8 @@ class BlockchainUi {
         this.$headInterlink = this.$el.querySelector('[head-interlink]');
 
         $.blockchain.on('head-changed', head => this._headChanged(head));
-        $.consensus.on('syncing', () => this.$title.classList.add('syncing'));
-        $.consensus.on('sync-chain-proof', () => this.$title.classList.add('sync-chain-proof'));
-        $.consensus.on('verify-chain-proof', () => this.$title.classList.add('verify-chain-proof'));
-        $.consensus.on('sync-accounts-tree', () => this.$title.classList.add('sync-accounts-tree'));
-        $.consensus.on('verify-accounts-tree', () => this.$title.classList.add('verify-accounts-tree'));
-        $.consensus.on('established', () => {
-            this.$title.classList.add('consensus-established');
-            this._headChanged($.blockchain.head);
-        });
-        $.consensus.on('lost', () => this.$title.classList.remove('initializing', 'connecting', 'syncing',
-            'sync-chain-proof', 'verify-chain-proof', 'sync-accounts-tree', 'verify-accounts-tree',
-            'consensus-established'));
+        $.consensus.on('established', () => this._headChanged($.blockchain.head));
 
-        this.$title.classList.add('connecting');
         this._headChanged($.blockchain.head);
     }
 
@@ -43,7 +30,7 @@ class BlockchainUi {
         this.$chainAccountsHash.textContent = this.$.blockchain.head.accountsHash.toBase64();
         this._showBlockTime();
 
-        if ($.clientType !== DevUI.CLIENT_NANO) {
+        if (this.$.clientType !== DevUi.ClientType.NANO) {
             this.$totalDifficulty.textContent = this.$.blockchain.totalDifficulty;
             this.$totalWork.textContent = this.$.blockchain.totalWork;
         }

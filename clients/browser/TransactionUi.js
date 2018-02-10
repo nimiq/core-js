@@ -78,7 +78,7 @@ class TransactionUi extends Nimiq.Observable {
     _onRecipientChanged() {
         const recipient = Utils.readAddress(this.$recipient);
         if (recipient === null) return;
-        Utils.getAccount($, recipient).then(account => this.$recipientType.value = account.type);
+        Utils.getAccount(this.$, recipient).then(account => this.$recipientType.value = account.type);
     }
 
     _onGenerateTransactionClick(e) {

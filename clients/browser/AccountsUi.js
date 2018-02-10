@@ -213,7 +213,7 @@ class AccountsUi extends Nimiq.Observable {
             this._userFriendlyAddressesToAddresses(this._vestingAccountList.get()),
             this._userFriendlyAddressesToAddresses(this._htlcAccountList.get())
         ).forEach(address => {
-            Utils.getAccount($, address).then(account => {
+            Utils.getAccount(this.$, address).then(account => {
                 if (account.isInitial()) this.removeAccount(address);
             });
         });
@@ -238,7 +238,7 @@ class AccountsUi extends Nimiq.Observable {
     }
 
     _updateNanoSubscriptions() {
-        if (this.$.clientType !== DevUI.CLIENT_NANO) return;
+        if (this.$.clientType !== DevUi.ClientType.NANO) return;
         // avoid frequent subsequent changes to nano subscriptions as these are costly
         clearTimeout(this._updateNanoSubscriptionsTimer);
         this._updateNanoSubscriptionsTimer = setTimeout(

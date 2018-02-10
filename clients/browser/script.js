@@ -1,16 +1,31 @@
-class DevUI {
-    constructor(el, $) {
+class DevUi {
+    constructor(el) {
         this.$el = el;
-        this.$ = $;
-        this._accountsUi = new AccountsUi(this.$el.querySelector('[accounts-ui]'), $);
-        this._accountInfoUi = new AccountInfoUi(this.$el.querySelector('[account-info-ui]'), $);
-        this._transactionUi = new TransactionUi(this.$el.querySelector('[transaction-ui]'), $);
-        this._blockchainUi = new BlockchainUi(this.$el.querySelector('[blockchain-ui]'), $);
-        this._mempoolUi = new MempoolUi(this.$el.querySelector('[mempool-ui]'), $);
-        this._networkUi = new NetworkUi(this.$el.querySelector('[network-ui]'), $);
+        this.$overlay = el.querySelector('[overlay]');
+        this.$mainUi = el.querySelector('[main-ui]');
 
-        if ($.clientType !== DevUI.CLIENT_NANO) {
-            this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), $);
+        this.clientType = location.hash.substr(1);
+        if (Object.values(DevUi.ClientType).indexOf(this.clientType) === -1) return;
+
+        this.$el.setAttribute('client', this.clientType);
+        this.$mainUi.style.display = 'block';
+        this._startInstance(this.clientType).then($ => {
+            this.$ = $;
+            return this._loadUiComponents(); // load ui components after core as some extend Nimiq.Observable
+        }).then(() => this._initUi());
+    }
+
+    _initUi() {
+        this._clientTypeUi = new ClientTypeUi(this.$el.querySelector('[client-type-ui]'), this.$);
+        this._accountsUi = new AccountsUi(this.$el.querySelector('[accounts-ui]'), this.$);
+        this._accountInfoUi = new AccountInfoUi(this.$el.querySelector('[account-info-ui]'), this.$);
+        this._transactionUi = new TransactionUi(this.$el.querySelector('[transaction-ui]'), this.$);
+        this._blockchainUi = new BlockchainUi(this.$el.querySelector('[blockchain-ui]'), this.$);
+        this._mempoolUi = new MempoolUi(this.$el.querySelector('[mempool-ui]'), this.$);
+        this._networkUi = new NetworkUi(this.$el.querySelector('[network-ui]'), this.$);
+
+        if (this.clientType !== DevUi.ClientType.NANO) {
+            this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), this.$);
         }
 
         this._accountsUi.on('account-selected', address => this._accountInfoUi.address = address);
@@ -23,83 +38,64 @@ class DevUI {
         });
         this._transactionUi.on('contract-created', address => this._accountsUi.addAccount(address));
     }
-}
-DevUI.CLIENT_NANO = 'nano';
-DevUI.CLIENT_LIGHT = 'light';
-DevUI.CLIENT_FULL = 'full';
 
-// Safari quirks: don't use the same var name in global scope as id of html element
-var overlay_ = document.querySelector('#overlay');
-
-function loadScript(scriptSrc) {
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.addEventListener('load', resolve);
-        script.addEventListener('error', reject);
-        setTimeout(reject, 10000);
-        script.src =scriptSrc;
-        document.body.appendChild(script);
-    });
-}
-
-function loadUi($) {
-    const scripts = ['Utils.js', 'BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
-        'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'Signer.js', 'HtlcSignerUi.js', 'SignerUi.js',
-        'AccountsUi.js', 'MultiSigWalletCreationUi.js', 'MultiSigSignerUi.js'];
-    const promises = [];
-    scripts.forEach(script => {
-        promises.push(loadScript(script));
-    });
-    Promise.all(promises)
-        .then(() => window.ui = new DevUI(document.getElementById('content'), $));
-}
-
-function startNimiq() {
-    var clientType = location.hash.substr(1);
-    if (clientType!==DevUI.CLIENT_NANO && clientType!==DevUI.CLIENT_LIGHT && clientType!==DevUI.CLIENT_FULL) {
-        alert('Please navigate to /#nano, /#light or /#full to select a client type.');
-        return;
+    _loadUiComponents() {
+        const scripts = ['ClientTypeUi.js', 'BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
+            'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'Signer.js', 'HtlcSignerUi.js', 'SignerUi.js',
+            'AccountsUi.js', 'MultiSigWalletCreationUi.js', 'MultiSigSignerUi.js'];
+        return Promise.all(scripts.map(script => Utils.loadScript(script)));
     }
-    document.body.setAttribute('client', clientType);
 
-    Nimiq.init(async function() { // TODO remove async await
-        const $ = {};
-        window.$ = $;
-        $.clientType = clientType;
-        $.consensus = await Nimiq.Consensus[clientType]();
+    _startInstance() {
+        return new Promise(resolve => {
+            Nimiq.init(() => {
+                const $ = {};
+                $.clientType = this.clientType;
+                Promise.all([
+                    Nimiq.Consensus[this.clientType](),
+                    new Nimiq.WalletStore()
+                ]).then(promiseResults => {
+                    $.consensus = promiseResults[0];
 
-        // XXX Legacy API
-        $.blockchain = $.consensus.blockchain;
-        $.mempool = $.consensus.mempool;
-        $.network = $.consensus.network;
+                    // XXX Legacy API
+                    $.blockchain = $.consensus.blockchain;
+                    $.mempool = $.consensus.mempool;
+                    $.network = $.consensus.network;
 
-        // XXX Legacy components
-        $.walletStore = await new Nimiq.WalletStore();
+                    if (this.clientType !== DevUi.ClientType.NANO) {
+                        $.accounts = $.blockchain.accounts;
+                        $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, null);
+                    }
 
-        if (clientType !== DevUI.CLIENT_NANO) {
-            $.accounts = $.blockchain.accounts;
-            $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, null);
-        }
-
-        $.network.connect();
-
-        overlay_.style.display = 'none';
-        loadUi($); // load UI after Core as some classes extend Nimiq.Observable
-    }, function(code) {
-        switch (code) {
-            case Nimiq.ERR_WAIT:
-                overlay_.style.display = 'block';
-                break;
-            case Nimiq.ERR_UNSUPPORTED:
-                alert('Browser not supported');
-                break;
-            default:
-                alert('Nimiq initialization error');
-                break;
-        }
-    });
+                    $.walletStore = promiseResults[1];
+                    $.network.connect();
+                    this.$overlay.style.display = 'none';
+                    resolve($);
+                });
+            }, function(code) {
+                switch (code) {
+                    case Nimiq.ERR_WAIT:
+                        this.$overlay.style.display = 'block';
+                        break;
+                    case Nimiq.ERR_UNSUPPORTED:
+                        alert('Browser not supported');
+                        break;
+                    default:
+                        alert('Nimiq initialization error');
+                        break;
+                }
+            });
+        });
+    }
 }
+DevUi.ClientType = {
+    NANO: 'nano',
+    LIGHT: 'light',
+    FULL: 'full'
+};
+
 
 window.addEventListener('unhandledrejection', event => alert('Unhandled Promise Rejection: ' + event.reason));
+window.addEventListener('hashchange', () => window.location.reload());
 
-startNimiq();
+window.ui = new DevUi(document.getElementById('content'));
