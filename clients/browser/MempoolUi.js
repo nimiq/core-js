@@ -6,7 +6,7 @@ class MempoolUi {
         this.$transactionCount = this.$el.querySelector('[transaction-count]');
         this.$transactions = this.$el.querySelector('[transactions]');
 
-        if ($.clientType !== DevUI.CLIENT_NANO) {
+        if ($.clientType !== DevUi.ClientType.NANO) {
             $.mempool.on('transactions-ready', () => this._rerender());
             $.mempool.on('transaction-added', tx => this._transactionAdded(tx));
         } else {

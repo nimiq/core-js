@@ -200,12 +200,12 @@ class HtlcSigner extends Signer {
         if (this._proofType === Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER
             || this._proofType === Nimiq.HashedTimeLockedContract.ProofType.EARLY_RESOLVE) {
             signerPromises.push(htlcRecipientSigner? Promise.resolve(htlcRecipientSigner)
-                : new SingleSigSigner($, this._account.recipient));
+                : new SingleSigSigner(this.$, this._account.recipient));
         }
         if (this._proofType === Nimiq.HashedTimeLockedContract.ProofType.EARLY_RESOLVE
             || this._proofType === Nimiq.HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE) {
             signerPromises.push(htlcSenderSigner? Promise.resolve(htlcSenderSigner)
-                : new SingleSigSigner($, this._account.sender));
+                : new SingleSigSigner(this.$, this._account.sender));
         }
         return Promise.all(signerPromises);
     }

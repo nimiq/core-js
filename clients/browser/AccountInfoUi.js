@@ -75,7 +75,7 @@ class AccountInfoUi {
 
     _update(head, rebranching) {
         if (!this._address
-            || this.$.clientType === DevUI.CLIENT_NANO && (!this.$.consensus.established || rebranching)) {
+            || this.$.clientType === DevUi.ClientType.NANO && (!this.$.consensus.established || rebranching)) {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {

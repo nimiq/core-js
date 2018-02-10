@@ -1,6 +1,17 @@
 class Utils {
+    static loadScript(scriptSrc) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.addEventListener('load', resolve);
+            script.addEventListener('error', reject);
+            setTimeout(reject, 10000);
+            script.src =scriptSrc;
+            document.body.appendChild(script);
+        });
+    }
+
     static getAccount($, address) {
-        if ($.clientType !== DevUI.CLIENT_NANO) {
+        if ($.clientType !== DevUi.ClientType.NANO) {
             return $.accounts.get(address);
         } else {
             return Utils.awaitConsensus($)
@@ -10,7 +21,7 @@ class Utils {
     }
 
     static broadcastTransaction($, tx) {
-        if ($.clientType !== DevUI.CLIENT_NANO) {
+        if ($.clientType !== DevUi.ClientType.NANO) {
             return $.mempool.pushTransaction(tx);
         } else {
             return Utils.awaitConsensus($).then(() => $.consensus.relayTransaction(tx));

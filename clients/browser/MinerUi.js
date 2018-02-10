@@ -1,6 +1,6 @@
 class MinerUi {
     constructor(el, $) {
-        if ($.clientType === DevUI.CLIENT_NANO) {
+        if ($.clientType === DevUi.ClientType.NANO) {
             // nano clients don't have a miner
             el.style.display = 'none';
             return;

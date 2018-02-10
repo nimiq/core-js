@@ -15,14 +15,8 @@ body {
     min-height: 100%;
 }
 
-[client="nano"] [hide-nano] {
-    display: none;
-}
-
-[client="light"] [hide-light] {
-    display: none;
-}
-
+[client="nano"] [hide-nano],
+[client="light"] [hide-light],
 [client="full"] [hide-full] {
     display: none;
 }
@@ -227,74 +221,6 @@ hash {
     width: 100%;
 }
 
-
-/* The order of these consensus classes is important to enable overwriting */
-
-[blockchain-ui] [title] {
-    transition: background ease 0.5s;
-}
-
-[blockchain-ui] [title]:after {
-    position: absolute;
-    top: 7px;
-    right: 20px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.65;
-    font-weight: 400;
-}
-
-.not-connected {
-    background: crimson;
-    opacity: 0.6;
-}
-
-.not-connected::after {
-    content: "Not connected";
-}
-
-.initializing {
-    background: #FFC107;
-    opacity: 0.8;
-}
-
-.initializing::after {
-    content: "Initializing...";
-}
-
-.connecting::after {
-    content: "Connecting...";
-}
-
-.syncing {
-    background: orange;
-    opacity: 0.8;
-}
-.syncing::after {
-    content: "Syncronizing...";
-}
-.sync-chain-proof::after {
-    content: "Downloading proof...";
-}
-.verify-chain-proof::after {
-    content: "Verifying proof...";
-}
-.sync-accounts-tree::after {
-    content: "Downloading accounts...";
-}
-.verify-accounts-tree::after {
-    content: "Verifying accounts...";
-}
-
-.consensus-established {
-    background: #2dad2d;
-    opacity: 1.0;
-}
-
-.consensus-established::after {
-    content: "Consensus established";
-}
-
 .address {
     font-family: monospace;
 }
@@ -326,7 +252,7 @@ hash {
     position: relative;
 }
 
-#overlay {
+[overlay] {
     display: none;
     position: absolute;
     top: 0;
@@ -337,12 +263,101 @@ hash {
     background: rgba(239, 239, 239, 0.95);
 }
 
-#overlay .message {
+[overlay] .message {
     font-size: 18pt;
     text-align: center;
     margin-top: 15%;
     padding: 15px;
 }
+
+/* Client Type UI */
+/* The order of these consensus classes is important to enable overwriting */
+
+[client-type-ui] [title] {
+    transition: background ease 0.5s;
+    position: relative;
+}
+
+[client-type-ui] [title]:after {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.65;
+    font-weight: 400;
+}
+
+[client-type-ui] .not-connected {
+    background: crimson;
+    opacity: 0.6;
+}
+
+[client-type-ui] .not-connected::after {
+    content: "Not connected";
+}
+
+[client-type-ui] .initializing {
+    background: #FFC107;
+    opacity: 0.8;
+}
+
+[client-type-ui] .initializing::after {
+    content: "Initializing...";
+}
+
+[client-type-ui] .connecting::after {
+    content: "Connecting...";
+}
+
+[client-type-ui] .syncing {
+    background: orange;
+    opacity: 0.8;
+}
+[client-type-ui] .syncing::after {
+    content: "Syncronizing...";
+}
+[client-type-ui] .sync-chain-proof::after {
+    content: "Downloading proof...";
+}
+[client-type-ui] .verify-chain-proof::after {
+    content: "Verifying proof...";
+}
+[client-type-ui] .sync-accounts-tree::after {
+    content: "Downloading accounts...";
+}
+[client-type-ui] .verify-accounts-tree::after {
+    content: "Verifying accounts...";
+}
+
+[client-type-ui] .consensus-established {
+    background: #2dad2d;
+    opacity: 1.0;
+}
+
+[client-type-ui] .consensus-established::after {
+    content: "Consensus established";
+}
+
+[client-type-ui] .info-block {
+    display: flex;
+    justify-content: space-between;
+}
+
+[client-type-ui] a {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    color: black;
+}
+
+[client="nano"] [client-type-ui] a[href="#nano"],
+[client="light"] [client-type-ui] a[href="#light"],
+[client="full"] [client-type-ui] a[href="#full"] {
+    text-decoration: underline;
+}
+
 
 /* Account Info UI */
 
