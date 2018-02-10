@@ -3,7 +3,9 @@ class Utils {
         if ($.clientType !== DevUI.CLIENT_NANO) {
             return $.accounts.get(address);
         } else {
-            return $.consensus.getAccount(address);
+            return Utils.awaitConsensus($)
+                .then(() => $.consensus.getAccount(address))
+                .then(account => account || Nimiq.Account.INITIAL);
         }
     }
 
@@ -11,8 +13,19 @@ class Utils {
         if ($.clientType !== DevUI.CLIENT_NANO) {
             return $.mempool.pushTransaction(tx);
         } else {
-            return $.consensus.relayTransaction(tx);
+            return Utils.awaitConsensus($).then(() => $.consensus.relayTransaction(tx));
         }
+    }
+
+    static awaitConsensus($) {
+        if ($.consensus.established) return Promise.resolve();
+        return new Promise(resolve => {
+            const onConsensus = () => {
+                $.consensus.off('established', onConsensus);
+                resolve();
+            };
+            $.consensus.on('established', onConsensus);
+        });
     }
 
     static humanBytes(bytes) {

@@ -365,9 +365,6 @@ hash {
     display: block;
 }
 
-[account-info-ui][account-type="not-found"] [account-type]:after {
-    content: 'Account not found.';
-}
 [account-info-ui][account-type="unknown"] [account-type]:after {
     content: 'Unknown account type.';
 }

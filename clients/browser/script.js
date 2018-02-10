@@ -8,13 +8,18 @@ class DevUI {
         this._blockchainUi = new BlockchainUi(this.$el.querySelector('[blockchain-ui]'), $);
         this._mempoolUi = new MempoolUi(this.$el.querySelector('[mempool-ui]'), $);
         this._networkUi = new NetworkUi(this.$el.querySelector('[network-ui]'), $);
-        this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), $);
+
+        if ($.clientType !== DevUI.CLIENT_NANO) {
+            this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), $);
+        }
 
         this._accountsUi.on('account-selected', address => this._accountInfoUi.address = address);
         this._accountsUi.on('accounts-changed', () => {
             this._transactionUi.notifyAccountsChanged();
-            this._minerUi.notifyAccountsChanged();
             this._accountsUi.notifyAccountsChanged();
+            if (this._minerUi) {
+                this._minerUi.notifyAccountsChanged();
+            }
         });
         this._transactionUi.on('contract-created', address => this._accountsUi.addAccount(address));
     }
@@ -74,10 +79,6 @@ function startNimiq() {
         if (clientType !== DevUI.CLIENT_NANO) {
             $.accounts = $.blockchain.accounts;
             $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, null);
-        } else {
-            $.walletStore.list().then(wallets => {
-                $.consensus.subscribeAccounts(wallets.map(wallet => wallet.address));
-            });
         }
 
         $.network.connect();
