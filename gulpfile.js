@@ -25,9 +25,7 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcDataChannel.js',
             './src/main/platform/browser/network/webrtc/WebRtcUtils.js',
             './src/main/platform/browser/network/webrtc/WebRtcConnector.js',
-            './src/main/platform/browser/network/websocket/WebSocketFactory.js',
-            './src/main/platform/browser/network/websocket/WebSocketConnector.js',
-            './src/main/platform/browser/network/websocket/WebSocketDataChannel.js'
+            './src/main/platform/browser/network/websocket/WebSocketFactory.js'
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
@@ -36,10 +34,7 @@ const sources = {
             './src/main/generic/network/DataChannel.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcConnector.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketConnector.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketDataChannel.js',
-            './src/main/platform/nodejs/network/NetworkConfig.js'
+            './src/main/platform/nodejs/network/websocket/WebSocketFactory.js'
         ]
     },
     generic: [
@@ -163,6 +158,8 @@ const sources = {
         './src/main/generic/network/message/GetTransactionReceiptsMessage.js',
         './src/main/generic/network/message/TransactionReceiptsMessage.js',
         './src/main/generic/network/message/MessageFactory.js',
+        './src/main/generic/network/websocket/WebSocketConnector.js',
+        './src/main/generic/network/websocket/WebSocketDataChannel.js',
         './src/main/generic/network/NetworkAgent.js',
         './src/main/generic/network/NetworkConfig.js',
         './src/main/generic/network/Network.js',
