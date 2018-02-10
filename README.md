@@ -47,7 +47,7 @@ node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FIL
 | **Configuration** | |
 | :--- | :--- |
 | `--host=HOSTNAME` | Hostname of the Node.js client. |
-| `--port=PORT` | Port to listen on for connections. |  
+| `--port=PORT` | Port to listen on for connections. |
 | `--cert=SSL_CERT_FILE` | SSL certificate file for your domain. CN should match HOSTNAME. |
 | `--key=SSL_KEY_FILE` | SSL private key file for your domain. |
 | **Options** | |

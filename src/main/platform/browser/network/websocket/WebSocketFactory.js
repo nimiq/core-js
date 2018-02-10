@@ -1,5 +1,14 @@
 class WebSocketFactory {
     /**
+     * @static
+     * @return {Observable}
+     */
+    static newWebSocketServer() {
+        return new Observable();
+    }
+
+    /**
+     * @static
      * @param {string} url
      * @return {WebSocket}
      */

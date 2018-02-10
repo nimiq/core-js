@@ -1,12 +1,6 @@
-// XXX Should we do this here or in a higher-level script?
-const WebSocket = require('ws');
-Class.register(WebSocket);
-
-const https = require('https');
-const fs = require('fs');
-
 class WebSocketFactory {
     /**
+     * @static
      * @param {NetworkConfig} networkConfig
      * @return {WebSocketServer}
      */
@@ -28,6 +22,7 @@ class WebSocketFactory {
     }
 
     /**
+     * @static
      * @param {string} url
      * @param {*} [options]
      * @return {WebSocket}
