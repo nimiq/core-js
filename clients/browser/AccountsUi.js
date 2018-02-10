@@ -17,7 +17,7 @@ class AccountsUi extends Nimiq.Observable {
         this.$addBasicWallet.addEventListener('click', () => this._addWallet());
 
         this._multiSigWalletCreationUi =
-            new MultiSigWalletCreationUi(el.querySelector('[multi-sig-wallet-creation-ui'), $);
+            new MultiSigWalletCreationUi(el.querySelector('[multi-sig-wallet-creation-ui]'), $);
         this._multiSigWalletCreationUi.on('multi-sig-wallet-created', wallet => this.addAccount(wallet.address));
 
         this._initLists();
