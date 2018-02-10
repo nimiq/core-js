@@ -6,7 +6,6 @@ class Signer {
         this._address = address;
         this._enforcedType = enforcedType;
         return Utils.getAccount($, address).then(account => {
-            if (!account) throw Error(`Account ${address.toUserFriendlyAddress()} not found.`);
             if (account.type !== this.realType) throw Error('Account type does not match address.');
             this._account = account;
             return this;
@@ -81,6 +80,7 @@ class MultiSigSigner extends Signer {
                 // public keys of all the m out of n combinations of all n public keys where m = signingAddresses.length
                 _this._combinationsPublicKeys = storedMultiSigWallet.publicKeys;
                 _this._signingPublicKeys = signingKeyPairs.map(keyPair => keyPair.publicKey);
+                _this._aggregatedSigningPublicKey = Nimiq.PublicKey.sum(_this._signingPublicKeys);
                 _this._signingWallets = signingKeyPairs.map(keyPair =>
                     new Nimiq.MultiSigWallet(keyPair, signingAddresses.length, _this._combinationsPublicKeys));
                 return _this;
@@ -92,7 +92,9 @@ class MultiSigSigner extends Signer {
     }
 
     get publicKey() {
-        return Nimiq.PublicKey.sum(this._combinationsPublicKeys);
+        // reveal the aggregated signing key for construction of basic transactions. Note that this only works for
+        // n out of n multi sigs.
+        return this._aggregatedSigningPublicKey;
     }
 
     sign(tx) {
@@ -101,8 +103,7 @@ class MultiSigSigner extends Signer {
         const partialSignatures = this._signingWallets.map((wallet, index) =>
             wallet.signTransaction(tx, this._signingPublicKeys, aggregatedCommitment, commitmentPairs[index].secret));
         const signature = Nimiq.Signature.fromPartialSignatures(aggregatedCommitment, partialSignatures);
-        const aggregatedSigningPublicKey = Nimiq.PublicKey.sum(this._signingPublicKeys);
-        const proof = Nimiq.SignatureProof.multiSig(aggregatedSigningPublicKey, this._combinationsPublicKeys,
+        const proof = Nimiq.SignatureProof.multiSig(this._aggregatedSigningPublicKey, this._combinationsPublicKeys,
             signature).serialize();
         return {
             signature: signature,

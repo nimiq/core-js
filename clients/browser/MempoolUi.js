@@ -10,10 +10,10 @@ class MempoolUi {
             $.mempool.on('transactions-ready', () => this._rerender());
             $.mempool.on('transaction-added', tx => this._transactionAdded(tx));
         } else {
-            $.mempool.on('*', () => this._rerender(true));
+            $.mempool.on('*', () => this._rerender());
         }
 
-        this._rerender($.clientType === DevUI.CLIENT_NANO);
+        this._rerender();
     }
 
     _transactionAdded(tx) {
@@ -23,7 +23,7 @@ class MempoolUi {
         this._renderTransaction(tx);
     }
 
-    _rerender(filter) {
+    _rerender() {
         // XXX inefficient
         const txs = this.$.mempool.getTransactions();
         this.$transactionCount.textContent = txs.length;
@@ -31,9 +31,6 @@ class MempoolUi {
         this.$transactions.innerHTML = '';
 
         txs.forEach(tx => {
-            /*if (filter && !this.$.wallet.address.equals(tx.sender) && !this.$.wallet.address.equals(tx.recipient)) {
-                return;
-            }*/
             this._renderTransaction(tx);
         });
     }

@@ -74,14 +74,11 @@ class AccountInfoUi {
     }
 
     _update(head, rebranching) {
-        if (!this._address || this.$.clientType === DevUI.CLIENT_NANO && rebranching) {
+        if (!this._address
+            || this.$.clientType === DevUI.CLIENT_NANO && (!this.$.consensus.established || rebranching)) {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {
-            if (!account) {
-                this.$el.setAttribute(AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE, AccountInfoUi.AccountType.NOT_FOUND);
-                return;
-            }
             this.$balance.textContent = Utils.satoshisToCoins(account.balance);
             switch (account.type) {
                 case Nimiq.Account.Type.BASIC:
@@ -123,7 +120,6 @@ class AccountInfoUi {
 }
 AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE = 'account-type';
 AccountInfoUi.AccountType = {
-    NOT_FOUND: 'not-found',
     UNKNOWN: 'unknown',
     BASIC: 'basic',
     VESTING: 'vesting',

@@ -51,7 +51,10 @@ class AccountsUi extends Nimiq.Observable {
             } else {
                 return this._removeAccount(address, isBasicWalletAddress, isMultiSigWalletAddress);
             }
-        }).then(() => this.fire('accounts-changed'));
+        }).then(() => {
+            this._updateNanoSubscriptions();
+            this.fire('accounts-changed');
+        });
     }
 
     _addAccount(address, isBasicWalletAddress, isMultiSigWalletAddress) {
@@ -165,8 +168,7 @@ class AccountsUi extends Nimiq.Observable {
                 }
                 return Promise.resolve();
             })
-            .then(() => this.addAccount(wallet.address))
-            .catch(alert);
+            .then(() => this.addAccount(wallet.address));
     }
 
     _initLists() {
@@ -184,7 +186,8 @@ class AccountsUi extends Nimiq.Observable {
         this._fillList(this.$pendingContractsList, pendingContractAddresses);
         pendingContractAddresses.forEach(address => this._checkPendingContract(address));
 
-        this._checkForPrunedContracts();
+        this._updateNanoSubscriptions();
+        Utils.awaitConsensus(this.$).then(() => this._checkForPrunedContracts());
     }
 
     _userFriendlyAddressesToAddresses(userFriendlyAddresses) {
@@ -211,9 +214,36 @@ class AccountsUi extends Nimiq.Observable {
             this._userFriendlyAddressesToAddresses(this._htlcAccountList.get())
         ).forEach(address => {
             Utils.getAccount($, address).then(account => {
-                if (!account || account.isInitial()) this.removeAccount(address);
+                if (account.isInitial()) this.removeAccount(address);
             });
         });
+    }
+
+    /** @async */
+    _getAddresses() {
+        return Promise.all([
+            this.$.walletStore.list(),
+            this.$.walletStore.listMultiSig()
+        ]).then(promiseResult => {
+            const singleSigWalletAddresses = promiseResult[0];
+            const multiSigWalletAddresses = promiseResult[1];
+            return [].concat(
+                singleSigWalletAddresses,
+                multiSigWalletAddresses,
+                this._userFriendlyAddressesToAddresses(this._vestingAccountList.get()),
+                this._userFriendlyAddressesToAddresses(this._htlcAccountList.get()),
+                this._userFriendlyAddressesToAddresses(this._pendingContractsList.get())
+            );
+        });
+    }
+
+    _updateNanoSubscriptions() {
+        if (this.$.clientType !== DevUI.CLIENT_NANO) return;
+        // avoid frequent subsequent changes to nano subscriptions as these are costly
+        clearTimeout(this._updateNanoSubscriptionsTimer);
+        this._updateNanoSubscriptionsTimer = setTimeout(
+            () => this._getAddresses().then(addresses => this.$.consensus.subscribeAccounts(addresses)),
+            1000);
     }
 }
 
