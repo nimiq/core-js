@@ -29,6 +29,6 @@ describe('TwoNodes', () => {
             consensus2.network.connect();
 
             expect(true).toBe(true);
-        })().then().catch(done.fail);
+        })().catch(done.fail);
     });
 });
