@@ -44,21 +44,6 @@ class PeerConnection extends Observable {
             return;
         }
 
-        /*
-        // XXX Cleanup!
-        if (!PlatformUtils.isBrowser() || !(msg instanceof Blob)) {
-            this._bytesReceived += msg.byteLength || msg.length;
-            this.fire('message', msg, this);
-        } else {
-            Log.e(PeerConnection, `Converting blob to ArrayBuffer on ${this._channel.toString()}`);
-            // Browser only
-            // TODO FileReader is slow and this is ugly anyways. Improve!
-            const reader = new FileReader();
-            reader.onloadend = () => this._onMessage(reader.result);
-            reader.readAsArrayBuffer(msg);
-        }
-        */
-
         this._bytesReceived += msg.byteLength || msg.length;
         this.fire('message', msg, this);
     }

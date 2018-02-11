@@ -15,6 +15,23 @@ class WebRtcDataChannel extends DataChannel {
     }
 
     /**
+     * @param {ArrayBuffer} msg
+     * @protected
+     * @override
+     */
+    _onMessage(msg) {
+        // FIXME It seems that Firefox still sometimes receives blobs instead of ArrayBuffers on RTC connections.
+        // FIXME FileReader is async and may RE-ORDER MESSAGES!
+        if (msg instanceof Blob) {
+            Log.e(DataChannel, 'Converting blob to ArrayBuffer on WebRtcDataChannel');
+            const reader = new FileReader();
+            reader.onloadend = () => super._onMessage(reader.result);
+            reader.readAsArrayBuffer(msg);
+        } else {
+            super._onMessage(msg);
+        }
+    }
+    /**
      * @override
      */
     sendChunk(msg) {
