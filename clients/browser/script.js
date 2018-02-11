@@ -11,6 +11,7 @@ class DevUi {
         this.$mainUi.style.display = 'block';
         this._startInstance(this.clientType).then($ => {
             this.$ = $;
+            window.$ = $;
             return this._loadUiComponents(); // load ui components after core as some extend Nimiq.Observable
         }).then(() => this._initUi());
     }

@@ -7,7 +7,7 @@ class MinerUi {
         }
 
         this.$el = el;
-        this.$  = $;
+        this.$ = $;
         this._lastMinedBlockTimestamp = null;
 
         this._minerAddress = new AccountSelector(this.$el.querySelector('[miner-address]'), $);
