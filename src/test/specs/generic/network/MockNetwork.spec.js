@@ -79,18 +79,22 @@ class MockWebSocketServer extends Observable {
 class MockNetwork {
     /**
      * @static
-     * @param {MockWebSocketServer} server
+     * @param {?MockWebSocketServer} server
      * @param {MockWebSocket} client
      * @returns {void}
      */
     static link(server, client) {
-        server.mockWebSocket.link(client);
-        client.link(server.mockWebSocket);
+        if (server) {
+            server.mockWebSocket.link(client);
+            client.link(server.mockWebSocket);
 
-        setTimeout(function () {
-            server.fire('connection', server.mockWebSocket);
-            client.onopen();
-        }, 0);
+            setTimeout(function () {
+                server.fire('connection', server.mockWebSocket);
+                client.onopen();
+            }, 0);
+        } else {
+            setTimeout(() => client.onerror(), 0);
+        }
     }
 
     /**
