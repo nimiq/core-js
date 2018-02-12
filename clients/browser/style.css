@@ -366,6 +366,45 @@ label strong {
     width: 70px;
 }
 
+.collapsible > :first-child {
+    position: relative;
+    padding-right: 32px;
+}
+
+.collapsible > :first-child::before,
+.collapsible > :first-child::after {
+    /* close icon in CSS */
+    content: '';
+    position: absolute;
+    top: 6px;
+    display: inline-block;
+    height: 3px;
+    width: 14px;
+    background: #e2a62f;
+}
+
+.collapsible > :first-child::before {
+    transform: rotate(-45deg);
+    right: 8px;
+}
+
+.collapsible > :first-child::after {
+    transform: rotate(45deg);
+    right: 0;
+}
+
+.collapsible.collapsed > :first-child::before {
+    transform: rotate(45deg);
+}
+
+.collapsible.collapsed > :first-child::after {
+    transform: rotate(-45deg);
+}
+
+.collapsible.collapsed > :not(:first-child) {
+    display: none;
+}
+
 /* Account Info UI */
 
 [account-info-ui] [clear-button] {
