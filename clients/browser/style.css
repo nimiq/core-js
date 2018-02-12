@@ -204,13 +204,12 @@ hash {
     flex-wrap: wrap;
 }
 
-.input-group strong {
-    display: inline-block;
+label strong {
+    margin-right: 8px;
 }
 
-input:not(:first-child),
-select:not(:first-child) {
-    margin-left: 8px;
+.input-group strong {
+    display: inline-block;
 }
 
 .input-group-button {
