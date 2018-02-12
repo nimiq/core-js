@@ -43,7 +43,7 @@ class MultiSigSignerUi {
     set address(address) {
         this._address = address;
         this.$.walletStore.getMultiSig(address)
-            .then(wallet => this._prefillSigners(wallet))
+            .then(wallet => this._preselectSigners(wallet))
             .catch(); // if we don't have this wallet, just ignore
     }
 
@@ -64,7 +64,7 @@ class MultiSigSignerUi {
         }
     }
 
-    _prefillSigners(multiSigWallet) {
+    _preselectSigners(multiSigWallet) {
         this._updateNumberOfSigners(multiSigWallet.minSignatures);
         // find a combination of signers that is able to sign the multi sig
         this.$.walletStore.list().then(walletAddresses => {
