@@ -347,49 +347,56 @@
                         <span average-block-time></span> <small>average</small> /
                         <span last-block-time></span> <small>last</small>
                     </div>
-                    <div class="info-block">
-                        <strong>Accounts Hash</strong>
-                        <hash chain-accounts-hash></hash>
-                    </div>
                     <hr/>
                 </div>
 
                 <div class="info">
-                    <div class="info-title">Head Block</div>
+                    <div class="info-title">Block</div>
                     <hr/>
 
-                    <div class="info-block">
-                        <strong>Hash</strong>
-                        <hash head-hash></hash>
+                    <div class="input-group">
+                        <label>
+                            <strong>Height</strong>
+                            <input block-height-input name="block-height" type="number" step="1" min="0">
+                        </label>
                     </div>
-                    <div class="info-block">
-                        <strong>PoW Hash</strong>
-                        <hash head-pow-hash></hash>
+                    <div block-info>
+                        <div class="info-block">
+                            <strong>Hash</strong>
+                            <hash block-hash></hash>
+                        </div>
+                        <div class="info-block">
+                            <strong>PoW Hash</strong>
+                            <hash block-pow-hash></hash>
+                        </div>
+                        <div class="info-block">
+                            <strong>Prev Hash</strong>
+                            <hash block-prev-hash></hash>
+                        </div>
+                        <div class="info-block">
+                            <strong>Accounts Hash</strong>
+                            <hash block-accounts-hash></hash>
+                        </div>
+                        <div class="info-block">
+                            <strong>Difficulty</strong>
+                            <span block-difficulty></span>
+                        </div>
+                        <div class="info-block">
+                            <strong>Timestamp</strong>
+                            <span block-timestamp></span>
+                        </div>
+                        <div class="info-block">
+                            <strong>Nonce</strong>
+                            <span block-nonce></span>
+                        </div>
+                        <div class="info-block">
+                            <strong>Interlink</strong>
+                            <span block-interlink></span>
+                        </div>
                     </div>
-                    <div class="info-block">
-                        <strong>Prev Hash</strong>
-                        <hash head-prev-hash></hash>
-                    </div>
-                    <div class="info-block">
-                        <strong>Accounts Hash</strong>
-                        <hash head-accounts-hash></hash>
-                    </div>
-                    <div class="info-block">
-                        <strong>Difficulty</strong>
-                        <span head-difficulty></span>
-                    </div>
-                    <div class="info-block">
-                        <strong>Timestamp</strong>
-                        <span head-timestamp></span>
-                    </div>
-                    <div class="info-block">
-                        <strong>Nonce</strong>
-                        <span head-nonce></span>
-                    </div>
-                    <div class="info-block">
-                        <strong>Interlink</strong>
-                        <span head-interlink></span>
-                    </div>
+                    <strong block-not-found style="display:none" class="info-block">
+                        Block not available.
+                    </strong>
                     <hr/>
                 </div>
             </div>
