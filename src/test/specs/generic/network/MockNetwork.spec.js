@@ -2,7 +2,6 @@ class MockPhy {
     /**
      * @constructor
      * @param {MockWebSocket} channel
-     * @returns {void}
      */
     constructor(channel) {
         this._channel = channel;
@@ -20,11 +19,9 @@ class MockPhy {
 }
 
 class MockWebSocket extends Observable {
-
     /**
      * @constructor
      * @param {string} address
-     * @returns {MockWebSocket}
      */
     constructor(address) {
         super();
@@ -58,11 +55,9 @@ class MockWebSocket extends Observable {
 }
 
 class MockWebSocketServer extends Observable {
-
     /**
      * @constructor
      * @param {string} address
-     * @returns {MockWebSocketServer}
      */
     constructor(address) {
         super();
@@ -88,7 +83,7 @@ class MockNetwork {
             server.mockWebSocket.link(client);
             client.link(server.mockWebSocket);
 
-            setTimeout(function () {
+            setTimeout(() => {
                 server.fire('connection', server.mockWebSocket);
                 client.onopen();
             }, 0);
@@ -107,14 +102,14 @@ class MockNetwork {
         MockNetwork._delay = delay;
         MockNetwork._lossrate = lossrate;
 
-        spyOn(WebSocketFactory, 'newWebSocketServer').and.callFake(function (netconfig) {
+        spyOn(WebSocketFactory, 'newWebSocketServer').and.callFake((netconfig) => {
             const peerAddress = netconfig.peerAddress;
             const server = new MockWebSocketServer(peerAddress.host);
             MockNetwork._servers.set(`wss://${peerAddress.host}:${peerAddress.port}`, server);
             return server;
         });
 
-        spyOn(WebSocketFactory, 'newWebSocket').and.callFake(function (url) {
+        spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url) => {
             // XXX can this be done more elegantly?
             const address = url.split(/:\/*/)[1];
 
