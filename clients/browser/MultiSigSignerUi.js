@@ -42,9 +42,9 @@ class MultiSigSignerUi {
 
     set address(address) {
         this._address = address;
-        this.$.walletStore.getMultiSig(address).then(wallet => {
-            this._updateNumberOfSigners(wallet.minSignatures);
-        }).catch(); // if we don't have this wallet, just ignore
+        this.$.walletStore.getMultiSig(address)
+            .then(wallet => this._prefillSigners(wallet))
+            .catch(); // if we don't have this wallet, just ignore
     }
 
     _updateNumberOfSigners(number) {
@@ -62,5 +62,27 @@ class MultiSigSignerUi {
             this._signerAccountSelectors.splice(-1, 1); // remove last entry
             this.$signerAccountSelectors.removeChild(this.$signerAccountSelectors.lastElementChild);
         }
+    }
+
+    _prefillSigners(multiSigWallet) {
+        this._updateNumberOfSigners(multiSigWallet.minSignatures);
+        // find a combination of signers that is able to sign the multi sig
+        this.$.walletStore.list().then(walletAddresses => {
+            const walletPromises = walletAddresses.map(address => this.$.walletStore.get(address));
+            return Promise.all(walletPromises);
+        }).then(wallets => {
+            const publicKeys = wallets.map(wallet => wallet.keyPair.publicKey);
+            const combinations = [...Nimiq.ArrayUtils.k_combinations(publicKeys, multiSigWallet.minSignatures)];
+            const validCombination = combinations.find(combination => {
+                const aggregatedPublicKey = Nimiq.PublicKey.sum(combination);
+                return multiSigWallet.publicKeys.some(multiSigKey => multiSigKey.equals(aggregatedPublicKey));
+            });
+            if (!validCombination) return;
+            for (let i=0; i<validCombination.length; ++i) {
+                const signerPublicKey = validCombination[i];
+                const signerAddress = signerPublicKey.toAddress();
+                this._signerAccountSelectors[i].selectedAddress = signerAddress;
+            }
+        });
     }
 }

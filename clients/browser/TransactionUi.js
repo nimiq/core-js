@@ -130,7 +130,13 @@ class TransactionUi extends Nimiq.Observable {
 
     _readTransactionCanonicals() {
         let value = Utils.readNumber(this.$value);
-        let fee = Utils.readNumber(this.$fee);
+        let fee;
+        if (this.$fee.value === '') {
+            fee = 0;
+            this.$fee.classList.remove('error');
+        } else {
+            fee = Utils.readNumber(this.$fee);
+        }
         let validityStart;
         if (this.$validityStart.value === '') {
             validityStart = this._getDefaultValidityStart();
