@@ -231,7 +231,7 @@ class Network extends Observable {
      * @listens PeerChannel#ban
      * @listens NetworkAgent#handshake
      * @listens NetworkAgent#close
-     * @param {PeerConnection} conn
+     * @param {NetworkConnection} conn
      * @returns {void}
      * @private
      */

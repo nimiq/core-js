@@ -1,7 +1,7 @@
 class PeerChannel extends Observable {
     /**
-     * @listens PeerConnection#message
-     * @param {PeerConnection} connection
+     * @listens NetworkConnection#message
+     * @param {NetworkConnection} connection
      */
     constructor(connection) {
         super();
@@ -367,7 +367,7 @@ class PeerChannel extends Observable {
         return `PeerChannel{conn=${this._conn}}`;
     }
 
-    /** @type {PeerConnection} */
+    /** @type {NetworkConnection} */
     get connection() {
         return this._conn;
     }

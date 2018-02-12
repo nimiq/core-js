@@ -261,7 +261,7 @@ class PeerConnector extends Observable {
             Log.w(PeerConnector, 'No ICE candidate seen for inbound connection');
         }
 
-        const conn = new PeerConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
+        const conn = new NetworkConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
         this.fire('connection', conn);
     }
 
