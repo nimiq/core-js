@@ -1,4 +1,4 @@
-class PeerConnection extends Observable {
+class NetworkConnection extends Observable {
     /**
      * @param {DataChannel} channel
      * @param {number} protocol
@@ -31,7 +31,7 @@ class PeerConnection extends Observable {
 
         // Unique id for this connection.
         /** @type {number} */
-        this._id = PeerConnection._instanceCount++;
+        this._id = NetworkConnection._instanceCount++;
 
         this._channel.on('message', msg => this._onMessage(msg));
         this._channel.on('close', () => this._onClose());
@@ -107,14 +107,14 @@ class PeerConnection extends Observable {
 
         // Fire close event (early) if channel is closing/closed.
         if (this._isChannelClosing() || this._isChannelClosed()) {
-            Log.w(PeerConnection, `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
+            Log.w(NetworkConnection, `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
             this._onClose();
             return false;
         }
 
         // Don't attempt to send if channel is not (yet) open.
         if (!this._isChannelOpen()) {
-            Log.w(PeerConnection, `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
+            Log.w(NetworkConnection, `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
             return false;
         }
 
@@ -123,7 +123,7 @@ class PeerConnection extends Observable {
             this._bytesSent += msg.byteLength || msg.length;
             return true;
         } catch (e) {
-            Log.e(PeerConnection, `Failed to send data to ${logAddress}: ${e.message || e}`);
+            Log.e(NetworkConnection, `Failed to send data to ${logAddress}: ${e.message || e}`);
             return false;
         }
     }
@@ -151,7 +151,7 @@ class PeerConnection extends Observable {
      */
     close(reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
-        Log.d(PeerConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
     }
 
@@ -159,7 +159,7 @@ class PeerConnection extends Observable {
      * @param {string} [reason]
      */
     ban(reason) {
-        Log.w(PeerConnection, `Banning peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        Log.w(NetworkConnection, `Banning peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
         this.fire('ban', reason, this);
     }
@@ -168,17 +168,17 @@ class PeerConnection extends Observable {
      * @param {string} [reason]
      */
     fail(reason) {
-        Log.w(PeerConnection, `Network failure on peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        Log.w(NetworkConnection, `Network failure on peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
         this._close();
         this.fire('fail', reason, this);
     }
 
     /**
-     * @param {PeerConnection} o
+     * @param {NetworkConnection} o
      * @return {boolean}
      */
     equals(o) {
-        return o instanceof PeerConnection
+        return o instanceof NetworkConnection
             && this._id === o.id;
     }
 
@@ -193,7 +193,7 @@ class PeerConnection extends Observable {
      * @return {string}
      */
     toString() {
-        return `PeerConnection{id=${this._id}, protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
+        return `NetworkConnection{id=${this._id}, protocol=${this._protocol}, peerAddress=${this._peerAddress}, netAddress=${this._netAddress}}`;
     }
 
     /** @type {number} */
@@ -251,6 +251,6 @@ class PeerConnection extends Observable {
         return this._closed;
     }
 }
-// Used to generate unique PeerConnection ids.
-PeerConnection._instanceCount = 0;
-Class.register(PeerConnection);
+// Used to generate unique NetworkConnection ids.
+NetworkConnection._instanceCount = 0;
+Class.register(NetworkConnection);

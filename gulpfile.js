@@ -165,7 +165,7 @@ const sources = {
         './src/main/generic/network/Network.js',
         './src/main/generic/network/NetUtils.js',
         './src/main/generic/network/PeerChannel.js',
-        './src/main/generic/network/PeerConnection.js',
+        './src/main/generic/network/NetworkConnection.js',
         './src/main/generic/network/PeerKeyStore.js',
         './src/main/generic/network/Peer.js',
         './src/main/generic/miner/Miner.js',

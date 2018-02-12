@@ -41,7 +41,7 @@ class WebSocketConnector extends Observable {
 
             // There is no way to determine the remote IP in the browser ... thanks for nothing, WebSocket API.
             const netAddress = (ws._socket && ws._socket.remoteAddress) ? NetAddress.fromIP(ws._socket.remoteAddress) : null;
-            const conn = new PeerConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, peerAddress);
+            const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {
@@ -85,7 +85,7 @@ class WebSocketConnector extends Observable {
      */
     _onConnection(ws) {
         const netAddress = NetAddress.fromIP(ws._socket.remoteAddress);
-        const conn = new PeerConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
+        const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
 
         /**
         * Tell listeners that an initial connection to a peer has been established.
