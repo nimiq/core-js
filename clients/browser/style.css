@@ -206,8 +206,11 @@ hash {
 
 .input-group strong {
     display: inline-block;
-    width: 100px;
-    padding-right: 8px;
+}
+
+input:not(:first-child),
+select:not(:first-child) {
+    margin-left: 8px;
 }
 
 .input-group-button {
@@ -358,6 +361,11 @@ hash {
     text-decoration: underline;
 }
 
+/* Block UI */
+
+[blockchain-ui] [block-height-input] {
+    width: 70px;
+}
 
 /* Account Info UI */
 
@@ -397,6 +405,10 @@ hash {
 
 [transaction-ui] select {
     display: block;
+}
+
+[transaction-ui] .input-group strong {
+    width: 100px;
 }
 
 [transaction-ui] [show] {
