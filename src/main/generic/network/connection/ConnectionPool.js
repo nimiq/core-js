@@ -9,26 +9,40 @@ class ConnectionPool extends Observable {
         super();
 
         /**
-         * Set of PeerAddressStates of all peerAddresses we know.
-         * @type {HashSet.<PeerAddressState>}
-         * @private
-         */
-        this._store = new HashSet();
-
-        /**
-         * Map from peerIds to RTC peerAddresses.
-         * @type {HashMap.<PeerId,PeerAddressState>}
-         * @private
-         */
-        this._peerIds = new HashMap();
-
-        /**
          * @type {NetworkConfig}
          * @private
          */
         this._networkConfig = netconfig;
 
-        // Number of WebSocket/WebRTC peers.
+        /**
+         * Map of all PeerConnections active.
+         * @type {Map.<number, PeerConnection>}
+         * @private
+         */
+        this._store = new Map();
+
+        /**
+         * Map from peerIds to RTC connections.
+         * @type {HashMap.<PeerId, PeerConnection>}
+         * @private
+         */
+        this._peerIdStore = new HashMap();
+
+        /**
+         * Map from peerAddresses to connections.
+         * @type {HashMap.<PeerAddress, PeerConnection>}
+         * @private
+         */
+        this._peerAddressStore = new HashMap();
+
+        /**
+         * Map from netAddresses to connections.
+         * @type {HashMap.<NetAddress, PeerConnection>}
+         * @private
+         */
+        this._netAddressStore = new HashMap();
+
+        // Number of WebSocket/WebRTC connections.
         /** @type {number} */
         this._peerCountWs = 0;
         /** @type {number} */
@@ -43,115 +57,8 @@ class ConnectionPool extends Observable {
          */
         this._connectingCount = 0;
 
-        // Init seed peers.
-        this.add(/*channel*/ null, ConnectionPool.SEED_PEERS);
-
         // Setup housekeeping interval.
         setInterval(() => this._housekeeping(), ConnectionPool.HOUSEKEEPING_INTERVAL);
-    }
-
-    /**
-     * @returns {?PeerAddress}
-     */
-    pickAddress() {
-        const addresses = this._store.values();
-        const numAddresses = addresses.length;
-
-        // Pick a random start index.
-        const index = Math.floor(Math.random() * numAddresses);
-
-        // Score up to 1000 addresses starting from the start index and pick the
-        // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 1000);
-        const candidates = new HashMap();
-        for (let i = 0; i < numAddresses; i++) {
-            const idx = (index + i) % numAddresses;
-            const address = addresses[idx];
-            const score = this._scoreAddress(address);
-            if (score >= 0) {
-                candidates.put(score, address);
-                if (candidates.length >= minCandidates) {
-                    break;
-                }
-            }
-        }
-
-        if (candidates.length === 0) {
-            return null;
-        }
-
-        // Return the candidate with the highest score.
-        const scores = candidates.keys().sort((a, b) => b - a);
-        const winner = candidates.get(scores[0]);
-        return winner.peerAddress;
-    }
-
-    /**
-     * @param {PeerAddressState} peerAddressState
-     * @returns {number}
-     * @private
-     */
-    _scoreAddress(peerAddressState) {
-        const peerAddress = peerAddressState.peerAddress;
-
-        // Filter addresses that we cannot connect to.
-        if (!this._networkConfig.canConnect(peerAddress.protocol)) {
-            return -1;
-        }
-
-        // Filter addresses that are too old.
-        if (this._exceedsAge(peerAddress)) {
-            return -1;
-        }
-
-        const score = this._scoreProtocol(peerAddress)
-            * ((peerAddress.timestamp / 1000) + 1);
-
-        switch (peerAddressState.state) {
-            case PeerAddressState.CONNECTING:
-            case PeerAddressState.CONNECTED:
-            case PeerAddressState.BANNED:
-                return -1;
-
-            case PeerAddressState.NEW:
-            case PeerAddressState.TRIED:
-                return score;
-
-            case PeerAddressState.FAILED:
-                // Don't pick failed addresses when they have failed the maximum number of times.
-                return (1 - ((peerAddressState.failedAttempts + 1) / peerAddressState.maxFailedAttempts)) * score;
-
-            default:
-                return -1;
-        }
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {number}
-     * @private
-     */
-    _scoreProtocol(peerAddress) {
-        let score = 1;
-
-        // We want at least two websocket connection
-        if (this._peerCountWs < 2) {
-            score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
-        } else {
-            score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
-        }
-
-        // Prefer WebRTC addresses with lower distance:
-        //  distance = 0: self
-        //  distance = 1: direct connection
-        //  distance = 2: 1 hop
-        //  ...
-        // We only expect distance >= 2 here.
-        if (peerAddress.protocol === Protocol.RTC) {
-            score *= 1 + ((ConnectionPool.MAX_DISTANCE - peerAddress.distance) / 2);
-        }
-
-        return score;
     }
 
     /** @type {number} */
@@ -160,36 +67,35 @@ class ConnectionPool extends Observable {
     }
 
     /**
-     * @param {PeerAddress} peerAddress
-     * @returns {?PeerAddressState}
-     * @private
+     * @param {number} id
+     * @returns {PeerConnection|null}
      */
-    _get(peerAddress) {
-        if (peerAddress instanceof WsPeerAddress) {
-            const localPeerAddress = this._store.get(peerAddress.withoutId());
-            if (localPeerAddress) return localPeerAddress;
-        }
+    get(id) {
         return this._store.get(peerAddress);
     }
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {PeerAddress|null}
+     * @returns {PeerConnection|null}
      */
-    get(peerAddress) {
-        /** @type {PeerAddressState} */
-        const peerAddressState = this._get(peerAddress);
-        return peerAddressState ? peerAddressState.peerAddress : null;
+    getByPeerAddress(peerAddress) {
+        return this._peerAddressStore.get(peerAddress);
     }
 
     /**
      * @param {PeerId} peerId
-     * @returns {PeerAddress|null}
-     */
+     * @returns {PeerConnection|null}
+    */
     getByPeerId(peerId) {
-        /** @type {PeerAddressState} */
-        const peerAddressState = this._peerIds.get(peerId);
-        return peerAddressState ? peerAddressState.peerAddress : null;
+        return this._peerIdStore.get(peerId);
+    }
+
+    /**
+     * @param {NetAddress} netAddress
+     * @returns {PeerConnection|null}
+    */
+    getByNetAddress(netAddress) {
+        return this._netAddressStore.get(netAddress);
     }
 
     /**
@@ -197,7 +103,7 @@ class ConnectionPool extends Observable {
      * @returns {PeerChannel}
      */
     getChannelByPeerId(peerId) {
-        const peerAddressState = this._peerIds.get(peerId);
+        const peerAddressState = this._peerIdStore.get(peerId);
         if (peerAddressState && peerAddressState.bestRoute) {
             return peerAddressState.bestRoute.signalChannel;
         }
@@ -353,7 +259,8 @@ class ConnectionPool extends Observable {
             this._store.add(peerAddressState);
             if (peerAddress.protocol === Protocol.RTC) {
                 // Index by peerId.
-                this._peerIds.put(peerAddress.peerId, peerAddressState);
+                this._peerIdS
+    tore.put(peerAddress.peerId, peerAddressState);
             }
         }
 
@@ -407,7 +314,8 @@ class ConnectionPool extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
 
             if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIds.put(peerAddress.peerId, peerAddressState);
+                this._peerIdS
+    tore.put(peerAddress.peerId, peerAddressState);
             }
 
             this._store.add(peerAddressState);
@@ -607,7 +515,8 @@ class ConnectionPool extends Observable {
 
         // Delete from peerId index.
         if (peerAddress.protocol === Protocol.RTC) {
-            this._peerIds.remove(peerAddress.peerId);
+            this._peerIdS
+tore.remove(peerAddress.peerId);
         }
 
         if (peerAddressState.state === PeerAddressState.CONNECTING) {
