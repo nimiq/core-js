@@ -148,8 +148,7 @@ class BaseChain extends IBlockchain {
         const blocks = [];
 
         // Include head if it is at the requested depth or below.
-        const headPow = await head.pow();
-        const headDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(headPow));
+        const headDepth = BlockUtils.getHashDepth(await head.pow());
         if (headDepth >= depth) {
             blocks.push(head.toLight());
         }
@@ -273,8 +272,7 @@ class BaseChain extends IBlockchain {
         const chains = (await proof.getSuperChains()).slice();
 
         // Append new prefix head to chains.
-        const target = BlockUtils.hashToTarget(await prefixHead.pow());
-        const depth = BlockUtils.getTargetDepth(target);
+        const depth = BlockUtils.getHashDepth(await prefixHead.pow());
         for (let i = depth; i >= 0; i--) {
             // Append block. Don't modify the chain, create a copy.
             if (!chains[i]) {
@@ -305,8 +303,8 @@ class BaseChain extends IBlockchain {
                     let numBlocksToDelete = 0;
                     let candidateBlock = chains[j].blocks[numBlocksToDelete];
                     while (candidateBlock.height <= referenceBlock.height) {
-                        const candidateTarget = BlockUtils.hashToTarget(await candidateBlock.pow());
-                        const candidateDepth = BlockUtils.getTargetDepth(candidateTarget);
+                        // eslint-disable-next-line no-await-in-loop
+                        const candidateDepth = BlockUtils.getHashDepth(await candidateBlock.pow());
                         if (candidateDepth === j && candidateBlock.height > 1) {
                             deletedBlockHeights.add(candidateBlock.height);
                         }
@@ -394,8 +392,7 @@ class BaseChain extends IBlockchain {
                 continue;
             }
 
-            const target = BlockUtils.hashToTarget(await block.pow()); // eslint-disable-line no-await-in-loop
-            const depth = BlockUtils.getTargetDepth(target);
+            const depth = BlockUtils.getHashDepth(await block.pow()); // eslint-disable-line no-await-in-loop
             counts[depth] = counts[depth] ? counts[depth] + 1 : 1;
         }
 

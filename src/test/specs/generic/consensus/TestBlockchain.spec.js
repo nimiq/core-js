@@ -255,7 +255,7 @@ class TestBlockchain extends FullChain {
         const share = await new Promise((resolve, error) => {
             const temp = function (share) {
                 if (share.block.header.equals(block.header)) {
-                    const shareLevel = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(share.hash)) - targetLevel;
+                    const shareLevel = BlockUtils.getHashDepth(share.hash) - targetLevel;
                     if (!mineSuperblock || shareLevel === superblockLevel) {
                         TestBlockchain._miningPool.off('share', temp.id);
                         resolve(share);

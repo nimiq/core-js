@@ -98,6 +98,14 @@ class BlockUtils {
 
     /**
      * @param {Hash} hash
+     * @returns {number}
+     */
+    static getHashDepth(hash) {
+        return BlockUtils.getTargetDepth(BlockUtils.hashToTarget(hash));
+    }
+
+    /**
+     * @param {Hash} hash
      * @param {number} target
      * @returns {boolean}
      */

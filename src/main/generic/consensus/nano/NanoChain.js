@@ -18,8 +18,7 @@ class NanoChain extends BaseChain {
     }
 
     async _init() {
-        const genesisBlock = GenesisConfig.GENESIS_BLOCK;
-        this._mainChain = new ChainData(genesisBlock, genesisBlock.difficulty, BlockUtils.realDifficulty(await genesisBlock.pow()), true);
+        this._mainChain = await ChainData.initial(GenesisConfig.GENESIS_BLOCK);
         await this._store.putChainData(GenesisConfig.GENESIS_HASH, this._mainChain);
 
         return this;
@@ -154,17 +153,21 @@ class NanoChain extends BaseChain {
 
             // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
+            let superBlockCounts = new SuperBlockCounts();
             for (let i = 0; i < proof.prefix.length - denseSuffix.length; i++) {
                 const block = proof.prefix.blocks[i];
                 const hash = block.hash();
-                const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, true);
+                const depth = BlockUtils.getHashDepth(await block.pow());
+                superBlockCounts = superBlockCounts.copyAndAdd(depth);
+
+                const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, superBlockCounts, true);
                 await this._store.putChainData(hash, data);
             }
 
             // Set the tail end of the dense suffix of the prefix as the new chain head.
             const tailEnd = denseSuffix[0];
             this._headHash = tailEnd.hash();
-            this._mainChain = new ChainData(tailEnd, tailEnd.difficulty, BlockUtils.realDifficulty(await tailEnd.pow()), true);
+            this._mainChain = await ChainData.initial(tailEnd, superBlockCounts);
             await this._store.putChainData(this._headHash, this._mainChain);
 
             // Only in the dense suffix of the prefix we can calculate the difficulties.
@@ -282,9 +285,7 @@ class NanoChain extends BaseChain {
      */
     async _pushBlockInternal(block, blockHash, prevData) {
         // Block looks good, create ChainData.
-        const totalDifficulty = prevData.totalDifficulty + block.difficulty;
-        const totalWork = prevData.totalWork + BlockUtils.realDifficulty(await block.pow());
-        const chainData = new ChainData(block, totalDifficulty, totalWork);
+        const chainData = await prevData.nextChainData(block);
 
         // Check if the block extends our current main chain.
         if (block.prevHash.equals(this.headHash)) {
@@ -311,7 +312,7 @@ class NanoChain extends BaseChain {
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
-        if (totalDifficulty > this._mainChain.totalDifficulty) {
+        if (chainData.totalDifficulty > this._mainChain.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
 

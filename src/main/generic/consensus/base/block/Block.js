@@ -317,8 +317,7 @@ class Block {
      */
     async getNextInterlink(nextTarget, nextVersion = BlockHeader.CURRENT_VERSION) {
         // Compute the depth of this block relative to the next target.
-        const pow = await this.pow();
-        const thisPowDepth = BlockUtils.getTargetDepth(BlockUtils.hashToTarget(pow));
+        const thisPowDepth = BlockUtils.getHashDepth(await this.pow());
         const nextTargetDepth = BlockUtils.getTargetDepth(nextTarget);
         let depth = thisPowDepth - nextTargetDepth;
 
