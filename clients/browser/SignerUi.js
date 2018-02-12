@@ -49,7 +49,6 @@ class SignerUi {
 
     /** @async */
     getSigner() {
-        // TODO enforced signer type
         switch (this._signerType) {
             case SignerUi.SignerType.SINGLE_SIG:
                 return new SingleSigSigner(this.$, this._signerAddress);

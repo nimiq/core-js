@@ -35,8 +35,8 @@ class TransactionUi extends Nimiq.Observable {
         this.$htlcTimeout = this.$el.querySelector('[tx-htlc-timeout]');
 
         this.$contractAddress = this.$el.querySelector('[contract-address]');
-        this.$sendButton = this.$el.querySelector('[tx-send]');
         this.$generateButton = this.$el.querySelector('[tx-generate]');
+        this.$sendButton = this.$el.querySelector('[tx-send]');
         this.$clearButton = this.$el.querySelector('[tx-clear]');
 
         $.consensus.on('established', () => this.$sendButton.removeAttribute('disabled'));
@@ -84,7 +84,7 @@ class TransactionUi extends Nimiq.Observable {
     _onGenerateTransactionClick(e) {
         if (e) e.preventDefault();
 
-        this._generateSignedTransaction().then(tx => {
+        this._generateSignedTransaction(false).then(tx => {
             this.$typeSelector.value = TransactionUi.TxType.PLAIN;
             this._onTransactionTypeSelected();
             this.$plainSender.value = tx.sender.toUserFriendlyAddress();
@@ -104,7 +104,7 @@ class TransactionUi extends Nimiq.Observable {
         e.preventDefault();
 
         let transaction;
-        this._generateSignedTransaction().then(tx => {
+        this._generateSignedTransaction(true).then(tx => {
             transaction = tx;
             return Utils.broadcastTransaction(this.$, transaction);
         }).then(() => {
@@ -153,10 +153,12 @@ class TransactionUi extends Nimiq.Observable {
     }
 
     /* async */
-    _generateSignedTransaction() {
-        if (this._transactionType === TransactionUi.TxType.PLAIN) {
-            // for plain transactions the user has to provide the signature proof
-            return Promise.resolve(this._generatePlainExtendedTransaction());
+    _generateSignedTransaction(useUserProvidedPlainProof) {
+        if (this._transactionType === TransactionUi.TxType.PLAIN && useUserProvidedPlainProof) {
+            // for plain transactions the user can provide the signature proof
+            const tx = this._generatePlainExtendedTransaction();
+            if (!tx) throw Error('Failed to generate transaction.');
+            return Promise.resolve(tx);
         } else {
             return this._senderUi.getSigner().then(sender => {
                 if (!sender) throw Error('Failed to retrieve sender.');
@@ -208,18 +210,18 @@ class TransactionUi extends Nimiq.Observable {
 
     _generatePlainExtendedTransaction() {
         const canonicals = this._readTransactionCanonicals();
-        const sender = Utils.readAddress(this.$plainSender);
+        const senderAddress = Utils.readAddress(this.$plainSender);
         const senderType = Utils.readNumber(this.$plainSenderType);
         const recipient = Utils.readAddress(this.$recipient);
         const recipientType = Utils.readNumber(this.$recipientType);
         const flags = Utils.readNumber(this.$plainFlags);
         const data = Utils.readBase64(this.$plainData);
         const proof = Utils.readBase64(this.$plainProof);
-        if (canonicals === null || sender === null || senderType === null || recipient === null ||
+        if (canonicals === null || senderAddress === null || senderType === null || recipient === null ||
             recipientType === null || flags === null || data === null || proof === null) {
             return null;
         }
-        return new Nimiq.ExtendedTransaction(sender, senderType, recipient, recipientType,
+        return new Nimiq.ExtendedTransaction(senderAddress, senderType, recipient, recipientType,
             canonicals.value, canonicals.fee, canonicals.validityStart, flags, data, proof);
     }
 

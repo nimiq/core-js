@@ -1,12 +1,11 @@
 /* abstract */
 class Signer {
     /** @async */
-    constructor($, address, enforcedType = null) {
+    constructor($, address) {
         this.$ = $;
         this._address = address;
-        this._enforcedType = enforcedType;
         return Utils.getAccount($, address).then(account => {
-            if (account.type !== this.realType) throw Error('Account type does not match address.');
+            if (account.type !== this.type) throw Error('Account type does not match address.');
             this._account = account;
             return this;
         });
@@ -17,10 +16,6 @@ class Signer {
     }
 
     get type() {
-        return this._enforcedType || this.realType;
-    }
-
-    get realType() {
         throw Error('Abstract Class');
     }
 
@@ -31,9 +26,9 @@ class Signer {
 
 class SingleSigSigner extends Signer {
     /** @async */
-    constructor($, address, enforcedType = null) {
+    constructor($, address) {
         let _this;
-        return super($, address, enforcedType)
+        return super($, address)
             .then(instance => {
                 _this = instance;
                 return $.walletStore.get(_this._address);
@@ -44,7 +39,7 @@ class SingleSigSigner extends Signer {
             });
     }
 
-    get realType() {
+    get type() {
         return Nimiq.Account.Type.BASIC;
     }
 
@@ -65,9 +60,9 @@ class SingleSigSigner extends Signer {
 
 class MultiSigSigner extends Signer {
     /** @async */
-    constructor($, address, signingAddresses, enforcedType = null) {
+    constructor($, address, signingAddresses) {
         let _this;
-        return super($, address, enforcedType)
+        return super($, address)
             .then(instance => {
                 _this = instance;
                 return Promise.all([
@@ -87,7 +82,7 @@ class MultiSigSigner extends Signer {
             });
     }
 
-    get realType() {
+    get type() {
         return Nimiq.Account.Type.BASIC;
     }
 
@@ -114,9 +109,9 @@ class MultiSigSigner extends Signer {
 
 class VestingSigner extends Signer {
     /** @async */
-    constructor($, address, vestingOwnerSigner = null, enforcedType = null) {
+    constructor($, address, vestingOwnerSigner = null) {
         let _this;
-        return super($, address, enforcedType).then(instance => {
+        return super($, address).then(instance => {
             _this = instance;
             if (vestingOwnerSigner === null) {
                 return new SingleSigSigner($, _this._account.owner).then(signer => {
@@ -130,7 +125,7 @@ class VestingSigner extends Signer {
         });
     }
 
-    get realType() {
+    get type() {
         return Nimiq.Account.Type.VESTING;
     }
 
@@ -143,10 +138,9 @@ class HtlcSigner extends Signer {
     /** @async */
     constructor($, address, proofType = Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER,
                 proofHashAlgorithm = Nimiq.Hash.Algorithm.BLAKE2B, proofHashPreImage = '',
-                proofHashDepth = 0, proofHashCount = 0, htlcSenderSigner = null, htlcRecipientSigner = null,
-                enforcedType = null) {
+                proofHashDepth = 0, proofHashCount = 0, htlcSenderSigner = null, htlcRecipientSigner = null) {
         let _this;
-        return super($, address, enforcedType).then(instance => {
+        return super($, address).then(instance => {
             _this = instance;
             _this._proofType = proofType;
             _this._proofHashAlgorithm = proofHashAlgorithm;
@@ -160,7 +154,7 @@ class HtlcSigner extends Signer {
         });
     }
 
-    get realType() {
+    get type() {
         return Nimiq.Account.Type.HTLC;
     }
 
