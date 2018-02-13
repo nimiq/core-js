@@ -1,5 +1,25 @@
 class PeerConnection extends Observable {
     /**
+     * @param {PeerAddress} peerAddress
+     * @returns {PeerConnection}
+     */
+    static getOutbound(peerAddress) {
+        const peerConnection = new PeerConnection();
+        peerConnection._peerAddress = peerAddress;
+        return peerConnection;
+    }
+
+    /**
+     * @param {NetworkConnection} networkConnection
+     * @returns {PeerConnection}
+     */
+    static getInbound(networkConnection) {
+        const peerConnection = new PeerConnection();
+        peerConnection._networkConnection = networkConnection;
+        return peerConnection;
+    }
+
+    /**
      * @constructor
      */
     constructor() {
@@ -45,8 +65,99 @@ class PeerConnection extends Observable {
          * @type {number}
          * @private
          */
-        this.state = PeerConnectionState.NEW;
+        this._state = PeerConnectionState.NEW;
     }
+
+    /** @type {number} */
+    get state() {
+        return this._state;
+    }
+
+    /** @type {NetworkConnection} */
+    get networkConnection() {
+        return this._networkConnection;
+    }
+
+    /** @param {NetworkConnection} value */
+    set networkConnection(value) {
+        this._networkConnection = value;
+        this._state = PeerConnectionState.CONNECTED;
+    }
+
+    /** @type {PeerChannel} */
+    get peerChannel() {
+        return this._peerChannel;
+    }
+
+    /** @param {PeerChannel} value */
+    set peerChannel(value) {
+        this._peerChannel = value;
+    }
+
+    /** @type {NetworkAgent} */
+    get networkAgent() {
+        return this._networkAgentn;
+    }
+
+    /** @param {NetworkAgent} value */
+    set networkAgent(value) {
+        this._networkAgent = value;
+        this._state = PeerConnectionState.NEGOTIATING;
+    }
+
+    /** @type {Peer} */
+    get peer() {
+        return this._peer;
+    }
+
+    /** @param {Peer} value */
+    set peer(value) {
+        this._peern = value;
+        this._state = PeerConnectionState.ESTABLISHED;
+    }
+
+    /**
+     * @param {WebSocketConnector|WebRtcConnector} connector
+     * @returns {void}
+     * @private
+     */
+    connectOutbound(connector) {
+        switch (this.peerAddress.protocol) {
+            case Protocol.WS:
+                Log.d(Network, `Connecting to ${this.peerAddress} ...`);
+                if (connector.connect(peerAddress)) {
+                    this._state = PeerConnectionState.CONNECTING;
+                }
+                break;
+
+            case Protocol.RTC: {
+                const signalChannel = this._addresses.getChannelByPeerId(peerAddress.peerId);
+                Log.d(Network, `Connecting to ${this.peerAddress} via ${signalChannel.peerAddress}...`);
+                if (connector.connect(peerAddress, signalChannel)) {
+                    this._state = PeerConnectionState.CONNECTING;
+                }
+                break;
+            }
+
+            default:
+                Log.e(Network, `Cannot connect to ${this.peerAddress} - unsupported protocol`);
+                this._onError(this.peerAddress);
+        }
+    }
+
+    /**
+     * @listens PeerChannel#signal
+     * @listens PeerChannel#ban
+     * @listens NetworkAgent#handshake
+     * @listens NetworkAgent#close
+     * @param {NetworkConnection} conn
+     * @returns {void}
+     * @private
+     */
+    onConnection(conn) {
+    }
+
+
 }
 // Used to generate unique PeerConnection ids.
 PeerConnection._instanceCount = 0;

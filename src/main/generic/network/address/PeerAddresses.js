@@ -173,6 +173,14 @@ class PeerAddresses extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
+     * @returns {?PeerAddressState}
+     */
+    getState(peerAddress) {
+        return this._get(peerAddress);
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
      * @returns {PeerAddress|null}
      */
     get(peerAddress) {
