@@ -159,6 +159,22 @@ class NetUtils {
     }
 
     /**
+     * @param {string} host
+     * @returns {boolean}
+     */
+    static hostGloballyReachable(host) {
+        // IP addresses can't have a proper certificate
+        if (NetUtils.isIPv4Address(host) || NetUtils.isIPv6Address(host)) {
+            return false;
+        }
+        // "the use of dotless domains is prohibited [in new gTLDs]" [ https://www.icann.org/resources/board-material/resolutions-new-gtld-2013-08-13-en#1 ]. Old gTLDs rarely use them.
+        if (!host.match(/.+\..+$/)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * @param {string} ip
      * @return {string}
      */

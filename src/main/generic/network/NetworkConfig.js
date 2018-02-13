@@ -170,6 +170,10 @@ class WsNetworkConfig extends NetworkConfig {
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
             this._host, this._port);
+
+        if (!peerAddress.globallyReachable()) {
+            throw 'PeerAddress not globally reachable.';
+        }
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
     }

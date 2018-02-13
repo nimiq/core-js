@@ -274,6 +274,13 @@ class WsPeerAddress extends PeerAddress {
         return buf;
     }
 
+    /**
+     * @returns {boolean}
+     */
+    globallyReachable() {
+        return NetUtils.hostGloballyReachable(this.host);
+    }
+
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
