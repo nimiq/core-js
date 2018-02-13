@@ -215,18 +215,18 @@ class ConnectionPool extends Observable {
         }
 
         if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
-            Log.e(Network, 'Cannot connect to {$this.peerAddress} - unsupported protocol');
+            Log.e(ConnectionPool, `Cannot connect to ${peerAddress} - unsupported protocol`);
             return false;
         }
 
         if (this._addresses.isBanned(peerAddress)){
-            Log.e(Network, `Connecting to banned address ${peerAddress}`);
+            Log.e(ConnectionPool, `Connecting to banned address ${peerAddress}`);
             return false;
         }
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
         if (peerConnection) {
-            Log.e(Network, `Duplicate connection to ${peerAddress}`);
+            Log.e(ConnectionPool, `Duplicate connection to ${peerAddress}`);
             return false;
         }
 

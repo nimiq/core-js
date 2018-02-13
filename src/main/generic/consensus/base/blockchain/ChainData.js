@@ -31,7 +31,7 @@ class ChainData {
             superBlockCounts = superBlockCounts.copyAndAdd(depth);
         } else {
             superBlockCounts = new SuperBlockCounts();
-            superBlockCounts.add(BlockUtils.getHashDepth(pow));
+            superBlockCounts.add(depth);
         }
 
         return new ChainData(block, block.difficulty, totalWork, superBlockCounts, true);
@@ -183,6 +183,24 @@ class SuperBlockCounts {
     get(depth) {
         Assert.that(NumberUtils.isUint8(depth));
         return this._arr[depth] || 0;
+    }
+
+    /**
+     * @param {number} m
+     * @returns {number}
+     */
+    getCandidateDepth(m) {
+        for (let i = this._arr.length - 1; i >= 0; i--) {
+            if (this._arr[i] >= m) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /** @type {number} */
+    get length() {
+        return this._arr.length;
     }
 
     /** @type {Array.<number>} */

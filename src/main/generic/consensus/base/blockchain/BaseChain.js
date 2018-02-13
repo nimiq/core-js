@@ -110,27 +110,30 @@ class BaseChain extends IBlockchain {
         // B <- C[0]
         let startHeight = 1;
 
-        const head = await this.getBlockAt(Math.max(this.height - k, 1)); // C[-k]
-        const maxDepth = Math.max(BlockUtils.getTargetDepth(head.target) + head.interlink.length - 1, 0); // |C[-k].interlink|
+        /** @type {ChainData} */
+        const headData = await this._store.getChainDataAt(Math.max(this.height - k, 1)); // C[-k]
+        const maxDepth = headData.superBlockCounts.getCandidateDepth(m);
+
         // for mu = |C[-k].interlink| down to 0 do
         for (let depth = maxDepth; depth >= 0; depth--) {
             // alpha = C[:-k]{B:}|^mu
-            const alpha = await this._getSuperChain(depth, head, startHeight); // eslint-disable-line no-await-in-loop
+            /** @type {Array.<ChainData>} */
+            const alpha = await this._getSuperChain(depth, headData, startHeight); // eslint-disable-line no-await-in-loop
 
             // pi = pi (union) alpha
-            prefix = BlockChain.merge(prefix, alpha);
+            prefix = BlockChain.merge(prefix, new BlockChain(alpha.map(data => data.head.toLight())));
 
             // if good_(delta,m)(C, alpha, mu) then
             if (BaseChain._isGoodSuperChain(alpha, depth, m, delta)) {
                 Assert.that(alpha.length >= m, `Good superchain expected to be at least ${m} long`);
-                Log.v(BaseChain, `Found good superchain at depth ${depth} with length ${alpha.length} (#${startHeight} - #${head.height})`);
+                Log.v(BaseChain, `Found good superchain at depth ${depth} with length ${alpha.length} (#${startHeight} - #${headData.head.height})`);
                 // B <- alpha[-m]
-                startHeight = alpha.blocks[alpha.length - m].height;
+                startHeight = alpha[alpha.length - m].head.height;
             }
         }
 
         // X <- C[-k:]
-        const suffix = await this._getHeaderChain(this.height - head.height);
+        const suffix = await this._getHeaderChain(this.height - headData.head.height);
 
         // return piX
         return new ChainProof(prefix, suffix);
@@ -138,58 +141,61 @@ class BaseChain extends IBlockchain {
 
     /**
      * @param {number} depth
-     * @param {Block} [head]
+     * @param {ChainData} headData
      * @param {number} [tailHeight]
-     * @returns {Promise.<BlockChain>}
+     * @returns {Promise.<Array.<ChainData>>}
      * @private
      */
-    async _getSuperChain(depth, head = this.head, tailHeight = 1) {
+    async _getSuperChain(depth, headData, tailHeight = 1) {
         Assert.that(tailHeight >= 1, 'tailHeight must be >= 1');
-        const blocks = [];
+        /** @type {Array.<ChainData>} */
+        const chain = [];
 
         // Include head if it is at the requested depth or below.
-        const headDepth = BlockUtils.getHashDepth(await head.pow());
+        const headDepth = BlockUtils.getHashDepth(await headData.head.pow());
         if (headDepth >= depth) {
-            blocks.push(head.toLight());
+            chain.push(headData);
         }
 
         // Follow the interlink pointers back at the requested depth.
-        let j = Math.max(depth - BlockUtils.getTargetDepth(head.target), -1);
-        while (j < head.interlink.hashes.length && head.height > tailHeight) {
-            const reference = j < 0 ? head.prevHash : head.interlink.hashes[j];
-            head = await this.getBlock(reference); // eslint-disable-line no-await-in-loop
-            if (!head) {
+        /** @type {ChainData} */
+        let chainData = headData;
+        let j = Math.max(depth - BlockUtils.getTargetDepth(chainData.head.target), -1);
+        while (j < chainData.head.interlink.hashes.length && chainData.head.height > tailHeight) {
+            const reference = j < 0 ? chainData.head.prevHash : chainData.head.interlink.hashes[j];
+            chainData = await this._store.getChainData(reference); // eslint-disable-line no-await-in-loop
+            if (!chainData) {
                 // This can happen in the light/nano client if chain superquality is harmed.
                 // Return a best-effort chain in this case.
                 Log.w(BaseChain, `Failed to find block ${reference} while constructing SuperChain at depth ${depth} - returning truncated chain`);
                 break;
             }
-            blocks.push(head.toLight());
+            chain.push(chainData);
 
-            j = Math.max(depth - BlockUtils.getTargetDepth(head.target), -1);
+            j = Math.max(depth - BlockUtils.getTargetDepth(chainData.head.target), -1);
         }
 
-        if ((blocks.length === 0 || blocks[blocks.length - 1].height > 1) && tailHeight === 1) {
-            blocks.push(GenesisConfig.GENESIS_BLOCK.toLight());
+        if ((chain.length === 0 || chain[chain.length - 1].head.height > 1) && tailHeight === 1) {
+            chain.push(await ChainData.initial(GenesisConfig.GENESIS_BLOCK));
         }
 
-        return new BlockChain(blocks.reverse());
+        return chain.reverse();
     }
 
     /**
-     * @param {BlockChain} superchain
+     * @param {Array.<ChainData>} superchain
      * @param {number} depth
      * @param {number} m
      * @param {number} delta
      * @returns {boolean}
      */
     static _isGoodSuperChain(superchain, depth, m, delta) {
-        // TODO multilevel quality
-        return BaseChain._hasSuperQuality(superchain, depth, m, delta);
+        return BaseChain._hasSuperQuality(superchain, depth, m, delta)
+            && BaseChain._hasMultiLevelQuality(superchain, depth, m, delta);
     }
 
     /**
-     * @param {BlockChain} superchain
+     * @param {Array.<ChainData>} superchain
      * @param {number} depth
      * @param {number} m
      * @param {number} delta
@@ -203,9 +209,53 @@ class BaseChain extends IBlockchain {
         }
 
         for (let i = m; i <= superchain.length; i++) {
-            const underlyingLength = superchain.head.height - superchain.blocks[superchain.length - i].height + 1;
+            const underlyingLength = superchain[superchain.length - 1].head.height - superchain[superchain.length - i].head.height + 1;
             if (!BaseChain._isLocallyGood(i, underlyingLength, depth, delta)) {
                 return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     *
+     * @param {Array.<ChainData>} superchain
+     * @param {number} depth
+     * @param {number} k1
+     * @param {number} delta
+     * @returns {boolean}
+     * @private
+     */
+    static _hasMultiLevelQuality(superchain, depth, k1, delta) {
+        if (depth <= 0) {
+            return true;
+        }
+
+        for (let i = 0; i < superchain.length - k1; i++) {
+            const tailData = superchain[i];
+            const headData = superchain[i + k1];
+
+            for (let mu = depth; mu >= 1; mu--) {
+                const upperChainLength = headData.superBlockCounts.get(mu) - tailData.superBlockCounts.get(mu);
+                /*
+                // Original paper badness check:
+                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
+                if (lowerChainLength > Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength) {
+                    Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
+                        + ` with ${upperChainLength}/${Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength}/${lowerChainLength} blocks`);
+                    return false;
+                }
+                */
+
+                // Relaxed badness check:
+                for (let j = mu - 1; j >= 0; j--) {
+                    const lowerChainLength = headData.superBlockCounts.get(j) - tailData.superBlockCounts.get(j);
+                    if (!BaseChain._isLocallyGood(upperChainLength, lowerChainLength, mu - j, delta)) {
+                        Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}/${j}`);
+                        return false;
+                    }
+                }
             }
         }
 
@@ -296,33 +346,36 @@ class BaseChain extends IBlockchain {
                 continue;
             }
 
-            if (BaseChain._isGoodSuperChain(superchain, i, Policy.M, Policy.DELTA)) {
-                // Remove all blocks in lower chains up to (including) superchain[-m].
-                const referenceBlock = superchain.blocks[superchain.length - Policy.M];
-                for (let j = i - 1; j >= 0; j--) {
-                    let numBlocksToDelete = 0;
-                    let candidateBlock = chains[j].blocks[numBlocksToDelete];
-                    while (candidateBlock.height <= referenceBlock.height) {
-                        // eslint-disable-next-line no-await-in-loop
-                        const candidateDepth = BlockUtils.getHashDepth(await candidateBlock.pow());
-                        if (candidateDepth === j && candidateBlock.height > 1) {
-                            deletedBlockHeights.add(candidateBlock.height);
-                        }
-
-                        numBlocksToDelete++;
-                        candidateBlock = chains[j].blocks[numBlocksToDelete];
-                    }
-
-                    if (numBlocksToDelete > 0) {
-                        // Don't modify the chain, create a copy.
-                        chains[j] = new BlockChain(chains[j].blocks.slice(numBlocksToDelete));
-                    }
-                }
-            } else {
+            // XXX Hack: Convert BlockChain to array of pseudo-ChainData for the super quality check.
+            const _superchain = superchain.blocks.map(block => ({ head: block }));
+            if (!BaseChain._hasSuperQuality(_superchain, i, Policy.M, Policy.DELTA)) {
                 Log.w(BaseChain, `Chain quality badness detected at depth ${i}`);
                 // TODO extend superchains at lower levels
                 if (failOnBadness) {
                     return null;
+                }
+                continue;
+            }
+
+            // Remove all blocks in lower chains up to (including) superchain[-m].
+            const referenceBlock = superchain.blocks[superchain.length - Policy.M];
+            for (let j = i - 1; j >= 0; j--) {
+                let numBlocksToDelete = 0;
+                let candidateBlock = chains[j].blocks[numBlocksToDelete];
+                while (candidateBlock.height <= referenceBlock.height) {
+                    // eslint-disable-next-line no-await-in-loop
+                    const candidateDepth = BlockUtils.getHashDepth(await candidateBlock.pow());
+                    if (candidateDepth === j && candidateBlock.height > 1) {
+                        deletedBlockHeights.add(candidateBlock.height);
+                    }
+
+                    numBlocksToDelete++;
+                    candidateBlock = chains[j].blocks[numBlocksToDelete];
+                }
+
+                if (numBlocksToDelete > 0) {
+                    // Don't modify the chain, create a copy.
+                    chains[j] = new BlockChain(chains[j].blocks.slice(numBlocksToDelete));
                 }
             }
         }

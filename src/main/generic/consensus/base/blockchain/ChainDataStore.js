@@ -144,6 +144,18 @@ class ChainDataStore {
     }
 
     /**
+     * @param {number} level
+     * @param {number} [startHeight]
+     * @returns {Promise.<Array.<ChainData>>}
+     */
+    async getSuperChain(level, startHeight = 1) {
+        const chain = await this._store.values(JDB.Query.and(JDB.Query.eq('level', level), JDB.Query.ge('height', startHeight)));
+        return chain
+            .filter(data => data.onMainChain)
+            .sort((a, b) => a.head.height - b.head.height);
+    }
+
+    /**
      * @returns {Promise.<Hash|undefined>}
      */
     async getHead() {

@@ -215,7 +215,6 @@ class FullChain extends BaseChain {
         return true;
     }
 
-
     /**
      * @param {Hash} blockHash
      * @param {ChainData} chainData
@@ -255,9 +254,12 @@ class FullChain extends BaseChain {
         // Update transactions cache.
         this._transactionCache.pushBlock(chainData.head);
 
-        // Update chain proof if we have cached one.
-        if (this._proof) {
+        if (this._shouldExtendChainProof() && this._proof) {
+            // If we want to maintain our proof by extending it and have a cached proof, extend it.
             this._proof = await this._extendChainProof(this._proof, chainData.head.header);
+        } else {
+            // Otherwise, clear the proof and recompute it the next time it is needed.
+            this._proof = null;
         }
 
         // Update head.
@@ -268,6 +270,14 @@ class FullChain extends BaseChain {
         this.fire('head-changed', this.head, /*rebranching*/ false);
 
         return true;
+    }
+
+    /**
+     * @returns {boolean}
+     * @private
+     */
+    _shouldExtendChainProof() {
+        return false;
     }
 
     /**

@@ -125,9 +125,13 @@ class ChainProof {
                 for (let j = depth - 1; j >= 0; j--) {
                     if (this._chains[j]) {
                         this._chains[j].blocks.push(block);
-                    } else {
-                        this._chains[j] = new BlockChain([]);
                     }
+                }
+            }
+
+            for (let i = 0; i < this._chains.length; i++) {
+                if (!this._chains[i]) {
+                    this._chains[i] = new BlockChain([]);
                 }
             }
         }

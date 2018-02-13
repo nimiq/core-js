@@ -196,7 +196,14 @@ class NanoConsensus extends Observable {
      * @param {Hash} [blockHash]
      * @returns {Promise.<Array<Transaction>>}
      */
-    async getTransactionsProof(addresses, blockHash=null) {
+    async getTransactionsProof(addresses, blockHash = null) {
+        if (!Array.isArray(addresses) || addresses.some(it => !(it instanceof Address))) {
+            throw new Error('Malformed addresses');
+        }
+        if (addresses.length === 0) {
+            return [];
+        }
+
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
         const agents = this._agents.values().filter(agent =>
             agent.synced

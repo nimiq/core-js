@@ -5,7 +5,9 @@ class Assert {
      * @returns {void}
      */
     static that(condition, message = 'Assertion failed') {
-        if (!condition) throw new Error(message);
+        if (!condition) {
+            throw new Error(message);
+        }
     }
 }
 Class.register(Assert);

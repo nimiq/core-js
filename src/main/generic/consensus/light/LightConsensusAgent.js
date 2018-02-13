@@ -34,6 +34,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Flag to track chain proof requests.
         this._requestedChainProof = false;
 
+        // Number of weak proofs we have received from the peer.
+        this._numWeakProofs = 0;
+
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
@@ -44,7 +47,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @override
      */
     async syncBlockchain() {
-        // We only sync with other full nodes.
+        // We don't sync with nano nodes.
         if (Services.isNanoNode(this._peer.peerAddress.services)) {
             this._syncFinished();
             return;
@@ -99,17 +102,18 @@ class LightConsensusAgent extends FullConsensusAgent {
             let header;
             try {
                 header = await this.getHeader(this._syncTarget);
-            } catch(err) {
+            } catch (e) {
                 this._peer.channel.close(CloseType.DID_NOT_GET_REQUESTED_HEADER, 'Did not get requested header');
                 return;
             }
 
             // Check how to sync based on heuristic:
-            this._catchup = header.height - this._blockchain.height <= Policy.NUM_BLOCKS_VERIFICATION;
+            this._catchup = header.height >= this._blockchain.height
+                && header.height - this._blockchain.height <= Policy.NUM_BLOCKS_VERIFICATION;
             Log.d(LightConsensusAgent, `Start syncing, catchup mode: ${this._catchup}`);
         }
 
-        // Case 3: We are are syncing.
+        // Case 3: We are syncing.
         if (this._syncing && !this._busy) {
             if (this._catchup) {
                 await FullConsensusAgent.prototype.syncBlockchain.call(this);
@@ -142,6 +146,15 @@ class LightConsensusAgent extends FullConsensusAgent {
                         break;
                     case PartialLightChain.State.ABORTED:
                         this._peer.channel.close(CloseType.ABORTED_SYNC, 'aborted sync');
+                        break;
+                    case PartialLightChain.State.WEAK_PROOF:
+                        Log.d(LightConsensusAgent, `Not syncing with ${this._peer.peerAddress} - weaker proof`);
+                        this._numWeakProofs++;
+                        if (this._numWeakProofs >= LightConsensusAgent.WEAK_PROOFS_MAX) {
+                            this._peer.channel.close(CloseType.BLOCKCHAIN_SYNC_FAILED, 'too many weak proofs');
+                        } else {
+                            this._syncFinished();
+                        }
                         break;
                 }
             }
@@ -523,6 +536,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         const resolve = this._headerRequest.resolve;
         const reject = this._headerRequest.reject;
 
+        // Reset headerRequest.
+        this._headerRequest = null;
+
         // Check that it is the correct hash.
         if (!requestedHash.equals(hash)) {
             Log.w(LightConsensusAgent, `Received wrong header from ${this._peer.peerAddress}`);
@@ -572,9 +588,6 @@ LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
 LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT = 1000 * 8;
 /**
  * Maximum number of blockchain sync retries before closing the connection.
- * XXX If the peer is on a long fork, it will count as a failed sync attempt
- * if our blockchain doesn't switch to the fork within 500 (max InvVectors returned by getBlocks)
- * blocks.
  * @type {number}
  */
 LightConsensusAgent.SYNC_ATTEMPTS_MAX = 5;
@@ -583,4 +596,10 @@ LightConsensusAgent.SYNC_ATTEMPTS_MAX = 5;
  * @type {number}
  */
 LightConsensusAgent.GETBLOCKS_VECTORS_MAX = 500;
+/**
+ * Maximum number of weak proofs we allow before closing the connection.
+ * @type {number}
+ */
+LightConsensusAgent.WEAK_PROOFS_MAX = 3;
+
 Class.register(LightConsensusAgent);

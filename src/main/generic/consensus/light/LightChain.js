@@ -65,5 +65,14 @@ class LightChain extends FullChain {
         await partialChain._init();
         return partialChain;
     }
+
+    /**
+     * @returns {boolean}
+     * @private
+     * @override
+     */
+    _shouldExtendChainProof() {
+        return true;
+    }
 }
 Class.register(LightChain);

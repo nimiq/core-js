@@ -126,6 +126,7 @@ class PartialLightChain extends LightChain {
             await this._acceptProof(proof, suffixBlocks);
         } else {
             await this.abort();
+            this._state = PartialLightChain.State.WEAK_PROOF;
         }
 
         return true;
@@ -561,6 +562,7 @@ class PartialLightChain extends LightChain {
  * @enum {number}
  */
 PartialLightChain.State = {
+    WEAK_PROOF: -2,
     ABORTED: -1,
     PROVE_CHAIN: 0,
     PROVE_ACCOUNTS_TREE: 1,

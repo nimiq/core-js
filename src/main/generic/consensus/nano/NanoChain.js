@@ -151,7 +151,7 @@ class NanoChain extends BaseChain {
             /** @type {Array.<Block>} */
             const denseSuffix = proof.prefix.denseSuffix();
 
-            // Put all other prefix blocks in the store as well (so they can be retrieved via getBlock()/getBlockAt()),
+            // Store all prefix blocks so they can be retrieved via getBlock()/getBlockAt()),
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
             let superBlockCounts = new SuperBlockCounts();
             for (let i = 0; i < proof.prefix.length - denseSuffix.length; i++) {
