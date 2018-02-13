@@ -61,13 +61,13 @@ class MockWebSocketServer extends Observable {
      */
     constructor(address) {
         super();
-        /** @type {MockWebSocket} */
-        this._mockWebSocket = new MockWebSocket(address);
+        /** @type {string} */
+        this._localAddress = address;
     }
 
-    /** @type {MockWebSocket} */
-    get mockWebSocket() {
-        return this._mockWebSocket;
+    /** @returns {MockWebSocket} */
+    createMockWebSocket() {
+        return new MockWebSocket(this._localAddress);
     }
 }
 
@@ -80,11 +80,13 @@ class MockNetwork {
      */
     static link(server, client) {
         if (server) {
-            server.mockWebSocket.link(client);
-            client.link(server.mockWebSocket);
+            const serverMockWebSocket = server.createMockWebSocket();
+
+            serverMockWebSocket.link(client);
+            client.link(serverMockWebSocket);
 
             setTimeout(() => {
-                server.fire('connection', server.mockWebSocket);
+                server.fire('connection', serverMockWebSocket);
                 client.onopen();
             }, 0);
         } else {
@@ -100,9 +102,9 @@ class MockNetwork {
         const crc = CRC32.compute(BufferUtils.fromAscii(host)).toString(16);
         let res = '2001:db8::';
         if (crc.length > 4) {
-            res += crc.substring(0, crc.length-4) + ':';
+            res += crc.substring(0, crc.length - 4) + ':';
         }
-        res += crc.substring(crc.length-4);
+        res += crc.substring(crc.length - 4);
         return res;
     }
 
