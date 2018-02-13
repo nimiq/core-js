@@ -15,6 +15,9 @@ require('./generic/DummyData.spec.js');
 require('./generic/TestUtils.spec.js');
 require('./generic/consensus/TestBlockchain.spec.js');
 
+// Blob is not defined on Node.js
+Class.register(class Blob{});
+
 if (process.env.USE_ISTANBUL) {
     jasmine.getEnv().addReporter(/** @type {Reporter} */ {
         jasmineDone() {
