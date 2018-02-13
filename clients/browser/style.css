@@ -293,6 +293,7 @@ label strong {
     right: 0;
     margin: auto;
     background: rgba(239, 239, 239, 0.95);
+    z-index: 1000;
 }
 
 [overlay] .message {

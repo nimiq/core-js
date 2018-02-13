@@ -72,7 +72,7 @@ class DevUi {
                     this.$overlay.style.display = 'none';
                     resolve($);
                 });
-            }, function(code) {
+            }, (code) => {
                 switch (code) {
                     case Nimiq.ERR_WAIT:
                         this.$overlay.style.display = 'block';
