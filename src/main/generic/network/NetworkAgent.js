@@ -387,6 +387,10 @@ class NetworkAgent extends Observable {
                 this._channel.ban('invalid addr');
                 return;
             }
+            if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
+                this._channel.ban('addr not globally reachable');
+                return;
+            }
             this._knownAddresses.add(addr);
         }
 
