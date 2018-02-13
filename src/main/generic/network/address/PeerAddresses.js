@@ -432,7 +432,9 @@ class PeerAddresses extends Observable {
         peerAddressState.bannedUntil = -1;
         peerAddressState.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
 
-        peerAddressState.peerAddress = peerAddress;
+        if (!peerAddressState.peerAddress.isSeed()) {
+            peerAddressState.peerAddress = peerAddress;
+        }
 
         // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
@@ -696,8 +698,8 @@ class PeerAddresses extends Observable {
 
                 case PeerAddressState.BANNED:
                     if (peerAddressState.bannedUntil <= now) {
-                        // If we banned because of failed attempts or it is a seed node, try again.
-                        if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts || addr.isSeed()) {
+                        // Don't remove seed addresses, unban them.
+                        if (addr.isSeed()) {
                             // Restore banned seed addresses to the NEW state.
                             peerAddressState.state = PeerAddressState.NEW;
                             peerAddressState.failedAttempts = 0;
@@ -793,7 +795,7 @@ PeerAddresses.SEED_PEERS = [
     // WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
     // WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
     // WsPeerAddress.seed('emily.nimiq-network.com', 443)
-    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
+    WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
 ];
 Class.register(PeerAddresses);
 
