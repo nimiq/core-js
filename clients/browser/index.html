@@ -10,24 +10,22 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-<header>
-    <span class="name icon-nimiq">nimiq</span>
-    <span class="subtitle">Blockchain Cockpit &mdash; Luna</span>
-</header>
 
 <script src="../../dist/nimiq.js"></script>
 
-<div id="content">
-    <div class="info" client-type-ui>
-        <div class="info-title not-connected" title>Client Types</div>
-        <hr/>
-        <div class="info-block">
-            <a href="#full">Full</a>
-            <a href="#light">Light</a>
-            <a href="#nano">Nano</a>
+<header>
+    <span class="name icon-nimiq">nimiq</span>
+    <div class="subheader">
+        <div class="subtitle">Blockchain Cockpit &mdash; Luna</div>
+        <div id="client-types">
+            <div id="full" class="client-link-container"><a href="#full">Full</a></div>
+            <div id="light" class="client-link-container"><a href="#light">Light</a></div>
+            <div id="nano" class="client-link-container"><a href="#nano">Nano</a></div>
         </div>
     </div>
+</header>
 
+<div id="content">
     <div overlay>
         <div class="message">
             Nimiq Blockchain Cockpit is already running in another browser window or tab.
@@ -331,7 +329,7 @@
         <div class="right">
             <div blockchain-ui>
                 <div class="info">
-                    <div class="info-title">Blockchain</div>
+                    <div class="info-title not-connected" title>Blockchain</div>
                     <hr/>
 
                     <div class="info-block">
@@ -394,7 +392,10 @@
                             <div block-interlink></div>
                         </div>
                         <div class="info-block collapsible collapsed">
-                            <strong block-transactions-title>Transactions</strong>
+                            <span block-transactions-title>
+                                <strong>Transactions</strong>
+                                <span block-transactions-count></span>
+                            </span>
                             <div block-transactions></div>
                         </div>
                     </div>

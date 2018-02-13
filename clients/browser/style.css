@@ -4,11 +4,10 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    background: linear-gradient(#3523ae,#1c0446) fixed;
 }
 
 body {
-    /* background-color: #042146; */
-    background: linear-gradient(#536DFE, #a553fe);
     letter-spacing: 0.3px;
     color: #333;
     margin: auto;
@@ -27,22 +26,18 @@ header {
     max-width: 100%;
     margin: auto;
     margin-bottom: 25px;
-    margin-top: 32px;
     text-align: center;
+    display: flex;
+    color: white;
+    justify-content: center;
+    align-items: flex-end;
 }
 
 header .name {
-    color: #FFF;
     line-height: 85px;
     font-size: 62px;
     font-weight: lighter;
     font-family: sans-serif;
-}
-
-header .name span {
-    color: #FFC107;
-    margin-right: 10px;
-    font-size: 42px;
 }
 
 header .icon-nimiq::before {
@@ -56,10 +51,38 @@ header .icon-nimiq::before {
     height: 60px;
 }
 
+header .subheader {
+    padding-bottom: 3px;
+    padding-left: 8px;
+    width: 227px;
+}
+
 header .subtitle {
-    color: #FFF;
     font-size: 15px;
     letter-spacing: 2px;
+    position: absolute;
+    top: 80px;
+}
+
+
+#client-types {
+    display: flex;
+    justify-content: space-between;
+}
+
+#client-types .client-link-container {
+    /* to avoid that the page jumps to the selected anchor target */
+    padding-top: 96px;
+}
+
+#client-types a {
+    text-decoration: none;
+    color: rgba(255,255,255,0.6);
+}
+
+#client-types .client-link-container:target a {
+    font-weight: bold;
+    color: white;
 }
 
 input,
@@ -191,7 +214,7 @@ hash {
     text-transform: uppercase;
     letter-spacing: 2px;
     padding: 7px 10px;
-    background: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.2);
     color: #FFF;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
@@ -279,15 +302,20 @@ label strong {
     padding: 15px;
 }
 
-/* Client Type UI */
+/* Block UI */
+
+[blockchain-ui] [block-height-input] {
+    width: 70px;
+}
+
 /* The order of these consensus classes is important to enable overwriting */
 
-[client-type-ui] [title] {
+[blockchain-ui] [title] {
     transition: background ease 0.5s;
     position: relative;
 }
 
-[client-type-ui] [title]:after {
+[blockchain-ui] [title]:after {
     position: absolute;
     top: 7px;
     right: 7px;
@@ -297,80 +325,55 @@ label strong {
     font-weight: 400;
 }
 
-[client-type-ui] .not-connected {
-    background: crimson;
+[blockchain-ui] .not-connected {
+    background: #B71C1C;
     opacity: 0.6;
 }
 
-[client-type-ui] .not-connected::after {
+[blockchain-ui] .not-connected::after {
     content: "Not connected";
 }
 
-[client-type-ui] .initializing {
-    background: #FFC107;
+[blockchain-ui] .initializing {
+    background: #F9A825;
     opacity: 0.8;
 }
 
-[client-type-ui] .initializing::after {
+[blockchain-ui] .initializing::after {
     content: "Initializing...";
 }
 
-[client-type-ui] .connecting::after {
+[blockchain-ui] .connecting::after {
     content: "Connecting...";
 }
 
-[client-type-ui] .syncing {
-    background: orange;
+[blockchain-ui] .syncing {
+    background: #EF6C00;
     opacity: 0.8;
 }
-[client-type-ui] .syncing::after {
+[blockchain-ui] .syncing::after {
     content: "Syncronizing...";
 }
-[client-type-ui] .sync-chain-proof::after {
+[blockchain-ui] .sync-chain-proof::after {
     content: "Downloading proof...";
 }
-[client-type-ui] .verify-chain-proof::after {
+[blockchain-ui] .verify-chain-proof::after {
     content: "Verifying proof...";
 }
-[client-type-ui] .sync-accounts-tree::after {
+[blockchain-ui] .sync-accounts-tree::after {
     content: "Downloading accounts...";
 }
-[client-type-ui] .verify-accounts-tree::after {
+[blockchain-ui] .verify-accounts-tree::after {
     content: "Verifying accounts...";
 }
 
-[client-type-ui] .consensus-established {
-    background: #2dad2d;
+[blockchain-ui] .consensus-established {
+    background: #43A047;
     opacity: 1.0;
 }
 
-[client-type-ui] .consensus-established::after {
+[blockchain-ui] .consensus-established::after {
     content: "Consensus established";
-}
-
-[client-type-ui] .info-block {
-    display: flex;
-    justify-content: space-between;
-}
-
-[client-type-ui] a {
-    padding-top: 8px;
-    padding-bottom: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    color: black;
-}
-
-[client="nano"] [client-type-ui] a[href="#nano"],
-[client="light"] [client-type-ui] a[href="#light"],
-[client="full"] [client-type-ui] a[href="#full"] {
-    text-decoration: underline;
-}
-
-/* Block UI */
-
-[blockchain-ui] [block-height-input] {
-    width: 70px;
 }
 
 .collapsible > :first-child {
