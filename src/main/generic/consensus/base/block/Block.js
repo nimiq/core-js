@@ -80,7 +80,7 @@ class Block {
      */
     async verify(time) {
         if (!this._valid) {
-            if (this.body.transactions.length < 150) {
+            if (this.isLight() || this.body.transactions.length < 150 || !IWorker.areWorkersAsync) {
                 // worker overhead doesn't pay off for small transaction numbers
                 this._valid = await this.computeVerify(time.now());
             } else {
