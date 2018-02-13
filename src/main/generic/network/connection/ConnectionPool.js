@@ -3,16 +3,41 @@
 class ConnectionPool extends Observable {
     /**
      * @constructor
-     * @param {NetworkConfig} netconfig
+     * @param {PeerAddresses} peerAddresses
+     * @param {NetworkConfig} networkConfig
+     * @param {IBlockchain} blockchain
+     * @param {Time} time
+     * @listens WebSocketConnector#connection
+     * @listens WebSocketConnector#error
+     * @listens WebRtcConnector#connection
+     * @listens WebRtcConnector#error
      */
-    constructor(netconfig) {
+    constructor(peerAddresses, networkConfig, blockchain, time) {
         super();
+
+        /**
+         * @type {PeerAddresses}
+         * @private
+         */
+        this._addresses = peerAddresses;
 
         /**
          * @type {NetworkConfig}
          * @private
          */
-        this._networkConfig = netconfig;
+        this._networkConfig = networkConfig;
+
+        /**
+         * @type {IBlockchain}
+         * @private
+         */
+        this._blockchain = blockchain;
+
+        /**
+         * @type {Time}
+         * @private
+         */
+        this._time = time;
 
         /**
          * Map of all PeerConnections active.
@@ -20,6 +45,13 @@ class ConnectionPool extends Observable {
          * @private
          */
         this._store = new Map();
+
+        /**
+         * Array of all inbound PeerConnections that are not yet assigned to an address.
+         * @type {Map.<number, PeerConnection>}
+         * @private
+         */
+        this._inboundStore = new Array();
 
         /**
          * Map from peerIds to RTC connections.
@@ -41,6 +73,17 @@ class ConnectionPool extends Observable {
          * @private
          */
         this._netAddressStore = new HashMap();
+
+        // TODO Stefan, peerAddr = connection
+        /** @type {WebSocketConnector} */
+        this._wsConnector = new WebSocketConnector(this._networkConfig);
+        this._wsConnector.on('connection', conn => this._onConnection(conn));
+        this._wsConnector.on('error', peerAddr => this._onError(peerAddr));
+
+        /** @type {WebRtcConnector} */
+        this._rtcConnector = new WebRtcConnector(this._networkConfig);
+        this._rtcConnector.on('connection', conn => this._onConnection(conn));
+        this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
         // Number of WebSocket/WebRTC connections.
         /** @type {number} */
@@ -71,7 +114,7 @@ class ConnectionPool extends Observable {
      * @returns {PeerConnection|null}
      */
     get(id) {
-        return this._store.get(peerAddress);
+        return this._store.get(id);
     }
 
     /**
@@ -111,192 +154,485 @@ class ConnectionPool extends Observable {
     }
 
     /**
-     * @todo improve this by returning the best addresses first.
-     * @param {number} protocolMask
-     * @param {number} serviceMask
-     * @param {number} maxAddresses
-     * @returns {Array.<PeerAddress>}
-     */
-    query(protocolMask, serviceMask, maxAddresses = 1000) {
-        // XXX inefficient linear scan
-        const now = Date.now();
-        const addresses = [];
-        for (const peerAddressState of this._store.values()) {
-            // Never return banned or failed addresses.
-            if (peerAddressState.state === PeerAddressState.BANNED
-                    || peerAddressState.state === PeerAddressState.FAILED) {
-                continue;
-            }
-
-            // Never return seed peers.
-            const address = peerAddressState.peerAddress;
-            if (address.isSeed()) {
-                continue;
-            }
-
-            // Only return addresses matching the protocol mask.
-            if ((address.protocol & protocolMask) === 0) {
-                continue;
-            }
-
-            // Only return addresses matching the service mask.
-            if ((address.services & serviceMask) === 0) {
-                continue;
-            }
-
-            // Update timestamp for connected peers.
-            if (peerAddressState.state === PeerAddressState.CONNECTED) {
-                // Also update timestamp for RTC connections
-                if (peerAddressState.bestRoute) {
-                    peerAddressState.bestRoute.timestamp = now;
-                }
-            }
-
-            // Never return addresses that are too old.
-            if (this._exceedsAge(address)) {
-                continue;
-            }
-
-            // Return this address.
-            addresses.push(address);
-
-            // Stop if we have collected maxAddresses.
-            if (addresses.length >= maxAddresses) {
-                break;
-            }
-        }
-        return addresses;
-    }
-
-    /**
-     * @param {PeerChannel} channel
-     * @param {PeerAddress|Array.<PeerAddress>} arg
-     */
-    add(channel, arg) {
-        const peerAddresses = Array.isArray(arg) ? arg : [arg];
-        const newAddresses = [];
-
-        for (const addr of peerAddresses) {
-            if (this._add(channel, addr)) {
-                newAddresses.push(addr);
-            }
-        }
-
-        // Tell listeners that we learned new addresses.
-        if (newAddresses.length) {
-            this.fire('added', newAddresses, this);
-        }
-    }
-
-    /**
-     * @param {PeerChannel} channel
-     * @param {PeerAddress|RtcPeerAddress} peerAddress
+     * @param {PeerAddress} peerAddress
      * @returns {boolean}
+     */
+    isEstablished(peerAddress) {
+        const peerAddressState = this.getByPeerAddress(peerAddress);
+        return peerAddressState && peerAddressState.state === PeerConnectionState.ESTABLISHED;
+    }
+
+    /**
+     * @param {PeerConnection} peerConnection
+     * @returns {void}
      * @private
      */
-    _add(channel, peerAddress) {
-        // Ignore our own address.
-        if (this._networkConfig.peerAddress.equals(peerAddress)) {
-            return false;
-        }
-
-        // Ignore address if it is too old.
-        // Special case: allow seed addresses (timestamp == 0) via null channel.
-        if (channel && this._exceedsAge(peerAddress)) {
-            Log.d(ConnectionPool, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
-            return false;
-        }
-
-        // Ignore address if its timestamp is too far in the future.
-        if (peerAddress.timestamp > Date.now() + ConnectionPool.MAX_TIMESTAMP_DRIFT) {
-            Log.d(ConnectionPool, `Ignoring addresses ${peerAddress} - timestamp in the future`);
-            return false;
-        }
-
-        // Increment distance values of RTC addresses.
-        if (peerAddress.protocol === Protocol.RTC) {
-            peerAddress.distance++;
-
-            // Ignore address if it exceeds max distance.
-            if (peerAddress.distance > ConnectionPool.MAX_DISTANCE) {
-                Log.d(ConnectionPool, `Ignoring address ${peerAddress} - max distance exceeded`);
-                // Drop any route to this peer over the current channel. This may prevent loops.
-                const peerAddressState = this._get(peerAddress);
-                if (peerAddressState) {
-                    peerAddressState.deleteRoute(channel);
-                }
-                return false;
-            }
-        }
-
-        // Check if we already know this address.
-        let peerAddressState = this._get(peerAddress);
-        if (peerAddressState) {
-            const knownAddress = peerAddressState.peerAddress;
-
-            // Ignore address if it is banned.
-            if (peerAddressState.state === PeerAddressState.BANNED) {
-                return false;
-            }
-
-            // Never update seed peers.
-            if (knownAddress.isSeed()) {
-                return false;
-            }
-
-            // Never erase NetAddresses.
-            if (knownAddress.netAddress && !peerAddress.netAddress) {
-                peerAddress.netAddress = knownAddress.netAddress;
-            }
-
-            // Ignore address if it is a websocket address and we already know this address with a more recent timestamp.
-            if (peerAddress.protocol === Protocol.WS && knownAddress.timestamp >= peerAddress.timestamp) {
-                return false;
-            }
-        } else {
-            // Add new peerAddressState.
-            peerAddressState = new PeerAddressState(peerAddress);
-            this._store.add(peerAddressState);
+    _add(peerConnection) {
+        this._store.put(peerConnection.id, peerConnection);
+        if (peerConnection.peerAddress){
+            this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
             if (peerAddress.protocol === Protocol.RTC) {
-                // Index by peerId.
-                this._peerIdS
-    tore.put(peerAddress.peerId, peerAddressState);
+                this._peerIdStore.put(peerAddress.peerId, peerConnection);
             }
         }
-
-        // Add route.
-        if (peerAddress.protocol === Protocol.RTC) {
-            peerAddressState.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
-        }
-
-        // Update the address.
-        peerAddressState.peerAddress = peerAddress;
-
-        return true;
     }
 
     /**
-     * Called when a connection to this peerAddress is being established.
+     * @param {PeerConnection} peerConnection
+     * @returns {void}
+     * @private
+     */
+    _remove(peerConnection) {
+        if (peerConnection.peerAddress) {
+            // Delete from peerId index.
+
+            if (peerAddress.protocol === Protocol.RTC) {
+                this._peerIdStore.remove(peerAddress.peerId);
+            }
+        }
+
+        this._peerAddressStore.remove(peerConnection.peerAddress);
+        this._store.remove(peerConnection.id);
+    }
+
+
+    /**
      * @param {PeerAddress} peerAddress
+     * @returns {PeerConnection|null}
+     */
+    connectOutbound(peerAddress) {
+        if (peerAddress === null){
+            return
+        }
+
+        if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
+            Log.e(Network, `Cannot connect to $this.peerAddress} - unsupported protocol`);
+            this._onError(peerAddress);
+        }
+
+        //TODO Stefan, seeds?
+        if ( this._addresses.isBanned(peerAddress)){
+             throw `Connecting to banned address ${peerAddress}`;
+        }
+
+        let peerConnection = this.getByPeerAddress(peerAddress);
+        if (peerConnection) {
+            throw `Duplicate connection to ${peerAddress}`;
+        }
+              
+        peerConnection = new PeerConnection.getOutbound(peerAddress);
+        this._add(peerConnection);
+
+        peerConnection.connectOutbound(peerAddress.protocol === Protocol.WS ? this._wsConnector : this._rtcConnector);
+
+        if (peerConnection.state === PeerConnectionState.CONNECTING){
+            this._connectingCount++;
+        }
+        else {
+            this._remove(peerConnection);
+            return null;
+        }
+            
+        return peerConnection;
+    }
+
+    /**
+     * @listens PeerChannel#signal
+     * @listens PeerChannel#ban
+     * @listens NetworkAgent#handshake
+     * @listens NetworkAgent#close
+     * @param {NetworkConnection} conn
+     * @returns {void}
+     * @private
+     */
+    _onConnection(conn) {
+        let peerConnection;
+        if(conn.outbound) {
+            this._connectingCount++;
+
+            peerConnection = this.getByPeerAddress(conn.peerAddress);
+
+            if(!peerConnection) {
+                throw `Connecting to outbound peer address not stored ${conn.peerAddress}`;
+            }
+    
+            //TODO Stefan, handle duplicate states
+            if(peerConnection.state !== PeerConnectionState.CONNECTING) {
+                throw `PeerConnection state not CONNECTING ${conn.peerAddress}`;
+            }    
+        } 
+        else {
+            peerConnection = PeerConnection.getInbound(conn);
+            this._inboundStore.add(peerConnection);
+        }
+
+        // Reject peer if we have reached max peer count.
+        if (this.peerCount >= Network.PEER_COUNT_MAX) {
+            if (conn.outbound) {
+                 //TODO Stefan, handle member
+                this._disconnect(null, conn.peerAddress, false);
+            }
+            conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
+            return;
+        }
+
+        // Connection accepted.
+
+        // Set peerConnection to CONNECTED state.
+        peerConnection.networkConnection = conn;
+
+        const connType = conn.inbound ? 'inbound' : 'outbound';
+        Log.d(Network, `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
+
+        // Create peer channel.
+        const channel = new PeerChannel(conn);
+        channel.on('signal', msg => this._onSignal(channel, msg));
+        channel.on('ban', reason => this._onBan(channel, reason));
+        channel.on('fail', reason => this._onFail(channel, reason));
+
+        peerConnection.peerChannel = channel;
+
+        // Create network agent.
+        const agent = new NetworkAgent(this._blockchain, this._addresses, this._networkConfig, channel);
+        agent.on('handshake', peer => this._onHandshake(peer, agent));
+        agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
+
+        // Set peerConnection to NEGOTIATING state.
+        peerConnection.networkAgent = agent;
+
+        // Initiate handshake with the peer.
+        agent.handshake();
+
+        // Call _checkPeerCount() here in case the peer doesn't send us any (new)
+        // addresses to keep on connecting.
+        // Add a delay before calling it to allow RTC peer addresses to be sent to us.
+        //setTimeout(() => this._checkPeerCount(), Network.ADDRESS_UPDATE_DELAY);
+    }
+
+    /**
+     * Handshake with this peer was successful.
+     * @fires Network#peer-joined
+     * @fires Network#peers-changed
+     * @param {Peer} peer
+     * @param {NetworkAgent} agent
+     * @returns {void}
+     * @private
+     */
+    _onHandshake(peer, agent) {
+         // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
+        if (peer.channel.netAddress) {
+            // TODO What to do if it doesn't match the currently advertised one?
+            if (peer.peerAddress.netAddress && !peer.peerAddress.netAddress.equals(peer.channel.netAddress)) {
+                Log.w(Network, `Got different netAddress ${peer.channel.netAddress} for peer ${peer.peerAddress} `
+                    + `- advertised was ${peer.peerAddress.netAddress}`);
+            }
+
+            // Only set the advertised netAddress if we have the public IP of the peer.
+            // WebRTC connectors might return local IP addresses for peers on the same LAN.
+            if (!peer.channel.netAddress.isPrivate()) {
+                peer.peerAddress.netAddress = peer.channel.netAddress;
+            }
+        }
+        // Otherwise, use the netAddress advertised for this peer if available.
+        else if (peer.channel.peerAddress.netAddress) {
+            peer.channel.netAddress = peer.channel.peerAddress.netAddress;
+        }
+        // Otherwise, we don't know the netAddress of this peer. Use a pseudo netAddress.
+        else {
+            peer.channel.netAddress = NetAddress.UNKNOWN;
+        }
+
+        // Close connection if we are already connected to this peer.
+        if (this.isEstablished(peer.peerAddress)) {
+            // XXX Clear channel.peerAddress to prevent _onClose() from changing
+            // the PeerAddressState of the connected peer.
+            agent.channel.peerAddress = null;
+            agent.channel.close('duplicate connection (post handshake)');
+            return;
+        }
+
+        // Close connection if this peer is banned.
+        if (this._addresses.isBanned(peer.peerAddress)
+            // Allow recovering seed peer's inbound connection to succeed.
+            && !peer.peerAddress.isSeed()) {
+            agent.channel.close('peer is banned');
+            return;
+        }
+
+        // Close connection if we have too many connections to the peer's IP address.
+        if (peer.netAddress && !peer.netAddress.isPseudo()) {
+            // TODO Stefan, handle this
+            const numConnections = this._agents.values().filter(
+                agent => peer.netAddress.equals(agent.channel.netAddress)).length;
+            if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
+                agent.channel.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                return;
+            }
+        }
+
+        let peerConnection = this.getByPeerAddress(peer.peerAddress);
+        if (!peerConnection) {
+            //inbound
+            peerConnection = this._inboundStore.get(agent.channel.connection)
+            peerConnection.peerAddress = peer.peerAddress;
+            this._add(peerConnection);
+            this._inboundStore.remove(agent.channel.connection);
+        }
+
+        // Set peerConnection to ESTABLISHED state.
+        peerConnection.peer = peer;
+
+        this._updateConnectedPeerCount(peer.peerAddress, 1);
+
+        // Recalculate the network adjusted offset
+        this._updateTimeOffset();
+
+        // Tell others about the address that we just connected to.
+        this._relayAddresses([peer.peerAddress]);
+
+        // Let listeners know about this peer.
+        this.fire('peer-joined', peer);
+
+        // Let listeners know that the peers changed.
+        this.fire('peers-changed');
+
+        Log.d(Network, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
+    }
+
+    /**
+     * This peer channel was closed.
+     * @fires Network#peer-left
+     * @fires Network#peers-changed
+     * @param {Peer} peer
+     * @param {PeerChannel} channel
+     * @param {boolean} closedByRemote
+     * @returns {void}
+     * @private
+     */
+    _onClose(peer, channel, closedByRemote) {
+        // Delete agent.
+        // TODO Stefan, handle this
+        this._agents.remove(channel.id);
+
+        // Update total bytes sent/received.
+        this._bytesSent += channel.connection.bytesSent;
+        this._bytesReceived += channel.connection.bytesReceived;
+
+        // channel.peerAddress is undefined for incoming connections pre-handshake.
+        // It is also cleared before closing duplicate connections post-handshake.
+        if (channel.peerAddress) {
+            // Check if the handshake with this peer has completed.
+            if (this.isEstablished(channel.peerAddress)) {
+                // Mark peer as disconnected.
+                this.disconnect(channel, channel.peerAddress, closedByRemote);
+
+                // Tell listeners that this peer has gone away.
+                this.fire('peer-left', peer);
+
+                // Let listeners know that the peers changed.
+                this.fire('peers-changed');
+
+                const kbTransferred = ((channel.connection.bytesSent
+                    + channel.connection.bytesReceived) / 1000).toFixed(2);
+                Log.d(Network, `[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
+                    + `(version=${peer.version}, headHash=${peer.headHash.toBase64()}, `
+                    + `transferred=${kbTransferred} kB)`);
+            } else {
+                // Treat connections closed pre-handshake by remote as failed attempts.
+                Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
+                if (closedByRemote) {
+                    this._addresses.failure(channel.peerAddress);
+                } else {
+                    this.disconnect(null, channel.peerAddress, false);
+                }
+            }
+        }
+
+        // Recalculate the network adjusted offset
+        this._updateTimeOffset();
+
+        this._checkPeerCount();
+    }
+
+    /**
+     * This peer channel was banned.
+     * @param {PeerChannel} channel
+     * @param {string|*} [reason]
+     * @returns {void}
+     * @private
+     */
+    _onBan(channel, reason) {
+        // TODO If this is an inbound connection, the peerAddress might not be set yet.
+        // Ban the netAddress in this case.
+        // XXX We should probably always ban the netAddress as well.
+        if (channel.peerAddress) {
+            this._addresses.ban(channel.peerAddress);
+        } else {
+            // TODO ban netAddress
+        }
+    }
+
+    /**
+     * This peer channel had a network failure.
+     * @param {PeerChannel} channel
+     * @param {string|*} [reason]
+     * @returns {void}
+     * @private
+     */
+    _onFail(channel, reason) {
+        if (channel.peerAddress) {
+            this._addresses.failure(channel.peerAddress);
+        }
+    }
+
+    /**
+     * Connection to this peer address failed.
+     * @param {PeerAddress} peerAddress
+     * @param {string|*} [reason]
+     * @returns {void}
+     * @private
+     */
+    _onError(peerAddress, reason) {
+        Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
+
+        this._addresses.failure(peerAddress);
+
+        this._checkPeerCount();
+    }
+
+
+    /* Signaling */
+
+    /**
+     * @param {PeerChannel} channel
+     * @param {SignalMessage} msg
+     * @returns {void}
+     * @private
+     */
+    _onSignal(channel, msg) {
+        // Discard signals with invalid TTL.
+        if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
+            channel.ban('invalid signal ttl');
+            return;
+        }
+
+        // Discard signals that have a payload, which is not properly signed.
+        if (msg.hasPayload() && !msg.verifySignature()) {
+            channel.ban('invalid signature');
+            return;
+        }
+
+        // Can be undefined for non-rtc nodes.
+        const myPeerId = this._networkConfig.peerAddress.peerId;
+
+        // Discard signals from myself.
+        if (msg.senderId.equals(myPeerId)) {
+            Log.w(Network, `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${myPeerId})`);
+            return;
+        }
+
+        // If the signal has the unroutable flag set and we previously forwarded a matching signal,
+        // mark the route as unusable.
+        if (msg.isUnroutable() && this._forwards.signalForwarded(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, /*nonce*/ msg.nonce)) {
+            const senderAddr = this._addresses.getByPeerId(msg.senderId);
+            this._addresses.unroutable(channel, senderAddr);
+        }
+
+        // If the signal is intended for us, pass it on to our WebRTC connector.
+        if (msg.recipientId.equals(myPeerId)) {
+            // If we sent out a signal that did not reach the recipient because of TTL
+            // or it was unroutable, delete this route.
+            if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
+                const senderAddr = this._addresses.getByPeerId(msg.senderId);
+                this._addresses.unroutable(channel, senderAddr);
+            }
+            this._rtcConnector.onSignal(channel, msg);
+            return;
+        }
+
+        // Discard signals that have reached their TTL.
+        if (msg.ttl <= 0) {
+            Log.d(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
+            // Send signal containing TTL_EXCEEDED flag back in reverse direction.
+            if (msg.flags === 0) {
+                channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flag.TTL_EXCEEDED);
+            }
+            return;
+        }
+
+        // Otherwise, try to forward the signal to the intended recipient.
+        const signalChannel = this._addresses.getChannelByPeerId(msg.recipientId);
+        if (!signalChannel) {
+            Log.d(Network, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
+            // Only do this if the signal is not already a unroutable response.
+            if (msg.flags === 0) {
+                channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flag.UNROUTABLE);
+            }
+            return;
+        }
+
+        // Discard signal if our shortest route to the target is via the sending peer.
+        // XXX Why does this happen?
+        if (signalChannel.peerAddress.equals(channel.peerAddress)) {
+            Log.w(Network, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
+            return;
+        }
+
+        // Decrement ttl and forward signal.
+        signalChannel.signal(msg.senderId, msg.recipientId, msg.nonce, msg.ttl - 1, msg.flags, msg.payload, msg.senderPubKey, msg.signature);
+
+        // We store forwarded messages if there are no special flags set.
+        if (msg.flags === 0) {
+            this._forwards.add(msg.senderId, msg.recipientId, msg.nonce);
+        }
+
+        // XXX This is very spammy!!!
+        // Log.v(Network, `Forwarding signal (ttl=${msg.ttl}) from ${msg.senderId} `
+        //     + `(received from ${channel.peerAddress}) to ${msg.recipientId} `
+        //     + `(via ${signalChannel.peerAddress})`);
+    }
+
+    /**
+     * Called when a connection to this peerAddress is closed.
+     * @param {PeerChannel} channel
+     * @param {PeerAddress} peerAddress
+     * @param {boolean} closedByRemote
      * @returns {void}
      */
-    connecting(peerAddress) {
+    disconnect(channel, peerAddress, closedByRemote) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
-        if (peerAddressState.state === PeerAddressState.BANNED) {
-            throw 'Connecting to banned address';
-        }
-        if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            throw `Duplicate connection to ${peerAddress}`;
+
+        // Delete all addresses that were signalable over the disconnected peer.
+        if (channel) {
+            this._removeBySignalChannel(channel);
         }
 
-        if (peerAddressState.state !== PeerAddressState.CONNECTING) {
-            this._connectingCount++;
+        if (peerAddressState.state === PeerAddressState.BANNED) {
+            return;
         }
-        peerAddressState.state = PeerAddressState.CONNECTING;
+        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+            this._connectingCount--;
+        }
+        if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            this._updateConnectedPeerCount(peerAddress, -1);
+        }
+
+        // Always set state to tried, even when deciding to delete this address.
+        // In the latter case, this will not influence the deletion,
+        // but it will prevent decrementing the peer count twice when banning seed nodes.
+        peerAddressState.state = PeerAddressState.TRIED;
+
+        // XXX Immediately delete address if the remote host closed the connection.
+        // Also immediately delete dumb clients, since we cannot connect to those anyway.
+        if ((closedByRemote && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
+            this._remove(peerAddress);
+        }
     }
+
 
     /**
      * Called when a connection to this peerAddress has been established.
@@ -314,8 +650,7 @@ class ConnectionPool extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
 
             if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIdS
-    tore.put(peerAddress.peerId, peerAddressState);
+                this._peerIdStore.put(peerAddress.peerId, peerAddressState);
             }
 
             this._store.add(peerAddressState);
