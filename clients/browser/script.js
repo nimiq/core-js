@@ -17,7 +17,6 @@ class DevUi {
     }
 
     _initUi() {
-        this._clientTypeUi = new ClientTypeUi(this.$el.querySelector('[client-type-ui]'), this.$);
         this._accountsUi = new AccountsUi(this.$el.querySelector('[accounts-ui]'), this.$);
         this._accountInfoUi = new AccountInfoUi(this.$el.querySelector('[account-info-ui]'), this.$);
         this._transactionUi = new TransactionUi(this.$el.querySelector('[transaction-ui]'), this.$);
@@ -41,7 +40,7 @@ class DevUi {
     }
 
     _loadUiComponents() {
-        const scripts = ['ClientTypeUi.js', 'BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
+        const scripts = ['BlockchainUi.js', 'AccountInfoUi.js', 'TransactionUi.js', 'MempoolUi.js',
             'MinerUi.js', 'NetworkUi.js', 'AccountSelector.js', 'Signer.js', 'HtlcSignerUi.js', 'SignerUi.js',
             'AccountsUi.js', 'MultiSigWalletCreationUi.js', 'MultiSigSignerUi.js'];
         return Promise.all(scripts.map(script => Utils.loadScript(script)));

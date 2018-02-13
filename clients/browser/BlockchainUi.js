@@ -5,6 +5,8 @@ class BlockchainUi {
         this._blockInterlinkCollapsed = true;
         this._blockTransactionsCollapsed = true;
 
+        this.$title = this.$el.querySelector('[title]');
+
         this.$chainHeight = this.$el.querySelector('[chain-height]');
         this.$totalDifficulty = this.$el.querySelector('[total-difficulty]');
         this.$totalWork = this.$el.querySelector('[total-work]');
@@ -25,6 +27,7 @@ class BlockchainUi {
         this.$blockInterlinkTitle = this.$el.querySelector('[block-interlink-title]');
         this.$blockTransactions = this.$el.querySelector('[block-transactions]');
         this.$blockTransactionsTitle = this.$el.querySelector('[block-transactions-title]');
+        this.$blockTransactionsCount = this.$el.querySelector('[block-transactions-count]');
 
         $.blockchain.on('head-changed', head => this._headChanged(head));
         $.consensus.on('established', () => this._headChanged($.blockchain.head));
@@ -34,6 +37,18 @@ class BlockchainUi {
         this.$blockHeightInput.addEventListener(inputEventName, () => this._updateUserRequestedBlock());
         this.$blockInterlinkTitle.addEventListener('click', () => this._toggleBlockInterlink());
         this.$blockTransactionsTitle.addEventListener('click', () => this._toggleTransactions());
+
+        $.consensus.on('syncing', () => this.$title.classList.add('syncing'));
+        $.consensus.on('sync-chain-proof', () => this.$title.classList.add('sync-chain-proof'));
+        $.consensus.on('verify-chain-proof', () => this.$title.classList.add('verify-chain-proof'));
+        $.consensus.on('sync-accounts-tree', () => this.$title.classList.add('sync-accounts-tree'));
+        $.consensus.on('verify-accounts-tree', () => this.$title.classList.add('verify-accounts-tree'));
+        $.consensus.on('established', () => this.$title.classList.add('consensus-established'));
+        $.consensus.on('lost', () => this.$title.classList.remove('initializing', 'connecting', 'syncing',
+            'sync-chain-proof', 'verify-chain-proof', 'sync-accounts-tree', 'verify-accounts-tree',
+            'consensus-established'));
+
+        this.$title.classList.add('connecting');
     }
 
     _headChanged(head) {
@@ -83,6 +98,7 @@ class BlockchainUi {
         this.$blockAccountsHash.textContent = block.accountsHash.toBase64();
         this.$blockTimestamp.textContent = new Date(block.timestamp * 1000);
         this.$blockNonce.textContent = block.nonce;
+        this.$blockTransactionsCount.textContent = !block.isLight()? block.transactionCount : '';
 
         block.pow().then(pow => {
             const realDifficulty = Nimiq.BlockUtils.realDifficulty(pow);
@@ -101,16 +117,20 @@ class BlockchainUi {
     }
 
     _updateBlocktransactions(block) {
+        if (block.isLight()) {
+            this.$blockTransactions.textContent = 'No transaction info available for light block.';
+            return;
+        }
+        if (block.transactions.length === 0) {
+            this.$blockTransactions.textContent = 'No transactions.';
+            return;
+        }
+
         const transactions = block.transactions.map(tx => {
             const value = Utils.satoshisToCoins(tx.value);
             const fee = Utils.satoshisToCoins(tx.fee);
             return `<div>&nbsp;-&gt; from=${tx.sender.toUserFriendlyAddress()}, to=${tx.recipient.toUserFriendlyAddress()}, value=${value}, fee=${fee}, validityStart=${tx.validityStartHeight}</div>`;
         });
-
-        if (transactions.length === 0) {
-            this.$blockTransactions.textContent = 'No transactions.';
-            return;
-        }
 
         this.$blockTransactions.innerHTML = transactions.join('');
     }
