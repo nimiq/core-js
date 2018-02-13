@@ -5,7 +5,7 @@ class Signer {
         this.$ = $;
         this._address = address;
         return Utils.getAccount($, address).then(account => {
-            if (account.type !== this.type) throw Error('Account type does not match address.');
+            // if (account.type !== this.type) throw Error('Account type does not match address.');
             this._account = account;
             return this;
         });
@@ -167,7 +167,8 @@ class HtlcSigner extends Signer {
         proof.writeUint8(this._proofType);
 
         if (this._proofType === Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER) {
-            let hash = Nimiq.BufferUtils.fromAscii(this._proofHashPreImage);
+            let hash = Nimiq.BufferUtils.fromAscii(this._proofHashPreImage); // ascii preimage
+            hash = Utils.hash(hash, this._proofHashAlgorithm); // hash once to make sure we use a hash as preimage
             for (let i = 0; i < this._proofHashCount - this._proofHashDepth; ++i) {
                 hash = Utils.hash(hash, this._proofHashAlgorithm);
             }

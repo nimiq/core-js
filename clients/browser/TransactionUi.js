@@ -291,6 +291,7 @@ class TransactionUi extends Nimiq.Observable {
             || hashCount === null || timeout === null) return null;
 
         let hashRoot = Nimiq.BufferUtils.fromAscii(this.$htlcHashPreImage.value);
+        hashRoot = Utils.hash(hashRoot, hashAlgo); // hash once to make sure we get a hash
         for (let i = 0; i < hashCount; ++i) {
             hashRoot = Utils.hash(hashRoot, hashAlgo);
         }
