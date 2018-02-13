@@ -11,14 +11,14 @@ describe('TwoNodes', () => {
         (async function () {
             let established1, established2;
 
-            const netconfig = new WsNetworkConfig('45.79.196.31', 9000, 'key1', 'cert1');
+            const netconfig = new WsNetworkConfig('node1.invalid', 9000, 'key1', 'cert1');
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', () => {
                 if (established2) done();
                 established1 = true;
             });
 
-            PeerAddresses.SEED_PEERS = [WsPeerAddress.seed('45.79.196.31', 9000)];
+            PeerAddresses.SEED_PEERS = [WsPeerAddress.seed('node1.invalid', 9000)];
 
             const consensus2 = await Consensus.volatileFull();
             consensus2.on('established', () => {
