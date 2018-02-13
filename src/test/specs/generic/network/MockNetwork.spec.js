@@ -93,6 +93,20 @@ class MockNetwork {
     }
 
     /**
+     * @param {string} host
+     * @private
+     */
+    static _hostToIp(host) {
+        const crc = CRC32.compute(BufferUtils.fromAscii(host)).toString(16);
+        let res = '2001:db8::';
+        if (crc.length > 4) {
+            res += crc.substring(0, crc.length-4) + ':';
+        }
+        res += crc.substring(crc.length-4);
+        return res;
+    }
+
+    /**
      * @static
      * @param {number} delay delay (in miliseconds) for messages in the network
      * @param {number} lossrate percentage (from 0 to 1) of packets that are never delivered
@@ -104,14 +118,14 @@ class MockNetwork {
 
         spyOn(WebSocketFactory, 'newWebSocketServer').and.callFake((netconfig) => {
             const peerAddress = netconfig.peerAddress;
-            const server = new MockWebSocketServer(peerAddress.host);
+            const server = new MockWebSocketServer(MockNetwork._hostToIp(peerAddress.host));
             MockNetwork._servers.set(`wss://${peerAddress.host}:${peerAddress.port}`, server);
             return server;
         });
 
         spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url) => {
             // XXX can this be done more elegantly?
-            const address = url.split(/:\/*/)[1];
+            const address = MockNetwork._hostToIp(url.split(/:\/*/)[1]);
 
             const client = new MockWebSocket(address);
             const server = MockNetwork._servers.get(url);
