@@ -1,29 +1,33 @@
-class ConnectionPool extends Observable {
+class Network extends Observable {
+    /**
+     * @type {number}
+     * @constant
+     */
+    static get PEER_COUNT_MAX() {
+        return PlatformUtils.isBrowser() ? 15 : 50000;
+    }
+
+    /**
+     * @type {number}
+     * @constant
+     */
+    static get PEER_COUNT_PER_IP_MAX() {
+        return PlatformUtils.isBrowser() ? 2 : 25;
+    }
+
     /**
      * @constructor
-     * @param {PeerAddresses} peerAddresses
-     * @param {NetworkConfig} networkConfig
      * @param {IBlockchain} blockchain
+     * @param {NetworkConfig} netconfig
      * @param {Time} time
+     * @listens PeerAddresses#added
      * @listens WebSocketConnector#connection
      * @listens WebSocketConnector#error
      * @listens WebRtcConnector#connection
      * @listens WebRtcConnector#error
      */
-    constructor(peerAddresses, networkConfig, blockchain, time) {
+    constructor(blockchain, netconfig, time) {
         super();
-
-        /**
-         * @type {PeerAddresses}
-         * @private
-         */
-        this._addresses = peerAddresses;
-
-        /**
-         * @type {NetworkConfig}
-         * @private
-         */
-        this._networkConfig = networkConfig;
 
         /**
          * @type {IBlockchain}
@@ -32,45 +36,45 @@ class ConnectionPool extends Observable {
         this._blockchain = blockchain;
 
         /**
+         * @type {NetworkConfig}
+         * @private
+         */
+        this._networkConfig = netconfig;
+
+        /**
          * @type {Time}
          * @private
          */
         this._time = time;
 
         /**
-         * Map of all PeerConnections active.
-         * @type {Map.<number, PeerConnection>}
+         * Flag indicating whether we should actively connect to other peers
+         * if our peer count is below PEER_COUNT_DESIRED.
+         * @type {boolean}
          * @private
          */
-        this._store = new Map();
+        this._autoConnect = false;
 
         /**
-         * Array of all inbound PeerConnections that are not yet assigned to an address.
-         * @type {Map.<number, PeerConnection>}
+         * Backoff for peer count check in seconds.
+         * @type {number}
          * @private
          */
-        this._inboundStore = new Array();
+        this._backoff = Network.CONNECT_BACKOFF_INITIAL;
 
         /**
-         * Map from peerIds to RTC connections.
-         * @type {HashMap.<PeerId, PeerConnection>}
+         * Flag indicating whether we already triggered a backoff.
+         * @type {boolean}
          * @private
          */
-        this._peerIdStore = new HashMap();
+        this._backedOff = false;
 
         /**
-         * Map from peerAddresses to connections.
-         * @type {HashMap.<PeerAddress, PeerConnection>}
+         * Map of agents indexed by connection ids.
+         * @type {HashMap.<number,NetworkAgent>}
          * @private
          */
-        this._peerAddressStore = new HashMap();
-
-        /**
-         * Map from netAddresses to connections.
-         * @type {HashMap.<NetAddress, PeerConnection>}
-         * @private
-         */
-        this._netAddressStore = new HashMap();
+        this._agents = new HashMap();
 
         // Total bytes sent/received on past connections.
         /** @type {number} */
@@ -78,7 +82,6 @@ class ConnectionPool extends Observable {
         /** @type {number} */
         this._bytesReceived = 0;
 
-        // TODO Stefan, peerAddr = connection
         /** @type {WebSocketConnector} */
         this._wsConnector = new WebSocketConnector(this._networkConfig);
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -89,161 +92,138 @@ class ConnectionPool extends Observable {
         this._rtcConnector.on('connection', conn => this._onConnection(conn));
         this._rtcConnector.on('error', (peerAddr, reason) => this._onError(peerAddr, reason));
 
-        // Number of WebSocket/WebRTC connections.
-        /** @type {number} */
-        this._peerCountWs = 0;
-        /** @type {number} */
-        this._peerCountRtc = 0;
-        /** @type {number} */
-        this._peerCountDumb = 0;
-
         /**
-         * Number of ongoing outbound connection attempts.
-         * @type {number}
+         * Helper objects to manage PeerAddresses.
+         * Must be initialized AFTER the WebSocket/WebRtcConnector.
+         * @type {PeerAddresses}
          * @private
          */
-        this._connectingCount = 0;
+        this._addresses = new PeerAddresses(this._networkConfig);
+
+        // Relay new addresses to peers.
+        this._addresses.on('added', addresses => {
+            this._relayAddresses(addresses);
+            this._checkPeerCount();
+        });
 
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
     }
 
-    /** @type {number} */
-    get peerCount() {
-        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
+    connect() {
+        this._autoConnect = true;
+
+        // Start connecting to peers.
+        this._checkPeerCount();
     }
 
     /**
-     * @returns {IterableIterator<PeerConnection>}
+     * @param {string|*} reason
      */
-    values(id) {
-        return this._store.values();
-    }
-    /**
-     * @param {number} id
-     * @returns {PeerConnection|null}
-     */
-    get(id) {
-        return this._store.get(id);
-    }
+    disconnect(reason) {
+        this._autoConnect = false;
 
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {PeerConnection|null}
-     */
-    getByPeerAddress(peerAddress) {
-        return this._peerAddressStore.get(peerAddress);
-    }
-
-    /**
-     * @param {PeerId} peerId
-     * @returns {PeerConnection|null}
-    */
-    getByPeerId(peerId) {
-        return this._peerIdStore.get(peerId);
-    }
-
-    /**
-     * @param {NetAddress} netAddress
-     * @returns {PeerConnection|null}
-    */
-    getByNetAddress(netAddress) {
-        return this._netAddressStore.get(netAddress);
-    }
-
-    /**
-     * @param {PeerId} peerId
-     * @returns {PeerChannel}
-     */
-    getChannelByPeerId(peerId) {
-        const peerAddressState = this._peerIdStore.get(peerId);
-        if (peerAddressState && peerAddressState.bestRoute) {
-            return peerAddressState.bestRoute.signalChannel;
+        // Close all active connections.
+        for (const agent of this._agents.values()) {
+            agent.channel.close(reason || 'manual network disconnect');
         }
-        return null;
     }
 
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {boolean}
-     */
-    isEstablished(peerAddress) {
-        const peerAddressState = this.getByPeerAddress(peerAddress);
-        return peerAddressState && peerAddressState.state === PeerConnectionState.ESTABLISHED;
-    }
+    // XXX For testing
+    disconnectWebSocket() {
+        this._autoConnect = false;
 
-    /**
-     * @param {PeerConnection} peerConnection
-     * @returns {void}
-     * @private
-     */
-    _add(peerConnection) {
-        this._store.put(peerConnection.id, peerConnection);
-        if (peerConnection.peerAddress){
-            this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
-            if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIdStore.put(peerAddress.peerId, peerConnection);
+        // Close all websocket connections.
+        for (const agent of this._agents.values()) {
+            if (agent.peer.peerAddress.protocol === Protocol.WS) {
+                agent.channel.close('manual websocket disconnect');
             }
         }
     }
 
     /**
-     * @param {PeerConnection} peerConnection
+     * @param {Array.<PeerAddress>} addresses
      * @returns {void}
      * @private
      */
-    _remove(peerConnection) {
-        if (peerConnection.peerAddress) {
-            // Delete from peerId index.
-
-            if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIdStore.remove(peerAddress.peerId);
-            }
+    _relayAddresses(addresses) {
+        // Pick PEER_COUNT_RELAY random peers and relay addresses to them if:
+        // - number of addresses <= 10
+        // TODO more restrictions, see Bitcoin
+        if (addresses.length > 10) {
+            return;
         }
 
-        this._peerAddressStore.remove(peerConnection.peerAddress);
-        this._store.remove(peerConnection.id);
+        // XXX We don't protect against picking the same peer more than once.
+        // The NetworkAgent will take care of not sending the addresses twice.
+        // In that case, the address will simply be relayed to less peers. Also,
+        // the peer that we pick might already know the address.
+        const agents = this._agents.values();
+        for (let i = 0; i < Network.PEER_COUNT_RELAY; ++i) {
+            const agent = ArrayUtils.randomElement(agents);
+            if (agent) {
+                agent.relayAddresses(addresses);
+            }
+        }
     }
 
+    _checkPeerCount() {
+        if (this._autoConnect
+            && this.peerCount + this._addresses.connectingCount < Network.PEER_COUNT_DESIRED
+            && this._addresses.connectingCount < Network.CONNECTING_COUNT_MAX) {
+
+            // Pick a peer address that we are not connected to yet.
+            const peerAddress = this._addresses.pickAddress();
+
+            // We can't connect if we don't know any more addresses.
+            if (!peerAddress) {
+                // If no backoff has been triggered, trigger one.
+                // This helps us to check back whether we need more connections.
+                if (!this._backedOff) {
+                    this._backedOff = true;
+                    const oldBackoff = this._backoff;
+                    this._backoff = Math.min(Network.CONNECT_BACKOFF_MAX, oldBackoff * 2);
+                    setTimeout(() => {
+                        this._backedOff = false;
+                        this._checkPeerCount();
+                    }, oldBackoff);
+                }
+                return;
+            }
+
+            // Connect to this address.
+            this._connect(peerAddress);
+        }
+        this._backoff = Network.CONNECT_BACKOFF_INITIAL;
+    }
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {PeerConnection|null}
+     * @returns {void}
+     * @private
      */
-    connectOutbound(peerAddress) {
-        if (peerAddress === null){
-            return
-        }
+    _connect(peerAddress) {
+        switch (peerAddress.protocol) {
+            case Protocol.WS:
+                Log.d(Network, `Connecting to ${peerAddress} ...`);
+                if (this._wsConnector.connect(peerAddress)) {
+                    this._addresses.connecting(peerAddress);
+                }
+                break;
 
-        if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
-            Log.e(Network, `Cannot connect to $this.peerAddress} - unsupported protocol`);
-            this._onError(peerAddress);
-        }
+            case Protocol.RTC: {
+                const signalChannel = this._addresses.getChannelByPeerId(peerAddress.peerId);
+                Log.d(Network, `Connecting to ${peerAddress} via ${signalChannel.peerAddress}...`);
+                if (this._rtcConnector.connect(peerAddress, signalChannel)) {
+                    this._addresses.connecting(peerAddress);
+                }
+                break;
+            }
 
-        //TODO Stefan, seeds?
-        if ( this._addresses.isBanned(peerAddress)){
-             throw `Connecting to banned address ${peerAddress}`;
+            default:
+                Log.e(Network, `Cannot connect to ${peerAddress} - unsupported protocol`);
+                this._onError(peerAddress);
         }
-
-        let peerConnection = this.getByPeerAddress(peerAddress);
-        if (peerConnection) {
-            throw `Duplicate connection to ${peerAddress}`;
-        }
-              
-        peerConnection = new PeerConnection.getOutbound(peerAddress);
-        this._add(peerConnection);
-
-        peerConnection.connectOutbound(peerAddress.protocol === Protocol.WS ? this._wsConnector : this._rtcConnector);
-
-        if (peerConnection.state === PeerConnectionState.CONNECTING){
-            this._connectingCount++;
-        }
-        else {
-            this._remove(peerConnection);
-            return null;
-        }
-            
-        return peerConnection;
     }
 
     /**
@@ -256,41 +236,24 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onConnection(conn) {
-        let peerConnection;
-        if(conn.outbound) {
-            this._connectingCount--;
-
-            peerConnection = this.getByPeerAddress(conn.peerAddress);
-
-            if(!peerConnection) {
-                throw `Connecting to outbound peer address not stored ${conn.peerAddress}`;
-            }
-    
-            //TODO Stefan, handle duplicate states
-            if(peerConnection.state !== PeerConnectionState.CONNECTING) {
-                throw `PeerConnection state not CONNECTING ${conn.peerAddress}`;
-            }    
-        } 
-        else {
-            peerConnection = PeerConnection.getInbound(conn);
-            this._inboundStore.add(peerConnection);
+        // Reject connection if we are already connected to this peer address.
+        // This can happen if the peer connects (inbound) while we are
+        // initiating a (outbound) connection to it.
+        if (conn.outbound && this._addresses.isConnected(conn.peerAddress)) {
+            conn.close('duplicate connection (outbound, pre handshake)');
+            return;
         }
 
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
             if (conn.outbound) {
-                 //TODO Stefan, handle member
-                this._disconnect(null, conn.peerAddress, false);
+                this._addresses.disconnected(null, conn.peerAddress, false);
             }
             conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return;
         }
 
         // Connection accepted.
-
-        // Set peerConnection to CONNECTED state.
-        peerConnection.networkConnection = conn;
-
         const connType = conn.inbound ? 'inbound' : 'outbound';
         Log.d(Network, `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
 
@@ -300,15 +263,13 @@ class ConnectionPool extends Observable {
         channel.on('ban', reason => this._onBan(channel, reason));
         channel.on('fail', reason => this._onFail(channel, reason));
 
-        peerConnection.peerChannel = channel;
-
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, this._networkConfig, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
         agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
 
-        // Set peerConnection to NEGOTIATING state.
-        peerConnection.networkAgent = agent;
+        // Store the agent.
+        this._agents.put(conn.id, agent);
 
         // Initiate handshake with the peer.
         agent.handshake();
@@ -316,8 +277,9 @@ class ConnectionPool extends Observable {
         // Call _checkPeerCount() here in case the peer doesn't send us any (new)
         // addresses to keep on connecting.
         // Add a delay before calling it to allow RTC peer addresses to be sent to us.
-        //setTimeout(() => this._checkPeerCount(), Network.ADDRESS_UPDATE_DELAY);
+        setTimeout(() => this._checkPeerCount(), Network.ADDRESS_UPDATE_DELAY);
     }
+
 
     /**
      * Handshake with this peer was successful.
@@ -329,7 +291,7 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onHandshake(peer, agent) {
-         // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
+        // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
         if (peer.channel.netAddress) {
             // TODO What to do if it doesn't match the currently advertised one?
             if (peer.peerAddress.netAddress && !peer.peerAddress.netAddress.equals(peer.channel.netAddress)) {
@@ -353,7 +315,7 @@ class ConnectionPool extends Observable {
         }
 
         // Close connection if we are already connected to this peer.
-        if (this.isEstablished(peer.peerAddress)) {
+        if (this._addresses.isConnected(peer.peerAddress)) {
             // XXX Clear channel.peerAddress to prevent _onClose() from changing
             // the PeerAddressState of the connected peer.
             agent.channel.peerAddress = null;
@@ -362,37 +324,29 @@ class ConnectionPool extends Observable {
         }
 
         // Close connection if this peer is banned.
-        if (this._addresses.isBanned(peer.peerAddress)
-            // Allow recovering seed peer's inbound connection to succeed.
-            && !peer.peerAddress.isSeed()) {
+        if (this._addresses.isBanned(peer.peerAddress)) {
             agent.channel.close('peer is banned');
             return;
         }
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
-            // TODO Stefan, handle this
-            const numConnections = this._store.values().filter(
-                peerConnection => peerConnection.networkAgent && peer.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
+            const numConnections = this._agents.values().filter(
+                agent => peer.netAddress.equals(agent.channel.netAddress)).length;
             if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
                 agent.channel.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return;
             }
         }
 
-        let peerConnection = this.getByPeerAddress(peer.peerAddress);
-        if (!peerConnection) {
-            //inbound
-            peerConnection = this._inboundStore.get(agent.channel.connection)
-            peerConnection.peerAddress = peer.peerAddress;
-            this._add(peerConnection);
-            this._inboundStore.remove(agent.channel.connection);
-        }
+        // Recalculate the network adjusted offset
+        this._updateTimeOffset();
 
-        // Set peerConnection to ESTABLISHED state.
-        peerConnection.peer = peer;
+        // Mark the peer's address as connected.
+        this._addresses.connected(agent.channel, peer.peerAddress);
 
-        this._updateConnectedPeerCount(peer.peerAddress, 1);
+        // Tell others about the address that we just connected to.
+        this._relayAddresses([peer.peerAddress]);
 
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
@@ -401,6 +355,21 @@ class ConnectionPool extends Observable {
         this.fire('peers-changed');
 
         Log.d(Network, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
+    }
+
+    /**
+     * Connection to this peer address failed.
+     * @param {PeerAddress} peerAddress
+     * @param {string|*} [reason]
+     * @returns {void}
+     * @private
+     */
+    _onError(peerAddress, reason) {
+        Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
+
+        this._addresses.failure(peerAddress);
+
+        this._checkPeerCount();
     }
 
     /**
@@ -414,10 +383,7 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onClose(peer, channel, closedByRemote) {
-        let peerLeft = false;
-
         // Delete agent.
-        // TODO Stefan, handle this
         this._agents.remove(channel.id);
 
         // Update total bytes sent/received.
@@ -428,38 +394,36 @@ class ConnectionPool extends Observable {
         // It is also cleared before closing duplicate connections post-handshake.
         if (channel.peerAddress) {
             // Check if the handshake with this peer has completed.
-            if (this.isEstablished(channel.peerAddress)) {
+            if (this._addresses.isConnected(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._disconnect(channel, channel.peerAddress, closedByRemote);
+                this._addresses.disconnected(channel, channel.peerAddress, closedByRemote);
 
-                peerLeft = true;
+                // Tell listeners that this peer has gone away.
+                this.fire('peer-left', peer);
+
+                // Let listeners know that the peers changed.
+                this.fire('peers-changed');
 
                 const kbTransferred = ((channel.connection.bytesSent
                     + channel.connection.bytesReceived) / 1000).toFixed(2);
                 Log.d(Network, `[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
                     + `(version=${peer.version}, headHash=${peer.headHash.toBase64()}, `
-                    + `transferred=${kbTransferred} kB)`);          
+                    + `transferred=${kbTransferred} kB)`);
             } else {
                 // Treat connections closed pre-handshake by remote as failed attempts.
                 Log.w(Network, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
                 if (closedByRemote) {
-                    this._failure(channel.peerAddress);
+                    this._addresses.failure(channel.peerAddress);
                 } else {
-                    this._disconnect(null, channel.peerAddress, false);
+                    this._addresses.disconnected(null, channel.peerAddress, false);
                 }
             }
-            const peerAddress = this.getByPeerAddress(channel.peerAddr);
-            this._remove(peerAddress);
         }
-        this._inboundStore.delete(channel.connection);
 
-        if (peerLeft){
-            // Tell listeners that this peer has gone away.
-            this.fire('peer-left', peer);
+        // Recalculate the network adjusted offset
+        this._updateTimeOffset();
 
-            // Let listeners know that the peers changed.
-            this.fire('peers-changed');         
-        } 
+        this._checkPeerCount();
     }
 
     /**
@@ -489,26 +453,36 @@ class ConnectionPool extends Observable {
      */
     _onFail(channel, reason) {
         if (channel.peerAddress) {
-            this._failure(channel.peerAddress);
+            this._addresses.failure(channel.peerAddress);
         }
     }
 
     /**
-     * Connection to this peer address failed.
-     * @param {PeerAddress} peerAddress
-     * @param {string|*} [reason]
+     * Updates the network time offset by calculating the median offset
+     * from all our peers.
      * @returns {void}
      * @private
      */
-    _onError(peerAddress, reason) {
-        Log.w(Network, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
+    _updateTimeOffset() {
+        const agents = this._agents.values();
 
-        this._failure(peerAddress);
+        const offsets = [0]; // Add our own offset.
+        agents.forEach(agent => {
+            // The agent.peer property is null pre-handshake.
+            if (agent.peer) {
+                offsets.push(agent.peer.timeOffset);
+            }
+        });
 
-        const peerConnection = this.getByPeerAddress(peerAddress);
-        this._remove(peerConnection);
+        const offsetsLength = offsets.length;
+        offsets.sort((a, b) => a - b);
+
+        if ((offsetsLength % 2) === 0) {
+            this._time.offset = Math.round((offsets[(offsetsLength / 2) - 1] + offsets[offsetsLength / 2]) / 2);
+        } else {
+            this._time.offset = offsets[(offsetsLength - 1) / 2];
+        }
     }
-
 
     /* Signaling */
 
@@ -602,105 +576,51 @@ class ConnectionPool extends Observable {
         //     + `(via ${signalChannel.peerAddress})`);
     }
 
-    /**
-     * Called when a connection to this peerAddress is closed.
-     * @param {PeerChannel} channel
-     * @param {PeerAddress} peerAddress
-     * @param {boolean} closedByRemote
-     * @returns {void}
-     */
-    _disconnect(channel, peerAddress, closedByRemote) {
-        const peerConnection = this.getByPeerAddress(peerAddress);
-        if (!peerConnection) {
-            return;
-        }
-        peerConnection.disconnect();
-
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
-        }
-    }
-
-
-    /**
-     * Called when a network connection to this peerAddress has failed.
-     * @param {PeerAddress} peerAddress
-     * @returns {void}
-     */
-    _failure(peerAddress) {
-        const peerConnection = this.getByPeerAddress(peerAddress);
-        if (!peerConnection) {
-            return;
-        }
-        peerConnection.failure();
-    }
-
-    /**
-     * @param {string|*} reason
-     */
-    disconnect(reason) {
-        // Close all active connections.
-        for (const connection of this.values()) {
-            if (connection.networkAgent) {
-                connection.networkAgent.channel.close(reason || 'manual network disconnect');
-            }
-        }
-    }
-
-    // XXX For testing
-    disconnectWebSocket() {
-        // Close all websocket connections.
-        for (const connection of this.values()) {
-            if (connection.networkAgent && agent.peer.peerAddress.protocol === Protocol.WS) {
-                connection.networkAgent.channel.close(reason || 'manual websocket disconnect');
-            }
-        }
-     }
-
-
-    /** @type {number} */
-    get peerCountWs() {
-        return this._peerCountWs;
+    /** @type {Time} */
+    get time() {
+        return this._time;
     }
 
     /** @type {number} */
-    get peerCountRtc() {
-        return this._peerCountRtc;
+    get peerCount() {
+        return this._addresses.peerCount;
+    }
+
+    /** @type {number} */
+    get peerCountWebSocket() {
+        return this._addresses.peerCountWs;
+    }
+
+    /** @type {number} */
+    get peerCountWebRtc() {
+        return this._addresses.peerCountRtc;
     }
 
     /** @type {number} */
     get peerCountDumb() {
-        return this._peerCountDumb;
+        return this._addresses.peerCountDumb;
     }
 
     /** @type {number} */
-    get connectingCount() {
-        return this._connectingCount;
+    get bytesSent() {
+        return this._bytesSent
+            + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);
+    }
+
+    /** @type {number} */
+    get bytesReceived() {
+        return this._bytesReceived
+            + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesReceived, 0);
     }
 }
-ConnectionPool.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
-ConnectionPool.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.MAX_AGE_DUMB = 1000 * 60; // 1 minute
-ConnectionPool.MAX_DISTANCE = 4;
-ConnectionPool.MAX_FAILED_ATTEMPTS_WS = 3;
-ConnectionPool.MAX_FAILED_ATTEMPTS_RTC = 2;
-ConnectionPool.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
-ConnectionPool.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
-ConnectionPool.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.SEED_PEERS = [
-    // WsPeerAddress.seed('alpacash.com', 8080),
-    // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('emily.nimiq-network.com', 443)
-    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
-];
-Class.register(ConnectionPool);
+Network.PEER_COUNT_DESIRED = 6;
+Network.PEER_COUNT_RELAY = 4;
+Network.CONNECTING_COUNT_MAX = 2;
+Network.SIGNAL_TTL_INITIAL = 3;
+Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
+Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
+Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
+Class.register(Network);
 
 class SignalStore {
     /**
