@@ -178,8 +178,9 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this.peerCount + this._addresses.connectingCount < Network.PEER_COUNT_DESIRED
-            && this._addresses.connectingCount < Network.CONNECTING_COUNT_MAX) {
+            //TODO Stefan, is this correct?
+            && this._connections.count < Network.PEER_COUNT_DESIRED
+            && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._addresses.pickAddress();

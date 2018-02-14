@@ -45,28 +45,28 @@ class ConnectionPool extends Observable {
         this._store = new Map();
 
         /**
-         * Array of all inbound PeerConnections that are not yet assigned to an address.
-         * @type {Map.<number, PeerConnection>}
+         * HashMap of all inbound PeerConnections that are not yet assigned to an address.
+         * @type {HashMap.<NetworkConnection, PeerConnection>}
          * @private
          */
-        this._inboundStore = new Array();
+        this._inboundStore = new Map();
 
         /**
-         * Map from peerIds to RTC connections.
+         * HashMap from peerIds to RTC connections.
          * @type {HashMap.<PeerId, PeerConnection>}
          * @private
          */
         this._peerIdStore = new HashMap();
 
         /**
-         * Map from peerAddresses to connections.
+         * HashMap from peerAddresses to connections.
          * @type {HashMap.<PeerAddress, PeerConnection>}
          * @private
          */
         this._peerAddressStore = new HashMap();
 
         /**
-         * Map from netAddresses to connections.
+         * HashMap from netAddresses to connections.
          * @type {HashMap.<NetAddress, PeerConnection>}
          * @private
          */
@@ -107,12 +107,6 @@ class ConnectionPool extends Observable {
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
     }
-
-    /** @type {number} */
-    get peerCount() {
-        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
-    }
-
     /**
      * @returns {IterableIterator<PeerConnection>}
      */
@@ -181,7 +175,7 @@ class ConnectionPool extends Observable {
         this._store.put(peerConnection.id, peerConnection);
         if (peerConnection.peerAddress){
             this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
-            if (peerAddress.protocol === Protocol.RTC) {
+            if (peerConnection.peerAddress.protocol === Protocol.RTC) {
                 this._peerIdStore.put(peerAddress.peerId, peerConnection);
             }
         }
@@ -192,16 +186,17 @@ class ConnectionPool extends Observable {
      * @returns {void}
      * @private
      */
-    _remove(peerConnection) {
+    _remove(peerConnection) { 
+        //TODO Stefan, remove by value?
         if (peerConnection.peerAddress) {
             // Delete from peerId index.
-
-            if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIdStore.remove(peerAddress.peerId);
+            if (peerConnection.peerAddress.protocol === Protocol.RTC) {
+                this._peerIdStore.remove(peerConnection.peerAddress.peerId);
             }
-        }
 
-        this._peerAddressStore.remove(peerConnection.peerAddress);
+            this._netAddressStore.remove(peerConnection.peerAddress.netAddress);
+            this._peerAddressStore.remove(peerConnection.peerAddress);
+        }
         this._store.remove(peerConnection.id);
     }
 
@@ -273,14 +268,14 @@ class ConnectionPool extends Observable {
         } 
         else {
             peerConnection = PeerConnection.getInbound(conn);
-            this._inboundStore.add(peerConnection);
+            this._inboundStore.put(conn, peerConnection);
         }
 
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
             if (conn.outbound) {
                  //TODO Stefan, handle member
-                this._disconnect(null, conn.peerAddress, false);
+                this._disconnected(null, conn.peerAddress, false);
             }
             conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return;
@@ -392,6 +387,8 @@ class ConnectionPool extends Observable {
         // Set peerConnection to ESTABLISHED state.
         peerConnection.peer = peer;
 
+        this._netAddressStore.put(peerConnection.peerAddress.netAddress);
+
         this._updateConnectedPeerCount(peer.peerAddress, 1);
 
         // Let listeners know about this peer.
@@ -424,13 +421,14 @@ class ConnectionPool extends Observable {
         this._bytesSent += channel.connection.bytesSent;
         this._bytesReceived += channel.connection.bytesReceived;
 
+
         // channel.peerAddress is undefined for incoming connections pre-handshake.
         // It is also cleared before closing duplicate connections post-handshake.
         if (channel.peerAddress) {
             // Check if the handshake with this peer has completed.
             if (this.isEstablished(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._disconnect(channel, channel.peerAddress, closedByRemote);
+                this._disconnected(channel, channel.peerAddress, closedByRemote);
 
                 peerLeft = true;
 
@@ -445,13 +443,17 @@ class ConnectionPool extends Observable {
                 if (closedByRemote) {
                     this._failure(channel.peerAddress);
                 } else {
-                    this._disconnect(null, channel.peerAddress, false);
+                    this._disconnected(null, channel.peerAddress, false);
                 }
             }
-            const peerAddress = this.getByPeerAddress(channel.peerAddr);
-            this._remove(peerAddress);
+
+            const peerConnection = this.getByPeerAddress(channel.peerAddr);
+            this._remove(peerConnection);
+            if (peerConnection.state === PeerConnectionState.CONNECTING) {
+                this._connectingCount--;
+            }
         }
-        this._inboundStore.delete(channel.connection);
+        this._inboundStore.remove(channel.connection);
 
         if (peerLeft){
             // Tell listeners that this peer has gone away.
@@ -474,6 +476,7 @@ class ConnectionPool extends Observable {
         // Ban the netAddress in this case.
         // XXX We should probably always ban the netAddress as well.
         if (channel.peerAddress) {
+            // TODO Stefan, disconnect?
             this._addresses.ban(channel.peerAddress);
         } else {
             // TODO ban netAddress
@@ -609,14 +612,14 @@ class ConnectionPool extends Observable {
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    _disconnect(channel, peerAddress, closedByRemote) {
+    _disconnected(channel, peerAddress, closedByRemote) {
         const peerConnection = this.getByPeerAddress(peerAddress);
         if (!peerConnection) {
             return;
         }
         peerConnection.disconnect();
 
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
+        if (peerConnection.state === PeerConnectionState.CONNECTING) {
             this._connectingCount--;
         }
     }
@@ -674,8 +677,18 @@ class ConnectionPool extends Observable {
     }
 
     /** @type {number} */
+    get peerCount() {
+        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
+    }
+
+    /** @type {number} */
     get connectingCount() {
         return this._connectingCount;
+    }
+
+    /** @type {number} */
+    get count() {
+        return this._store.length();
     }
 }
 ConnectionPool.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
