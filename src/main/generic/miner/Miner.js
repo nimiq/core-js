@@ -111,6 +111,9 @@ class Miner extends Observable {
         /** @type {boolean} */
         this._submittingBlock = false;
 
+        this._shareCompact = 0;
+        this._shareCompactSet = false;
+
         // Listen to changes in the mempool which evicts invalid transactions
         // after every blockchain head change and then fires 'transactions-ready'
         // when the eviction process finishes. Restart work on the next block
@@ -159,7 +162,7 @@ class Miner extends Observable {
 
             Log.d(Miner, `Starting work on block #${block.header.height} with ${block.transactionCount} transactions (${this._hashrate} H/s)`);
 
-            this._workerPool.startMiningOnBlock(block).catch(Log.w.tag(Miner));
+            this._workerPool.startMiningOnBlock(block, this._shareCompactSet ? this._shareCompact : undefined).catch(Log.w.tag(Miner));
         } catch (e) {
             Log.w(Miner, 'Failed to start work, retrying in 100ms');
             this.stopWork();
@@ -177,24 +180,27 @@ class Miner extends Observable {
         this._hashCount += this._workerPool.noncesPerRun;
         if (obj.block && obj.block.prevHash.equals(this._blockchain.headHash)) {
             Log.d(Miner, () => `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
-            if (BlockUtils.isProofOfWork(obj.hash, obj.block.target) && !this._submittingBlock) {
+            if (!this._submittingBlock) {
                 obj.block.header.nonce = obj.nonce;
-                this._submittingBlock = true;
-                if (await obj.block.header.verifyProofOfWork()) {
-                    // Tell listeners that we've mined a block.
-                    this.fire('block-mined', obj.block, this);
+                if (BlockUtils.isProofOfWork(obj.hash, obj.block.target)) {
+                    this._submittingBlock = true;
+                    if (await obj.block.header.verifyProofOfWork()) {
+                        // Tell listeners that we've mined a block.
+                        this.fire('block-mined', obj.block, this);
 
-                    // Push block into blockchain.
-                    if ((await this._blockchain.pushBlock(obj.block)) < 0) {
-                        this._submittingBlock = false;
-                        this._startWork().catch(Log.w.tag(Miner));
-                        return;
+                        // Push block into blockchain.
+                        if ((await this._blockchain.pushBlock(obj.block)) < 0) {
+                            this._submittingBlock = false;
+                            this._startWork().catch(Log.w.tag(Miner));
+                            return;
+                        } else {
+                            this._submittingBlock = false;
+                        }
                     } else {
-                        this._submittingBlock = false;
+                        Log.d(Miner, `Ignoring invalid share: ${await obj.block.header.pow()}`);
                     }
-                } else {
-                    Log.d(Miner, `Ignoring invalid share: ${await obj.block.header.pow()}`);
                 }
+                this.fire('share', obj.block, this);
             }
         }
         if (this._mempoolChanged && this._lastRestart + Miner.MIN_TIME_ON_BLOCK < Date.now()) {
@@ -345,6 +351,15 @@ class Miner extends Observable {
         return this._address;
     }
 
+    /** @type {Address} */
+    set address(addr) {
+        if (!addr.equals(this._address)) {
+            this._address = addr;
+            this._startWork().catch(Miner._log);
+        }
+    }
+
+
     /** @type {boolean} */
     get working() {
         return !!this._hashrateWorker;
@@ -389,6 +404,28 @@ class Miner extends Observable {
      */
     set throttleAfter(throttleAfter) {
         this._workerPool.runsPerCycle = throttleAfter;
+    }
+
+    /** @type {Uint8Array} */
+    get extraData() {
+        return this._extraData;
+    }
+
+    /** @param {Uint8Array} extra */
+    set extraData(extra) {
+        if (!BufferUtils.equals(extra, this._extraData)) {
+            this._extraData = extra;
+            this._startWork().catch(Miner._log);
+        }
+    }
+
+    set shareTarget(target) {
+        if (!target) {
+            this._shareCompactSet = false;
+        } else {
+            this._shareCompact = BlockUtils.targetToCompact(target);
+            this._shareCompactSet = true;
+        }
     }
 }
 
