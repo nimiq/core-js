@@ -127,6 +127,9 @@ class ChainDataStore {
      * @returns {Promise.<Array.<Block>>}
      */
     async getBlocks(startHeight, count = 500, forward = true) {
+        if (count <= 0) {
+            return [];
+        }
         if (!forward) {
             startHeight = startHeight - count;
         }
