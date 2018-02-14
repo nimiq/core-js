@@ -73,6 +73,16 @@ class PeerConnection extends Observable {
         return this._state;
     }
 
+    /** @type {PeerAddress} */
+    get peerAddress() {
+        return this._peerAddress;
+    }
+
+    /** @param {PeerAddress} value */
+    set peerAddress(value) {
+        this._peerAddress = value;
+    }
+
     /** @type {NetworkConnection} */
     get networkConnection() {
         return this._networkConnection;
@@ -112,27 +122,27 @@ class PeerConnection extends Observable {
 
     /** @param {Peer} value */
     set peer(value) {
-        this._peern = value;
+        this._peer = value;
         this._state = PeerConnectionState.ESTABLISHED;
     }
 
     /**
      * @param {WebSocketConnector|WebRtcConnector} connector
+     * @param {Signalchannel|null} signalChannel
      * @returns {void}
      */
-    connectOutbound(connector) {
-        switch (this.peerAddress.protocol) {
+    connectOutbound(connector, signalChannel) {
+        switch (this._peerAddress.protocol) {
             case Protocol.WS:
-                Log.d(Network, `Connecting to ${this.peerAddress} ...`);
-                if (connector.connect(peerAddress)) {
+                Log.d(Network, `Connecting to ${this._peerAddress} ...`);
+                if (connector.connect(this._peerAddress)) {
                     this._state = PeerConnectionState.CONNECTING;
                 }
                 break;
 
             case Protocol.RTC: {
-                const signalChannel = this._addresses.getChannelByPeerId(peerAddress.peerId);
                 Log.d(Network, `Connecting to ${this.peerAddress} via ${signalChannel.peerAddress}...`);
-                if (connector.connect(peerAddress, signalChannel)) {
+                if (connector.connect(this._peerAddress, signalChannel)) {
                     this._state = PeerConnectionState.CONNECTING;
                 }
                 break;

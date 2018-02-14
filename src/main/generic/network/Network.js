@@ -18,7 +18,7 @@ class Network extends Observable {
     /**
      * @constructor
      * @param {IBlockchain} blockchain
-     * @param {NetworkConfig} netconfig
+     * @param {NetworkConfig} networkConfig
      * @param {Time} time
      * @listens PeerAddresses#added
      * @listens WebSocketConnector#connection
@@ -26,7 +26,7 @@ class Network extends Observable {
      * @listens WebRtcConnector#connection
      * @listens WebRtcConnector#error
      */
-    constructor(blockchain, netconfig, time) {
+    constructor(blockchain, networkConfig, time) {
         super();
 
         /**
@@ -39,7 +39,7 @@ class Network extends Observable {
          * @type {NetworkConfig}
          * @private
          */
-        this._networkConfig = netconfig;
+        this._networkConfig = networkConfig;
 
         /**
          * @type {Time}
@@ -71,7 +71,6 @@ class Network extends Observable {
 
         /**
          * Helper objects to manage PeerAddresses.
-         * Must be initialized AFTER the WebSocket/WebRtcConnector.
          * @type {PeerAddresses}
          * @private
          */
@@ -86,11 +85,10 @@ class Network extends Observable {
         
         /**
          * Helper objects to manage PeerConnections.
-         * Must be initialized AFTER the WebSocket/WebRtcConnector.
-         * @type {PeerConnections}
+         * @type {ConnectionPool}
          * @private
          */
-        this._connections = new PeerConnections(this._networkConfig);
+        this._connections = new ConnectionPool(this._addresses, networkConfig, blockchain, time);
 
         // Relay new connections to peers.
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
@@ -170,7 +168,7 @@ class Network extends Observable {
         const peerConnections = this._connections.values();
         for (let i = 0; i < Network.PEER_COUNT_RELAY; ++i) {
             const peerConnection = ArrayUtils.randomElement(peerConnections);
-            if (peerConnection && peerConnection.networkAgent) {
+            if (peerConnection && peerConnection.state === PeerConnectionState.ESTABLISHED && peerConnection.networkAgent) {
                 peerConnection.networkAgent.relayAddresses(addresses);
             }
         }
@@ -221,7 +219,7 @@ class Network extends Observable {
         const offsets = [0]; // Add our own offset.
         peerConnections.forEach(peerConnection => {
             // The agent.peer property is null pre-handshake.
-            if (peerConnection && peerConnection.networkAgent && peerConnection.networkAgent.peer) {
+            if (peerConnection && peerConnection.state === PeerConnectionState.ESTABLISHED && peerConnection.networkAgent && peerConnection.networkAgent.peer) {
                 offsets.push(peerConnection.networkAgent.peer.timeOffset);
             }
         });
@@ -277,12 +275,12 @@ class Network extends Observable {
 
     /** @type {number} */
     get bytesSent() {
-        return this.connections.bytesSent();
+        return this._connections.bytesSent;
     }
 
     /** @type {number} */
     get bytesReceived() {
-        return this.connections.bytesReceived();
+        return this._connections.bytesReceived;
     }
 }
 Network.PEER_COUNT_DESIRED = 6;
