@@ -87,7 +87,6 @@ class SynchronousAccountsTree extends AccountsTree {
     /**
      * @param {Address} address
      * @param {Account} account
-     * @private
      */
     putSync(address, account) {
         this.putBatch(address, account);

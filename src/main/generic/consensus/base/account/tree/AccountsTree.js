@@ -387,6 +387,14 @@ class AccountsTree extends Observable {
     get tx() {
         return this._store.tx;
     }
+
+    /**
+     * @returns {Promise.<boolean>}
+     */
+    async isEmpty() {
+        const rootNode = await this._store.getRootNode();
+        return !rootNode.hasChildren();
+    }
 }
 Class.register(AccountsTree);
 

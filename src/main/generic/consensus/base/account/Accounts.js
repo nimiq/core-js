@@ -29,6 +29,41 @@ class Accounts extends Observable {
     }
 
     /**
+     * @param {Block} genesisBlock
+     * @param {string} encodedAccounts
+     * @returns {Promise.<void>}
+     */
+    async initialize(genesisBlock, encodedAccounts) {
+        Assert.that(await this._tree.isEmpty());
+
+        const tree = await this._tree.synchronousTransaction();
+        try {
+            const buf = BufferUtils.fromBase64(encodedAccounts);
+            const count = buf.readUint16();
+            for (let i = 0; i < count; i++) {
+                const address = Address.unserialize(buf);
+                const account = Account.unserialize(buf);
+                tree.putSync(address, account);
+            }
+
+            await this._commitBlockBody(tree, genesisBlock.body, genesisBlock.height, new TransactionCache());
+
+            tree.finalizeBatch();
+        } catch (e) {
+            await tree.abort();
+            throw e;
+        }
+
+        const hash = tree.rootSync();
+        if (!genesisBlock.accountsHash.equals(hash)) {
+            await tree.abort();
+            throw new Error('Genesis AccountsHash mismatch');
+        }
+
+        return tree.commit();
+    }
+
+    /**
      * @param {Array.<Address>} addresses
      * @returns {Promise.<AccountsProof>}
      */
@@ -373,5 +408,4 @@ class Accounts extends Observable {
         return this._tree.tx;
     }
 }
-
 Class.register(Accounts);

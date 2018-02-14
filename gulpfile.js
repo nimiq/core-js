@@ -123,6 +123,7 @@ const sources = {
         './src/main/generic/consensus/nano/NanoMempool.js',
         './src/main/generic/consensus/ConsensusDB.js',
         './src/main/generic/consensus/Consensus.js',
+        './src/main/generic/consensus/Genesis.js',
         './src/main/generic/network/Protocol.js',
         './src/main/generic/network/address/NetAddress.js',
         './src/main/generic/network/address/PeerId.js',

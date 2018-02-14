@@ -90,7 +90,7 @@ class FullChain extends BaseChain {
             await tx.setHead(Block.GENESIS.HASH);
             await tx.commit();
 
-            await this._accounts.commitBlock(Block.GENESIS, this._transactionCache);
+            await this._accounts.initialize(Block.GENESIS, Accounts.GENESIS);
         }
 
         return this;

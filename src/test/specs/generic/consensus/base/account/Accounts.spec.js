@@ -168,7 +168,7 @@ describe('Accounts', () => {
             const accounts = testBlockchain.accounts;
             // we expect rejection of block
             try {
-                await accounts.commitBlock(block);
+                await accounts.commitBlock(block, testBlockchain.transactionCache);
             } catch (e) {
                 const balance1 = (await accounts.get(user1.address, Account.Type.BASIC)).balance;
                 const balance3 = (await accounts.get(user3.address)).balance;
@@ -225,7 +225,7 @@ describe('Accounts', () => {
             });
             let error = false;
             try {
-                await accounts.commitBlock(block);
+                await accounts.commitBlock(block, testBlockchain.transactionCache);
             } catch(e) {
                 expect(e.message.toLowerCase()).toContain('balance error!');
                 error = true;
@@ -236,13 +236,47 @@ describe('Accounts', () => {
             block.body._minerAddr = user1.address;
             error = false;
             try {
-                await accounts.commitBlock(block);
+                await accounts.commitBlock(block, testBlockchain.transactionCache);
             } catch(e) {
                 expect(e.message.toLowerCase()).toContain('balance error!');
                 error = true;
             }
             expect(error).toBe(true);
 
+        })().then(done, done.fail);
+    });
+
+    it('can initialize genesis accounts', (done) => {
+        (async () => {
+            const map = new Map();
+            map.set(Address.fromBase64(Dummy.address1), new BasicAccount(5));
+            map.set(Address.fromBase64(Dummy.address2), new VestingContract(10, Address.fromBase64(Dummy.address2), 0, 10, 2));
+            map.set(Address.fromBase64(Dummy.address3), new VestingContract(20, Address.fromBase64(Dummy.address1), 0, 20, 5));
+
+            let size = 2;
+            for (const entry of map.entries()) {
+                size += entry[0].serializedSize + entry[1].serializedSize;
+            }
+
+            const buf = new SerialBuffer(size);
+            buf.writeUint16(map.size);
+            for (const entry of map.entries()) {
+                entry[0].serialize(buf);
+                entry[1].serialize(buf);
+            }
+
+            const genesis = new Block(
+                new BlockHeader(Hash.NULL, Hash.NULL, Block.GENESIS.bodyHash, Hash.fromBase64('6hvwL5Il5F6dBF2JyT0kqwyLgQQ2zShm/7TQBeR2I8E='), BlockUtils.difficultyToCompact(1), 1, 0, 0),
+                Block.GENESIS.interlink,
+                Block.GENESIS.body
+            );
+            const accounts = await Accounts.createVolatile();
+            await accounts.initialize(genesis, BufferUtils.toBase64(buf));
+
+            expect((await accounts.get(genesis.minerAddr)).equals(new BasicAccount(Policy.blockRewardAt(1)))).toBe(true);
+            for (const entry of map.entries()) {
+                expect((await accounts.get(entry[0])).equals(entry[1])).toBe(true);
+            }
         })().then(done, done.fail);
     });
 });
