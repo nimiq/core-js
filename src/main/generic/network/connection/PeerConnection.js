@@ -119,7 +119,6 @@ class PeerConnection extends Observable {
     /**
      * @param {WebSocketConnector|WebRtcConnector} connector
      * @returns {void}
-     * @private
      */
     connectOutbound(connector) {
         switch (this.peerAddress.protocol) {
@@ -146,18 +145,18 @@ class PeerConnection extends Observable {
     }
 
     /**
-     * @listens PeerChannel#signal
-     * @listens PeerChannel#ban
-     * @listens NetworkAgent#handshake
-     * @listens NetworkAgent#close
-     * @param {NetworkConnection} conn
      * @returns {void}
-     * @private
      */
-    onConnection(conn) {
+    failure() {
+        this._state = PeerConnectionState.FAILED;
     }
 
-
+    /**
+     * @returns {void}
+     */
+    disconnect() {
+        this._state = PeerConnectionState.TRIED;
+    }
 }
 // Used to generate unique PeerConnection ids.
 PeerConnection._instanceCount = 0;
