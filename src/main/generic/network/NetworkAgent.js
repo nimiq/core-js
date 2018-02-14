@@ -184,6 +184,8 @@ class NetworkAgent extends Observable {
                 this._timers.clearTimeout('version');
                 this._channel.close('version timeout');
             }, NetworkAgent.HANDSHAKE_TIMEOUT);
+        } else if (this._peerAddressVerified) {
+            this._sendVerAck();
         }
 
         this._timers.setTimeout('verack', () => {
@@ -203,6 +205,12 @@ class NetworkAgent extends Observable {
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
+            return;
+        }
+
+        // Ignore duplicate version messages.
+        if (this._versionReceived) {
+            Log.d(NetworkAgent, () => `Ignoring duplicate version message from ${this._observedPeerAddress}`);
             return;
         }
 
@@ -268,6 +276,7 @@ class NetworkAgent extends Observable {
 
         if (!this._versionSent) {
             this.handshake();
+            return;
         }
 
         if (this._peerAddressVerified) {
@@ -298,6 +307,12 @@ class NetworkAgent extends Observable {
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
+            return;
+        }
+
+        // Ignore duplicate verack messages.
+        if (this._verackReceived) {
+            Log.d(NetworkAgent, () => `Ignoring duplicate verack message from ${this._observedPeerAddress}`);
             return;
         }
 
@@ -493,12 +508,12 @@ class NetworkAgent extends Observable {
     _canAcceptMessage(msg) {
         // The first message must be the version message.
         if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
-            Log.w(NetworkAgent, `Discarding ${msg.type} message from ${this._channel}`
+            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel}`
                 + ' - no version message received previously');
             return false;
         }
         if (this._versionReceived && !this._verackReceived && msg.type !== Message.Type.VERACK) {
-            Log.w(NetworkAgent, `Discarding ${msg.type} message from ${this._channel}`
+            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel}`
                 + ' - no verack message received previously');
             return false;
         }
@@ -516,7 +531,7 @@ class NetworkAgent extends Observable {
     }
 }
 
-NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
+NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 4; // 4 seconds
 NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
 NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
 NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 5; // 5 minutes

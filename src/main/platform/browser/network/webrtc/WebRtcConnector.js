@@ -84,10 +84,16 @@ class WebRtcConnector extends Observable {
             // simultaneously. Resolve this by having the peer with the higher
             // peerId discard the offer while the one with the lower peerId
             // accepts it.
-            if (this._connectors.contains(msg.senderId)) {
-                if (msg.recipientId.compare(msg.senderId) === 1) {
+            let connector = this._connectors.get(msg.senderId);
+            if (connector) {
+                if (msg.recipientId.compare(msg.senderId) > 0) {
                     // Discard the offer.
                     Log.d(WebRtcConnector, `Simultaneous connection, discarding offer from ${msg.senderId} (<${msg.recipientId})`);
+                    return;
+                } else if (connector instanceof InboundPeerConnector) {
+                    // We have already seen an offer from this peer. Forward it to the existing connector.
+                    Log.w(WebRtcConnector, `Duplicate offer received from ${msg.senderId}`);
+                    connector.onSignal(payload);
                     return;
                 } else {
                     // We are going to accept the offer. Clear the connect timeout
@@ -98,7 +104,7 @@ class WebRtcConnector extends Observable {
             }
 
             // Accept the offer.
-            const connector = new InboundPeerConnector(this._networkConfig, channel, msg.senderId, payload);
+            connector = new InboundPeerConnector(this._networkConfig, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
             this._connectors.put(msg.senderId, connector);
 
