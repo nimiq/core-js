@@ -116,11 +116,12 @@ class CryptoWorker {
 
     /**
      * @param {Uint8Array} block
+     * @param {Array.<bool>} transactionValid
      * @param {number} timeNow
      * @param {Uint8Array} genesisHash
      * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
      */
-    async blockVerify(block, timeNow, genesisHash) {}
+    async blockVerify(block, transactionValid, timeNow, genesisHash) {}
 }
 CryptoWorker.ARGON2_HASH_SIZE = 32;
 CryptoWorker.BLAKE2_HASH_SIZE = 32;

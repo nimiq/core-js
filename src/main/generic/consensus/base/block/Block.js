@@ -84,7 +84,8 @@ class Block {
                 // worker overhead doesn't pay off for small transaction numbers
                 this._valid = await this.computeVerify(time.now());
             } else {
-                const {valid, pow, interlinkHash, bodyHash} = await Crypto.blockVerify(this.serialize(), time.now());
+                const transactionValid = this.body.transactions.map(t => t._valid);
+                const {valid, pow, interlinkHash, bodyHash} = await Crypto.blockVerify(this.serialize(), transactionValid, time.now());
                 this._valid = valid;
                 this.header._pow = Hash.unserialize(new SerialBuffer(pow));
                 this.interlink._hash = Hash.unserialize(new SerialBuffer(interlinkHash));

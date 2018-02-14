@@ -501,21 +501,26 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} blockSerialized
+     * @param {Array.<bool>} transactionValid
      * @param {number} timeNow
      * @param {Uint8Array} genesisHash
      * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
      */
-    async blockVerify(blockSerialized, timeNow, genesisHash) {
+    async blockVerify(blockSerialized, transactionValid, timeNow, genesisHash) {
         // XXX Create a stub genesis block within the worker.
         if (!Block.GENESIS) {
             Block.GENESIS = { HASH: Hash.unserialize(new SerialBuffer(genesisHash)) };
         }
 
         const block = Block.unserialize(new SerialBuffer(blockSerialized));
+        for (let i = 0; i < transactionValid.length; i++) {
+            block.body.transactions[i]._valid = transactionValid[i];
+        }
+
         const valid = await block.computeVerify(timeNow);
         const pow = await block.header.pow();
-        const interlinkHash = await block.interlink.hash();
-        const bodyHash = await block.body.hash();
+        const interlinkHash = block.interlink.hash();
+        const bodyHash = block.body.hash();
         return { valid: valid, pow: pow.serialize(), interlinkHash: interlinkHash.serialize(), bodyHash: bodyHash.serialize() };
     }
 }
