@@ -128,6 +128,8 @@ const sources = {
         './src/main/generic/network/address/PeerId.js',
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddresses.js',
+        './src/main/generic/network/connection/ConnectionPool.js',
+        './src/main/generic/network/connection/PeerConnection.js',
         './src/main/generic/network/message/Message.js',
         './src/main/generic/network/message/AddrMessage.js',
         './src/main/generic/network/message/BlockMessage.js',

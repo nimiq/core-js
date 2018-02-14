@@ -49,7 +49,7 @@ class ConnectionPool extends Observable {
          * @type {HashMap.<NetworkConnection, PeerConnection>}
          * @private
          */
-        this._inboundStore = new Map();
+        this._inboundStore = new HashMap();
 
         /**
          * HashMap from peerIds to RTC connections.
@@ -107,11 +107,12 @@ class ConnectionPool extends Observable {
         /** @type {SignalStore} */
         this._forwards = new SignalStore();
     }
+
     /**
-     * @returns {IterableIterator<PeerConnection>}
+     * @returns {Array<PeerConnection>}
      */
     values(id) {
-        return this._store.values();
+        return Array.from(this._store.values());
     }
     /**
      * @param {number} id
@@ -146,18 +147,6 @@ class ConnectionPool extends Observable {
     }
 
     /**
-     * @param {PeerId} peerId
-     * @returns {PeerChannel}
-     */
-    getChannelByPeerId(peerId) {
-        const peerAddressState = this._peerIdStore.get(peerId);
-        if (peerAddressState && peerAddressState.bestRoute) {
-            return peerAddressState.bestRoute.signalChannel;
-        }
-        return null;
-    }
-
-    /**
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
      */
@@ -172,11 +161,15 @@ class ConnectionPool extends Observable {
      * @private
      */
     _add(peerConnection) {
-        this._store.put(peerConnection.id, peerConnection);
-        if (peerConnection.peerAddress){
-            this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
-            if (peerConnection.peerAddress.protocol === Protocol.RTC) {
-                this._peerIdStore.put(peerAddress.peerId, peerConnection);
+        //TODO Stefan, throw, if no peerConnection?
+        if (peerConnection) {
+            this._store.set(peerConnection.id, peerConnection);
+            if (peerConnection.peerAddress){
+                this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
+ 
+                if (peerConnection.peerAddress.protocol === Protocol.RTC) {
+                    this._peerIdStore.put(peerAddress.peerId, peerConnection);
+                }
             }
         }
     }
@@ -186,18 +179,27 @@ class ConnectionPool extends Observable {
      * @returns {void}
      * @private
      */
-    _remove(peerConnection) { 
-        //TODO Stefan, remove by value?
-        if (peerConnection.peerAddress) {
-            // Delete from peerId index.
-            if (peerConnection.peerAddress.protocol === Protocol.RTC) {
-                this._peerIdStore.remove(peerConnection.peerAddress.peerId);
+    _remove(peerConnection) {
+        //TODO Stefan, throw, if no peerConnection?
+        if (peerConnection) {
+            if (peerConnection.state === PeerConnectionState.CONNECTING) {
+                this._connectingCount--;
+            }
+            if (peerConnection.peerAddress) {
+                // Delete from peerId index.
+                if (peerConnection.peerAddress.protocol === Protocol.RTC) {
+                    this._peerIdStore.remove(peerConnection.peerAddress.peerId);
+                }
+
+                if (peerConnection.peerAddress.netAddress) {
+                    this._netAddressStore.remove(peerConnection.peerAddress.netAddress);
+                }
+
+                this._peerAddressStore.remove(peerConnection.peerAddress);
             }
 
-            this._netAddressStore.remove(peerConnection.peerAddress.netAddress);
-            this._peerAddressStore.remove(peerConnection.peerAddress);
+            this._store.delete(peerConnection.id);
         }
-        this._store.remove(peerConnection.id);
     }
 
 
@@ -207,17 +209,17 @@ class ConnectionPool extends Observable {
      */
     connectOutbound(peerAddress) {
         if (peerAddress === null){
-            return
+            return null;
         }
 
         if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
             Log.e(Network, `Cannot connect to $this.peerAddress} - unsupported protocol`);
-            this._onError(peerAddress);
+            return null;
         }
 
         //TODO Stefan, seeds?
         if ( this._addresses.isBanned(peerAddress)){
-             throw `Connecting to banned address ${peerAddress}`;
+            throw `Connecting to banned address ${peerAddress}`;
         }
 
         let peerConnection = this.getByPeerAddress(peerAddress);
@@ -225,17 +227,23 @@ class ConnectionPool extends Observable {
             throw `Duplicate connection to ${peerAddress}`;
         }
               
-        peerConnection = new PeerConnection.getOutbound(peerAddress);
+        peerConnection = PeerConnection.getOutbound(peerAddress);
         this._add(peerConnection);
 
-        peerConnection.connectOutbound(peerAddress.protocol === Protocol.WS ? this._wsConnector : this._rtcConnector);
+        if (peerAddress.protocol === Protocol.WS) {
+            peerConnection.connectOutbound(this._wsConnector, null);   
+        }
+        else {
+            const signalChannel = this._addresses.getChannelByPeerId(peerAddress.peerId);
+            peerConnection.connectOutbound(this._rtcConnector, signalChannel);
+   
+        }
 
         if (peerConnection.state === PeerConnectionState.CONNECTING){
             this._connectingCount++;
         }
         else {
-            this._remove(peerConnection);
-            return null;
+            this._onError(peerAddress, `Outbound attempt not connecting. ${peerAddress}`);
         }
             
         return peerConnection;
@@ -261,7 +269,7 @@ class ConnectionPool extends Observable {
                 throw `Connecting to outbound peer address not stored ${conn.peerAddress}`;
             }
     
-            //TODO Stefan, handle duplicate states
+            //TODO Stefan, handle duplicate states?
             if(peerConnection.state !== PeerConnectionState.CONNECTING) {
                 throw `PeerConnection state not CONNECTING ${conn.peerAddress}`;
             }    
@@ -274,7 +282,6 @@ class ConnectionPool extends Observable {
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
             if (conn.outbound) {
-                 //TODO Stefan, handle member
                 this._disconnected(null, conn.peerAddress, false);
             }
             conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
@@ -378,7 +385,7 @@ class ConnectionPool extends Observable {
         let peerConnection = this.getByPeerAddress(peer.peerAddress);
         if (!peerConnection) {
             //inbound
-            peerConnection = this._inboundStore.get(agent.channel.connection)
+            peerConnection = this._inboundStore.get(agent.channel.connection);
             peerConnection.peerAddress = peer.peerAddress;
             this._add(peerConnection);
             this._inboundStore.remove(agent.channel.connection);
@@ -413,14 +420,9 @@ class ConnectionPool extends Observable {
     _onClose(peer, channel, closedByRemote) {
         let peerLeft = false;
 
-        // Delete agent.
-        // TODO Stefan, handle this
-        this._agents.remove(channel.id);
-
         // Update total bytes sent/received.
         this._bytesSent += channel.connection.bytesSent;
         this._bytesReceived += channel.connection.bytesReceived;
-
 
         // channel.peerAddress is undefined for incoming connections pre-handshake.
         // It is also cleared before closing duplicate connections post-handshake.
@@ -447,11 +449,8 @@ class ConnectionPool extends Observable {
                 }
             }
 
-            const peerConnection = this.getByPeerAddress(channel.peerAddr);
+            const peerConnection = this.getByPeerAddress(channel.peerAddress);
             this._remove(peerConnection);
-            if (peerConnection.state === PeerConnectionState.CONNECTING) {
-                this._connectingCount--;
-            }
         }
         this._inboundStore.remove(channel.connection);
 
@@ -572,6 +571,7 @@ class ConnectionPool extends Observable {
             return;
         }
 
+        // TODO Stefan, is this a connection issue?
         // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelByPeerId(msg.recipientId);
         if (!signalChannel) {
@@ -658,7 +658,7 @@ class ConnectionPool extends Observable {
                 connection.networkAgent.channel.close(reason || 'manual websocket disconnect');
             }
         }
-     }
+    }
 
 
     /** @type {number} */
@@ -688,8 +688,21 @@ class ConnectionPool extends Observable {
 
     /** @type {number} */
     get count() {
-        return this._store.length();
+        return this._store.size;
     }
+
+    /** @type {number} */
+    get bytesSent() {
+        return this._bytesSent
+            + this.values().reduce((n, peerConnection) => n + peerConnection.networkConnection ? peerConnection.networkConnection.bytesSent : 0, 0);
+    }
+
+    /** @type {number} */
+    get bytesReceived() {
+        return this._bytesReceived
+            + this.values().reduce((n, peerConnection) => n + peerConnection.networkConnection ? peerConnection.networkConnection.bytesReceived : 0, 0);
+    }
+
 }
 ConnectionPool.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
 ConnectionPool.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
@@ -700,8 +713,6 @@ ConnectionPool.MAX_FAILED_ATTEMPTS_RTC = 2;
 ConnectionPool.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 ConnectionPool.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 ConnectionPool.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
-ConnectionPool.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
 ConnectionPool.SEED_PEERS = [
     // WsPeerAddress.seed('alpacash.com', 8080),
     // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
