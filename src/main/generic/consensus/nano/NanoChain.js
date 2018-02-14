@@ -181,6 +181,11 @@ class NanoChain extends BaseChain {
         }
     }
 
+    /**
+     * @param {Block} block
+     * @returns {Promise.<number>}
+     * @private
+     */
     async _pushBlock(block) {
         // Check if we already know this header/block.
         const hash = await block.hash();
