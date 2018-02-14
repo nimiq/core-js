@@ -364,6 +364,16 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
+        // Reuse already known (verified) transactions
+        const transactions = msg.block.body.transactions;
+        const transactionPromises = transactions.map(t => this._getTransaction(t.hash()));
+        for (let i = 0; i < transactions.length; i++) {
+            const transaction = await transactionPromises[i]; // eslint-disable-line no-await-in-loop
+            if (transaction) {
+                transactions[i] = transaction;
+            }
+        }
+
         // Mark object as received.
         this._onObjectReceived(vector);
 

@@ -102,24 +102,26 @@ class Transaction {
      * @returns {boolean}
      */
     verify() {
+        if (this._valid !== undefined) {
+            return this._valid;
+        }
         // Check that sender != recipient.
         if (this._recipient.equals(this._sender)) {
             Log.w(Transaction, 'Sender and recipient must not match', this);
-            return false;
-        }
-        if (!Account.TYPE_MAP.has(this._senderType) || !Account.TYPE_MAP.has(this._recipientType)) {
+            this._valid = false;
+        } else if (!Account.TYPE_MAP.has(this._senderType) || !Account.TYPE_MAP.has(this._recipientType)) {
             Log.w(Transaction, 'Invalid account type', this);
-            return false;
-        }
-        if (!Account.TYPE_MAP.get(this._senderType).verifyOutgoingTransaction(this)) {
+            this._valid = false;
+        } else if (!Account.TYPE_MAP.get(this._senderType).verifyOutgoingTransaction(this)) {
             Log.w(Transaction, 'Invalid for sender', this);
-            return false;
-        }
-        if (!Account.TYPE_MAP.get(this._recipientType).verifyIncomingTransaction(this)) {
+            this._valid = false;
+        } else if (!Account.TYPE_MAP.get(this._recipientType).verifyIncomingTransaction(this)) {
             Log.w(Transaction, 'Invalid for recipient', this);
-            return false;
+            this._valid = false;
+        } else {
+            this._valid = true;
         }
-        return true;
+        return this._valid;
     }
 
     /** @type {number} */

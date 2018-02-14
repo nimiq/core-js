@@ -139,7 +139,6 @@ class BlockBody {
     }
 
     /**
-     * @return {Promise.<Hash>}
      * @return {Hash}
      */
     hash() {

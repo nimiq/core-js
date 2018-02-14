@@ -169,12 +169,13 @@ class Crypto {
 
     /**
      * @param {Uint8Array} block
+     * @param {Array.<bool>} transactionValid
      * @param {number} timeNow
      * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
      */
-    static async blockVerify(block, timeNow) {
+    static async blockVerify(block, transactionValid, timeNow) {
         const worker = await Crypto._cryptoWorkerAsync();
-        return worker.blockVerify(block, timeNow, Block.GENESIS.HASH.serialize());
+        return worker.blockVerify(block, transactionValid, timeNow, Block.GENESIS.HASH.serialize());
     }
 
 
