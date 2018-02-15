@@ -752,6 +752,7 @@ class PeerAddressState {
     }
 }
 PeerAddressState.NEW = 1;
+PeerAddressState.CONNECTED = 3;
 PeerAddressState.TRIED = 4;
 PeerAddressState.FAILED = 5;
 PeerAddressState.BANNED = 6;
