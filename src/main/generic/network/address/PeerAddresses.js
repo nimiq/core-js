@@ -27,135 +27,11 @@ class PeerAddresses extends Observable {
          */
         this._networkConfig = netconfig;
 
-        // Number of WebSocket/WebRTC peers.
-        /** @type {number} */
-        this._peerCountWs = 0;
-        /** @type {number} */
-        this._peerCountRtc = 0;
-        /** @type {number} */
-        this._peerCountDumb = 0;
-
-        /**
-         * Number of ongoing outbound connection attempts.
-         * @type {number}
-         * @private
-         */
-        this._connectingCount = 0;
-
         // Init seed peers.
         this.add(/*channel*/ null, PeerAddresses.SEED_PEERS);
 
         // Setup housekeeping interval.
         setInterval(() => this._housekeeping(), PeerAddresses.HOUSEKEEPING_INTERVAL);
-    }
-
-    /**
-     * @returns {?PeerAddress}
-     */
-    pickAddress() {
-        const addresses = this._store.values();
-        const numAddresses = addresses.length;
-
-        // Pick a random start index.
-        const index = Math.floor(Math.random() * numAddresses);
-
-        // Score up to 1000 addresses starting from the start index and pick the
-        // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 1000);
-        const candidates = new HashMap();
-        for (let i = 0; i < numAddresses; i++) {
-            const idx = (index + i) % numAddresses;
-            const address = addresses[idx];
-            const score = this._scoreAddress(address);
-            if (score >= 0) {
-                candidates.put(score, address);
-                if (candidates.length >= minCandidates) {
-                    break;
-                }
-            }
-        }
-
-        if (candidates.length === 0) {
-            return null;
-        }
-
-        // Return the candidate with the highest score.
-        const scores = candidates.keys().sort((a, b) => b - a);
-        const winner = candidates.get(scores[0]);
-        return winner.peerAddress;
-    }
-
-    /**
-     * @param {PeerAddressState} peerAddressState
-     * @returns {number}
-     * @private
-     */
-    _scoreAddress(peerAddressState) {
-        const peerAddress = peerAddressState.peerAddress;
-
-        // Filter addresses that we cannot connect to.
-        if (!this._networkConfig.canConnect(peerAddress.protocol)) {
-            return -1;
-        }
-
-        // Filter addresses that are too old.
-        if (this._exceedsAge(peerAddress)) {
-            return -1;
-        }
-
-        const score = this._scoreProtocol(peerAddress)
-            * ((peerAddress.timestamp / 1000) + 1);
-
-        switch (peerAddressState.state) {
-            case PeerAddressState.CONNECTING:
-            case PeerAddressState.CONNECTED:
-            case PeerAddressState.BANNED:
-                return -1;
-
-            case PeerAddressState.NEW:
-            case PeerAddressState.TRIED:
-                return score;
-
-            case PeerAddressState.FAILED:
-                // Don't pick failed addresses when they have failed the maximum number of times.
-                return (1 - ((peerAddressState.failedAttempts + 1) / peerAddressState.maxFailedAttempts)) * score;
-
-            default:
-                return -1;
-        }
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {number}
-     * @private
-     */
-    _scoreProtocol(peerAddress) {
-        let score = 1;
-
-        // We want at least two websocket connection
-        if (this._peerCountWs < 2) {
-            score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
-        } else {
-            score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
-        }
-
-        // Prefer WebRTC addresses with lower distance:
-        //  distance = 0: self
-        //  distance = 1: direct connection
-        //  distance = 2: 1 hop
-        //  ...
-        // We only expect distance >= 2 here.
-        if (peerAddress.protocol === Protocol.RTC) {
-            score *= 1 + ((PeerAddresses.MAX_DISTANCE - peerAddress.distance) / 2);
-        }
-
-        return score;
-    }
-
-    /** @type {number} */
-    get peerCount() {
-        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
     }
 
     /**
@@ -376,29 +252,6 @@ class PeerAddresses extends Observable {
     }
 
     /**
-     * Called when a connection to this peerAddress is being established.
-     * @param {PeerAddress} peerAddress
-     * @returns {void}
-     */
-    connecting(peerAddress) {
-        const peerAddressState = this._get(peerAddress);
-        if (!peerAddressState) {
-            return;
-        }
-        if (peerAddressState.state === PeerAddressState.BANNED) {
-            throw 'Connecting to banned address';
-        }
-        if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            throw `Duplicate connection to ${peerAddress}`;
-        }
-
-        if (peerAddressState.state !== PeerAddressState.CONNECTING) {
-            this._connectingCount++;
-        }
-        peerAddressState.state = PeerAddressState.CONNECTING;
-    }
-
-    /**
      * Called when a connection to this peerAddress has been established.
      * The connection might have been initiated by the other peer, so address
      * may not be known previously.
@@ -425,13 +278,6 @@ class PeerAddresses extends Observable {
             && !peerAddressState.peerAddress.isSeed()) {
 
             throw 'Connected to banned address';
-        }
-
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
-        }
-        if (peerAddressState.state !== PeerAddressState.CONNECTED) {
-            this._updateConnectedPeerCount(peerAddress, 1);
         }
 
         peerAddressState.state = PeerAddressState.CONNECTED;
@@ -471,12 +317,6 @@ class PeerAddresses extends Observable {
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
-        }
-        if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            this._updateConnectedPeerCount(peerAddress, -1);
-        }
 
         // Always set state to tried, even when deciding to delete this address.
         // In the latter case, this will not influence the deletion,
@@ -502,9 +342,6 @@ class PeerAddresses extends Observable {
         }
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
-        }
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
         }
 
         peerAddressState.state = PeerAddressState.FAILED;
@@ -559,27 +396,12 @@ class PeerAddresses extends Observable {
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
         }
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
-        }
-        if (peerAddressState.state === PeerAddressState.CONNECTED) {
-            this._updateConnectedPeerCount(peerAddress, -1);
-        }
 
         peerAddressState.state = PeerAddressState.BANNED;
         peerAddressState.bannedUntil = Date.now() + duration;
 
         // Drop all routes to this peer.
         peerAddressState.deleteAllRoutes();
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {boolean}
-     */
-    isConnected(peerAddress) {
-        const peerAddressState = this._get(peerAddress);
-        return peerAddressState && peerAddressState.state === PeerAddressState.CONNECTED;
     }
 
     /**
@@ -619,10 +441,6 @@ class PeerAddresses extends Observable {
             this._peerIds.remove(peerAddress.peerId);
         }
 
-        if (peerAddressState.state === PeerAddressState.CONNECTING) {
-            this._connectingCount--;
-        }
-
         // Don't delete bans.
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
@@ -647,28 +465,6 @@ class PeerAddresses extends Observable {
                     this._remove(peerAddressState.peerAddress);
                 }
             }
-        }
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
-     * @param {number} delta
-     * @returns {void}
-     * @private
-     */
-    _updateConnectedPeerCount(peerAddress, delta) {
-        switch (peerAddress.protocol) {
-            case Protocol.WS:
-                this._peerCountWs += delta;
-                break;
-            case Protocol.RTC:
-                this._peerCountRtc += delta;
-                break;
-            case Protocol.DUMB:
-                this._peerCountDumb += delta;
-                break;
-            default:
-                Log.w(PeerAddresses, `Unknown protocol ${peerAddress.protocol}`);
         }
     }
 
@@ -761,31 +557,6 @@ class PeerAddresses extends Observable {
                 return age > PeerAddresses.MAX_AGE_DUMB;
         }
         return false;
-    }
-
-    /** @type {number} */
-    get peerCountWs() {
-        return this._peerCountWs;
-    }
-
-    /** @type {number} */
-    get peerCountRtc() {
-        return this._peerCountRtc;
-    }
-
-    /** @type {number} */
-    get peerCountDumb() {
-        return this._peerCountDumb;
-    }
-
-    /** @type {number} */
-    get connectingCount() {
-        return this._connectingCount;
-    }
-
-    /** @type {number} */
-    get knownAddressesCount() {
-        return this._store.length;
     }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
@@ -981,8 +752,6 @@ class PeerAddressState {
     }
 }
 PeerAddressState.NEW = 1;
-PeerAddressState.CONNECTING = 2;
-PeerAddressState.CONNECTED = 3;
 PeerAddressState.TRIED = 4;
 PeerAddressState.FAILED = 5;
 PeerAddressState.BANNED = 6;
