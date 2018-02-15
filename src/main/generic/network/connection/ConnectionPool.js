@@ -404,6 +404,8 @@ class ConnectionPool extends Observable {
  
         this._updateConnectedPeerCount(peer.peerAddress, 1);
 
+        this._addresses.connected(peerAddress);
+
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
 
@@ -631,6 +633,7 @@ class ConnectionPool extends Observable {
         }
 
         peerConnection.disconnect();
+        this._addresses.disconnected(channel, peerAddress, closedByRemote);
     }
 
 
@@ -645,6 +648,7 @@ class ConnectionPool extends Observable {
             return;
         }
         peerConnection.failure();
+        this._addresses.fail(peerAddress);
     }
 
     /**
