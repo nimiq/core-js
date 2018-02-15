@@ -56,6 +56,7 @@ class ConnectionPool extends Observable {
          * @type {HashMap.<PeerId, PeerConnection>}
          * @private
          */
+        // TODO, Stefan connectionsByPeerAddress
         this._peerIdStore = new HashMap();
 
         /**
@@ -111,7 +112,7 @@ class ConnectionPool extends Observable {
     /**
      * @returns {Array<PeerConnection>}
      */
-    values(id) {
+    values() {
         return Array.from(this._store.values());
     }
     /**
@@ -373,7 +374,10 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
-            // TODO Stefan, handle this
+            // TODO Stefan, store counts, additionally onConnection, if netAdress is available
+            // TODO Stefan, send duplicate messages to address
+            // TODO Stefan, onclose with category
+            // TODO Stefan, relate more to states
             const numConnections = this.values().filter(
                 peerConnection => peerConnection.networkAgent && peer.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
             if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
@@ -621,11 +625,12 @@ class ConnectionPool extends Observable {
         if (!peerConnection) {
             return;
         }
-        peerConnection.disconnect();
 
         if (peerConnection.state === PeerConnectionState.CONNECTING) {
             this._connectingCount--;
         }
+
+        peerConnection.disconnect();
     }
 
 
