@@ -70,7 +70,7 @@ class Network extends Observable {
         this._backedOff = false;
 
         /**
-         * Helper objects to manage PeerAddresses.
+         * The network's addressbook
          * @type {PeerAddresses}
          * @private
          */
@@ -81,20 +81,25 @@ class Network extends Observable {
             this._relayAddresses(addresses);
             this._checkPeerCount();
         });
-
-        
+       
         /**
-         * Helper objects to manage PeerConnections.
+         * Peer connections database & operator
          * @type {ConnectionPool}
          * @private
          */
         this._connections = new ConnectionPool(this._addresses, networkConfig, blockchain, time);
 
-        // Relay new connections to peers.
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peer-changed', () => this._onPeerChanged());
-    }
+ 
+        /**
+         * Helper object to pick PeerAddresses.
+         * @type {PeerScorer}
+         * @private
+         */
+        this._scorer = new PeerScorer(this._networkConfig, this._addresses, this._connections);
+    }       
 
     connect() {
         this._autoConnect = true;
@@ -181,7 +186,7 @@ class Network extends Observable {
             && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
-            const peerAddress = this._addresses.pickAddress();
+            const peerAddress = this._scorer.pickAddress();
 
             // We can't connect if we don't know any more addresses.
             if (!peerAddress) {
