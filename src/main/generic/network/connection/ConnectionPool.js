@@ -374,7 +374,7 @@ class ConnectionPool extends Observable {
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
             // TODO Stefan, handle this
-            const numConnections = this._store.values().filter(
+            const numConnections = this.values().filter(
                 peerConnection => peerConnection.networkAgent && peer.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
             if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
                 agent.channel.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
