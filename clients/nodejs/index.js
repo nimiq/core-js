@@ -80,12 +80,17 @@ const walletAddress = argv['wallet-address'] || null;
 const isNano = argv.type === 'nano';
 
 if (isNano && minerOptions) {
-    console.error('Cannot mine when running a nano client.');
+    console.error('Cannot mine when running as a nano client.');
     process.exit(1);
 }
 
 if (metrics && dumb) {
     console.error('Cannot provide metrics when running as a dumb client.');
+    process.exit(1);
+}
+
+if (metrics && isNano) {
+    console.error('Cannot provide metrics when running as a nano client.');
     process.exit(1);
 }
 

@@ -10,7 +10,7 @@ class MetricsServer {
             cert: fs.readFileSync(sslConfig.cert)
         };
 
-        const httpsServer = https.createServer(options, (req, res) => {
+        https.createServer(options, (req, res) => {
             if (req.url !== '/metrics') {
                 res.writeHead(301, {'Location': '/metrics'});
                 res.end();
