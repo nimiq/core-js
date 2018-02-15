@@ -605,6 +605,16 @@ class Network extends Observable {
     }
 
     /** @type {number} */
+    get peerCountConnecting() {
+        return this._addresses.connectingCount;
+    }
+
+    /** @type {number} */
+    get knownAddressesCount() {
+        return this._addresses.knownAddressesCount;
+    }
+
+    /** @type {number} */
     get bytesSent() {
         return this._bytesSent
             + this._agents.values().reduce((n, agent) => n + agent.channel.connection.bytesSent, 0);

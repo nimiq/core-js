@@ -58,6 +58,9 @@ class FullChain extends BaseChain {
 
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
+
+        /** @type {number} */
+        this._blockKnownCount = this._blockInvalidCount = this._blockOrphanCount = this._blockExtendedCount = this._blockRebranchedCount = this._blockForkedCount = 0;
     }
 
     /**
@@ -114,17 +117,20 @@ class FullChain extends BaseChain {
         const knownBlock = await this._store.getBlock(hash);
         if (knownBlock) {
             Log.v(FullChain, `Ignoring known block ${hash}`);
+            this._blockKnownCount++;
             return FullChain.OK_KNOWN;
         }
 
         // Check that the given block is a full block (includes block body).
         if (!block.isFull()) {
             Log.w(FullChain, 'Rejecting block - body missing');
+            this._blockInvalidCount++;
             return FullChain.ERR_INVALID;
         }
 
         // Check all intrinsic block invariants.
         if (!(await block.verify(this._time))) {
+            this._blockInvalidCount++;
             return FullChain.ERR_INVALID;
         }
 
@@ -139,6 +145,7 @@ class FullChain extends BaseChain {
         const prevData = await this._store.getChainData(block.prevHash);
         if (!prevData) {
             Log.w(FullChain, 'Rejecting block - unknown predecessor');
+            this._blockOrphanCount++;
             return FullChain.ERR_ORPHAN;
         }
 
@@ -146,6 +153,7 @@ class FullChain extends BaseChain {
         const predecessor = prevData.head;
         if (!(await block.isImmediateSuccessorOf(predecessor))) {
             Log.w(FullChain, 'Rejecting block - not a valid immediate successor');
+            this._blockInvalidCount++;
             return FullChain.ERR_INVALID;
         }
 
@@ -154,6 +162,7 @@ class FullChain extends BaseChain {
         Assert.that(BlockUtils.isValidTarget(nextTarget), 'Failed to compute next target in FullChain');
         if (block.nBits !== BlockUtils.targetToCompact(nextTarget)) {
             Log.w(FullChain, 'Rejecting block - difficulty mismatch');
+            this._blockInvalidCount++;
             return FullChain.ERR_INVALID;
         }
 
@@ -166,8 +175,10 @@ class FullChain extends BaseChain {
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
             if (!(await this._extend(hash, chainData))) {
+                this._blockInvalidCount++;
                 return FullChain.ERR_INVALID;
             }
+            this._blockExtendedCount++;
             return FullChain.OK_EXTENDED;
         }
 
@@ -175,8 +186,10 @@ class FullChain extends BaseChain {
         if (totalDifficulty > this.totalDifficulty) {
             // A fork has become the hardest chain, rebranch to it.
             if (!(await this._rebranch(hash, chainData))) {
+                this._blockInvalidCount++;
                 return FullChain.ERR_INVALID;
             }
+            this._blockRebranchedCount++;
             return FullChain.OK_REBRANCHED;
         }
 
@@ -184,6 +197,7 @@ class FullChain extends BaseChain {
         Log.v(FullChain, `Creating/extending fork with block ${hash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
         await this._store.putChainData(hash, chainData);
 
+        this._blockForkedCount++;
         return FullChain.OK_FORKED;
     }
 
@@ -611,6 +625,36 @@ class FullChain extends BaseChain {
         return this._transactionCache;
     }
 
+    /** @type {number} */
+    get blockForkedCount() {
+        return this._blockForkedCount;
+    }
+
+    /** @type {number} */
+    get blockRebranchedCount() {
+        return this._blockRebranchedCount;
+    }
+
+    /** @type {number} */
+    get blockExtendedCount() {
+        return this._blockExtendedCount;
+    }
+
+    /** @type {number} */
+    get blockOrphanCount() {
+        return this._blockOrphanCount;
+    }
+
+    /** @type {number} */
+    get blockInvalidCount() {
+        return this._blockInvalidCount;
+    }
+
+    /** @type {number} */
+    get blockKnownCount() {
+        return this._blockKnownCount;
+    }
+
     /**
      * @returns {Promise.<Hash>}
      */
@@ -619,6 +663,7 @@ class FullChain extends BaseChain {
         return this._accounts.hash();
     }
 }
+
 FullChain.ERR_ORPHAN = -2;
 FullChain.ERR_INVALID = -1;
 FullChain.OK_KNOWN = 0;

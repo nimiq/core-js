@@ -774,6 +774,11 @@ class PeerAddresses extends Observable {
     get connectingCount() {
         return this._connectingCount;
     }
+
+    /** @type {number} */
+    get knownAddressesCount() {
+        return this._store.length;
+    }
 }
 PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
 PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes

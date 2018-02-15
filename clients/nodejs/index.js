@@ -1,5 +1,6 @@
 const Nimiq = require('../../dist/node.js');
 const JsonRpcServer = require('./JsonRpcServer.js');
+const MetricsServer = require('./MetricsServer.js');
 const START = Date.now();
 /**
  * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean}}
@@ -36,6 +37,10 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
         '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
+        '  --metrics[=PORT]           Start Prometheus-compatible metrics server on port\n' +
+        '           [:PASSWORD]       PORT (default: 8649). If PASSWORD is specified, it\n' +
+        '                             is required to be used for username "metrics" via\n' +
+        '                             Basic Authentication.' +
         '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
@@ -53,16 +58,34 @@ const host = argv.host;
 const port = parseInt(argv.port);
 const key = argv.key;
 const cert = argv.cert;
+const dumb = argv.dumb;
 const minerOptions = argv.miner;
 const statisticsOptions = argv.statistics;
 const passive = argv.passive;
 const rpc = argv.rpc;
+let rpcPort = 8648;
+if (typeof rpc === 'string') {
+    rpcPort = parseInt(rpc);
+}
+const metrics = argv.metrics;
+let metricsPort = 8649, metricsPassword = null;
+if (typeof metrics === 'string') {
+    if (metrics.indexOf(':') > 0) {
+        metricsPassword = metrics.substring(metrics.indexOf(':') + 1);
+    }
+    metricsPort = parseInt(metrics);
+}
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
 const isNano = argv.type === 'nano';
 
 if (isNano && minerOptions) {
     console.error('Cannot mine when running a nano client.');
+    process.exit(1);
+}
+
+if (metrics && dumb) {
+    console.error('Cannot provide metrics when running as a dumb client.');
     process.exit(1);
 }
 
@@ -91,7 +114,7 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
-    const networkConfig = argv.dumb
+    const networkConfig = dumb
         ? new Nimiq.DumbNetworkConfig()
         : new Nimiq.WsNetworkConfig(host, port, key, cert);
 
@@ -204,8 +227,13 @@ const $ = {};
     }
 
     if (rpc) {
-        $.rpcServer = new JsonRpcServer(rpc ? 8648 : undefined);
+        $.rpcServer = new JsonRpcServer(rpcPort);
         $.rpcServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
+    }
+
+    if (metrics) {
+        $.metricsServer = new MetricsServer(networkConfig.sslConfig, metricsPort, metricsPassword);
+        $.metricsServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner);
     }
 })().catch(e => {
     console.error(e);

@@ -267,6 +267,11 @@ class Transaction {
     }
 
     /** @type {number} */
+    get feePerByte() {
+        return this._fee / this.serializedSize;
+    }
+
+    /** @type {number} */
     get validityStartHeight() {
         return this._validityStartHeight;
     }
