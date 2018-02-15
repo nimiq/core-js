@@ -394,8 +394,10 @@ class ConnectionPool extends Observable {
         // Set peerConnection to ESTABLISHED state.
         peerConnection.peer = peer;
 
-        this._netAddressStore.put(peerConnection.peerAddress.netAddress);
-
+        if(peer.netAddress && !peer.netAddress.equals(NetAddress.UNKNOWN)){
+            this._netAddressStore.put(peer.netAddress);
+        }
+ 
         this._updateConnectedPeerCount(peer.peerAddress, 1);
 
         // Let listeners know about this peer.
@@ -455,6 +457,8 @@ class ConnectionPool extends Observable {
         this._inboundStore.remove(channel.connection);
 
         if (peerLeft){
+            this._updateConnectedPeerCount(peer.peerAddress, -1);
+
             // Tell listeners that this peer has gone away.
             this.fire('peer-left', peer);
 
@@ -637,6 +641,29 @@ class ConnectionPool extends Observable {
         }
         peerConnection.failure();
     }
+
+    /**
+     * @param {PeerAddress} peerAddress
+     * @param {number} delta
+     * @returns {void}
+     * @private
+     */
+    _updateConnectedPeerCount(peerAddress, delta) {
+        switch (peerAddress.protocol) {
+            case Protocol.WS:
+                this._peerCountWs += delta;
+                break;
+            case Protocol.RTC:
+                this._peerCountRtc += delta;
+                break;
+            case Protocol.DUMB:
+                this._peerCountDumb += delta;
+                break;
+            default:
+                Log.w(PeerAddresses, `Unknown protocol ${peerAddress.protocol}`);
+        }
+    }
+
 
     /**
      * @param {string|*} reason
