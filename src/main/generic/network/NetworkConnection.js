@@ -254,3 +254,48 @@ class NetworkConnection extends Observable {
 // Used to generate unique NetworkConnection ids.
 NetworkConnection._instanceCount = 0;
 Class.register(NetworkConnection);
+
+// In order to give control to scoring
+class ClosingType{
+}
+ClosingType.GET_BLOCKS_TIMEOUT = 0; //getBlocks timeout
+ClosingType.BLOXKCHAIN_SYNC_FAILED = 1; //blockchain sync failed
+
+ClosingType.GET_CHAIN_PROOF_TIMEOUT = 2; //getChainProof timeout
+ClosingType.GET_ACCOUNTS_TREE_CHUNK_TIMEOUT = 3; //getAccountsTreeChunk timeout
+ClosingType.GET_HEADER_TIMEOUT = 4; //getHeader timeout
+ClosingType.INVALID_ACCOUNTS_TREE_CHUNK = 5; //Invalid AccountsTreeChunk
+ClosingType.ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH = 6; //AccountsTreeChunk root hash mismatch
+ClosingType.INVALID_CHAIN_PROOF = 7; //invalid chain proof
+ClosingType.RECEIVED_WRONG_HEADER = 8; //Received wrong header
+ClosingType.DID_NOT_REQESTED_HEADER = 9; //Did not get requested header
+ClosingType.ABORTED_SYNC = 10; //aborted sync
+
+ClosingType.GET_ACCOUNTS_PROOF_TIMEOUT = 11; //getAccountsProof timeout
+ClosingType.GET_TRANSACTIONS_PROOF_TIMEOUT = 12; //getTransactionsProof timeout
+ClosingType.GET_TRANSACTION_RECEIPTS_TIMEOUT = 13; //getTransactionReceipt timeout
+ClosingType.INVALID_ACCOUNTS_PROOF = 14; //Invalid AccountsProof
+ClosingType.ACCOUNTS_PROOF_ROOT_HASH_MISMATCH = 15; //AccountsProof root hash mismatch
+ClosingType.INCOMPLETE_ACCOUNTS_PROOF = 16; //Incomplete AccountsProof
+ClosingType.INVALID_BLOCK = 17; //Invalid block
+ClosingType.INVALID_CHAIN_PROOF = 18; //invalid chain proof
+ClosingType.INVALID_TRANSACTION_PROOF = 19; //Invalid TransactionProof
+
+ClosingType.VERSION_TIMEOUT = 20; //version timeout
+ClosingType.VERACK_TIMEOUT = 21; //verack timeout
+ClosingType.SENDING_PING_MESSAGE_FAILED = 22; //sending ping message failed
+ClosingType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE = 23; //Invalid public key in verack message
+ClosingType.INVALID_SIGNATURE_IN_VERACK_MESSAGE  = 24; //Invalid signature in verack message
+ClosingType.INCOMPATIBLE_VERSION = 25; //incompatible version
+ClosingType.DIFFERENT_GENESIS_BLOCK = 26; //different genesis block
+ClosingType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE = 27; //invalid peerAddress in version message
+ClosingType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE = 28; //unexpected peerAddress in version message
+ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED = 29; //sending of version message failed
+
+ClosingType.DUPLICATE_CONNECTION = 30; //duplicate connection
+ClosingType.PEER_IS_BANNED = 31; //peer is banned
+ClosingType.CONNECTION_LIMIT_PER_IP = 32; //verack timeout
+ClosingType.MANUAL_NETWORK_DISCONNECT  = 33; //manual network disconnect
+ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual WEBSOCKET disconnect
+
+Class.register(class ClosingType);
