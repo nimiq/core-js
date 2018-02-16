@@ -34,15 +34,14 @@ class BufferUtils {
             .replace('ž', '¸').replace('Œ', '¼').replace('œ', '½').replace('Ÿ', '¾');
     }
 
-
     static _tripletToBase64(num) {
         return BufferUtils._BASE64_LOOKUP[num >> 18 & 0x3F] + BufferUtils._BASE64_LOOKUP[num >> 12 & 0x3F] + BufferUtils._BASE64_LOOKUP[num >> 6 & 0x3F] + BufferUtils._BASE64_LOOKUP[num & 0x3F];
     }
 
     static _base64encodeChunk(u8, start, end) {
-        var tmp;
-        var output = [];
-        for (var i = start; i < end; i += 3) {
+        let tmp;
+        const output = [];
+        for (let i = start; i < end; i += 3) {
             tmp = ((u8[i] << 16) & 0xFF0000) + ((u8[i + 1] << 8) & 0xFF00) + (u8[i + 2] & 0xFF);
             output.push(BufferUtils._tripletToBase64(tmp));
         }
@@ -50,15 +49,15 @@ class BufferUtils {
     }
 
     static _base64fromByteArray(u8) {
-        var tmp;
-        var len = u8.length;
-        var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
-        var output = '';
-        var parts = [];
-        var maxChunkLength = 16383; // must be multiple of 3
+        let tmp;
+        const len = u8.length;
+        const extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+        let output = '';
+        const parts = [];
+        const maxChunkLength = 16383; // must be multiple of 3
 
         // go through the array every three bytes, we'll deal with trailing stuff later
-        for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+        for (let i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
             parts.push(BufferUtils._base64encodeChunk(u8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)));
         }
 
@@ -80,7 +79,6 @@ class BufferUtils {
 
         return parts.join('');
     }
-
 
     /**
      * @param {*} buffer
