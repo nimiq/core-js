@@ -191,7 +191,7 @@ class Transaction {
         if (this._senderType > o._senderType) return 1;
         if (this._flags < o._flags) return -1;
         if (this._flags > o._flags) return 1;
-        return 0;
+        return BufferUtils.compare(this._data, o._data);
     }
 
     /**
