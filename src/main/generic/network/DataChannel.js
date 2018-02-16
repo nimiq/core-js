@@ -14,7 +14,7 @@ class DataChannel extends Observable {
         this._msgType = 0;
 
         /** @type {number} */
-        this._receivingTag = 0;
+        this._receivingTag = -1;
 
         /** @type {number} */
         this._sendingTag = 0;
@@ -56,10 +56,11 @@ class DataChannel extends Observable {
         this._timers.resetTimeout(`chunk-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), chunkTimeout);
         this._timers.resetTimeout(`msg-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), msgTimeout);
     }
-    
+
     /**
      * @abstract
      */
+
     /* istanbul ignore next */
     close() { throw new Error('Not implemented'); }
 
@@ -85,84 +86,92 @@ class DataChannel extends Observable {
      * @protected
      */
     _onMessage(msg) {
-        // Blindly forward empty messages.
-        // TODO should we drop them instead?
-        const buffer = new SerialBuffer(msg);
-        if (buffer.byteLength === 0) {
-            Log.w(DataChannel, 'Received empty message', buffer, msg);
-            this.fire('message', msg, this);
-            return;
-        }
-
-        // Chunk is too large.
-        if (buffer.byteLength > DataChannel.CHUNK_SIZE_MAX) {
-            this._onError('Received chunk larger than maximum chunk size, discarding');
-            return;
-        }
-
-        const tag = buffer.readUint8();
-
-        // Buffer length without tag.
-        const effectiveChunkLength = buffer.byteLength - buffer.readPos;
-        const chunk = buffer.read(effectiveChunkLength);
-
-        // Detect if this is a new message.
-        if (this._buffer === null) {
-            const chunkBuffer = new SerialBuffer(chunk);
-            const messageSize = Message.peekLength(chunkBuffer);
-
-            if (messageSize > DataChannel.MESSAGE_SIZE_MAX) {
-                this._onError(`Received message with excessive message size ${messageSize} > ${DataChannel.MESSAGE_SIZE_MAX}`);
+        try {
+            // Blindly forward empty messages.
+            // TODO should we drop them instead?
+            const buffer = new SerialBuffer(msg);
+            if (buffer.byteLength === 0) {
+                Log.w(DataChannel, 'Received empty message', buffer, msg);
+                this.fire('message', msg, this);
                 return;
             }
 
-            this._buffer = new SerialBuffer(messageSize);
-            this._receivingTag = tag;
-            this._msgType = Message.peekType(chunkBuffer);
-        }
+            // Chunk is too large.
+            if (buffer.byteLength > DataChannel.CHUNK_SIZE_MAX) {
+                this._onError('Received chunk larger than maximum chunk size, discarding');
+                return;
+            }
 
-        let remainingBytes = this._buffer.byteLength - this._buffer.writePos;
+            const tag = buffer.readUint8();
 
-        // Mismatch between buffer sizes.
-        if (effectiveChunkLength > remainingBytes) {
-            this._onError('Received chunk larger than remaining bytes to read, discarding');
-            return;
-        }
+            // Buffer length without tag.
+            const effectiveChunkLength = buffer.byteLength - buffer.readPos;
+            const chunk = buffer.read(effectiveChunkLength);
 
-        // Currently, we only support one message at a time.
-        if (tag !== this._receivingTag) {
-            this._onError(`Received message with wrong message tag ${tag}, expected ${this._receivingTag}`);
-            return;
-        }
+            // Detect if this is a new message.
+            if (this._buffer === null && tag === (this._receivingTag + 1) % NumberUtils.UINT8_MAX) {
+                const chunkBuffer = new SerialBuffer(chunk);
+                const messageSize = Message.peekLength(chunkBuffer);
 
-        // Write chunk and subtract remaining byte length.
-        this._buffer.write(chunk);
-        remainingBytes -= effectiveChunkLength;
-
-        const expectedMsg = this._expectedMessagesByType.get(this._msgType);
-        if (remainingBytes === 0) {
-            if (expectedMsg) {
-                this._timers.clearTimeout(`chunk-${expectedMsg.id}`);
-                this._timers.clearTimeout(`msg-${expectedMsg.id}`);
-                for (const type of expectedMsg.types) {
-                    this._expectedMessagesByType.delete(type);
+                if (messageSize > DataChannel.MESSAGE_SIZE_MAX) {
+                    this._onError(`Received message with excessive message size ${messageSize} > ${DataChannel.MESSAGE_SIZE_MAX}`);
+                    return;
                 }
-            } else {
-                this._timers.clearTimeout('chunk');
+
+                this._buffer = new SerialBuffer(messageSize);
+                this._receivingTag = tag;
+                this._msgType = Message.peekType(chunkBuffer);
             }
 
-            const msg = this._buffer.buffer;
-            this._buffer = null;
-            this._receivingTag = 0;
-            this.fire('message', msg, this);
-        } else {
-            // Set timeout.
-            if (expectedMsg) {
-                this._timers.resetTimeout(`chunk-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), expectedMsg.chunkTimeout);
-            } else {
-                this._timers.resetTimeout('chunk', this._onTimeout.bind(this), DataChannel.CHUNK_TIMEOUT);
+            if (this._buffer === null) {
+                this._onError(`Message does not start next tag ${this._receivingTag + 1} (but ${tag}), but buffer is null`);
+                return;
             }
-            this.fire('chunk', this._buffer);
+
+            // Currently, we only support one message at a time.
+            if (tag !== this._receivingTag) {
+                this._onError(`Received message with wrong message tag ${tag}, expected ${this._receivingTag}`);
+                return;
+            }
+
+            let remainingBytes = this._buffer.byteLength - this._buffer.writePos;
+
+            // Mismatch between buffer sizes.
+            if (effectiveChunkLength > remainingBytes) {
+                this._onError('Received chunk larger than remaining bytes to read, discarding');
+                return;
+            }
+
+            // Write chunk and subtract remaining byte length.
+            this._buffer.write(chunk);
+            remainingBytes -= effectiveChunkLength;
+
+            const expectedMsg = this._expectedMessagesByType.get(this._msgType);
+            if (remainingBytes === 0) {
+                if (expectedMsg) {
+                    this._timers.clearTimeout(`chunk-${expectedMsg.id}`);
+                    this._timers.clearTimeout(`msg-${expectedMsg.id}`);
+                    for (const type of expectedMsg.types) {
+                        this._expectedMessagesByType.delete(type);
+                    }
+                } else {
+                    this._timers.clearTimeout('chunk');
+                }
+
+                const msg = this._buffer.buffer;
+                this._buffer = null;
+                this.fire('message', msg, this);
+            } else {
+                // Set timeout.
+                if (expectedMsg) {
+                    this._timers.resetTimeout(`chunk-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), expectedMsg.chunkTimeout);
+                } else {
+                    this._timers.resetTimeout('chunk', this._onTimeout.bind(this), DataChannel.CHUNK_TIMEOUT);
+                }
+                this.fire('chunk', this._buffer);
+            }
+        } catch (e) {
+            this._onError(`Error occured while parsing incoming message, ${e.message}`);
         }
     }
 
@@ -228,6 +237,7 @@ class DataChannel extends Observable {
      * @abstract
      * @param {Uint8Array} msg
      */
+
     /* istanbul ignore next */
     sendChunk(msg) { throw  new Error('Not implemented'); }
 
@@ -235,9 +245,11 @@ class DataChannel extends Observable {
      * @abstract
      * @type {DataChannel.ReadyState}
      */
+
     /* istanbul ignore next */
     get readyState() { throw new Error('Not implemented'); }
 }
+
 DataChannel.CHUNK_SIZE_MAX = 1024 * 16; // 16 kb
 DataChannel.MESSAGE_SIZE_MAX = 10 * 1024 * 1024; // 10 mb
 DataChannel.CHUNK_TIMEOUT = 1000 * 5; // 5 seconds
