@@ -26,7 +26,7 @@ describe('Blockchain', () => {
     it('rejects orphan blocks', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
-            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
+            const zeroHash = new Hash(new Uint8Array(Hash.SIZE.get(Hash.Algorithm.BLAKE2B)));
 
             // Try to push a block with an invalid prevHash and check that it fails
             // hash that does NOT match the one from Genesis
@@ -67,7 +67,7 @@ describe('Blockchain', () => {
     it('verifies block body hash', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
-            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
+            const zeroHash = new Hash(new Uint8Array(Hash.SIZE.get(Hash.Algorithm.BLAKE2B)));
 
             // Now try to push a block with an invalid body hash
             const block = await testBlockchain.createBlock({bodyHash: zeroHash});
@@ -79,7 +79,7 @@ describe('Blockchain', () => {
     it('verifies accounts hash', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
-            const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
+            const zeroHash = new Hash(new Uint8Array(Hash.SIZE.get(Hash.Algorithm.BLAKE2B)));
 
             // Try to push a block that has an invalid AccountsHash
             const block = await testBlockchain.createBlock({accountsHash: zeroHash});

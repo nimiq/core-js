@@ -1,7 +1,7 @@
 describe('BlockInterlink', () => {
     const hash1 = new Hash(BufferUtils.fromBase64(Dummy.hash1));
     const hash2 = new Hash(BufferUtils.fromBase64(Dummy.hash2));
-    const zeroHash = new Hash(new Uint8Array(Crypto.hashSize));
+    const zeroHash = new Hash(new Uint8Array(Hash.SIZE.get(Hash.Algorithm.BLAKE2B)));
 
     const blockHashes = [hash1, hash2];
     const blockInterlink1 = new BlockInterlink(blockHashes, zeroHash);
@@ -76,8 +76,8 @@ describe('BlockInterlink', () => {
     });
 
     it('has the correct serialized size', () => {
-        expect(blockInterlink1.serializedSize).toBe(1 + 1 + blockHashes.length * Crypto.hashSize);
-        expect(longInterlink.serializedSize).toBe(1 + 4 + hashes.length * Crypto.hashSize);
+        expect(blockInterlink1.serializedSize).toBe(1 + 1 + blockHashes.length * Hash.SIZE.get(Hash.Algorithm.BLAKE2B));
+        expect(longInterlink.serializedSize).toBe(1 + 4 + hashes.length * Hash.SIZE.get(Hash.Algorithm.BLAKE2B));
     });
 
     it('must return the correct root hash', () => {

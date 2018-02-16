@@ -13,7 +13,7 @@ class PublicKey extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.publicKeyType, Crypto.publicKeySize);
+        super(arg, Uint8Array, PublicKey.SIZE);
     }
 
     /**
@@ -21,7 +21,7 @@ class PublicKey extends Primitive {
      * @return {PublicKey}
      */
     static derive(privateKey) {
-        return new PublicKey(Crypto.publicKeyDerive(privateKey._obj));
+        return new PublicKey(Crypto.workerSync().publicKeyDerive(privateKey._obj));
     }
 
     /**
@@ -31,7 +31,10 @@ class PublicKey extends Primitive {
     static sum(publicKeys) {
         publicKeys = publicKeys.slice();
         publicKeys.sort((a, b) => a.compare(b));
-        return new PublicKey(Crypto.delinearizeAndAggregatePublicKeys(publicKeys.map(key => key._obj)));
+        const publicKeysObj = publicKeys.map(key => key._obj);
+        const publicKeysHash = Crypto.workerSync().publicKeysHash(publicKeysObj);
+        const raw = Crypto.workerSync().publicKeysDelinearizeAndAggregate(publicKeysObj, publicKeysHash);
+        return new PublicKey(raw);
     }
 
     /**
@@ -39,7 +42,7 @@ class PublicKey extends Primitive {
      * @return {PublicKey}
      */
     static unserialize(buf) {
-        return new PublicKey(Crypto.publicKeyUnserialize(buf.read(Crypto.publicKeySize)));
+        return new PublicKey(buf.read(PublicKey.SIZE));
     }
 
     /**
@@ -48,13 +51,13 @@ class PublicKey extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.publicKeySerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.publicKeySize;
+        return PublicKey.SIZE;
     }
 
     /**
@@ -101,5 +104,7 @@ class PublicKey extends Primitive {
         return new PeerId(this.hash().subarray(0, 16));
     }
 }
+
+PublicKey.SIZE = 32;
 
 Class.register(PublicKey);

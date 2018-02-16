@@ -55,8 +55,8 @@ class Utils {
 
     static hash(data, algorithm) {
         switch (algorithm) {
-            case Nimiq.Hash.Algorithm.BLAKE2B: return Nimiq.Crypto.blake2bSync(data);
-            case Nimiq.Hash.Algorithm.SHA256: return Nimiq.Crypto.sha256(data);
+            case Nimiq.Hash.Algorithm.BLAKE2B: return Nimiq.Crypto.workerSync().computeBlake2b(data);
+            case Nimiq.Hash.Algorithm.SHA256: return Nimiq.Crypto.workerSync().computeSha256(data);
             // case Nimiq.Hash.Algorithm.ARGON2D intentionally omitted
             default: throw new Error('Invalid hash algorithm');
         }

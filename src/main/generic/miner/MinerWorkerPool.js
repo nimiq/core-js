@@ -42,7 +42,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
                             } else {
                                 blockHeader.writePos -= 4;
                                 blockHeader.writeUint32(nonce);
-                                const hash = await Crypto.argon2d(blockHeader);
+                                const hash = await (await Crypto.workerAsync()).computeArgon2d(blockHeader);
                                 resolve({hash, nonce});
                             }
                         } catch (e) {

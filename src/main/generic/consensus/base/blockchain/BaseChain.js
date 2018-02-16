@@ -336,6 +336,31 @@ class BaseChain extends IBlockchain {
         return new ChainProof(newPrefix, new HeaderChain(suffix), chains);
     }
 
+    /**
+     * @param {Array.<BlockHeader>} headers
+     * @return {Promise.<void>}
+     */
+    static async manyPow(headers) {
+        const worker = await Crypto.workerAsync();
+        const size = worker.poolSize || 1;
+        const partitions = [];
+        let j = 0;
+        for (let i = 0; i < size; ++i) {
+            partitions.push([]);
+            for (; j < ((i + 1) / size) * headers.length; ++j) {
+                partitions[i].push(headers[j].serialize());
+            }
+        }
+        const promises = [];
+        for (const part of partitions) {
+            promises.push(worker.computeArgon2dBatch(part));
+        }
+        const pows = (await Promise.all(promises)).reduce((a, b) => [...a, ...b], []);
+        for(let i = 0; i < headers.length; ++i) {
+            headers[i]._pow = new Hash(pows[i]);
+        }
+    }
+
 
     /* NiPoPoW Verifier functions */
 

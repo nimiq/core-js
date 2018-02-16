@@ -13,7 +13,7 @@ class Commitment extends Primitive {
      * @return {Commitment}
      */
     static sum(commitments) {
-        return new Commitment(Crypto.aggregateCommitments(commitments.map(c => c._obj)));
+        return new Commitment(Crypto.workerSync().commitmentsAggregate(commitments.map(c => c._obj)));
     }
 
     /**
@@ -21,7 +21,7 @@ class Commitment extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.commitmentType, Crypto.commitmentSize);
+        super(arg, Uint8Array, Commitment.SIZE);
     }
 
     /**
@@ -29,7 +29,7 @@ class Commitment extends Primitive {
      * @return {Commitment}
      */
     static unserialize(buf) {
-        return new Commitment(Crypto.commitmentUnserialize(buf.read(Crypto.commitmentSize)));
+        return new Commitment(buf.read(Commitment.SIZE));
     }
 
     /**
@@ -38,13 +38,13 @@ class Commitment extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.commitmentSerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.commitmentSize;
+        return Commitment.SIZE;
     }
 
     /**
@@ -55,5 +55,7 @@ class Commitment extends Primitive {
         return o instanceof Commitment && super.equals(o);
     }
 }
+
+Commitment.SIZE = 32;
 
 Class.register(Commitment);

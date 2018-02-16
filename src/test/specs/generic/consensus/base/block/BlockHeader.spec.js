@@ -51,7 +51,7 @@ describe('BlockHeader', () => {
             const test4 = new BlockHeader(new Address(new Uint8Array(20)), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
-            const test5 = new BlockHeader(new Signature(new Uint8Array(Crypto.signatureSize)), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
+            const test5 = new BlockHeader(new Signature(new Uint8Array(Signature.SIZE)), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed prevHash');
         expect(() => {
             const test5 = new BlockHeader(new ArrayBuffer(32), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
@@ -74,7 +74,7 @@ describe('BlockHeader', () => {
             const test4 = new BlockHeader(prevHash, new Address(new Uint8Array(20)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed interlinkHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, new Signature(new Uint8Array(Crypto.signatureSize)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, new Signature(new Uint8Array(Signature.SIZE)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed interlinkHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, new Uint8Array(32), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
@@ -97,7 +97,7 @@ describe('BlockHeader', () => {
             const test4 = new BlockHeader(prevHash, interlinkHash, new Address(new Uint8Array(20)), accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, interlinkHash, new Signature(new Uint8Array(Crypto.signatureSize)), accountsHash, difficulty, 2, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, interlinkHash, new Signature(new Uint8Array(Signature.SIZE)), accountsHash, difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed bodyHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, new Uint8Array(32), accountsHash, difficulty, 2, timestamp, nonce);
@@ -120,7 +120,7 @@ describe('BlockHeader', () => {
             const test4 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Address(new Uint8Array(20)), difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
-            const test5 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Signature(new Uint8Array(Crypto.signatureSize)), difficulty, 2, timestamp, nonce);
+            const test5 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Signature(new Uint8Array(Signature.SIZE)), difficulty, 2, timestamp, nonce);
         }).toThrow('Malformed accountsHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Uint8Array(32), difficulty, 2, timestamp, nonce);

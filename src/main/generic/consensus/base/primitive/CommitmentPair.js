@@ -4,14 +4,17 @@ class CommitmentPair extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.commitmentPairType);
+        super(arg, Object);
     }
 
     /**
      * @return {CommitmentPair}
      */
     static generate() {
-        return new CommitmentPair(Crypto.commitmentPairGenerate());
+        const randomness = new Uint8Array(CommitmentPair.RANDOMNESS_SIZE);
+        Crypto.lib.getRandomValues(randomness);
+        const raw = Crypto.workerSync().commitmentCreate(randomness);
+        return new CommitmentPair(raw);
     }
 
     /**
@@ -21,7 +24,7 @@ class CommitmentPair extends Primitive {
     static unserialize(buf) {
         const secret = RandomSecret.unserialize(buf);
         const commitment = Commitment.unserialize(buf);
-        return new CommitmentPair(Crypto.commitmentPairFromValues(secret._obj, commitment._obj));
+        return new CommitmentPair({ secret: secret._obj, commitment: commitment._obj });
     }
 
     /**
@@ -45,12 +48,12 @@ class CommitmentPair extends Primitive {
 
     /** @type {RandomSecret} */
     get secret() {
-        return this._secret || (this._secret = new RandomSecret(Crypto.commitmentPairRandomSecret(this._obj)));
+        return this._secret || (this._secret = new RandomSecret(this._obj.secret));
     }
 
     /** @type {Commitment} */
     get commitment() {
-        return this._commitment || (this._commitment = new Commitment(Crypto.commitmentPairCommitment(this._obj)));
+        return this._commitment || (this._commitment = new Commitment(this._obj.commitment));
     }
 
     /** @type {number} */
@@ -66,5 +69,8 @@ class CommitmentPair extends Primitive {
         return o instanceof CommitmentPair && super.equals(o);
     }
 }
-CommitmentPair.SERIALIZED_SIZE = Crypto.randomSecretSize + Crypto.commitmentSize;
+
+CommitmentPair.SERIALIZED_SIZE = RandomSecret.SIZE + Signature.SIZE;
+CommitmentPair.RANDOMNESS_SIZE = 32;
+
 Class.register(CommitmentPair);

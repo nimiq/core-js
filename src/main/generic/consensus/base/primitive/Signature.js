@@ -15,7 +15,7 @@ class Signature extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.signatureType, Crypto.signatureSize);
+        super(arg, Uint8Array, Signature.SIZE);
     }
 
     /**
@@ -25,7 +25,7 @@ class Signature extends Primitive {
      * @return {Signature}
      */
     static create(privateKey, publicKey, data) {
-        return new Signature(Crypto.signatureCreate(privateKey._obj, publicKey._obj, data));
+        return new Signature(Crypto.workerSync().signatureCreate(privateKey._obj, publicKey._obj, data));
     }
 
     /**
@@ -34,7 +34,9 @@ class Signature extends Primitive {
      * @return {Signature}
      */
     static fromPartialSignatures(commitment, signatures) {
-        return new Signature(Crypto.combinePartialSignatures(commitment._obj, signatures.map(s => s._obj)));
+        const combinedSignature = signatures.map(s => s._obj).reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
+        const raw = BufferUtils.concatTypedArrays(commitment._obj, combinedSignature);
+        return new Signature(raw);
     }
 
     /**
@@ -42,7 +44,7 @@ class Signature extends Primitive {
      * @return {Signature}
      */
     static unserialize(buf) {
-        return new Signature(Crypto.signatureUnserialize(buf.read(Crypto.signatureSize)));
+        return new Signature(buf.read(Signature.SIZE));
     }
 
     /**
@@ -51,13 +53,13 @@ class Signature extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.signatureSerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.signatureSize;
+        return Signature.SIZE;
     }
 
     /**
@@ -66,7 +68,7 @@ class Signature extends Primitive {
      * @return {boolean}
      */
     verify(publicKey, data) {
-        return Crypto.signatureVerify(publicKey._obj, data, this._obj);
+        return Crypto.workerSync().signatureVerify(publicKey._obj, data, this._obj);
     }
 
     /**
@@ -77,4 +79,7 @@ class Signature extends Primitive {
         return o instanceof Signature && super.equals(o);
     }
 }
+
+Signature.SIZE = 64;
+
 Class.register(Signature);

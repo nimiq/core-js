@@ -19,7 +19,7 @@ class Hash extends Primitive {
         if (arg === null) {
             arg = new Uint8Array(Hash.getSize(algorithm));
         }
-        super(arg, Crypto.hashType, Hash.getSize(algorithm));
+        super(arg, Uint8Array, Hash.getSize(algorithm));
         /** @type {Hash.Algorithm} */
         this._algorithm = algorithm;
     }
@@ -38,7 +38,7 @@ class Hash extends Primitive {
      * @returns {Hash}
      */
     static blake2b(arr) {
-        return new Hash(Crypto.blake2bSync(arr), Hash.Algorithm.BLAKE2B);
+        return new Hash(Crypto.workerSync().computeBlake2b(arr), Hash.Algorithm.BLAKE2B);
     }
 
     /**
@@ -55,7 +55,7 @@ class Hash extends Primitive {
      * @returns {Promise.<Hash>}
      */
     static async blake2bAsync(arr) {
-        return new Hash(await Crypto.blake2bAsync(arr), Hash.Algorithm.BLAKE2B);
+        return new Hash(await (await Crypto.workerAsync()).computeBlake2b(arr), Hash.Algorithm.BLAKE2B);
     }
 
     /**
@@ -72,7 +72,7 @@ class Hash extends Primitive {
      * @returns {Promise.<Hash>}
      */
     static async argon2d(arr) {
-        return new Hash(await Crypto.argon2d(arr), Hash.Algorithm.ARGON2D);
+        return new Hash(await (await Crypto.workerAsync()).computeArgon2d(arr), Hash.Algorithm.ARGON2D);
     }
 
     /**
@@ -80,7 +80,7 @@ class Hash extends Primitive {
      * @returns {Hash}
      */
     static sha256(arr) {
-        return new Hash(Crypto.sha256(arr), Hash.Algorithm.SHA256);
+        return new Hash(Crypto.workerSync().computeSha256(arr), Hash.Algorithm.SHA256);
     }
 
     /**
@@ -211,9 +211,9 @@ Hash.Algorithm = {
  * @type {Map<Hash.Algorithm, number>}
  */
 Hash.SIZE = new Map();
-Hash.SIZE.set(Hash.Algorithm.BLAKE2B, Crypto.blake2bSize);
-Hash.SIZE.set(Hash.Algorithm.ARGON2D, Crypto.argon2dSize);
-Hash.SIZE.set(Hash.Algorithm.SHA256, Crypto.sha256Size);
+Hash.SIZE.set(Hash.Algorithm.BLAKE2B, 32);
+Hash.SIZE.set(Hash.Algorithm.ARGON2D, 32);
+Hash.SIZE.set(Hash.Algorithm.SHA256, 32);
 
-Hash.NULL = new Hash(new Uint8Array(Crypto.hashSize));
+Hash.NULL = new Hash(new Uint8Array(32));
 Class.register(Hash);

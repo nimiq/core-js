@@ -88,53 +88,53 @@ describe('Crypto', () => {
 
     it('can create keys of proposed size', (done) => {
         (async function () {
-            const keyPair = await Crypto.keyPairGenerate();
-            expect(Crypto.publicKeySerialize(Crypto.keyPairPublic(keyPair)).byteLength).toEqual(Crypto.publicKeySize);
-            expect(Crypto.privateKeySerialize(Crypto.keyPairPrivate(keyPair)).byteLength).toEqual(Crypto.privateKeySize);
+            const keyPair = KeyPair.generate();
+            expect(keyPair.publicKey.serialize().byteLength).toEqual(PublicKey.SIZE);
+            expect(keyPair.privateKey.serialize().byteLength).toEqual(PrivateKey.SIZE);
         })().then(done, done.fail);
     });
 
     it('can serialize, unserialize keys and use them afterwards', (done) => {
         (async function () {
-            const keyPair = await Crypto.keyPairGenerate();
+            const keyPair = KeyPair.generate();
             const data = new Uint8Array([1, 2, 3]);
             const data2 = new Uint8Array([1, 2, 4]);
-            const privateSerialized = Crypto.privateKeySerialize(Crypto.keyPairPrivate(keyPair));
-            const publicSerialized = Crypto.publicKeySerialize(Crypto.keyPairPublic(keyPair));
-            const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), Crypto.keyPairPublic(keyPair), data);
-            const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
-            const falsify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data2, sign);
+            const privateSerialized = keyPair.privateKey.serialize();
+            const publicSerialized = keyPair.publicKey.serialize();
+            const sign = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
+            const verify = sign.verify(keyPair.publicKey, data);
+            const falsify = sign.verify(keyPair.publicKey, data2);
 
-            const privateUnserialized = Crypto.privateKeyUnserialize(privateSerialized);
-            const publicUnserialized = Crypto.publicKeyUnserialize(publicSerialized);
+            const privateUnserialized = PrivateKey.unserialize(privateSerialized);
+            const publicUnserialized = PublicKey.unserialize(publicSerialized);
 
-            const verify2 = await Crypto.signatureVerify(publicUnserialized, data, sign);
+            const verify2 = sign.verify(publicUnserialized, data);
             expect(verify2).toBe(verify);
 
-            const falsify2 = await Crypto.signatureVerify(publicUnserialized, data2, sign);
+            const falsify2 = sign.verify(publicUnserialized, data2);
             expect(falsify2).toBe(falsify);
 
-            const sign2 = await Crypto.signatureCreate(privateUnserialized, publicUnserialized, data);
+            const sign2 = Signature.create(privateUnserialized, publicUnserialized, data);
             expect(sign2.length).toBe(sign.length);
         })().then(done, done.fail);
     });
 
     it('can derive a functional key pair from private key', (done) => {
         (async function () {
-            const keyPair = await Crypto.keyPairGenerate();
+            const keyPair = KeyPair.generate();
             const data = new Uint8Array([1, 2, 3]);
-            const keyPair2 = await Crypto.keyPairDerive(Crypto.keyPairPrivate(keyPair));
+            const keyPair2 = KeyPair.derive(keyPair.privateKey);
 
-            const sign = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), Crypto.keyPairPublic(keyPair), data);
-            const verify = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign);
+            const sign = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
+            const verify = sign.verify(keyPair.publicKey, data);
             expect(verify).toBe(true, 'can verify original with original key');
-            const verify2 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign);
+            const verify2 = sign.verify(keyPair2.publicKey, data);
             expect(verify2).toBe(true, 'can verify original with derived key');
 
-            const sign2 = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair2), Crypto.keyPairPublic(keyPair2), data);
-            const verify3 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), data, sign2);
+            const sign2 = Signature.create(keyPair2.privateKey, keyPair2.publicKey, data);
+            const verify3 = sign2.verify(keyPair.publicKey, data);
             expect(verify3).toBe(true, 'can verify derived with original key');
-            const verify4 = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair2), data, sign2);
+            const verify4 = sign2.verify(keyPair2.publicKey, data);
             expect(verify4).toBe(true, 'can verify derived with derived key');
         })().then(done, done.fail);
     });
@@ -183,19 +183,18 @@ describe('Crypto', () => {
             ];
 
             for (const testCase of testCases) {
-                /* eslint-disable no-await-in-loop */
-                const privateKey = hexToBytes(testCase.priv);
-                const referencePublicKey = hexToBytes(testCase.pub);
-                const referenceSignature = hexToBytes(testCase.sig);
+                const privateKey = new PrivateKey(hexToBytes(testCase.priv));
+                const referencePublicKey = new PublicKey(hexToBytes(testCase.pub));
+                const referenceSignature = new Signature(hexToBytes(testCase.sig));
                 const message = hexToBytes(testCase.msg);
 
-                const computedPublicKey = await Crypto.publicKeyDerive(privateKey);
-                expect(BufferUtils.equals(referencePublicKey, computedPublicKey)).toBe(true, 'calculated wrong public key');
+                const computedPublicKey = PublicKey.derive(privateKey);
+                expect(referencePublicKey.equals(computedPublicKey)).toBe(true, 'calculated wrong public key');
 
-                const computedSignature = await Crypto.signatureCreate(privateKey, referencePublicKey, message);
-                expect(BufferUtils.equals(referenceSignature, computedSignature)).toBe(true, 'calculated wrong signature');
+                const computedSignature = Signature.create(privateKey, referencePublicKey, message);
+                expect(referenceSignature.equals(computedSignature)).toBe(true, 'calculated wrong signature');
 
-                expect(await Crypto.signatureVerify(referencePublicKey, message, referenceSignature)).toBe(true, 'could not verify valid signature');
+                expect(referenceSignature.verify(referencePublicKey, message)).toBe(true, 'could not verify valid signature');
 
                 // try whether the signature also verifies for a manipulated message
                 let forgedMessage;
@@ -206,13 +205,12 @@ describe('Crypto', () => {
                     forgedMessage = new Uint8Array(message);
                     forgedMessage[forgedMessage.length-1]++;
                 }
-                expect(await Crypto.signatureVerify(referencePublicKey, forgedMessage, referenceSignature)).toBe(false, 'Accepted signature for wrong message');
+                expect(referenceSignature.verify(referencePublicKey, forgedMessage)).toBe(false, 'Accepted signature for wrong message');
 
                 // try whether a manipulated signature verifies the original message
                 // change a single bit of a single byte
-                computedSignature[Math.floor(Math.random() * Crypto.signatureSize)] ^= 1 << (Math.floor(Math.random() * 8));
-                expect(await Crypto.signatureVerify(referencePublicKey, forgedMessage, referenceSignature)).toBe(false, 'Accepted wrong signature');
-                /* eslint-enable no-await-in-loop */
+                referenceSignature._obj[Math.floor(Math.random() * Signature.SIZE)] ^= 1 << (Math.floor(Math.random() * 8));
+                expect(referenceSignature.verify(referencePublicKey, message)).toBe(false, 'Accepted wrong signature');
             }
         })().then(done, done.fail);
     });
@@ -233,11 +231,10 @@ describe('Crypto', () => {
             ];
 
             for (const entry of testData) {
-                expect(await Crypto.signatureVerify(
-                    Crypto.publicKeyUnserialize(BufferUtils.fromBase64(entry[1])),
-                    BufferUtils.fromBase64(entry[2]),
-                    Crypto.signatureUnserialize(BufferUtils.fromBase64(entry[0])))
-                ).toBeTruthy();
+                const publicKey = PublicKey.unserialize(BufferUtils.fromBase64(entry[1]));
+                const signature = Signature.unserialize(BufferUtils.fromBase64(entry[0]));
+                const message = BufferUtils.fromBase64(entry[2]);
+                expect(await signature.verify(publicKey, message)).toBeTruthy();
             }
         })().then(done, done.fail);
     });
@@ -246,19 +243,19 @@ describe('Crypto', () => {
         // http://www.ietf.org/rfc/rfc6090.txt
         (async function () {
             const dataToSign = BufferUtils.fromAscii('test data to sign');
-            const keyPair = await Crypto.keyPairGenerate();
-            const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), Crypto.keyPairPublic(keyPair), dataToSign);
-            const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), dataToSign, signature);
-            expect(proof).toEqual(true);
+            const keyPair = KeyPair.generate();
+            const signature = Signature.create(keyPair.privateKey, keyPair.publicKey, dataToSign);
+            expect(signature.verify(keyPair.publicKey, dataToSign)).toBeTruthy();
         })().then(done, done.fail);
     });
 
     it('can verify serialized signature', (done) => {
         (async function () {
             const dataToSign = BufferUtils.fromAscii('test data to sign');
-            const keyPair = await Crypto.keyPairGenerate();
-            const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), Crypto.keyPairPublic(keyPair), dataToSign);
-            const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), dataToSign, Crypto.signatureUnserialize(Crypto.signatureSerialize(signature)));
+            const keyPair = KeyPair.generate();
+            let signature = Signature.create(keyPair.privateKey, keyPair.publicKey, dataToSign);
+            signature = Signature.unserialize(signature.serialize());
+            const proof = signature.verify(keyPair.publicKey, dataToSign);
             expect(proof).toEqual(true);
         })().then(done, done.fail);
     });
@@ -267,9 +264,9 @@ describe('Crypto', () => {
         (async function () {
             const dataToSign = BufferUtils.fromAscii('test data to sign');
             const wrongData = BufferUtils.fromAscii('wrong test data to sign');
-            const keyPair = await Crypto.keyPairGenerate();
-            const signature = await Crypto.signatureCreate(Crypto.keyPairPrivate(keyPair), Crypto.keyPairPublic(keyPair), dataToSign);
-            const proof = await Crypto.signatureVerify(Crypto.keyPairPublic(keyPair), wrongData, signature);
+            const keyPair = KeyPair.generate();
+            const signature = Signature.create(keyPair.privateKey, keyPair.publicKey, dataToSign);
+            const proof = signature.verify(keyPair.publicKey, wrongData);
             expect(proof).toEqual(false);
         })().then(done, done.fail);
     });
@@ -278,7 +275,7 @@ describe('Crypto', () => {
         (async function () {
             const dataToHash = BufferUtils.fromAscii('hello');
             const expectedHash = Dummy.hash1;
-            const hash = Crypto.blake2bSync(dataToHash);
+            const hash = Crypto.workerSync().computeBlake2b(dataToHash);
             expect(BufferUtils.toBase64(hash)).toBe(expectedHash);
         })().then(done, done.fail);
     });
@@ -286,7 +283,7 @@ describe('Crypto', () => {
     it('correctly aggregates commitments', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggCommitment = await Crypto.aggregateCommitments(testCase.commitments);
+                const aggCommitment = Crypto.workerSync().commitmentsAggregate(testCase.commitments);
                 expect(BufferUtils.equals(aggCommitment, testCase.aggCommitment)).toBe(true);
             }
         })().then(done, done.fail);
@@ -295,7 +292,7 @@ describe('Crypto', () => {
     it('correctly aggregates partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggSignatures = await Crypto.aggregatePartialSignatures(testCase.partialSignatures);
+                const aggSignatures = testCase.partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
                 expect(BufferUtils.equals(aggSignatures, testCase.aggSignature)).toBe(true);
             }
         })().then(done, done.fail);
@@ -304,9 +301,10 @@ describe('Crypto', () => {
     it('correctly combines partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const signature = await Crypto.combinePartialSignatures(testCase.aggCommitment, testCase.partialSignatures);
-                expect(BufferUtils.equals(signature, testCase.signature)).toBe(true, 'could not compute signature correctly');
-                const result = await Crypto.signatureVerify(testCase.aggPubKey, testCase.message, signature);
+                const combinedSignature = testCase.partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
+                const aggPartialSig = BufferUtils.concatTypedArrays(testCase.aggCommitment, combinedSignature);
+                expect(BufferUtils.equals(aggPartialSig, testCase.signature)).toBe(true, 'could not compute signature correctly');
+                const result = Crypto.workerSync().signatureVerify(testCase.aggPubKey, testCase.message, aggPartialSig);
                 expect(result).toBe(true, 'could not verify signature');
             }
         })().then(done, done.fail);
@@ -316,7 +314,7 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.pubKeys.length; ++i) {
-                    const pubKey = await Crypto.publicKeyDerive(testCase.privKeys[i]);
+                    const pubKey = Crypto.workerSync().publicKeyDerive(testCase.privKeys[i]);
                     expect(BufferUtils.equals(pubKey, testCase.pubKeys[i])).toBe(true);
                 }
             }
@@ -326,7 +324,7 @@ describe('Crypto', () => {
     it('correctly computes public keys hash', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const publicKeysHash = await Crypto.hashPublicKeys(testCase.pubKeys);
+                const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
                 expect(BufferUtils.equals(publicKeysHash, testCase.pubKeysHash)).toBe(true);
             }
         })().then(done, done.fail);
@@ -336,7 +334,8 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.privKeys.length; ++i) {
-                    const delinearizedPrivKey = await Crypto.delinearizePrivateKey(testCase.pubKeys, testCase.pubKeys[i], testCase.privKeys[i]);
+                    const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
+                    const delinearizedPrivKey = Crypto.workerSync().privateKeyDelinearize(testCase.privKeys[i], testCase.pubKeys[i], publicKeysHash);
                     expect(BufferUtils.equals(delinearizedPrivKey, testCase.delinearizedPrivKeys[i])).toBe(true);
                 }
             }
@@ -347,7 +346,8 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.pubKeys.length; ++i) {
-                    const delinearizedPubKey = await Crypto.delinearizePublicKey(testCase.pubKeys, testCase.pubKeys[i]);
+                    const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
+                    const delinearizedPubKey = Crypto.workerSync().publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
                     expect(BufferUtils.equals(delinearizedPubKey, testCase.delinearizedPubKeys[i])).toBe(true);
                 }
             }
@@ -357,12 +357,13 @@ describe('Crypto', () => {
     it('correctly aggregates and delinearizes public keys', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
+                const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
                 const delinearizedPubKeys = [];
-                for (let i = 0; i < testCase.pubKeys.length; ++i) {
-                    const delinearizedPubKey = await Crypto.delinearizePublicKey(testCase.pubKeys, testCase.pubKeys[i]);
+                for (let i = 0; i < testCase.pubKeys.length; ++i) { // TODO why is this even computed
+                    const delinearizedPubKey = Crypto.workerSync().publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
                     delinearizedPubKeys.push(delinearizedPubKey);
                 }
-                const aggregatePubKey = await Crypto.delinearizeAndAggregatePublicKeys(testCase.pubKeys);
+                const aggregatePubKey = Crypto.workerSync().publicKeysDelinearizeAndAggregate(testCase.pubKeys, publicKeysHash);
                 expect(BufferUtils.equals(aggregatePubKey, testCase.aggPubKey)).toBe(true);
             }
         })().then(done, done.fail);
@@ -373,26 +374,29 @@ describe('Crypto', () => {
             const message = BufferUtils.fromAscii('to be authenticated');
             const pubKeys = [], privKeys = [], secrets = [], commitments = [], partialSignatures = [];
             for (let i = 0; i < 3; ++i) {
-                const keyPair = await Crypto.keyPairGenerate();
-                const nonce = await Crypto.commitmentPairGenerate();
+                const keyPair = KeyPair.generate();
+                const nonce = CommitmentPair.generate();
 
                 // pubKeys.push(partialSignatureTestVectors[3].pubKeys[i]);
                 // privKeys.push(partialSignatureTestVectors[3].privKeys[i]);
-                pubKeys.push(keyPair.publicKey);
-                privKeys.push(keyPair.privateKey);
-                secrets.push(nonce.secret);
-                commitments.push(nonce.commitment);
+                pubKeys.push(keyPair.publicKey.serialize());
+                privKeys.push(keyPair.privateKey.serialize());
+                secrets.push(nonce.secret.serialize());
+                commitments.push(nonce.commitment.serialize());
             }
 
-            const aggCommitment = await Crypto.aggregateCommitments(commitments);
-            const aggPubKey = await Crypto.delinearizeAndAggregatePublicKeys(pubKeys);
+            const aggCommitment = Crypto.workerSync().commitmentsAggregate(commitments);
+            const publicKeysHash = Crypto.workerSync().publicKeysHash(pubKeys);
+
+            const aggPubKey =  Crypto.workerSync().publicKeysDelinearizeAndAggregate(pubKeys, publicKeysHash);
             for (let i = 0; i < 3; ++i) {
-                const partialSignature = await Crypto.delinearizedPartialSignatureCreate(privKeys[i], pubKeys[i], pubKeys, secrets[i], aggCommitment, message);
+                const partialSignature = Crypto.workerSync().delinearizedPartialSignatureCreate(pubKeys, privKeys[i], pubKeys[i], secrets[i], aggCommitment, message);
                 partialSignatures.push(partialSignature);
             }
+            const combinedSignature = partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
+            const signature = BufferUtils.concatTypedArrays(aggCommitment, combinedSignature);
 
-            const signature = await Crypto.combinePartialSignatures(aggCommitment, partialSignatures);
-            expect(await Crypto.signatureVerify(aggPubKey, message, signature)).toBe(true);
+            expect(Crypto.workerSync().signatureVerify(aggPubKey, message, signature)).toBeTruthy();
         })().then(done, done.fail);
     });
 });

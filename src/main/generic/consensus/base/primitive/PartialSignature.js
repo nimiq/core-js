@@ -4,7 +4,7 @@ class PartialSignature extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.partialSignatureType, Crypto.partialSignatureSize);
+        super(arg, Uint8Array, PartialSignature.SIZE);
     }
 
     /**
@@ -17,8 +17,9 @@ class PartialSignature extends Primitive {
      * @return {PartialSignature}
      */
     static create(privateKey, publicKey, publicKeys, secret, aggregateCommitment, data) {
-        return new PartialSignature(Crypto.delinearizedPartialSignatureCreate(privateKey._obj, publicKey._obj,
-            publicKeys.map(o => o._obj), secret._obj, aggregateCommitment._obj, data));
+        const raw = Crypto.workerSync().delinearizedPartialSignatureCreate(publicKeys.map(o => o._obj), privateKey._obj,
+            publicKey._obj, secret._obj, aggregateCommitment._obj, data);
+        return new PartialSignature(raw);
     }
 
     /**
@@ -26,7 +27,7 @@ class PartialSignature extends Primitive {
      * @return {PartialSignature}
      */
     static unserialize(buf) {
-        return new PartialSignature(Crypto.partialSignatureUnserialize(buf.read(Crypto.signatureSize)));
+        return new PartialSignature(buf.read(PartialSignature.SIZE));
     }
 
     /**
@@ -35,13 +36,13 @@ class PartialSignature extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.partialSignatureSerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.partialSignatureSize;
+        return PartialSignature.SIZE;
     }
 
     /**
@@ -52,4 +53,6 @@ class PartialSignature extends Primitive {
         return o instanceof PartialSignature && super.equals(o);
     }
 }
+
+PartialSignature.SIZE = 32;
 Class.register(PartialSignature);

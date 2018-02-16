@@ -4,7 +4,7 @@ class RandomSecret extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.randomSecretType, Crypto.randomSecretSize);
+        super(arg, Uint8Array, RandomSecret.SIZE);
     }
 
     /**
@@ -12,7 +12,7 @@ class RandomSecret extends Primitive {
      * @return {RandomSecret}
      */
     static unserialize(buf) {
-        return new RandomSecret(Crypto.randomSecretUnserialize(buf.read(Crypto.randomSecretSize)));
+        return new RandomSecret(buf.read(RandomSecret.SIZE));
     }
 
     /**
@@ -21,13 +21,13 @@ class RandomSecret extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.randomSecretSerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.randomSecretSize;
+        return RandomSecret.SIZE;
     }
 
     /**
@@ -38,5 +38,7 @@ class RandomSecret extends Primitive {
         return o instanceof RandomSecret && super.equals(o);
     }
 }
+
+RandomSecret.SIZE = 32;
 
 Class.register(RandomSecret);

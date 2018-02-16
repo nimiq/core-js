@@ -6,7 +6,7 @@ class KeyPair extends Primitive {
      * @private
      */
     constructor(arg, locked = false, lockSalt = null) {
-        super(arg, Crypto.keyPairType);
+        super(arg, Object);
         /** @type {boolean} */
         this._locked = locked;
         /** @type {boolean} */
@@ -14,22 +14,34 @@ class KeyPair extends Primitive {
         /** @type {Uint8Array} */
         this._lockSalt = lockSalt;
         /** @type {PrivateKey} */
-        this._internalPrivateKey = new PrivateKey(Crypto.keyPairPrivate(this._obj));
+        this._internalPrivateKey = new PrivateKey(this._obj.privateKey);
     }
 
     /**
      * @return {KeyPair}
      */
     static generate() {
-        return new KeyPair(Crypto.keyPairGenerate());
+        const privateKey = PrivateKey.generate();
+        return KeyPair.fromKeys(privateKey, PublicKey.derive(privateKey));
+    }
+
+    /**
+     * @param {PrivateKey} privateKey
+     * @param {PublicKey} publicKey
+     * @param {boolean} locked
+     * @param {Uint8Array} lockSalt
+     * @return {KeyPair}
+     */
+    static fromKeys(privateKey, publicKey, locked = false, lockSalt = null) {
+        return new KeyPair({ privateKey: privateKey._obj, publicKey: publicKey._obj }, locked, lockSalt);
     }
 
     /**
      * @param {PrivateKey} privateKey
      * @return {KeyPair}
      */
-    static fromPrivateKey(privateKey) {
-        return new KeyPair(Crypto.keyPairDerive(privateKey._obj));
+    static derive(privateKey) {
+        return KeyPair.fromKeys(privateKey, PublicKey.derive(privateKey));
     }
 
     /**
@@ -57,7 +69,7 @@ class KeyPair extends Primitive {
         const check = buf.read(KeyPair.EXPORT_CHECKSUM_LENGTH);
 
         const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, rounds));
-        const keyPair = KeyPair.fromPrivateKey(privateKey);
+        const keyPair = KeyPair.derive(privateKey);
         const pubHash = keyPair.publicKey.hash();
         if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
             throw new Error('Invalid key');
@@ -81,7 +93,7 @@ class KeyPair extends Primitive {
                 lockSalt = buf.read(32);
             }
         }
-        return new KeyPair(Crypto.keyPairFromKeys(privateKey._obj, publicKey._obj), locked, lockSalt);
+        return KeyPair.fromKeys(privateKey, publicKey, locked, lockSalt);
     }
 
     /**
@@ -123,7 +135,7 @@ class KeyPair extends Primitive {
 
     /** @type {PublicKey} */
     get publicKey() {
-        return this._publicKey || (this._publicKey = new PublicKey(Crypto.keyPairPublic(this._obj)));
+        return this._publicKey || (this._publicKey = new PublicKey(this._obj.publicKey));
     }
 
     /** @type {number} */
@@ -240,7 +252,7 @@ class KeyPair extends Primitive {
      * @private
      */
     static async _otpKdf(message, key, salt, iterations) {
-        return BufferUtils.xor(message, await Crypto.kdf(key, salt, iterations));
+        return BufferUtils.xor(message, await (await Crypto.workerAsync()).kdf(key, salt, iterations));
     }
 
     get isLocked() {

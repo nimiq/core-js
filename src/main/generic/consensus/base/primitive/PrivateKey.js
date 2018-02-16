@@ -4,14 +4,16 @@ class PrivateKey extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Crypto.privateKeyType, Crypto.privateKeySize);
+        super(arg, Uint8Array, PrivateKey.SIZE);
     }
 
     /**
      * @return {PrivateKey}
      */
     static generate() {
-        return new PrivateKey(Crypto.privateKeyGenerate());
+        const privateKey = new Uint8Array(PrivateKey.SIZE);
+        Crypto.lib.getRandomValues(privateKey);
+        return new PrivateKey(privateKey);
     }
 
     /**
@@ -19,7 +21,7 @@ class PrivateKey extends Primitive {
      * @return {PrivateKey}
      */
     static unserialize(buf) {
-        return new PrivateKey(Crypto.privateKeyUnserialize(buf.read(Crypto.privateKeySize)));
+        return new PrivateKey(buf.read(PrivateKey.SIZE));
     }
 
     /**
@@ -28,13 +30,13 @@ class PrivateKey extends Primitive {
      */
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
-        buf.write(Crypto.privateKeySerialize(this._obj));
+        buf.write(this._obj);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
-        return Crypto.privateKeySize;
+        return PrivateKey.SIZE;
     }
 
     /**
@@ -53,5 +55,7 @@ class PrivateKey extends Primitive {
         return o instanceof PrivateKey && super.equals(o);
     }
 }
+
+PrivateKey.SIZE = 32;
 
 Class.register(PrivateKey);
