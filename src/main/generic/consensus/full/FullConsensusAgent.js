@@ -75,7 +75,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         // This sets a maximum length for forks that the full client will accept:
         //   FullConsensusAgent.SYNC_ATTEMPTS_MAX * BaseInvectoryMessage.VECTORS_MAX_COUNT
         if (this._numBlocksExtending === 0 && ++this._failedSyncs >= FullConsensusAgent.SYNC_ATTEMPTS_MAX) {
-            this._peer.channel.close('blockchain sync failed');
+            this._peer.channel.ban('blockchain sync failed');
             return;
         }
 
@@ -214,12 +214,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onKnownBlockAnnounced(hash, block) {
         if (!this._syncing) return;
 
-        // Check if this block is on a fork.
-        const onFork = !(await this._getBlock(hash, /*includeForks*/ false));
-        if (onFork) {
-            this._numBlocksForking++;
-            this._forkHead = block;
-        }
+        this._numBlocksForking++;
+        this._forkHead = block;
     }
 
     /**
@@ -497,7 +493,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
  * blocks.
  * @type {number}
  */
-FullConsensusAgent.SYNC_ATTEMPTS_MAX = 10;
+FullConsensusAgent.SYNC_ATTEMPTS_MAX = 25;
 /**
  * Maximum number of inventory vectors to sent in the response for onGetBlocks.
  * @type {number}

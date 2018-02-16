@@ -226,7 +226,7 @@ class NetworkAgent extends Observable {
 
         // Check if the peer is working on the same genesis block.
         if (!Block.GENESIS.HASH.equals(msg.genesisHash)) {
-            this._channel.close(`different genesis block (${msg.genesisHash})`);
+            this._channel.ban(`different genesis block (${msg.genesisHash})`);
             return;
         }
 
