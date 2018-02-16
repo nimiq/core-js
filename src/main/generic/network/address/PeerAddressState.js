@@ -54,7 +54,7 @@ class PeerAddressState {
         if (this._signalRouter.bestRoute) {
             this._signalRouter.bestRoute.failedAttempts = value;
             this._signalRouter.updateBestRoute(); // scores may have changed
-         } else {
+        } else {
             this._failedAttempts = value;
         }
     }
