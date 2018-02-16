@@ -134,6 +134,7 @@ class Miner extends Observable {
         this._totalElapsed = 0;
         this._lastHashrate = Date.now();
         this._hashrateWorker = setInterval(() => this._updateHashrate(), 1000);
+        this._retry = 0;
 
         // Tell listeners that we've started working.
         this.fire('start', this);
@@ -153,11 +154,16 @@ class Miner extends Observable {
             this._mempoolChanged = false;
 
             // Construct next block.
+            this._retry = 0;
             const block = await this.getNextBlock();
 
             Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
 
             this._workerPool.startMiningOnBlock(block).catch(Log.w.tag(Miner));
+        } catch (e) {
+            Log.w(Miner, 'Failed to start work, retrying in 100ms');
+            this.stopWork();
+            setTimeout(() => this.startWork(), 100);
         } finally {
             this._restarting = false;
         }
@@ -201,11 +207,19 @@ class Miner extends Observable {
      * @private
      */
     async getNextBlock() {
-        const nextTarget = await this._blockchain.getNextTarget();
-        const interlink = await this._getNextInterlink(nextTarget);
-        const body = await this._getNextBody(interlink.serializedSize);
-        const header = await this._getNextHeader(nextTarget, interlink, body);
-        return new Block(header, interlink, body);
+        this._retry++;
+        try {
+            const nextTarget = await this._blockchain.getNextTarget();
+            const interlink = await this._getNextInterlink(nextTarget);
+            const body = await this._getNextBody(interlink.serializedSize);
+            const header = await this._getNextHeader(nextTarget, interlink, body);
+            if ((await this._blockchain.getNextTarget()) !== nextTarget) return this.getNextBlock();
+            return new Block(header, interlink, body);
+        } catch (e) {
+            // Retry up to three times.
+            if (this._retry <= 3) return this.getNextBlock();
+            throw e;
+        }
     }
 
     /**
