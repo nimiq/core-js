@@ -1,4 +1,4 @@
-class PeerConnection extends Observable {
+class PeerConnection {
     /**
      * @param {PeerAddress} peerAddress
      * @returns {PeerConnection}
@@ -23,8 +23,6 @@ class PeerConnection extends Observable {
      * @constructor
      */
     constructor() {
-        super();
-
         // Unique id for this connection.
         /** @type {number} */
         this._id = PeerConnection._instanceCount++;
