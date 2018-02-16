@@ -35,6 +35,12 @@ class PeerAddresses extends Observable {
     }
 
     /**
+     * @returns {Array<PeerAddressState>}
+     */
+    values() {
+        return this._store.values();
+    }
+    /**
      * @param {PeerAddress} peerAddress
      * @returns {?PeerAddressState}
      * @private
@@ -130,7 +136,7 @@ class PeerAddresses extends Observable {
             }
 
             // Never return addresses that are too old.
-            if (this._exceedsAge(address)) {
+            if (this.exceedsAge(address)) {
                 continue;
             }
 
@@ -179,7 +185,7 @@ class PeerAddresses extends Observable {
 
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
-        if (channel && this._exceedsAge(peerAddress)) {
+        if (channel && this.exceedsAge(peerAddress)) {
             Log.d(PeerAddresses, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
@@ -484,7 +490,7 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.TRIED:
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
-                    if (this._exceedsAge(addr)) {
+                    if (this.exceedsAge(addr)) {
                         Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
                         this._remove(addr);
                     }
@@ -537,9 +543,8 @@ class PeerAddresses extends Observable {
     /**
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
-     * @private
      */
-    _exceedsAge(peerAddress) {
+    exceedsAge(peerAddress) {
         // Seed addresses are never too old.
         if (peerAddress.isSeed()) {
             return false;

@@ -115,6 +115,7 @@ class ConnectionPool extends Observable {
     values() {
         return Array.from(this._store.values());
     }
+
     /**
      * @param {number} id
      * @returns {PeerConnection|null}
@@ -214,7 +215,7 @@ class ConnectionPool extends Observable {
         }
 
         if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
-            Log.e(Network, `Cannot connect to $this.peerAddress} - unsupported protocol`);
+            Log.e(Network, `Cannot connect to {$this.peerAddress} - unsupported protocol`);
             return null;
         }
 
@@ -648,7 +649,7 @@ class ConnectionPool extends Observable {
             return;
         }
         peerConnection.failure();
-        this._addresses.fail(peerAddress);
+        this._addresses.failure(peerAddress);
     }
 
     /**
