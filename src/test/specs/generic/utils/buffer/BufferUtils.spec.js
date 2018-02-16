@@ -1,4 +1,5 @@
 describe('BufferUtils', () => {
+    if (PlatformUtils.isNodeJs()) btoa = require('btoa'); //eslint-disable-line no-global-assign
 
     it('has fromUnicode and toUnicode methods', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromAscii('{x:"test"}'))).toEqual('{x:"test"}');
@@ -22,6 +23,18 @@ describe('BufferUtils', () => {
         expect(BufferUtils.toBase32(BufferUtils.fromBase32('MZXW6YQ', BufferUtils.BASE32_ALPHABET.RFC4648), BufferUtils.BASE32_ALPHABET.RFC4648)).toEqual('MZXW6YQ=');
     });
 
+    it('toBase64/fromBase64 handle all code points like btoa/atob', () => {
+        const arr = [];
+        for (let i = 0; i < 256; ++i) arr.push(i);
+        const sb = new SerialBuffer(arr);
+        const tobase64 = BufferUtils.toBase64(sb);
+        const withbtoa = btoa(String.fromCharCode(...sb));
+
+        expect(tobase64).toEqual(withbtoa);
+        expect(BufferUtils.fromBase64(tobase64)).toEqual(sb);
+        expect(BufferUtils.fromBase64(withbtoa)).toEqual(sb);
+    });
+
     it('toBase64 fulfills RFC 4648 test vectors', () => {
         expect(BufferUtils.toBase64(BufferUtils.fromAscii(''))).toBe('');
         expect(BufferUtils.toBase64(BufferUtils.fromAscii('f'))).toBe('Zg==');
@@ -41,7 +54,7 @@ describe('BufferUtils', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromBase64('Zm9vYmE='))).toEqual('fooba');
         expect(BufferUtils.toAscii(BufferUtils.fromBase64('Zm9vYmFy'))).toEqual('foobar');
     });
-    
+
     it('toBase32 fulfills RFC 4648 test vectors', () => {
         expect(BufferUtils.toBase32(BufferUtils.fromAscii(''), BufferUtils.BASE32_ALPHABET.RFC4648)).toBe('');
         expect(BufferUtils.toBase32(BufferUtils.fromAscii('f'), BufferUtils.BASE32_ALPHABET.RFC4648)).toBe('MY======');
