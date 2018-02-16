@@ -270,7 +270,7 @@ class Network extends Observable {
 
     /** @type {number} */
     get peerCountConnecting() {
-        return this._addresses.connectingCount;
+        return this._connections.connectingCount;
     }
 
     /** @type {number} */

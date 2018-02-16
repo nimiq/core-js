@@ -170,7 +170,7 @@ class ConnectionPool extends Observable {
                 this._peerAddressStore.put(peerConnection.peerAddress, peerConnection);
  
                 if (peerConnection.peerAddress.protocol === Protocol.RTC) {
-                    this._peerIdStore.put(peerAddress.peerId, peerConnection);
+                    this._peerIdStore.put(peerConnection.peerAddress.peerId, peerConnection);
                 }
             }
         }
@@ -405,7 +405,7 @@ class ConnectionPool extends Observable {
  
         this._updateConnectedPeerCount(peer.peerAddress, 1);
 
-        this._addresses.connected(peerAddress);
+        this._addresses.connected(peer.channel, peer.peerAddress);
 
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
