@@ -129,7 +129,7 @@ class LightConsensusAgent extends FullConsensusAgent {
                         this.fire('sync-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.PROVE_BLOCKS:
-                        this._requestProofBlocks().catch(Log.w.tag(LightConsensusAgent));
+                        this._requestProofBlocks();
                         this.fire('verify-accounts-tree', this._peer.peerAddress);
                         break;
                     case PartialLightChain.State.COMPLETE:
