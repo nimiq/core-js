@@ -24,8 +24,8 @@ describe('WalletStore', () => {
             await walletStore.put(wallet2);
             expect((await walletStore.list()).length).toBe(2);
 
-            readWallet1 = await walletStore.get(wallet1.address);
-            readWallet2 = await walletStore.get(wallet2.address);
+            const readWallet1 = await walletStore.get(wallet1.address);
+            const readWallet2 = await walletStore.get(wallet2.address);
 
             expect(readWallet1.equals(wallet1)).toBeTruthy();
             expect(readWallet2.equals(wallet2)).toBeTruthy();
@@ -47,8 +47,8 @@ describe('WalletStore', () => {
             await walletStore.put(wallet2, 'test1');
             expect((await walletStore.list()).length).toBe(2);
 
-            readWallet1 = await walletStore.get(wallet1.address, 'test');
-            readWallet2 = await walletStore.get(wallet2.address, 'test1');
+            const readWallet1 = await walletStore.get(wallet1.address, 'test');
+            const readWallet2 = await walletStore.get(wallet2.address, 'test1');
 
             expect(readWallet1.equals(wallet1)).toBeTruthy();
             expect(readWallet2.equals(wallet2)).toBeTruthy();
@@ -63,24 +63,27 @@ describe('WalletStore', () => {
         (async () => {
             const keyPair1 = KeyPair.generate();
             const keyPair2 = KeyPair.generate();
+            const keyPair3 = KeyPair.generate();
 
             const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
             const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
+            const wallet3 = MultiSigWallet.fromPublicKeys(keyPair3, 2, [keyPair3.publicKey, keyPair1.publicKey]);
 
             expect(await walletStore.listMultiSig()).toEqual([]);
 
             await walletStore.putMultiSig(wallet1);
             await walletStore.putMultiSig(wallet2);
+            await walletStore.putMultiSig(wallet3);
             expect((await walletStore.listMultiSig()).length).toBe(2);
 
-            readWallet1 = await walletStore.getMultiSig(wallet1.address);
-            readWallet2 = await walletStore.getMultiSig(wallet2.address);
+            const readWallet2 = await walletStore.getMultiSig(wallet2.address);
+            const readWallet3 = await walletStore.getMultiSig(wallet3.address);
 
-            expect(readWallet1.equals(wallet1)).toBeTruthy();
             expect(readWallet2.equals(wallet2)).toBeTruthy();
+            expect(readWallet3.equals(wallet3)).toBeTruthy();
 
-            await walletStore.removeMultiSig(wallet1.address);
             await walletStore.removeMultiSig(wallet2.address);
+            await walletStore.removeMultiSig(wallet3.address);
             expect((await walletStore.listMultiSig()).length).toBe(0);
         })().then(done, done.fail);
     });
@@ -89,9 +92,10 @@ describe('WalletStore', () => {
         (async () => {
             const keyPair1 = KeyPair.generate();
             const keyPair2 = KeyPair.generate();
+            const keyPair3 = KeyPair.generate();
 
             const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
-            const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
+            const wallet2 = MultiSigWallet.fromPublicKeys(keyPair3, 2, [keyPair3.publicKey, keyPair1.publicKey]);
 
             expect(await walletStore.listMultiSig()).toEqual([]);
 

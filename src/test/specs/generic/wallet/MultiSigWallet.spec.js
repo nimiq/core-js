@@ -14,6 +14,27 @@ describe('MultiSigWallet', () => {
         KeyPair.EXPORT_KDF_ROUNDS = deepLockRounds;
     });
 
+    it('rejects if own public key is missing', () => {
+        const keyPair1 = KeyPair.generate();
+        const keyPair2 = KeyPair.generate();
+        const keyPair3 = KeyPair.generate();
+
+        expect(() => MultiSigWallet.fromPublicKeys(keyPair3, 2, [keyPair1.publicKey, keyPair2.publicKey])).toThrow();
+    });
+
+    it('order of public keys does not matter', () => {
+        const keyPair1 = KeyPair.generate();
+        const keyPair2 = KeyPair.generate();
+
+        const wallet1 = MultiSigWallet.fromPublicKeys(keyPair1, 2, [keyPair1.publicKey, keyPair2.publicKey]);
+        const wallet2 = MultiSigWallet.fromPublicKeys(keyPair2, 2, [keyPair2.publicKey, keyPair1.publicKey]);
+
+        expect(wallet1.address.equals(wallet2.address)).toBe(true);
+        for (let i = 0; i < wallet1.publicKeys.length; ++i) {
+            expect(wallet1.publicKeys[i].equals(wallet2.publicKeys[i])).toBe(true);
+        }
+    });
+
     it('can create a signed transaction', () => {
         const keyPair1 = KeyPair.generate();
         const keyPair2 = KeyPair.generate();
@@ -28,7 +49,7 @@ describe('MultiSigWallet', () => {
 
         let transaction = wallet1.createTransaction(recipient, value, fee, 1);
 
-        const partialSignature1 = wallet1.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
+        const partialSignature1 = wallet1.signTransaction(transaction, [keyPair2.publicKey, keyPair1.publicKey],
             aggregatedCommitment, commitmentPair1.secret);
         const partialSignature2 = wallet2.signTransaction(transaction, [keyPair1.publicKey, keyPair2.publicKey],
             aggregatedCommitment, commitmentPair2.secret);

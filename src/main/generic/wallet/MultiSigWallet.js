@@ -9,7 +9,11 @@ class MultiSigWallet extends Wallet {
     static fromPublicKeys(keyPair, minSignatures, publicKeys) {
         if (publicKeys.length === 0) throw new Error('publicKeys may not be empty');
         if (minSignatures <= 0) throw new Error('minSignatures must be greater than 0');
+        if (!publicKeys.some(key => key.equals(keyPair.publicKey))) throw new Error('Own publicKey must be part of publicKeys');
 
+        // Sort public keys so that the order when signing and construction does not matter.
+        publicKeys = publicKeys.slice();
+        publicKeys.sort((a, b) => a.compare(b));
         const combinations = [...ArrayUtils.k_combinations(publicKeys, minSignatures)];
         const multiSigKeys = combinations.map(arr => PublicKey.sum(arr));
         return new MultiSigWallet(keyPair, minSignatures, multiSigKeys);
@@ -161,6 +165,10 @@ class MultiSigWallet extends Wallet {
      * @returns {PartialSignature}
      */
     signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
+        // Sort public keys to get the right combined public key.
+        publicKeys = publicKeys.slice();
+        publicKeys.sort((a, b) => a.compare(b));
+
         return PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
             secret, aggregatedCommitment, transaction.serializeContent());
     }

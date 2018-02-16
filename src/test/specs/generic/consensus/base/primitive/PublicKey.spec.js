@@ -27,9 +27,9 @@ describe('PublicKey', () => {
     it('can sum up public keys', () => {
         const pubKey1 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
         const pubKey2 = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey2));
-        const pubKey3 = PublicKey.unserialize(BufferUtils.fromBase64('NbjmhKskNEbYSWstfxlwosvWdcefOBmtnX8UxbIJUUo='));
+        const pubKey3 = PublicKey.unserialize(BufferUtils.fromBase64('gJIjyS65kczX3eYvkw+Gd1bH7OQGBYvRJc2cx0pJd2k='));
 
         expect(PublicKey.sum([pubKey1, pubKey2]).equals(pubKey3)).toEqual(true);
-        expect(PublicKey.sum([pubKey2, pubKey1]).equals(pubKey3)).toEqual(false);
+        expect(PublicKey.sum([pubKey2, pubKey1]).equals(pubKey3)).toEqual(true);
     });
 });

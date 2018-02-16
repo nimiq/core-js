@@ -29,6 +29,8 @@ class PublicKey extends Primitive {
      * @return {PublicKey}
      */
     static sum(publicKeys) {
+        publicKeys = publicKeys.slice();
+        publicKeys.sort((a, b) => a.compare(b));
         return new PublicKey(Crypto.delinearizeAndAggregatePublicKeys(publicKeys.map(key => key._obj)));
     }
 
