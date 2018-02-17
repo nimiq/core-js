@@ -100,7 +100,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             try {
                 header = await this.getHeader(this._syncTarget);
             } catch(err) {
-                this._peer.channel.close('Did not get requested header');
+                this._peer.channel.close(ClosingType.DID_NOT_REQESTED_HEADER, 'Did not get requested header');
                 return;
             }
 
@@ -141,7 +141,7 @@ class LightConsensusAgent extends FullConsensusAgent {
                         this._syncFinished();
                         break;
                     case PartialLightChain.State.ABORTED:
-                        this._peer.channel.close('aborted sync');
+                        this._peer.channel.close(ClosingType.ABORTED_SYNC, 'aborted sync');
                         break;
                 }
             }
@@ -214,7 +214,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Drop the peer if it doesn't send the chain proof within the timeout.
         // TODO should we ban here instead?
         this._peer.channel.expectMessage(Message.Type.CHAIN_PROOF, () => {
-            this._peer.channel.close('getChainProof timeout');
+            this._peer.channel.close(ClosingType.GET_CHAIN_PROOF_TIMEOUT, 'getChainProof timeout');
         }, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT, LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT);
     }
 
@@ -243,7 +243,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         if (!(await this._partialChain.pushProof(msg.proof))) {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
             // TODO ban instead?
-            this._peer.channel.close('invalid chain proof');
+            this._peer.channel.close(ClosingType.INVALID_CHAIN_PROOF, 'invalid chain proof');
             return;
         }
 
@@ -275,7 +275,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Drop the peer if it doesn't send the accounts proof within the timeout.
         this._peer.channel.expectMessage(Message.Type.ACCOUNTS_TREE_CHUNK, () => {
-            this._peer.channel.close('getAccountsTreeChunk timeout');
+            this._peer.channel.close(ClosingType.GET_ACCOUNTS_TREE_CHUNK_TIMEOUT, 'getAccountsTreeChunk timeout');
         }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
 
@@ -314,7 +314,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Check that we know the reference block.
         if (!blockHash.equals(msg.blockHash) || msg.chunk.head.prefix <= startPrefix) {
             Log.w(LightConsensusAgent, `Received AccountsTreeChunk for block != head or wrong start prefix from ${this._peer.peerAddress}`);
-            this._peer.channel.close('Invalid AccountsTreeChunk');
+            this._peer.channel.close(ClosingType.INVALID_ACCOUNTS_TREE_CHUNK, 'Invalid AccountsTreeChunk');
             return;
         }
 
@@ -323,7 +323,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         if (!chunk.verify()) {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close('Invalid AccountsTreeChunk');
+            this._peer.channel.close(ClosingType.INVALID_ACCOUNTS_TREE_CHUNK, 'Invalid AccountsTreeChunk');
             return;
         }
 
@@ -333,7 +333,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         if (!block.accountsHash.equals(rootHash)) {
             Log.w(LightConsensusAgent, `Invalid AccountsTreeChunk (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close('AccountsTreeChunk root hash mismatch');
+            this._peer.channel.close(ClosingType.ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH, 'AccountsTreeChunk root hash mismatch');
             return;
         }
 
@@ -344,7 +344,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         if (result < 0) {
             // TODO maybe ban?
             Log.e(`AccountsTree sync failed with error code ${result} from ${this._peer.peerAddress}`);
-            this._peer.channel.close('AccountsTreeChunk root hash mismatch');
+            this._peer.channel.close(ClosingType.ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH, 'AccountsTreeChunk root hash mismatch');
         }
 
         this._busy = false;
@@ -372,7 +372,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         this._peer.channel.expectMessage(Message.Type.INV, () => {
-            this._peer.channel.close('getBlocks timeout');
+            this._peer.channel.close(ClosingType.GET_BLOCKS_TIMEOUT, 'getBlocks timeout');
         }, BaseConsensusAgent.REQUEST_TIMEOUT);
 
         // Request blocks from peer.
@@ -496,7 +496,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._peer.channel.expectMessage(Message.Type.HEADER, () => {
                 this._headerRequest = null;
-                this._peer.channel.close('getHeader timeout');
+                this._peer.channel.close(ClosingType.GET_HEADER_TIMEOUT, 'getHeader timeout');
                 reject(new Error('timeout')); // TODO error handling
             }, BaseConsensusAgent.REQUEST_TIMEOUT);
         });
@@ -526,7 +526,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Check that it is the correct hash.
         if (!requestedHash.equals(hash)) {
             Log.w(LightConsensusAgent, `Received wrong header from ${this._peer.peerAddress}`);
-            this._peer.channel.close('Received wrong header');
+            this._peer.channel.close(ClosingType.RECEIVED_WRONG_HEADER, 'Received wrong header');
             reject(new Error('Received wrong header'));
             return;
         }

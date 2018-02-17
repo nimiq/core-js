@@ -79,10 +79,11 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {number} [type]
      * @param {string} [reason]
      */
-    close(reason) {
-        this._conn.close(reason);
+    close(type, reason) {
+        this._conn.close(type, reason);
     }
 
     /**

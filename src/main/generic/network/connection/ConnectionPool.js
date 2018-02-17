@@ -205,7 +205,7 @@ class ConnectionPool extends Observable {
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
      */
-    _checkConnectOutbound(peerAddress) {
+    _checkOutboundConnectionRequest(peerAddress) {
         if (peerAddress === null){
             return false;
         }
@@ -251,35 +251,37 @@ class ConnectionPool extends Observable {
      * @returns {boolean}
      * @private
      */
-    _checkOnConnection(conn) {
+    _checkConnection(conn) {
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
             if (conn.outbound) {
                 this._disconnected(null, conn.peerAddress, false);
             }
-            conn.close(`max peer count reached (${Network.PEER_COUNT_MAX})`);
+            conn.close(ClosingType.MAX_PEER_COUNT_REACHED,`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
 
-        //TODO Stefan, seeds?
-        //TODO Stefan, inform addresses?
-        if (this._addresses.isBanned(peerAddress)){
-            throw `Connected to banned address ${peerAddress}`;
-        }
+        if (conn.peerAddress) {
+            //TODO Stefan, seeds?
+            //TODO Stefan, inform addresses?
+            if (this._addresses.isBanned(conn.peerAddress)){
+                conn.close(ClosingType.PEER_IS_BANNED, `Connected to banned address ${conn.peerAddress}`);
+            }
 
-        if (conn.inbound){
-            const peerConnection = this.getByPeerAddress(peerAddress);
-            if (peerConnection) {
-                throw `Duplicate connection to ${peerAddress}`;
-            }    
-        } 
+            if (conn.inbound){
+                const peerConnection = this.getByPeerAddress(conn.peerAddress);
+                if (peerConnection) {
+                    conn.close(ClosingType.DUPLICATE_CONNECTION,  `Duplicate connection to ${conn.peerAddress}`);
+                }    
+            } 
+        }
 
         // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo()) {
             const numConnections = this.values().filter(
             peerConnection => peerConnection.networkAgent && conn.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
             if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
-                conn.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                conn.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
         }
@@ -293,13 +295,13 @@ class ConnectionPool extends Observable {
      * @returns {boolean}
      * @private
      */
-    _checkOnHandshake(peer, agent) {
+    _checkHandshake(peer, agent) {
         // Close connection if we are already connected to this peer.
         if (this.isEstablished(peer.peerAddress)) {
             // XXX Clear channel.peerAddress to prevent _onClose() from changing
             // the PeerAddressState of the connected peer.
             agent.channel.peerAddress = null;
-            agent.channel.close('duplicate connection (post handshake)');
+            agent.channel.close(ClosingType.DUPLICATE_CONNECTION, 'duplicate connection (post handshake)');
             return false;
         }
 
@@ -307,7 +309,7 @@ class ConnectionPool extends Observable {
         if (this._addresses.isBanned(peer.peerAddress)
             // Allow recovering seed peer's inbound connection to succeed.
             && !peer.peerAddress.isSeed()) {
-            agent.channel.close('peer is banned');
+            agent.channel.close(ClosingType.PEER_IS_BANNED, 'peer is banned');
             return false;
         }
 
@@ -320,7 +322,7 @@ class ConnectionPool extends Observable {
             const numConnections = this.values().filter(
                 peerConnection => peerConnection.networkAgent && peer.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
             if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
-                agent.channel.close(`connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                agent.channel.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
         }
@@ -333,7 +335,7 @@ class ConnectionPool extends Observable {
      */
     connectOutbound(peerAddress) {
         // all checks in one step
-        if (!this._checkConnectOutbound(peerAddress)){
+        if (!this._checkOutboundConnectionRequest(peerAddress)){
             return null;
         }
 
@@ -395,7 +397,7 @@ class ConnectionPool extends Observable {
             this._inboundStore.put(conn, peerConnection);
         }
 
-        if (!this._checkOnConnection(conn)) {
+        if (!this._checkConnection(conn)) {
             return;
         }
 
@@ -418,7 +420,7 @@ class ConnectionPool extends Observable {
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, this._networkConfig, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
-        agent.on('close', (peer, channel, closedByRemote) => this._onClose(peer, channel, closedByRemote));
+        agent.on('close', (peer, channel, closedByRemote, type, reason) => this._onClose(peer, channel, closedByRemote, type, reason));
 
         // Set peerConnection to NEGOTIATING state.
         peerConnection.networkAgent = agent;
@@ -446,7 +448,7 @@ class ConnectionPool extends Observable {
         peer.updateNetAddress();
 
         // Close connection if we are already connected to this peer.
-        if (!this._checkOnHandshake()) {
+        if (!this._checkHandshake(peer, agent)) {
             return;
         }
 
@@ -486,10 +488,12 @@ class ConnectionPool extends Observable {
      * @param {Peer} peer
      * @param {PeerChannel} channel
      * @param {boolean} closedByRemote
+     * @param {number} type
+     * @param {string} reason
      * @returns {void}
      * @private
      */
-    _onClose(peer, channel, closedByRemote) {
+    _onClose(peer, channel, closedByRemote, type, reason) {
         let peerLeft = false;
 
         // Update total bytes sent/received.
@@ -745,7 +749,7 @@ class ConnectionPool extends Observable {
         // Close all active connections.
         for (const connection of this.values()) {
             if (connection.networkAgent) {
-                connection.networkAgent.channel.close(reason || 'manual network disconnect');
+                connection.networkAgent.channel.close(ClosingType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
             }
         }
     }
@@ -755,7 +759,7 @@ class ConnectionPool extends Observable {
         // Close all websocket connections.
         for (const connection of this.values()) {
             if (connection.networkAgent && agent.peer.peerAddress.protocol === Protocol.WS) {
-                connection.networkAgent.channel.close(reason || 'manual websocket disconnect');
+                connection.networkAgent.channel.close(ClosingType.MANUAL_WEBSOCKET_DISCONNECT, reason || 'manual websocket disconnect');
             }
         }
     }
