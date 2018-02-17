@@ -129,7 +129,7 @@ class PeerAddresses extends Observable {
             }
 
             // Update timestamp for connected peers.
-            if (peerAddressState.state === PeerAddressState.CONNECTED) {
+            if (peerAddressState.state === PeerAddressState.ESTABLISHED) {
                 // Also update timestamp for RTC connections
                 if (peerAddressState.signalRouter.bestRoute) {
                     peerAddressState.signalRouter.bestRoute.timestamp = now;
@@ -267,7 +267,7 @@ class PeerAddresses extends Observable {
      * @param {PeerAddress|RtcPeerAddress} peerAddress
      * @returns {void}
      */
-    connected(channel, peerAddress) {
+    established(channel, peerAddress) {
         let peerAddressState = this._get(peerAddress);
         
         if (!peerAddressState) {
@@ -287,7 +287,7 @@ class PeerAddresses extends Observable {
             throw 'Connected to banned address';
         }
 
-        peerAddressState.state = PeerAddressState.CONNECTED;
+        peerAddressState.state = PeerAddressState.ESTABLISHED;
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
         peerAddressState.bannedUntil = -1;
@@ -529,7 +529,7 @@ class PeerAddresses extends Observable {
                     }
                     break;
 
-                case PeerAddressState.CONNECTED:
+                case PeerAddressState.ESTABLISHED:
                     // Also update timestamp for RTC connections
                     if (peerAddressState.signalRouter.bestRoute) {
                         peerAddressState.signalRouter.bestRoute.timestamp = now;

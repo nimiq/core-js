@@ -466,7 +466,7 @@ class ConnectionPool extends Observable {
  
         this._updateConnectedPeerCount(peer.peerAddress, 1);
 
-        this._addresses.connected(peer.channel, peer.peerAddress);
+        this._addresses.established(peer.channel, peer.peerAddress);
 
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);

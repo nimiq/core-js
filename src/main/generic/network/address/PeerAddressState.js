@@ -114,10 +114,10 @@ class PeerAddressState {
     }
 }
 PeerAddressState.NEW = 1;
-PeerAddressState.CONNECTED = 3;
-PeerAddressState.TRIED = 4;
-PeerAddressState.FAILED = 5;
-PeerAddressState.BANNED = 6;
+PeerAddressState.ESTABLISHED = 2;
+PeerAddressState.TRIED = 3;
+PeerAddressState.FAILED = 4;
+PeerAddressState.BANNED = 5;
 Class.register(PeerAddressState);
 
 class SignalRouter {
