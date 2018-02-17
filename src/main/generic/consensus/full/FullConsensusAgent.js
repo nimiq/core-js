@@ -75,7 +75,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         // This sets a maximum length for forks that the full client will accept:
         //   FullConsensusAgent.SYNC_ATTEMPTS_MAX * BaseInvectoryMessage.VECTORS_MAX_COUNT
         if (this._numBlocksExtending === 0 && ++this._failedSyncs >= FullConsensusAgent.SYNC_ATTEMPTS_MAX) {
-            this._peer.channel.ban('blockchain sync failed');
+            this._peer.channel.close(ClosingType.BLOCKCHAIN_SYNC_FAILED, 'blockchain sync failed');
             return;
         }
 
@@ -114,7 +114,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         // Drop the peer if it doesn't start sending InvVectors for its chain within the timeout.
         // Set timeout early to prevent re-entering the method.
         this._peer.channel.expectMessage(Message.Type.INV, () => {
-            this._peer.channel.close('getBlocks timeout');
+            this._peer.channel.close(ClosingType.GET_BLOCKS_TIMEOUT, 'getBlocks timeout');
         }, BaseConsensusAgent.REQUEST_TIMEOUT);
 
         // Check if the peer is sending us a fork.

@@ -34,7 +34,7 @@ class NetworkConnection extends Observable {
         this._id = NetworkConnection._instanceCount++;
 
         this._channel.on('message', msg => this._onMessage(msg));
-        this._channel.on('close', () => this._onClose());
+        this._channel.on('close', () => this._onClose(ClosingType.CLOSED_BY_REMOTE, "Closed by remote"));
         this._channel.on('error', e => this.fire('error', e, this));
     }
 
@@ -48,7 +48,12 @@ class NetworkConnection extends Observable {
         this.fire('message', msg, this);
     }
 
-    _onClose() {
+    /**
+     * @param {number} [type]
+     * @param {string} [reason]
+     * @private
+     */
+    _onClose(type, reason) {
         // Don't fire close event again when already closed.
         if (this._closed) {
             return;
@@ -58,14 +63,19 @@ class NetworkConnection extends Observable {
         this._closed = true;
 
         // Tell listeners that this connection has closed.
-        this.fire('close', !this._closedByUs, this);
+        this.fire('close', !this._closedByUs, type, reason, this);
     }
 
-    _close() {
+    /**
+     * @param {number} [type]
+     * @param {string} [reason]
+     * @private
+     */
+    _close(type, reason) {
         this._closedByUs = true;
 
         // Don't wait for the native close event to fire.
-        this._onClose();
+        this._onClose(type, reason);
 
         // Close the native channel.
         this._channel.close();
@@ -147,12 +157,13 @@ class NetworkConnection extends Observable {
     }
 
     /**
+     * @param {number} [type]
      * @param {string} [reason]
      */
-    close(reason) {
+    close(type, reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
         Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
-        this._close();
+        this._close(type, reason);
     }
 
     /**
@@ -256,10 +267,10 @@ NetworkConnection._instanceCount = 0;
 Class.register(NetworkConnection);
 
 // In order to give control to scoring
-class ClosingType{
+class ClosingType {
 }
 ClosingType.GET_BLOCKS_TIMEOUT = 0; //getBlocks timeout
-ClosingType.BLOXKCHAIN_SYNC_FAILED = 1; //blockchain sync failed
+ClosingType.BLOCKCHAIN_SYNC_FAILED = 1; //blockchain sync failed
 
 ClosingType.GET_CHAIN_PROOF_TIMEOUT = 2; //getChainProof timeout
 ClosingType.GET_ACCOUNTS_TREE_CHUNK_TIMEOUT = 3; //getAccountsTreeChunk timeout
@@ -296,6 +307,10 @@ ClosingType.DUPLICATE_CONNECTION = 30; //duplicate connection
 ClosingType.PEER_IS_BANNED = 31; //peer is banned
 ClosingType.CONNECTION_LIMIT_PER_IP = 32; //verack timeout
 ClosingType.MANUAL_NETWORK_DISCONNECT  = 33; //manual network disconnect
-ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual WEBSOCKET disconnect
+ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual websocket disconnect
+ClosingType.MAX_PEER_COUNT_REACHED  = 35; //max peer count reached
 
-Class.register(class ClosingType);
+
+ClosingType.CLOSED_BY_REMOTE  = 36;
+
+Class.register(ClosingType);
