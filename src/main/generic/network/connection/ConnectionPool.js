@@ -143,7 +143,7 @@ class ConnectionPool extends Observable {
      * @returns {Array<PeerConnection>}
      */
     getConnectionsByNetAddress(netAddress) {
-        if(this._connectionsByNetAddress.has(netAddress)){
+        if(this._connectionsByNetAddress.contains(netAddress)){
             return this._connectionsByNetAddress.get(netAddress);
         }
         return new Array();
@@ -209,9 +209,9 @@ class ConnectionPool extends Observable {
      * @returns {void}
      * @private
      */
-    _addNetAddress(peerConnection, netAdress) {
-        if (peerConnection && netAddress) {
-            if(this._connectionsByNetAddress.has(netAddress)){
+    _addNetAddress(peerConnection, netAddress) {
+        if (peerConnection && netAddress && !netAddress.equals(NetAddress.UNSPECIFIED) && !netAddress.equals(NetAddress.UNKNOWN)) {
+            if(this._connectionsByNetAddress.contains(netAddress)){
                 this._connectionsByNetAddress.get(netAddress).push(peerConnection);
             }
             else {
@@ -226,9 +226,9 @@ class ConnectionPool extends Observable {
      * @returns {void}
      * @private
      */
-    _removeNetAddress(peerConnection, netAdress) {
+    _removeNetAddress(peerConnection, netAddress) {
         if (peerConnection && netAddress) {
-            if(this._connectionsByNetAddress.has(netAddress)){
+            if(this._connectionsByNetAddress.contains(netAddress)){
                 const peerConnections = this._connectionsByNetAddress.get(netAddress);
 
                 const index = peerConnections.indexOf(peerConnection);
@@ -316,7 +316,7 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo()) {
-            if (this.getConnectionsByNetAddress(netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
+            if (this.getConnectionsByNetAddress(conn.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 conn.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
