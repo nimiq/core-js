@@ -181,7 +181,6 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            //TODO Stefan, is this correct?
             && this._connections.count < Network.PEER_COUNT_DESIRED
             && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 

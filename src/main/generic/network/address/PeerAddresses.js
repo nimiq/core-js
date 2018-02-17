@@ -27,6 +27,7 @@ class PeerAddresses extends Observable {
          */
         this._networkConfig = netconfig;
 
+
         // Init seed peers.
         this.add(/*channel*/ null, PeerAddresses.SEED_PEERS);
 
@@ -309,11 +310,14 @@ class PeerAddresses extends Observable {
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    disconnected(channel, peerAddress, closedByRemote) {
+    disconnected(channel, peerAddress, closedByRemote, type = null) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
         }
+
+        // register the type of disconnection
+        peerAddressState.close(type);
 
         // Delete all addresses that were signalable over the disconnected peer.
         if (channel) {
@@ -341,7 +345,7 @@ class PeerAddresses extends Observable {
      * @param {PeerAddress} peerAddress
      * @returns {void}
      */
-    failure(peerAddress) {
+    failure(peerAddress, type = null) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -349,6 +353,9 @@ class PeerAddresses extends Observable {
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
         }
+
+        // register the type of failure
+        peerAddressState.close(type);
 
         peerAddressState.state = PeerAddressState.FAILED;
         peerAddressState.failedAttempts++;
