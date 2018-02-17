@@ -220,7 +220,7 @@ class NetworkAgent extends Observable {
         // Check if the peer is running a compatible version.
         if (!Version.isCompatible(msg.version)) {
             this._channel.reject(Message.Type.VERSION, RejectMessage.Code.REJECT_OBSOLETE, `incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
-            this._channel.close(`incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
+            this._channel.ban(`incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
             return;
         }
 
@@ -232,7 +232,7 @@ class NetworkAgent extends Observable {
 
         // Check that the given peerAddress is correctly signed.
         if (!msg.peerAddress.verifySignature()) {
-            this._channel.close('invalid peerAddress in version message');
+            this._channel.ban('invalid peerAddress in version message');
             return;
         }
 
@@ -245,7 +245,7 @@ class NetworkAgent extends Observable {
         // to the peer's netAddress!
         if (this._channel.peerAddress) {
             if (!this._channel.peerAddress.equals(msg.peerAddress)) {
-                this._channel.close('unexpected peerAddress in version message');
+                this._channel.ban('unexpected peerAddress in version message');
                 return;
             }
             this._peerAddressVerified = true;
@@ -321,14 +321,14 @@ class NetworkAgent extends Observable {
 
         // Verify public key
         if (!msg.publicKey.toPeerId().equals(this._observedPeerAddress.peerId)) {
-            this._channel.close('Invalid public key in verack message');
+            this._channel.ban('Invalid public key in verack message');
             return;
         }
 
         // Verify signature
         const data = BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce);
         if (!msg.signature.verify(msg.publicKey, data)) {
-            this._channel.close('Invalid signature in verack message');
+            this._channel.ban('Invalid signature in verack message');
             return;
         }
 
