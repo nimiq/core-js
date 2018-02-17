@@ -78,7 +78,6 @@ class ConnectionPool extends Observable {
         /** @type {number} */
         this._bytesReceived = 0;
 
-        // TODO Stefan, peerAddr = connection
         /** @type {WebSocketConnector} */
         this._wsConnector = new WebSocketConnector(this._networkConfig);
         this._wsConnector.on('connection', conn => this._onConnection(conn));
@@ -216,7 +215,6 @@ class ConnectionPool extends Observable {
         }
 
         //TODO Stefan, seeds?
-        //TODO Stefan, extract 'may I connect?'
         //TODO Stefan, inform addresses?
         if (this._addresses.isBanned(peerAddress)){
             throw `Connecting to banned address ${peerAddress}`;
@@ -263,7 +261,6 @@ class ConnectionPool extends Observable {
 
         if (conn.peerAddress) {
             //TODO Stefan, seeds?
-            //TODO Stefan, inform addresses?
             if (this._addresses.isBanned(conn.peerAddress)){
                 conn.close(ClosingType.PEER_IS_BANNED, `Connected to banned address ${conn.peerAddress}`);
             }
@@ -387,7 +384,6 @@ class ConnectionPool extends Observable {
                 throw `Connecting to outbound peer address not stored ${conn.peerAddress}`;
             }
     
-            //TODO Stefan, handle duplicate states?
             if(peerConnection.state !== PeerConnectionState.CONNECTING) {
                 throw `PeerConnection state not CONNECTING ${conn.peerAddress}`;
             }    
@@ -506,7 +502,7 @@ class ConnectionPool extends Observable {
             // Check if the handshake with this peer has completed.
             if (this.isEstablished(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._disconnected(channel, channel.peerAddress, closedByRemote);
+                this._disconnected(channel, channel.peerAddress, closedByRemote, type);
 
                 peerLeft = true;
 
@@ -519,9 +515,9 @@ class ConnectionPool extends Observable {
                 // Treat connections closed pre-handshake by remote as failed attempts.
                 Log.w(ConnectionPool, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
                 if (closedByRemote) {
-                    this._failure(channel.peerAddress);
+                    this._failure(channel.peerAddress, type);
                 } else {
-                    this._disconnected(null, channel.peerAddress, false);
+                    this._disconnected(null, channel.peerAddress, false, type);
                 }
             }
 
@@ -690,18 +686,20 @@ class ConnectionPool extends Observable {
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    _disconnected(channel, peerAddress, closedByRemote) {
+    _disconnected(channel, peerAddress, closedByRemote, type = null) {
         const peerConnection = this.getByPeerAddress(peerAddress);
-        if (!peerConnection) {
-            return;
+        if (peerConnection) {
+            if (peerConnection.state === PeerConnectionState.CONNECTING) {
+                this._connectingCount--;
+            }
+
+            peerConnection.closingType = type;
+
+            peerConnection.disconnect();
         }
 
-        if (peerConnection.state === PeerConnectionState.CONNECTING) {
-            this._connectingCount--;
-        }
 
-        peerConnection.disconnect();
-        this._addresses.disconnected(channel, peerAddress, closedByRemote);
+        this._addresses.disconnected(channel, peerAddress, closedByRemote, type);
     }
 
 
@@ -710,13 +708,15 @@ class ConnectionPool extends Observable {
      * @param {PeerAddress} peerAddress
      * @returns {void}
      */
-    _failure(peerAddress) {
+    _failure(peerAddress, type = null) {
         const peerConnection = this.getByPeerAddress(peerAddress);
-        if (!peerConnection) {
-            return;
+        if (peerConnection) {
+            peerConnection.closingType = type;
+
+            peerConnection.failure();
         }
-        peerConnection.failure();
-        this._addresses.failure(peerAddress);
+
+        this._addresses.failure(peerAddress, type);
     }
 
     /**

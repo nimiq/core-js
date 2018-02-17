@@ -20,6 +20,13 @@ class PeerAddressState {
 
         /** @type {number} */
         this._failedAttempts = 0;
+
+        /**
+         * Map from closingType to number of incurrences
+         * @type {Map.<number,number>}
+         * @private
+         */
+        this._closingTypes = new Map();
     }
 
     /** @type {SignalRouter} */
@@ -57,6 +64,28 @@ class PeerAddressState {
         } else {
             this._failedAttempts = value;
         }
+    }
+
+    /**
+     * @param {number} type
+     */
+    close(type) {
+        if (type) {
+            if(this._closingTypes.has(type)) {
+                this._closingTypes.set(type, this._closingTypes.get(type) + 1);
+            }
+            else {
+                this._closingTypes.set(type, new Number(1));
+            }
+        }
+    }
+
+    /**
+     * @param {number} type
+     * @returns {number}
+     */
+    getClosesCount(type) {
+        return this._closingTypes.has(type) ? this._closingTypes.get(type) : 0;
     }
 
     /**

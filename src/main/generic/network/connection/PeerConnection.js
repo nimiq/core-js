@@ -64,6 +64,9 @@ class PeerConnection {
          * @private
          */
         this._state = PeerConnectionState.NEW;
+
+        /** @type {number} */
+        this.closingType = null;
     }
 
     /** @type {number} */
