@@ -47,11 +47,16 @@ class KeyPair extends Primitive {
      * @return {Promise<KeyPair>}
      */
     static async fromEncrypted(buf, key) {
+        const type = buf.readUint8();
+        if (type !== 1) throw new Error('Unsupported type');
+        const roundsLog = buf.readUint8();
+        if (roundsLog > 32) throw new Error('Rounds out-of-bounds');
+        const rounds = Math.pow(2, roundsLog);
         const encryptedKey = PrivateKey.unserialize(buf);
         const salt = buf.read(KeyPair.EXPORT_SALT_LENGTH);
         const check = buf.read(KeyPair.EXPORT_CHECKSUM_LENGTH);
 
-        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
+        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, rounds));
         const keyPair = KeyPair.fromPrivateKey(privateKey);
         const pubHash = keyPair.publicKey.hash();
         if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
@@ -145,6 +150,8 @@ class KeyPair extends Primitive {
         Crypto.lib.getRandomValues(salt);
 
         const buf = new SerialBuffer(this.encryptedSize);
+        buf.writeUint8(1); // Argon2 KDF
+        buf.writeUint8(Math.log2(KeyPair.EXPORT_KDF_ROUNDS));
         buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
         buf.write(salt);
         buf.write(this.publicKey.hash().subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
@@ -156,7 +163,7 @@ class KeyPair extends Primitive {
 
     /** @type {number} */
     get encryptedSize() {
-        return this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH;
+        return 2 + this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH;
     }
 
     /**
