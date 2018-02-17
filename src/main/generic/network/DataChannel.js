@@ -124,7 +124,7 @@ class DataChannel extends Observable {
             }
 
             if (this._buffer === null) {
-                this._onError(`Message does not start next tag ${this._receivingTag + 1} (but ${tag}), but buffer is null`);
+                Log.e(DataChannel, `Message does not start next tag ${this._receivingTag + 1} (but ${tag}), but buffer is null`);
                 return;
             }
 
@@ -154,8 +154,6 @@ class DataChannel extends Observable {
                     for (const type of expectedMsg.types) {
                         this._expectedMessagesByType.delete(type);
                     }
-                } else {
-                    this._timers.clearTimeout('chunk');
                 }
 
                 const msg = this._buffer.buffer;
@@ -165,8 +163,6 @@ class DataChannel extends Observable {
                 // Set timeout.
                 if (expectedMsg) {
                     this._timers.resetTimeout(`chunk-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), expectedMsg.chunkTimeout);
-                } else {
-                    this._timers.resetTimeout('chunk', this._onTimeout.bind(this), DataChannel.CHUNK_TIMEOUT);
                 }
                 this.fire('chunk', this._buffer);
             }
