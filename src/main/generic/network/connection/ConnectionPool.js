@@ -67,7 +67,7 @@ class ConnectionPool extends Observable {
         
         /**
          * HashMap from netAddresses to connections.
-         * @type {HashMap.<NetAddress, PeerConnection>}
+         * @type {HashMap.<NetAddress, Array<PeerConnection>>}
          * @private
          */
         this._connectionsByNetAddress = new HashMap();
@@ -140,10 +140,13 @@ class ConnectionPool extends Observable {
 
     /**
      * @param {NetAddress} netAddress
-     * @returns {PeerConnection|null}
-    */
-    getByNetAddress(netAddress) {
-        return this._connectionsByNetAddress.get(netAddress);
+     * @returns {Array<PeerConnection>}
+     */
+    getConnectionsByNetAddress(netAddress) {
+        if(this._connectionsByNetAddress.has(netAddress)){
+            return this._connectionsByNetAddress.get(netAddress);
+        }
+        return new Array();
     }
 
     /**
@@ -165,7 +168,7 @@ class ConnectionPool extends Observable {
             this._store.set(peerConnection.id, peerConnection);
             if (peerConnection.peerAddress){
                 this._connectionsByPeerAddress.put(peerConnection.peerAddress, peerConnection);
- 
+
                 if (peerConnection.peerAddress.protocol === Protocol.RTC) {
                     this._connectionsByPeerId.put(peerConnection.peerAddress.peerId, peerConnection);
                 }
@@ -190,13 +193,53 @@ class ConnectionPool extends Observable {
                 }
 
                 if (peerConnection.peerAddress.netAddress) {
-                    this._connectionsByNetAddress.remove(peerConnection.peerAddress.netAddress);
+                    this._removeNetAddress(peerConnection, peerConnection.peerAddress.netAddress);
                 }
 
                 this._connectionsByPeerAddress.remove(peerConnection.peerAddress);
             }
 
             this._store.delete(peerConnection.id);
+        }
+    }
+
+    /**
+     * @param {PeerConnection} peerConnection
+     * @param {NetAddress} netAddress
+     * @returns {void}
+     * @private
+     */
+    _addNetAddress(peerConnection, netAdress) {
+        if (peerConnection && netAddress) {
+            if(this._connectionsByNetAddress.has(netAddress)){
+                this._connectionsByNetAddress.get(netAddress).push(peerConnection);
+            }
+            else {
+                this._connectionsByNetAddress.put(netAddress, new Array(peerConnection));
+            }
+        }
+    }
+
+    /**
+     * @param {PeerConnection} peerConnection
+     * @param {NetAddress} netAddress
+     * @returns {void}
+     * @private
+     */
+    _removeNetAddress(peerConnection, netAdress) {
+        if (peerConnection && netAddress) {
+            if(this._connectionsByNetAddress.has(netAddress)){
+                const peerConnections = this._connectionsByNetAddress.get(netAddress);
+
+                const index = peerConnections.indexOf(peerConnection);
+                if (index >= 0) {
+                    peerConnections.splice(index,1);
+                }
+
+                if (peerConnections.length === 0) {
+                    this._connectionsByNetAddress.remove(netAddress);
+                }
+            }
         }
     }
 
@@ -233,9 +276,7 @@ class ConnectionPool extends Observable {
 
         // Forbid connection if we have too many connections to the peer's IP address.
         if (peerAddress.netAddress && !peerAddress.netAddress.isPseudo()) {
-            const numConnections = this.values().filter(
-            peerConnection => peerConnection.networkAgent && peerAddress.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
-            if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
+            if (this.getConnectionsByNetAddress(peerAddress.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 Log.e(ConnectionPool, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
@@ -275,9 +316,7 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo()) {
-            const numConnections = this.values().filter(
-            peerConnection => peerConnection.networkAgent && conn.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
-            if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
+            if (this.getConnectionsByNetAddress(netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 conn.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
@@ -312,13 +351,7 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
-            // TODO Stefan, store counts, additionally onConnection, if netAdress is available
-            // TODO Stefan, send duplicate messages to address
-            // TODO Stefan, onclose with category
-            // TODO Stefan, relate more to states
-            const numConnections = this.values().filter(
-                peerConnection => peerConnection.networkAgent && peer.netAddress.equals(peerConnection.networkAgent.channel.netAddress)).length;
-            if (numConnections > Network.PEER_COUNT_PER_IP_MAX) {
+            if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 agent.channel.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
@@ -461,7 +494,7 @@ class ConnectionPool extends Observable {
         peerConnection.peer = peer;
 
         if(peer.netAddress && !peer.netAddress.equals(NetAddress.UNKNOWN)){
-            this._connectionsByNetAddress.put(peer.netAddress);
+            this._addNetAddress(peerConnection,peer.netAddress);
         }
  
         this._updateConnectedPeerCount(peer.peerAddress, 1);
