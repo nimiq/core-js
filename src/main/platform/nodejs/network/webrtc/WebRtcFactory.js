@@ -5,24 +5,27 @@
  */
 class WebRtcFactory {
     /**
-     * @returns {boolean}
+     * @param {?RTCConfiguration} configuration
+     * @returns {?RTCPeerConnection}
      */
-    static newPeerConnection() {
-        return false;
+    static newPeerConnection(configuration) {
+        return null;
     }
 
     /**
-     * @returns {boolean}
+     * @param {*} rtcSessionDescriptionInit
+     * @returns {?RTCSessionDescription}
      */
-    static newSessionDescription() {
-        return false;
+    static newSessionDescription(rtcSessionDescriptionInit) {
+        return null;
     }
 
     /**
-     * @returns {boolean}
+     * @param {*} rtcIceCandidateInit
+     * @returns {?RTCIceCandidate}
      */
-    static newIceCandidate() {
-        return false;
+    static newIceCandidate(rtcIceCandidateInit) {
+        return null;
     }
 }
 Class.register(WebRtcFactory);
