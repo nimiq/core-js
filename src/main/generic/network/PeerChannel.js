@@ -9,7 +9,7 @@ class PeerChannel extends Observable {
         this._conn.on('message', msg => this._onMessage(msg));
 
         // Forward specified events on the connection to listeners of this Observable.
-        this.bubble(this._conn, 'close', 'error', 'ban');
+        this.bubble(this._conn, 'close', 'error');
     }
 
     /**
@@ -33,7 +33,7 @@ class PeerChannel extends Observable {
             // If the message does not make sense at a whole or we fear to get into a reject loop,
             // we ban the peer instead.
             if (!type || type === Message.Type.REJECT) {
-                this.ban('Failed to parse message type');
+                this.close(ClosingType.FAILED_TO_PARSE_MESSAGE_TYPE, 'Failed to parse message type');
                 return;
             }
 
@@ -84,20 +84,6 @@ class PeerChannel extends Observable {
      */
     close(type, reason) {
         this._conn.close(type, reason);
-    }
-
-    /**
-     * @param {string} [reason]
-     */
-    ban(reason) {
-        this._conn.ban(reason);
-    }
-
-    /**
-     * @param {string} [reason]
-     */
-    fail(reason) {
-        this._conn.fail(reason);
     }
 
     /**

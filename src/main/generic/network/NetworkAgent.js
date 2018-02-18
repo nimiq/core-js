@@ -392,18 +392,18 @@ class NetworkAgent extends Observable {
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > 1000) {
             Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
-            this._channel.ban('addr message too large');
+            this._channel.close(ClosingType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
             return;
         }
 
         // Remember that the peer has sent us these addresses.
         for (const addr of msg.addresses) {
             if (!addr.verifySignature()) {
-                this._channel.ban('invalid addr');
+                this._channel.close(ClosingType.INVALID_ADDR, 'invalid addr');
                 return;
             }
             if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
-                this._channel.ban('addr not globally reachable');
+                this._channel.close(ClosingType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
                 return;
             }
             this._knownAddresses.add(addr);
@@ -465,7 +465,7 @@ class NetworkAgent extends Observable {
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout(`ping_${nonce}`, () => {
             this._timers.clearTimeout(`ping_${nonce}`);
-            this._channel.fail('ping timeout');
+            this._channel.close(ClosingType.PING_TIMEOUT, 'ping timeout');
         }, NetworkAgent.PING_TIMEOUT);
     }
 

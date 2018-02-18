@@ -264,7 +264,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         const status = await this._blockchain.pushBlock(block);
         switch (status) {
             case FullChain.ERR_INVALID:
-                this._peer.channel.ban('received invalid block');
+                this._peer.channel.close(ClosingType.RECEIVED_INVALID_BLOCK, 'received invalid block');
                 break;
 
             case FullChain.OK_EXTENDED:

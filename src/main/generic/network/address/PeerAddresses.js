@@ -310,7 +310,8 @@ class PeerAddresses extends Observable {
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    disconnected(channel, peerAddress, closedByRemote, type = null) {
+    //TODO Stefan, look after
+    close(channel, peerAddress, closedByRemote, type = null) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -324,50 +325,27 @@ class PeerAddresses extends Observable {
             this._removeBySignalChannel(channel);
         }
 
-        if (peerAddressState.state === PeerAddressState.BANNED) {
-            return;
+        if (ClosingType.isBanningType(type)){
+            this._ban(peerAddress);
         }
+        else if (ClosingType.isFailingType(type)) {
+            peerAddressState.failedAttempts++;
 
-        // Always set state to tried, even when deciding to delete this address.
-        // In the latter case, this will not influence the deletion,
-        // but it will prevent decrementing the peer count twice when banning seed nodes.
-        peerAddressState.state = PeerAddressState.TRIED;
+            if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
+                // Remove address only if we have tried the maximum number of backoffs.
+                if (peerAddressState.banBackoff >= PeerAddresses.MAX_FAILED_BACKOFF) {
+                    this._remove(peerAddress);
+                } else {
+                    peerAddressState.bannedUntil = Date.now() + peerAddressState.banBackoff;
+                    peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
+                }
+            }
+        }
 
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
         if ((closedByRemote && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
             this._remove(peerAddress);
-        }
-    }
-
-    /**
-     * Called when a network connection to this peerAddress has failed.
-     * @param {PeerAddress} peerAddress
-     * @returns {void}
-     */
-    failure(peerAddress, type = null) {
-        const peerAddressState = this._get(peerAddress);
-        if (!peerAddressState) {
-            return;
-        }
-        if (peerAddressState.state === PeerAddressState.BANNED) {
-            return;
-        }
-
-        // register the type of failure
-        peerAddressState.close(type);
-
-        peerAddressState.state = PeerAddressState.FAILED;
-        peerAddressState.failedAttempts++;
-
-        if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
-            // Remove address only if we have tried the maximum number of backoffs.
-            if (peerAddressState.banBackoff >= PeerAddresses.MAX_FAILED_BACKOFF) {
-                this._remove(peerAddress);
-            } else {
-                peerAddressState.bannedUntil = Date.now() + peerAddressState.banBackoff;
-                peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
-            }
         }
     }
 
@@ -402,8 +380,9 @@ class PeerAddresses extends Observable {
      * @param {PeerAddress} peerAddress
      * @param {number} [duration] in milliseconds
      * @returns {void}
+     * @private
      */
-    ban(peerAddress, duration = PeerAddresses.DEFAULT_BAN_TIME) {
+    _ban(peerAddress, duration = PeerAddresses.DEFAULT_BAN_TIME) {
         let peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
@@ -445,7 +424,7 @@ class PeerAddresses extends Observable {
 
         // Never delete seed addresses, ban them instead for a couple of minutes.
         if (peerAddressState.peerAddress.isSeed()) {
-            this.ban(peerAddress, peerAddressState.banBackoff);
+            this._ban(peerAddress, peerAddressState.banBackoff);
             return;
         }
 

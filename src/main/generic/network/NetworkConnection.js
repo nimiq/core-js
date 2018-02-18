@@ -167,24 +167,6 @@ class NetworkConnection extends Observable {
     }
 
     /**
-     * @param {string} [reason]
-     */
-    ban(reason) {
-        Log.w(NetworkConnection, `Banning peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
-        this._close();
-        this.fire('ban', reason, this);
-    }
-
-    /**
-     * @param {string} [reason]
-     */
-    fail(reason) {
-        Log.w(NetworkConnection, `Network failure on peer ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
-        this._close();
-        this.fire('fail', reason, this);
-    }
-
-    /**
      * @param {NetworkConnection} o
      * @return {boolean}
      */
@@ -268,7 +250,24 @@ Class.register(NetworkConnection);
 
 // In order to give control to scoring
 class ClosingType {
+    /**
+     * @param {number} closingType
+     * @return {boolean}
+     */
+    static isBanningType(closingType){
+        return closingType >= 100 && closingType < 200;
+    }
+
+    /**
+     * @param {number} closingType
+     * @return {boolean}
+     */
+    static isFailingType(closingType){
+        return closingType >= 200;
+    }
 }
+////// Regular Closing Types
+
 ClosingType.GET_BLOCKS_TIMEOUT = 0; //getBlocks timeout
 ClosingType.BLOCKCHAIN_SYNC_FAILED = 1; //blockchain sync failed
 
@@ -310,7 +309,22 @@ ClosingType.MANUAL_NETWORK_DISCONNECT  = 33; //manual network disconnect
 ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual websocket disconnect
 ClosingType.MAX_PEER_COUNT_REACHED  = 35; //max peer count reached
 
+////// Banning Closing Types
 
-ClosingType.CLOSED_BY_REMOTE  = 36;
+ClosingType.RECEIVED_INVALID_BLOCK = 100; //received invalid block
+ClosingType.BANNED_BLOCKCHAIN_SYNC_FAILED = 101; //blockchain sync failed
+ClosingType.RECEIVED_INVALID_HEADER = 102; //received invalid header
+ClosingType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION = 103; //received transaction not matching our subscriptio
+ClosingType.ADDR_MESSAGE_TOO_LARGE = 104; //addr message too large
+ClosingType.INVALID_ADDR = 105; //invalid addr
+ClosingType.ADDR_NOT_GLOBALLY_REACHABLE = 106; //addr not globally reachable
+ClosingType.INVALID_SIGNAL_TTL = 107; //invalid signal ttl
+ClosingType.INVALID_SIGNATURE = 108; //invalid signature
+
+//////  Failed Closing Types
+
+ClosingType.CLOSED_BY_REMOTE  = 200;
+ClosingType.PING_TIMEOUT = 201; //ping timeout
+ClosingType.CONNECTION_FAILED = 202; //Connection failed
 
 Class.register(ClosingType);

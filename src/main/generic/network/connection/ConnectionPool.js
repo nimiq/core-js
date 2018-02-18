@@ -257,8 +257,6 @@ class ConnectionPool extends Observable {
             return false;
         }
 
-        //TODO Stefan, seeds?
-        //TODO Stefan, inform addresses?
         if (this._addresses.isBanned(peerAddress)){
             throw `Connecting to banned address ${peerAddress}`;
         }
@@ -301,7 +299,6 @@ class ConnectionPool extends Observable {
         }
 
         if (conn.peerAddress) {
-            //TODO Stefan, seeds?
             if (this._addresses.isBanned(conn.peerAddress)){
                 conn.close(ClosingType.PEER_IS_BANNED, `Connected to banned address ${conn.peerAddress}`);
             }
@@ -342,9 +339,7 @@ class ConnectionPool extends Observable {
         }
 
         // Close connection if this peer is banned.
-        if (this._addresses.isBanned(peer.peerAddress)
-            // Allow recovering seed peer's inbound connection to succeed.
-            && !peer.peerAddress.isSeed()) {
+        if (this._addresses.isBanned(peer.peerAddress)) {
             agent.channel.close(ClosingType.PEER_IS_BANNED, 'peer is banned');
             return false;
         }
@@ -399,7 +394,6 @@ class ConnectionPool extends Observable {
      
     /**
      * @listens PeerChannel#signal
-     * @listens PeerChannel#ban
      * @listens NetworkAgent#handshake
      * @listens NetworkAgent#close
      * @param {NetworkConnection} conn
@@ -441,9 +435,7 @@ class ConnectionPool extends Observable {
         // Create peer channel.
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
-        channel.on('ban', reason => this._onBan(channel, reason));
-        channel.on('fail', reason => this._onFail(channel, reason));
-
+ 
         peerConnection.peerChannel = channel;
 
         // Create network agent.
@@ -523,6 +515,9 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onClose(peer, channel, closedByRemote, type, reason) {
+        // TODO If this is an inbound connection, the peerAddress might not be set yet.
+        // Ban the netAddress in this case.
+        // XXX We should probably always ban the netAddress as well.
         let peerLeft = false;
 
         // Update total bytes sent/received.
@@ -535,7 +530,7 @@ class ConnectionPool extends Observable {
             // Check if the handshake with this peer has completed.
             if (this.isEstablished(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._disconnected(channel, channel.peerAddress, closedByRemote, type);
+                this._close(channel, channel.peerAddress, closedByRemote, type);
 
                 peerLeft = true;
 
@@ -544,14 +539,11 @@ class ConnectionPool extends Observable {
                 Log.d(ConnectionPool, `[PEER-LEFT] ${peer.peerAddress} ${peer.netAddress} `
                     + `(version=${peer.version}, headHash=${peer.headHash.toBase64()}, `
                     + `transferred=${kbTransferred} kB)`);          
-            } else {
+            } 
+            else {
                 // Treat connections closed pre-handshake by remote as failed attempts.
                 Log.w(ConnectionPool, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
-                if (closedByRemote) {
-                    this._failure(channel.peerAddress, type);
-                } else {
-                    this._disconnected(null, channel.peerAddress, false, type);
-                }
+                this._close(null, channel.peerAddress, false, type);
             }
 
             const peerConnection = this.getByPeerAddress(channel.peerAddress);
@@ -571,38 +563,6 @@ class ConnectionPool extends Observable {
     }
 
     /**
-     * This peer channel was banned.
-     * @param {PeerChannel} channel
-     * @param {string|*} [reason]
-     * @returns {void}
-     * @private
-     */
-    _onBan(channel, reason) {
-        // TODO If this is an inbound connection, the peerAddress might not be set yet.
-        // Ban the netAddress in this case.
-        // XXX We should probably always ban the netAddress as well.
-        if (channel.peerAddress) {
-            // TODO Stefan, disconnect?
-            this._addresses.ban(channel.peerAddress);
-        } else {
-            // TODO ban netAddress
-        }
-    }
-
-    /**
-     * This peer channel had a network failure.
-     * @param {PeerChannel} channel
-     * @param {string|*} [reason]
-     * @returns {void}
-     * @private
-     */
-    _onFail(channel, reason) {
-        if (channel.peerAddress) {
-            this._failure(channel.peerAddress);
-        }
-    }
-
-    /**
      * Connection to this peer address failed.
      * @param {PeerAddress} peerAddress
      * @param {string|*} [reason]
@@ -612,10 +572,7 @@ class ConnectionPool extends Observable {
     _onError(peerAddress, reason) {
         Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
-        this._failure(peerAddress);
-
-        const peerConnection = this.getByPeerAddress(peerAddress);
-        this._remove(peerConnection);
+        this._close(null, peerAddress, false, ClosingType.CONNECTION_FAILED);
     }
 
 
@@ -630,13 +587,13 @@ class ConnectionPool extends Observable {
     _onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
-            channel.ban('invalid signal ttl');
+            channel.close(ClosingType.INVALID_SIGNAL_TTL, 'invalid signal ttl');
             return;
         }
 
         // Discard signals that have a payload, which is not properly signed.
         if (msg.hasPayload() && !msg.verifySignature()) {
-            channel.ban('invalid signature');
+            channel.close(ClosingType.INVALID_SIGNATURE, 'invalid signature');
             return;
         }
 
@@ -719,37 +676,17 @@ class ConnectionPool extends Observable {
      * @param {boolean} closedByRemote
      * @returns {void}
      */
-    _disconnected(channel, peerAddress, closedByRemote, type = null) {
+    _close(channel, peerAddress, closedByRemote, type = null) {
         const peerConnection = this.getByPeerAddress(peerAddress);
         if (peerConnection) {
             if (peerConnection.state === PeerConnectionState.CONNECTING) {
                 this._connectingCount--;
             }
 
-            peerConnection.closingType = type;
-
-            peerConnection.disconnect();
+            peerConnection.close(type);
         }
 
-
-        this._addresses.disconnected(channel, peerAddress, closedByRemote, type);
-    }
-
-
-    /**
-     * Called when a network connection to this peerAddress has failed.
-     * @param {PeerAddress} peerAddress
-     * @returns {void}
-     */
-    _failure(peerAddress, type = null) {
-        const peerConnection = this.getByPeerAddress(peerAddress);
-        if (peerConnection) {
-            peerConnection.closingType = type;
-
-            peerConnection.failure();
-        }
-
-        this._addresses.failure(peerAddress, type);
+        this._addresses.close(channel, peerAddress, closedByRemote, type);
     }
 
     /**
