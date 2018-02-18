@@ -160,7 +160,9 @@ class BlockUtils {
         nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
         nextTarget = Math.max(nextTarget, 1);
 
-        return nextTarget;
+        // XXX Reduce target precision to nBits precision.
+        const nBits = BlockUtils.targetToCompact(nextTarget);
+        return BlockUtils.compactToTarget(nBits);
     }
 }
 Class.register(BlockUtils);
