@@ -64,7 +64,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Ban peer if the sync failed more often than allowed.
         if (this._failedSyncs >= LightConsensusAgent.SYNC_ATTEMPTS_MAX) {
-            this._peer.channel.ban('blockchain sync failed');
+            this._peer.channel.close(ClosingType.BANNED_BLOCKCHAIN_SYNC_FAILED, 'blockchain sync failed');
             if (this._partialChain) {
                 await this._partialChain.abort();
                 this._partialChain = null;
@@ -189,7 +189,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         for (const block of this._orphanedBlocks) {
             const status = await this._blockchain.pushBlock(block);
             if (status === LightChain.ERR_INVALID) {
-                this._peer.channel.ban('received invalid block');
+                this._peer.channel.close(ClosingType.RECEIVED_INVALID_BLOCK, 'received invalid block');
                 break;
             }
         }
@@ -416,7 +416,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         switch (status) {
             case FullChain.ERR_INVALID:
-                this._peer.channel.ban('received invalid block');
+                this._peer.channel.close(ClosingType.RECEIVED_INVALID_BLOCK, 'received invalid block');
                 break;
 
             case FullChain.OK_EXTENDED:

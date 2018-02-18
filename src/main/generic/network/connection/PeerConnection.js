@@ -65,8 +65,11 @@ class PeerConnection {
          */
         this._state = PeerConnectionState.NEW;
 
-        /** @type {number} */
-        this.closingType = null;
+        /**
+         * @type {number}
+         * @private
+         */
+        this._closingType = null;
     }
 
     /** @type {number} */
@@ -156,17 +159,21 @@ class PeerConnection {
     }
 
     /**
+     * @param {number} type //ClosingType
      * @returns {void}
      */
-    failure() {
-        this._state = PeerConnectionState.FAILED;
-    }
-
-    /**
-     * @returns {void}
-     */
-    disconnect() {
-        this._state = PeerConnectionState.TRIED;
+    close(type) {
+        if (ClosingType.isBanningType(type)){
+            this._state = PeerConnectionState.FAILED;
+        }
+        else if (ClosingType.isFailingType(type)) {
+            this._state = PeerConnectionState.FAILED;
+        }
+        else {
+            this._state = PeerConnectionState.TRIED;
+        }
+    
+        this._closingType = type;
     }
 }
 // Used to generate unique PeerConnection ids.

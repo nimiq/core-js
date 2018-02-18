@@ -157,7 +157,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         for (const header of this._orphanedBlocks) {
             const status = await this._blockchain.pushHeader(header);
             if (status === NanoChain.ERR_INVALID) {
-                this._peer.channel.ban('received invalid block');
+                this._peer.channel.close(ClosingType.RECEIVED_INVALID_BLOCK, 'received invalid block');
                 break;
             }
         }
@@ -220,7 +220,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // TODO send reject message if we don't like the block
         const status = await this._blockchain.pushHeader(header);
         if (status === NanoChain.ERR_INVALID) {
-            this._peer.channel.ban('received invalid header');
+            this._peer.channel.close(ClosingType.RECEIVED_INVALID_HEADER, 'received invalid header');
         }
         // Re-sync with this peer if it starts sending orphan blocks after the initial sync.
         else if (status === NanoChain.ERR_ORPHAN) {
@@ -240,7 +240,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      */
     _processTransaction(hash, transaction) {
         if (!this._localSubscription.matchesTransaction(transaction)) {
-            this._peer.channel.ban('received transaction not matching our subscription');
+            this._peer.channel.close(ClosingType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
         }
         return this._mempool.pushTransaction(transaction);
     }
