@@ -396,6 +396,7 @@ class ConnectionPool extends Observable {
      * @listens PeerChannel#signal
      * @listens NetworkAgent#handshake
      * @listens NetworkAgent#close
+     * @fires ConnectionPool#connection
      * @param {NetworkConnection} conn
      * @returns {void}
      * @private
@@ -432,6 +433,9 @@ class ConnectionPool extends Observable {
         const connType = conn.inbound ? 'inbound' : 'outbound';
         Log.d(ConnectionPool, `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
 
+        // Let listeners know about this connection.
+        this.fire('connection', conn);
+
         // Create peer channel.
         const channel = new PeerChannel(conn);
         channel.on('signal', msg => this._onSignal(channel, msg));
@@ -457,8 +461,8 @@ class ConnectionPool extends Observable {
 
     /**
      * Handshake with this peer was successful.
-     * @fires Network#peer-joined
-     * @fires Network#peers-changed
+     * @fires ConnectionPool#peer-joined
+     * @fires ConnectionPool#peers-changed
      * @param {Peer} peer
      * @param {NetworkAgent} agent
      * @returns {void}
@@ -504,8 +508,9 @@ class ConnectionPool extends Observable {
 
     /**
      * This peer channel was closed.
-     * @fires Network#peer-left
-     * @fires Network#peers-changed
+     * @fires ConnectionPool#peer-left
+     * @fires ConnectionPool#peers-changed
+     * @fires ConnectionPool#close
      * @param {Peer} peer
      * @param {PeerChannel} channel
      * @param {boolean} closedByRemote
@@ -550,6 +555,9 @@ class ConnectionPool extends Observable {
             this._remove(peerConnection);
         }
         this._inboundStore.remove(channel.connection);
+
+        // Let listeners know about this closing.
+        this.fire('close', peer, channel, closedByRemote, type, reason);
 
         if (peerLeft){
             this._updateConnectedPeerCount(peer.peerAddress, -1);
