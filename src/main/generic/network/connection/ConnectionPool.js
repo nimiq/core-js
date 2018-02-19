@@ -146,7 +146,7 @@ class ConnectionPool extends Observable {
         if(this._connectionsByNetAddress.contains(netAddress)){
             return this._connectionsByNetAddress.get(netAddress);
         }
-        return new Array();
+        return [];
     }
 
     /**
@@ -291,9 +291,10 @@ class ConnectionPool extends Observable {
     _checkConnection(conn) {
         // Reject peer if we have reached max peer count.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
-            if (conn.outbound) {
-                this._disconnected(null, conn.peerAddress, false);
-            }
+            //TODO Stefan, is this right
+            //if (conn.outbound) {
+            //    this._disconnected(null, conn.peerAddress, false);
+            //}
             conn.close(ClosingType.MAX_PEER_COUNT_REACHED,`max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
@@ -331,9 +332,6 @@ class ConnectionPool extends Observable {
     _checkHandshake(peer, agent) {
         // Close connection if we are already connected to this peer.
         if (this.isEstablished(peer.peerAddress)) {
-            // XXX Clear channel.peerAddress to prevent _onClose() from changing
-            // the PeerAddressState of the connected peer.
-            agent.channel.peerAddress = null;
             agent.channel.close(ClosingType.DUPLICATE_CONNECTION, 'duplicate connection (post handshake)');
             return false;
         }
@@ -471,7 +469,7 @@ class ConnectionPool extends Observable {
          // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
         peer.updateNetAddress();
 
-        // Close connection if we are already connected to this peer.
+        // Check, if we should close connection .
         if (!this._checkHandshake(peer, agent)) {
             return;
         }
@@ -507,14 +505,14 @@ class ConnectionPool extends Observable {
 
     /**
      * This peer channel was closed.
-     * @fires ConnectionPool#peer-left
-     * @fires ConnectionPool#peers-changed
-     * @fires ConnectionPool#close
      * @param {Peer} peer
      * @param {PeerChannel} channel
      * @param {boolean} closedByRemote
      * @param {number} type
      * @param {string} reason
+     * @fires ConnectionPool#peer-left
+     * @fires ConnectionPool#peers-changed
+     * @fires ConnectionPool#close
      * @returns {void}
      * @private
      */
@@ -587,6 +585,7 @@ class ConnectionPool extends Observable {
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
      * @param {boolean} closedByRemote
+     * @param {number|null} type
      * @returns {void}
      */
     _close(channel, peerAddress, closedByRemote, type = null) {
@@ -631,8 +630,8 @@ class ConnectionPool extends Observable {
     disconnect(reason) {
         // Close all active connections.
         for (const connection of this.values()) {
-            if (connection.networkAgent) {
-                connection.networkAgent.channel.close(ClosingType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
+            if (connection.peerChannel) {
+                connection.peerChannel.close(ClosingType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
             }
         }
     }
@@ -641,8 +640,8 @@ class ConnectionPool extends Observable {
     disconnectWebSocket() {
         // Close all websocket connections.
         for (const connection of this.values()) {
-            if (connection.networkAgent && agent.peer.peerAddress.protocol === Protocol.WS) {
-                connection.networkAgent.channel.close(ClosingType.MANUAL_WEBSOCKET_DISCONNECT, reason || 'manual websocket disconnect');
+            if (connection.peerChannel && connection.peerAddress && connection.peerAddress.protocol === Protocol.WS) {
+                connection.channel.close(ClosingType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
             }
         }
     }
@@ -691,24 +690,4 @@ class ConnectionPool extends Observable {
     }
 
 }
-ConnectionPool.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
-ConnectionPool.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.MAX_AGE_DUMB = 1000 * 60; // 1 minute
-ConnectionPool.MAX_DISTANCE = 4;
-ConnectionPool.MAX_FAILED_ATTEMPTS_WS = 3;
-ConnectionPool.MAX_FAILED_ATTEMPTS_RTC = 2;
-ConnectionPool.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
-ConnectionPool.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
-ConnectionPool.SEED_PEERS = [
-    // WsPeerAddress.seed('alpacash.com', 8080),
-    // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('emily.nimiq-network.com', 443)
-    WsPeerAddress.seed('dev.nimiq-network.com', 8080)
-];
 Class.register(ConnectionPool);
