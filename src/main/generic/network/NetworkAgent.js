@@ -1,7 +1,7 @@
 class NetworkAgent extends Observable {
     /**
      * @param {IBlockchain} blockchain
-     * @param {PeerAddresses} addresses
+     * @param {PeerAddressBook} addresses
      * @param {NetworkConfig} networkConfig
      * @param {PeerChannel} channel
      *
@@ -17,7 +17,7 @@ class NetworkAgent extends Observable {
         super();
         /** @type {IBlockchain} */
         this._blockchain = blockchain;
-        /** @type {PeerAddresses} */
+        /** @type {PeerAddressBook} */
         this._addresses = addresses;
         /** @type {NetworkConfig} */
         this._networkConfig = networkConfig;
@@ -127,7 +127,7 @@ class NetworkAgent extends Observable {
         // the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
-            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddressBook.MAX_DISTANCE) {
                 return false;
             }
 
@@ -432,7 +432,7 @@ class NetworkAgent extends Observable {
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
-            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddresses.MAX_DISTANCE) {
+            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddressBook.MAX_DISTANCE) {
                 return false;
             }
 

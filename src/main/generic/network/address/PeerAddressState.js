@@ -13,7 +13,7 @@ class PeerAddressState {
         /** @type {number} */
         this.bannedUntil = -1;
         /** @type {number} */
-        this.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
+        this.banBackoff = PeerAddressBook.INITIAL_FAILED_BACKOFF;
 
         /** @type {SignalRouter} */
         this._signalRouter = new SignalRouter(peerAddress);
@@ -39,9 +39,9 @@ class PeerAddressState {
     get maxFailedAttempts() {
         switch (this.peerAddress.protocol) {
             case Protocol.RTC:
-                return PeerAddresses.MAX_FAILED_ATTEMPTS_RTC;
+                return PeerAddressBook.MAX_FAILED_ATTEMPTS_RTC;
             case Protocol.WS:
-                return PeerAddresses.MAX_FAILED_ATTEMPTS_WS;
+                return PeerAddressBook.MAX_FAILED_ATTEMPTS_WS;
             default:
                 return 0;
         }
@@ -227,7 +227,7 @@ class SignalRouter {
         if (this._bestRoute) {
             this.peerAddress.distance = this._bestRoute.distance;
         } else {
-            this.peerAddress.distance = PeerAddresses.MAX_DISTANCE + 1;
+            this.peerAddress.distance = PeerAddressBook.MAX_DISTANCE + 1;
         }
     }
 
@@ -283,7 +283,7 @@ class SignalRoute {
 
     /** @type {number} */
     get score() {
-        return ((PeerAddresses.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddresses.MAX_FAILED_ATTEMPTS_RTC));
+        return ((PeerAddressBook.MAX_DISTANCE - this._distance) / 2) * (1 - (this.failedAttempts / PeerAddressBook.MAX_FAILED_ATTEMPTS_RTC));
     }
 
     /**

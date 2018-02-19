@@ -3,7 +3,7 @@ class PeerScorer extends Observable {
     /**
      * @constructor
      * @param {NetworkConfig} networkConfig
-     * @param {PeerAddresses} addresses
+     * @param {PeerAddressBook} addresses
      * @param {ConnectionPool} connections
      */
     constructor(networkConfig, addresses, connections) {
@@ -16,7 +16,7 @@ class PeerScorer extends Observable {
         this._networkConfig = networkConfig;
 
         /**
-         * @type {PeerAddresses}
+         * @type {PeerAddressBook}
          * @private
          */
         this._addresses = addresses;
@@ -129,7 +129,7 @@ class PeerScorer extends Observable {
         //  ...
         // We only expect distance >= 2 here.
         if (peerAddress.protocol === Protocol.RTC) {
-            score *= 1 + ((PeerAddresses.MAX_DISTANCE - peerAddress.distance) / 2);
+            score *= 1 + ((PeerAddressBook.MAX_DISTANCE - peerAddress.distance) / 2);
         }
 
         return score;

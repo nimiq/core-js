@@ -1,5 +1,5 @@
 // TODO Limit the number of addresses we store.
-class PeerAddresses extends Observable {
+class PeerAddressBook extends Observable {
     /**
      * @constructor
      * @param {NetworkConfig} netconfig
@@ -29,10 +29,10 @@ class PeerAddresses extends Observable {
 
 
         // Init seed peers.
-        this.add(/*channel*/ null, PeerAddresses.SEED_PEERS);
+        this.add(/*channel*/ null, PeerAddressBook.SEED_PEERS);
 
         // Setup housekeeping interval.
-        setInterval(() => this._housekeeping(), PeerAddresses.HOUSEKEEPING_INTERVAL);
+        setInterval(() => this._housekeeping(), PeerAddressBook.HOUSEKEEPING_INTERVAL);
     }
 
     /**
@@ -187,13 +187,13 @@ class PeerAddresses extends Observable {
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
         if (channel && this.exceedsAge(peerAddress)) {
-            Log.d(PeerAddresses, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
+            Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
 
         // Ignore address if its timestamp is too far in the future.
-        if (peerAddress.timestamp > Date.now() + PeerAddresses.MAX_TIMESTAMP_DRIFT) {
-            Log.d(PeerAddresses, `Ignoring addresses ${peerAddress} - timestamp in the future`);
+        if (peerAddress.timestamp > Date.now() + PeerAddressBook.MAX_TIMESTAMP_DRIFT) {
+            Log.d(PeerAddressBook, `Ignoring addresses ${peerAddress} - timestamp in the future`);
             return false;
         }
 
@@ -202,8 +202,8 @@ class PeerAddresses extends Observable {
             peerAddress.distance++;
 
             // Ignore address if it exceeds max distance.
-            if (peerAddress.distance > PeerAddresses.MAX_DISTANCE) {
-                Log.d(PeerAddresses, `Ignoring address ${peerAddress} - max distance exceeded`);
+            if (peerAddress.distance > PeerAddressBook.MAX_DISTANCE) {
+                Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - max distance exceeded`);
                 // Drop any route to this peer over the current channel. This may prevent loops.
                 const peerAddressState = this._get(peerAddress);
                 if (peerAddressState) {
@@ -291,7 +291,7 @@ class PeerAddresses extends Observable {
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;
         peerAddressState.bannedUntil = -1;
-        peerAddressState.banBackoff = PeerAddresses.INITIAL_FAILED_BACKOFF;
+        peerAddressState.banBackoff = PeerAddressBook.INITIAL_FAILED_BACKOFF;
 
         if (!peerAddressState.peerAddress.isSeed()) {
             peerAddressState.peerAddress = peerAddress;
@@ -333,11 +333,11 @@ class PeerAddresses extends Observable {
 
             if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
                 // Remove address only if we have tried the maximum number of backoffs.
-                if (peerAddressState.banBackoff >= PeerAddresses.MAX_FAILED_BACKOFF) {
+                if (peerAddressState.banBackoff >= PeerAddressBook.MAX_FAILED_BACKOFF) {
                     this._remove(peerAddress);
                 } else {
                     peerAddressState.bannedUntil = Date.now() + peerAddressState.banBackoff;
-                    peerAddressState.banBackoff = Math.min(PeerAddresses.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
+                    peerAddressState.banBackoff = Math.min(PeerAddressBook.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
                 }
             }
         }
@@ -366,7 +366,7 @@ class PeerAddresses extends Observable {
         }
 
         if (!peerAddressState.signalRouter.bestRoute || !peerAddressState.signalRouter.bestRoute.signalChannel.equals(channel)) {
-            Log.w(PeerAddresses, `Got unroutable for ${peerAddress} on a channel other than the best route.`);
+            Log.w(PeerAddressBook, `Got unroutable for ${peerAddress} on a channel other than the best route.`);
             return;
         }
 
@@ -382,7 +382,7 @@ class PeerAddresses extends Observable {
      * @returns {void}
      * @private
      */
-    _ban(peerAddress, duration = PeerAddresses.DEFAULT_BAN_TIME) {
+    _ban(peerAddress, duration = PeerAddressBook.DEFAULT_BAN_TIME) {
         let peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
@@ -477,7 +477,7 @@ class PeerAddresses extends Observable {
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (this.exceedsAge(addr)) {
-                        Log.d(PeerAddresses, `Deleting old peer address ${addr}`);
+                        Log.d(PeerAddressBook, `Deleting old peer address ${addr}`);
                         this._remove(addr);
                     }
 
@@ -539,29 +539,29 @@ class PeerAddresses extends Observable {
         const age = Date.now() - peerAddress.timestamp;
         switch (peerAddress.protocol) {
             case Protocol.WS:
-                return age > PeerAddresses.MAX_AGE_WEBSOCKET;
+                return age > PeerAddressBook.MAX_AGE_WEBSOCKET;
 
             case Protocol.RTC:
-                return age > PeerAddresses.MAX_AGE_WEBRTC;
+                return age > PeerAddressBook.MAX_AGE_WEBRTC;
 
             case Protocol.DUMB:
-                return age > PeerAddresses.MAX_AGE_DUMB;
+                return age > PeerAddressBook.MAX_AGE_DUMB;
         }
         return false;
     }
 }
-PeerAddresses.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
-PeerAddresses.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.MAX_AGE_DUMB = 1000 * 60; // 1 minute
-PeerAddresses.MAX_DISTANCE = 4;
-PeerAddresses.MAX_FAILED_ATTEMPTS_WS = 3;
-PeerAddresses.MAX_FAILED_ATTEMPTS_RTC = 2;
-PeerAddresses.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
-PeerAddresses.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
-PeerAddresses.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
-PeerAddresses.SEED_PEERS = [
+PeerAddressBook.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
+PeerAddressBook.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.MAX_AGE_DUMB = 1000 * 60; // 1 minute
+PeerAddressBook.MAX_DISTANCE = 4;
+PeerAddressBook.MAX_FAILED_ATTEMPTS_WS = 3;
+PeerAddressBook.MAX_FAILED_ATTEMPTS_RTC = 2;
+PeerAddressBook.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
+PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
+PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.SEED_PEERS = [
     // WsPeerAddress.seed('alpacash.com', 8080),
     // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
     // WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
@@ -572,4 +572,4 @@ PeerAddresses.SEED_PEERS = [
     // WsPeerAddress.seed('emily.nimiq-network.com', 443)
     WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
 ];
-Class.register(PeerAddresses);
+Class.register(PeerAddressBook);
