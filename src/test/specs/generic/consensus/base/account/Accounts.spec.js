@@ -201,7 +201,7 @@ describe('Accounts', () => {
             const block = await testBlockchain.createBlock({
                 transactions: transactions,
                 prunedAccounts: [],
-                accountsHash: Hash.fromBase64('oNZL6ELgX1TSHboXMGN3iwiBljB2F/8ZoqsJzQVD5gE=')
+                accountsHash: Hash.fromBase64('UEnDCYaynX3v/AxoQK9uldXgrxGS+KCb4bSGXFwH9u0=') // TODO
             });
             expect(await block.verify(time)).toBeTruthy();
             expect(await accounts.commitBlock(block, testBlockchain.transactionCache)).toBeTruthy();
@@ -266,7 +266,7 @@ describe('Accounts', () => {
             }
 
             const genesis = new Block(
-                new BlockHeader(Hash.NULL, Hash.NULL, Block.GENESIS.bodyHash, Hash.fromBase64('6hvwL5Il5F6dBF2JyT0kqwyLgQQ2zShm/7TQBeR2I8E='), BlockUtils.difficultyToCompact(1), 1, 0, 0),
+                new BlockHeader(Hash.NULL, Hash.NULL, Block.GENESIS.bodyHash, Hash.fromBase64('IDpF4aKOYPHMBBOHHoTvF8SdybqwwtQ7qd3AFgWq1sU=') /* TODO */, BlockUtils.difficultyToCompact(1), 1, 0, 0),
                 Block.GENESIS.interlink,
                 Block.GENESIS.body
             );

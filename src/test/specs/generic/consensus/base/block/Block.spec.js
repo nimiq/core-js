@@ -3,6 +3,7 @@ describe('Block', () => {
 
     beforeEach(function (done) {
         (async function () {
+            await Crypto.prepareSyncCryptoWorker();
             // create testing blockchain with only genesis and dummy users
             testBlockchain = await TestBlockchain.createVolatileTest(0);
             block = await testBlockchain.createBlock();

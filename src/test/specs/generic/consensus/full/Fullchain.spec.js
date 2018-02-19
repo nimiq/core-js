@@ -262,7 +262,7 @@ describe('Blockchain', () => {
             }
 
             nextTarget = await testBlockchain.getNextTarget();
-            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.0930698023517638));
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(520153652); // TODO
         })().then(done, done.fail);
     });
 
@@ -290,7 +290,7 @@ describe('Blockchain', () => {
             }
 
             nextTarget = await testBlockchain.getNextTarget();
-            expect(BlockUtils.targetToCompact(nextTarget)).toBe(BlockUtils.difficultyToCompact(1.098953617064091));
+            expect(BlockUtils.targetToCompact(nextTarget)).toBe(520153331); // TODO
         })().then(done, done.fail);
     });
 

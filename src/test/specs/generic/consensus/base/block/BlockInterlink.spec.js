@@ -81,7 +81,7 @@ describe('BlockInterlink', () => {
     });
 
     it('must return the correct root hash', () => {
-        const rootHash = new Hash(BufferUtils.fromBase64('F68A+8WVtrq9qZlUkVPMrcSworh6OLq6ELNv114T9xQ='));
+        const rootHash = new Hash(BufferUtils.fromBase64('5mQlLFj/j14+cha4CjZ1tofU4Cs2ua9iYepA2/HIA5c=')); // TODO
         const hash = blockInterlink1.hash();
         expect(hash.equals(rootHash)).toBe(true);
     });

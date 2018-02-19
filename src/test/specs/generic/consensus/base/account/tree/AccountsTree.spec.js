@@ -1,5 +1,9 @@
 describe('AccountsTree', () => {
 
+    beforeAll((done) => {
+        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
+    });
+
     /** Parameterized tests: each test is invoked an all kinds of account trees defined below **/
 
 
@@ -209,7 +213,7 @@ describe('AccountsTree', () => {
                 let accounts = new Accounts(tree);
 
                 // order1
-                await accounts.commitBlock(Block.GENESIS);
+                await accounts.initialize(Block.GENESIS, Accounts.GENESIS);
                 await accounts._tree.put(address1, new BasicAccount(value1));
                 await accounts._tree.put(address2, new BasicAccount(value2));
                 const state1 = await accounts._tree.root();
@@ -220,7 +224,7 @@ describe('AccountsTree', () => {
                 accounts = new Accounts(tree);
 
                 // order2
-                await accounts.commitBlock(Block.GENESIS);
+                await accounts.initialize(Block.GENESIS, Accounts.GENESIS);
                 await accounts._tree.put(address2, new BasicAccount(value2));
                 await accounts._tree.put(address1, new BasicAccount(value1));
                 const state2 = await accounts._tree.root();
