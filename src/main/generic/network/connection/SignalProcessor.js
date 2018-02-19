@@ -1,7 +1,7 @@
 class SignalProcessor extends Observable {
     /**
      * @constructor
-     * @param {PeerAddresses} peerAddresses
+     * @param {PeerAddressBook} peerAddresses
      * @param {NetworkConfig} networkConfig
      * @param {WebRtcConnector} rtcConnector
      */
@@ -9,7 +9,7 @@ class SignalProcessor extends Observable {
         super();
 
         /**
-         * @type {PeerAddresses}
+         * @type {PeerAddressBook}
          * @private
          */
         this._addresses = peerAddresses;

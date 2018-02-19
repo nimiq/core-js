@@ -1,7 +1,7 @@
 class ConnectionPool extends Observable {
     /**
      * @constructor
-     * @param {PeerAddresses} peerAddresses
+     * @param {PeerAddressBook} peerAddresses
      * @param {NetworkConfig} networkConfig
      * @param {IBlockchain} blockchain
      * @param {Time} time
@@ -14,7 +14,7 @@ class ConnectionPool extends Observable {
         super();
 
         /**
-         * @type {PeerAddresses}
+         * @type {PeerAddressBook}
          * @private
          */
         this._addresses = peerAddresses;
@@ -620,7 +620,7 @@ class ConnectionPool extends Observable {
                 this._peerCountDumb += delta;
                 break;
             default:
-                Log.w(PeerAddresses, `Unknown protocol ${peerAddress.protocol}`);
+                Log.w(PeerAddressBook, `Unknown protocol ${peerAddress.protocol}`);
         }
     }
 

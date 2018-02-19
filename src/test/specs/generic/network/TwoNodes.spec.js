@@ -20,7 +20,7 @@ describe('TwoNodes', () => {
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
 
-            PeerAddresses.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000)];
+            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000)];
 
             const consensus2 = await Consensus.volatileFull();
             consensus2.on('established', checkEstablished);

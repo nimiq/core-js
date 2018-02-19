@@ -20,7 +20,7 @@ class Network extends Observable {
      * @param {IBlockchain} blockchain
      * @param {NetworkConfig} networkConfig
      * @param {Time} time
-     * @listens PeerAddresses#added
+     * @listens PeerAddressBook#added
      * @listens ConnectionPool#peer-joined
      * @listens ConnectionPool#peer-left
      * @listens ConnectionPool#peers-changed
@@ -70,10 +70,10 @@ class Network extends Observable {
 
         /**
          * The network's addressbook
-         * @type {PeerAddresses}
+         * @type {PeerAddressBook}
          * @private
          */
-        this._addresses = new PeerAddresses(this._networkConfig);
+        this._addresses = new PeerAddressBook(this._networkConfig);
 
         // Relay new addresses to peers.
         this._addresses.on('added', addresses => {
@@ -93,7 +93,7 @@ class Network extends Observable {
         this._connections.on('peer-changed', () => this._onPeerChanged());
          
         /**
-         * Helper object to pick PeerAddresses.
+         * Helper object to pick PeerAddressBook.
          * @type {PeerScorer}
          * @private
          */
