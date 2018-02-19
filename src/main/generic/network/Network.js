@@ -21,10 +21,9 @@ class Network extends Observable {
      * @param {NetworkConfig} networkConfig
      * @param {Time} time
      * @listens PeerAddresses#added
-     * @listens WebSocketConnector#connection
-     * @listens WebSocketConnector#error
-     * @listens WebRtcConnector#connection
-     * @listens WebRtcConnector#error
+     * @listens ConnectionPool#peer-joined
+     * @listens ConnectionPool#peer-left
+     * @listens ConnectionPool#peers-changed
      */
     constructor(blockchain, networkConfig, time) {
         super();
@@ -92,7 +91,7 @@ class Network extends Observable {
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peer-changed', () => this._onPeerChanged());
- 
+         
         /**
          * Helper object to pick PeerAddresses.
          * @type {PeerScorer}
@@ -126,6 +125,7 @@ class Network extends Observable {
 
     /**
      * @param {Peer} peer
+     * @fires Network#peer-joined
      */
     _onPeerJoined(peer){
         // Recalculate the network adjusted offset
@@ -139,17 +139,21 @@ class Network extends Observable {
 
     /**
      * @param {Peer} peer
+     * @fires Network#peer-left
      */
     _onPeerLeft(peer) {
         // Recalculate the network adjusted offset
         this._updateTimeOffset();
 
         this.fire('peer-left', peer);
-
-        this._checkPeerCount();
     }
 
+    /**
+     * @fires Network#peer-changed
+     */
     _onPeerChanged() {
+        this._checkPeerCount();
+
         this.fire('peer-changed');
     }
 
