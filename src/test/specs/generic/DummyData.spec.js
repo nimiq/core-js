@@ -28,7 +28,13 @@ if (typeof global !== 'undefined') {
 }
 
 if (Block.GENESIS) {
+    /** @type {Block} */
     Block.OLD_GENESIS = Block.GENESIS;
+}
+
+if (Accounts.GENESIS) {
+    /** @type {string} */
+    Accounts.OLD_GENESIS = Accounts.GENESIS;
 }
 
 /* Testing Genesis Block */
@@ -37,16 +43,22 @@ Block.GENESIS = new Block(
         new Hash(null),
         new Hash(null),
         Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
-        Hash.fromBase64('/oV9hHPK+59k+Bj9hQMrRbeadb/Z8cOxiHYCz1wZmt0='),
+        Hash.fromBase64('v6zYHGQ3Z/O/G/ZCyXtO/TPa7/Kw00HGEzRK5wbu2zg='),
         BlockUtils.difficultyToCompact(1),
         1,
         0,
-        11883,
+        101720,
         BlockHeader.Version.V1),
     new BlockInterlink([], new Hash(null)),
     new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
 );
-Block.GENESIS.HASH = Hash.fromBase64('B/ayKKwRAAQutgTARpNsNhPMlPnXltYd7u3X8wUfefM=');
+Block.GENESIS.HASH = Hash.fromBase64('+v0/HMgAMJy5MQgSV7Tn7bD56kABh8VQ/ZFBRH6ghqU=');
+
+/* Testing Genesis Accounts */
+Accounts.GENESIS =
+    'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA';
+
+
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;

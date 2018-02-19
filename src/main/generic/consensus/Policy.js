@@ -157,7 +157,7 @@ Policy.TOTAL_SUPPLY = 21e14;
  * @type {number}
  * @constant
  */
-Policy.INITIAL_SUPPLY = 0;
+Policy.INITIAL_SUPPLY = 252000000000000;
 
 /**
  * Emission speed.

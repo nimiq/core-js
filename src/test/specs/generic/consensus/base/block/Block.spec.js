@@ -92,26 +92,4 @@ describe('Block', () => {
         expect(block3.isFull()).toBeTruthy();
         expect(block3.equals(Block.GENESIS)).toBeTruthy();
     });
-
-    it('GENESIS is valid (testing)', (done) => {
-        (async () => {
-            time = new Time();
-            expect(await Block.GENESIS.verify(time)).toBeTruthy();
-        })().then(done, done.fail);
-    });
-
-    it('GENESIS.HASH matches GENESIS.hash() (testing)', () => {
-        expect(Block.GENESIS.HASH.equals(Block.GENESIS.hash())).toBeTruthy();
-    });
-
-    it('GENESIS is valid (real)', (done) => {
-        (async () => {
-            time = new Time();
-            expect(await Block.OLD_GENESIS.verify(time)).toBeTruthy();
-        })().then(done, done.fail);
-    });
-
-    it('GENESIS.HASH matches GENESIS.hash() (real)', () => {
-        expect(Block.OLD_GENESIS.HASH.equals(Block.OLD_GENESIS.hash())).toBeTruthy();
-    });
 });
