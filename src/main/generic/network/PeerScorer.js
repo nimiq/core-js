@@ -78,7 +78,7 @@ class PeerScorer extends Observable {
         }
 
         // Filter addresses that are too old.
-        if (this._addresses.exceedsAge(peerAddress)) {
+        if (peerAddress.exceedsAge()) {
             return -1;
         }
 

@@ -137,7 +137,7 @@ class PeerAddressBook extends Observable {
             }
 
             // Never return addresses that are too old.
-            if (this.exceedsAge(address)) {
+            if (address.exceedsAge()) {
                 continue;
             }
 
@@ -155,6 +155,7 @@ class PeerAddressBook extends Observable {
     /**
      * @param {PeerChannel} channel
      * @param {PeerAddress|Array.<PeerAddress>} arg
+     * @fires PeerAddressBook#added
      */
     add(channel, arg) {
         const peerAddresses = Array.isArray(arg) ? arg : [arg];
@@ -186,7 +187,7 @@ class PeerAddressBook extends Observable {
 
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
-        if (channel && this.exceedsAge(peerAddress)) {
+        if (channel && peerAddress.exceedsAge()) {
             Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
@@ -308,6 +309,7 @@ class PeerAddressBook extends Observable {
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
      * @param {boolean} closedByRemote
+     * @param {number|null} type
      * @returns {void}
      */
     //TODO Stefan, look after
@@ -476,7 +478,7 @@ class PeerAddressBook extends Observable {
                 case PeerAddressState.TRIED:
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
-                    if (this.exceedsAge(addr)) {
+                    if (addr.exceedsAge()) {
                         Log.d(PeerAddressBook, `Deleting old peer address ${addr}`);
                         this._remove(addr);
                     }
@@ -526,28 +528,9 @@ class PeerAddressBook extends Observable {
         }
     }
 
-    /**
-     * @param {PeerAddress} peerAddress
-     * @returns {boolean}
-     */
-    exceedsAge(peerAddress) {
-        // Seed addresses are never too old.
-        if (peerAddress.isSeed()) {
-            return false;
-        }
-
-        const age = Date.now() - peerAddress.timestamp;
-        switch (peerAddress.protocol) {
-            case Protocol.WS:
-                return age > PeerAddressBook.MAX_AGE_WEBSOCKET;
-
-            case Protocol.RTC:
-                return age > PeerAddressBook.MAX_AGE_WEBRTC;
-
-            case Protocol.DUMB:
-                return age > PeerAddressBook.MAX_AGE_DUMB;
-        }
-        return false;
+    /** @type {number} */
+    get knownAddressesCount() {
+        return this._store.length;
     }
 }
 PeerAddressBook.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes

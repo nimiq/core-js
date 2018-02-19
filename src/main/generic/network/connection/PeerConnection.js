@@ -110,7 +110,7 @@ class PeerConnection {
 
     /** @type {NetworkAgent} */
     get networkAgent() {
-        return this._networkAgentn;
+        return this._networkAgent;
     }
 
     /** @param {NetworkAgent} value */
@@ -132,7 +132,7 @@ class PeerConnection {
 
     /**
      * @param {WebSocketConnector|WebRtcConnector} connector
-     * @param {Signalchannel|null} signalChannel
+     * @param {PeerChannel|null} signalChannel
      * @returns {void}
      */
     connectOutbound(connector, signalChannel) {
@@ -154,12 +154,11 @@ class PeerConnection {
 
             default:
                 Log.e(Network, `Cannot connect to ${this.peerAddress} - unsupported protocol`);
-                this._onError(this.peerAddress);
         }
     }
 
     /**
-     * @param {number} type //ClosingType
+     * @param {number} type
      * @returns {void}
      */
     close(type) {

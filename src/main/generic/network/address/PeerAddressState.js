@@ -78,14 +78,16 @@ class PeerAddressState {
                 this._closingTypes.set(type, new Number(1));
             }
 
-            if (ClosingType.isBanningType(type)){
-                this._state = PeerAddressState.BANNED;
-            }
-            else if (ClosingType.isFailingType(type)) {
-                this._state = PeerAddressState.FAILED;
-            }
-            else {
-                this._state = PeerAddressState.TRIED;
+            if (this._state !== PeerAddressState.BANNED) {
+                if (ClosingType.isBanningType(type)){
+                    this._state = PeerAddressState.BANNED;
+                }
+                else if (ClosingType.isFailingType(type)) {
+                    this._state = PeerAddressState.FAILED;
+                }
+                else {
+                    this._state = PeerAddressState.TRIED;
+                }
             }
         }
     }

@@ -5,7 +5,7 @@ class SignalProcessor extends Observable {
      * @param {NetworkConfig} networkConfig
      * @param {WebRtcConnector} rtcConnector
      */
-    constructor(peerAddresses, networkConfig) {
+    constructor(peerAddresses, networkConfig, rtcConnector) {
         super();
 
         /**
@@ -37,7 +37,6 @@ class SignalProcessor extends Observable {
      * @param {PeerChannel} channel
      * @param {SignalMessage} msg
      * @returns {void}
-     * @private
      */
     onSignal(channel, msg) {
         // Discard signals with invalid TTL.
