@@ -501,7 +501,7 @@ class NetworkAgent extends Observable {
         this._timers.clearAll();
 
         // Tell listeners that the peer has disconnected.
-        this.fire('close', this._peer, this._channel, closedByRemote, this);
+        this.fire('close', this._peer, this._channel, closedByRemote, ClosingType.CLOSED_BY_REMOTE, "closed by remote", this);
     }
 
     /**
