@@ -23,7 +23,7 @@ describe('ThreeNodes', () => {
             consensus1 = await Consensus.volatileFull(netconfig1);
             consensus1.on('established', checkEstablished);
 
-            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000)];
+            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netconfig1.publicKey.toHex())];
 
             const netconfig2 = new DumbNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netconfig2);
