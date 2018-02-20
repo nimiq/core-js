@@ -126,8 +126,7 @@ class MockNetwork {
         });
 
         spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url) => {
-            // XXX can this be done more elegantly?
-            const address = MockNetwork._hostToIp(url.split(/:\/*/)[1]);
+            const address = MockNetwork._hostToIp(`reserved${MockNetwork._clientSerial++}.test`);
 
             const client = new MockWebSocket(address);
             const server = MockNetwork._servers.get(url);
@@ -153,4 +152,5 @@ class MockNetwork {
 MockNetwork._servers = new Map();
 MockNetwork._delay = 0;
 MockNetwork._lossrate = 0;
+MockNetwork._clientSerial = 1;
 Class.register(MockNetwork);
