@@ -326,5 +326,6 @@ ClosingType.INVALID_SIGNATURE = 108; //invalid signature
 ClosingType.CLOSED_BY_REMOTE  = 200;
 ClosingType.PING_TIMEOUT = 201; //ping timeout
 ClosingType.CONNECTION_FAILED = 202; //Connection failed
+ClosingType.MISSING_PEER_CONNECTION = 203; //missing peer connection
 
 Class.register(ClosingType);

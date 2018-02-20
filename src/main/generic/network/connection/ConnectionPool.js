@@ -478,6 +478,11 @@ class ConnectionPool extends Observable {
         if (!peerConnection) {
             //inbound
             peerConnection = this._inboundStore.get(agent.channel.connection);
+            if (!peerConnection) {
+                agent.channel.close(ClosingType.MISSING_PEER_CONNECTION, 'missing peer connection');
+                return;     
+            }
+       
             peerConnection.peerAddress = peer.peerAddress;
             this._add(peerConnection);
             this._inboundStore.remove(agent.channel.connection);
