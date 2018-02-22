@@ -16,6 +16,14 @@ class Network extends Observable {
     }
 
     /**
+     * @type {number}
+     * @constant
+     */
+    static get PEER_COUNT_RECYCLING_ACTIVE() {
+        return PlatformUtils.isBrowser() ? 5 : 1000;
+    }
+
+    /**
      * @constructor
      * @param {IBlockchain} blockchain
      * @param {NetworkConfig} networkConfig
@@ -98,6 +106,9 @@ class Network extends Observable {
          * @private
          */
         this._scorer = new PeerScorer(this._networkConfig, this._addresses, this._connections);
+
+        // Setup housekeeping interval.
+        setInterval(() => this._housekeeping(), Network.HOUSEKEEPING_INTERVAL);
     }       
 
     connect() {
@@ -213,8 +224,6 @@ class Network extends Observable {
         this._backoff = Network.CONNECT_BACKOFF_INITIAL;
     }
 
-
-
     /**
      * Updates the network time offset by calculating the median offset
      * from all our peers.
@@ -245,6 +254,20 @@ class Network extends Observable {
         this._time.offset = Math.max(Math.min(timeOffset, Network.TIME_OFFSET_MAX), -Network.TIME_OFFSET_MAX);
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
+    _housekeeping() {
+        this._scorer.scoreConnections();
+
+        // recycle
+        if (this.peerCount > Network.PEER_COUNT_RECYCLING_ACTIVE) {
+            // recycle 1% at PEER_COUNT_RECYCLING_ACTIVE, 20% at PEER_COUNT_MAX
+            const percentageToRecycle = (this.peerCount - Network.PEER_COUNT_RECYCLING_ACTIVE) * 0.19 / (Network.PEER_COUNT_MAX - Network.PEER_COUNT_RECYCLING_ACTIVE) + 0.01;
+            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle))
+        }
+    }
 
     /** @type {Time} */
     get time() {
@@ -299,4 +322,5 @@ Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
 Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
 Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
 Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
+Network.HOUSEKEEPING_INTERVAL = 5 * 60 * 1000; // 5 minutes
 Class.register(Network);

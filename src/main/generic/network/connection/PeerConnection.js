@@ -70,6 +70,13 @@ class PeerConnection {
          * @private
          */
         this._closingType = null;
+
+        // Latest score given, computed by PeerScorer
+        /**
+         * @type {number}
+         * @private
+         */
+        this._score = null;
     }
 
     /** @type {number} */
@@ -128,6 +135,16 @@ class PeerConnection {
     set peer(value) {
         this._peer = value;
         this._state = PeerConnectionState.ESTABLISHED;
+    }
+
+    /** @type {number} */
+    get score() {
+        return this._score;
+    }
+
+    /** @param {number} value */
+    set score(value) {
+        this._score = value;
     }
 
     /**

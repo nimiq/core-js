@@ -20,12 +20,18 @@ class PeerScorer extends Observable {
          * @private
          */
         this._addresses = addresses;
- 
+
         /**
          * @type {ConnectionPool}
          * @private
          */
         this._connections = connections;
+
+        /**
+         * @type {Array<PeerConnection>}
+         * @private
+         */
+        this._connectionScores = null;
     }
 
     /**
@@ -134,5 +140,56 @@ class PeerScorer extends Observable {
 
         return score;
     }
+
+    /**
+     * @returns {void}
+     */
+    scoreConnections() {
+        const candidates = [];
+
+        for (const connection of this._connections.values()) {
+            const score = this._scoreConnection(connection);
+            connection.score = score;
+            candidates.push(score, connection);
+        }
+
+        //sort by score
+        this._connectionScores = candidates.sort((a, b) => b.score - a.score);
+    }
+
+    /**
+     * @param {number} count
+     * @returns {void}
+     */
+    recycleConnections(count) {
+        let _count = Math.min(count, this._connectionScores.length);
+
+        if (this._connectionScores ) {
+            while(_count > 0 && this._connectionScores.length > 0) {
+                const peerConnection = this._connectionScores.pop();
+                if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
+                    peerConnection.peerChannel.close(ClosingType.PEER_CONNECTION_RECYCLED, `Duplicate connection to ${peerConnection.peerAddress}`)
+                    _count--;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {PeerConnection} peerConnection
+     * @returns {number}
+     * @private
+     */
+    _scoreConnection(peerConnection) {
+        // Age
+
+        return 0;
+    }
+
+    /** @type {Array<PeerConnection>|null} */
+    get connectionScores() {
+        return this._connectionScores;
+    }
+
 }
 Class.register(PeerScorer);
