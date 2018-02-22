@@ -77,6 +77,12 @@ class PeerConnection {
          * @private
          */
         this._score = null;
+
+        /**
+         * @type {number}
+         * @private
+         */
+        this._establishedSince = null;
     }
 
     /** @type {number} */
@@ -135,6 +141,7 @@ class PeerConnection {
     set peer(value) {
         this._peer = value;
         this._state = PeerConnectionState.ESTABLISHED;
+        this._establishedSince = Date.now();
     }
 
     /** @type {number} */
@@ -146,6 +153,12 @@ class PeerConnection {
     set score(value) {
         this._score = value;
     }
+
+    /** @type {number} */
+    get establishedSince() {
+        return this._establishedSince;
+    }
+
 
     /**
      * @param {WebSocketConnector|WebRtcConnector} connector

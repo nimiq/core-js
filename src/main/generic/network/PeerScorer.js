@@ -147,10 +147,12 @@ class PeerScorer extends Observable {
     scoreConnections() {
         const candidates = [];
 
-        for (const connection of this._connections.values()) {
-            const score = this._scoreConnection(connection);
-            connection.score = score;
-            candidates.push(score, connection);
+        for (const peerConnection of this._connections.values()) {
+            if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
+                const score = this._scoreConnection(peerConnection);
+                peerConnection.score = score;
+                candidates.push(score, peerConnection);
+            }
         }
 
         //sort by score
@@ -181,9 +183,29 @@ class PeerScorer extends Observable {
      * @private
      */
     _scoreConnection(peerConnection) {
-        // Age
+        // Age, 1 at BEST_AGE and beneath, 0 at MAX_AGE and beyond
+        const age = Date.now() - peerConnection.establishedSince;
+        let scoreAge = 1;
+        if (age > PeerScorer.BEST_AGE) {
+            if (age > PeerScorer.MAX_AGE) {
+                scoreAge = 0;
+            }
+            else {
+                scoreAge = 1 - (age - PeerScorer.BEST_AGE) / PeerScorer.MAX_AGE;
+            }
+        }
 
-        return 0;
+        // Protocol, when low on Websocket connections, give it some aid
+        const distribution = this._connections.peerCountWs / this._connections.peerCount;
+        let scoreAgeProtocol = 0;
+        if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION) {
+            if (peerConnection.peerAddress.protocol === Protocol.WS) {
+                scoreAgeProtocol = 0.2;
+            }
+        }
+
+
+        return scoreAge;
     }
 
     /** @type {Array<PeerConnection>|null} */
@@ -191,5 +213,14 @@ class PeerScorer extends Observable {
         return this._connectionScores;
     }
 
+    /** @type {number|null} */
+    get lowestConnectionScore() {
+        return this._connectionScores && this._connectionScores.length > 0 ? this._connectionScores[this._connectionScores.length-1].score : null;
+    }
+
 }
+PeerScorer.BEST_AGE = 5 * 60 * 1000; // 5 minutes
+PeerScorer.MAX_AGE = 3 * 60 * 60 * 1000; // 3 hours
+PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION = 0.15; // 15%
+
 Class.register(PeerScorer);

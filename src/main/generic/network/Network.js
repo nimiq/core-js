@@ -32,6 +32,7 @@ class Network extends Observable {
      * @listens ConnectionPool#peer-joined
      * @listens ConnectionPool#peer-left
      * @listens ConnectionPool#peers-changed
+     * @listens ConnectionPool#inbound-request
      */
     constructor(blockchain, networkConfig, time) {
         super();
@@ -99,7 +100,8 @@ class Network extends Observable {
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peer-changed', () => this._onPeerChanged());
-         
+        this._connections.on('inbound-request', () => this._onInboundRequest());
+
         /**
          * Helper object to pick PeerAddressBook.
          * @type {PeerScorer}
@@ -166,6 +168,14 @@ class Network extends Observable {
         this._checkPeerCount();
 
         this.fire('peer-changed');
+    }
+
+    _onInboundRequest() {
+        this._scorer.recycleConnections(1);
+
+        // set ability to exchange for new inbound connections
+        this._connections.allowInboundExchange =
+            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE :false;
     }
 
     /**
@@ -267,6 +277,10 @@ class Network extends Observable {
             const percentageToRecycle = (this.peerCount - Network.PEER_COUNT_RECYCLING_ACTIVE) * 0.19 / (Network.PEER_COUNT_MAX - Network.PEER_COUNT_RECYCLING_ACTIVE) + 0.01;
             this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle))
         }
+
+        // set ability to exchange for new inbound connections
+        this._connections.allowInboundExchange =
+            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE :false;
     }
 
     /** @type {Time} */
@@ -323,4 +337,5 @@ Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
 Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
 Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
 Network.HOUSEKEEPING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+Network.SCORE_INBOUND_EXCHANGE = 1.5; // of 2.2
 Class.register(Network);

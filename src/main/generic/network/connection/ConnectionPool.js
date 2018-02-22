@@ -105,6 +105,10 @@ class ConnectionPool extends Observable {
 
         /** @type {SignalProcessor} */
         this._signalProcessor = new SignalProcessor(peerAddresses, networkConfig, this._rtcConnector);
+
+        // When true, send a signal to network to close an established connection for a incoming one
+        /** @type {boolean} */
+        this._allowInboundExchange = false;
     }
 
     /**
@@ -266,12 +270,6 @@ class ConnectionPool extends Observable {
             throw `Duplicate connection to ${peerAddress}`;
         }
 
-        // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX) {
-            Log.e(ConnectionPool, `max peer count reached (${Network.PEER_COUNT_MAX})`);
-            return false;
-        }
-
         // Forbid connection if we have too many connections to the peer's IP address.
         if (peerAddress.netAddress && !peerAddress.netAddress.isPseudo()) {
             if (this.getConnectionsByNetAddress(peerAddress.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
@@ -280,25 +278,22 @@ class ConnectionPool extends Observable {
             }
         }
 
+        // Reject peer if we have reached max peer count.
+        if (this.peerCount >= Network.PEER_COUNT_MAX) {
+            Log.e(ConnectionPool, `max peer count reached (${Network.PEER_COUNT_MAX})`);
+            return false;
+        }
+
         return true;
     }
 
     /**
      * @param {NetworkConnection} conn
+     * @fires ConnectionPool#inbound-request
      * @returns {boolean}
      * @private
      */
     _checkConnection(conn) {
-        // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX) {
-            //TODO Stefan, is this right
-            //if (conn.outbound) {
-            //    this._disconnected(null, conn.peerAddress, false);
-            //}
-            conn.close(ClosingType.MAX_PEER_COUNT_REACHED,`max peer count reached (${Network.PEER_COUNT_MAX})`);
-            return false;
-        }
-
         if (conn.peerAddress) {
             if (this._addresses.isBanned(conn.peerAddress)){
                 conn.close(ClosingType.PEER_IS_BANNED, `Connected to banned address ${conn.peerAddress}`);
@@ -319,7 +314,18 @@ class ConnectionPool extends Observable {
                 return false;
             }
         }
-             
+
+        // Reject peer if we have reached max peer count.
+        if (this.peerCount >= Network.PEER_COUNT_MAX ) {
+            if (conn.inbound && this._allowInboundExchange) {
+                this.fire('inbound-request');
+            }
+            else {
+                conn.close(ClosingType.MAX_PEER_COUNT_REACHED,`max peer count reached (${Network.PEER_COUNT_MAX})`);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -692,6 +698,11 @@ class ConnectionPool extends Observable {
     get bytesReceived() {
         return this._bytesReceived
             + this.values().reduce((n, peerConnection) => n + peerConnection.networkConnection ? peerConnection.networkConnection.bytesReceived : 0, 0);
+    }
+
+    /** @param {boolean} value */
+    set allowInboundExchange(value) {
+        this._allowInboundExchange = value;
     }
 
 }
