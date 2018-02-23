@@ -1,20 +1,25 @@
-class KeyPair extends Primitive {
+class KeyPair extends Serializable {
     /**
      * @param arg
      * @param {boolean} locked
      * @param {Uint8Array} lockSalt
      * @private
      */
-    constructor(arg, locked = false, lockSalt = null) {
-        super(arg, Object);
+    constructor(privateKey, publicKey, locked = false, lockSalt = null) {
+        if (!(privateKey instanceof Object)) throw new Error('Primitive: Invalid type');
+        if (!(publicKey instanceof Object)) throw new Error('Primitive: Invalid type');
+        super();
+
         /** @type {boolean} */
         this._locked = locked;
         /** @type {boolean} */
         this._lockedInternally = locked;
         /** @type {Uint8Array} */
         this._lockSalt = lockSalt;
+        /** @type {PublicKey} */
+        this._publicKey = publicKey;
         /** @type {PrivateKey} */
-        this._internalPrivateKey = new PrivateKey(this._obj.privateKey);
+        this._internalPrivateKey = new PrivateKey(privateKey.serialize());
     }
 
     /**
@@ -22,18 +27,7 @@ class KeyPair extends Primitive {
      */
     static generate() {
         const privateKey = PrivateKey.generate();
-        return KeyPair.fromKeys(privateKey, PublicKey.derive(privateKey));
-    }
-
-    /**
-     * @param {PrivateKey} privateKey
-     * @param {PublicKey} publicKey
-     * @param {boolean} locked
-     * @param {Uint8Array} lockSalt
-     * @return {KeyPair}
-     */
-    static fromKeys(privateKey, publicKey, locked = false, lockSalt = null) {
-        return new KeyPair({ privateKey: privateKey._obj, publicKey: publicKey._obj }, locked, lockSalt);
+        return new KeyPair(privateKey, PublicKey.derive(privateKey));
     }
 
     /**
@@ -41,7 +35,7 @@ class KeyPair extends Primitive {
      * @return {KeyPair}
      */
     static derive(privateKey) {
-        return KeyPair.fromKeys(privateKey, PublicKey.derive(privateKey));
+        return new KeyPair(privateKey, PublicKey.derive(privateKey));
     }
 
     /**
@@ -93,7 +87,7 @@ class KeyPair extends Primitive {
                 lockSalt = buf.read(32);
             }
         }
-        return KeyPair.fromKeys(privateKey, publicKey, locked, lockSalt);
+        return new KeyPair(privateKey, publicKey, locked, lockSalt);
     }
 
     /**
@@ -260,7 +254,7 @@ class KeyPair extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

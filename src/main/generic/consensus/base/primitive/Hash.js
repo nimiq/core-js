@@ -1,4 +1,4 @@
-class Hash extends Primitive {
+class Hash extends Serializable {
     /**
      * @param {Hash} o
      * @returns {Hash}
@@ -18,8 +18,12 @@ class Hash extends Primitive {
     constructor(arg, algorithm = Hash.Algorithm.BLAKE2B) {
         if (arg === null) {
             arg = new Uint8Array(Hash.getSize(algorithm));
+        } else {
+            if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+            if (arg.length !== Hash.getSize(algorithm)) throw new Error('Primitive: Invalid length');
         }
-        super(arg, Uint8Array, Hash.getSize(algorithm));
+        super();
+        this._obj = arg;
         /** @type {Hash.Algorithm} */
         this._algorithm = algorithm;
     }
@@ -141,7 +145,7 @@ class Hash extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @returns {boolean}
      */
     equals(o) {

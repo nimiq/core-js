@@ -1,4 +1,4 @@
-class Signature extends Primitive {
+class Signature extends Serializable {
     /**
      * @param {Signature} o
      * @returns {Signature}
@@ -15,7 +15,10 @@ class Signature extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Uint8Array, Signature.SIZE);
+        super();
+        if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+        if (arg.length !== Signature.SIZE) throw new Error('Primitive: Invalid length');
+        this._obj = arg;
     }
 
     /**
@@ -72,7 +75,7 @@ class Signature extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

@@ -1,4 +1,4 @@
-class PublicKey extends Primitive {
+class PublicKey extends Serializable {
     /**
      * @param {PublicKey} o
      * @returns {PublicKey}
@@ -13,7 +13,10 @@ class PublicKey extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Uint8Array, PublicKey.SIZE);
+        super();
+        if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+        if (arg.length !== PublicKey.SIZE) throw new Error('Primitive: Invalid length');
+        this._obj = arg;
     }
 
     /**
@@ -61,7 +64,7 @@ class PublicKey extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

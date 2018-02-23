@@ -1,4 +1,4 @@
-class Commitment extends Primitive {
+class Commitment extends Serializable {
     /**
      * @param {Commitment} o
      * @returns {Commitment}
@@ -21,7 +21,10 @@ class Commitment extends Primitive {
      * @private
      */
     constructor(arg) {
-        super(arg, Uint8Array, Commitment.SIZE);
+        super();
+        if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+        if (arg.length !== Commitment.SIZE) throw new Error('Primitive: Invalid length');
+        this._obj = arg;
     }
 
     /**
@@ -48,7 +51,7 @@ class Commitment extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

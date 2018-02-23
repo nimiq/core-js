@@ -1,10 +1,13 @@
-class RandomSecret extends Primitive {
+class RandomSecret extends Serializable {
     /**
      * @param arg
      * @private
      */
     constructor(arg) {
-        super(arg, Uint8Array, RandomSecret.SIZE);
+        super();
+        if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+        if (arg.length !== RandomSecret.SIZE) throw new Error('Primitive: Invalid length');
+        this._obj = arg;
     }
 
     /**
@@ -31,7 +34,7 @@ class RandomSecret extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

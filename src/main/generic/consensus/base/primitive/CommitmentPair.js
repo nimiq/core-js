@@ -1,10 +1,14 @@
-class CommitmentPair extends Primitive {
+class CommitmentPair extends Serializable {
     /**
      * @param arg
      * @private
      */
-    constructor(arg) {
-        super(arg, Object);
+    constructor(secret, commitment) {
+        super();
+        if (!(secret instanceof RandomSecret)) throw new Error('Primitive: Invalid type');
+        if (!(commitment instanceof Commitment)) throw new Error('Primitive: Invalid type');
+        this._secret = secret;
+        this._commitment = commitment;
     }
 
     /**
@@ -14,7 +18,7 @@ class CommitmentPair extends Primitive {
         const randomness = new Uint8Array(CommitmentPair.RANDOMNESS_SIZE);
         Crypto.lib.getRandomValues(randomness);
         const raw = Crypto.workerSync().commitmentCreate(randomness);
-        return new CommitmentPair(raw);
+        return new CommitmentPair(new RandomSecret(raw.secret), new Commitment(raw.commitment));
     }
 
     /**
@@ -24,7 +28,7 @@ class CommitmentPair extends Primitive {
     static unserialize(buf) {
         const secret = RandomSecret.unserialize(buf);
         const commitment = Commitment.unserialize(buf);
-        return new CommitmentPair({ secret: secret._obj, commitment: commitment._obj });
+        return new CommitmentPair(secret, commitment);
     }
 
     /**
@@ -48,12 +52,12 @@ class CommitmentPair extends Primitive {
 
     /** @type {RandomSecret} */
     get secret() {
-        return this._secret || (this._secret = new RandomSecret(this._obj.secret));
+        return this._secret;
     }
 
     /** @type {Commitment} */
     get commitment() {
-        return this._commitment || (this._commitment = new Commitment(this._obj.commitment));
+        return this._commitment;
     }
 
     /** @type {number} */
@@ -62,7 +66,7 @@ class CommitmentPair extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {

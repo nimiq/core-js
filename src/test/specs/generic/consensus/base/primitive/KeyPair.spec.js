@@ -39,7 +39,7 @@ describe('KeyPair', () => {
             expect(pair.isLocked).toBeTruthy();
             expect(() => pair.privateKey).toThrow();
             expect(pair._unlockedPrivateKey).toBeFalsy();
-            expect(pair._obj.privateKey).not.toEqual(privateKeyBak);
+            expect(pair._internalPrivateKey.serialize()).not.toEqual(privateKeyBak);
 
             await pair.unlock(key);
             expect(pair.isLocked).toBeFalsy();
@@ -51,7 +51,7 @@ describe('KeyPair', () => {
             expect(() => pair.privateKey).toThrow();
             expect(pair._unlockedPrivateKey).toBeFalsy();
             expect(privateKeyTmp).not.toEqual(privateKeyBak);
-            expect(pair._obj.privateKey).not.toEqual(privateKeyBak);
+            expect(pair._internalPrivateKey.serialize()).not.toEqual(privateKeyBak);
         })().then(done, done.fail);
     });
 
@@ -84,7 +84,7 @@ describe('KeyPair', () => {
             expect(pair.isLocked).toBeTruthy();
             expect(() => pair.privateKey).toThrow();
             expect(pair._unlockedPrivateKey).toBeFalsy();
-            expect(pair._obj.privateKey).not.toEqual(privateKeyBak);
+            expect(pair._internalPrivateKey).not.toEqual(privateKeyBak);
 
             await pair.unlock(key1);
             expect(pair.isLocked).toBeFalsy();
@@ -96,7 +96,7 @@ describe('KeyPair', () => {
             expect(() => pair.privateKey).toThrow();
             expect(pair._unlockedPrivateKey).toBeFalsy();
             expect(privateKeyTmp).not.toEqual(privateKeyBak);
-            expect(pair._obj.privateKey).not.toEqual(privateKeyBak);
+            expect(pair._internalPrivateKey).not.toEqual(privateKeyBak);
 
             await pair.unlock(key2);
             expect(pair.isLocked).toBeFalsy();

@@ -1,4 +1,4 @@
-class Address extends Primitive {
+class Address extends Serializable {
     /**
      * @param {Address} o
      * @returns {Address}
@@ -18,7 +18,10 @@ class Address extends Primitive {
     }
 
     constructor(arg) {
-        super(arg, Uint8Array, Address.SERIALIZED_SIZE);
+        super();
+        if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
+        if (arg.length !== Address.SERIALIZED_SIZE) throw new Error('Primitive: Invalid length');
+        this._obj = arg;
     }
 
     /**
@@ -53,7 +56,7 @@ class Address extends Primitive {
     }
 
     /**
-     * @param {Primitive} o
+     * @param {Serializable} o
      * @return {boolean}
      */
     equals(o) {
