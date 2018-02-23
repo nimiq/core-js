@@ -177,7 +177,7 @@ class PeerScorer extends Observable {
             while(boundCount > 0 && this._connectionScores.length > 0) {
                 const peerConnection = this._connectionScores.pop();
                 if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
-                    peerConnection.peerChannel.close(type, reason);
+                    peerConnection.peerChannel.close(type, reason + " " + peerConnection.peerAddress.toString());
                     boundCount--;
                 }
             }
@@ -218,7 +218,18 @@ class PeerScorer extends Observable {
             scoreSpeed = 1 - medianDelay / NetworkAgent.PING_TIMEOUT;
         }
 
-        return scoreAge + scoreAgeProtocol + scoreSpeed;
+        // Behaviour of sending addresses, 1 for 30 addresses if needed, 1 for 3, if not
+        const addressCount = peerConnection.statistics.getMessageCount(Message.Type.ADDR);
+        let scoreAddressMessages;
+
+        if (this._addresses.values().length > PlatformUtils.isBrowser() ? 100 : 3000) {
+            scoreAddressMessages = 1 - Math.min(Math.abs(addressCount - 3), 30) / 30.0;
+        }
+        else {
+            scoreAddressMessages = 1 - Math.min(Math.abs(addressCount - 30), 30) / 30.0;
+        }
+
+        return scoreAge + scoreAgeProtocol + scoreSpeed + scoreAddressMessages;
     }
 
     /** @type {Array<PeerConnection>|null} */

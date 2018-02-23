@@ -151,6 +151,7 @@ class PeerConnection {
 
         // start statistics
         this._networkAgent.on('ping-pong', (latency) => this._statistics.addLatency(latency));
+        this._peerChannel.on('message-log', (msg) => this._statistics.addMessage(msg));
     }
 
     /** @type {number} */
