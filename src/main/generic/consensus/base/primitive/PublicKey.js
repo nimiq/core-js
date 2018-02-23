@@ -34,9 +34,7 @@ class PublicKey extends Serializable {
     static sum(publicKeys) {
         publicKeys = publicKeys.slice();
         publicKeys.sort((a, b) => a.compare(b));
-        const publicKeysObj = publicKeys.map(key => key._obj);
-        const publicKeysHash = Crypto.workerSync().publicKeysHash(publicKeysObj);
-        const raw = Crypto.workerSync().publicKeysDelinearizeAndAggregate(publicKeysObj, publicKeysHash);
+        const raw = PublicKey._delinearizeAndAggregatePublicKeys(publicKeys.map(k => k.serialize()));
         return new PublicKey(raw);
     }
 
@@ -105,6 +103,16 @@ class PublicKey extends Serializable {
      */
     toPeerId() {
         return new PeerId(this.hash().subarray(0, 16));
+    }
+
+    /**
+     * @param {Array.<Uint8Array>} publicKeys
+     * @returns {Uint8Array}
+     */
+    static _delinearizeAndAggregatePublicKeys(publicKeys) {
+        const worker = Crypto.workerSync();
+        const publicKeysHash = worker.publicKeysHash(publicKeys);
+        return worker.publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash);
     }
 }
 

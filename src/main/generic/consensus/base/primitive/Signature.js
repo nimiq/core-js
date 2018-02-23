@@ -37,8 +37,7 @@ class Signature extends Serializable {
      * @return {Signature}
      */
     static fromPartialSignatures(commitment, signatures) {
-        const combinedSignature = signatures.map(s => s._obj).reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
-        const raw = BufferUtils.concatTypedArrays(commitment._obj, combinedSignature);
+        const raw = Signature._combinePartialSignatures(commitment.serialize(), signatures.map(s => s._obj));
         return new Signature(raw);
     }
 
@@ -80,6 +79,25 @@ class Signature extends Serializable {
      */
     equals(o) {
         return o instanceof Signature && super.equals(o);
+    }
+
+    /**
+     * @param {Array.<Uint8Array>} partialSignatures
+     * @returns {Uint8Array}
+     */
+    static _aggregatePartialSignatures(partialSignatures) {
+        const worker = Crypto.workerSync();
+        return partialSignatures.reduce((sigA, sigB) => worker.scalarsAdd(sigA, sigB));
+    }
+
+    /**
+     * @param {Uint8Array} combinedCommitment
+     * @param {Array.<Uint8Array>} partialSignatures
+     * @returns {Uint8Array}
+     */
+    static _combinePartialSignatures(combinedCommitment, partialSignatures) {
+        const combinedSignature = Signature._aggregatePartialSignatures(partialSignatures);
+        return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
     }
 }
 

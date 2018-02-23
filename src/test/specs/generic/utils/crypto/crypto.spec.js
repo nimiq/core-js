@@ -234,7 +234,7 @@ describe('Crypto', () => {
                 const publicKey = PublicKey.unserialize(BufferUtils.fromBase64(entry[1]));
                 const signature = Signature.unserialize(BufferUtils.fromBase64(entry[0]));
                 const message = BufferUtils.fromBase64(entry[2]);
-                expect(await signature.verify(publicKey, message)).toBeTruthy();
+                expect(signature.verify(publicKey, message)).toBeTruthy();
             }
         })().then(done, done.fail);
     });
@@ -275,8 +275,8 @@ describe('Crypto', () => {
         (async function () {
             const dataToHash = BufferUtils.fromAscii('hello');
             const expectedHash = Dummy.hash1;
-            const hash = Crypto.workerSync().computeBlake2b(dataToHash);
-            expect(BufferUtils.toBase64(hash)).toBe(expectedHash);
+            const hash = Hash.blake2b(dataToHash);
+            expect(BufferUtils.toBase64(hash.serialize())).toBe(expectedHash);
         })().then(done, done.fail);
     });
 
@@ -292,7 +292,7 @@ describe('Crypto', () => {
     it('correctly aggregates partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggSignatures = testCase.partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
+                const aggSignatures = Signature._aggregatePartialSignatures(testCase.partialSignatures);
                 expect(BufferUtils.equals(aggSignatures, testCase.aggSignature)).toBe(true);
             }
         })().then(done, done.fail);
@@ -301,8 +301,7 @@ describe('Crypto', () => {
     it('correctly combines partial signatures', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const combinedSignature = testCase.partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
-                const aggPartialSig = BufferUtils.concatTypedArrays(testCase.aggCommitment, combinedSignature);
+                const aggPartialSig = Signature._combinePartialSignatures(testCase.aggCommitment, testCase.partialSignatures);
                 expect(BufferUtils.equals(aggPartialSig, testCase.signature)).toBe(true, 'could not compute signature correctly');
                 const result = Crypto.workerSync().signatureVerify(testCase.aggPubKey, testCase.message, aggPartialSig);
                 expect(result).toBe(true, 'could not verify signature');
@@ -379,24 +378,21 @@ describe('Crypto', () => {
 
                 // pubKeys.push(partialSignatureTestVectors[3].pubKeys[i]);
                 // privKeys.push(partialSignatureTestVectors[3].privKeys[i]);
-                pubKeys.push(keyPair.publicKey.serialize());
-                privKeys.push(keyPair.privateKey.serialize());
-                secrets.push(nonce.secret.serialize());
-                commitments.push(nonce.commitment.serialize());
+                pubKeys.push(keyPair.publicKey);
+                privKeys.push(keyPair.privateKey);
+                secrets.push(nonce.secret);
+                commitments.push(nonce.commitment);
             }
+            const aggCommitment = Commitment.sum(commitments);
+            const aggPubKey = new PublicKey(PublicKey._delinearizeAndAggregatePublicKeys(pubKeys.map(k => k.serialize())));
 
-            const aggCommitment = Crypto.workerSync().commitmentsAggregate(commitments);
-            const publicKeysHash = Crypto.workerSync().publicKeysHash(pubKeys);
-
-            const aggPubKey =  Crypto.workerSync().publicKeysDelinearizeAndAggregate(pubKeys, publicKeysHash);
             for (let i = 0; i < 3; ++i) {
-                const partialSignature = Crypto.workerSync().delinearizedPartialSignatureCreate(pubKeys, privKeys[i], pubKeys[i], secrets[i], aggCommitment, message);
+                const partialSignature = PartialSignature.create(privKeys[i], pubKeys[i], pubKeys, secrets[i], aggCommitment, message);
                 partialSignatures.push(partialSignature);
             }
-            const combinedSignature = partialSignatures.reduce((sigA, sigB) => Crypto.workerSync().scalarsAdd(sigA, sigB));
-            const signature = BufferUtils.concatTypedArrays(aggCommitment, combinedSignature);
+            const signature = Signature.fromPartialSignatures(aggCommitment, partialSignatures);
 
-            expect(Crypto.workerSync().signatureVerify(aggPubKey, message, signature)).toBeTruthy();
+            expect(signature.verify(aggPubKey, message)).toBeTruthy();
         })().then(done, done.fail);
     });
 });
