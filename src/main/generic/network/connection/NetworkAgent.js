@@ -98,6 +98,12 @@ class NetworkAgent extends Observable {
          */
         this._peerChallengeNonce = null;
 
+        /**
+         * @type {Hashmap<number>}
+         * @private
+         */
+        this._pingTimes = new HashMap();
+
         /** @type {Uint8Array} */
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         Crypto.lib.getRandomValues(this._challengeNonce);
@@ -462,10 +468,14 @@ class NetworkAgent extends Observable {
             return;
         }
 
+        // Save ping timestamp to detect the speed of the connection
+        this._pingTimes.put(nonce, Date.now());
+
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout(`ping_${nonce}`, () => {
             this._timers.clearTimeout(`ping_${nonce}`);
             this._channel.close(ClosingType.PING_TIMEOUT, 'ping timeout');
+            this._pingTimes.remove(nonce);
         }, NetworkAgent.PING_TIMEOUT);
     }
 
@@ -485,11 +495,22 @@ class NetworkAgent extends Observable {
 
     /**
      * @param {PongMessage} msg
+     * @fires NetworkAgent#ping-pong
      * @private
      */
     _onPong(msg) {
         // Clear the ping timeout for this nonce.
         this._timers.clearTimeout(`ping_${msg.nonce}`);
+
+        /** @type {number} */
+        const startTime = this._pingTimes.get(msg.nonce);
+        if (startTime) {
+            const delta = Date.now() - startTime;
+            if (delta > 0) {
+                this.fire('ping-pong', delta);
+            }
+            this._pingTimes.remove(msg.nonce);
+        }
     }
 
     /**

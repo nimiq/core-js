@@ -83,6 +83,12 @@ class PeerConnection {
          * @private
          */
         this._establishedSince = null;
+
+        /**
+         * @type {PeerConnectionStatistics}
+         * @private
+         */
+        this._statistics = new PeerConnectionStatistics();
     }
 
     /** @type {number} */
@@ -142,6 +148,9 @@ class PeerConnection {
         this._peer = value;
         this._state = PeerConnectionState.ESTABLISHED;
         this._establishedSince = Date.now();
+
+        // start statistics
+        this._networkAgent.on('ping-pong', (latency) => this._statistics.addLatency(latency));
     }
 
     /** @type {number} */
@@ -159,6 +168,15 @@ class PeerConnection {
         return this._establishedSince;
     }
 
+    /** @type {number} */
+    get ageEstablished() {
+        return Date.now() - this.establishedSince;
+    }
+
+    /** @type {PeerConnectionStatistics} */
+    get statistics() {
+        return this._statistics;
+    }
 
     /**
      * @param {WebSocketConnector|WebRtcConnector} connector

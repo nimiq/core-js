@@ -149,9 +149,14 @@ class PeerScorer extends Observable {
 
         for (const peerConnection of this._connections.values()) {
             if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
-                const score = this._scoreConnection(peerConnection);
-                peerConnection.score = score;
-                candidates.push(score, peerConnection);
+                // Save the children
+                if (peerConnection.ageEstablished > PeerScorer.MIN_AGE) {
+                    const score = this._scoreConnection(peerConnection);
+                    peerConnection.score = score;
+                    candidates.push(score, peerConnection);
+                }
+
+                peerConnection.statistics.reset();
             }
         }
 
@@ -161,17 +166,19 @@ class PeerScorer extends Observable {
 
     /**
      * @param {number} count
+     * @param {number} type
+     * @param {string} reason
      * @returns {void}
      */
-    recycleConnections(count) {
-        let _count = Math.min(count, this._connectionScores.length);
+    recycleConnections(count, type, reason) {
+        let boundCount = Math.min(count, this._connectionScores.length);
 
         if (this._connectionScores ) {
-            while(_count > 0 && this._connectionScores.length > 0) {
+            while(boundCount > 0 && this._connectionScores.length > 0) {
                 const peerConnection = this._connectionScores.pop();
                 if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
-                    peerConnection.peerChannel.close(ClosingType.PEER_CONNECTION_RECYCLED, `Duplicate connection to ${peerConnection.peerAddress}`)
-                    _count--;
+                    peerConnection.peerChannel.close(type, reason);
+                    boundCount--;
                 }
             }
         }
@@ -184,7 +191,7 @@ class PeerScorer extends Observable {
      */
     _scoreConnection(peerConnection) {
         // Age, 1 at BEST_AGE and beneath, 0 at MAX_AGE and beyond
-        const age = Date.now() - peerConnection.establishedSince;
+        const age = peerConnection.ageEstablished;
         let scoreAge = 1;
         if (age > PeerScorer.BEST_AGE) {
             if (age > PeerScorer.MAX_AGE) {
@@ -204,8 +211,14 @@ class PeerScorer extends Observable {
             }
         }
 
+        // Connection speed, based on ping-pong latency median
+        const medianDelay = peerConnection.statistics.latencyMedian;
+        let scoreSpeed = 0;
+        if (medianDelay > 0 && medianDelay < NetworkAgent.PING_TIMEOUT) {
+            scoreSpeed = 1 - medianDelay / NetworkAgent.PING_TIMEOUT;
+        }
 
-        return scoreAge;
+        return scoreAge + scoreAgeProtocol + scoreSpeed;
     }
 
     /** @type {Array<PeerConnection>|null} */
@@ -219,6 +232,7 @@ class PeerScorer extends Observable {
     }
 
 }
+PeerScorer.MIN_AGE = 3 * 60 * 1000; // 5 minutes
 PeerScorer.BEST_AGE = 5 * 60 * 1000; // 5 minutes
 PeerScorer.MAX_AGE = 3 * 60 * 60 * 1000; // 3 hours
 PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION = 0.15; // 15%

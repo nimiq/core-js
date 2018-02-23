@@ -109,12 +109,18 @@ class Network extends Observable {
          */
         this._scorer = new PeerScorer(this._networkConfig, this._addresses, this._connections);
 
-        // Setup housekeeping interval.
-        setInterval(() => this._housekeeping(), Network.HOUSEKEEPING_INTERVAL);
+        /**
+         * @type {number|null}
+         * @private
+         */
+        this._houseKeepingIntervalId = null;
     }       
 
     connect() {
         this._autoConnect = true;
+
+        // Setup housekeeping interval.
+        this._houseKeepingIntervalId = setInterval(() => this._housekeeping(), Network.HOUSEKEEPING_INTERVAL);
 
         // Start connecting to peers.
         this._checkPeerCount();
@@ -125,6 +131,9 @@ class Network extends Observable {
      */
     disconnect(reason) {
         this._autoConnect = false;
+
+        // Clear housekeeping interval.
+        clearInterval(this._houseKeepingIntervalId);
 
         this._connections.disconnect(reason);
     }
@@ -171,7 +180,7 @@ class Network extends Observable {
     }
 
     _onInboundRequest() {
-        this._scorer.recycleConnections(1);
+        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, `peer connection recycled inbound exchange  ${peerConnection.peerAddress}`);
 
         // set ability to exchange for new inbound connections
         this._connections.allowInboundExchange =
@@ -275,7 +284,7 @@ class Network extends Observable {
         if (this.peerCount > Network.PEER_COUNT_RECYCLING_ACTIVE) {
             // recycle 1% at PEER_COUNT_RECYCLING_ACTIVE, 20% at PEER_COUNT_MAX
             const percentageToRecycle = (this.peerCount - Network.PEER_COUNT_RECYCLING_ACTIVE) * 0.19 / (Network.PEER_COUNT_MAX - Network.PEER_COUNT_RECYCLING_ACTIVE) + 0.01;
-            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle))
+            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle), ClosingType.PEER_CONNECTION_RECYCLED, `Peer connection recycled ${peerConnection.peerAddress}`);
         }
 
         // set ability to exchange for new inbound connections
