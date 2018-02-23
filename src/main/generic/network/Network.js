@@ -180,11 +180,11 @@ class Network extends Observable {
     }
 
     _onInboundRequest() {
-        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, `peer connection recycled inbound exchange  ${peerConnection.peerAddress}`);
+        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, `Peer connection recycled inbound exchange`);
 
         // set ability to exchange for new inbound connections
         this._connections.allowInboundExchange =
-            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE :false;
+            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE : false;
     }
 
     /**
@@ -284,7 +284,7 @@ class Network extends Observable {
         if (this.peerCount > Network.PEER_COUNT_RECYCLING_ACTIVE) {
             // recycle 1% at PEER_COUNT_RECYCLING_ACTIVE, 20% at PEER_COUNT_MAX
             const percentageToRecycle = (this.peerCount - Network.PEER_COUNT_RECYCLING_ACTIVE) * 0.19 / (Network.PEER_COUNT_MAX - Network.PEER_COUNT_RECYCLING_ACTIVE) + 0.01;
-            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle), ClosingType.PEER_CONNECTION_RECYCLED, `Peer connection recycled ${peerConnection.peerAddress}`);
+            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle), ClosingType.PEER_CONNECTION_RECYCLED, `Peer connection recycled`);
         }
 
         // set ability to exchange for new inbound connections
@@ -346,5 +346,5 @@ Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
 Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
 Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
 Network.HOUSEKEEPING_INTERVAL = 5 * 60 * 1000; // 5 minutes
-Network.SCORE_INBOUND_EXCHANGE = 1.5; // of 2.2
+Network.SCORE_INBOUND_EXCHANGE = 1.5; // of 3.2
 Class.register(Network);
