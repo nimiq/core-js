@@ -310,6 +310,7 @@ ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual websocket disconnect
 ClosingType.MAX_PEER_COUNT_REACHED  = 35; //max peer count reached
 
 ClosingType.PEER_CONNECTION_RECYCLED  = 36; //peer connection recycled
+ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE  = 37; //peer connection recycled inbound exchange
 
 ////// Banning Closing Types
 
