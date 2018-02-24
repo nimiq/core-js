@@ -1,6 +1,7 @@
 class KeyPair extends Serializable {
     /**
-     * @param arg
+     * @param {PrivateKey} privateKey
+     * @param {PublicKey} publicKey
      * @param {boolean} locked
      * @param {Uint8Array} lockSalt
      * @private

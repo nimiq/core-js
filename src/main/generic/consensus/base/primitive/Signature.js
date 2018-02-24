@@ -11,7 +11,7 @@ class Signature extends Serializable {
     }
 
     /**
-     * @param arg
+     * @param {Uint8Array} arg
      * @private
      */
     constructor(arg) {
@@ -37,7 +37,7 @@ class Signature extends Serializable {
      * @return {Signature}
      */
     static fromPartialSignatures(commitment, signatures) {
-        const raw = Signature._combinePartialSignatures(commitment.serialize(), signatures.map(s => s._obj));
+        const raw = Signature._combinePartialSignatures(commitment.serialize(), signatures.map(s => s.serialize()));
         return new Signature(raw);
     }
 
@@ -82,14 +82,6 @@ class Signature extends Serializable {
     }
 
     /**
-     * @param {Array.<Uint8Array>} partialSignatures
-     * @returns {Uint8Array}
-     */
-    static _aggregatePartialSignatures(partialSignatures) {
-        return partialSignatures.reduce((sigA, sigB) => Signature._scalarsAdd(sigA, sigB));
-    }
-
-    /**
      * @param {Uint8Array} combinedCommitment
      * @param {Array.<Uint8Array>} partialSignatures
      * @returns {Uint8Array}
@@ -97,6 +89,14 @@ class Signature extends Serializable {
     static _combinePartialSignatures(combinedCommitment, partialSignatures) {
         const combinedSignature = Signature._aggregatePartialSignatures(partialSignatures);
         return BufferUtils.concatTypedArrays(combinedCommitment, combinedSignature);
+    }
+
+    /**
+     * @param {Array.<Uint8Array>} partialSignatures
+     * @returns {Uint8Array}
+     */
+    static _aggregatePartialSignatures(partialSignatures) {
+        return partialSignatures.reduce((sigA, sigB) => Signature._scalarsAdd(sigA, sigB));
     }
 
     /**

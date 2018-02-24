@@ -1,6 +1,7 @@
 class CommitmentPair extends Serializable {
     /**
-     * @param arg
+     * @param {RandomSecret} arg
+     * @param {Commitment} arg
      * @private
      */
     constructor(secret, commitment) {

@@ -242,7 +242,7 @@ describe('Signature', () => {
                 commitments.push(nonce.commitment);
             }
             const aggCommitment = Commitment.sum(commitments);
-            const aggPubKey = new PublicKey(PublicKey._delinearizeAndAggregatePublicKeys(pubKeys.map(k => k.serialize())));
+            const aggPubKey = PublicKey._delinearizeAndAggregatePublicKeys(pubKeys);
 
             for (let i = 0; i < 3; ++i) {
                 const partialSignature = PartialSignature.create(privKeys[i], pubKeys[i], pubKeys, secrets[i], aggCommitment, message);

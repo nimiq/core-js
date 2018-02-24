@@ -9,7 +9,7 @@ class PublicKey extends Serializable {
     }
 
     /**
-     * @param arg
+     * @param {Uint8Array} arg
      * @private
      */
     constructor(arg) {
@@ -34,8 +34,7 @@ class PublicKey extends Serializable {
     static sum(publicKeys) {
         publicKeys = publicKeys.slice();
         publicKeys.sort((a, b) => a.compare(b));
-        const raw = PublicKey._delinearizeAndAggregatePublicKeys(publicKeys.map(k => k.serialize()));
-        return new PublicKey(raw);
+        return PublicKey._delinearizeAndAggregatePublicKeys(publicKeys);
     }
 
     /**
@@ -99,12 +98,14 @@ class PublicKey extends Serializable {
     }
 
     /**
-     * @param {Array.<Uint8Array>} publicKeys
-     * @returns {Uint8Array}
+     * @param {Array.<PublicKey>} publicKeys
+     * @returns {PublicKey}
      */
     static _delinearizeAndAggregatePublicKeys(publicKeys) {
-        const publicKeysHash = PublicKey._publicKeysHash(publicKeys);
-        return PublicKey._publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash);
+        const publicKeysObj = publicKeys.map(k => k.serialize());
+        const publicKeysHash = PublicKey._publicKeysHash(publicKeysObj);
+        const raw = PublicKey._publicKeysDelinearizeAndAggregate(publicKeysObj, publicKeysHash);
+        return new PublicKey(raw);
     }
 
     /**

@@ -1,6 +1,6 @@
 class RandomSecret extends Serializable {
     /**
-     * @param arg
+     * @param {Uint8Array} arg
      * @private
      */
     constructor(arg) {
