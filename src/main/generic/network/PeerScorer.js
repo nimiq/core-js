@@ -92,7 +92,7 @@ class PeerScorer extends Observable {
             * ((peerAddress.timestamp / 1000) + 1);
 
         // a channel to that peer address is CONNECTING, CONNECTED, NEGOTIATING OR ESTABLISHED
-        if (this._connections.getByPeerAddress(peerAddress)) {
+        if (this._connections.getConnectionByPeerAddress(peerAddress)) {
             return -1;
         }
 
