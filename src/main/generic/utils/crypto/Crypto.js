@@ -12,15 +12,6 @@ class Crypto {
     }
 
     /**
-     * @returns {CryptoWorkerImpl}
-     * @private
-     */
-    static workerSync() {
-        if (Crypto._workerSync === null) throw new Error('Synchronous crypto worker not yet prepared');
-        return Crypto._workerSync;
-    }
-
-    /**
      * @returns {Promise.<CryptoWorker>}
      * @private
      */
@@ -32,8 +23,6 @@ class Crypto {
     }
 }
 
-/** @type {CryptoWorkerImpl} */
-Crypto._workerSync = null;
 /** @type {CryptoWorker} */
 Crypto._workerAsync = null;
 

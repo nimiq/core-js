@@ -57,6 +57,40 @@ class PrivateKey extends Serializable {
     equals(o) {
         return o instanceof PrivateKey && super.equals(o);
     }
+
+    /**
+     * @param {Uint8Array} privateKey
+     * @param {Uint8Array} publicKey
+     * @param {Uint8Array} publicKeysHash
+     * @returns {Uint8Array}
+     */
+    static _privateKeyDelinearize(privateKey, publicKey, publicKeysHash) {
+        if (privateKey.byteLength !== PrivateKey.SIZE
+            || publicKey.byteLength !== PublicKey.SIZE
+            || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
+            throw Error('Wrong buffer size.');
+        }
+        let stackPtr;
+        try {
+            stackPtr = Module.stackSave();
+            const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+            const wasmInPrivateKey = Module.stackAlloc(privateKey.length);
+            const wasmInPublicKey = Module.stackAlloc(publicKey.length);
+            const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPrivateKey, privateKey.length).set(privateKey);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
+            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
+            Module._ed25519_derive_delinearized_private_key(wasmOut, wasmInPublicKeysHash, wasmInPublicKey, wasmInPrivateKey);
+            const delinearizedPrivateKey = new Uint8Array(PrivateKey.SIZE);
+            delinearizedPrivateKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PrivateKey.SIZE));
+            return delinearizedPrivateKey;
+        } catch (e) {
+            Log.w(CryptoWorkerImpl, e);
+            throw e;
+        } finally {
+            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        }
+    }
 }
 
 PrivateKey.SIZE = 32;

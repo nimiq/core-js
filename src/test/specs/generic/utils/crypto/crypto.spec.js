@@ -283,7 +283,7 @@ describe('Crypto', () => {
     it('correctly aggregates commitments', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const aggCommitment = Crypto.workerSync().commitmentsAggregate(testCase.commitments);
+                const aggCommitment = Commitment._commitmentsAggregate(testCase.commitments);
                 expect(BufferUtils.equals(aggCommitment, testCase.aggCommitment)).toBe(true);
             }
         })().then(done, done.fail);
@@ -303,7 +303,7 @@ describe('Crypto', () => {
             for (const testCase of partialSignatureTestVectors) {
                 const aggPartialSig = Signature._combinePartialSignatures(testCase.aggCommitment, testCase.partialSignatures);
                 expect(BufferUtils.equals(aggPartialSig, testCase.signature)).toBe(true, 'could not compute signature correctly');
-                const result = Crypto.workerSync().signatureVerify(testCase.aggPubKey, testCase.message, aggPartialSig);
+                const result = Signature._signatureVerify(testCase.aggPubKey, testCase.message, aggPartialSig);
                 expect(result).toBe(true, 'could not verify signature');
             }
         })().then(done, done.fail);
@@ -313,7 +313,7 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.pubKeys.length; ++i) {
-                    const pubKey = Crypto.workerSync().publicKeyDerive(testCase.privKeys[i]);
+                    const pubKey = PublicKey._publicKeyDerive(testCase.privKeys[i]);
                     expect(BufferUtils.equals(pubKey, testCase.pubKeys[i])).toBe(true);
                 }
             }
@@ -323,7 +323,7 @@ describe('Crypto', () => {
     it('correctly computes public keys hash', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
+                const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
                 expect(BufferUtils.equals(publicKeysHash, testCase.pubKeysHash)).toBe(true);
             }
         })().then(done, done.fail);
@@ -333,8 +333,8 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.privKeys.length; ++i) {
-                    const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
-                    const delinearizedPrivKey = Crypto.workerSync().privateKeyDelinearize(testCase.privKeys[i], testCase.pubKeys[i], publicKeysHash);
+                    const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
+                    const delinearizedPrivKey = PrivateKey._privateKeyDelinearize(testCase.privKeys[i], testCase.pubKeys[i], publicKeysHash);
                     expect(BufferUtils.equals(delinearizedPrivKey, testCase.delinearizedPrivKeys[i])).toBe(true);
                 }
             }
@@ -345,8 +345,8 @@ describe('Crypto', () => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
                 for (let i = 0; i < testCase.pubKeys.length; ++i) {
-                    const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
-                    const delinearizedPubKey = Crypto.workerSync().publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
+                    const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
+                    const delinearizedPubKey = PublicKey._publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
                     expect(BufferUtils.equals(delinearizedPubKey, testCase.delinearizedPubKeys[i])).toBe(true);
                 }
             }
@@ -356,13 +356,13 @@ describe('Crypto', () => {
     it('correctly aggregates and delinearizes public keys', (done) => {
         (async function () {
             for (const testCase of partialSignatureTestVectors) {
-                const publicKeysHash = Crypto.workerSync().publicKeysHash(testCase.pubKeys);
+                const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
                 const delinearizedPubKeys = [];
                 for (let i = 0; i < testCase.pubKeys.length; ++i) { // TODO why is this even computed
-                    const delinearizedPubKey = Crypto.workerSync().publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
+                    const delinearizedPubKey = PublicKey._publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
                     delinearizedPubKeys.push(delinearizedPubKey);
                 }
-                const aggregatePubKey = Crypto.workerSync().publicKeysDelinearizeAndAggregate(testCase.pubKeys, publicKeysHash);
+                const aggregatePubKey = PublicKey._publicKeysDelinearizeAndAggregate(testCase.pubKeys, publicKeysHash);
                 expect(BufferUtils.equals(aggregatePubKey, testCase.aggPubKey)).toBe(true);
             }
         })().then(done, done.fail);
