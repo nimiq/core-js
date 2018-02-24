@@ -36,4 +36,13 @@ describe('Hash', () => {
         expect(hash1.equals(1))
             .toBe(false, 'because hash1 !== 1');
     });
+
+    it('can hash data with blake2b', (done) => {
+        (async function () {
+            const dataToHash = BufferUtils.fromAscii('hello');
+            const expectedHash = Dummy.hash1;
+            const hash = Hash.blake2b(dataToHash);
+            expect(BufferUtils.toBase64(hash.serialize())).toBe(expectedHash);
+        })().then(done, done.fail);
+    });
 });

@@ -32,4 +32,51 @@ describe('PublicKey', () => {
         expect(PublicKey.sum([pubKey1, pubKey2]).equals(pubKey3)).toEqual(true);
         expect(PublicKey.sum([pubKey2, pubKey1]).equals(pubKey3)).toEqual(true);
     });
+
+    it('correctly derives the public key', (done) => {
+        (async function () {
+            for (const testCase of Dummy.partialSignatureTestVectors) {
+                for (let i = 0; i < testCase.pubKeys.length; ++i) {
+                    const pubKey = PublicKey._publicKeyDerive(testCase.privKeys[i]);
+                    expect(BufferUtils.equals(pubKey, testCase.pubKeys[i])).toBe(true);
+                }
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly computes public keys hash', (done) => {
+        (async function () {
+            for (const testCase of Dummy.partialSignatureTestVectors) {
+                const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
+                expect(BufferUtils.equals(publicKeysHash, testCase.pubKeysHash)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly derives the delinearized public key', (done) => {
+        (async function () {
+            for (const testCase of Dummy.partialSignatureTestVectors) {
+                for (let i = 0; i < testCase.pubKeys.length; ++i) {
+                    const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
+                    const delinearizedPubKey = PublicKey._publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
+                    expect(BufferUtils.equals(delinearizedPubKey, testCase.delinearizedPubKeys[i])).toBe(true);
+                }
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly aggregates and delinearizes public keys', (done) => {
+        (async function () {
+            for (const testCase of Dummy.partialSignatureTestVectors) {
+                const publicKeysHash = PublicKey._publicKeysHash(testCase.pubKeys);
+                const delinearizedPubKeys = [];
+                for (let i = 0; i < testCase.pubKeys.length; ++i) { // TODO why is this even computed
+                    const delinearizedPubKey = PublicKey._publicKeyDelinearize(testCase.pubKeys[i], publicKeysHash);
+                    delinearizedPubKeys.push(delinearizedPubKey);
+                }
+                const aggregatePubKey = PublicKey._publicKeysDelinearizeAndAggregate(testCase.pubKeys, publicKeysHash);
+                expect(BufferUtils.equals(aggregatePubKey, testCase.aggPubKey)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
 });

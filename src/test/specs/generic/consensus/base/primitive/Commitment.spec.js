@@ -36,4 +36,13 @@ describe('Commitment', () => {
             expect((await Commitment.sum([commitment2, commitment1])).equals(commitment3)).toEqual(true);
         })().then(done, done.fail);
     });
+
+    it('correctly aggregates commitments', (done) => {
+        (async function () {
+            for (const testCase of Dummy.partialSignatureTestVectors) {
+                const aggCommitment = Commitment._commitmentsAggregate(testCase.commitments);
+                expect(BufferUtils.equals(aggCommitment, testCase.aggCommitment)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
 });

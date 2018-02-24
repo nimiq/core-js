@@ -104,4 +104,32 @@ describe('KeyPair', () => {
             expect(privateKeyTmp).toEqual(privateKeyBak);
         })().then(done, done.fail);
     });
+
+    it('can create keys of proposed size', (done) => {
+        (async function () {
+            const keyPair = KeyPair.generate();
+            expect(keyPair.publicKey.serialize().byteLength).toEqual(PublicKey.SIZE);
+            expect(keyPair.privateKey.serialize().byteLength).toEqual(PrivateKey.SIZE);
+        })().then(done, done.fail);
+    });
+
+    it('can derive a functional key pair from private key', (done) => {
+        (async function () {
+            const keyPair = KeyPair.generate();
+            const data = new Uint8Array([1, 2, 3]);
+            const keyPair2 = KeyPair.derive(keyPair.privateKey);
+
+            const sign = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
+            const verify = sign.verify(keyPair.publicKey, data);
+            expect(verify).toBe(true, 'can verify original with original key');
+            const verify2 = sign.verify(keyPair2.publicKey, data);
+            expect(verify2).toBe(true, 'can verify original with derived key');
+
+            const sign2 = Signature.create(keyPair2.privateKey, keyPair2.publicKey, data);
+            const verify3 = sign2.verify(keyPair.publicKey, data);
+            expect(verify3).toBe(true, 'can verify derived with original key');
+            const verify4 = sign2.verify(keyPair2.publicKey, data);
+            expect(verify4).toBe(true, 'can verify derived with derived key');
+        })().then(done, done.fail);
+    });
 });
