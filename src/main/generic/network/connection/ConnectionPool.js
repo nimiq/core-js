@@ -448,7 +448,7 @@ class ConnectionPool extends Observable {
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, this._networkConfig, channel);
         agent.on('handshake', peer => this._onHandshake(peer, agent));
-        agent.on('close', (peer, channel, closedByRemote, type, reason) => this._onClose(peer, channel, closedByRemote, type, reason));
+        agent.on('close', (peer, channel, type, reason) => this._onClose(peer, channel, type, reason));
 
         // Set peerConnection to NEGOTIATING state.
         peerConnection.networkAgent = agent;
@@ -518,7 +518,6 @@ class ConnectionPool extends Observable {
      * This peer channel was closed.
      * @param {Peer} peer
      * @param {PeerChannel} channel
-     * @param {boolean} closedByRemote
      * @param {number} type
      * @param {string} reason
      * @fires ConnectionPool#peer-left
@@ -527,7 +526,7 @@ class ConnectionPool extends Observable {
      * @returns {void}
      * @private
      */
-    _onClose(peer, channel, closedByRemote, type, reason) {
+    _onClose(peer, channel, type, reason) {
         // TODO If this is an inbound connection, the peerAddress might not be set yet.
         // Ban the netAddress in this case.
         // XXX We should probably always ban the netAddress as well.
@@ -543,7 +542,7 @@ class ConnectionPool extends Observable {
             // Check if the handshake with this peer has completed.
             if (this.isEstablished(channel.peerAddress)) {
                 // Mark peer as disconnected.
-                this._close(channel, channel.peerAddress, closedByRemote, type);
+                this._close(channel, channel.peerAddress, type);
 
                 peerLeft = true;
 
@@ -555,17 +554,18 @@ class ConnectionPool extends Observable {
             } 
             else {
                 // Treat connections closed pre-handshake by remote as failed attempts.
-                Log.w(ConnectionPool, `Connection to ${channel.peerAddress} closed pre-handshake (by ${closedByRemote ? 'remote' : 'us'})`);
-                this._close(null, channel.peerAddress, false, type);
+                Log.w(ConnectionPool, `Connection to ${channel.peerAddress} closed pre-handshake (by ${type == ClosingType.CLOSED_BY_REMOTE ? 'remote' : 'us'})`);
+                this._close(null, channel.peerAddress, type);
             }
 
             const peerConnection = this.getByPeerAddress(channel.peerAddress);
             this._remove(peerConnection);
         }
+
         this._inboundStore.remove(channel.connection);
 
         // Let listeners know about this closing.
-        this.fire('close', peer, channel, closedByRemote, type, reason);
+        this.fire('close', peer, channel, type, reason);
 
         if (peerLeft){
             this._updateConnectedPeerCount(peer.peerAddress, -1);
@@ -588,18 +588,18 @@ class ConnectionPool extends Observable {
     _onError(peerAddress, reason) {
         Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
-        this._close(null, peerAddress, false, ClosingType.CONNECTION_FAILED);
+        //TODO Stefan, does a close follow automatically?
+        this._close(null, peerAddress, ClosingType.CONNECTION_FAILED);
     }
 
     /**
      * Called when a connection to this peerAddress is closed.
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
-     * @param {boolean} closedByRemote
      * @param {number|null} type
      * @returns {void}
      */
-    _close(channel, peerAddress, closedByRemote, type = null) {
+    _close(channel, peerAddress, type = null) {
         const peerConnection = this.getByPeerAddress(peerAddress);
         if (peerConnection) {
             if (peerConnection.state === PeerConnectionState.CONNECTING) {
@@ -609,7 +609,7 @@ class ConnectionPool extends Observable {
             peerConnection.close(type);
         }
 
-        this._addresses.close(channel, peerAddress, closedByRemote, type);
+        this._addresses.close(channel, peerAddress, type);
     }
 
     /**

@@ -47,10 +47,10 @@ class PeerConnection {
         this._peerChannel = null;
 
         /**
-         * @type {NetworkConfig}
+         * @type {NetworkAgent}
          * @private
          */
-        this.NetworkAgent = null;
+        this._networkAgent = null;
 
         /**
          * @type {Peer}
