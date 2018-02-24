@@ -117,7 +117,7 @@ class NetworkAgent extends Observable {
         channel.on('pong', msg => this._onPong(msg));
 
         // Clean up when the peer disconnects.
-        channel.on('close', closedByRemote => this._onClose(closedByRemote));
+        channel.on('close', (type, reason) => this._onClose(type, reason));
     }
 
     /**
@@ -514,15 +514,16 @@ class NetworkAgent extends Observable {
     }
 
     /**
-     * @param {boolean} closedByRemote
+     * @param {number|null} type
+     * @param {string|null} reason
      * @private
      */
-    _onClose(closedByRemote) {
+    _onClose(type, reason) {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
 
         // Tell listeners that the peer has disconnected.
-        this.fire('close', this._peer, this._channel, closedByRemote, ClosingType.CLOSED_BY_REMOTE, "closed by remote", this);
+        this.fire('close', this._peer, this._channel, type, reason, this);
     }
 
     /**

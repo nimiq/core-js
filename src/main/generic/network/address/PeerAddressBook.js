@@ -308,12 +308,11 @@ class PeerAddressBook extends Observable {
      * Called when a connection to this peerAddress is closed.
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
-     * @param {boolean} closedByRemote
      * @param {number|null} type
      * @returns {void}
      */
     //TODO Stefan, look after
-    close(channel, peerAddress, closedByRemote, type = null) {
+    close(channel, peerAddress, type = null) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -346,7 +345,7 @@ class PeerAddressBook extends Observable {
 
         // XXX Immediately delete address if the remote host closed the connection.
         // Also immediately delete dumb clients, since we cannot connect to those anyway.
-        if ((closedByRemote && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
+        if ((type === ClosingType.CLOSED_BY_REMOTE && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
             this._remove(peerAddress);
         }
     }

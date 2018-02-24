@@ -24,8 +24,7 @@ class NetworkConnection extends Observable {
 
         /** @type {boolean} */
         this._inbound = !peerAddress;
-        /** @type {boolean} */
-        this._closedByUs = false;
+
         /** @type {boolean} */
         this._closed = false;
 
@@ -63,7 +62,7 @@ class NetworkConnection extends Observable {
         this._closed = true;
 
         // Tell listeners that this connection has closed.
-        this.fire('close', !this._closedByUs, type, reason, this);
+        this.fire('close', type, reason, this);
     }
 
     /**
@@ -72,8 +71,6 @@ class NetworkConnection extends Observable {
      * @private
      */
     _close(type, reason) {
-        this._closedByUs = true;
-
         // Don't wait for the native close event to fire.
         this._onClose(type, reason);
 
