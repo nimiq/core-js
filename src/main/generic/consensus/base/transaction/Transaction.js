@@ -156,15 +156,6 @@ class Transaction {
     }
 
     /**
-     * @return {Promise.<Hash>}
-     */
-    async hashAsync() {
-        // Exclude the signature, we don't want transactions to be malleable.
-        this._hash = this._hash || await Hash.lightAsync(this.serializeContent());
-        return this._hash;
-    }
-
-    /**
      * @param {Transaction} o
      * @return {number}
      */

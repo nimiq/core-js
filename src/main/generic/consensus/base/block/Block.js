@@ -509,14 +509,6 @@ class Block {
      * @param {SerialBuffer} [buf]
      * @returns {Promise.<Hash>}
      */
-    hashAsync(buf) {
-        return this._header.hashAsync(buf);
-    }
-
-    /**
-     * @param {SerialBuffer} [buf]
-     * @returns {Promise.<Hash>}
-     */
     pow(buf) {
         return this._header.pow(buf);
     }

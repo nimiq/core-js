@@ -77,13 +77,6 @@ class PublicKey extends Serializable {
     }
 
     /**
-     * @return {Promise.<Hash>}
-     */
-    hashAsync() {
-        return Hash.lightAsync(this.serialize());
-    }
-
-    /**
      * @param {PublicKey} o
      * @return {number}
      */

@@ -46,23 +46,6 @@ class Hash extends Serializable {
     }
 
     /**
-     * @deprecated
-     * @param {Uint8Array} arr
-     * @returns {Promise.<Hash>}
-     */
-    static lightAsync(arr) {
-        return Hash.blake2bAsync(arr);
-    }
-
-    /**
-     * @param {Uint8Array} arr
-     * @returns {Promise.<Hash>}
-     */
-    static async blake2bAsync(arr) {
-        return new Hash(await (await Crypto.workerAsync()).computeBlake2b(arr), Hash.Algorithm.BLAKE2B);
-    }
-
-    /**
      * @param {Uint8Array} arr
      * @deprecated
      * @returns {Promise.<Hash>}

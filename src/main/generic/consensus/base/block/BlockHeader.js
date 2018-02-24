@@ -148,15 +148,6 @@ class BlockHeader {
         this._hash = this._hash || Hash.light(this.serialize(buf));
         return this._hash;
     }
-
-    /**
-     * @param {SerialBuffer} [buf]
-     * @return {Promise.<Hash>}
-     */
-    async hashAsync(buf) {
-        this._hash = this._hash || await Hash.lightAsync(this.serialize(buf));
-        return this._hash;
-    }
     
     /**
      * @param {SerialBuffer} [buf]
