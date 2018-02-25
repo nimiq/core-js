@@ -142,10 +142,6 @@ class ConnectionPool extends Observable {
         if (peerConnection) {
             if (peerConnection.peerAddress){
                 this._connectionsByPeerAddress.put(peerConnection.peerAddress, peerConnection);
-
-                if (peerConnection.peerAddress.netAddress) {
-                    this._addNetAddress(peerConnection, peerConnection.peerAddress.netAddress);
-                }
             }
         }
     }
@@ -225,12 +221,14 @@ class ConnectionPool extends Observable {
         }
 
         if (this._addresses.isBanned(peerAddress)){
-            throw `Connecting to banned address ${peerAddress}`;
+            Log.e(Network, `Connecting to banned address ${peerAddress}`);
+            return false;
         }
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
         if (peerConnection) {
-            throw `Duplicate connection to ${peerAddress}`;
+            Log.e(Network, `Duplicate connection to ${peerAddress}`);
+            return false;
         }
 
         // Forbid connection if we have too many connections to the peer's IP address.
@@ -260,12 +258,14 @@ class ConnectionPool extends Observable {
         if (conn.peerAddress) {
             if (this._addresses.isBanned(conn.peerAddress)){
                 conn.close(ClosingType.PEER_IS_BANNED, `Connected to banned address ${conn.peerAddress}`);
+                return false;
             }
 
             if (conn.inbound){
                 const peerConnection = this.getConnectionByPeerAddress(conn.peerAddress);
                 if (peerConnection) {
                     conn.close(ClosingType.DUPLICATE_CONNECTION,  `Duplicate connection to ${conn.peerAddress}`);
+                    return false;
                 }    
             } 
         }
@@ -301,20 +301,20 @@ class ConnectionPool extends Observable {
     _checkHandshake(peer, agent) {
         // Close connection if we are already connected to this peer.
         if (this.isEstablished(peer.peerAddress)) {
-            agent.channel.close(ClosingType.DUPLICATE_CONNECTION, 'duplicate connection (post handshake)');
+            agent.channel.close(ClosingType.DUPLICATE_CONNECTION, `Duplicate connection to ${peer.peerAddress} (post-handshake)` );
             return false;
         }
 
         // Close connection if this peer is banned.
         if (this._addresses.isBanned(peer.peerAddress)) {
-            agent.channel.close(ClosingType.PEER_IS_BANNED, 'peer is banned');
+            agent.channel.close(ClosingType.PEER_IS_BANNED, `Connection with banned address ${peer.peerAddress} (post-handshake)`);
             return false;
         }
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
             if (this.getConnectionByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
-                agent.channel.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                agent.channel.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post-handshake)`);
                 return false;
             }
         }
@@ -351,7 +351,9 @@ class ConnectionPool extends Observable {
             this._connectingCount++;
         }
         else {
-            this._onError(peerAddress, `Outbound attempt not connecting. ${peerAddress}`);
+            this._remove(peerConnection);
+            Log.e(Network, `Outbound attempt not connecting. ${peerAddress}`);
+            return null;
         }
 
         return peerConnection;
@@ -448,7 +450,7 @@ class ConnectionPool extends Observable {
             //inbound
             peerConnection = this._inboundStore.get(agent.channel.connection);
             if (!peerConnection) {
-                agent.channel.close(ClosingType.MISSING_PEER_CONNECTION, 'missing peer connection');
+                agent.channel.close(ClosingType.MISSING_PEER_CONNECTION, `Missing PeerConnection ${peer.peerAddress} (post-handshake)`);
                 return;     
             }
        
@@ -504,7 +506,7 @@ class ConnectionPool extends Observable {
         if (channel.peerAddress) {
             // Check if the handshake with this peer has completed.
             if (this.isEstablished(channel.peerAddress)) {
-                // Mark peer as disconnected.
+                // Mark peerConnection, peeaAddress.
                 this._close(channel, channel.peerAddress, type);
 
                 peerLeft = true;
@@ -552,7 +554,7 @@ class ConnectionPool extends Observable {
         Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
 
         //TODO Stefan, does a close follow automatically?
-        this._close(null, peerAddress, ClosingType.CONNECTION_FAILED);
+//        this._close(null, peerAddress, ClosingType.CONNECTION_FAILED);
     }
 
     /**
