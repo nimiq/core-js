@@ -1,7 +1,4 @@
 describe('Genesis', () => {
-    beforeEach(function (done) {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('light Block is valid (testing)', (done) => {
         (async () => {

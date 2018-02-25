@@ -171,7 +171,7 @@ class Nimiq {
         WindowDetector.get().waitForSingleWindow(async function () {
             try {
                 await Nimiq.load();
-                await Nimiq.Crypto.prepareSyncCryptoWorker();
+                await Nimiq.WasmHelper.doImportBrowser();
                 console.log('Nimiq engine loaded.');
                 if (ready) ready();
             } catch (e) {

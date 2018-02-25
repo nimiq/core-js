@@ -1,7 +1,6 @@
 describe('Blockchain', () => {
     it('verifies block size limit', (done) => {
         (async function () {
-            await Crypto.prepareSyncCryptoWorker();
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 1);
             const sender = testBlockchain.users[0];
             const numTransactions = 8000;
@@ -106,7 +105,6 @@ describe('Blockchain', () => {
 
     it('verifies transaction signatures in large blocks', (done) => {
         (async function () {
-            await Crypto.prepareSyncCryptoWorker();
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
             const sender = testBlockchain.users[0];
             const receiver = testBlockchain.users[1];

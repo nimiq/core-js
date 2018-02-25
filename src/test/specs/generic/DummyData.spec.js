@@ -140,7 +140,9 @@ Block.GENESIS.HASH = Hash.fromBase64('+v0/HMgAMJy5MQgSV7Tn7bD56kABh8VQ/ZFBRH6ghq
 Accounts.GENESIS =
     'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA';
 
-
+beforeAll((done) => {
+    WasmHelper.doImportBrowser().then(done, done.fail);
+});
 
 if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;

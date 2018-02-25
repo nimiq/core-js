@@ -1,7 +1,4 @@
 describe('PublicKey', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('is serializable and unserializable', () => {
         const pubKey1 = KeyPair.generate().publicKey;

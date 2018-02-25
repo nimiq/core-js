@@ -13,8 +13,6 @@ describe('Subscription', () => {
 
     beforeAll((done) => {
         (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-
             senderAddress = senderPubKey.toAddress();
 
             // create testing blockchain with only genesis and dummy users

@@ -1,7 +1,4 @@
 describe('Accounts', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('cannot commit a wrong block', (done) => {
         (async function () {

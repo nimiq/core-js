@@ -154,7 +154,7 @@ class KeyPair extends Serializable {
         }
 
         const salt = new Uint8Array(KeyPair.EXPORT_SALT_LENGTH);
-        Crypto.lib.getRandomValues(salt);
+        CryptoWorker.lib.getRandomValues(salt);
 
         const buf = new SerialBuffer(this.encryptedSize);
         buf.writeUint8(1); // Argon2 KDF
@@ -183,7 +183,7 @@ class KeyPair extends Serializable {
         if (lockSalt) this._lockSalt = lockSalt;
         if (!this._lockSalt || this._lockSalt.length === 0) {
             this._lockSalt = new Uint8Array(32);
-            Crypto.lib.getRandomValues(this._lockSalt);
+            CryptoWorker.lib.getRandomValues(this._lockSalt);
         }
 
         this._internalPrivateKey.overwrite(await this._otpPrivateKey(key));
@@ -247,7 +247,7 @@ class KeyPair extends Serializable {
      * @private
      */
     static async _otpKdf(message, key, salt, iterations) {
-        return BufferUtils.xor(message, await (await Crypto.workerAsync()).kdf(key, salt, iterations));
+        return BufferUtils.xor(message, await (await CryptoWorker.getInstanceAsync()).kdf(key, salt, iterations));
     }
 
     get isLocked() {

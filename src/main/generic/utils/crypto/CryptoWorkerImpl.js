@@ -6,13 +6,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     }
 
     async init(name) {
-        if (IWorker._insideWebWorker) {
-            Crypto._workerSync = this;
-            Crypto._workerAsync = this;
-        }
         await this._superInit.call(this, name);
-
-        await WasmHelper.doImport();
+        await WasmHelper.doImportBrowser();
+        CryptoWorker._workerAsync = this;
     }
 
     /**

@@ -1,9 +1,5 @@
 describe('AccountsTree', () => {
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     /** Parameterized tests: each test is invoked an all kinds of account trees defined below **/
 
 

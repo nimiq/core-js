@@ -1,7 +1,4 @@
 describe('AccountsTreeChunk', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('is correctly created', (done) => {
         (async () => {

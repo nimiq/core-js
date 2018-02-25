@@ -4,10 +4,9 @@ describe('MultiSigWallet', () => {
     const fee = 888;
     const deepLockRounds = KeyPair.EXPORT_KDF_ROUNDS;
 
-    beforeAll((done) => {
+    beforeAll(() => {
         // Temporarily reduce deep lock rounds.
         KeyPair.EXPORT_KDF_ROUNDS = KeyPair.LOCK_KDF_ROUNDS;
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
     });
 
     afterAll(() => {

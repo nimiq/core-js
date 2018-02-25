@@ -85,7 +85,7 @@ class Block {
                 this._valid = await this._verify(time.now());
             } else {
                 const transactionValid = this.body.transactions.map(t => t._valid);
-                const {valid, pow, interlinkHash, bodyHash} = await (await Crypto.workerAsync()).blockVerify(this.serialize(), transactionValid, time.now(), Block.GENESIS.HASH.serialize());
+                const {valid, pow, interlinkHash, bodyHash} = await (await CryptoWorker.getInstanceAsync()).blockVerify(this.serialize(), transactionValid, time.now(), Block.GENESIS.HASH.serialize());
                 this._valid = valid;
                 this.header._pow = Hash.unserialize(new SerialBuffer(pow));
                 this.interlink._hash = Hash.unserialize(new SerialBuffer(interlinkHash));

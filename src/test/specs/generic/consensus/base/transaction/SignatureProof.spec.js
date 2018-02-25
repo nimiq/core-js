@@ -1,7 +1,4 @@
 describe('SignatureProof', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('can create and verify a signature proof', () => {
         const data = BufferUtils.fromAscii('test message');

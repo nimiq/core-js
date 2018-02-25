@@ -1,7 +1,4 @@
 describe('PrivateKey', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('correctly derives the delinearized private key', (done) => {
         (async function () {

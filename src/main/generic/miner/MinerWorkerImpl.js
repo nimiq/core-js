@@ -7,12 +7,7 @@ class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
 
     async init(name) {
         await this._superInit.call(this, name);
-
-        if (await this.importWasm('worker-wasm.wasm')) {
-            await this.importScript('worker-wasm.js');
-        } else {
-            await this.importScript('worker-js.js');
-        }
+        await WasmHelper.doImportBrowser();
     }
 
     async multiMine(input, compact, minNonce, maxNonce) {

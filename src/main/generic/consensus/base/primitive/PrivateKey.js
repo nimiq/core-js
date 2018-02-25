@@ -15,7 +15,7 @@ class PrivateKey extends Serializable {
      */
     static generate() {
         const privateKey = new Uint8Array(PrivateKey.SIZE);
-        Crypto.lib.getRandomValues(privateKey);
+        CryptoWorker.lib.getRandomValues(privateKey);
         return new PrivateKey(privateKey);
     }
 

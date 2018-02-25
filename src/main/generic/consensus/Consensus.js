@@ -4,8 +4,6 @@ class Consensus {
      * @return {Promise.<FullConsensus>}
      */
     static async full(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.FULL, Services.FULL);
         await netconfig.initPersistent();
 
@@ -32,8 +30,6 @@ class Consensus {
      * @return {Promise.<LightConsensus>}
      */
     static async light(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
         await netconfig.initPersistent();
 
@@ -58,8 +54,6 @@ class Consensus {
      * @return {Promise.<NanoConsensus>}
      */
     static async nano(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
         await netconfig.initPersistent();
 
@@ -80,8 +74,6 @@ class Consensus {
      * @return {Promise.<FullConsensus>}
      */
     static async volatileFull(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.FULL, Services.FULL);
         await netconfig.initVolatile();
 
@@ -106,8 +98,6 @@ class Consensus {
      * @return {Promise.<LightConsensus>}
      */
     static async volatileLight(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
         await netconfig.initVolatile();
 
@@ -130,8 +120,6 @@ class Consensus {
      * @return {Promise.<NanoConsensus>}
      */
     static async volatileNano(netconfig = NetworkConfig.getDefault()) {
-        await Crypto.prepareSyncCryptoWorker();
-
         netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
         await netconfig.initVolatile();
 

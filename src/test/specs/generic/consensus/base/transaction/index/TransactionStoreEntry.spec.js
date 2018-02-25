@@ -1,7 +1,4 @@
 describe('TransactionStoreEntry', () => {
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
 
     it('correctly constructs transactions from block', (done) => {
         (async () => {

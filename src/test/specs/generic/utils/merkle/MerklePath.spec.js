@@ -9,10 +9,6 @@ describe('MerklePath', () => {
         BufferUtils.fromAscii('6')
     ];
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     it('correctly computes an empty proof', () => {
         const root = MerkleTree.computeRoot([]);
         const proof = MerklePath.compute([], values[0]);

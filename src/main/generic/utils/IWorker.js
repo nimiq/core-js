@@ -64,13 +64,6 @@ class IWorker {
         IWorker._workerImplementation[baseClazz.name] = impl;
     }
 
-    static fireModuleLoaded(module = 'Module') {
-        if (typeof IWorker._moduleLoadedCallbacks[module] === 'function') {
-            IWorker._moduleLoadedCallbacks[module]();
-            IWorker._moduleLoadedCallbacks[module] = null;
-        }
-    }
-
     static _loadBrowserScript(url, resolve) {
         // Adding the script tag to the head as suggested before
         const head = document.getElementsByTagName('head')[0];

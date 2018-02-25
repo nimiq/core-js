@@ -36,10 +36,6 @@ describe('BlockInterlink', () => {
     ];
     const longInterlink = new BlockInterlink(hashes, zeroHash);
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     it('must have a well defined blockHashes array', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {

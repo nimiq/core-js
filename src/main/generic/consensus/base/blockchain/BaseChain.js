@@ -341,7 +341,7 @@ class BaseChain extends IBlockchain {
      * @return {Promise.<void>}
      */
     static async manyPow(headers) {
-        const worker = await Crypto.workerAsync();
+        const worker = await CryptoWorker.getInstanceAsync();
         const size = worker.poolSize || 1;
         const partitions = [];
         let j = 0;

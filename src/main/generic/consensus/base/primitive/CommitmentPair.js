@@ -17,7 +17,7 @@ class CommitmentPair extends Serializable {
      */
     static generate() {
         const randomness = new Uint8Array(CommitmentPair.RANDOMNESS_SIZE);
-        Crypto.lib.getRandomValues(randomness);
+        CryptoWorker.lib.getRandomValues(randomness);
         const raw = CommitmentPair._commitmentCreate(randomness);
         return new CommitmentPair(new RandomSecret(raw.secret), new Commitment(raw.commitment));
     }

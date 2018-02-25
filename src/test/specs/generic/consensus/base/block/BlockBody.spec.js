@@ -6,15 +6,12 @@ describe('BlockBody', () => {
     const orderedAccounts = [account1, account2, account3].sort((a, b) => a.compare(b));
     let orderedTxs;
 
-    beforeAll((done) => {
-        (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-            const users = TestBlockchain.getUsers(3);
-            const tx1 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 5, 1, users[0].privateKey);
-            const tx2 = TestBlockchain.createTransaction(users[1].publicKey, users[2].address, 1000, 500, 1, users[1].privateKey);
-            const tx3 = TestBlockchain.createTransaction(users[2].publicKey, users[0].address, 3000, 500, 2, users[2].privateKey);
-            orderedTxs = [tx1, tx2, tx3].sort((a, b) => a.compareBlockOrder(b));
-        })().then(done, done.fail);
+    beforeAll(() => {
+        const users = TestBlockchain.getUsers(3);
+        const tx1 = TestBlockchain.createTransaction(users[0].publicKey, users[1].address, 2000, 5, 1, users[0].privateKey);
+        const tx2 = TestBlockchain.createTransaction(users[1].publicKey, users[2].address, 1000, 500, 1, users[1].privateKey);
+        const tx3 = TestBlockchain.createTransaction(users[2].publicKey, users[0].address, 3000, 500, 2, users[2].privateKey);
+        orderedTxs = [tx1, tx2, tx3].sort((a, b) => a.compareBlockOrder(b));
     });
 
     it('is serializable and unserializable', () => {

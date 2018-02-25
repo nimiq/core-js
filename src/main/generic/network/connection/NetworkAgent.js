@@ -100,7 +100,7 @@ class NetworkAgent extends Observable {
 
         /** @type {Uint8Array} */
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
-        Crypto.lib.getRandomValues(this._challengeNonce);
+        CryptoWorker.lib.getRandomValues(this._challengeNonce);
 
         // Listen to network/control messages from the peer.
         channel.on('version', msg => this._onVersion(msg));

@@ -2,10 +2,6 @@ describe('BasicAccount', () => {
     const pubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
     const recipient = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     it('can serialize and unserialize itself', () => {
         const account = new BasicAccount(100);
         const account2 = Account.unserialize(account.serialize());

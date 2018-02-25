@@ -59,7 +59,7 @@ class Hash extends Serializable {
      * @returns {Promise.<Hash>}
      */
     static async argon2d(arr) {
-        return new Hash(await (await Crypto.workerAsync()).computeArgon2d(arr), Hash.Algorithm.ARGON2D);
+        return new Hash(await (await CryptoWorker.getInstanceAsync()).computeArgon2d(arr), Hash.Algorithm.ARGON2D);
     }
 
     /**

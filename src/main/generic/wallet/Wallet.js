@@ -4,7 +4,7 @@ class Wallet {
      * @returns {Promise.<Wallet>} Newly created Wallet.
      */
     static async generate() {
-        await Crypto.prepareSyncCryptoWorker();
+        await WasmHelper.doImportBrowser();
         return new Wallet(KeyPair.generate());
     }
 

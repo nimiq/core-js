@@ -3,10 +3,6 @@ describe('VestingContract', () => {
     const recipient = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const sender = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     it('can serialize and unserialize itself', () => {
         const account = new VestingContract(1000, Address.NULL, 1, 1440, 1, 800);
         const account2 = /** @type {VestingContract} */ Account.unserialize(account.serialize());

@@ -7,8 +7,6 @@ describe('TransactionStore', () => {
 
     beforeAll((done) => {
         (async () => {
-            await Crypto.prepareSyncCryptoWorker();
-
             transactionStore = TransactionStore.createVolatile();
 
             const blockchain = await TestBlockchain.createVolatileTest(0, 3);

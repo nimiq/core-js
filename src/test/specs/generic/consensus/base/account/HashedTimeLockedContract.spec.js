@@ -2,10 +2,6 @@ describe('HashedTimeLockedContract', () => {
     const recipient = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const sender = Address.unserialize(BufferUtils.fromBase64(Dummy.address2));
 
-    beforeAll((done) => {
-        Crypto.prepareSyncCryptoWorker().then(done, done.fail);
-    });
-
     it('can serialize and unserialize itself', () => {
         const account = new HashedTimeLockedContract(1000, sender, recipient, Hash.NULL, 42, 1000, 800);
         const account2 = /** @type {HashedTimeLockedContract} */ Account.unserialize(account.serialize());

@@ -17,3 +17,5 @@ process.on('uncaughtException', (err) => {
 
     console.error(`Uncaught exception: ${err.message || err}`, err);
 });
+
+WasmHelper.doImportNodeJs();
