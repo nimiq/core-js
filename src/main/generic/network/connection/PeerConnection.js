@@ -179,24 +179,6 @@ class PeerConnection {
     get statistics() {
         return this._statistics;
     }
-
-    /**
-     * @param {number} type
-     * @returns {void}
-     */
-    close(type) {
-        if (ClosingType.isBanningType(type)){
-            this._state = PeerConnectionState.FAILED;
-        }
-        else if (ClosingType.isFailingType(type)) {
-            this._state = PeerConnectionState.FAILED;
-        }
-        else {
-            this._state = PeerConnectionState.TRIED;
-        }
-    
-        this._closingType = type;
-    }
 }
 // Used to generate unique PeerConnection ids.
 PeerConnection._instanceCount = 0;
@@ -209,6 +191,4 @@ PeerConnectionState.CONNECTING = 2;
 PeerConnectionState.CONNECTED = 3;
 PeerConnectionState.NEGOTIATING = 4;
 PeerConnectionState.ESTABLISHED = 5;
-PeerConnectionState.FAILED = 6;
-PeerConnectionState.TRIED = 7;
 Class.register(PeerConnectionState);

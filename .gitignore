@@ -21,3 +21,4 @@
 /build
 /.istanbul/
 settings.json
+/coverage

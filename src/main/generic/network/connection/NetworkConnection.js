@@ -74,7 +74,7 @@ class NetworkConnection extends Observable {
         this._closed = true;
 
         // Propagate last network error.
-        if (type === ClosingType.CLOSED_BY_REMOTE && !this._lastError) {
+        if (type === ClosingType.CLOSED_BY_REMOTE && this._lastError) {
             type = ClosingType.NETWORK_ERROR;
             reason = this._lastError;
         }

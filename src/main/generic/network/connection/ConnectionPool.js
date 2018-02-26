@@ -458,8 +458,6 @@ class ConnectionPool extends Observable {
         this._bytesSent += peerConnection.networkConnection.bytesSent;
         this._bytesReceived +=  peerConnection.networkConnection.bytesReceived;
 
-        peerConnection.close(type);
-
         if (peerConnection.peerAddress) {
             this._addresses.close(peerConnection.peerChannel, peerConnection.peerAddress, type);
         }
