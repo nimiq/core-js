@@ -100,7 +100,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             try {
                 header = await this.getHeader(this._syncTarget);
             } catch(err) {
-                this._peer.channel.close(ClosingType.DID_NOT_REQESTED_HEADER, 'Did not get requested header');
+                this._peer.channel.close(ClosingType.DID_NOT_GET_REQUESTED_HEADER, 'Did not get requested header');
                 return;
             }
 

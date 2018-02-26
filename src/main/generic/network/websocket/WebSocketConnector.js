@@ -39,6 +39,9 @@ class WebSocketConnector extends Observable {
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);
 
+            // Don't fire error events after the connection has been established.
+            ws.onerror = () => {};
+
             // There is no way to determine the remote IP in the browser ... thanks for nothing, WebSocket API.
             const netAddress = (ws._socket && ws._socket.remoteAddress) ? NetAddress.fromIP(ws._socket.remoteAddress) : null;
             const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, peerAddress);

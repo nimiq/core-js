@@ -6,6 +6,7 @@ class PeerConnection {
     static getOutbound(peerAddress) {
         const peerConnection = new PeerConnection();
         peerConnection._peerAddress = peerAddress;
+        peerConnection._state = PeerConnectionState.CONNECTING;
         return peerConnection;
     }
 
@@ -177,33 +178,6 @@ class PeerConnection {
     /** @type {PeerConnectionStatistics} */
     get statistics() {
         return this._statistics;
-    }
-
-    /**
-     * @param {WebSocketConnector|WebRtcConnector} connector
-     * @param {PeerChannel|null} signalChannel
-     * @returns {void}
-     */
-    connectOutbound(connector, signalChannel) {
-        switch (this._peerAddress.protocol) {
-            case Protocol.WS:
-                Log.d(Network, `Connecting to ${this._peerAddress} ...`);
-                if (connector.connect(this._peerAddress)) {
-                    this._state = PeerConnectionState.CONNECTING;
-                }
-                break;
-
-            case Protocol.RTC: {
-                Log.d(Network, `Connecting to ${this.peerAddress} via ${signalChannel.peerAddress}...`);
-                if (connector.connect(this._peerAddress, signalChannel)) {
-                    this._state = PeerConnectionState.CONNECTING;
-                }
-                break;
-            }
-
-            default:
-                Log.e(Network, `Cannot connect to ${this.peerAddress} - unsupported protocol`);
-        }
     }
 
     /**

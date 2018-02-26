@@ -75,7 +75,7 @@ class PeerAddressState {
                 this._closingTypes.set(type, this._closingTypes.get(type) + 1);
             }
             else {
-                this._closingTypes.set(type, new Number(1));
+                this._closingTypes.set(type, 1);
             }
 
             if (this._state !== PeerAddressState.BANNED) {

@@ -99,10 +99,10 @@ class NetworkAgent extends Observable {
         this._peerChallengeNonce = null;
 
         /**
-         * @type {Hashmap<number>}
+         * @type {Map.<number, number>}
          * @private
          */
-        this._pingTimes = new HashMap();
+        this._pingTimes = new Map();
 
         /** @type {Uint8Array} */
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
@@ -117,7 +117,7 @@ class NetworkAgent extends Observable {
         channel.on('pong', msg => this._onPong(msg));
 
         // Clean up when the peer disconnects.
-        channel.on('close', (type, reason) => this._onClose(type, reason));
+        channel.on('close', () => this._onClose());
     }
 
     /**
@@ -172,7 +172,7 @@ class NetworkAgent extends Observable {
         if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
-                this._channel.close(ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED,'sending of version message failed');
+                this._channel.close(ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
                 return;
             }
 
@@ -469,13 +469,13 @@ class NetworkAgent extends Observable {
         }
 
         // Save ping timestamp to detect the speed of the connection
-        this._pingTimes.put(nonce, Date.now());
+        this._pingTimes.set(nonce, Date.now());
 
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout(`ping_${nonce}`, () => {
             this._timers.clearTimeout(`ping_${nonce}`);
             this._channel.close(ClosingType.PING_TIMEOUT, 'ping timeout');
-            this._pingTimes.remove(nonce);
+            this._pingTimes.delete(nonce);
         }, NetworkAgent.PING_TIMEOUT);
     }
 
@@ -509,21 +509,16 @@ class NetworkAgent extends Observable {
             if (delta > 0) {
                 this.fire('ping-pong', delta);
             }
-            this._pingTimes.remove(msg.nonce);
+            this._pingTimes.delete(msg.nonce);
         }
     }
 
     /**
-     * @param {number|null} type
-     * @param {string|null} reason
      * @private
      */
-    _onClose(type, reason) {
+    _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
-
-        // Tell listeners that the peer has disconnected.
-        this.fire('close', this._peer, this._channel, type, reason, this);
     }
 
     /**
