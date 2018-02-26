@@ -281,13 +281,6 @@ class PeerAddressBook extends Observable {
             this._store.add(peerAddressState);
         }
 
-        if (peerAddressState.state === PeerAddressState.BANNED
-            // Allow recovering seed peer's inbound connection to succeed.
-            && !peerAddressState.peerAddress.isSeed()) {
-
-            throw 'Connected to banned address';
-        }
-
         peerAddressState.state = PeerAddressState.ESTABLISHED;
         peerAddressState.lastConnected = Date.now();
         peerAddressState.failedAttempts = 0;

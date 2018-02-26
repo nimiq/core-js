@@ -33,6 +33,7 @@ class Network extends Observable {
      * @listens ConnectionPool#peer-left
      * @listens ConnectionPool#peers-changed
      * @listens ConnectionPool#inbound-request
+     * @listens ConnectionPool#connect-error
      */
     constructor(blockchain, networkConfig, time) {
         super();
@@ -99,8 +100,9 @@ class Network extends Observable {
 
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
-        this._connections.on('peer-changed', () => this._onPeerChanged());
+        this._connections.on('peers-changed', () => this._onPeersChanged());
         this._connections.on('inbound-request', () => this._onInboundRequest());
+        this._connections.on('connect-error', () => this._checkPeerCount());
 
         /**
          * Helper object to pick PeerAddressBook.
@@ -171,20 +173,21 @@ class Network extends Observable {
     }
 
     /**
-     * @fires Network#peer-changed
+     * @fires Network#peers-changed
      */
-    _onPeerChanged() {
+    _onPeersChanged() {
         this._checkPeerCount();
 
-        this.fire('peer-changed');
+        this.fire('peers-changed');
     }
 
     _onInboundRequest() {
-        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, `Peer connection recycled inbound exchange`);
+        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, 'Peer connection recycled inbound exchange');
 
         // set ability to exchange for new inbound connections
-        this._connections.allowInboundExchange =
-            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE : false;
+        this._connections.allowInboundExchange = this._scorer.lowestConnectionScore !== null
+            ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE
+            : false;
     }
 
     /**
@@ -238,7 +241,10 @@ class Network extends Observable {
             }
 
             // Connect to this address.
-            this._connections.connectOutbound(peerAddress);
+            if (!this._connections.connectOutbound(peerAddress)) {
+                this._addresses.close(null, peerAddress, ClosingType.CONNECTION_FAILED);
+                setTimeout(() => this._checkPeerCount(), 0);
+            }
         }
         this._backoff = Network.CONNECT_BACKOFF_INITIAL;
     }
@@ -254,8 +260,7 @@ class Network extends Observable {
 
         const offsets = [0]; // Add our own offset.
         peerConnections.forEach(peerConnection => {
-            // The agent.peer property is null pre-handshake.
-            if (peerConnection && peerConnection.state === PeerConnectionState.ESTABLISHED && peerConnection.networkAgent && peerConnection.networkAgent.peer) {
+            if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
                 offsets.push(peerConnection.networkAgent.peer.timeOffset);
             }
         });
@@ -288,8 +293,9 @@ class Network extends Observable {
         }
 
         // set ability to exchange for new inbound connections
-        this._connections.allowInboundExchange =
-            this._scorer.lowestConnectionScore ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE :false;
+        this._connections.allowInboundExchange = this._scorer.lowestConnectionScore !== null
+            ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE
+            : false;
     }
 
     /** @type {Time} */

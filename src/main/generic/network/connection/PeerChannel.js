@@ -46,7 +46,7 @@ class PeerChannel extends Observable {
 
         try {
             this.fire(PeerChannel.Event[msg.type], msg, this);
-            this.fire("message-log", msg, this);
+            this.fire('message-log', msg, this);
         } catch (e) {
             Log.w(PeerChannel, `Error while processing ${msg.type} message from ${this.peerAddress || this.netAddress}: ${e}`);
         }

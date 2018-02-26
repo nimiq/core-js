@@ -28,13 +28,16 @@ class NetworkConnection extends Observable {
         /** @type {boolean} */
         this._closed = false;
 
+        /** @type {*} */
+        this._lastError = null;
+
         // Unique id for this connection.
         /** @type {number} */
         this._id = NetworkConnection._instanceCount++;
 
         this._channel.on('message', msg => this._onMessage(msg));
-        this._channel.on('close', () => this._onClose(ClosingType.CLOSED_BY_REMOTE, "Closed by remote"));
-        this._channel.on('error', e => this.fire('error', e, this));
+        this._channel.on('close', () => this._onClose(ClosingType.CLOSED_BY_REMOTE, 'Closed by remote'));
+        this._channel.on('error', e => this._onError(e));
     }
 
     _onMessage(msg) {
@@ -45,6 +48,15 @@ class NetworkConnection extends Observable {
 
         this._bytesReceived += msg.byteLength || msg.length;
         this.fire('message', msg, this);
+    }
+
+    /**
+     * @param {*} e
+     * @private
+     */
+    _onError(e) {
+        this._lastError = e;
+        this.fire('error', e, this);
     }
 
     /**
@@ -60,6 +72,12 @@ class NetworkConnection extends Observable {
 
         // Mark this connection as closed.
         this._closed = true;
+
+        // Propagate last network error.
+        if (type === ClosingType.CLOSED_BY_REMOTE && !this._lastError) {
+            type = ClosingType.NETWORK_ERROR;
+            reason = this._lastError;
+        }
 
         // Tell listeners that this connection has closed.
         this.fire('close', type, reason, this);
@@ -275,7 +293,7 @@ ClosingType.INVALID_ACCOUNTS_TREE_CHUNK = 5; //Invalid AccountsTreeChunk
 ClosingType.ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH = 6; //AccountsTreeChunk root hash mismatch
 ClosingType.INVALID_CHAIN_PROOF = 7; //invalid chain proof
 ClosingType.RECEIVED_WRONG_HEADER = 8; //Received wrong header
-ClosingType.DID_NOT_REQESTED_HEADER = 9; //Did not get requested header
+ClosingType.DID_NOT_GET_REQUESTED_HEADER = 9; //Did not get requested header
 ClosingType.ABORTED_SYNC = 10; //aborted sync
 
 ClosingType.GET_ACCOUNTS_PROOF_TIMEOUT = 11; //getAccountsProof timeout
@@ -291,12 +309,6 @@ ClosingType.INVALID_TRANSACTION_PROOF = 19; //Invalid TransactionProof
 ClosingType.VERSION_TIMEOUT = 20; //version timeout
 ClosingType.VERACK_TIMEOUT = 21; //verack timeout
 ClosingType.SENDING_PING_MESSAGE_FAILED = 22; //sending ping message failed
-ClosingType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE = 23; //Invalid public key in verack message
-ClosingType.INVALID_SIGNATURE_IN_VERACK_MESSAGE  = 24; //Invalid signature in verack message
-ClosingType.INCOMPATIBLE_VERSION = 25; //incompatible version
-ClosingType.DIFFERENT_GENESIS_BLOCK = 26; //different genesis block
-ClosingType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE = 27; //invalid peerAddress in version message
-ClosingType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE = 28; //unexpected peerAddress in version message
 ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED = 29; //sending of version message failed
 
 ClosingType.DUPLICATE_CONNECTION = 30; //duplicate connection
@@ -320,12 +332,18 @@ ClosingType.INVALID_ADDR = 105; //invalid addr
 ClosingType.ADDR_NOT_GLOBALLY_REACHABLE = 106; //addr not globally reachable
 ClosingType.INVALID_SIGNAL_TTL = 107; //invalid signal ttl
 ClosingType.INVALID_SIGNATURE = 108; //invalid signature
+ClosingType.INCOMPATIBLE_VERSION = 109; //incompatible version
+ClosingType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE = 110; //Invalid public key in verack message
+ClosingType.INVALID_SIGNATURE_IN_VERACK_MESSAGE  = 111; //Invalid signature in verack message
+ClosingType.DIFFERENT_GENESIS_BLOCK = 112; //different genesis block
+ClosingType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE = 113; //invalid peerAddress in version message
+ClosingType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE = 114; //unexpected peerAddress in version message
 
 //////  Failed Closing Types
 
-ClosingType.CLOSED_BY_REMOTE  = 200;
-ClosingType.PING_TIMEOUT = 201; //ping timeout
-ClosingType.CONNECTION_FAILED = 202; //Connection failed
-ClosingType.MISSING_PEER_CONNECTION = 203; //missing peer connection
+ClosingType.CLOSED_BY_REMOTE = 200;
+ClosingType.PING_TIMEOUT = 201; // ping timeout
+ClosingType.CONNECTION_FAILED = 202; // Connection failed
+ClosingType.NETWORK_ERROR = 203; // Network error
 
 Class.register(ClosingType);

@@ -151,9 +151,8 @@ class PeerScorer extends Observable {
             if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
                 // Save the children
                 if (peerConnection.ageEstablished > PeerScorer.MIN_AGE) {
-                    const score = this._scoreConnection(peerConnection);
-                    peerConnection.score = score;
-                    candidates.push(score, peerConnection);
+                    peerConnection.score = this._scoreConnection(peerConnection);
+                    candidates.push(peerConnection);
                 }
 
                 peerConnection.statistics.reset();
