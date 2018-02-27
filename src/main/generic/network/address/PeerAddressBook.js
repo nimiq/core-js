@@ -1,5 +1,12 @@
-// TODO Limit the number of addresses we store.
 class PeerAddressBook extends Observable {
+    /**
+     * @type {number}
+     * @constant
+     */
+    static get MAX_ADDRESS_BOOK_SIZE() {
+        return PlatformUtils.isBrowser() ? 300 : 5000;
+    }
+
     /**
      * @constructor
      * @param {NetworkConfig} netconfig
@@ -180,6 +187,11 @@ class PeerAddressBook extends Observable {
      * @private
      */
     _add(channel, peerAddress) {
+        // Max book size reached
+        if (this._store.length >= PeerAddressBook.MAX_ADDRESS_BOOK_SIZE) {
+            return false;
+        }
+
         // Ignore our own address.
         if (this._networkConfig.peerAddress.equals(peerAddress)) {
             return false;
