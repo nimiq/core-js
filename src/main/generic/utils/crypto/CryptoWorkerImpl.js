@@ -501,7 +501,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     /**
      * @param {Uint8Array} blockSerialized
-     * @param {Array.<bool>} transactionValid
+     * @param {Array.<boolean|undefined>} transactionValid
      * @param {number} timeNow
      * @param {Uint8Array} genesisHash
      * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
@@ -517,7 +517,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             block.body.transactions[i]._valid = transactionValid[i];
         }
 
-        const valid = await block.computeVerify(timeNow);
+        const valid = await block._verify(timeNow);
         const pow = await block.header.pow();
         const interlinkHash = block.interlink.hash();
         const bodyHash = block.body.hash();
