@@ -10,9 +10,9 @@ describe('PeerLeft', () => {
 
     it('should be able to disconnect triggering peer-left', (done) => {
         function checkPeerLeft(peer) {
-                expect(true).toBe(true);
-                done();
-         }
+            expect(true).toBe(true);
+            done();
+        }
 
         (async () => {
             const netconfig = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');

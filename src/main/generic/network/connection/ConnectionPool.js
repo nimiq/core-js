@@ -151,7 +151,7 @@ class ConnectionPool extends Observable {
             this._connectionsByPeerAddress.remove(peerConnection.peerAddress);
         }
 
-        if (peerConnection.networkConnection.netAddress) {
+        if (peerConnection.networkConnection && peerConnection.networkConnection.netAddress) {
             this._removeNetAddress(peerConnection, peerConnection.networkConnection.netAddress);
         }
     }
