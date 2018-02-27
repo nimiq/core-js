@@ -35,7 +35,7 @@ class JsonRpcServer {
 
         // Transactions
         this._methods.set('sendRawTransaction', async (txhex) => {
-            const tx = Nimiq.Transaction.unserialize(BufferUtils.fromHex(txhex));
+            const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txhex));
             const ret = await mempool.pushTransaction(tx);
             if (ret < 0) {
                 const e = new Error(`Transaction not accepted: ${ret}`);
