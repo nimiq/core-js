@@ -104,6 +104,32 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
+    it('verifies transaction signatures in large blocks', (done) => {
+        (async function () {
+            await Crypto.prepareSyncCryptoWorker();
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const sender = testBlockchain.users[0];
+            const receiver = testBlockchain.users[1];
+            const numTransactions = 1000;
+
+            const transactions = [];
+            for (let i = 0; i < numTransactions; i++) {
+                const recipient = Address.fromHash(Hash.blake2b(BufferUtils.fromAscii(`tx${i}`)));
+                transactions.push(TestBlockchain.createTransaction(sender.publicKey, recipient, 1, 1, 1, sender.privateKey));
+            }
+
+            // Now try to push a block with an invalid transaction signature
+            const data = new Uint8Array(32);
+            const wrongSignature = Signature.create(testBlockchain.users[0].privateKey, testBlockchain.users[0].publicKey, data);
+            transactions.push(TestBlockchain.createTransaction(sender.publicKey, receiver.address, 1, 1, 0, undefined, wrongSignature));
+            transactions.sort((a, b) => a.compareBlockOrder(b));
+
+            const block = await testBlockchain.createBlock({transactions: transactions});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.ERR_INVALID);
+        })().then(done, done.fail);
+    });
+
     it('verifies that sufficient funds are available', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
@@ -119,7 +145,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('verifies transaction nonce', (done) => {
+    it('verifies transaction validityStartHeight', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
             const senderPubKey = testBlockchain.users[0].publicKey;
