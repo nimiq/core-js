@@ -90,6 +90,12 @@ class PeerConnection {
          * @private
          */
         this._statistics = new PeerConnectionStatistics();
+
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._markedForInboundExchange = false;
     }
 
     /** @type {number} */
@@ -178,6 +184,16 @@ class PeerConnection {
     /** @type {PeerConnectionStatistics} */
     get statistics() {
         return this._statistics;
+    }
+
+    /** @type {boolean} */
+    get markedForInboundExchange() {
+        return this._markedForInboundExchange;
+    }
+
+    /** @param {boolean} value*/
+    set markedForInboundExchange(value) {
+        this._markedForInboundExchange = value;
     }
 }
 // Used to generate unique PeerConnection ids.
