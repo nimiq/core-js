@@ -201,6 +201,12 @@ class PeerScorer extends Observable {
             }
         }
 
+        // connection type
+        let scoreType = 1;
+        if (peerConnection.networkConnection.inbound ) {
+            scoreType = 0.8;
+        }
+
         // Protocol, when low on Websocket connections, give it some aid
         const distribution = this._connections.peerCountWs / this._connections.peerCount;
         let scoreAgeProtocol = 0;
@@ -228,7 +234,7 @@ class PeerScorer extends Observable {
             scoreAddressMessages = 1 - Math.min(Math.abs(addressCount - 30), 30) / 30.0;
         }
 
-        return scoreAge + scoreAgeProtocol + scoreSpeed + scoreAddressMessages;
+        return scoreAge + scoreType + scoreAgeProtocol + scoreSpeed + scoreAddressMessages;
     }
 
     /** @type {Array<PeerConnection>|null} */
