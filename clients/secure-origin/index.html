@@ -1,0 +1,34 @@
+<script src="../../dist/nimiq.js"></script>
+<script>
+    Nimiq.init(() => {
+        const $ = {};
+        window.$ = $;
+        (new Nimiq.WalletStore()).then(async walletStore => {
+            $.walletStore = walletStore;
+
+            console.log("Create volatile wallet");
+            $.wallet = await Nimiq.Wallet.generate();
+            console.warn("Nimiq.Wallet.createVolatile()", $.wallet);
+
+            const recipient = await Nimiq.Wallet.generate();
+
+            console.log("Create new transaction");
+            const canonicals = {
+                value: 100,
+                fee: 1,
+                validityStart: 1000
+            };
+            const tx = new Nimiq.BasicTransaction($.wallet.publicKey, recipient.address, canonicals.value, canonicals.fee, canonicals.validityStart);
+            console.warn("new Nimiq.BasicTransaction()", tx);
+
+            console.log("Signing transaction");
+            const signature = Nimiq.Signature.create($.wallet.keyPair.privateKey, $.wallet.keyPair.publicKey, tx.serializeContent());
+            console.warn("Nimiq.Signature.create()", signature);
+
+            console.log("Creating signature proof");
+            const proof = Nimiq.SignatureProof.singleSig($.wallet.keyPair.publicKey, signature);
+            const serializedProof = proof.serialize();
+            console.warn("Nimiq.SignatureProof.singleSig()", proof, serializedProof);
+        });
+    });
+</script>

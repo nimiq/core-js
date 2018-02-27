@@ -48,10 +48,12 @@ class Nimiq {
                         error(Nimiq.ERR_UNSUPPORTED);
                         return;
                     } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                        Nimiq.script = 'web-babel.js';
+                        if(window.location.hostname.startsWith('secure.')) Nimiq.script = 'secure-origin-babel.js';
+                        else Nimiq.script = 'web-babel.js';
                         console.warn('Client lacks native support for async');
                     } else {
-                        Nimiq._script = 'web.js';
+                        if(window.location.hostname.startsWith('secure.')) Nimiq._script = 'secure-origin.js';
+                        else Nimiq._script = 'web.js';
                     }
                 }
 

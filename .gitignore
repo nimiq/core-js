@@ -9,6 +9,7 @@
 /dist/nimiq*
 /dist/worker.js*
 /dist/web*
+/dist/secure-origin*
 /dist/node*
 /dist/doc/
 .idea
