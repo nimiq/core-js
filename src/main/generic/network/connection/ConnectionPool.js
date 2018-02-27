@@ -249,14 +249,9 @@ class ConnectionPool extends Observable {
         }
 
         // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX) {
-            if (conn.inbound && this._allowInboundExchange) {
-                this.fire('inbound-request');
-            }
-            else {
-                conn.close(ClosingType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
-                return false;
-            }
+        if (this.peerCount >= Network.PEER_COUNT_MAX && !(conn.inbound && this._allowInboundExchange)) {
+            conn.close(ClosingType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
+            return false;
         }
 
         return true;
@@ -351,6 +346,9 @@ class ConnectionPool extends Observable {
         else {
             peerConnection = PeerConnection.getInbound(conn);
             this._inboundCount++;
+            if (this.peerCount >= Network.PEER_COUNT_MAX && this._allowInboundExchange) {
+                peerConnection.markedForInboundExchange = true;
+            }
         }
 
 
@@ -416,7 +414,13 @@ class ConnectionPool extends Observable {
             return;
         }
 
+        // Handshake accepted.
+
         if (peerConnection.networkConnection.inbound) {
+            if (peerConnection.markedForInboundExchange) {
+                this.fire('inbound-request');
+            }
+
             peerConnection.peerAddress = peer.peerAddress;
             this._add(peerConnection);
             this._inboundCount--;
