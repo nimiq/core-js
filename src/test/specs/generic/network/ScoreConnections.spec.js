@@ -1,7 +1,7 @@
 describe('ScoreConnections', () => {
     beforeEach(function () {
         MockClock.install();
-        MockNetwork.install();
+        MockNetwork.install(33); //network delay
     });
 
     afterEach(function () {
@@ -36,12 +36,18 @@ describe('ScoreConnections', () => {
 
             await connect();
 
-            MockClock.tick(6 * 60 * 1000); // 6 min
+            MockClock.speed = 20;
 
-            expect(consensus1.network._scorer.connectionScores).not.toBeNull();
-            expect(consensus1.network._scorer.connectionScores.length).toBeGreaterThan(0);
+            setTimeout(() => {
+                MockClock.tick(3 * 60 * 1000); // 6 min
 
-            done();
+                expect(consensus1.network._scorer.connectionScores).not.toBeNull();
+                expect(consensus1.network._scorer.connectionScores.length).toBeGreaterThan(0);
+
+                done();
+
+
+            }, 3 * 60 * 1000); // 3/20 min
         })().catch(done.fail);
     });
 });
