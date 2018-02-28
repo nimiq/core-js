@@ -74,6 +74,12 @@ class ConnectionPool extends Observable {
         this._peerCountRtc = 0;
         /** @type {number} */
         this._peerCountDumb = 0;
+        /** @type {number} */
+        this._peerCountFull = 0;
+        /** @type {number} */
+        this._peerCountLight = 0;
+        /** @type {number} */
+        this._peerCountNano = 0;
 
         /**
          * Number of ongoing outbound connection attempts.
@@ -195,6 +201,14 @@ class ConnectionPool extends Observable {
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
      */
+    _storeFullCannotConnect(peerAddress) {
+        return this.peerCount >= Network.PEER_COUNT_MAX && !(this.peerCountFull === 0 && peerAddress.services === Services.FULL);
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
+     * @returns {boolean}
+     */
     _checkOutboundConnectionRequest(peerAddress) {
         if (peerAddress === null) {
             return false;
@@ -225,7 +239,7 @@ class ConnectionPool extends Observable {
         }
 
         // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX) {
+        if (this._storeFullCannotConnect()) {
             Log.e(ConnectionPool, `max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
@@ -235,7 +249,6 @@ class ConnectionPool extends Observable {
 
     /**
      * @param {NetworkConnection} conn
-     * @fires ConnectionPool#inbound-request
      * @returns {boolean}
      * @private
      */
@@ -249,13 +262,15 @@ class ConnectionPool extends Observable {
         }
 
         // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX && !(conn.inbound && this._allowInboundExchange)) {
+        if (this._storeFullCannotConnect() && !(conn.inbound && this._allowInboundExchange)) {
             conn.close(ClosingType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
 
         return true;
     }
+
+
 
     /**
      * @param {PeerConnection} peerConnection
@@ -342,15 +357,21 @@ class ConnectionPool extends Observable {
             Assert.that(peerConnection, `Connecting to outbound peer address not stored ${conn.peerAddress}`);
             Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
                 `PeerConnection state not CONNECTING ${conn.peerAddress}`);
+
         }
         else {
             peerConnection = PeerConnection.getInbound(conn);
             this._inboundCount++;
             if (this.peerCount >= Network.PEER_COUNT_MAX && this._allowInboundExchange) {
-                peerConnection.markedForInboundExchange = true;
+                peerConnection.markedForRecycling = true;
             }
         }
 
+        if (!peerConnection.markedForRecycling) {
+            if (this.peerCount >= Network.PEER_COUNT_MAX && this.peerCountFull === 0 && peerAddress.services === Services.FULL) {
+                peerConnection.markedForRecycling = true;
+            }
+        }
 
         conn.on('close', (type, reason) => this._onClose(peerConnection, type, reason));
 
@@ -400,6 +421,7 @@ class ConnectionPool extends Observable {
      * Handshake with this peer was successful.
      * @fires ConnectionPool#peer-joined
      * @fires ConnectionPool#peers-changed
+     * @fires ConnectionPool#recyling-request
      * @param {PeerConnection} peerConnection
      * @param {Peer} peer
      * @returns {void}
@@ -416,11 +438,11 @@ class ConnectionPool extends Observable {
 
         // Handshake accepted.
 
-        if (peerConnection.networkConnection.inbound) {
-            if (peerConnection.markedForInboundExchange) {
-                this.fire('inbound-request');
-            }
+        if (peerConnection.markedForRecycling) {
+            this.fire('recycling-request');
+        }
 
+        if (peerConnection.networkConnection.inbound) {
             peerConnection.peerAddress = peer.peerAddress;
             this._add(peerConnection);
             this._inboundCount--;
@@ -538,6 +560,20 @@ class ConnectionPool extends Observable {
             default:
                 Log.w(PeerAddressBook, `Unknown protocol ${peerAddress.protocol}`);
         }
+
+        switch (peerAddress.services) {
+            case Services.FULL:
+                this._peerCountFull += delta;
+                break;
+            case Services.LIGHT:
+                this._peerCountLight += delta;
+                break;
+            case Services.NANO:
+                this._peerCountNano += delta;
+                break;
+            default:
+                Log.w(PeerAddressBook, `Unknown service ${peerAddress.services}`);
+        }
     }
 
 
@@ -583,6 +619,21 @@ class ConnectionPool extends Observable {
     /** @type {number} */
     get peerCount() {
         return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
+    }
+
+    /** @type {number} */
+    get peerCountFull() {
+        return this._peerCountFull;
+    }
+
+    /** @type {number} */
+    get peerCountLight() {
+        return this._peerCountLight;
+    }
+
+    /** @type {number} */
+    get peerCountNano() {
+        return this._peerCountNano;
     }
 
     /** @type {number} */

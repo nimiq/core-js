@@ -88,13 +88,19 @@ class PeerScorer extends Observable {
             return -1;
         }
 
-        const score = this._scoreProtocol(peerAddress)
-            * ((peerAddress.timestamp / 1000) + 1);
-
         // a channel to that peer address is CONNECTING, CONNECTED, NEGOTIATING OR ESTABLISHED
         if (this._connections.getConnectionByPeerAddress(peerAddress)) {
             return -1;
         }
+
+        // Filter addresses that are too old.
+        if (peerAddress.exceedsAge()) {
+            return -1;
+        }
+
+        // (protocol + services) * age
+        const score = (this._scoreProtocol(peerAddress) * this._scoreServices(peerAddress))
+            * ((peerAddress.timestamp / 1000) + 1);
 
         switch (peerAddressState.state) {
             case PeerAddressState.BANNED:
@@ -139,6 +145,18 @@ class PeerScorer extends Observable {
         }
 
         return score;
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
+     * @returns {number}
+     * @private
+     */
+    _scoreServices(peerAddress) {
+        if (this._connections.peerCount > 2 && this._connections.peerCountFull === 0 && peerAddress.services === Services.FULL) {
+            return 10;
+        }
+        return 0;
     }
 
     /**

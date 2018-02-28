@@ -32,7 +32,7 @@ class Network extends Observable {
      * @listens ConnectionPool#peer-joined
      * @listens ConnectionPool#peer-left
      * @listens ConnectionPool#peers-changed
-     * @listens ConnectionPool#inbound-request
+     * @listens ConnectionPool#recycling-request
      * @listens ConnectionPool#connect-error
      */
     constructor(blockchain, networkConfig, time) {
@@ -101,7 +101,7 @@ class Network extends Observable {
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peers-changed', () => this._onPeersChanged());
-        this._connections.on('inbound-request', () => this._onInboundRequest());
+        this._connections.on('recycling-request', () => this._onRecyclingRequest());
         this._connections.on('connect-error', () => this._checkPeerCount());
 
         /**
@@ -181,7 +181,7 @@ class Network extends Observable {
         this.fire('peers-changed');
     }
 
-    _onInboundRequest() {
+    _onRecyclingRequest() {
         this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, 'Peer connection recycled inbound exchange');
 
         // set ability to exchange for new inbound connections
