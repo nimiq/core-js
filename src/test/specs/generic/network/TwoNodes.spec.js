@@ -47,7 +47,7 @@ describe('TwoNodes', () => {
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
 
-            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000)];
+            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netconfig.publicKey.toHex())];
 
             const netconfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileFull(netconfig2);
