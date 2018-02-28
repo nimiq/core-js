@@ -95,7 +95,7 @@ class PeerConnection {
          * @type {boolean}
          * @private
          */
-        this._markedForInboundExchange = false;
+        this._markedForRecycling = false;
     }
 
     /** @type {number} */
@@ -187,13 +187,13 @@ class PeerConnection {
     }
 
     /** @type {boolean} */
-    get markedForInboundExchange() {
-        return this._markedForInboundExchange;
+    get markedForRecycling() {
+        return this._markedForRecycling;
     }
 
     /** @param {boolean} value*/
-    set markedForInboundExchange(value) {
-        this._markedForInboundExchange = value;
+    set markedForRecycling(value) {
+        this._markedForRecycling = value;
     }
 }
 // Used to generate unique PeerConnection ids.
