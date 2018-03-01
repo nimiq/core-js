@@ -3,6 +3,12 @@ describe('Genesis', () => {
         Crypto.prepareSyncCryptoWorker().then(done, done.fail);
     });
 
+    it('light Block is valid (testing)', (done) => {
+        (async () => {
+            expect(await Block.GENESIS.toLight().verify(new Time())).toBeTruthy();
+        })().then(done, done.fail);
+    });
+
     it('Block is valid (testing)', (done) => {
         (async () => {
             time = new Time();
