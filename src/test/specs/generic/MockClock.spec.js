@@ -89,7 +89,7 @@ class MockClock {
         this._clearInterval = null;
 
         /**
-         * @type {number}
+         * @type {Number}
          */
         this._interval = null;
 
@@ -152,10 +152,12 @@ class MockClock {
         this._stop();
 
         jasmine.clock().uninstall();
+
+        MockClock._instance = null;
     }
 
     /**
-     * @returns {void}
+     * @returns {boolean}
      */
     _running() {
         return this._interval === null;
@@ -166,9 +168,7 @@ class MockClock {
      * @returns {void}
      */
     _tick(millis) {
-        if (this._interval) {
-            jasmine.clock().tick(millis);
-        }
+        jasmine.clock().tick(millis);
     }
 }
 MockClock._instance = null;

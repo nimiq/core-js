@@ -90,12 +90,6 @@ class PeerConnection {
          * @private
          */
         this._statistics = new PeerConnectionStatistics();
-
-        /**
-         * @type {boolean}
-         * @private
-         */
-        this._markedForRecycling = false;
     }
 
     /** @type {number} */
@@ -184,16 +178,6 @@ class PeerConnection {
     /** @type {PeerConnectionStatistics} */
     get statistics() {
         return this._statistics;
-    }
-
-    /** @type {boolean} */
-    get markedForRecycling() {
-        return this._markedForRecycling;
-    }
-
-    /** @param {boolean} value*/
-    set markedForRecycling(value) {
-        this._markedForRecycling = value;
     }
 }
 // Used to generate unique PeerConnection ids.

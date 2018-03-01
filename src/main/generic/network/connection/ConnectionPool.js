@@ -201,8 +201,8 @@ class ConnectionPool extends Observable {
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
      */
-    _storeFullCannotConnect(peerAddress) {
-        return this.peerCount >= Network.PEER_COUNT_MAX && !(this.peerCountFull === 0 && peerAddress.services === Services.FULL);
+    _hasPriority(peerAddress) {
+        return this.peerCountFull === 0 && Services.isFullNode(peerAddress.services);
     }
 
     /**
@@ -239,7 +239,7 @@ class ConnectionPool extends Observable {
         }
 
         // Reject peer if we have reached max peer count.
-        if (this._storeFullCannotConnect()) {
+        if (this.peerCount >= Network.PEER_COUNT_MAX && !this._hasPriority(peerAddress)) {
             Log.e(ConnectionPool, `max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
@@ -256,21 +256,22 @@ class ConnectionPool extends Observable {
         // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo()) {
             if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
-                conn.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
             }
         }
 
         // Reject peer if we have reached max peer count.
-        if (this._storeFullCannotConnect() && !(conn.inbound && this._allowInboundExchange)) {
-            conn.close(ClosingType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
+        if (this.peerCount >= Network.PEER_COUNT_MAX
+            && !(conn.outbound && this._hasPriority(conn.peerAddress))
+            && !(conn.inbound && this._allowInboundExchange)) {
+
+            conn.close(CloseType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
             return false;
         }
 
         return true;
     }
-
-
 
     /**
      * @param {PeerConnection} peerConnection
@@ -281,20 +282,20 @@ class ConnectionPool extends Observable {
     _checkHandshake(peerConnection, peer) {
         // Close connection if we are already connected to this peer.
         if (this.isEstablished(peer.peerAddress)) {
-            peerConnection.peerChannel.close(ClosingType.DUPLICATE_CONNECTION, `Duplicate connection to ${peer.peerAddress} (post-handshake)` );
+            peerConnection.peerChannel.close(CloseType.DUPLICATE_CONNECTION, `Duplicate connection to ${peer.peerAddress} (post-handshake)` );
             return false;
         }
 
         // Close connection if this peer is banned.
         if (this._addresses.isBanned(peer.peerAddress)) {
-            peerConnection.peerChannel.close(ClosingType.PEER_IS_BANNED, `Connection with banned address ${peer.peerAddress} (post-handshake)`);
+            peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED, `Connection with banned address ${peer.peerAddress} (post-handshake)`);
             return false;
         }
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo()) {
             if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
-                peerConnection.peerChannel.close(ClosingType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post-handshake)`);
+                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post-handshake)`);
                 return false;
             }
         }
@@ -349,7 +350,7 @@ class ConnectionPool extends Observable {
      */
     _onConnection(conn) {
         let peerConnection;
-        if(conn.outbound) {
+        if (conn.outbound) {
             this._connectingCount--;
 
             peerConnection = this.getConnectionByPeerAddress(conn.peerAddress);
@@ -357,24 +358,13 @@ class ConnectionPool extends Observable {
             Assert.that(peerConnection, `Connecting to outbound peer address not stored ${conn.peerAddress}`);
             Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
                 `PeerConnection state not CONNECTING ${conn.peerAddress}`);
-
-        }
-        else {
+        } else {
             peerConnection = PeerConnection.getInbound(conn);
             this._inboundCount++;
-            if (this.peerCount >= Network.PEER_COUNT_MAX && this._allowInboundExchange) {
-                peerConnection.markedForRecycling = true;
-            }
         }
 
-        if (!peerConnection.markedForRecycling) {
-            if (this.peerCount >= Network.PEER_COUNT_MAX && this.peerCountFull === 0 && peerAddress.services === Services.FULL) {
-                peerConnection.markedForRecycling = true;
-            }
-        }
-
+        // Register close listener early to clean up correctly in case _checkConnection() closes the connection.
         conn.on('close', (type, reason) => this._onClose(peerConnection, type, reason));
-
 
         if (!this._checkConnection(conn)) {
             return;
@@ -438,7 +428,8 @@ class ConnectionPool extends Observable {
 
         // Handshake accepted.
 
-        if (peerConnection.markedForRecycling) {
+        // Check if we need to recycle a connection.
+        if (this.peerCount >= Network.PEER_COUNT_MAX) {
             this.fire('recycling-request');
         }
 
@@ -503,8 +494,7 @@ class ConnectionPool extends Observable {
             const kbTransferred = ((peerConnection.networkConnection.bytesSent
                 + peerConnection.networkConnection.bytesReceived) / 1000).toFixed(2);
             Log.d(ConnectionPool, `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
-                + `(version=${peerConnection.peer.version}, headHash=${peerConnection.peer.headHash.toBase64()}, `
-                + `transferred=${kbTransferred} kB)`);
+                + `(version=${peerConnection.peer.version}, transferred=${kbTransferred} kB, closingType=${type} ${reason})`);
         } else {
             if (peerConnection.networkConnection.inbound) {
                 this._inboundCount--;
@@ -535,7 +525,7 @@ class ConnectionPool extends Observable {
 
         this._connectingCount--;
 
-        this._addresses.close(null, peerAddress, ClosingType.CONNECTION_FAILED);
+        this._addresses.close(null, peerAddress, CloseType.CONNECTION_FAILED);
 
         this.fire('connect-error', peerAddress, reason);
     }
@@ -561,18 +551,12 @@ class ConnectionPool extends Observable {
                 Log.w(PeerAddressBook, `Unknown protocol ${peerAddress.protocol}`);
         }
 
-        switch (peerAddress.services) {
-            case Services.FULL:
-                this._peerCountFull += delta;
-                break;
-            case Services.LIGHT:
-                this._peerCountLight += delta;
-                break;
-            case Services.NANO:
-                this._peerCountNano += delta;
-                break;
-            default:
-                Log.w(PeerAddressBook, `Unknown service ${peerAddress.services}`);
+        if (Services.isFullNode(peerAddress.services)) {
+            this._peerCountFull += delta;
+        } else if (Services.isLightNode(peerAddress.services)) {
+            this._peerCountLight += delta;
+        } else {
+            this._peerCountNano += delta;
         }
     }
 
@@ -585,7 +569,7 @@ class ConnectionPool extends Observable {
         // Close all active connections.
         for (const connection of this.values()) {
             if (connection.peerChannel) {
-                connection.peerChannel.close(ClosingType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
+                connection.peerChannel.close(CloseType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
             }
         }
     }
@@ -595,7 +579,7 @@ class ConnectionPool extends Observable {
         // Close all websocket connections.
         for (const connection of this.values()) {
             if (connection.peerChannel && connection.peerAddress && connection.peerAddress.protocol === Protocol.WS) {
-                connection.channel.close(ClosingType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
+                connection.channel.close(CloseType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
             }
         }
     }

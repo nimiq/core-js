@@ -39,13 +39,13 @@ class SignalProcessor {
     onSignal(channel, msg) {
         // Discard signals with invalid TTL.
         if (msg.ttl > Network.SIGNAL_TTL_INITIAL) {
-            channel.close(ClosingType.INVALID_SIGNAL_TTL, 'invalid signal ttl');
+            channel.close(CloseType.INVALID_SIGNAL_TTL, 'invalid signal ttl');
             return;
         }
 
         // Discard signals that have a payload, which is not properly signed.
         if (msg.hasPayload() && !msg.verifySignature()) {
-            channel.close(ClosingType.INVALID_SIGNATURE, 'invalid signature');
+            channel.close(CloseType.INVALID_SIGNATURE, 'invalid signature');
             return;
         }
 
@@ -87,7 +87,6 @@ class SignalProcessor {
             return;
         }
 
-        // TODO Stefan, is this a connection issue?
         // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelByPeerId(msg.recipientId);
         if (!signalChannel) {

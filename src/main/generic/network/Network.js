@@ -1,29 +1,5 @@
 class Network extends Observable {
     /**
-     * @type {number}
-     * @constant
-     */
-    static get PEER_COUNT_MAX() {
-        return PlatformUtils.isBrowser() ? 15 : 50000;
-    }
-
-    /**
-     * @type {number}
-     * @constant
-     */
-    static get PEER_COUNT_PER_IP_MAX() {
-        return PlatformUtils.isBrowser() ? 2 : 25;
-    }
-
-    /**
-     * @type {number}
-     * @constant
-     */
-    static get PEER_COUNT_RECYCLING_ACTIVE() {
-        return PlatformUtils.isBrowser() ? 5 : 1000;
-    }
-
-    /**
      * @constructor
      * @param {IBlockchain} blockchain
      * @param {NetworkConfig} networkConfig
@@ -182,7 +158,7 @@ class Network extends Observable {
     }
 
     _onRecyclingRequest() {
-        this._scorer.recycleConnections(1, ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, 'Peer connection recycled inbound exchange');
+        this._scorer.recycleConnections(1, CloseType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, 'Peer connection recycled inbound exchange');
 
         // set ability to exchange for new inbound connections
         this._connections.allowInboundExchange = this._scorer.lowestConnectionScore !== null
@@ -218,7 +194,7 @@ class Network extends Observable {
 
     _checkPeerCount() {
         if (this._autoConnect
-            && this._connections.count < Network.PEER_COUNT_DESIRED
+            && (this._connections.count < Network.PEER_COUNT_DESIRED || this._connections.peerCountFull === 0)
             && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
@@ -242,7 +218,7 @@ class Network extends Observable {
 
             // Connect to this address.
             if (!this._connections.connectOutbound(peerAddress)) {
-                this._addresses.close(null, peerAddress, ClosingType.CONNECTION_FAILED);
+                this._addresses.close(null, peerAddress, CloseType.CONNECTION_FAILED);
                 setTimeout(() => this._checkPeerCount(), 0);
             }
         }
@@ -289,7 +265,8 @@ class Network extends Observable {
         if (this.peerCount > Network.PEER_COUNT_RECYCLING_ACTIVE) {
             // recycle 1% at PEER_COUNT_RECYCLING_ACTIVE, 20% at PEER_COUNT_MAX
             const percentageToRecycle = (this.peerCount - Network.PEER_COUNT_RECYCLING_ACTIVE) * 0.19 / (Network.PEER_COUNT_MAX - Network.PEER_COUNT_RECYCLING_ACTIVE) + 0.01;
-            this._scorer.recycleConnections(Math.round(this.peerCount * percentageToRecycle), ClosingType.PEER_CONNECTION_RECYCLED, `Peer connection recycled`);
+            const connectionsToRecycle = Math.ceil(this.peerCount * percentageToRecycle);
+            this._scorer.recycleConnections(connectionsToRecycle, CloseType.PEER_CONNECTION_RECYCLED, 'Peer connection recycled');
         }
 
         // set ability to exchange for new inbound connections
@@ -343,14 +320,69 @@ class Network extends Observable {
         return this._connections.bytesReceived;
     }
 }
+/**
+ * @type {number}
+ * @constant
+ */
+Network.PEER_COUNT_MAX = PlatformUtils.isBrowser() ? 15 : 50000;
+/**
+ * @type {number}
+ * @constant
+ */
+Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 2 : 25;
+/**
+ * @type {number}
+ * @constant
+ */
+Network.PEER_COUNT_RECYCLING_ACTIVE = PlatformUtils.isBrowser() ? 5 : 1000;
+/**
+ * @type {number}
+ * @constant
+ */
 Network.PEER_COUNT_DESIRED = 6;
+/**
+ * @type {number}
+ * @constant
+ */
 Network.PEER_COUNT_RELAY = 4;
+/**
+ * @type {number}
+ * @constant
+ */
 Network.CONNECTING_COUNT_MAX = 2;
+/**
+ * @type {number}
+ * @constant
+ */
 Network.SIGNAL_TTL_INITIAL = 3;
+/**
+ * @type {number}
+ * @constant
+ */
 Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
+/**
+ * @type {number}
+ * @constant
+ */
 Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
+/**
+ * @type {number}
+ * @constant
+ */
 Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
+/**
+ * @type {number}
+ * @constant
+ */
 Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
+/**
+ * @type {number}
+ * @constant
+ */
 Network.HOUSEKEEPING_INTERVAL = 5 * 60 * 1000; // 5 minutes
-Network.SCORE_INBOUND_EXCHANGE = 1.5; // of 3.2
+/**
+ * @type {number}
+ * @constant
+ */
+Network.SCORE_INBOUND_EXCHANGE = 0.5;
 Class.register(Network);

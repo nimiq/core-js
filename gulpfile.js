@@ -161,6 +161,7 @@ const sources = {
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddressState.js',
         './src/main/generic/network/address/PeerAddressBook.js',
+        './src/main/generic/network/connection/CloseType.js',
         './src/main/generic/network/connection/NetworkConnection.js',
         './src/main/generic/network/connection/PeerChannel.js',
         './src/main/generic/network/connection/NetworkAgent.js',
