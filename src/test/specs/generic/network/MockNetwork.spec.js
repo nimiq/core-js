@@ -78,7 +78,7 @@ class MockGenericSender extends Observable {
     link(channel) {
         this._phy = new MockPhy(channel);
         this.send = (msg) => this._phy.send(msg);
-        this.close = () => channel.onclose();
+        this.close = () => setTimeout(() => channel.onclose(), 0);
     }
 }
 

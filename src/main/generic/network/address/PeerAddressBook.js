@@ -1,13 +1,5 @@
 class PeerAddressBook extends Observable {
     /**
-     * @type {number}
-     * @constant
-     */
-    static get MAX_ADDRESS_BOOK_SIZE() {
-        return PlatformUtils.isBrowser() ? 300 : 5000;
-    }
-
-    /**
      * @constructor
      * @param {NetworkConfig} netconfig
      */
@@ -188,7 +180,7 @@ class PeerAddressBook extends Observable {
      */
     _add(channel, peerAddress) {
         // Max book size reached
-        if (this._store.length >= PeerAddressBook.MAX_ADDRESS_BOOK_SIZE) {
+        if (this._store.length >= PeerAddressBook.MAX_SIZE) {
             return false;
         }
 
@@ -316,7 +308,6 @@ class PeerAddressBook extends Observable {
      * @param {number|null} type
      * @returns {void}
      */
-    //TODO Stefan, look after
     close(channel, peerAddress, type = null) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
@@ -331,10 +322,10 @@ class PeerAddressBook extends Observable {
             this._removeBySignalChannel(channel);
         }
 
-        if (ClosingType.isBanningType(type)){
+        if (CloseType.isBanningType(type)){
             this._ban(peerAddress);
         }
-        else if (ClosingType.isFailingType(type)) {
+        else if (CloseType.isFailingType(type)) {
             peerAddressState.failedAttempts++;
 
             if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
@@ -348,9 +339,8 @@ class PeerAddressBook extends Observable {
             }
         }
 
-        // XXX Immediately delete address if the remote host closed the connection.
-        // Also immediately delete dumb clients, since we cannot connect to those anyway.
-        if ((type === ClosingType.CLOSED_BY_REMOTE && PlatformUtils.isOnline()) || peerAddress.protocol === Protocol.DUMB) {
+        // Immediately delete dumb addresses, since we cannot connect to those anyway.
+        if (peerAddress.protocol === Protocol.DUMB) {
             this._remove(peerAddress);
         }
     }
@@ -548,6 +538,7 @@ PeerAddressBook.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 10000 : 200000;
 PeerAddressBook.SEED_PEERS = [
     // WsPeerAddress.seed('alpacash.com', 8080),
     // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),

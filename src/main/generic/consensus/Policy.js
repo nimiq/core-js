@@ -88,15 +88,6 @@ class Policy {
         const remainder = remaining % Policy.EMISSION_SPEED;
         return (remaining - remainder) / Policy.EMISSION_SPEED;
     }
-
-    /**
-     * The highest (easiest) block PoW target.
-     * @type {number}
-     * @constant
-     */
-    static get BLOCK_TARGET_MAX() {
-        return Math.pow(2, 240);
-    }
 }
 
 /**
@@ -112,6 +103,13 @@ Policy.BLOCK_TIME = 60;
  * @constant
  */
 Policy.BLOCK_SIZE_MAX = 1e6; // 1 MB
+
+/**
+ * The highest (easiest) block PoW target.
+ * @type {number}
+ * @constant
+ */
+Policy.BLOCK_TARGET_MAX = Math.pow(2, 240);
 
 /**
  * Number of blocks we take into account to calculate next difficulty.

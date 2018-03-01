@@ -36,7 +36,7 @@ class NetworkConnection extends Observable {
         this._id = NetworkConnection._instanceCount++;
 
         this._channel.on('message', msg => this._onMessage(msg));
-        this._channel.on('close', () => this._onClose(ClosingType.CLOSED_BY_REMOTE, 'Closed by remote'));
+        this._channel.on('close', () => this._onClose(CloseType.CLOSED_BY_REMOTE, 'Closed by remote'));
         this._channel.on('error', e => this._onError(e));
     }
 
@@ -74,8 +74,8 @@ class NetworkConnection extends Observable {
         this._closed = true;
 
         // Propagate last network error.
-        if (type === ClosingType.CLOSED_BY_REMOTE && this._lastError) {
-            type = ClosingType.NETWORK_ERROR;
+        if (type === CloseType.CLOSED_BY_REMOTE && this._lastError) {
+            type = CloseType.NETWORK_ERROR;
             reason = this._lastError;
         }
 
@@ -177,7 +177,7 @@ class NetworkConnection extends Observable {
      */
     close(type, reason) {
         const connType = this._inbound ? 'inbound' : 'outbound';
-        Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : ''));
+        Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : '') + ` (${type})`);
         this._close(type, reason);
     }
 
@@ -262,88 +262,3 @@ class NetworkConnection extends Observable {
 // Used to generate unique NetworkConnection ids.
 NetworkConnection._instanceCount = 0;
 Class.register(NetworkConnection);
-
-// In order to give control to scoring
-class ClosingType {
-    /**
-     * @param {number} closingType
-     * @return {boolean}
-     */
-    static isBanningType(closingType){
-        return closingType >= 100 && closingType < 200;
-    }
-
-    /**
-     * @param {number} closingType
-     * @return {boolean}
-     */
-    static isFailingType(closingType){
-        return closingType >= 200;
-    }
-}
-////// Regular Closing Types
-
-ClosingType.GET_BLOCKS_TIMEOUT = 0; //getBlocks timeout
-ClosingType.BLOCKCHAIN_SYNC_FAILED = 1; //blockchain sync failed
-
-ClosingType.GET_CHAIN_PROOF_TIMEOUT = 2; //getChainProof timeout
-ClosingType.GET_ACCOUNTS_TREE_CHUNK_TIMEOUT = 3; //getAccountsTreeChunk timeout
-ClosingType.GET_HEADER_TIMEOUT = 4; //getHeader timeout
-ClosingType.INVALID_ACCOUNTS_TREE_CHUNK = 5; //Invalid AccountsTreeChunk
-ClosingType.ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH = 6; //AccountsTreeChunk root hash mismatch
-ClosingType.INVALID_CHAIN_PROOF = 7; //invalid chain proof
-ClosingType.RECEIVED_WRONG_HEADER = 8; //Received wrong header
-ClosingType.DID_NOT_GET_REQUESTED_HEADER = 9; //Did not get requested header
-ClosingType.ABORTED_SYNC = 10; //aborted sync
-
-ClosingType.GET_ACCOUNTS_PROOF_TIMEOUT = 11; //getAccountsProof timeout
-ClosingType.GET_TRANSACTIONS_PROOF_TIMEOUT = 12; //getTransactionsProof timeout
-ClosingType.GET_TRANSACTION_RECEIPTS_TIMEOUT = 13; //getTransactionReceipt timeout
-ClosingType.INVALID_ACCOUNTS_PROOF = 14; //Invalid AccountsProof
-ClosingType.ACCOUNTS_PROOF_ROOT_HASH_MISMATCH = 15; //AccountsProof root hash mismatch
-ClosingType.INCOMPLETE_ACCOUNTS_PROOF = 16; //Incomplete AccountsProof
-ClosingType.INVALID_BLOCK = 17; //Invalid block
-ClosingType.INVALID_CHAIN_PROOF = 18; //invalid chain proof
-ClosingType.INVALID_TRANSACTION_PROOF = 19; //Invalid TransactionProof
-
-ClosingType.VERSION_TIMEOUT = 20; //version timeout
-ClosingType.VERACK_TIMEOUT = 21; //verack timeout
-ClosingType.SENDING_PING_MESSAGE_FAILED = 22; //sending ping message failed
-ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED = 29; //sending of version message failed
-
-ClosingType.DUPLICATE_CONNECTION = 30; //duplicate connection
-ClosingType.PEER_IS_BANNED = 31; //peer is banned
-ClosingType.CONNECTION_LIMIT_PER_IP = 32; //verack timeout
-ClosingType.MANUAL_NETWORK_DISCONNECT  = 33; //manual network disconnect
-ClosingType.MANUAL_WEBSOCKET_DISCONNECT  = 34; //manual websocket disconnect
-ClosingType.MAX_PEER_COUNT_REACHED  = 35; //max peer count reached
-
-ClosingType.PEER_CONNECTION_RECYCLED  = 36; //Peer connection recycled
-ClosingType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE  = 37; //Peer connection recycled inbound exchange
-
-////// Banning Closing Types
-
-ClosingType.RECEIVED_INVALID_BLOCK = 100; //received invalid block
-ClosingType.BANNED_BLOCKCHAIN_SYNC_FAILED = 101; //blockchain sync failed
-ClosingType.RECEIVED_INVALID_HEADER = 102; //received invalid header
-ClosingType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION = 103; //received transaction not matching our subscriptio
-ClosingType.ADDR_MESSAGE_TOO_LARGE = 104; //addr message too large
-ClosingType.INVALID_ADDR = 105; //invalid addr
-ClosingType.ADDR_NOT_GLOBALLY_REACHABLE = 106; //addr not globally reachable
-ClosingType.INVALID_SIGNAL_TTL = 107; //invalid signal ttl
-ClosingType.INVALID_SIGNATURE = 108; //invalid signature
-ClosingType.INCOMPATIBLE_VERSION = 109; //incompatible version
-ClosingType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE = 110; //Invalid public key in verack message
-ClosingType.INVALID_SIGNATURE_IN_VERACK_MESSAGE  = 111; //Invalid signature in verack message
-ClosingType.DIFFERENT_GENESIS_BLOCK = 112; //different genesis block
-ClosingType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE = 113; //invalid peerAddress in version message
-ClosingType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE = 114; //unexpected peerAddress in version message
-
-//////  Failed Closing Types
-
-ClosingType.CLOSED_BY_REMOTE = 200;
-ClosingType.PING_TIMEOUT = 201; // ping timeout
-ClosingType.CONNECTION_FAILED = 202; // Connection failed
-ClosingType.NETWORK_ERROR = 203; // Network error
-
-Class.register(ClosingType);

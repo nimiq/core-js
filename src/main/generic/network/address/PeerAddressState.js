@@ -22,11 +22,11 @@ class PeerAddressState {
         this._failedAttempts = 0;
 
         /**
-         * Map from closingType to number of incurrences
+         * Map from closeType to number of occurrences
          * @type {Map.<number,number>}
          * @private
          */
-        this._closingTypes = new Map();
+        this._closeTypes = new Map();
     }
 
     /** @type {SignalRouter} */
@@ -70,34 +70,25 @@ class PeerAddressState {
      * @param {number} type
      */
     close(type) {
-        if (type) {
-            if(this._closingTypes.has(type)) {
-                this._closingTypes.set(type, this._closingTypes.get(type) + 1);
-            }
-            else {
-                this._closingTypes.set(type, 1);
-            }
+        if (!type) return;
 
-            if (this.state !== PeerAddressState.BANNED) {
-                if (ClosingType.isBanningType(type)){
-                    this.state = PeerAddressState.BANNED;
-                }
-                else if (ClosingType.isFailingType(type)) {
-                    this.state = PeerAddressState.FAILED;
-                }
-                else {
-                    this.state = PeerAddressState.TRIED;
-                }
-            }
+        if (this._closeTypes.has(type)) {
+            this._closeTypes.set(type, this._closeTypes.get(type) + 1);
+        } else {
+            this._closeTypes.set(type, 1);
         }
-    }
 
-    /**
-     * @param {number} type
-     * @returns {number}
-     */
-    getClosesCount(type) {
-        return this._closingTypes.has(type) ? this._closingTypes.get(type) : 0;
+        if (this.state === PeerAddressState.BANNED) {
+            return;
+        }
+
+        if (CloseType.isBanningType(type)) {
+            this.state = PeerAddressState.BANNED;
+        } else if (CloseType.isFailingType(type)) {
+            this.state = PeerAddressState.FAILED;
+        } else {
+            this.state = PeerAddressState.TRIED;
+        }
     }
 
     /**

@@ -172,7 +172,7 @@ class NetworkAgent extends Observable {
         if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
-                this._channel.close(ClosingType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
+                this._channel.close(CloseType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
                 return;
             }
 
@@ -188,7 +188,7 @@ class NetworkAgent extends Observable {
             // TODO Should we ban instead?
             this._timers.setTimeout('version', () => {
                 this._timers.clearTimeout('version');
-                this._channel.close(ClosingType.VERSION_TIMEOUT, 'version timeout');
+                this._channel.close(CloseType.VERSION_TIMEOUT, 'version timeout');
             }, NetworkAgent.HANDSHAKE_TIMEOUT);
         } else if (this._peerAddressVerified) {
             this._sendVerAck();
@@ -196,7 +196,7 @@ class NetworkAgent extends Observable {
 
         this._timers.setTimeout('verack', () => {
             this._timers.clearTimeout('verack');
-            this._channel.close(ClosingType.VERACK_TIMEOUT, 'verack timeout');
+            this._channel.close(CloseType.VERACK_TIMEOUT, 'verack timeout');
         }, NetworkAgent.HANDSHAKE_TIMEOUT);
     }
 
@@ -226,19 +226,19 @@ class NetworkAgent extends Observable {
         // Check if the peer is running a compatible version.
         if (!Version.isCompatible(msg.version)) {
             this._channel.reject(Message.Type.VERSION, RejectMessage.Code.REJECT_OBSOLETE, `incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
-            this._channel.close(ClosingType.INCOMPATIBLE_VERSION, `incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
+            this._channel.close(CloseType.INCOMPATIBLE_VERSION, `incompatible version (ours=${Version.CODE}, theirs=${msg.version})`);
             return;
         }
 
         // Check if the peer is working on the same genesis block.
         if (!Block.GENESIS.HASH.equals(msg.genesisHash)) {
-            this._channel.close(ClosingType.DIFFERENT_GENESIS_BLOCK, `different genesis block (${msg.genesisHash})`);
+            this._channel.close(CloseType.DIFFERENT_GENESIS_BLOCK, `different genesis block (${msg.genesisHash})`);
             return;
         }
 
         // Check that the given peerAddress is correctly signed.
         if (!msg.peerAddress.verifySignature()) {
-            this._channel.close(ClosingType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE, 'invalid peerAddress in version message');
+            this._channel.close(CloseType.INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE, 'invalid peerAddress in version message');
             return;
         }
 
@@ -251,7 +251,7 @@ class NetworkAgent extends Observable {
         // to the peer's netAddress!
         if (this._channel.peerAddress) {
             if (!this._channel.peerAddress.equals(msg.peerAddress)) {
-                this._channel.close(ClosingType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE, 'unexpected peerAddress in version message');
+                this._channel.close(CloseType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE, 'unexpected peerAddress in version message');
                 return;
             }
             this._peerAddressVerified = true;
@@ -327,14 +327,14 @@ class NetworkAgent extends Observable {
 
         // Verify public key
         if (!msg.publicKey.toPeerId().equals(this._observedPeerAddress.peerId)) {
-            this._channel.close(ClosingType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE, 'Invalid public key in verack message');
+            this._channel.close(CloseType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE, 'Invalid public key in verack message');
             return;
         }
 
         // Verify signature
         const data = BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce);
         if (!msg.signature.verify(msg.publicKey, data)) {
-            this._channel.close(ClosingType.INVALID_SIGNATURE_IN_VERACK_MESSAGE, 'Invalid signature in verack message');
+            this._channel.close(CloseType.INVALID_SIGNATURE_IN_VERACK_MESSAGE, 'Invalid signature in verack message');
             return;
         }
 
@@ -398,18 +398,18 @@ class NetworkAgent extends Observable {
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > 1000) {
             Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
-            this._channel.close(ClosingType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
+            this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
             return;
         }
 
         // Remember that the peer has sent us these addresses.
         for (const addr of msg.addresses) {
             if (!addr.verifySignature()) {
-                this._channel.close(ClosingType.INVALID_ADDR, 'invalid addr');
+                this._channel.close(CloseType.INVALID_ADDR, 'invalid addr');
                 return;
             }
             if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
-                this._channel.close(ClosingType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
+                this._channel.close(CloseType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
                 return;
             }
             this._knownAddresses.add(addr);
@@ -464,7 +464,7 @@ class NetworkAgent extends Observable {
         // Send ping message to peer.
         // If sending the ping message fails, assume the connection has died.
         if (!this._channel.ping(nonce)) {
-            this._channel.close(ClosingType.SENDING_PING_MESSAGE_FAILED, 'sending ping message failed');
+            this._channel.close(CloseType.SENDING_PING_MESSAGE_FAILED, 'sending ping message failed');
             return;
         }
 
@@ -474,7 +474,7 @@ class NetworkAgent extends Observable {
         // Drop peer if it doesn't answer with a matching pong message within the timeout.
         this._timers.setTimeout(`ping_${nonce}`, () => {
             this._timers.clearTimeout(`ping_${nonce}`);
-            this._channel.close(ClosingType.PING_TIMEOUT, 'ping timeout');
+            this._channel.close(CloseType.PING_TIMEOUT, 'ping timeout');
             this._pingTimes.delete(nonce);
         }, NetworkAgent.PING_TIMEOUT);
     }

@@ -1,4 +1,3 @@
-// TODO Limit the number of addresses we store.
 class PeerScorer extends Observable {
     /**
      * @constructor
@@ -99,7 +98,7 @@ class PeerScorer extends Observable {
         }
 
         // (protocol + services) * age
-        const score = (this._scoreProtocol(peerAddress) * this._scoreServices(peerAddress))
+        const score = (this._scoreProtocol(peerAddress) + this._scoreServices(peerAddress))
             * ((peerAddress.timestamp / 1000) + 1);
 
         switch (peerAddressState.state) {
@@ -153,7 +152,7 @@ class PeerScorer extends Observable {
      * @private
      */
     _scoreServices(peerAddress) {
-        if (this._connections.peerCount > 2 && this._connections.peerCountFull === 0 && peerAddress.services === Services.FULL) {
+        if (this._connections.peerCount > 2 && this._connections.peerCountFull === 0 && Services.isFullNode(peerAddress.services)) {
             return 10;
         }
         return 0;
@@ -167,8 +166,8 @@ class PeerScorer extends Observable {
 
         for (const peerConnection of this._connections.values()) {
             if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
-                // Save the children
-                if (peerConnection.ageEstablished > PeerScorer.MIN_AGE) {
+                // Grant new connections a grace period from recycling.
+                if (peerConnection.ageEstablished > PeerScorer._getMinAge(peerConnection.peerAddress)) {
                     peerConnection.score = this._scoreConnection(peerConnection);
                     candidates.push(peerConnection);
                 }
@@ -177,7 +176,7 @@ class PeerScorer extends Observable {
             }
         }
 
-        //sort by score
+        // sort by score
         this._connectionScores = candidates.sort((a, b) => b.score - a.score);
     }
 
@@ -188,15 +187,15 @@ class PeerScorer extends Observable {
      * @returns {void}
      */
     recycleConnections(count, type, reason) {
-        let boundCount = Math.min(count, this._connectionScores.length);
+        if (!this._connectionScores) {
+            return;
+        }
 
-        if (this._connectionScores ) {
-            while(boundCount > 0 && this._connectionScores.length > 0) {
-                const peerConnection = this._connectionScores.pop();
-                if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
-                    peerConnection.peerChannel.close(type, reason + " " + peerConnection.peerAddress.toString());
-                    boundCount--;
-                }
+        while (count > 0 && this._connectionScores.length > 0) {
+            const peerConnection = this._connectionScores.pop();
+            if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
+                peerConnection.peerChannel.close(type, `${reason}`);
+                count--;
             }
         }
     }
@@ -207,30 +206,17 @@ class PeerScorer extends Observable {
      * @private
      */
     _scoreConnection(peerConnection) {
-        // Age, 1 at BEST_AGE and beneath, 0 at MAX_AGE and beyond
-        const age = peerConnection.ageEstablished;
-        let scoreAge = 1;
-        if (age > PeerScorer.BEST_AGE) {
-            if (age > PeerScorer.MAX_AGE) {
-                scoreAge = 0;
-            }
-            else {
-                scoreAge = 1 - (age - PeerScorer.BEST_AGE) / PeerScorer.MAX_AGE;
-            }
-        }
+        const scoreAge = this._scoreConnectionAge(peerConnection);
 
-        // connection type
-        let scoreType = 1;
-        if (peerConnection.networkConnection.inbound ) {
-            scoreType = 0.8;
-        }
+        // Connection type
+        const scoreType = peerConnection.networkConnection.inbound ? 0 : 1;
 
         // Protocol, when low on Websocket connections, give it some aid
         const distribution = this._connections.peerCountWs / this._connections.peerCount;
-        let scoreAgeProtocol = 0;
+        let scoreProtocol = 0;
         if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION) {
             if (peerConnection.peerAddress.protocol === Protocol.WS) {
-                scoreAgeProtocol = 0.2;
+                scoreProtocol = 1;
             }
         }
 
@@ -241,34 +227,66 @@ class PeerScorer extends Observable {
             scoreSpeed = 1 - medianDelay / NetworkAgent.PING_TIMEOUT;
         }
 
-        // Behaviour of sending addresses, 1 for 30 addresses if needed, 1 for 3, if not
-        const addressCount = peerConnection.statistics.getMessageCount(Message.Type.ADDR);
-        let scoreAddressMessages;
-
-        if (this._addresses.values().length > PlatformUtils.isBrowser() ? 100 : 3000) {
-            scoreAddressMessages = 1 - Math.min(Math.abs(addressCount - 3), 30) / 30.0;
-        }
-        else {
-            scoreAddressMessages = 1 - Math.min(Math.abs(addressCount - 30), 30) / 30.0;
-        }
-
-        return scoreAge + scoreType + scoreAgeProtocol + scoreSpeed + scoreAddressMessages;
+        return 0.4 * scoreAge + 0.2 * scoreType + 0.2 * scoreProtocol + 0.2 * scoreSpeed;
     }
 
-    /** @type {Array<PeerConnection>|null} */
+    /**
+     * @param {PeerConnection} peerConnection
+     * @returns {number}
+     * @private
+     */
+    _scoreConnectionAge(peerConnection) {
+        const score = (age, bestAge, maxAge) => Math.max(Math.min(1 - (age - bestAge) / maxAge, 1), 0);
+
+        const age = peerConnection.ageEstablished;
+        const services = peerConnection.peerAddress.services;
+        if (Services.isFullNode(services)) {
+            return age / (2 * PeerScorer.BEST_AGE_FULL) + 0.5;
+        } else if (Services.isLightNode(services)) {
+            return score(age, PeerScorer.BEST_AGE_LIGHT, PeerScorer.MAX_AGE_LIGHT);
+        } else {
+            return score(age, PeerScorer.BEST_AGE_NANO, PeerScorer.MAX_AGE_NANO);
+        }
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
+     * @returns {number}
+     * @private
+     */
+    static _getMinAge(peerAddress) {
+        if (Services.isFullNode(peerAddress.services)) {
+            return PeerScorer.MIN_AGE_FULL;
+        } else if (Services.isLightNode(peerAddress.services)) {
+            return PeerScorer.MIN_AGE_LIGHT;
+        } else {
+            return PeerScorer.MIN_AGE_NANO;
+        }
+    }
+
+    /** @type {Array.<PeerConnection>|null} */
     get connectionScores() {
         return this._connectionScores;
     }
 
     /** @type {number|null} */
     get lowestConnectionScore() {
-        return this._connectionScores && this._connectionScores.length > 0 ? this._connectionScores[this._connectionScores.length-1].score : null;
+        return this._connectionScores && this._connectionScores.length > 0
+            ? this._connectionScores[this._connectionScores.length - 1].score
+            : null;
     }
-
 }
-PeerScorer.MIN_AGE = 3 * 60 * 1000; // 5 minutes
-PeerScorer.BEST_AGE = 5 * 60 * 1000; // 5 minutes
-PeerScorer.MAX_AGE = 3 * 60 * 60 * 1000; // 3 hours
+PeerScorer.MIN_AGE_FULL = 5 * 60 * 1000; // 5 minutes
+PeerScorer.BEST_AGE_FULL = 24 * 60 * 60 * 1000; // 24 hours
+
+PeerScorer.MIN_AGE_LIGHT = 2 * 60 * 1000; // 2 minutes
+PeerScorer.BEST_AGE_LIGHT = 15 * 60 * 1000; // 15 minutes
+PeerScorer.MAX_AGE_LIGHT = 6 * 60 * 60 * 1000; // 6 hours
+
+PeerScorer.MIN_AGE_NANO = 60 * 1000; // 1 minute
+PeerScorer.BEST_AGE_NANO = 5 * 60 * 1000; // 5 minutes
+PeerScorer.MAX_AGE_NANO = 30 * 60 * 1000; // 30 minutes
+
 PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION = 0.15; // 15%
 
 Class.register(PeerScorer);

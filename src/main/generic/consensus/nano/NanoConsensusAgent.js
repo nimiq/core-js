@@ -106,7 +106,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
         // Drop the peer if it doesn't send the chain proof within the timeout.
         this._peer.channel.expectMessage(Message.Type.CHAIN_PROOF, () => {
-            this._peer.channel.close(ClosingType.GET_CHAIN_PROOF_TIMEOUT, 'getChainProof timeout');
+            this._peer.channel.close(CloseType.GET_CHAIN_PROOF_TIMEOUT, 'getChainProof timeout');
         }, NanoConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT, NanoConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT);
     }
 
@@ -135,7 +135,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         if (!(await this._blockchain.pushProof(msg.proof))) {
             Log.w(NanoConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
             // TODO ban instead?
-            this._peer.channel.close(ClosingType.INVALID_CHAIN_PROOF, 'invalid chain proof');
+            this._peer.channel.close(CloseType.INVALID_CHAIN_PROOF, 'invalid chain proof');
             return;
         }
 
@@ -157,7 +157,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         for (const header of this._orphanedBlocks) {
             const status = await this._blockchain.pushHeader(header);
             if (status === NanoChain.ERR_INVALID) {
-                this._peer.channel.close(ClosingType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
                 break;
             }
         }
@@ -220,7 +220,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // TODO send reject message if we don't like the block
         const status = await this._blockchain.pushHeader(header);
         if (status === NanoChain.ERR_INVALID) {
-            this._peer.channel.close(ClosingType.RECEIVED_INVALID_HEADER, 'received invalid header');
+            this._peer.channel.close(CloseType.RECEIVED_INVALID_HEADER, 'received invalid header');
         }
         // Re-sync with this peer if it starts sending orphan blocks after the initial sync.
         else if (status === NanoChain.ERR_ORPHAN) {
@@ -240,7 +240,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      */
     _processTransaction(hash, transaction) {
         if (!this._localSubscription.matchesTransaction(transaction)) {
-            this._peer.channel.close(ClosingType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
+            this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
         }
         return this._mempool.pushTransaction(transaction);
     }
@@ -291,7 +291,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._peer.channel.expectMessage(Message.Type.ACCOUNTS_PROOF, () => {
-                this._peer.channel.close(ClosingType.GET_ACCOUNTS_PROOF_TIMEOUT, 'getAccountsProof timeout');
+                this._peer.channel.close(CloseType.GET_ACCOUNTS_PROOF_TIMEOUT, 'getAccountsProof timeout');
                 reject(new Error('timeout')); // TODO error handling
             }, NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT);
         });
@@ -337,7 +337,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         if (!proof.verify()) {
             Log.w(NanoConsensusAgent, `Invalid AccountsProof received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close(ClosingType.INVALID_ACCOUNTS_PROOF, 'Invalid AccountsProof');
+            this._peer.channel.close(CloseType.INVALID_ACCOUNTS_PROOF, 'Invalid AccountsProof');
             reject(new Error('Invalid AccountsProof'));
             return;
         }
@@ -348,7 +348,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         if (!block.accountsHash.equals(rootHash)) {
             Log.w(NanoConsensusAgent, `Invalid AccountsProof (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close(ClosingType.ACCOUNTS_PROOF_ROOT_HASH_MISMATCH, 'AccountsProof root hash mismatch');
+            this._peer.channel.close(CloseType.ACCOUNTS_PROOF_ROOT_HASH_MISMATCH, 'AccountsProof root hash mismatch');
             reject(new Error('AccountsProof root hash mismatch'));
             return;
         }
@@ -363,7 +363,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
             } catch (e) {
                 Log.w(NanoConsensusAgent, `Incomplete AccountsProof received from ${this._peer.peerAddress}`);
                 // TODO ban instead?
-                this._peer.channel.close(ClosingType.INCOMPLETE_ACCOUNTS_PROOF, 'Incomplete AccountsProof');
+                this._peer.channel.close(CloseType.INCOMPLETE_ACCOUNTS_PROOF, 'Incomplete AccountsProof');
                 reject(new Error('Incomplete AccountsProof'));
                 return;
             }
@@ -416,7 +416,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
-                this._peer.channel.close(ClosingType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
+                this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
                 reject(new Error('timeout')); // TODO error handling
             }, NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT);
         });
@@ -464,7 +464,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         if (!header.bodyHash.equals(proof.root())) {
             Log.w(NanoConsensusAgent, `Invalid TransactionsProof received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close(ClosingType.INVALID_TRANSACTION_PROOF, 'Invalid TransactionsProof');
+            this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'Invalid TransactionsProof');
             reject(new Error('Invalid TransactionsProof'));
             return;
         }
@@ -481,7 +481,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         this._requestedTransactionReceipts = true;
 
         this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
-            this._peer.channel.close(ClosingType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
+            this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
         }, NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT);
     }
 
@@ -578,7 +578,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         if (!(await msg.block.verify(this._time))) {
             Log.w(NanoConsensusAgent, `Invalid block received from ${this._peer.peerAddress}`);
             // TODO ban instead?
-            this._peer.channel.close(ClosingType.INVALID_BLOCK, 'Invalid block');
+            this._peer.channel.close(CloseType.INVALID_BLOCK, 'Invalid block');
             reject(new Error('Invalid block'));
             return;
         }

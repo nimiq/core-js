@@ -33,7 +33,7 @@ class PeerChannel extends Observable {
             // If the message does not make sense at a whole or we fear to get into a reject loop,
             // we ban the peer instead.
             if (!type || type === Message.Type.REJECT) {
-                this.close(ClosingType.FAILED_TO_PARSE_MESSAGE_TYPE, 'Failed to parse message type');
+                this.close(CloseType.FAILED_TO_PARSE_MESSAGE_TYPE, 'Failed to parse message type');
                 return;
             }
 
