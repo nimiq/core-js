@@ -484,6 +484,7 @@ class PeerAddressBook extends Observable {
 
                         peerAddressState.bannedUntil = -1;
                         peerAddressState.failedAttempts = 0;
+                        unbannedAddresses.push(addr);
                     }
 
                     break;
@@ -536,7 +537,7 @@ PeerAddressBook.MAX_FAILED_ATTEMPTS_RTC = 2;
 PeerAddressBook.MAX_TIMESTAMP_DRIFT = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
-PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 15; // 15 seconds
+PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 30; // 30 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 10000 : 200000;
 PeerAddressBook.SEED_PEERS = [

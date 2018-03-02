@@ -517,7 +517,7 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onConnectError(peerAddress, reason) {
-        Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (reason ? ` - ${reason}` : ''));
+        Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (typeof reason === 'string' ? ` - ${reason}` : ''));
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
         Assert.that(peerConnection && peerConnection.state === PeerConnectionState.CONNECTING);
