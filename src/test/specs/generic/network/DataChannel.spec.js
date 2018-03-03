@@ -26,7 +26,6 @@ describe('DataChannel', () => {
     });
 
     it('can set custom timeouts for multiple messages', (done) => {
-        const addr = Address.fromBase64(Dummy.address1);
         const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
         const largeArray = new SerialBuffer(new Uint8Array(1024));
         largeArray.writePos = /*magic*/ 4;
@@ -47,5 +46,21 @@ describe('DataChannel', () => {
             done();
         });
         first.send(largeArray);
+    });
+
+    it('closes the connection on invalid chunks', (done) => {
+        const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
+        let secondClosed = false;
+        first.on('close', () => secondClosed ? done() : done.fail());
+        second.on('close', () => secondClosed = true);
+
+        // Send chunk with excessive size.
+        const chunk = new SerialBuffer(10);
+        chunk.writeUint8(0);
+        chunk.writeUint32(0x42042042);
+        chunk.writeVarUint(Message.Type.VERSION);
+        chunk.writeUint32(0xffff0000);
+        first.sendChunk(chunk);
+        expect(true).toBe(true);
     });
 });

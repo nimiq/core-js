@@ -20,8 +20,9 @@ class PeerChannel extends Observable {
         let msg = null, type = null;
 
         try {
-            type = MessageFactory.peekType(rawMsg);
-            msg = MessageFactory.parse(rawMsg);
+            const buf = new SerialBuffer(rawMsg);
+            type = MessageFactory.peekType(buf);
+            msg = MessageFactory.parse(buf);
         } catch(e) {
             Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}`, e.message || e);
 

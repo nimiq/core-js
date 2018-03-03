@@ -88,12 +88,14 @@ class DataChannel extends Observable {
      */
     _onMessage(msg) {
         try {
-            // Blindly forward empty messages.
-            // TODO should we drop them instead?
+            // Drop message if the channel is not open.
+            if (this.readyState !== DataChannel.ReadyState.OPEN) {
+                return;
+            }
+
+            // Drop empty messages.
             const buffer = new SerialBuffer(msg);
             if (buffer.byteLength === 0) {
-                Log.w(DataChannel, 'Received empty message', buffer, msg);
-                this.fire('message', msg, this);
                 return;
             }
 
@@ -168,7 +170,7 @@ class DataChannel extends Observable {
                 this.fire('chunk', this._buffer);
             }
         } catch (e) {
-            this._error(`Error occured while parsing incoming message, ${e.message}`);
+            this._error(`Error occurred while parsing incoming message, ${e.message}`);
         }
     }
 

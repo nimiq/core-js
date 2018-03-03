@@ -81,12 +81,6 @@ class NetworkAgent extends Observable {
         this._versionAttempts = 0;
 
         /**
-         * @type {PeerAddress}
-         * @private
-         */
-        this._observedPeerAddress = null;
-
-        /**
          * @type {boolean}
          * @private
          */
@@ -216,7 +210,7 @@ class NetworkAgent extends Observable {
 
         // Ignore duplicate version messages.
         if (this._versionReceived) {
-            Log.d(NetworkAgent, () => `Ignoring duplicate version message from ${this._observedPeerAddress}`);
+            Log.d(NetworkAgent, () => `Ignoring duplicate version message from ${this._channel.peerAddress}`);
             return;
         }
 
@@ -247,10 +241,9 @@ class NetworkAgent extends Observable {
         // Check that the given peerAddress matches the one we expect.
         // In case of inbound WebSocket connections, this is the first time we
         // see the remote peer's peerAddress.
-        // TODO We should validate that the given peerAddress actually resolves
-        // to the peer's netAddress!
+        const peerAddress = msg.peerAddress;
         if (this._channel.peerAddress) {
-            if (!this._channel.peerAddress.equals(msg.peerAddress)) {
+            if (!this._channel.peerAddress.equals(peerAddress)) {
                 this._channel.close(CloseType.UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE, 'unexpected peerAddress in version message');
                 return;
             }
@@ -258,14 +251,16 @@ class NetworkAgent extends Observable {
         }
 
         // The client might not send its netAddress. Set it from our address database if we have it.
-        this._observedPeerAddress = msg.peerAddress;
-        if (!this._observedPeerAddress.netAddress) {
+        if (!peerAddress.netAddress || peerAddress.netAddress.isPseudo()) {
             /** @type {PeerAddress} */
-            const storedAddress = this._addresses.get(this._observedPeerAddress);
+            const storedAddress = this._addresses.get(peerAddress);
             if (storedAddress && storedAddress.netAddress) {
-                this._observedPeerAddress.netAddress = storedAddress.netAddress;
+                peerAddress.netAddress = storedAddress.netAddress;
             }
         }
+
+        // Set/update the channel's peer address.
+        this._channel.peerAddress = peerAddress;
 
         // Create peer object. Since the initial version message received from the
         // peer contains their local timestamp, we can use it to calculate their
@@ -274,11 +269,20 @@ class NetworkAgent extends Observable {
             this._channel,
             msg.version,
             msg.headHash,
-            this._observedPeerAddress.timestamp - now
+            peerAddress.timestamp - now
         );
 
         this._peerChallengeNonce = msg.challengeNonce;
         this._versionReceived = true;
+
+        // Tell listeners that we received this peer's version information.
+        // Listeners registered to this event might close the connection to this peer.
+        this.fire('version', this._peer, this);
+
+        // Abort handshake if the connection was closed.
+        if (this._channel.closed) {
+            return;
+        }
 
         if (!this._versionSent) {
             this.handshake();
@@ -297,7 +301,7 @@ class NetworkAgent extends Observable {
     _sendVerAck() {
         Assert.that(this._peerAddressVerified);
 
-        const data = BufferUtils.concatTypedArrays(this._observedPeerAddress.peerId.serialize(), this._peerChallengeNonce);
+        const data = BufferUtils.concatTypedArrays(this._channel.peerAddress.peerId.serialize(), this._peerChallengeNonce);
         const signature = Signature.create(this._networkConfig.keyPair.privateKey, this._networkConfig.keyPair.publicKey, data);
         this._channel.verack(this._networkConfig.keyPair.publicKey, signature);
 
@@ -309,7 +313,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVerAck(msg) {
-        Log.d(NetworkAgent, () => `[VERACK] from ${this._observedPeerAddress}`);
+        Log.d(NetworkAgent, () => `[VERACK] from ${this._channel.peerAddress}`);
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -318,7 +322,7 @@ class NetworkAgent extends Observable {
 
         // Ignore duplicate verack messages.
         if (this._verackReceived) {
-            Log.d(NetworkAgent, () => `Ignoring duplicate verack message from ${this._observedPeerAddress}`);
+            Log.d(NetworkAgent, () => `Ignoring duplicate verack message from ${this._channel.peerAddress}`);
             return;
         }
 
@@ -326,7 +330,7 @@ class NetworkAgent extends Observable {
         this._timers.clearTimeout('verack');
 
         // Verify public key
-        if (!msg.publicKey.toPeerId().equals(this._observedPeerAddress.peerId)) {
+        if (!msg.publicKey.toPeerId().equals(this._channel.peerAddress.peerId)) {
             this._channel.close(CloseType.INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE, 'Invalid public key in verack message');
             return;
         }
@@ -342,8 +346,6 @@ class NetworkAgent extends Observable {
             this._peerAddressVerified = true;
             this._sendVerAck();
         }
-
-        this._channel.peerAddress = this._observedPeerAddress;
 
         // Remember that the peer has sent us this address.
         this._knownAddresses.add(this._channel.peerAddress);
@@ -367,7 +369,7 @@ class NetworkAgent extends Observable {
             () => this._channel.addr([this._networkConfig.peerAddress]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
-        // Tell listeners about the new peer that connected.
+        // Tell listeners that the handshake with this peer succeeded.
         this.fire('handshake', this._peer, this);
 
         // Request new network addresses from the peer.
