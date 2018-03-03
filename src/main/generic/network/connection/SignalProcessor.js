@@ -103,6 +103,11 @@ class SignalProcessor {
         // XXX Why does this happen?
         if (signalChannel.peerAddress.equals(channel.peerAddress)) {
             Log.w(SignalProcessor, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
+            // If our best route is via the sending peer, return signal to sender with unroutable flag set and payload removed.
+            // Only do this if the signal is not already a unroutable response.
+            if (msg.flags === 0) {
+                channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flag.UNROUTABLE);
+            }
             return;
         }
 

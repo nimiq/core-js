@@ -363,6 +363,9 @@ class ConnectionPool extends Observable {
             this._inboundCount++;
         }
 
+        // Set peerConnection to CONNECTED state.
+        peerConnection.networkConnection = conn;
+
         // Register close listener early to clean up correctly in case _checkConnection() closes the connection.
         conn.on('close', (type, reason) => this._onClose(peerConnection, type, reason));
 
@@ -371,9 +374,6 @@ class ConnectionPool extends Observable {
         }
 
         // Connection accepted.
-
-        // Set peerConnection to CONNECTED state.
-        peerConnection.networkConnection = conn;
 
         if (conn.netAddress && !conn.netAddress.isPseudo()) {
             this._addNetAddress(peerConnection, conn.netAddress);
