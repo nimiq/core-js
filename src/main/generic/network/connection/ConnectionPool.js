@@ -332,7 +332,7 @@ class ConnectionPool extends Observable {
             this._connectingCount++;
         } else {
             this._remove(peerConnection);
-            Log.e(Network, `Outbound attempt not connecting. ${peerAddress}`);
+            Log.d(Network, `Outbound attempt not connecting: ${peerAddress}`);
             return false;
         }
 

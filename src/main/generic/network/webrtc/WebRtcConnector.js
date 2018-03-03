@@ -26,7 +26,6 @@ class WebRtcConnector extends Observable {
 
         const peerId = peerAddress.peerId;
         if (this._connectors.contains(peerId)) {
-            Log.w(WebRtcConnector, `WebRtc: Already connecting/connected to ${peerId}`);
             return false;
         }
 
@@ -84,6 +83,7 @@ class WebRtcConnector extends Observable {
             // simultaneously. Resolve this by having the peer with the higher
             // peerId discard the offer while the one with the lower peerId
             // accepts it.
+            /** @type {PeerConnector} */
             let connector = this._connectors.get(msg.senderId);
             if (connector) {
                 if (msg.recipientId.compare(msg.senderId) > 0) {
@@ -97,9 +97,12 @@ class WebRtcConnector extends Observable {
                     return;
                 } else {
                     // We are going to accept the offer. Clear the connect timeout
-                    // from our previous Outbound connection attempt to this peer.
+                    // from our previous outbound connection attempt to this peer.
                     Log.d(WebRtcConnector, `Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
                     this._timers.clearTimeout(`connect_${msg.senderId}`);
+
+                    // XXX Abort the outbound connection attempt.
+                    this.fire('error', connector.peerAddress, 'simultaneous inbound connection');
                 }
             }
 

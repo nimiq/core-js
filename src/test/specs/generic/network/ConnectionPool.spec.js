@@ -126,4 +126,49 @@ describe('ConnectionPool', () => {
             done();
         })().catch(done.fail);
     });
+
+    it('correctly deals with simultaneous RTC connections', (done) => {
+        (async () => {
+            MockClock.speed = 20;
+
+            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            consensus1.network.connect();
+
+            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())];
+
+            const netConfig2 = new RtcNetworkConfig();
+            const consensus2 = await Consensus.volatileLight(netConfig2);
+            consensus2.network.connect();
+
+            await new Promise(resolve => consensus2.on('established', resolve));
+            expect(consensus1.network.peerCount).toBe(1);
+            expect(consensus2.network.peerCount).toBe(1);
+
+            const netConfig3 = new RtcNetworkConfig();
+            const consensus3 = await Consensus.volatileLight(netConfig3);
+            consensus3.network.connect();
+
+            await new Promise(resolve => consensus3.on('established', resolve));
+            expect(consensus1.network.peerCount).toBe(2);
+            expect(consensus2.network.peerCount).toBe(1);
+            expect(consensus3.network.peerCount).toBe(1);
+
+            setTimeout(() => {
+                expect(consensus1.network.peerCount).toBe(2);
+                expect(consensus2.network.peerCount).toBe(2);
+                expect(consensus3.network.peerCount).toBe(2);
+
+                expect(consensus1.network._connections._connectingCount).toBe(0);
+                expect(consensus2.network._connections._connectingCount).toBe(0);
+                expect(consensus3.network._connections._connectingCount).toBe(0);
+
+                expect(consensus1.network._connections.count).toBe(2);
+                expect(consensus2.network._connections.count).toBe(2);
+                expect(consensus3.network._connections.count).toBe(2);
+
+                done();
+            }, 10000);
+        })().catch(done.fail);
+    });
 });
