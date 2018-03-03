@@ -10,7 +10,7 @@ class MockDataChannel extends DataChannel {
 
     _link(channel) {
         this.sendChunk = (msg) => channel._onMessage(msg);
-        this.close = () => channel.fire('close');
+        this.close = () => { this.fire('close'); channel.fire('close'); };
         this._readyState = DataChannel.ReadyState.OPEN;
     }
 

@@ -393,6 +393,7 @@ class ConnectionPool extends Observable {
 
         // Create network agent.
         const agent = new NetworkAgent(this._blockchain, this._addresses, this._networkConfig, channel);
+        agent.on('version', peer => this._checkHandshake(peerConnection, peer));
         agent.on('handshake', peer => this._onHandshake(peerConnection, peer));
 
         // Set peerConnection to NEGOTIATING state.
@@ -400,11 +401,6 @@ class ConnectionPool extends Observable {
 
         // Initiate handshake with the peer.
         agent.handshake();
-
-        // Call _checkPeerCount() here in case the peer doesn't send us any (new)
-        // addresses to keep on connecting.
-        // Add a delay before calling it to allow RTC peer addresses to be sent to us.
-        //setTimeout(() => this._checkPeerCount(), Network.ADDRESS_UPDATE_DELAY);
     }
 
     /**
@@ -418,14 +414,6 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onHandshake(peerConnection, peer) {
-         // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
-        peer.updateNetAddress();
-
-        // Check, if we should close the connection.
-        if (!this._checkHandshake(peerConnection, peer)) {
-            return;
-        }
-
         // Handshake accepted.
 
         // Check if we need to recycle a connection.
@@ -501,6 +489,7 @@ class ConnectionPool extends Observable {
                 Log.w(ConnectionPool, `Inbound connection closed pre-handshake: ${reason} (${type})`);
             } else {
                 Log.w(ConnectionPool, `Connection to ${peerConnection.peerAddress} closed pre-handshake: ${reason} (${type})`);
+                this.fire('connect-error', peerConnection.peerAddress, `${reason} (${type})`);
             }
         }
 

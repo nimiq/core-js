@@ -1,15 +1,17 @@
 class MessageFactory {
     /**
-     * @param buffer
-     * @return {Message.Type}
+     * @param {SerialBuffer} buf
+     * @returns {Message.Type}
      */
-    static peekType(buffer) {
-        const buf = new SerialBuffer(buffer);
+    static peekType(buf) {
         return Message.peekType(buf);
     }
 
-    static parse(buffer) {
-        const buf = new SerialBuffer(buffer);
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {Message}
+     */
+    static parse(buf) {
         const type = Message.peekType(buf);
         const clazz = MessageFactory.CLASSES[type];
         if (!clazz || !clazz.unserialize) throw new Error(`Invalid message type: ${type}`);
