@@ -1,5 +1,4 @@
 describe('ConnectionPool', () => {
-    const peerCountDesired = Network.PEER_COUNT_DESIRED;
     const peerCountMax = Network.PEER_COUNT_MAX;
     const peerCountRecyclingActive = Network.PEER_COUNT_RECYCLING_ACTIVE;
     const seedPeers = PeerAddressBook.SEED_PEERS;
@@ -82,6 +81,48 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(5);
 
             Network.PEER_COUNT_RECYCLING_ACTIVE = peerCountRecyclingActive;
+            done();
+        })().catch(done.fail);
+    });
+
+    it('should reject duplicate connections to the same peer address', (done) => {
+        (async () => {
+            MockClock.speed = 20;
+
+            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            consensus1.network.connect();
+
+            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())];
+
+            const netConfig2 = new RtcNetworkConfig();
+            const consensus2 = await Consensus.volatileLight(netConfig2);
+            consensus2.network.connect();
+
+            await new Promise(resolve => consensus2.on('established', resolve));
+            expect(consensus1.network.peerCount).toBe(1);
+
+            // Try to connect the same peer again.
+            const duplicate = await Consensus.volatileLight(netConfig2);
+            const disconnected = new Promise(resolve => duplicate.network.on('disconnected', resolve));
+            duplicate.on('established', done.fail);
+            duplicate.network.connect();
+            await disconnected;
+
+            expect(duplicate.established).toBe(false);
+            expect(consensus1.network.peerCount).toBe(1);
+
+            // Try a second time.
+            const duplicate2 = await Consensus.volatileLight(netConfig2);
+            const disconnected2 = new Promise(resolve => duplicate2.network.on('disconnected', resolve));
+            duplicate2.on('established', done.fail);
+            duplicate2.network.connect();
+            await disconnected2;
+
+            expect(duplicate.established).toBe(false);
+            expect(consensus1.network.peerCount).toBe(1);
+
+            expect(consensus2.established).toBe(true);
             done();
         })().catch(done.fail);
     });

@@ -30,7 +30,7 @@ class Peer {
         if (this.channel.netAddress) {
             // TODO What to do if it doesn't match the currently advertised one?
             if (this.peerAddress.netAddress && !this.peerAddress.netAddress.equals(this.channel.netAddress)) {
-                Log.w(ConnectionPool, `Got different netAddress ${this.channel.netAddress} for this ${this.peerAddress} `
+                Log.w(Peer, `Got different netAddress ${this.channel.netAddress} for ${this.peerAddress} `
                     + `- advertised was ${this.peerAddress.netAddress}`);
             }
 
