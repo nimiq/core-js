@@ -57,12 +57,17 @@ class NetworkConfig {
      * @returns {void}
      */
     async _init(db) {
+        if (this._keyPair) {
+            return;
+        }
+
         /** @type {KeyPair} */
         let keys = await db.get('keys');
         if (!keys) {
             keys = KeyPair.generate();
             await db.put('keys', keys);
         }
+
         this._keyPair = keys;
         this._peerId = keys.publicKey.toPeerId();
     }

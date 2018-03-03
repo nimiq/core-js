@@ -212,7 +212,14 @@ class Network extends Observable {
                         this._backedOff = false;
                         this._checkPeerCount();
                     }, oldBackoff);
+
+                    // If we are not connected to any peers (anymore), tell listeners that we are disconnected
+                    // and have given up on trying to connect for the time being. This is primarily useful for tests.
+                    if (this._connections.count === 0) {
+                        this.fire('disconnected');
+                    }
                 }
+
                 return;
             }
 
