@@ -12,6 +12,19 @@ class Queue {
         this._queue.push(value);
     }
 
+    enqueueFirst(value) {
+        this._queue.unshift(value);
+    }
+
+    enqueueUnique(value) {
+        if (this.indexOf(value) >= 0) return;
+        this.enqueue(value);
+    }
+
+    enqueueAllNew(values) {
+        for (const value of values) this.enqueueUnique(value);
+    }
+
     dequeue() {
         return this._queue.shift();
     }
@@ -67,6 +80,13 @@ class Queue {
 
     values() {
         return this._queue;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this.length === 0;
     }
 
     /** @type {number} */

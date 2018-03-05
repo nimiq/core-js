@@ -119,7 +119,7 @@ class NetworkAgent extends Observable {
      */
     relayAddresses(addresses) {
         // Don't relay if the handshake hasn't finished yet.
-        if (!this._versionReceived || !this._versionSent) {
+        if (!this._verackReceived || !this._versionSent) {
             return;
         }
 
