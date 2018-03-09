@@ -3,7 +3,7 @@ const JsonRpcServer = require('./JsonRpcServer.js');
 const MetricsServer = require('./MetricsServer.js');
 const START = Date.now();
 /**
- * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean}}
+ * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean, networkid: ?string}}
  */
 const argv = require('minimist')(process.argv.slice(2));
 
@@ -49,7 +49,8 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
         '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
         '                             The wallet cannot be used to sign transactions when\n' +
-        '                             using this option.');
+        '                             using this option.' +
+        '  --networkid=ID             Configure the network to connect to.\n');
 
     process.exit();
 }
@@ -74,6 +75,11 @@ if (typeof metrics === 'string') {
         metricsPassword = metrics.substring(metrics.indexOf(':') + 1);
     }
     metricsPort = parseInt(metrics);
+}
+const networkIdArg = argv.networkid;
+let networkId = 2;
+if (typeof networkIdArg === 'string') {
+    networkId = parseInt(networkIdArg);
 }
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
@@ -119,6 +125,8 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
+    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[networkId]);
+
     const networkConfig = dumb
         ? new Nimiq.DumbNetworkConfig()
         : new Nimiq.WsNetworkConfig(host, port, key, cert);

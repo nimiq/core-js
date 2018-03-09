@@ -51,6 +51,8 @@ class DevUi {
             Nimiq.init(() => {
                 const $ = {};
                 $.clientType = this.clientType;
+                // TODO: allow to change the genesis config.
+                Nimiq.GenesisConfig.devnet();
                 Promise.all([
                     Nimiq.Consensus[this.clientType](),
                     new Nimiq.WalletStore()
