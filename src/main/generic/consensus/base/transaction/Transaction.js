@@ -16,7 +16,7 @@ class Transaction {
      * @param {Uint8Array} [proof]
      * @param {number} [networkId]
      */
-    constructor(format, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof, networkId = undefined) {
+    constructor(format, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof, networkId = GenesisConfig.NETWORK_ID) {
         if (!(sender instanceof Address)) throw new Error('Malformed sender');
         if (!NumberUtils.isUint8(senderType)) throw new Error('Malformed sender type');
         if (!(recipient instanceof Address)) throw new Error('Malformed recipient');
@@ -27,12 +27,7 @@ class Transaction {
         if (!NumberUtils.isUint8(flags) && (flags & ~(Transaction.Flag.ALL)) > 0) throw new Error('Malformed flags');
         if (!(data instanceof Uint8Array) || !(NumberUtils.isUint16(data.byteLength))) throw new Error('Malformed data');
         if (proof && (!(proof instanceof Uint8Array) || !(NumberUtils.isUint16(proof.byteLength)))) throw new Error('Malformed proof');
-        if (networkId !== undefined && !NumberUtils.isUint8(networkId)) throw new Error('Malformed networkId');
-
-        // Explicit check for undefined since 0 is a valid value.
-        if (networkId === undefined) {
-            networkId = GenesisConfig.NETWORK_ID;
-        }
+        if (!NumberUtils.isUint8(networkId)) throw new Error('Malformed networkId');
 
         /** @type {Transaction.Format} */
         this._format = format;
@@ -125,8 +120,7 @@ class Transaction {
      * @returns {boolean}
      * @private
      */
-    _verify(networkId) {
-        networkId = networkId || GenesisConfig.NETWORK_ID;
+    _verify(networkId = GenesisConfig.NETWORK_ID) {
         if (this._networkId !== networkId) {
             Log.w(Transaction, 'Transaction is not valid in this network', this);
             return false;
