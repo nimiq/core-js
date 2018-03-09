@@ -28,7 +28,7 @@ class PeerAddressBook extends Observable {
 
 
         // Init seed peers.
-        this.add(/*channel*/ null, PeerAddressBook.SEED_PEERS);
+        this.add(/*channel*/ null, GenesisConfig.CURRENT_CONFIG.SEED_PEERS);
 
         // Setup housekeeping interval.
         setInterval(() => this._housekeeping(), PeerAddressBook.HOUSEKEEPING_INTERVAL);
@@ -540,15 +540,4 @@ PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 30; // 30 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 10000 : 200000;
-PeerAddressBook.SEED_PEERS = [
-    // WsPeerAddress.seed('alpacash.com', 8080),
-    // WsPeerAddress.seed('nimiq1.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('nimiq2.styp-rekowsky.de', 8080),
-    // WsPeerAddress.seed('seed1.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed2.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed3.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('seed4.nimiq-network.com', 8080),
-    // WsPeerAddress.seed('emily.nimiq-network.com', 443)
-    WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
-];
 Class.register(PeerAddressBook);

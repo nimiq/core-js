@@ -177,7 +177,7 @@ describe('BlockHeader', () => {
     });
 
     it('can verify a valid proof-of-work', (done) => {
-        const blockHeader = Block.GENESIS.header;
+        const blockHeader = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.header;
         blockHeader.verifyProofOfWork()
             .then((isValid) => {
                 expect(isValid).toBe(true);

@@ -37,7 +37,7 @@ describe('ConnectOutboundCheck', () => {
             consensus1.network.on('peer-left', (peer) => tryReconnectPeer(peer));
             expect(consensus1.network._connections.connectOutbound(null)).toBe(false);
 
-            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())];
+            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             consensus2 = await Consensus.volatileNano(netConfig2);

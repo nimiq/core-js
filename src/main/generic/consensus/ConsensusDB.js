@@ -1,20 +1,22 @@
 class ConsensusDB extends JDB.JungleDB {
     /**
+     * @param {string} [dbPrefix]
      * @returns {Promise.<ConsensusDB>}
      */
-    static async getFull() {
+    static async getFull(dbPrefix = '') {
         if (!ConsensusDB._instance) {
-            ConsensusDB._instance = await new ConsensusDB('full-consensus');
+            ConsensusDB._instance = await new ConsensusDB(`${dbPrefix}full-consensus`);
         }
         return ConsensusDB._instance;
     }
 
     /**
+     * @param {string} dbPrefix
      * @returns {Promise.<ConsensusDB>}
      */
-    static async getLight() {
+    static async getLight(dbPrefix = '') {
         if (!ConsensusDB._instance) {
-            ConsensusDB._instance = await new ConsensusDB('light-consensus');
+            ConsensusDB._instance = await new ConsensusDB(`${dbPrefix}light-consensus`);
         }
         return ConsensusDB._instance;
     }

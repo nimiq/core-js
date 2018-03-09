@@ -9,7 +9,7 @@ describe('PeerChannel', () => {
         const challenge = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         (async function () {
             // We need this to prevent a race condition where a new
-            // VersionMessage would be created before Block.GENESIS.HASH
+            // VersionMessage would be created before GenesisConfig.CURRENT_CONFIG.GENESIS_HASH
             // is set in the object
             const spy = new SpyConnection(msg => {
                 const vMsg = VersionMessage.unserialize(msg);

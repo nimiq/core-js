@@ -209,7 +209,7 @@ describe('AccountsTree', () => {
                 let accounts = new Accounts(tree);
 
                 // order1
-                await accounts.initialize(Block.GENESIS, Accounts.GENESIS);
+                await accounts.initialize(GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK, GenesisConfig.CURRENT_CONFIG.GENESIS_ACCOUNTS);
                 await accounts._tree.put(address1, new BasicAccount(value1));
                 await accounts._tree.put(address2, new BasicAccount(value2));
                 const state1 = await accounts._tree.root();
@@ -220,7 +220,7 @@ describe('AccountsTree', () => {
                 accounts = new Accounts(tree);
 
                 // order2
-                await accounts.initialize(Block.GENESIS, Accounts.GENESIS);
+                await accounts.initialize(GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK, GenesisConfig.CURRENT_CONFIG.GENESIS_ACCOUNTS);
                 await accounts._tree.put(address2, new BasicAccount(value2));
                 await accounts._tree.put(address1, new BasicAccount(value1));
                 const state2 = await accounts._tree.root();

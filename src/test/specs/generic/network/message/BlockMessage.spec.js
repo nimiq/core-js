@@ -1,5 +1,5 @@
 describe('BlockMessage', () => {
-    const block = Block.GENESIS;
+    const block = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK;
 
     it('is correctly constructed', () => {
         const msg1 = new BlockMessage(block);

@@ -1,13 +1,13 @@
 describe('ConnectionPool', () => {
     const peerCountMax = Network.PEER_COUNT_MAX;
     const peerCountRecyclingActive = Network.PEER_COUNT_RECYCLING_ACTIVE;
-    const seedPeers = PeerAddressBook.SEED_PEERS;
+    const seedPeers = GenesisConfig.CURRENT_CONFIG.SEED_PEERS;
 
     beforeEach(function () {
         MockClock.install();
         MockNetwork.install(20); // 20ms latency
 
-        PeerAddressBook.SEED_PEERS = [];
+        GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([]);
         Network.PEER_COUNT_MAX = 5;
     });
 
@@ -15,7 +15,7 @@ describe('ConnectionPool', () => {
         MockClock.uninstall();
         MockNetwork.uninstall();
 
-        PeerAddressBook.SEED_PEERS = seedPeers;
+        GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers(seedPeers);
         Network.PEER_COUNT_MAX = peerCountMax;
     });
 
@@ -93,7 +93,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())];
+            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -135,7 +135,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            PeerAddressBook.SEED_PEERS = [WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())];
+            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);

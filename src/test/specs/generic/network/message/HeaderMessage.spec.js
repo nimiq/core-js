@@ -1,5 +1,5 @@
 describe('HeaderMessage', () => {
-    const header = Block.GENESIS.header;
+    const header = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.header;
 
     it('is correctly constructed', () => {
         const msg1 = new HeaderMessage(header);

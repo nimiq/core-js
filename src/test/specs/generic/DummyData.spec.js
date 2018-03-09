@@ -109,36 +109,31 @@ if (typeof global !== 'undefined') {
     global.Dummy = Dummy;
 }
 
-if (Block.GENESIS) {
-    /** @type {Block} */
-    Block.OLD_GENESIS = Block.GENESIS;
-}
-
-if (Accounts.GENESIS) {
-    /** @type {string} */
-    Accounts.OLD_GENESIS = Accounts.GENESIS;
+if (GenesisConfig.CURRENT_CONFIG) {
+    /** @type {GenesisConfig} */
+    GenesisConfig.OLD_CONFIG = GenesisConfig.CURRENT_CONFIG;
 }
 
 /* Testing Genesis Block */
-Block.GENESIS = new Block(
-    new BlockHeader(
-        new Hash(null),
-        new Hash(null),
-        Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
-        Hash.fromBase64('v6zYHGQ3Z/O/G/ZCyXtO/TPa7/Kw00HGEzRK5wbu2zg='),
-        BlockUtils.difficultyToCompact(1),
-        1,
-        0,
-        101720,
-        BlockHeader.Version.V1),
-    new BlockInterlink([], new Hash(null)),
-    new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
+GenesisConfig.CURRENT_CONFIG = new GenesisConfig(4, 'tests-',
+    new Block(
+        new BlockHeader(
+            new Hash(null),
+            new Hash(null),
+            Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
+            Hash.fromBase64('v6zYHGQ3Z/O/G/ZCyXtO/TPa7/Kw00HGEzRK5wbu2zg='),
+            BlockUtils.difficultyToCompact(1),
+            1,
+            0,
+            101720,
+            BlockHeader.Version.V1),
+        new BlockInterlink([], new Hash(null)),
+        new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
+    ),
+    Hash.fromBase64('+v0/HMgAMJy5MQgSV7Tn7bD56kABh8VQ/ZFBRH6ghqU='),
+    'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
+    []
 );
-Block.GENESIS.HASH = Hash.fromBase64('+v0/HMgAMJy5MQgSV7Tn7bD56kABh8VQ/ZFBRH6ghqU=');
-
-/* Testing Genesis Accounts */
-Accounts.GENESIS =
-    'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA';
 
 beforeAll((done) => {
     WasmHelper.doImportBrowser().then(done, done.fail);

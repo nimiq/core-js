@@ -144,7 +144,7 @@ class BlockChain {
      * @returns {boolean}
      */
     isAnchored() {
-        return Block.GENESIS.HASH.equals(this.tail.hash());
+        return GenesisConfig.CURRENT_CONFIG.GENESIS_HASH.equals(this.tail.hash());
     }
 
     /**

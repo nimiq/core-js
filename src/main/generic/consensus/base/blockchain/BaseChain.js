@@ -171,7 +171,7 @@ class BaseChain extends IBlockchain {
         }
 
         if ((blocks.length === 0 || blocks[blocks.length - 1].height > 1) && tailHeight === 1) {
-            blocks.push(Block.GENESIS.toLight());
+            blocks.push(GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.toLight());
         }
 
         return new BlockChain(blocks.reverse());
