@@ -6,14 +6,15 @@ class BasicTransaction extends Transaction {
      * @param {number} fee
      * @param {number} validityStartHeight
      * @param {Signature} [signature]
+     * @param {number} [networkId]
      */
-    constructor(senderPubKey, recipient, value, fee, validityStartHeight, signature) {
+    constructor(senderPubKey, recipient, value, fee, validityStartHeight, signature, networkId) {
         if (!(senderPubKey instanceof PublicKey)) throw new Error('Malformed senderPubKey');
         // Signature may be initially empty and can be set later.
         if (signature !== undefined && !(signature instanceof Signature)) throw new Error('Malformed signature');
 
         const proof = SignatureProof.singleSig(senderPubKey, signature);
-        super(Transaction.Format.BASIC, senderPubKey.toAddress(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0), proof.serialize());
+        super(Transaction.Format.BASIC, senderPubKey.toAddress(), Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0), proof.serialize(), networkId);
 
         /**
          * @type {SignatureProof}
@@ -35,8 +36,9 @@ class BasicTransaction extends Transaction {
         const value = buf.readUint64();
         const fee = buf.readUint64();
         const validityStartHeight = buf.readUint32();
+        const networkId = buf.readUint8();
         const signature = Signature.unserialize(buf);
-        return new BasicTransaction(senderPubKey, recipient, value, fee, validityStartHeight, signature);
+        return new BasicTransaction(senderPubKey, recipient, value, fee, validityStartHeight, signature, networkId);
     }
 
     /**
@@ -51,6 +53,7 @@ class BasicTransaction extends Transaction {
         buf.writeUint64(this._value);
         buf.writeUint64(this._fee);
         buf.writeUint32(this._validityStartHeight);
+        buf.writeUint8(this._networkId);
         this.signature.serialize(buf);
         return buf;
     }
@@ -63,6 +66,7 @@ class BasicTransaction extends Transaction {
             + /*value*/ 8
             + /*fee*/ 8
             + /*validityStartHeight*/ 4
+            + /*networkId*/ 1
             + this.signature.serializedSize;
     }
 

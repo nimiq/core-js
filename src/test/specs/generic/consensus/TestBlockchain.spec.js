@@ -34,10 +34,11 @@ class TestBlockchain extends FullChain {
      * @param {number} validityStartHeight
      * @param {PrivateKey} [senderPrivKey]
      * @param {Signature} [signature]
+     * @param {number} [networkId]
      * @return {BasicTransaction}
      */
-    static createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined) {
-        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight);
+    static createTransaction(senderPubKey, recipientAddr, amount = 1, fee = 1, validityStartHeight = 0, senderPrivKey = undefined, signature = undefined, networkId = undefined) {
+        const transaction = new BasicTransaction(senderPubKey, recipientAddr, amount, fee, validityStartHeight, undefined, networkId);
 
         // allow to hardcode a signature
         if (!signature) {

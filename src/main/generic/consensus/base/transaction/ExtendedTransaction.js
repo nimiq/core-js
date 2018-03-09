@@ -11,9 +11,10 @@ class ExtendedTransaction extends Transaction {
      * @param {Transaction.Flag | *} flags
      * @param {Uint8Array} data
      * @param {Uint8Array} [proof]
+     * @param {number} [networkId]
      */
-    constructor(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof = new Uint8Array(0)) {
-        super(Transaction.Format.EXTENDED, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof);
+    constructor(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof = new Uint8Array(0), networkId) {
+        super(Transaction.Format.EXTENDED, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof, networkId);
     }
 
     /**
@@ -33,10 +34,11 @@ class ExtendedTransaction extends Transaction {
         const value = buf.readUint64();
         const fee = buf.readUint64();
         const validityStartHeight = buf.readUint32();
+        const networkId = buf.readUint8();
         const flags = buf.readUint8();
         const proofSize = buf.readUint16();
         const proof = buf.read(proofSize);
-        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof);
+        return new ExtendedTransaction(sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof, networkId);
     }
 
     /**

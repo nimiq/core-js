@@ -13,9 +13,10 @@ class Transaction {
      * @param {number} validityStartHeight
      * @param {Transaction.Flag | *} flags
      * @param {Uint8Array} data
-     * @param {Uint8Array} proof
+     * @param {Uint8Array} [proof]
+     * @param {number} [networkId]
      */
-    constructor(format, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof) {
+    constructor(format, sender, senderType, recipient, recipientType, value, fee, validityStartHeight, flags, data, proof, networkId = undefined) {
         if (!(sender instanceof Address)) throw new Error('Malformed sender');
         if (!NumberUtils.isUint8(senderType)) throw new Error('Malformed sender type');
         if (!(recipient instanceof Address)) throw new Error('Malformed recipient');
@@ -26,6 +27,12 @@ class Transaction {
         if (!NumberUtils.isUint8(flags) && (flags & ~(Transaction.Flag.ALL)) > 0) throw new Error('Malformed flags');
         if (!(data instanceof Uint8Array) || !(NumberUtils.isUint16(data.byteLength))) throw new Error('Malformed data');
         if (proof && (!(proof instanceof Uint8Array) || !(NumberUtils.isUint16(proof.byteLength)))) throw new Error('Malformed proof');
+        if (networkId !== undefined && !NumberUtils.isUint8(networkId)) throw new Error('Malformed networkId');
+
+        // Explicit check for undefined since 0 is a valid value.
+        if (networkId === undefined) {
+            networkId = GenesisConfig.NETWORK_ID;
+        }
 
         /** @type {Transaction.Format} */
         this._format = format;
@@ -41,6 +48,8 @@ class Transaction {
         this._value = value;
         /** @type {number} */
         this._fee = fee;
+        /** @type {number} */
+        this._networkId = networkId;
         /** @type {number} */
         this._validityStartHeight = validityStartHeight;
         /** @type {Transaction.Flag | *} */
@@ -80,6 +89,7 @@ class Transaction {
         buf.writeUint64(this._value);
         buf.writeUint64(this._fee);
         buf.writeUint32(this._validityStartHeight);
+        buf.writeUint8(this._networkId);
         buf.writeUint8(this._flags);
         return buf;
     }
@@ -95,24 +105,32 @@ class Transaction {
             + /*value*/ 8
             + /*fee*/ 8
             + /*validityStartHeight*/ 4
+            + /*networkId*/ 1
             + /*flags*/ 1;
     }
 
     /**
+     * @param {number} [networkId]
      * @returns {boolean}
      */
-    verify() {
+    verify(networkId) {
         if (this._valid === undefined) {
-            this._valid = this._verify();
+            this._valid = this._verify(networkId);
         }
         return this._valid;
     }
 
     /**
+     * @param {number} [networkId]
      * @returns {boolean}
      * @private
      */
-    _verify() {
+    _verify(networkId) {
+        networkId = networkId || GenesisConfig.NETWORK_ID;
+        if (this._networkId !== networkId) {
+            Log.w(Transaction, 'Transaction is not valid in this network', this);
+            return false;
+        }
         // Check that sender != recipient.
         if (this._recipient.equals(this._sender)) {
             Log.w(Transaction, 'Sender and recipient must not match', this);
@@ -211,6 +229,7 @@ class Transaction {
             && this._value === o._value
             && this._fee === o._fee
             && this._validityStartHeight === o._validityStartHeight
+            && this._networkId === o._networkId
             && this._flags === o._flags
             && BufferUtils.equals(this._data, o._data);
     }
@@ -225,6 +244,7 @@ class Transaction {
             + `value=${this._value}, `
             + `fee=${this._fee}, `
             + `validityStartHeight=${this._validityStartHeight}`
+            + `networkId=${this._networkId}`
             + `}`;
     }
 
@@ -271,6 +291,11 @@ class Transaction {
     /** @type {number} */
     get feePerByte() {
         return this._fee / this.serializedSize;
+    }
+
+    /** @type {number} */
+    get networkId() {
+        return this._networkId;
     }
 
     /** @type {number} */
