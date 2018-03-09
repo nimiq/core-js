@@ -149,8 +149,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
             }
 
             // Push the genesis block hash.
-            if (locators.length === 0 || !locators[locators.length - 1].equals(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH)) {
-                locators.push(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH);
+            if (locators.length === 0 || !locators[locators.length - 1].equals(GenesisConfig.GENESIS_HASH)) {
+                locators.push(GenesisConfig.GENESIS_HASH);
             }
         }
 
@@ -383,7 +383,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         // chain, ignore the rest. If none of the requested hashes is found,
         // pick the genesis block hash. Send the main chain starting from the
         // picked hash back to the peer.
-        let startBlock = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK;
+        let startBlock = GenesisConfig.GENESIS_BLOCK;
         for (const locator of msg.locators) {
             const block = await this._blockchain.getBlock(locator);
             if (block) {

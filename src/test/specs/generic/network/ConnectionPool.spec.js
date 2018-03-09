@@ -1,13 +1,12 @@
 describe('ConnectionPool', () => {
     const peerCountMax = Network.PEER_COUNT_MAX;
     const peerCountRecyclingActive = Network.PEER_COUNT_RECYCLING_ACTIVE;
-    const seedPeers = GenesisConfig.CURRENT_CONFIG.SEED_PEERS;
+    const seedPeers = GenesisConfig.SEED_PEERS;
 
     beforeEach(function () {
         MockClock.install();
         MockNetwork.install(20); // 20ms latency
 
-        GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([]);
         Network.PEER_COUNT_MAX = 5;
     });
 
@@ -15,7 +14,7 @@ describe('ConnectionPool', () => {
         MockClock.uninstall();
         MockNetwork.uninstall();
 
-        GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers(seedPeers);
+        GenesisConfig._CONFIG.SEED_PEERS = seedPeers;
         Network.PEER_COUNT_MAX = peerCountMax;
     });
 
@@ -30,10 +29,11 @@ describe('ConnectionPool', () => {
         }
 
         (async () => {
+            GenesisConfig._CONFIG.SEED_PEERS = [];
             Network.PEER_COUNT_RECYCLING_ACTIVE = 4;
             MockClock.speed = 20;
 
-            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
@@ -65,7 +65,7 @@ describe('ConnectionPool', () => {
             Network.PEER_COUNT_RECYCLING_ACTIVE = 5;
             MockClock.speed = 20;
 
-            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
@@ -89,11 +89,9 @@ describe('ConnectionPool', () => {
         (async () => {
             MockClock.speed = 20;
 
-            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -131,11 +129,9 @@ describe('ConnectionPool', () => {
         (async () => {
             MockClock.speed = 20;
 
-            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);

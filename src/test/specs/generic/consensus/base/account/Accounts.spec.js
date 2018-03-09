@@ -263,9 +263,9 @@ describe('Accounts', () => {
             }
 
             const genesis = new Block(
-                new BlockHeader(Hash.NULL, Hash.NULL, GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.bodyHash, Hash.fromBase64('IDpF4aKOYPHMBBOHHoTvF8SdybqwwtQ7qd3AFgWq1sU=') /* TODO */, BlockUtils.difficultyToCompact(1), 1, 0, 0),
-                GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.interlink,
-                GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.body
+                new BlockHeader(Hash.NULL, Hash.NULL, GenesisConfig.GENESIS_BLOCK.bodyHash, Hash.fromBase64('IDpF4aKOYPHMBBOHHoTvF8SdybqwwtQ7qd3AFgWq1sU=') /* TODO */, BlockUtils.difficultyToCompact(1), 1, 0, 0),
+                GenesisConfig.GENESIS_BLOCK.interlink,
+                GenesisConfig.GENESIS_BLOCK.body
             );
             const accounts = await Accounts.createVolatile();
             await accounts.initialize(genesis, BufferUtils.toBase64(buf));

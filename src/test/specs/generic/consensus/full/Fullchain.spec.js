@@ -378,7 +378,7 @@ describe('Blockchain', () => {
             // Create second chain (5 blocks)
             const fork = await TestBlockchain.createVolatileTest(0, 2);
             block = await fork.createBlock({
-                timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+                timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
             });
             status = await fork.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
@@ -458,7 +458,7 @@ describe('Blockchain', () => {
             // Create second chain (3 blocks)
             const fork = await TestBlockchain.createVolatileTest(0, 2);
             block = await fork.createBlock({
-                timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+                timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
                 transactions: [tx4]
             });
             status = await fork.pushBlock(block);

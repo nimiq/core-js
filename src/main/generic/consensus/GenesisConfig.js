@@ -1,49 +1,83 @@
 class GenesisConfig {
-    constructor(networkId, databasePrefix, genesisBlock, genesisHash, genesisAccounts, seedPeers) {
-        this._networkId = networkId;
-        this._databasePrefix = databasePrefix;
-        this._genesisBlock = genesisBlock;
-        this._genesisHash = genesisHash;
-        this._genesisAccounts = genesisAccounts;
-        this._seedPeers = seedPeers;
-    }
+    /**
+     * @param {{NETWORK_ID:number,DATABASE_PREFIX:string,GENESIS_BLOCK:Block,GENESIS_ACCOUNTS:string,SEED_PEERS:Array.<PeerAddress>}} networkId
+     */
+    static init(config) {
+        if (GenesisConfig._CONFIG) throw new Error('Already initialized');
+        if (!config.NETWORK_ID) throw new Error('Config is missing network id');
+        if (!config.DATABASE_PREFIX) throw new Error('Config is missing database prefix');
+        if (!config.GENESIS_BLOCK) throw new Error('Config is missing genesis block');
+        if (!config.GENESIS_ACCOUNTS) throw new Error('Config is missing genesis accounts');
+        if (!config.SEED_PEERS) throw new Error('Config is missing seed peers');
 
-    get NETWORK_ID() {
-        return this._networkId;
-    }
-
-    get DATABASE_PREFIX() {
-        return this._databasePrefix;
-    }
-
-    get GENESIS_BLOCK() {
-        return this._genesisBlock;
-    }
-
-    get GENESIS_HASH() {
-        return this._genesisHash;
-    }
-
-    get GENESIS_ACCOUNTS() {
-        return this._genesisAccounts;
-    }
-
-    get SEED_PEERS() {
-        return this._seedPeers;
+        // Copy over config.
+        GenesisConfig._CONFIG = config;
     }
 
     static devnet() {
-        GenesisConfig.CURRENT_CONFIG = GenesisConfig.CONFIGS[2];
-        return GenesisConfig.CURRENT_CONFIG;
+        GenesisConfig.init(GenesisConfig.CONFIGS[2]);
     }
 
-    withSeedPeers(seedPeers) {
-        return new GenesisConfig(this._networkId, this._databasePrefix, this._genesisBlock, this._genesisHash, this._genesisAccounts, seedPeers);
+    /*
+     * Static getters.
+     */
+
+    /**
+     * @type {number}
+     */
+    static get NETWORK_ID() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._CONFIG.NETWORK_ID;
+    }
+
+    /**
+     * @type {string}
+     */
+    static get DATABASE_PREFIX() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._CONFIG.DATABASE_PREFIX;
+    }
+
+    /**
+     * @type {Block}
+     */
+    static get GENESIS_BLOCK() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._CONFIG.GENESIS_BLOCK;
+    }
+
+    /**
+     * @type {Hash}
+     */
+    static get GENESIS_HASH() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        if (!GenesisConfig._CONFIG.GENESIS_HASH) {
+            GenesisConfig._CONFIG.GENESIS_HASH = GenesisConfig._CONFIG.GENESIS_BLOCK.hash();
+        }
+        return GenesisConfig._CONFIG.GENESIS_HASH;
+    }
+
+    /**
+     * @type {string}
+     */
+    static get GENESIS_ACCOUNTS() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._CONFIG.GENESIS_ACCOUNTS;
+    }
+
+    /**
+     * @type {Array.<PeerAddress>}
+     */
+    static get SEED_PEERS() {
+        if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._CONFIG.SEED_PEERS;
     }
 }
 GenesisConfig.CONFIGS = {
-    2: new GenesisConfig(2, 'devnet-',
-        new Block(
+    2: {
+        NETWORK_ID: 2,
+        DATABASE_PREFIX: 'devnet-',
+        GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),
                 new Hash(null),
@@ -57,12 +91,10 @@ GenesisConfig.CONFIGS = {
             new BlockInterlink([], new Hash(null)),
             new BlockBody(Address.fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAA='), [])
         ),
-        Hash.fromBase64('ykmTb222PK189z6x6dpT3Ul607cGjzFzECR4WXO+m+Y='),
-        'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
-        [
+        GENESIS_ACCOUNTS: 'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
+        SEED_PEERS: [
             WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
         ]
-    )
+    }
 };
-GenesisConfig.CURRENT_CONFIG = GenesisConfig.CONFIGS[2];
 Class.register(GenesisConfig);

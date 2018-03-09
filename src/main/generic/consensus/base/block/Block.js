@@ -213,7 +213,7 @@ class Block {
 
         // Check that the predecessor is contained in this block's interlink and verify its position.
         const prevHash = predecessor.hash();
-        if (!GenesisConfig.CURRENT_CONFIG.GENESIS_HASH.equals(prevHash)) {
+        if (!GenesisConfig.GENESIS_HASH.equals(prevHash)) {
             const prevPow = await predecessor.pow();
             const targetHeight = BlockUtils.getTargetHeight(this.target);
             let blockFound = false;

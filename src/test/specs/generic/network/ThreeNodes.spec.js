@@ -19,11 +19,9 @@ describe('ThreeNodes', () => {
         }
 
         (async () => {
-            const netconfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netconfig1 = Dummy.NETCONFIG;
             consensus1 = await Consensus.volatileFull(netconfig1);
             consensus1.on('established', checkEstablished);
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netconfig1.publicKey.toHex())]);
 
             const netconfig2 = new DumbNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netconfig2);

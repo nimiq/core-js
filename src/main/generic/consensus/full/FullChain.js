@@ -82,16 +82,16 @@ class FullChain extends BaseChain {
             this._transactionCache.prependBlocks([...blocks.reverse(), this._mainChain.head]);
         } else {
             // Initialize chain & accounts with Genesis block.
-            const genesisBlock = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK;
+            const genesisBlock = GenesisConfig.GENESIS_BLOCK;
             this._mainChain = new ChainData(genesisBlock, genesisBlock.difficulty, BlockUtils.realDifficulty(await genesisBlock.pow()), true);
-            this._headHash = GenesisConfig.CURRENT_CONFIG.GENESIS_HASH;
+            this._headHash = GenesisConfig.GENESIS_HASH;
 
             const tx = this._store.transaction();
-            await tx.putChainData(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, this._mainChain);
-            await tx.setHead(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH);
+            await tx.putChainData(GenesisConfig.GENESIS_HASH, this._mainChain);
+            await tx.setHead(GenesisConfig.GENESIS_HASH);
             await tx.commit();
 
-            await this._accounts.initialize(genesisBlock, GenesisConfig.CURRENT_CONFIG.GENESIS_ACCOUNTS);
+            await this._accounts.initialize(genesisBlock, GenesisConfig.GENESIS_ACCOUNTS);
         }
 
         return this;

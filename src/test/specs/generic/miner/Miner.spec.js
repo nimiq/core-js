@@ -57,7 +57,7 @@ describe('Miner', () => {
             spyOn(testBlockchain.time, 'now').and.returnValue(1800);
 
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
-            const miner = new Miner(testBlockchain, testBlockchain.accounts, mempool, testBlockchain.time, GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.minerAddr);
+            const miner = new Miner(testBlockchain, testBlockchain.accounts, mempool, testBlockchain.time, GenesisConfig.GENESIS_BLOCK.minerAddr);
             const block = await new Promise((resolve) => {
                 miner.on('block-mined', resolve);
                 miner.startWork();

@@ -4,17 +4,17 @@ describe('VersionMessage', () => {
     const challenge = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
 
     it('is correctly constructed', () => {
-        const msg1 = new VersionMessage(2, addr, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, blockHash, challenge);
+        const msg1 = new VersionMessage(2, addr, GenesisConfig.GENESIS_HASH, blockHash, challenge);
 
         expect(msg1.version).toBe(2);
         expect(msg1.peerAddress.equals(addr)).toBe(true);
-        expect(msg1.genesisHash.equals(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH)).toBe(true);
+        expect(msg1.genesisHash.equals(GenesisConfig.GENESIS_HASH)).toBe(true);
         expect(msg1.headHash.equals(blockHash)).toBe(true);
         expect(BufferUtils.equals(msg1.challengeNonce, challenge)).toBe(true);
     });
 
     it('is serializable and unserializable', () => {
-        const msg1 = new VersionMessage(2, addr, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, blockHash, challenge);
+        const msg1 = new VersionMessage(2, addr, GenesisConfig.GENESIS_HASH, blockHash, challenge);
         const msg2 = VersionMessage.unserialize(msg1.serialize());
 
         expect(msg2.version).toBe(msg1.version);
@@ -25,10 +25,10 @@ describe('VersionMessage', () => {
     });
 
     it('must have well defined arguments', () => {
-        expect(() => new VersionMessage(NumberUtils.UINT32_MAX+1, addr, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, blockHash, challenge)).toThrow();
-        expect(() => new VersionMessage(2, blockHash, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, blockHash, challenge)).toThrow();
+        expect(() => new VersionMessage(NumberUtils.UINT32_MAX+1, addr, GenesisConfig.GENESIS_HASH, blockHash, challenge)).toThrow();
+        expect(() => new VersionMessage(2, blockHash, GenesisConfig.GENESIS_HASH, blockHash, challenge)).toThrow();
         expect(() => new VersionMessage(2, addr, addr, blockHash, challenge)).toThrow();
-        expect(() => new VersionMessage(2, addr, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, addr, challenge)).toThrow();
-        expect(() => new VersionMessage(2, addr, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, blockHash, addr)).toThrow();
+        expect(() => new VersionMessage(2, addr, GenesisConfig.GENESIS_HASH, addr, challenge)).toThrow();
+        expect(() => new VersionMessage(2, addr, GenesisConfig.GENESIS_HASH, blockHash, addr)).toThrow();
     });
 });

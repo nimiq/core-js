@@ -13,7 +13,7 @@ describe('Interlink', () => {
             const bc = await TestBlockchain.createVolatileTest(0, 5);
 
             // Push 5 blocks with superblock level 0.
-            let prevHash = GenesisConfig.CURRENT_CONFIG.GENESIS_HASH;
+            let prevHash = GenesisConfig.GENESIS_HASH;
             for (let i = 0; i < 5; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 0
@@ -34,7 +34,7 @@ describe('Interlink', () => {
             const bc = await TestBlockchain.createVolatileTest(0, 5);
 
             // Push 5 blocks with superblock level 1-5.
-            let prevHash = GenesisConfig.CURRENT_CONFIG.GENESIS_HASH;
+            let prevHash = GenesisConfig.GENESIS_HASH;
             for (let i = 0; i < 5; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: i + 1
@@ -61,7 +61,7 @@ describe('Interlink', () => {
             const levels = [2, 0, 1, 0, 3, 0];
             const interlinks = [[0], [1, 1, 1], [2, 1, 1], [3, 3, 1], [4, 3, 1], [5, 5, 5, 5]];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < levels.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i]
@@ -85,11 +85,11 @@ describe('Interlink', () => {
             // Push 8 blocks. The target depth increases between block 3,4 and 7,8.
             const interlinks = [[0], [1], [2], [], [4], [5], [6], []];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 0,
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -110,11 +110,11 @@ describe('Interlink', () => {
             // Push 8 blocks. The target depth increases between block 3,4 and 7,8.
             const interlinks = [[0], [1, 1], [2, 2], [3], [4, 4], [5, 5], [6, 6], [7]];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 1,
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -136,11 +136,11 @@ describe('Interlink', () => {
             const levels = [1, 1, 1, 0, 0, 0, 0, 0];
             const interlinks = [[0], [1, 1], [2, 2], [3], [4], [5], [6], []];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -162,11 +162,11 @@ describe('Interlink', () => {
             const levels = [2, 2, 2, 1, 1, 1, 1, 0];
             const interlinks = [[0], [1, 1, 1], [2, 2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7]];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -188,11 +188,11 @@ describe('Interlink', () => {
             const levels = [2, 0, 1, 0, 2, 0, 1, 0];
             const interlinks = [[0], [1, 1, 1], [2, 1, 1], [3, 1], [4, 1], [5, 5, 5], [6, 5, 5], [7, 5]];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -214,11 +214,11 @@ describe('Interlink', () => {
             const levels = [2, 1, 0, 0, 2, 1, 0, 0];
             const interlinks = [[0], [1, 1, 1], [2, 2, 1], [2, 1], [4, 1], [5, 5, 5], [6, 6, 5], [6, 5]];
 
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: levels[i],
-                    timestamp: GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp + i + 1
+                    timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + i + 1
                 });
 
                 hashes.push(block.hash());
@@ -240,8 +240,8 @@ describe('Interlink', () => {
             const timestamps = [1, 1, 1, 120, 60, 121, 1, 1];
             const interlinks = [[0], [1], [2], [], [4, 4], [4], [6, 6], [6]];
 
-            let ts = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.timestamp;
-            const hashes = [GenesisConfig.CURRENT_CONFIG.GENESIS_HASH];
+            let ts = GenesisConfig.GENESIS_BLOCK.timestamp;
+            const hashes = [GenesisConfig.GENESIS_HASH];
             for (let i = 0; i < interlinks.length; i++) {
                 const block = await bc.createBlock({
                     superblockLevel: 0,

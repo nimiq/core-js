@@ -80,7 +80,7 @@ describe('Block', () => {
     });
 
     it('can handle light blocks', () => {
-        const block = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.toLight();
+        const block = GenesisConfig.GENESIS_BLOCK.toLight();
         expect(block.isLight()).toBeTruthy();
 
         const block2 = Block.unserialize(block.serialize());
@@ -88,8 +88,8 @@ describe('Block', () => {
         expect(() => block2.body).toThrow();
         expect(block.equals(block2)).toBeTruthy();
 
-        const block3 = block2.toFull(GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.body);
+        const block3 = block2.toFull(GenesisConfig.GENESIS_BLOCK.body);
         expect(block3.isFull()).toBeTruthy();
-        expect(block3.equals(GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK)).toBeTruthy();
+        expect(block3.equals(GenesisConfig.GENESIS_BLOCK)).toBeTruthy();
     });
 });

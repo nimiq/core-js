@@ -15,11 +15,9 @@ describe('PeerLeft', () => {
         }
 
         (async () => {
-            const netconfig = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.network.on('peer-left', peer => checkPeerLeft(peer));
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netconfig.publicKey.toHex())]);
 
             const netconfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netconfig2);

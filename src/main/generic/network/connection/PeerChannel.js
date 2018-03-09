@@ -95,7 +95,7 @@ class PeerChannel extends Observable {
      * @return {boolean}
      */
     version(peerAddress, headHash, challengeNonce) {
-        return this._send(new VersionMessage(Version.CODE, peerAddress, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, headHash, challengeNonce));
+        return this._send(new VersionMessage(Version.CODE, peerAddress, GenesisConfig.GENESIS_HASH, headHash, challengeNonce));
     }
 
     /**

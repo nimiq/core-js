@@ -28,7 +28,7 @@ class PeerAddressBook extends Observable {
 
 
         // Init seed peers.
-        this.add(/*channel*/ null, GenesisConfig.CURRENT_CONFIG.SEED_PEERS);
+        this.add(/*channel*/ null, GenesisConfig.SEED_PEERS);
 
         // Setup housekeeping interval.
         setInterval(() => this._housekeeping(), PeerAddressBook.HOUSEKEEPING_INTERVAL);

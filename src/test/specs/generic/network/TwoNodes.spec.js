@@ -16,11 +16,9 @@ describe('TwoNodes', () => {
         }
 
         (async () => {
-            const netconfig = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netconfig.publicKey.toHex())]);
 
             const consensus2 = await Consensus.volatileFull();
             consensus2.on('established', checkEstablished);
@@ -43,11 +41,9 @@ describe('TwoNodes', () => {
         }
 
         (async () => {
-            const netconfig = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netconfig.publicKey.toHex())]);
 
             const netconfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileFull(netconfig2);

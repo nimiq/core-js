@@ -1,5 +1,5 @@
 describe('ChainProofMessage', () => {
-    const proof = new ChainProof(new BlockChain([GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.toLight()]), new HeaderChain([]));
+    const proof = new ChainProof(new BlockChain([GenesisConfig.GENESIS_BLOCK.toLight()]), new HeaderChain([]));
 
     it('is correctly constructed', () => {
         const msg1 = new ChainProofMessage(proof);

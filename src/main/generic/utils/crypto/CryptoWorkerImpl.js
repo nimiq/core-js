@@ -111,8 +111,8 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      */
     async blockVerify(blockSerialized, transactionValid, timeNow, genesisHash) {
         // XXX Create a stub genesis block within the worker.
-        if (!GenesisConfig.CURRENT_CONFIG) {
-            GenesisConfig.CURRENT_CONFIG = { GENESIS_HASH: Hash.unserialize(new SerialBuffer(genesisHash)) };
+        if (!GenesisConfig.GENESIS_HASH) {
+            GenesisConfig = { GENESIS_HASH: Hash.unserialize(new SerialBuffer(genesisHash)) };
         }
 
         const block = Block.unserialize(new SerialBuffer(blockSerialized));

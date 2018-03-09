@@ -31,13 +31,11 @@ describe('ConnectOutboundCheck', () => {
         }
 
         (async () => {
-            const netConfig1 = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+            const netConfig1 = Dummy.NETCONFIG;
             consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.on('peer-joined', (peer) => banPeer(peer));
             consensus1.network.on('peer-left', (peer) => tryReconnectPeer(peer));
             expect(consensus1.network._connections.connectOutbound(null)).toBe(false);
-
-            GenesisConfig.CURRENT_CONFIG = GenesisConfig.CURRENT_CONFIG.withSeedPeers([WsPeerAddress.seed('node1.test', 9000, netConfig1.publicKey.toHex())]);
 
             const netConfig2 = new RtcNetworkConfig();
             consensus2 = await Consensus.volatileNano(netConfig2);

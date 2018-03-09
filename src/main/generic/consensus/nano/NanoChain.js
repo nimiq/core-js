@@ -8,9 +8,9 @@ class NanoChain extends BaseChain {
 
         this._time = time;
 
-        this._proof = new ChainProof(new BlockChain([GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK.toLight()]), new HeaderChain([]));
+        this._proof = new ChainProof(new BlockChain([GenesisConfig.GENESIS_BLOCK.toLight()]), new HeaderChain([]));
 
-        this._headHash = GenesisConfig.CURRENT_CONFIG.GENESIS_HASH;
+        this._headHash = GenesisConfig.GENESIS_HASH;
 
         this._synchronizer = new Synchronizer();
 
@@ -18,9 +18,9 @@ class NanoChain extends BaseChain {
     }
 
     async _init() {
-        const genesisBlock = GenesisConfig.CURRENT_CONFIG.GENESIS_BLOCK;
+        const genesisBlock = GenesisConfig.GENESIS_BLOCK;
         this._mainChain = new ChainData(genesisBlock, genesisBlock.difficulty, BlockUtils.realDifficulty(await genesisBlock.pow()), true);
-        await this._store.putChainData(GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, this._mainChain);
+        await this._store.putChainData(GenesisConfig.GENESIS_HASH, this._mainChain);
 
         return this;
     }

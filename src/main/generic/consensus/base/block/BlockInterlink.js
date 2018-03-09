@@ -124,7 +124,7 @@ class BlockInterlink {
      */
     hash() {
         if (!this._hash) {
-            this._hash = MerkleTree.computeRoot([this._repeatBits, GenesisConfig.CURRENT_CONFIG.GENESIS_HASH, ...this._compressed]);
+            this._hash = MerkleTree.computeRoot([this._repeatBits, GenesisConfig.GENESIS_HASH, ...this._compressed]);
         }
         return this._hash;
     }
