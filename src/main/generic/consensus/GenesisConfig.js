@@ -1,11 +1,11 @@
 class GenesisConfig {
     /**
-     * @param {{NETWORK_ID:number,DATABASE_PREFIX:string,GENESIS_BLOCK:Block,GENESIS_ACCOUNTS:string,SEED_PEERS:Array.<PeerAddress>}} networkId
+     * @param {{NETWORK_ID:number,NETWORK_NAME:string,GENESIS_BLOCK:Block,GENESIS_ACCOUNTS:string,SEED_PEERS:Array.<PeerAddress>}} networkId
      */
     static init(config) {
         if (GenesisConfig._CONFIG) throw new Error('Already initialized');
         if (!config.NETWORK_ID) throw new Error('Config is missing network id');
-        if (!config.DATABASE_PREFIX) throw new Error('Config is missing database prefix');
+        if (!config.NETWORK_NAME) throw new Error('Config is missing database prefix');
         if (!config.GENESIS_BLOCK) throw new Error('Config is missing genesis block');
         if (!config.GENESIS_ACCOUNTS) throw new Error('Config is missing genesis accounts');
         if (!config.SEED_PEERS) throw new Error('Config is missing seed peers');
@@ -33,9 +33,9 @@ class GenesisConfig {
     /**
      * @type {string}
      */
-    static get DATABASE_PREFIX() {
+    static get NETWORK_NAME() {
         if (!GenesisConfig._CONFIG) throw new Error('GenesisConfig not initialized');
-        return GenesisConfig._CONFIG.DATABASE_PREFIX;
+        return GenesisConfig._CONFIG.NETWORK_NAME;
     }
 
     /**
@@ -76,7 +76,7 @@ class GenesisConfig {
 GenesisConfig.CONFIGS = {
     2: {
         NETWORK_ID: 2,
-        DATABASE_PREFIX: 'devnet-',
+        NETWORK_NAME: 'devnet',
         GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),

@@ -110,7 +110,7 @@ Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a8
 
 GenesisConfig.CONFIGS[4] = {
     NETWORK_ID: 4,
-    DATABASE_PREFIX: 'tests-',
+    NETWORK_NAME: 'tests',
     GENESIS_BLOCK: new Block(
         new BlockHeader(
             new Hash(null),
