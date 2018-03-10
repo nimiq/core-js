@@ -30,14 +30,19 @@ describe('TwoNodes', () => {
     });
 
     it('should be able to connect and sync through WebRTC', (done) => {
-        let consensus3, established = false;
+        let consensus3, establishedCount = 0;
 
-        function checkEstablished() {
-            if (established) {
+        async function checkEstablished() {
+            establishedCount++;
+            if (establishedCount === 2) {
+                const netconfig3 = new RtcNetworkConfig();
+                consensus3 = await Consensus.volatileLight(netconfig3);
+                consensus3.network.connect();
+                consensus3.on('established', checkEstablished);
+            } else if (establishedCount === 3) {
                 expect(consensus3._agents.length).toBe(2);
                 done();
             }
-            established = true;
         }
 
         (async () => {
@@ -49,12 +54,7 @@ describe('TwoNodes', () => {
             const consensus2 = await Consensus.volatileFull(netconfig2);
             consensus2.network.connect();
 
-            consensus2.on('established', async () => {
-                const netconfig3 = new RtcNetworkConfig();
-                consensus3 = await Consensus.volatileLight(netconfig3);
-                consensus3.network.connect();
-                consensus3.on('established', checkEstablished);
-            });
+            consensus2.on('established', checkEstablished);
         })().catch(done.fail);
     });
 });

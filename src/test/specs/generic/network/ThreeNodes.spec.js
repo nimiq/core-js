@@ -11,11 +11,11 @@ describe('ThreeNodes', () => {
         let consensus1, establishedCount = 0;
 
         function checkEstablished() {
-            if (establishedCount === 2) {
+            establishedCount++;
+            if (establishedCount === 3) {
                 expect(consensus1._agents.length).toBe(2);
                 done();
             }
-            establishedCount++;
         }
 
         (async () => {
