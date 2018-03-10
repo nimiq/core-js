@@ -65,8 +65,8 @@ const statisticsOptions = argv.statistics;
 const passive = argv.passive;
 const rpc = argv.rpc;
 let rpcPort = 8648;
-if (typeof rpc === 'string') {
-    rpcPort = parseInt(rpc);
+if (typeof rpc === 'number') {
+    rpcPort = rpc;
 }
 const metrics = argv.metrics;
 let metricsPort = 8649, metricsPassword = null;
@@ -78,8 +78,8 @@ if (typeof metrics === 'string') {
 }
 const networkIdArg = argv.networkid;
 let networkId = 2;
-if (typeof networkIdArg === 'string') {
-    networkId = parseInt(networkIdArg);
+if (typeof networkIdArg === 'number') {
+    networkId = networkIdArg;
 }
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
