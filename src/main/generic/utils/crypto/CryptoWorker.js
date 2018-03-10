@@ -38,9 +38,10 @@ class CryptoWorker {
      * @param {Array.<bool>} transactionValid
      * @param {number} timeNow
      * @param {Uint8Array} genesisHash
+     * @param {number} networkId
      * @returns {Promise.<{valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer}>}
      */
-    async blockVerify(block, transactionValid, timeNow, genesisHash) {}
+    async blockVerify(block, transactionValid, timeNow, genesisHash, networkId) {}
 }
 /** @type {CryptoWorker} */
 CryptoWorker._workerAsync = null;
