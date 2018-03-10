@@ -28,9 +28,9 @@ class PartialLightChain extends LightChain {
      * @returns {Promise.<boolean>}
      */
     pushProof(proof) {
-        return this._synchronizer.push(() => {
-            return this._pushProof(proof);
-        });
+        // Synchronize with .pushBlock()
+        return this._synchronizer.push('pushBlock',
+            this._pushProof.bind(this, proof));
     }
 
     /**

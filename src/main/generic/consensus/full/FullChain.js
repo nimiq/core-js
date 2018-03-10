@@ -56,8 +56,8 @@ class FullChain extends BaseChain {
         /** @type {TransactionStore} */
         this._transactionStore = transactionStore;
 
-        /** @type {Synchronizer} */
-        this._synchronizer = new Synchronizer();
+        /** @type {MultiSynchronizer} */
+        this._synchronizer = new MultiSynchronizer();
 
         /** @type {number} */
         this._blockKnownCount = this._blockInvalidCount = this._blockOrphanCount = this._blockExtendedCount = this._blockRebranchedCount = this._blockForkedCount = 0;
@@ -101,9 +101,8 @@ class FullChain extends BaseChain {
      * @returns {Promise.<number>}
      */
     pushBlock(block) {
-        return this._synchronizer.push(() => {
-            return this._pushBlock(block);
-        });
+        return this._synchronizer.push('pushBlock',
+            this._pushBlock.bind(this, block));
     }
 
     /**
@@ -436,25 +435,13 @@ class FullChain extends BaseChain {
      * @returns {Promise.<ChainProof>}
      * @override
      */
-    async getChainProof() {
-        if (!this._proof) {
-            this._proof = await this._getChainProof();
-        }
-        return this._proof;
-    }
-
-    /**
-     * @param {Block} blockToProve
-     * @param {Block} knownBlock
-     * @returns {Promise.<?BlockChain>}
-     */
-    async getBlockInclusionProof(blockToProve, knownBlock) {
-        const blocks = await this._followDown(blockToProve, knownBlock);
-        if (!blocks) {
-            return null;
-        }
-
-        return new BlockChain(blocks);
+    getChainProof() {
+        return this._synchronizer.push('getChainProof', async () => {
+            if (!this._proof) {
+                this._proof = await this._getChainProof();
+            }
+            return this._proof;
+        });
     }
 
     /**
@@ -516,11 +503,11 @@ class FullChain extends BaseChain {
         const entriesByRecipient = await this._transactionStore.getByRecipient(address);
 
         entriesBySender.forEach(entry => {
-            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash));
+            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
         });
 
         entriesByRecipient.forEach(entry => {
-            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash));
+            transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
         });
 
         return transactionReceipts;
@@ -548,7 +535,8 @@ class FullChain extends BaseChain {
      * @returns {Promise.<?Accounts>}
      */
     _getSnapshot(blockHash) {
-        return this._synchronizer.push(async () => {
+        // TODO Does this have to be synchronized with pushBlock() ?
+        return this._synchronizer.push('pushBlock', async () => {
             const block = await this.getBlock(blockHash);
             // Check if blockHash is a block on the main chain within the allowed window.
             if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {

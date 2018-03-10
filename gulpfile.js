@@ -37,6 +37,7 @@ const sources = {
     generic: [
         './src/main/generic/utils/Services.js',
         './src/main/generic/utils/Synchronizer.js',
+        './src/main/generic/utils/MultiSynchronizer.js',
         './src/main/generic/utils/Timers.js',
         './src/main/generic/utils/Version.js',
         './src/main/generic/utils/Time.js',
@@ -112,6 +113,7 @@ const sources = {
         './src/main/generic/consensus/base/mempool/MempoolTransactionSet.js',
         './src/main/generic/consensus/base/mempool/Mempool.js',
         './src/main/generic/consensus/BaseConsensusAgent.js',
+        './src/main/generic/consensus/BaseConsensus.js',
         './src/main/generic/consensus/full/FullChain.js',
         './src/main/generic/consensus/full/FullConsensusAgent.js',
         './src/main/generic/consensus/full/FullConsensus.js',

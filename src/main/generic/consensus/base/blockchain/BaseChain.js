@@ -38,6 +38,40 @@ class BaseChain extends IBlockchain {
     }
 
     /**
+     * @returns {Promise.<Array.<Hash>>}
+     */
+    async getBlockLocators() {
+        // Push top 10 hashes first, then back off exponentially.
+        /** @type {Array.<Hash>} */
+        const locators = [this.headHash];
+
+        let block = this.head;
+        for (let i = Math.min(10, this.height) - 1; i > 0; i--) {
+            if (!block) {
+                break;
+            }
+            locators.push(block.prevHash);
+            block = await this.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
+        }
+
+        let step = 2;
+        for (let i = this.height - 10 - step; i > 0; i -= step) {
+            block = await this.getBlockAt(i); // eslint-disable-line no-await-in-loop
+            if (block) {
+                locators.push(await block.hash()); // eslint-disable-line no-await-in-loop
+            }
+            step *= 2;
+        }
+
+        // Push the genesis block hash.
+        if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
+            locators.push(Block.GENESIS.HASH);
+        }
+
+        return locators;
+    }
+
+    /**
      * Computes the target value for the block after the given block or the head of this chain if no block is given.
      * @param {Block} [block]
      * @returns {Promise.<number>}
@@ -328,7 +362,7 @@ class BaseChain extends IBlockchain {
         prefix.push(prefixHead);
 
         // Extract layered superchains from prefix. Make a copy because we are going to change the chains array.
-        const chains = (await proof.getSuperChains()).slice();
+        const chains = (await proof.prefix.getSuperChains()).slice();
 
         // Append new prefix head to chains.
         const depth = BlockUtils.getHashDepth(await prefixHead.pow());
@@ -343,7 +377,7 @@ class BaseChain extends IBlockchain {
 
         // If the new header isn't a superblock, we're done.
         if (depth - BlockUtils.getTargetDepth(prefixHead.target) <= 0) {
-            return new ChainProof(new BlockChain(prefix), new HeaderChain(suffix), chains);
+            return new ChainProof(new BlockChain(prefix, chains), new HeaderChain(suffix));
         }
 
         // Prune unnecessary blocks if the chain is good.
@@ -390,10 +424,87 @@ class BaseChain extends IBlockchain {
         }
 
         // Remove all deleted blocks from prefix.
-        const newPrefix = new BlockChain(prefix.filter(block => !deletedBlockHeights.has(block.height)));
+        const newPrefix = new BlockChain(prefix.filter(block => !deletedBlockHeights.has(block.height)), chains);
 
         // Return the extended proof.
-        return new ChainProof(newPrefix, new HeaderChain(suffix), chains);
+        return new ChainProof(newPrefix, new HeaderChain(suffix));
+    }
+
+    /**
+     * @param {Block} blockToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<?BlockChain>}
+     **/
+    async getBlockProof(blockToProve, knownBlock) {
+        const snapshot = this._store.snapshot();
+        const chain = new BaseChainSnapshot(snapshot, this.head);
+        const proof = await chain._getBlockProof(blockToProve, knownBlock);
+        snapshot.abort().catch(Log.w.tag(BaseChain));
+        return proof;
+    }
+
+    /**
+     * @param {Block} blockToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<?BlockChain>}
+     * @private
+     */
+    async _getBlockProof(blockToProve, knownBlock) {
+        /**
+         * @param {Block} block
+         * @param {number} depth
+         * @returns {Hash}
+         */
+        const getInterlinkReference = (block, depth) => {
+            const index = Math.min(depth - BlockUtils.getTargetDepth(block.target), block.interlink.length - 1);
+            return index < 0 ? block.prevHash : block.interlink.hashes[index];
+        };
+
+        const blocks = [];
+        const hashToProve = blockToProve.hash();
+
+        const proveTarget = BlockUtils.hashToTarget(await blockToProve.pow());
+        const proveDepth = BlockUtils.getTargetDepth(proveTarget);
+
+        let depth = BlockUtils.getTargetDepth(knownBlock.target) + knownBlock.interlink.length - 1;
+        let block = knownBlock;
+
+        let reference = getInterlinkReference(block, depth);
+        while (!hashToProve.equals(reference)) {
+            const nextBlock = await this.getBlock(reference); // eslint-disable-line no-await-in-loop
+            if (!nextBlock) {
+                // This can happen in the light/nano client if the blockToProve is known but blocks between tailBlock
+                // and blockToProve are missing.
+                Log.w(BaseChain, `Failed to find block ${reference} while constructing inclusion proof`);
+                return null;
+            }
+
+            if (nextBlock.height < blockToProve.height) {
+                // We have gone past the blockToProve, but are already at proveDepth, fail.
+                if (depth <= proveDepth) {
+                    return null;
+                }
+
+                // Decrease depth and thereby step size.
+                depth--;
+                reference = getInterlinkReference(block, depth);
+            } else if (nextBlock.height > blockToProve.height) {
+                // We are still in front of blockToProve, add block to result and advance.
+                blocks.push(nextBlock.toLight());
+
+                block = nextBlock;
+                reference = getInterlinkReference(block, depth);
+            } else {
+                // We found a reference to a different block than blockToProve at its height.
+                Log.w(BaseChain, `Failed to prove block ${hashToProve} - different block ${reference} at its height ${block.height}`);
+                return null;
+            }
+        }
+
+        // Include the blockToProve in the result.
+        blocks.push(blockToProve.toLight());
+
+        return new BlockChain(blocks.reverse());
     }
 
     /**

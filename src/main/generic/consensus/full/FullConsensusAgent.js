@@ -2,10 +2,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {FullChain} blockchain
      * @param {Mempool} mempool
+     * @param {Time} time
      * @param {Peer} peer
      */
-    constructor(blockchain, mempool, peer) {
-        super(peer);
+    constructor(blockchain, mempool, time, peer) {
+        super(time, peer);
         /** @type {FullChain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
@@ -122,37 +123,12 @@ class FullConsensusAgent extends BaseConsensusAgent {
         const onFork = this._forkHead && this._numBlocksExtending === 0 && this._numBlocksForking > 0;
 
         /** @type {Array.<Hash>} */
-        const locators = [];
+        let locators;
         if (onFork) {
             // Only send the fork head as locator if the peer is sending us a fork.
-            locators.push(this._forkHead.hash());
+            locators = [this._forkHead.hash()];
         } else {
-            // Request blocks starting from our hardest chain head going back to
-            // the genesis block. Push top 10 hashes first, then back off exponentially.
-            locators.push(this._blockchain.headHash);
-
-            let block = this._blockchain.head;
-            for (let i = Math.min(10, this._blockchain.height) - 1; i > 0; i--) {
-                if (!block) {
-                    break;
-                }
-                locators.push(block.prevHash);
-                block = await this._blockchain.getBlock(block.prevHash); // eslint-disable-line no-await-in-loop
-            }
-
-            let step = 2;
-            for (let i = this._blockchain.height - 10 - step; i > 0; i -= step) {
-                block = await this._blockchain.getBlockAt(i); // eslint-disable-line no-await-in-loop
-                if (block) {
-                    locators.push(block.hash()); // eslint-disable-line no-await-in-loop
-                }
-                step *= 2;
-            }
-
-            // Push the genesis block hash.
-            if (locators.length === 0 || !locators[locators.length - 1].equals(GenesisConfig.GENESIS_HASH)) {
-                locators.push(GenesisConfig.GENESIS_HASH);
-            }
+            locators = await this._blockchain.getBlockLocators();
         }
 
         // Reset block counters.
@@ -429,7 +405,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             return;
         }
 
-        const proof = await this._blockchain.getBlockInclusionProof(blockToProve, knownBlock);
+        const proof = await this._blockchain.getBlockProof(blockToProve, knownBlock);
         this._peer.channel.blockProof(proof);
     }
 

@@ -6,13 +6,11 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {Peer} peer
      */
     constructor(blockchain, mempool, time, peer) {
-        super(peer);
+        super(time, peer);
         /** @type {NanoChain} */
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
         this._mempool = mempool;
-        /** @type {Time} */
-        this._time = time;
 
         // Flag indicating that we are currently syncing our blockchain with the peer's.
         /** @type {boolean} */
@@ -21,29 +19,15 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         /** @type {Array.<BlockHeader>} */
         this._orphanedBlocks = [];
 
-        /** @type {Synchronizer} */
-        this._synchronizer = new Synchronizer();
-
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
-
-        // Helper object to keep track of the transactions we're requesting from the peer.
-        this._transactionsRequest = null;
-
-        // Helper object to keep track of full blocks we're requesting from the peer.
-        this._blockRequest = null;
 
         // Flag to track chain proof requests.
         this._requestedChainProof = false;
 
-        // Flag to track transaction receipts requests.
-        this._requestedTransactionReceipts = false;
-
         // Listen to consensus messages from the peer.
         peer.channel.on('chain-proof', msg => this._onChainProof(msg));
         peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
-        peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
-        peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
 
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
@@ -262,9 +246,8 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @returns {Promise.<Array.<Account>>}
      */
     getAccounts(blockHash, addresses) {
-        return this._synchronizer.push(() => {
-            return this._getAccounts(blockHash, addresses);
-        });
+        return this._synchronizer.push('getAccounts',
+            this._getAccounts.bind(this, blockHash, addresses));
     }
 
     /**
@@ -374,238 +357,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {Hash} blockHash
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<Array.<Transaction>>}
-     */
-    getTransactionsProof(blockHash, addresses) {
-        return this._synchronizer.push(() => {
-            return this._getTransactionsProof(blockHash, addresses);
-        });
-    }
-
-    /**
-     * @param {Hash} blockHash
-     * @param {Array.<Address>} addresses
-     * @returns {Promise.<Array<Transaction>>}
-     * @private
-     */
-    async _getTransactionsProof(blockHash, addresses) {
-        Assert.that(this._transactionsRequest === null);
-
-        Log.d(NanoConsensusAgent, `Requesting TransactionsProof for ${addresses} from ${this._peer.peerAddress}`);
-
-        /** @type {Block} */
-        const block = await this._blockchain.getBlock(blockHash);
-        if (!block) {
-            Log.d(NanoConsensusAgent, `Requested block with hash ${blockHash} not found`);
-            return [];
-        }
-
-        return new Promise((resolve, reject) => {
-            this._transactionsRequest = {
-                addresses: addresses,
-                blockHash: blockHash,
-                header: block.header,
-                resolve: resolve,
-                reject: reject
-            };
-
-            // Request AccountsProof from peer.
-            this._peer.channel.getTransactionsProof(blockHash, addresses);
-
-            // Drop the peer if it doesn't send the accounts proof within the timeout.
-            this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
-                this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
-                reject(new Error('timeout')); // TODO error handling
-            }, NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT);
-        });
-    }
-
-    /**
-     * @param {TransactionsProofMessage} msg
-     * @returns {Promise.<void>}
-     * @private
-     */
-    async _onTransactionsProof(msg) {
-        Log.d(NanoConsensusAgent, `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, transactions=${msg.transactions}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
-
-        // Check if we have requested a transactions proof, reject unsolicited ones.
-        if (!this._transactionsRequest) {
-            Log.w(NanoConsensusAgent, `Unsolicited transactions proof received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
-            return;
-        }
-
-        const blockHash = this._transactionsRequest.blockHash;
-        /** @type {BlockHeader} */
-        const header = this._transactionsRequest.header;
-        const resolve = this._transactionsRequest.resolve;
-        const reject = this._transactionsRequest.reject;
-
-        // Reset transactionsRequest.
-        this._transactionsRequest = null;
-
-        if (!msg.hasProof()) {
-            Log.w(NanoConsensusAgent, `TransactionsProof request was rejected by ${this._peer.peerAddress}`);
-            reject(new Error('TransactionsProof request was rejected'));
-            return;
-        }
-
-        // Check that the reference block corresponds to the one we requested.
-        if (!blockHash.equals(msg.blockHash)) {
-            Log.w(NanoConsensusAgent, `Received TransactionsProof for invalid reference block from ${this._peer.peerAddress}`);
-            reject(new Error('Invalid reference block'));
-            return;
-        }
-
-        // Verify the proof.
-        const proof = msg.proof;
-        if (!header.bodyHash.equals(proof.root())) {
-            Log.w(NanoConsensusAgent, `Invalid TransactionsProof received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
-            this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'Invalid TransactionsProof');
-            reject(new Error('Invalid TransactionsProof'));
-            return;
-        }
-
-        // Return the retrieved transactions.
-        resolve(proof.transactions);
-    }
-
-    /**
-     * @param {Address} address
-     */
-    getTransactionReceipts(address) {
-        this._peer.channel.getTransactionReceipts(address);
-        this._requestedTransactionReceipts = true;
-
-        this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
-            this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
-        }, NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT);
-    }
-
-    /**
-     * @param {TransactionReceiptsMessage} msg
-     * @returns {Promise.<void>}
-     * @private
-     */
-    async _onTransactionReceipts(msg) {
-        Log.d(NanoConsensusAgent, `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionReceipts.length}`);
-
-        // Check if we have requested transaction receipts, reject unsolicited ones.
-        if (!this._requestedTransactionReceipts) {
-            Log.w(NanoConsensusAgent, `Unsolicited transaction receipts received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
-            return;
-        }
-        this._requestedTransactionReceipts = false;
-
-        this.fire('transaction-receipts', msg.transactionReceipts);
-    }
-
-    /**
-     * @param {Hash} hash
-     * @returns {Promise.<Block>}
-     */
-    getFullBlock(hash) {
-        // TODO we can use a different synchronizer here, no need to synchronize with getAccounts().
-        return this._synchronizer.push(() => {
-            return this._getFullBlock(hash);
-        });
-    }
-
-    /**
-     * @param {Hash} hash
-     * @returns {Promise.<Block>}
-     * @private
-     */
-    _getFullBlock(hash) {
-        Assert.that(this._blockRequest === null);
-
-        Log.d(NanoConsensusAgent, `Requesting full block ${hash} from ${this._peer.peerAddress}`);
-
-        return new Promise((resolve, reject) => {
-            this._blockRequest = {
-                hash: hash,
-                resolve: resolve,
-                reject: reject
-            };
-
-            // Request full block from peer.
-            const vector = new InvVector(InvVector.Type.BLOCK, hash);
-            this._peer.channel.getData([vector]);
-
-            // Drop the peer if it doesn't send the block within the timeout.
-            this._peer.channel.expectMessage([Message.Type.BLOCK, Message.Type.NOT_FOUND], () => {
-                reject(new Error('timeout')); // TODO error handling
-            }, BaseConsensusAgent.REQUEST_TIMEOUT);
-        });
-    }
-
-    /**
-     * @param {BlockMessage} msg
-     * @return {Promise.<void>}
-     * @protected
-     * @override
-     */
-    async _onBlock(msg) {
-        // Ignore all block messages that we didn't request.
-        if (!this._blockRequest) {
-            Log.w(NanoConsensusAgent, `Unsolicited block message received from ${this._peer.peerAddress}, discarding`);
-            // TODO close/ban?
-            return;
-        }
-
-        const blockHash = this._blockRequest.hash;
-        const resolve = this._blockRequest.resolve;
-        const reject = this._blockRequest.reject;
-
-        // Reset blockRequest.
-        this._blockRequest = null;
-
-        // Check if we asked for this specific block.
-        const hash = msg.block.hash();
-        if (!hash.equals(blockHash)) {
-            Log.w(NanoConsensusAgent, `Unexpected block received from ${this._peer.peerAddress}, discarding`);
-            // TODO close/ban?
-            reject(new Error('Unexpected block'));
-            return;
-        }
-
-        // Verify block.
-        // TODO should we let the caller do that instead?
-        if (!(await msg.block.verify(this._time))) {
-            Log.w(NanoConsensusAgent, `Invalid block received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
-            this._peer.channel.close(CloseType.INVALID_BLOCK, 'Invalid block');
-            reject(new Error('Invalid block'));
-            return;
-        }
-
-        // Return the retrieved block.
-        resolve(msg.block);
-    }
-
-    /**
-     * @param {NotFoundMessage} msg
-     * @returns {void}
-     * @protected
-     * @override
-     */
-    _onNotFound(msg) {
-        // Check if this notfound message corresponds to our block request.
-        if (this._blockRequest && msg.vectors.length === 1 && msg.vectors[0].hash.equals(this._blockRequest.hash)) {
-            const reject = this._blockRequest.reject;
-            this._blockRequest = null;
-
-            reject(new Error('Block not found'));
-        }
-
-        super._onNotFound(msg);
-    }
-
-    /**
      * @returns {void}
      * @protected
      * @override
@@ -631,7 +382,5 @@ NanoConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
-NanoConsensusAgent.TRANSACTIONSPROOF_REQUEST_TIMEOUT = 1000 * 10;
-NanoConsensusAgent.TRANSACTIONS_REQUEST_TIMEOUT = 1000 * 15;
 NanoConsensusAgent.SUBSCRIPTION_CHANGE_THROTTLE = 1000 * 2;
 Class.register(NanoConsensusAgent);

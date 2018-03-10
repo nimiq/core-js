@@ -2,9 +2,8 @@ class ChainProof {
     /**
      * @param {BlockChain} prefix
      * @param {HeaderChain} suffix
-     * @param {Array.<BlockChain>} [superChains]
      */
-    constructor(prefix, suffix, superChains) {
+    constructor(prefix, suffix) {
         if (!(prefix instanceof BlockChain) || !prefix.length) throw new Error('Malformed prefix');
         if (!(suffix instanceof HeaderChain)) throw new Error('Malformed suffix');
 
@@ -12,8 +11,6 @@ class ChainProof {
         this._prefix = prefix;
         /** @type {HeaderChain} */
         this._suffix = suffix;
-        /** @type {?Array.<BlockChain>} */
-        this._chains = superChains;
     }
 
     static unserialize(buf) {
@@ -104,38 +101,6 @@ class ChainProof {
         }
 
         return true;
-    }
-
-    /**
-     * @returns {Promise.<Array.<BlockChain>>}
-     */
-    async getSuperChains() {
-        if (!this._chains) {
-            this._chains = [];
-            for (let i = 0; i < this._prefix.length; i++) {
-                const block = this._prefix.blocks[i];
-                const depth = BlockUtils.getHashDepth(await block.pow());
-
-                if (this._chains[depth]) {
-                    this._chains[depth].blocks.push(block);
-                } else if (!this._chains[depth]) {
-                    this._chains[depth] = new BlockChain([block]);
-                }
-
-                for (let j = depth - 1; j >= 0; j--) {
-                    if (this._chains[j]) {
-                        this._chains[j].blocks.push(block);
-                    }
-                }
-            }
-
-            for (let i = 0; i < this._chains.length; i++) {
-                if (!this._chains[i]) {
-                    this._chains[i] = new BlockChain([]);
-                }
-            }
-        }
-        return this._chains;
     }
 
     /**

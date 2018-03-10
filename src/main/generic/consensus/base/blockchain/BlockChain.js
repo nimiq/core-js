@@ -60,13 +60,16 @@ class BlockChain {
 
     /**
      * @param {Array.<Block>} blocks
+     * @param {Array.<BlockChain>} [superChains]
      */
-    constructor(blocks) {
-        if (!blocks || !NumberUtils.isUint16(blocks.length)
+    constructor(blocks, superChains) {
+        if (!Array.isArray(blocks) || !NumberUtils.isUint16(blocks.length)
             || blocks.some(it => !(it instanceof Block) || !it.isLight())) throw new Error('Malformed blocks');
 
         /** @type {Array.<Block>} */
         this._blocks = blocks;
+        /** @type {Array.<BlockChain>} */
+        this._chains = superChains;
     }
 
     /**
@@ -138,6 +141,38 @@ class BlockChain {
         }
         denseSuffix.reverse();
         return denseSuffix;
+    }
+
+    /**
+     * @returns {Promise.<Array.<BlockChain>>}
+     */
+    async getSuperChains() {
+        if (!this._chains) {
+            this._chains = [];
+            for (let i = 0; i < this.length; i++) {
+                const block = this.blocks[i];
+                const depth = BlockUtils.getHashDepth(await block.pow());
+
+                if (this._chains[depth]) {
+                    this._chains[depth].blocks.push(block);
+                } else if (!this._chains[depth]) {
+                    this._chains[depth] = new BlockChain([block]);
+                }
+
+                for (let j = depth - 1; j >= 0; j--) {
+                    if (this._chains[j]) {
+                        this._chains[j].blocks.push(block);
+                    }
+                }
+            }
+
+            for (let i = 0; i < this._chains.length; i++) {
+                if (!this._chains[i]) {
+                    this._chains[i] = new BlockChain([]);
+                }
+            }
+        }
+        return this._chains;
     }
 
     /**

@@ -4,7 +4,7 @@ class TransactionsProof {
      * @param {MerkleProof} proof
      */
     constructor(transactions, proof) {
-        if (!transactions || !NumberUtils.isUint16(transactions.length)
+        if (!Array.isArray(transactions) || !NumberUtils.isUint16(transactions.length)
             || transactions.some(it => !(it instanceof Transaction))) throw new Error('Malformed transactions');
         if (!(proof instanceof MerkleProof)) throw new Error('Malformed merkle proof');
 

@@ -2,10 +2,12 @@ class TransactionReceipt {
     /**
      * @param {Hash} transactionHash
      * @param {Hash} blockHash
+     * @param {number} blockHeight
      */
-    constructor(transactionHash, blockHash) {
+    constructor(transactionHash, blockHash, blockHeight) {
         this._transactionHash = transactionHash;
         this._blockHash = blockHash;
+        this._blockHeight = blockHeight;
     }
 
     /**
@@ -15,7 +17,8 @@ class TransactionReceipt {
     static unserialize(buf) {
         const transactionHash = Hash.unserialize(buf);
         const blockHash = Hash.unserialize(buf);
-        return new TransactionReceipt(transactionHash, blockHash);
+        const blockHeight = buf.readUint32();
+        return new TransactionReceipt(transactionHash, blockHash, blockHeight);
     }
 
     /**
@@ -26,13 +29,15 @@ class TransactionReceipt {
         buf = buf || new SerialBuffer(this.serializedSize);
         this._transactionHash.serialize(buf);
         this._blockHash.serialize(buf);
+        buf.writeUint32(this._blockHeight);
         return buf;
     }
 
     /** @type {number} */
     get serializedSize() {
         return this._transactionHash.serializedSize
-            + this._blockHash.serializedSize;
+            + this._blockHash.serializedSize
+            + /*blockHeight*/ 4;
     }
 
     /** @type {Hash} */
@@ -43,6 +48,11 @@ class TransactionReceipt {
     /** @type {Hash} */
     get blockHash() {
         return this._blockHash;
+    }
+
+    /** @type {number} */
+    get blockHeight() {
+        return this._blockHeight;
     }
 }
 Class.register(TransactionReceipt);

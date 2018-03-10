@@ -6,13 +6,17 @@ class NanoChain extends BaseChain {
     constructor(time) {
         super(ChainDataStore.createVolatile());
 
+        /** @type {Time} */
         this._time = time;
 
+        /** @type {ChainProof} */
         this._proof = new ChainProof(new BlockChain([GenesisConfig.GENESIS_BLOCK.toLight()]), new HeaderChain([]));
 
+        /** @type {Hash} */
         this._headHash = GenesisConfig.GENESIS_HASH;
 
-        this._synchronizer = new Synchronizer();
+        /** @type {MultiSynchronizer} */
+        this._synchronizer = new MultiSynchronizer();
 
         return this._init();
     }
@@ -29,9 +33,8 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<boolean>}
      */
     pushProof(proof) {
-        return this._synchronizer.push(() => {
-            return this._pushProof(proof);
-        });
+        return this._synchronizer.push('pushProof',
+            this._pushProof.bind(this, proof));
     }
 
     /**
@@ -213,9 +216,9 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<number>}
      */
     pushHeader(header) {
-        return this._synchronizer.push(() => {
-            return this._pushHeader(header);
-        });
+        // Synchronize with .pushProof()
+        return this._synchronizer.push('pushProof',
+            this._pushHeader.bind(this, header));
     }
 
     /**
@@ -387,11 +390,13 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<ChainProof>}
      * @override
      */
-    async getChainProof() {
-        if (!this._proof) {
-            this._proof = await this._getChainProof();
-        }
-        return this._proof;
+    getChainProof() {
+        return this._synchronizer.push('getChainProof', async () => {
+            if (!this._proof) {
+                this._proof = await this._getChainProof();
+            }
+            return this._proof;
+        });
     }
 
     /** @type {Block} */

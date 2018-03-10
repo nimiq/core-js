@@ -4,7 +4,7 @@ class TransactionReceiptsMessage extends Message {
      */
     constructor(transactionReceipts) {
         super(Message.Type.TRANSACTION_RECEIPTS);
-        if (!transactionReceipts || !NumberUtils.isUint16(transactionReceipts.length)
+        if (!Array.isArray(transactionReceipts) || !NumberUtils.isUint16(transactionReceipts.length)
             || transactionReceipts.some(it => !(it instanceof TransactionReceipt))
             || transactionReceipts.length > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) throw new Error('Malformed transactionReceipts');
         /** @type {Array.<TransactionReceipt>} */

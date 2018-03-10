@@ -3,10 +3,13 @@
  */
 class BaseConsensusAgent extends Observable {
     /**
+     * @param {Time} time
      * @param {Peer} peer
      */
-    constructor(peer) {
+    constructor(time, peer) {
         super();
+        /** @type {Time} */
+        this._time = time;
         /** @type {Peer} */
         this._peer = peer;
 
@@ -55,6 +58,18 @@ class BaseConsensusAgent extends Observable {
         this._waitingFreeInvVectors = new Queue();
         this._timers.setInterval('freeInvVectors', () => this._sendFreeWaitingInvVectors(), BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL);
 
+        // Helper object to keep track of block proofs we're requesting.
+        this._blockProofRequest = null;
+
+        // Helper object to keep track of transaction proofs we're requesting.
+        this._transactionsProofRequest = null;
+
+        // Helper object to keep track of transaction receipts we're requesting.
+        this._transactionReceiptsRequest = null;
+
+        /** @type {MultiSynchronizer} */
+        this._synchronizer = new MultiSynchronizer();
+
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
         peer.channel.on('block', msg => this._onBlock(msg));
@@ -65,6 +80,10 @@ class BaseConsensusAgent extends Observable {
         peer.channel.on('subscribe', msg => this._onSubscribe(msg));
         peer.channel.on('get-data', msg => this._onGetData(msg));
         peer.channel.on('get-header', msg => this._onGetHeader(msg));
+
+        peer.channel.on('block-proof', msg => this._onBlockProof(msg));
+        peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
+        peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
@@ -106,7 +125,7 @@ class BaseConsensusAgent extends Observable {
         const invVectors = this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT);
         if (invVectors.length > 0) {
             this._peer.channel.inv(invVectors);
-            Log.v(BaseConsensusAgent, `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
+            Log.v(BaseConsensusAgent, () => `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
         }
     }
 
@@ -121,7 +140,7 @@ class BaseConsensusAgent extends Observable {
         }
         if (invVectors.length > 0) {
             this._peer.channel.inv(invVectors);
-            Log.v(BaseConsensusAgent, `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
+            Log.v(BaseConsensusAgent, () => `[INV] Sent ${invVectors.length} vectors to ${this._peer.peerAddress}`);
         }
     }
 
@@ -145,7 +164,7 @@ class BaseConsensusAgent extends Observable {
 
         // Relay transaction to peer later.
         const serializedSize = transaction.serializedSize;
-        if (transaction.fee/serializedSize < BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN) {
+        if (transaction.fee / serializedSize < BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN) {
             this._waitingFreeInvVectors.enqueue({serializedSize, vector});
         } else {
             this._waitingInvVectors.enqueue(vector);
@@ -649,10 +668,253 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
+     * @param {Hash} blockHashToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<Block>}
+     */
+    getBlockProof(blockHashToProve, knownBlock) {
+        return this._synchronizer.push('getBlockProof',
+            this._getBlockProof.bind(this, blockHashToProve, knownBlock));
+    }
+
+    /**
+     * @param {Hash} blockHashToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<Block>}
+     * @private
+     */
+    _getBlockProof(blockHashToProve, knownBlock) {
+        Assert.that(this._blockProofRequest === null);
+
+        Log.d(BaseConsensusAgent, () => `Requesting BlockProof for ${blockHashToProve} from ${this._peer.peerAddress}`);
+
+        return new Promise((resolve, reject) => {
+            this._blockProofRequest = {
+                blockHashToProve,
+                knownBlock,
+                resolve,
+                reject
+            };
+
+            // Request BlockProof from peer.
+            this._peer.channel.getBlockProof(blockHashToProve, knownBlock.hash());
+
+            this._peer.channel.expectMessage(Message.Type.BLOCK_PROOF, () => {
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {BlockProofMessage} msg
+     * @returns {Promise.<void>}
+     * @private
+     */
+    async _onBlockProof(msg) {
+        Log.d(BaseConsensusAgent, () => `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
+
+        // Check if we have requested a header proof, reject unsolicited ones.
+        if (!this._blockProofRequest) {
+            Log.w(BaseConsensusAgent, `Unsolicited header proof received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        const { blockHashToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
+        this._blockProofRequest = null;
+
+        if (!msg.hasProof() || msg.proof.length === 0) {
+            reject(new Error('Block proof request was rejected'));
+            return;
+        }
+
+        // Check that the tail of the proof corresponds to the requested block.
+        const proof = msg.proof;
+        if (!blockHashToProve.equals(proof.tail.hash())) {
+            Log.w(BaseConsensusAgent, `Received BlockProof with invalid tail block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid tail block'));
+            return;
+        }
+
+        // Check that the proof links up to our reference block.
+        if (!(await knownBlock.isInterlinkSuccessorOf(proof.head))) {
+            Log.w(BaseConsensusAgent, `Received BlockProof with invalid head block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid head block'));
+            return;
+        }
+
+        // Verify the proof.
+        if (!(await proof.verify())) {
+            Log.w(BaseConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close(CloseType.INVALID_BLOCK_PROOF, 'Invalid BlockProof');
+            reject(new Error('Invalid BlockProof'));
+            return;
+        }
+
+        // Verify individual blocks.
+        const verificationResults = await Promise.all(proof.blocks.map(block => block.verify(this._time)));
+        if (!verificationResults.every(result => result)) {
+            Log.w(BaseConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
+            // TODO ban instead?
+            this._peer.channel.close(CloseType.INVALID_BLOCK_PROOF, 'Invalid BlockProof');
+            reject(new Error('Invalid BlockProof'));
+            return;
+        }
+
+        // Return the proven block.
+        resolve(proof.tail);
+    }
+
+    /**
+     * @param {Block} block
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    getTransactionsProof(block, addresses) {
+        return this._synchronizer.push('getTransactionsProof',
+            this._getTransactionsProof.bind(this, block, addresses));
+    }
+
+    /**
+     * @param {Block} block
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array.<Transaction>>}
+     * @private
+     */
+    _getTransactionsProof(block, addresses) {
+        Assert.that(this._transactionsProofRequest === null);
+
+        Log.d(BaseConsensusAgent, () => `Requesting TransactionsProof for ${addresses}@${block.height} from ${this._peer.peerAddress}`);
+
+        return new Promise((resolve, reject) => {
+            this._transactionsProofRequest = {
+                addresses,
+                block,
+                resolve,
+                reject,
+            };
+
+            // Request TransactionProof from peer.
+            this._peer.channel.getTransactionsProof(block.hash(), addresses);
+
+            // Drop the peer if it doesn't send the TransactionProof within the timeout.
+            this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
+                this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.TRANSACTIONS_PROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {TransactionsProofMessage} msg
+     * @returns {void}
+     * @private
+     */
+    _onTransactionsProof(msg) {
+        Log.d(BaseConsensusAgent, () => `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
+
+        // Check if we have requested a transactions proof, reject unsolicited ones.
+        if (!this._transactionsProofRequest) {
+            Log.w(BaseConsensusAgent, `Unsolicited transactions proof received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        const {/** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
+        this._transactionsProofRequest = null;
+
+        if (!msg.hasProof()) {
+            Log.w(BaseConsensusAgent, `TransactionsProof request was rejected by ${this._peer.peerAddress}`);
+            reject(new Error('TransactionsProof request was rejected'));
+            return;
+        }
+
+        // Check that the reference block corresponds to the one we requested.
+        if (!block.hash().equals(msg.blockHash)) {
+            Log.w(BaseConsensusAgent, `Received TransactionsProof for invalid reference block from ${this._peer.peerAddress}`);
+            reject(new Error('Invalid reference block'));
+            return;
+        }
+
+        // Verify the proof.
+        const proof = msg.proof;
+        if (!block.bodyHash.equals(proof.root())) {
+            Log.w(BaseConsensusAgent, `Invalid TransactionsProof received from ${this._peer.peerAddress}`);
+            this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'Invalid TransactionsProof');
+            reject(new Error('Invalid TransactionsProof'));
+            return;
+        }
+
+        // TODO Verify that the proof only contains transactions that match the given addresses.
+
+        // Return the retrieved transactions.
+        resolve(proof.transactions);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     */
+    getTransactionReceipts(address) {
+        return this._synchronizer.push('getTransactionReceipts',
+            this._getTransactionReceipts.bind(this, address));
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     * @private
+     */
+    _getTransactionReceipts(address) {
+        Assert.that(this._transactionReceiptsRequest === null);
+
+        return new Promise((resolve, reject) => {
+            this._transactionReceiptsRequest = {
+                address,
+                resolve,
+                reject
+            };
+
+            this._peer.channel.getTransactionReceipts(address);
+
+            this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
+                this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.TRANSACTION_RECEIPTS_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {TransactionReceiptsMessage} msg
+     * @returns {void}
+     * @private
+     */
+    _onTransactionReceipts(msg) {
+        Log.d(BaseConsensusAgent, () => `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionReceipts.length}`);
+
+        // Check if we have requested transaction receipts, reject unsolicited ones.
+        if (!this._transactionReceiptsRequest) {
+            Log.w(BaseConsensusAgent, `Unsolicited transaction receipts received from ${this._peer.peerAddress}`);
+            // TODO close/ban?
+            return;
+        }
+
+        const {resolve} = this._transactionReceiptsRequest;
+        this._transactionReceiptsRequest = null;
+
+        // TODO Verify that the transaction receipts match the given address.
+
+        resolve(msg.transactionReceipts);
+    }
+
+    /**
      * @returns {void}
      * @protected
      */
     _onClose() {
+        this._synchronizer.clear();
+
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
 
@@ -671,20 +933,35 @@ class BaseConsensusAgent extends Observable {
     }
 }
 /**
- * Number of InvVectors in invToRequest pool to automatically trigger a getData request.
+ * Number of InvVectors in invToRequest pool to automatically trigger a get-data request.
  * @type {number}
  */
 BaseConsensusAgent.REQUEST_THRESHOLD = 50;
 /**
- * Time (ms) to wait after the last received inv message before sending getData.
+ * Time (ms) to wait after the last received inv message before sending get-data.
  * @type {number}
  */
 BaseConsensusAgent.REQUEST_THROTTLE = 500;
 /**
- * Maximum time (ms) to wait after sending out getData or receiving the last object for this request.
+ * Maximum time (ms) to wait after sending out get-data or receiving the last object for this request.
  * @type {number}
  */
 BaseConsensusAgent.REQUEST_TIMEOUT = 1000 * 10;
+/**
+ * Maximum time (ms) to wait for block-proof.
+ * @type {number}
+ */
+BaseConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT = 1000 * 10;
+/**
+ * Maximum time (ms) to wait for transactions-proof.
+ * @type {number}
+ */
+BaseConsensusAgent.TRANSACTIONS_PROOF_REQUEST_TIMEOUT = 1000 * 10;
+/**
+ * Maximum time (ms) to wait for transactions-receipts.
+ * @type {number}
+ */
+BaseConsensusAgent.TRANSACTION_RECEIPTS_REQUEST_TIMEOUT = 1000 * 15;
 /**
  * Time interval (ms) to wait between sending out transactions.
  * @type {number}
