@@ -108,7 +108,7 @@ Dummy.partialSignatureTestVectors = [
 Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
 Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a83356ea443ac68969824184b82903a5ea83e7ee0c8c7ad863c3ceffd31a63679e1ea34a5f89e3ae0f90c5d281d4a900');
 
-GenesisConfig.CONFIGS[4] = {
+GenesisConfig.CONFIGS['tests'] = {
     NETWORK_ID: 4,
     NETWORK_NAME: 'tests',
     GENESIS_BLOCK: new Block(
@@ -128,7 +128,7 @@ GenesisConfig.CONFIGS[4] = {
     GENESIS_ACCOUNTS: 'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
     SEED_PEERS: [WsPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
 };
-GenesisConfig.init(GenesisConfig.CONFIGS[4]);
+GenesisConfig.init(GenesisConfig.CONFIGS['tests']);
 
 if (typeof global !== 'undefined') {
     global.Dummy = Dummy;

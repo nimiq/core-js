@@ -77,8 +77,8 @@ if (typeof metrics === 'string') {
     metricsPort = parseInt(metrics);
 }
 const networkIdArg = argv.networkid;
-let networkId = 2;
-if (typeof networkIdArg === 'number') {
+let networkId = 'dev';
+if (typeof networkIdArg === 'string') {
     networkId = networkIdArg;
 }
 const walletSeed = argv['wallet-seed'] || null;

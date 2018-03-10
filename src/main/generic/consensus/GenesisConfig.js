@@ -15,7 +15,7 @@ class GenesisConfig {
     }
 
     static devnet() {
-        GenesisConfig.init(GenesisConfig.CONFIGS[2]);
+        GenesisConfig.init(GenesisConfig.CONFIGS['dev']);
     }
 
     /*
@@ -74,9 +74,9 @@ class GenesisConfig {
     }
 }
 GenesisConfig.CONFIGS = {
-    2: {
+    'dev': {
         NETWORK_ID: 2,
-        NETWORK_NAME: 'devnet',
+        NETWORK_NAME: 'dev',
         GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),
