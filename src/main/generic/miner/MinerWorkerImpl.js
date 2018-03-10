@@ -8,7 +8,14 @@ class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
     async init(name) {
         await this._superInit.call(this, name);
 
-        if (await this.importWasm('worker-wasm.wasm')) {
+        // FIXME: Remove when iOS 11.3 is sufficiently widespread
+        let hasNoiOSBug = true;
+        if(PlatformUtils.isiOS()) {
+            await this.importWasm('iOS-wasm-fail.wasm', 'iOSWasmTest');
+            hasNoiOSBug = await PlatformUtils.hasNoBrokenWasmImplementation();
+        }
+
+        if (hasNoiOSBug && (await this.importWasm('worker-wasm.wasm'))) {
             await this.importScript('worker-wasm.js');
         } else {
             await this.importScript('worker-js.js');

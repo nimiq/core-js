@@ -63,7 +63,7 @@ class Nimiq {
                         path = './';
                     }
                 }
-                
+
                 Nimiq._path = path;
                 Nimiq._fullScript = Nimiq._path + Nimiq._script;
 
@@ -107,7 +107,7 @@ class Nimiq {
         for (const clazz of classes) {
             self[clazz] = Nimiq[clazz];
         }
-    } 
+    }
 
     static _hasNativeClassSupport() {
         try {
