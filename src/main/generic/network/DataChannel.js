@@ -127,7 +127,7 @@ class DataChannel extends Observable {
             }
 
             if (this._buffer === null) {
-                Log.e(DataChannel, `Message does not start next tag ${this._receivingTag + 1} (but ${tag}), but buffer is null`);
+                Log.e(DataChannel, `Message does not start with next tag ${this._receivingTag + 1} (got ${tag} instead), but buffer is null`);
                 return;
             }
 
