@@ -71,7 +71,9 @@ class Nimiq {
                     if (!Nimiq._loaded) {
                         error(Nimiq.ERR_UNKNOWN);
                     } else {
-                        resolve();
+                        Nimiq.WasmHelper.doImportBrowser()
+                            .then(resolve)
+                            .catch(error.bind(null, Nimiq.ERR_UNKNOWN));
                     }
                 };
                 Nimiq._loadScript(Nimiq._fullScript, Nimiq._onload);
@@ -102,12 +104,14 @@ class Nimiq {
      * @param {Array.<string>} classes Array of class names to load in global scope
      * @returns {Promise.<void>}
      */
-    static async loadToScope(...classes) {
-        await Nimiq.load();
-        for (const clazz of classes) {
-            self[clazz] = Nimiq[clazz];
-        }
-    } 
+    static loadToScope(...classes) {
+        return Nimiq.load()
+            .then(function() {
+                for (const clazz of classes) {
+                    self[clazz] = Nimiq[clazz];
+                }
+            });
+    }
 
     static _hasNativeClassSupport() {
         try {
@@ -168,21 +172,23 @@ class Nimiq {
         }
 
         // Wait until there is only a single browser window open for this origin.
-        WindowDetector.get().waitForSingleWindow(async function () {
-            try {
-                await Nimiq.load();
-                await Nimiq.WasmHelper.doImportBrowser();
-                console.log('Nimiq engine loaded.');
-                if (ready) ready();
-            } catch (e) {
-                if (Number.isInteger(e)) {
-                    if (error) error(e);
-                } else {
-                    console.error('Error while initializing the core', e);
-                    if (error) error(Nimiq.ERR_UNKNOWN);
-                }
-            }
-        }, () => error && error(Nimiq.ERR_WAIT));
+        WindowDetector.get().waitForSingleWindow(function () {
+            Nimiq.load()
+                .then(function() {
+                    console.log('Nimiq engine loaded.');
+                    if (ready) ready();
+                })
+                .catch(function(e) {
+                    if (Number.isInteger(e)) {
+                        if (error) error(e);
+                    } else {
+                        console.error('Error while initializing the core', e);
+                        if (error) error(Nimiq.ERR_UNKNOWN);
+                    }
+                });
+        }, function () {
+            if (error) error(Nimiq.ERR_WAIT);
+        });
     }
 }
 Nimiq._currentScript = document.currentScript;
