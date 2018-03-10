@@ -21,6 +21,7 @@ class Mempool extends Observable {
         // Listen for changes in the blockchain head to evict transactions that
         // have become invalid.
         blockchain.on('head-changed', () => this._evictTransactions());
+        blockchain.on('block-reverted', (block) => this._restoreTransactions(block));
     }
 
     /**
@@ -144,7 +145,7 @@ class Mempool extends Observable {
         const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionCache);
         const prunedAccountsSize = prunedAccounts.reduce((sum, acc) => sum + acc.serializedSize, 0);
 
-        let size = prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0); 
+        let size = prunedAccountsSize + transactions.reduce((sum, tx) => sum + tx.serializedSize, 0);
         while (size > maxSize) {
             size -= transactions.pop().serializedSize;
         }
@@ -160,6 +161,19 @@ class Mempool extends Observable {
     getPendingTransactions(address) {
         const set = this._transactionSetByAddress.get(address);
         return set ? set.transactions : [];
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise}
+     * @private
+     */
+    _restoreTransactions(block) {
+        return this._synchronizer.push(async () => {
+            for (const tx of block.transactions) {
+                await this._pushTransaction(tx);
+            }
+        });
     }
 
     /**

@@ -300,6 +300,7 @@ class FullChain extends BaseChain {
         // Walk up the fork chain until we find a block that is part of the main chain.
         // Store the chain along the way.
         const forkChain = [];
+        const revertChain = [];
         const forkHashes = [];
 
         let curData = chainData;
@@ -334,6 +335,7 @@ class FullChain extends BaseChain {
                 if (this._transactionStore) {
                     await transactionStoreTx.remove(head);
                 }
+                revertChain.push(head);
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
                 accountsTx.abort().catch(Log.w.tag(FullChain));
@@ -409,6 +411,11 @@ class FullChain extends BaseChain {
         // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
         // TODO modify chain proof directly, don't recompute.
         this._proof = null;
+
+        // Fire block-reverted event for each block reverted during rebranch
+        for (let i = 0; i < revertChain.length; i++) {
+            this.fire('block-reverted', revertChain[i]);
+        }
 
         // Fire head-changed event for each fork block.
         for (let i = forkChain.length - 1; i >= 0; i--) {
