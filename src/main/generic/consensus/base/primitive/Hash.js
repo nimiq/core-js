@@ -197,15 +197,16 @@ class Hash extends Serializable {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(Hash.SIZE.get(Hash.Algorithm.BLAKE2B));
+            const hashSize = Hash.getSize(Hash.Algorithm.BLAKE2B);
+            const wasmOut = Module.stackAlloc(hashSize);
             const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             const res = Module._nimiq_blake2(wasmOut, wasmIn, input.length);
             if (res !== 0) {
                 throw res;
             }
-            const hash = new Uint8Array(Hash.SIZE.get(Hash.Algorithm.BLAKE2B));
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, Hash.SIZE.get(Hash.Algorithm.BLAKE2B)));
+            const hash = new Uint8Array(hashSize);
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
             return hash;
         } catch (e) {
             Log.w(Hash, e);
@@ -223,12 +224,13 @@ class Hash extends Serializable {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(Hash.SIZE.get(Hash.Algorithm.SHA256));
+            const hashSize = Hash.getSize(Hash.Algorithm.SHA256);
+            const wasmOut = Module.stackAlloc(hashSize);
             const wasmIn = Module.stackAlloc(input.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
             Module._nimiq_sha256(wasmOut, wasmIn, input.length);
-            const hash = new Uint8Array(Hash.SIZE.get(Hash.Algorithm.SHA256));
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, Hash.SIZE.get(Hash.Algorithm.SHA256)));
+            const hash = new Uint8Array(hashSize);
+            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
             return hash;
         } catch (e) {
             Log.w(CryptoWorkerImpl, e);
