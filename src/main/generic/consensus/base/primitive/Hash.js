@@ -5,7 +5,6 @@ class Hash extends Serializable {
      */
     static copy(o) {
         if (!o) return o;
-        // FIXME Move this to Crypto class.
         const obj = new Uint8Array(o._obj);
         return new Hash(obj);
     }
@@ -76,6 +75,7 @@ class Hash extends Serializable {
      * @returns {Hash}
      */
     static compute(arr, algorithm) {
+        // !! The algorithms supported by this function are the allowed hash algorithms for HTLCs !!
         switch (algorithm) {
             case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
             case Hash.Algorithm.SHA256: return Hash.sha256(arr);
@@ -151,6 +151,10 @@ class Hash extends Serializable {
         return new Hash(BufferUtils.fromHex(hex));
     }
 
+    /**
+     * @param {string} str
+     * @returns {Hash}
+     */
     static fromString(str) {
         try {
             return Hash.fromHex(str);
@@ -241,7 +245,8 @@ class Hash extends Serializable {
 Hash.Algorithm = {
     BLAKE2B: 1,
     ARGON2D: 2,
-    SHA256: 3
+    SHA256: 3,
+    SHA512: 4
 };
 /**
  * @type {Map<Hash.Algorithm, number>}
@@ -250,6 +255,7 @@ Hash.SIZE = new Map();
 Hash.SIZE.set(Hash.Algorithm.BLAKE2B, 32);
 Hash.SIZE.set(Hash.Algorithm.ARGON2D, 32);
 Hash.SIZE.set(Hash.Algorithm.SHA256, 32);
+Hash.SIZE.set(Hash.Algorithm.SHA512, 64);
 
 Hash.NULL = new Hash(new Uint8Array(32));
 Class.register(Hash);

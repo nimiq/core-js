@@ -42,16 +42,6 @@ class CryptoWorker {
      */
     async blockVerify(block, transactionValid, timeNow, genesisHash) {}
 }
-CryptoWorker.ARGON2_HASH_SIZE = 32;
-CryptoWorker.BLAKE2_HASH_SIZE = 32;
-CryptoWorker.SHA256_HASH_SIZE = 32;
-CryptoWorker.PUBLIC_KEY_SIZE = 32;
-CryptoWorker.PRIVATE_KEY_SIZE = 32;
-CryptoWorker.MULTISIG_RANDOMNESS_SIZE = 32;
-CryptoWorker.SIGNATURE_SIZE = 64;
-CryptoWorker.PARTIAL_SIGNATURE_SIZE = 32;
-CryptoWorker.SIGNATURE_HASH_SIZE = 64;
-
 /** @type {CryptoWorker} */
 CryptoWorker._workerAsync = null;
 

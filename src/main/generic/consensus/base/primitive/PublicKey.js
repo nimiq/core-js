@@ -153,12 +153,13 @@ class PublicKey extends Serializable {
         let stackPtr;
         try {
             stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(CryptoWorker.SIGNATURE_HASH_SIZE);
+            const hashSize = Hash.getSize(Hash.Algorithm.SHA512);
+            const wasmOut = Module.stackAlloc(hashSize);
             const wasmInPublicKeys = Module.stackAlloc(concatenatedPublicKeys.length);
             new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeys, concatenatedPublicKeys.length).set(concatenatedPublicKeys);
             Module._ed25519_hash_public_keys(wasmOut, wasmInPublicKeys, publicKeys.length);
-            const hashedPublicKey = new Uint8Array(CryptoWorker.SIGNATURE_HASH_SIZE);
-            hashedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, CryptoWorker.SIGNATURE_HASH_SIZE));
+            const hashedPublicKey = new Uint8Array(hashSize);
+            hashedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
             return hashedPublicKey;
         } catch (e) {
             Log.w(PublicKey, e);
@@ -175,7 +176,7 @@ class PublicKey extends Serializable {
      */
     static _publicKeyDelinearize(publicKey, publicKeysHash) {
         if (publicKey.byteLength !== PublicKey.SIZE
-            || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
+            || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
         let stackPtr;
@@ -205,7 +206,7 @@ class PublicKey extends Serializable {
      */
     static _publicKeysDelinearizeAndAggregate(publicKeys, publicKeysHash) {
         if (publicKeys.some(publicKey => publicKey.byteLength !== PublicKey.SIZE)
-            || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
+            || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
         const concatenatedPublicKeys = new Uint8Array(publicKeys.length * PublicKey.SIZE);

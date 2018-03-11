@@ -67,7 +67,7 @@ class PrivateKey extends Serializable {
     static _privateKeyDelinearize(privateKey, publicKey, publicKeysHash) {
         if (privateKey.byteLength !== PrivateKey.SIZE
             || publicKey.byteLength !== PublicKey.SIZE
-            || publicKeysHash.byteLength !== CryptoWorker.SIGNATURE_HASH_SIZE) {
+            || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
         let stackPtr;
