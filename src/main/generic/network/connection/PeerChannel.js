@@ -24,7 +24,7 @@ class PeerChannel extends Observable {
             type = MessageFactory.peekType(buf);
             msg = MessageFactory.parse(buf);
         } catch(e) {
-            Log.w(PeerChannel, `Failed to parse message from ${this.peerAddress || this.netAddress}`, e.message || e);
+            Log.w(PeerChannel, `Failed to parse '${PeerChannel.Event[type]}' message from ${this.peerAddress || this.netAddress}`, e.message || e);
 
             // From the Bitcoin Reference:
             //  "Be careful of reject message feedback loops where two peers

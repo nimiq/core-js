@@ -3,7 +3,7 @@ const JsonRpcServer = require('./JsonRpcServer.js');
 const MetricsServer = require('./MetricsServer.js');
 const START = Date.now();
 /**
- * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean, networkid: ?string}}
+ * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean, network: ?string}}
  */
 const argv = require('minimist')(process.argv.slice(2));
 
@@ -45,12 +45,13 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
-        '                             full (default), light or nano.\n' +
+        '                             full (default), light, or nano.\n' +
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
         '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
         '                             The wallet cannot be used to sign transactions when\n' +
         '                             using this option.' +
-        '  --networkid=ID             Configure the network to connect to.\n');
+        '  --network=NAME             Configure the network to connect to, one of\n' +
+        '                             main (default), test, dev, or bounty');
 
     process.exit();
 }
@@ -64,10 +65,7 @@ const minerOptions = argv.miner;
 const statisticsOptions = argv.statistics;
 const passive = argv.passive;
 const rpc = argv.rpc;
-let rpcPort = 8648;
-if (typeof rpc === 'number') {
-    rpcPort = rpc;
-}
+const rpcPort = typeof rpc === 'number' ? rpc : 8648;
 const metrics = argv.metrics;
 let metricsPort = 8649, metricsPassword = null;
 if (typeof metrics === 'string') {
@@ -75,12 +73,11 @@ if (typeof metrics === 'string') {
         metricsPassword = metrics.substring(metrics.indexOf(':') + 1);
     }
     metricsPort = parseInt(metrics);
+} else if (typeof metrics === 'number') {
+    metricsPort = metrics;
 }
-const networkIdArg = argv.networkid;
-let networkId = 'dev';
-if (typeof networkIdArg === 'string') {
-    networkId = networkIdArg;
-}
+// TODO set default to 'main' for MainNet.
+const network = argv.network || 'dev';
 const walletSeed = argv['wallet-seed'] || null;
 const walletAddress = argv['wallet-address'] || null;
 const isNano = argv.type === 'nano';
@@ -89,14 +86,20 @@ if (isNano && minerOptions) {
     console.error('Cannot mine when running as a nano client.');
     process.exit(1);
 }
-
 if (metrics && dumb) {
     console.error('Cannot provide metrics when running as a dumb client.');
     process.exit(1);
 }
-
 if (metrics && isNano) {
     console.error('Cannot provide metrics when running as a nano client.');
+    process.exit(1);
+}
+if (!Nimiq.GenesisConfig.CONFIGS[network]) {
+    console.error('Invalid network name');
+    process.exit(1);
+}
+if (walletSeed && walletAddress) {
+    console.error('Can only use one of wallet-seed or wallet-address, not both!');
     process.exit(1);
 }
 
@@ -113,19 +116,16 @@ if (argv['log-tag']) {
     });
 }
 
-if (walletSeed && walletAddress) {
-    console.error('Can only use one of wallet-seed or wallet-address, not both!');
-    process.exit(1);
-}
-
-console.log(`Nimiq NodeJS Client starting (${host && port ? `host=${host}, port=${port}` : 'dumb'}, miner=${!!minerOptions}, statistics=${!!statisticsOptions}, passive=${!!passive}, rpc=${!!rpc})`);
-
 const TAG = 'Node';
-
 const $ = {};
 
 (async () => {
-    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[networkId]);
+    Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${network}`
+        + `, ${host ? `host=${host}, port=${port}` : 'dumb'}`
+        + `, miner=${!!minerOptions}, rpc=${!!rpc}${rpc ? `@${rpcPort}` : ''}`
+        + `, metrics=${!!metrics}${metrics ? `@${metricsPort}` : ''})`);
+
+    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[network]);
 
     const networkConfig = dumb
         ? new Nimiq.DumbNetworkConfig()
@@ -179,6 +179,8 @@ const $ = {};
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
         + (!isNano ? ` Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : ''));
 
+    Nimiq.Log.i(TAG, `Blockchain state: height=${$.blockchain.height}, headHash=${$.blockchain.headHash}`);
+
     $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address);
 
     $.blockchain.on('head-changed', (head) => {
@@ -213,7 +215,7 @@ const $ = {};
 
     $.consensus.on('established', () => {
         Nimiq.Log.i(TAG, `Blockchain ${type}-consensus established in ${(Date.now() - START) / 1000}s.`);
-        Nimiq.Log.i(TAG, `Current state: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash.toBase64()}`);
+        Nimiq.Log.i(TAG, `Current state: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash}`);
     });
 
     $.miner.on('block-mined', (block) => {

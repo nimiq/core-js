@@ -1,4 +1,7 @@
 const Dummy = {};
+if (typeof global !== 'undefined') {
+    global.Dummy = Dummy;
+}
 
 Dummy.hash1 = 'Mk3PAn3UowqTLEQfNlol6GsXPe+kuOWJSCU0cbgbcs8='; // 'hello'
 Dummy.hash2 = 'uLN8HQNONxx6O4NPlHanRutiJZ/5VYq3FbS/956/WOE='; // 'hello2'
@@ -108,6 +111,17 @@ Dummy.partialSignatureTestVectors = [
 Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
 Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a83356ea443ac68969824184b82903a5ea83e7ee0c8c7ad863c3ceffd31a63679e1ea34a5f89e3ae0f90c5d281d4a900');
 
+beforeAll((done) => {
+    // This has no effect on Node.js.
+    WasmHelper.doImportBrowser().then(done, done.fail);
+});
+
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
+if (typeof WebAssembly === 'undefined') {
+    // No WebAssembly => Likely slow
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
+}
+
 GenesisConfig.CONFIGS['tests'] = {
     NETWORK_ID: 4,
     NETWORK_NAME: 'tests',
@@ -129,19 +143,3 @@ GenesisConfig.CONFIGS['tests'] = {
     SEED_PEERS: [WsPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
 };
 GenesisConfig.init(GenesisConfig.CONFIGS['tests']);
-
-if (typeof global !== 'undefined') {
-    global.Dummy = Dummy;
-}
-
-beforeAll((done) => {
-    WasmHelper.doImportBrowser().then(done, done.fail);
-});
-
-if (jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;
-    if (typeof WebAssembly === 'undefined') {
-        // No WebAssembly => Likely slow
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
-    }
-}
