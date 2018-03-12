@@ -49,9 +49,9 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
         '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
         '                             The wallet cannot be used to sign transactions when\n' +
-        '                             using this option.' +
+        '                             using this option.\n' +
         '  --network=NAME             Configure the network to connect to, one of\n' +
-        '                             main (default), test, dev, or bounty');
+        '                             main (default), test, dev, or bounty.\n');
 
     process.exit();
 }
