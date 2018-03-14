@@ -4,9 +4,8 @@ class DevUi {
         this.$overlay = el.querySelector('[overlay]');
         this.$mainUi = el.querySelector('[main-ui]');
 
-        this.clientType = location.hash.substr(1);
+        [this.clientType, this.networkName] = location.hash.substr(1).split('-');
         if (Object.values(DevUi.ClientType).indexOf(this.clientType) === -1) return;
-
         this.$el.setAttribute('client', this.clientType);
         this.$mainUi.style.display = 'block';
         this._startInstance(this.clientType).then($ => {
@@ -51,8 +50,8 @@ class DevUi {
             Nimiq.init(() => {
                 const $ = {};
                 $.clientType = this.clientType;
-                // TODO: allow to change the genesis config.
-                Nimiq.GenesisConfig.dev();
+                const config = Nimiq.GenesisConfig.CONFIGS[this.networkName] || Nimiq.GenesisConfig.CONFIGS['dev'];
+                Nimiq.GenesisConfig.init(config);
 
                 Promise.all([
                     Nimiq.Consensus[this.clientType](),

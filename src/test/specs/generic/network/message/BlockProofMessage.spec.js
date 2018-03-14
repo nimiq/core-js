@@ -1,5 +1,5 @@
 describe('BlockProofMessage', () => {
-    const proof = new BlockChain([Block.GENESIS.toLight()]);
+    const proof = new BlockChain([GenesisConfig.GENESIS_BLOCK.toLight()]);
 
     it('is correctly constructed', () => {
         let msg1 = new BlockProofMessage(proof);

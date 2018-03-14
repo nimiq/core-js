@@ -64,8 +64,8 @@ class BaseChain extends IBlockchain {
         }
 
         // Push the genesis block hash.
-        if (locators.length === 0 || !locators[locators.length - 1].equals(Block.GENESIS.HASH)) {
-            locators.push(Block.GENESIS.HASH);
+        if (locators.length === 0 || !locators[locators.length - 1].equals(GenesisConfig.GENESIS_HASH)) {
+            locators.push(GenesisConfig.GENESIS_HASH);
         }
 
         return locators;
@@ -291,6 +291,16 @@ class BaseChain extends IBlockchain {
                 }
                 */
 
+                /*
+                // Alternative badness check:
+                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
+                if (2 * upperChainLength < Math.pow(1 - delta, 1 / depth) * lowerChainLength) {
+                    Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
+                        + ` with ${upperChainLength}/${Math.pow(1 - delta, 1 / depth) * lowerChainLength}/${lowerChainLength} blocks`);
+                    return false;
+                }
+                */
+
                 // Relaxed badness check:
                 for (let j = mu - 1; j >= 0; j--) {
                     const lowerChainLength = headData.superBlockCounts.get(j) - tailData.superBlockCounts.get(j);
@@ -299,6 +309,15 @@ class BaseChain extends IBlockchain {
                         return false;
                     }
                 }
+
+                /*
+                // Local goodness only:
+                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
+                if (!BaseChain._isLocallyGood(lowerChainLength, headData.head.height - tailData.head.height, depth, delta)) {
+                    Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}`);
+                    return false;
+                }
+                */
             }
         }
 
