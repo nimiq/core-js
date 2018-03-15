@@ -28,7 +28,7 @@ class MockRTCIceCandidate {
 class MockPhy {
     /**
      * @constructor
-     * @param {MockWebSocket} channel
+     * @param {MockGenericSender} channel
      */
     constructor(channel) {
         this._channel = channel;
@@ -51,6 +51,13 @@ class MockGenericSender extends Observable {
      */
     constructor() {
         super();
+
+        /** @type {MockGenericSender} */
+        this._channel = null;
+        /** @type {MockPhy} */
+        this._phy = null;
+        /** @type {boolean} */
+        this._closed = false;
     }
 
     /**
@@ -71,14 +78,44 @@ class MockGenericSender extends Observable {
         return this._localAddress;
     }
 
+    /** @type {boolean} */
+    get closed() {
+        return this._closed;
+    }
+
     /**
      * @param {MockGenericSender} channel
      * @returns {void}
      */
     link(channel) {
+        this._channel = channel;
         this._phy = new MockPhy(channel);
-        this.send = (msg) => this._phy.send(msg);
-        this.close = () => setTimeout(() => channel.onclose(), 0);
+    }
+
+    /**
+     * @param {Uint8Array} msg
+     * @returns {void}
+     */
+    send(msg) {
+        if (this._closed) return;
+        this._phy.send(msg);
+    }
+
+    /**
+     * @returns {void}
+     */
+    close() {
+        if (this._closed) return;
+        this._closed = true;
+
+        if (this._readyState === DataChannel.ReadyState.OPEN) {
+            setTimeout(() => {
+                if (this.onclose) this.onclose();
+            }, 0);
+            this._channel.close();
+        }
+
+        this._readyState = DataChannel.ReadyState.CLOSED;
     }
 }
 
@@ -98,7 +135,7 @@ class MockWebSocket extends MockGenericSender {
     }
 
     /**
-     * @param {MockWebSocket} channel
+     * @param {MockGenericSender} channel
      * @returns {void}
      */
     link(channel) {
@@ -120,7 +157,7 @@ class MockRTCDataChannel extends MockGenericSender {
     }
 
     /**
-     * @param {MockRTCDataChannel} channel
+     * @param {MockGenericSender} channel
      * @returns {void}
      */
     link(channel) {
@@ -154,6 +191,7 @@ class MockPeerConnection extends Observable {
         this._localDescription = null;
         this._remoteDescription = null;
         this._dataChannel = null;
+        this._closed = false;
     }
 
     /**
@@ -165,6 +203,16 @@ class MockPeerConnection extends Observable {
         this._nonce = Math.floor(Math.random() * 65536);
         this._dataChannel = new MockRTCDataChannel();
         return this._dataChannel;
+    }
+
+    /**
+     * @returns {void}
+     */
+    close() {
+        this._closed = true;
+        if (this._dataChannel) {
+            this._dataChannel.close();
+        }
     }
 
     /**
@@ -186,6 +234,7 @@ class MockPeerConnection extends Observable {
      * @returns {Promise}
      */
     setLocalDescription(description) {
+        if (this._closed) return Promise.resolve();
         this._localDescription = description;
 
         if (description.type === 'answer') {
@@ -201,6 +250,7 @@ class MockPeerConnection extends Observable {
      * @returns {Promise}
      */
     setRemoteDescription(description) {
+        if (this._closed) return Promise.resolve();
         this._remoteDescription = description;
 
         if (description.type === 'offer') {
@@ -224,6 +274,8 @@ class MockPeerConnection extends Observable {
      * @returns {Promise}
      */
     addIceCandidate(candidate) {
+        if (this._closed) return Promise.resolve();
+
         this._remoteIceCandidate = candidate;
         const peer = MockNetwork._peerConnections.get(`${this._label}-${this.remoteDescription.sdp.nonce}`);
 
@@ -270,6 +322,7 @@ class MockNetwork {
             client.link(serverMockWebSocket);
 
             setTimeout(() => {
+                if (serverMockWebSocket.closed || client.closed) return;
                 server.fire('connection', serverMockWebSocket);
                 client.onopen();
             }, 0);
@@ -288,8 +341,11 @@ class MockNetwork {
         first.link(second);
         second.link(first);
 
-        first.onopen({ channel: first });
-        second.onopen({ channel: second });
+        setTimeout(() => {
+            if (first.closed || second.closed) return;
+            first.onopen({ channel: first });
+            second.onopen({ channel: second });
+        }, 0);
     }
 
     /**
@@ -369,6 +425,26 @@ class MockNetwork {
         WebRtcFactory.newPeerConnection.and.callThrough();
         WebRtcFactory.newSessionDescription.and.callThrough();
         WebRtcFactory.newIceCandidate.and.callThrough();
+    }
+
+    /** @type {number} */
+    static get delay() {
+        return MockNetwork._delay;
+    }
+
+    /** @type {number} */
+    static set delay(delay) {
+        MockNetwork._delay = delay;
+    }
+
+    /** @type {number} */
+    static get lossrate() {
+        return MockNetwork._lossrate;
+    }
+
+    /** @type {number} */
+    static set lossrate(lossrate) {
+        MockNetwork._lossrate = lossrate;
     }
 }
 /**

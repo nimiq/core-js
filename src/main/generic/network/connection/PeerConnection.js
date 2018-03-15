@@ -93,6 +93,11 @@ class PeerConnection {
     }
 
     /** @type {number} */
+    get id() {
+        return this._id;
+    }
+
+    /** @type {number} */
     get state() {
         return this._state;
     }

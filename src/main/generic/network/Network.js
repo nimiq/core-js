@@ -78,7 +78,7 @@ class Network extends Observable {
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peers-changed', () => this._onPeersChanged());
         this._connections.on('recycling-request', () => this._onRecyclingRequest());
-        this._connections.on('connect-error', () => this._checkPeerCount());
+        this._connections.on('connect-error', () => setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE));
 
         /**
          * Helper object to pick PeerAddressBook.
@@ -152,7 +152,7 @@ class Network extends Observable {
      * @fires Network#peers-changed
      */
     _onPeersChanged() {
-        this._checkPeerCount();
+        setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE);
 
         this.fire('peers-changed');
     }
@@ -226,7 +226,7 @@ class Network extends Observable {
             // Connect to this address.
             if (!this._connections.connectOutbound(peerAddress)) {
                 this._addresses.close(null, peerAddress, CloseType.CONNECTION_FAILED);
-                setTimeout(() => this._checkPeerCount(), 0);
+                setTimeout(() => this._checkPeerCount(), Network.CONNECT_THROTTLE);
             }
         }
         this._backoff = Network.CONNECT_BACKOFF_INITIAL;
@@ -366,11 +366,6 @@ Network.SIGNAL_TTL_INITIAL = 3;
  * @type {number}
  * @constant
  */
-Network.ADDRESS_UPDATE_DELAY = 1000; // 1 second
-/**
- * @type {number}
- * @constant
- */
 Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
 /**
  * @type {number}
@@ -392,4 +387,10 @@ Network.HOUSEKEEPING_INTERVAL = 5 * 60 * 1000; // 5 minutes
  * @constant
  */
 Network.SCORE_INBOUND_EXCHANGE = 0.5;
+/**
+ * @type {number}
+ * @constant
+ */
+Network.CONNECT_THROTTLE = 300; // 300 ms
+
 Class.register(Network);

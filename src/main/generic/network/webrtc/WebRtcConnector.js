@@ -36,6 +36,9 @@ class WebRtcConnector extends Observable {
         this._timers.setTimeout(`connect_${peerId}`, () => {
             this._connectors.remove(peerId);
             this._timers.clearTimeout(`connect_${peerId}`);
+
+            connector.rtcConnection.close();
+
             this.fire('error', peerAddress, 'timeout');
         }, WebRtcConnector.CONNECT_TIMEOUT);
 
@@ -51,10 +54,13 @@ class WebRtcConnector extends Observable {
         if (msg.isUnroutable() || msg.isTtlExceeded()) {
             // Clear the timeout early if we initiated the connection.
             if (this.isValidSignal(msg) && this._connectors.get(msg.senderId) instanceof OutboundPeerConnector) {
-                const peerAddress = this._connectors.get(msg.senderId).peerAddress;
+                const connector = this._connectors.get(msg.senderId);
+                const peerAddress = connector.peerAddress;
 
                 this._connectors.remove(msg.senderId);
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
+
+                connector.rtcConnection.close();
 
                 // XXX Reason needs to be adapted when more flags are added.
                 const reason = msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
@@ -101,7 +107,10 @@ class WebRtcConnector extends Observable {
                     Log.d(WebRtcConnector, `Simultaneous connection, accepting offer from ${msg.senderId} (>${msg.recipientId})`);
                     this._timers.clearTimeout(`connect_${msg.senderId}`);
 
-                    // XXX Abort the outbound connection attempt.
+                    // Abort the outbound connection attempt.
+                    connector.rtcConnection.close();
+
+                    // Let listeners know that the connection attempt was aborted.
                     this.fire('error', connector.peerAddress, 'simultaneous inbound connection');
                 }
             }
@@ -142,7 +151,7 @@ class WebRtcConnector extends Observable {
         this._timers.clearTimeout(`connect_${peerId}`);
     }
 }
-WebRtcConnector.CONNECT_TIMEOUT = 5000; // ms
+WebRtcConnector.CONNECT_TIMEOUT = 8000; // ms
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
@@ -274,6 +283,10 @@ class PeerConnector extends Observable {
 
     get peerAddress() {
         return this._peerAddress;
+    }
+
+    get rtcConnection() {
+        return this._rtcConnection;
     }
 }
 Class.register(PeerConnector);

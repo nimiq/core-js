@@ -49,7 +49,7 @@ class PeerChannel extends Observable {
             this.fire(PeerChannel.Event[msg.type], msg, this);
             this.fire('message-log', msg, this);
         } catch (e) {
-            Log.w(PeerChannel, `Error while processing ${msg.type} message from ${this.peerAddress || this.netAddress}: ${e}`);
+            Log.w(PeerChannel, `Error while processing '${PeerChannel.Event[msg.type]}' message from ${this.peerAddress || this.netAddress}: ${e}`);
         }
     }
 

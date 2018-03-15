@@ -191,7 +191,7 @@ class NetworkAgent extends Observable {
         this._timers.setTimeout('verack', () => {
             this._timers.clearTimeout('verack');
             this._channel.close(CloseType.VERACK_TIMEOUT, 'verack timeout');
-        }, NetworkAgent.HANDSHAKE_TIMEOUT);
+        }, NetworkAgent.HANDSHAKE_TIMEOUT * 2);
     }
 
     /**

@@ -3,7 +3,7 @@ class MockClock {
      * @returns {void}
      */
     static install() {
-        if (! MockClock._instance) {
+        if (!MockClock._instance) {
             MockClock._instance = new MockClock();
         }
         MockClock._instance._install();
@@ -101,7 +101,7 @@ class MockClock {
         /**
          * @type {number}
          */
-        this._rate = 100;
+        this._rate = 10;
     }
 
     /**

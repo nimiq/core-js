@@ -248,62 +248,6 @@ class ConnectionPool extends Observable {
     }
 
     /**
-     * @param {NetworkConnection} conn
-     * @returns {boolean}
-     * @private
-     */
-    _checkConnection(conn) {
-        // Close connection if we have too many connections to the peer's IP address.
-        if (conn.netAddress && !conn.netAddress.isPseudo()) {
-            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
-                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
-                return false;
-            }
-        }
-
-        // Reject peer if we have reached max peer count.
-        if (this.peerCount >= Network.PEER_COUNT_MAX
-            && !(conn.outbound && this._hasPriority(conn.peerAddress))
-            && !(conn.inbound && this._allowInboundExchange)) {
-
-            conn.close(CloseType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param {PeerConnection} peerConnection
-     * @param {Peer} peer
-     * @returns {boolean}
-     * @private
-     */
-    _checkHandshake(peerConnection, peer) {
-        // Close connection if we are already connected to this peer.
-        if (this.isEstablished(peer.peerAddress)) {
-            peerConnection.peerChannel.close(CloseType.DUPLICATE_CONNECTION, `Duplicate connection to ${peer.peerAddress} (post-handshake)` );
-            return false;
-        }
-
-        // Close connection if this peer is banned.
-        if (this._addresses.isBanned(peer.peerAddress)) {
-            peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED, `Connection with banned address ${peer.peerAddress} (post-handshake)`);
-            return false;
-        }
-
-        // Close connection if we have too many connections to the peer's IP address.
-        if (peer.netAddress && !peer.netAddress.isPseudo()) {
-            if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
-                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post-handshake)`);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * @param {PeerAddress} peerAddress
      * @returns {boolean}
      */
@@ -340,6 +284,32 @@ class ConnectionPool extends Observable {
     }
 
     /**
+     * @param {NetworkConnection} conn
+     * @returns {boolean}
+     * @private
+     */
+    _checkConnection(conn) {
+        // Close connection if we have too many connections to the peer's IP address.
+        if (conn.netAddress && !conn.netAddress.isPseudo()) {
+            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
+                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                return false;
+            }
+        }
+
+        // Reject peer if we have reached max peer count.
+        if (this.peerCount >= Network.PEER_COUNT_MAX
+            && !(conn.outbound && this._hasPriority(conn.peerAddress))
+            && !(conn.inbound && this._allowInboundExchange)) {
+
+            conn.close(CloseType.MAX_PEER_COUNT_REACHED, `max peer count reached (${Network.PEER_COUNT_MAX})`);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * @listens PeerChannel#signal
      * @listens NetworkAgent#handshake
      * @listens NetworkAgent#close
@@ -349,15 +319,17 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onConnection(conn) {
+        /** @type {PeerConnection} */
         let peerConnection;
         if (conn.outbound) {
             this._connectingCount--;
+            Assert.that(this._connectingCount >= 0, 'connectingCount < 0');
 
             peerConnection = this.getConnectionByPeerAddress(conn.peerAddress);
 
-            Assert.that(peerConnection, `Connecting to outbound peer address not stored ${conn.peerAddress}`);
+            Assert.that(!!peerConnection, `PeerAddress not stored ${conn.peerAddress}`);
             Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
-                `PeerConnection state not CONNECTING ${conn.peerAddress}`);
+                `PeerConnection state not CONNECTING, but ${peerConnection.state} (${conn.peerAddress})`);
         } else {
             peerConnection = PeerConnection.getInbound(conn);
             this._inboundCount++;
@@ -404,6 +376,57 @@ class ConnectionPool extends Observable {
     }
 
     /**
+     * @param {PeerConnection} peerConnection
+     * @param {Peer} peer
+     * @returns {boolean}
+     * @private
+     */
+    _checkHandshake(peerConnection, peer) {
+        // Close connection if this peer is banned.
+        if (this._addresses.isBanned(peer.peerAddress)) {
+            peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED,
+                `Connection with banned address ${peer.peerAddress} (post version)`);
+            return false;
+        }
+
+        // Close connection if we have too many connections to the peer's IP address.
+        if (peer.netAddress && !peer.netAddress.isPseudo()) {
+            if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
+                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
+                    `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post version)`);
+                return false;
+            }
+        }
+
+        // Duplicate/simultaneous connection check (post version):
+        const storedConnection = this.getConnectionByPeerAddress(peer.peerAddress);
+        if (storedConnection && storedConnection.id !== peerConnection.id) {
+            // If we already have an established connection to this peer, close this connection.
+            if (storedConnection.state === PeerConnectionState.ESTABLISHED) {
+                peerConnection.peerChannel.close(CloseType.DUPLICATE_CONNECTION,
+                    'Duplicate connection (post version)');
+                return false;
+            }
+
+            // If we're negotiating with the peer, the peer with the higher peerId rejects
+            // this connection and keeps his stored connection.
+            if (storedConnection.state !== PeerConnectionState.CONNECTING
+                && this._networkConfig.peerAddress.peerId.compare(peer.peerAddress.peerId) > 0) {
+
+                peerConnection.peerChannel.close(CloseType.SIMULTANEOUS_CONNECTION,
+                    'Simultaneous connection (post version) - higher peerId');
+                return false;
+            }
+
+            // The peer with the lower peerId accepts this connection and closes his stored connection.
+            // Closing the stored connection is deferred to _onHandshake() as we have not verified the peerAddress
+            // at this point.
+        }
+
+        return true;
+    }
+
+    /**
      * Handshake with this peer was successful.
      * @fires ConnectionPool#peer-joined
      * @fires ConnectionPool#peers-changed
@@ -414,17 +437,47 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onHandshake(peerConnection, peer) {
+        if (peerConnection.networkConnection.inbound) {
+            // Duplicate/simultaneous connection check (post handshake):
+            const storedConnection = this.getConnectionByPeerAddress(peer.peerAddress);
+            if (storedConnection && storedConnection.id !== peerConnection.id) {
+                // If we already have an established connection to this peer, close this connection.
+                if (storedConnection.state === PeerConnectionState.ESTABLISHED) {
+                    peerConnection.peerChannel.close(CloseType.DUPLICATE_CONNECTION,
+                        'Duplicate connection (post handshake)');
+                    return;
+                }
+
+                // If we are currently trying to connect to this peer, abort the stored connection attempt
+                // and accept this connection.
+                if (storedConnection.state === PeerConnectionState.CONNECTING) {
+                    Assert.that(peer.peerAddress.protocol === Protocol.WS, 'Duplicate connection to non-WS node');
+                    Log.d(ConnectionPool, `Aborting connection attempt to ${peer.peerAddress}, simultaneous inbound connection succeeded`);
+                    this._wsConnector.abort(peer.peerAddress);
+                    Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), 'PeerConnection not removed');
+                }
+                // Otherwise, we are negotiating with this peer. The peer with the lower peerId accepts this
+                // connection and closes his stored connection.
+                else if (this._networkConfig.peerAddress.peerId.compare(peer.peerAddress.peerId) < 0) {
+                    storedConnection.peerChannel.close(CloseType.SIMULTANEOUS_CONNECTION,
+                        'Simultaneous connection (post handshake) - lower peerId');
+                    Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), 'PeerConnection not removed');
+                }
+            }
+
+            Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), `PeerConnection ${peer.peerAddress} already exists`);
+            peerConnection.peerAddress = peer.peerAddress;
+            this._add(peerConnection);
+
+            this._inboundCount--;
+            Assert.that(this._inboundCount >= 0, 'inboundCount < 0');
+        }
+
         // Handshake accepted.
 
         // Check if we need to recycle a connection.
         if (this.peerCount >= Network.PEER_COUNT_MAX) {
             this.fire('recycling-request');
-        }
-
-        if (peerConnection.networkConnection.inbound) {
-            peerConnection.peerAddress = peer.peerAddress;
-            this._add(peerConnection);
-            this._inboundCount--;
         }
 
         // Set peerConnection to ESTABLISHED state.
@@ -461,8 +514,12 @@ class ConnectionPool extends Observable {
     _onClose(peerConnection, type, reason) {
         // Update total bytes sent/received.
         this._bytesSent += peerConnection.networkConnection.bytesSent;
-        this._bytesReceived +=  peerConnection.networkConnection.bytesReceived;
+        this._bytesReceived += peerConnection.networkConnection.bytesReceived;
 
+        // Only propagate the close type (i.e. track fails/bans) if the peerAddress is set.
+        // This is true for
+        // - all outbound connections
+        // - inbound connections post handshake (peerAddress is verified)
         if (peerConnection.peerAddress) {
             this._addresses.close(peerConnection.peerChannel, peerConnection.peerAddress, type);
         }
@@ -486,9 +543,9 @@ class ConnectionPool extends Observable {
         } else {
             if (peerConnection.networkConnection.inbound) {
                 this._inboundCount--;
-                Log.w(ConnectionPool, `Inbound connection closed pre-handshake: ${reason} (${type})`);
+                Log.w(ConnectionPool, `Inbound connection #${peerConnection.networkConnection.id} closed pre-handshake: ${reason} (${type})`);
             } else {
-                Log.w(ConnectionPool, `Connection to ${peerConnection.peerAddress} closed pre-handshake: ${reason} (${type})`);
+                Log.w(ConnectionPool, `Connection #${peerConnection.networkConnection.id} to ${peerConnection.peerAddress} closed pre-handshake: ${reason} (${type})`);
                 this.fire('connect-error', peerConnection.peerAddress, `${reason} (${type})`);
             }
         }
@@ -509,10 +566,13 @@ class ConnectionPool extends Observable {
         Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (typeof reason === 'string' ? ` - ${reason}` : ''));
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
-        Assert.that(peerConnection && peerConnection.state === PeerConnectionState.CONNECTING);
+        Assert.that(!!peerConnection, `PeerAddress not stored ${peerAddress}`);
+        Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
+            `PeerConnection state not CONNECTING, but ${peerConnection.state} (${peerAddress})`);
         this._remove(peerConnection);
 
         this._connectingCount--;
+        Assert.that(this._connectingCount >= 0, 'connectingCount < 0');
 
         this._addresses.close(null, peerAddress, CloseType.CONNECTION_FAILED);
 
@@ -529,12 +589,15 @@ class ConnectionPool extends Observable {
         switch (peerAddress.protocol) {
             case Protocol.WS:
                 this._peerCountWs += delta;
+                Assert.that(this._peerCountWs >= 0, 'peerCountWs < 0');
                 break;
             case Protocol.RTC:
                 this._peerCountRtc += delta;
+                Assert.that(this._peerCountRtc >= 0, 'peerCountRtc < 0');
                 break;
             case Protocol.DUMB:
                 this._peerCountDumb += delta;
+                Assert.that(this._peerCountDumb >= 0, 'peerCountDumb < 0');
                 break;
             default:
                 Log.w(PeerAddressBook, `Unknown protocol ${peerAddress.protocol}`);
@@ -542,10 +605,13 @@ class ConnectionPool extends Observable {
 
         if (Services.isFullNode(peerAddress.services)) {
             this._peerCountFull += delta;
+            Assert.that(this._peerCountFull >= 0, 'peerCountFull < 0');
         } else if (Services.isLightNode(peerAddress.services)) {
             this._peerCountLight += delta;
+            Assert.that(this._peerCountLight >= 0, 'peerCountLight < 0');
         } else {
             this._peerCountNano += delta;
+            Assert.that(this._peerCountNano >= 0, 'peerCountNano < 0');
         }
     }
 
@@ -572,7 +638,6 @@ class ConnectionPool extends Observable {
             }
         }
     }
-
 
     /** @type {number} */
     get peerCountWs() {

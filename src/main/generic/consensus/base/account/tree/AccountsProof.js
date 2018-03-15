@@ -89,7 +89,9 @@ class AccountsProof {
      * @returns {?Account}
      */
     getAccount(address) {
-        Assert.that(!!this._index, 'AccountsProof must be verified before retrieving accounts. Call verify() first.');
+        if (!this._index) {
+            throw new Error('AccountsProof must be verified before retrieving accounts. Call verify() first.');
+        }
 
         const rootNode = this._nodes[this._nodes.length - 1];
         const prefix = address.toHex();
