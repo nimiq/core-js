@@ -181,5 +181,6 @@ class SpyConnection extends Observable {
         this.onmessage = ( (msg) => {
             this.fire('message', msg);
         } );
+        this.confirmExpectedMessage = () => {};
     }
 }

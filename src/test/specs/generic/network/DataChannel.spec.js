@@ -41,6 +41,7 @@ describe('DataChannel', () => {
         expect(second.isExpectingMessage(Message.Type.INV)).toBe(true);
 
         second.on('message', (msg) => {
+            second.confirmExpectedMessage(Message.Type.INV, true);
             expect(second.isExpectingMessage(Message.Type.BLOCK)).toBe(false);
             expect(second.isExpectingMessage(Message.Type.INV)).toBe(false);
             done();
