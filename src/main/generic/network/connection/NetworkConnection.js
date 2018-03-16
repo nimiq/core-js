@@ -40,6 +40,10 @@ class NetworkConnection extends Observable {
         this._channel.on('error', e => this._onError(e));
     }
 
+    /**
+     * @param {Uint8Array} msg
+     * @private
+     */
     _onMessage(msg) {
         // Don't emit messages if this channel is closed.
         if (this._closed) {
@@ -169,6 +173,14 @@ class NetworkConnection extends Observable {
      */
     isExpectingMessage(type) {
         return this._channel.isExpectingMessage(type);
+    }
+
+    /**
+     * @param {Message.Type} type
+     * @param {boolean} success
+     */
+    confirmExpectedMessage(type, success) {
+        this._channel.confirmExpectedMessage(type, success);
     }
 
     /**

@@ -26,6 +26,9 @@ class PeerChannel extends Observable {
         } catch(e) {
             Log.w(PeerChannel, `Failed to parse '${PeerChannel.Event[type]}' message from ${this.peerAddress || this.netAddress}`, e.message || e);
 
+            // Confirm that message arrived but could not be parsed successfully.
+            this._conn.confirmExpectedMessage(type, false);
+
             // From the Bitcoin Reference:
             //  "Be careful of reject message feedback loops where two peers
             //   each don’t understand each other’s reject messages and so keep
@@ -33,7 +36,7 @@ class PeerChannel extends Observable {
 
             // If the message does not make sense at a whole or we fear to get into a reject loop,
             // we ban the peer instead.
-            if (!type || type === Message.Type.REJECT) {
+            if (type === null || type === Message.Type.REJECT) {
                 this.close(CloseType.FAILED_TO_PARSE_MESSAGE_TYPE, 'Failed to parse message type');
                 return;
             }
@@ -44,6 +47,9 @@ class PeerChannel extends Observable {
         }
 
         if (!msg) return;
+
+        // Confirm that message was successfully parsed.
+        this._conn.confirmExpectedMessage(type, true);
 
         try {
             this.fire(PeerChannel.Event[msg.type], msg, this);

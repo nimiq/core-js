@@ -35,6 +35,25 @@ class DataChannel extends Observable {
     }
 
     /**
+     * @param {Message.Type} type
+     * @param {boolean} success
+     */
+    confirmExpectedMessage(type, success) {
+        const expectedMsg = this._expectedMessagesByType.get(type);
+        if (!expectedMsg) return;
+
+        this._timers.clearTimeout(`chunk-${expectedMsg.id}`);
+        this._timers.clearTimeout(`msg-${expectedMsg.id}`);
+        for (const type of expectedMsg.types) {
+            this._expectedMessagesByType.delete(type);
+        }
+
+        if (!success) {
+            expectedMsg.timeoutCallback();
+        }
+    }
+
+    /**
      * @param {Message.Type|Array.<Message.Type>} types
      * @param {function()} timeoutCallback
      * @param {number} [msgTimeout]
@@ -151,14 +170,6 @@ class DataChannel extends Observable {
 
             const expectedMsg = this._expectedMessagesByType.get(this._msgType);
             if (remainingBytes === 0) {
-                if (expectedMsg) {
-                    this._timers.clearTimeout(`chunk-${expectedMsg.id}`);
-                    this._timers.clearTimeout(`msg-${expectedMsg.id}`);
-                    for (const type of expectedMsg.types) {
-                        this._expectedMessagesByType.delete(type);
-                    }
-                }
-
                 const msg = this._buffer.buffer;
                 this._buffer = null;
                 this.fire('message', msg, this);
