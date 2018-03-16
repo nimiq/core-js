@@ -4532,9 +4532,9 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-jungle-db@nimiq-network/jungle-db#v0.4.0:
-  version "0.4.0"
-  resolved "https://codeload.github.com/nimiq-network/jungle-db/tar.gz/3ffa7a28ecffe59a4fa9102ac40983d7b5d74741"
+jungle-db@nimiq-network/jungle-db#v0.4.2:
+  version "0.4.2"
+  resolved "https://codeload.github.com/nimiq-network/jungle-db/tar.gz/ffcde0f623cd9f638b9cbc39ba9e520f30367f4d"
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"
