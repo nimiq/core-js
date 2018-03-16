@@ -319,7 +319,7 @@ class Block {
         // Compute the depth of this block relative to the next target.
         const thisPowDepth = BlockUtils.getHashDepth(await this.pow());
         const nextTargetDepth = BlockUtils.getTargetDepth(nextTarget);
-        let depth = thisPowDepth - nextTargetDepth;
+        const depth = thisPowDepth - nextTargetDepth;
 
         // Start constructing the next interlink.
         /** @type {Array.<Hash>} */

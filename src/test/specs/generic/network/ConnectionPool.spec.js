@@ -14,7 +14,7 @@ describe('ConnectionPool', () => {
         MockClock.uninstall();
         MockNetwork.uninstall();
 
-        GenesisConfig._CONFIG.SEED_PEERS = seedPeers;
+        GenesisConfig._config.SEED_PEERS = seedPeers;
         Network.PEER_COUNT_MAX = peerCountMax;
     });
 
@@ -29,7 +29,7 @@ describe('ConnectionPool', () => {
         }
 
         (async () => {
-            GenesisConfig._CONFIG.SEED_PEERS = [];
+            GenesisConfig._config.SEED_PEERS = [];
             Network.PEER_COUNT_RECYCLING_ACTIVE = 4;
             MockClock.speed = 20;
 
