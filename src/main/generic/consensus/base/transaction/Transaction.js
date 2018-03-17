@@ -237,7 +237,7 @@ class Transaction {
             + `recipient=${this._recipient.toBase64()}, `
             + `value=${this._value}, `
             + `fee=${this._fee}, `
-            + `validityStartHeight=${this._validityStartHeight}`
+            + `validityStartHeight=${this._validityStartHeight}, `
             + `networkId=${this._networkId}`
             + `}`;
     }

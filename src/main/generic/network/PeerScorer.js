@@ -82,6 +82,11 @@ class PeerScorer extends Observable {
             return -1;
         }
 
+        // Filter addresses not matching our accepted services.
+        if ((peerAddress.services & this._networkConfig.services.accepted) === 0) {
+            return -1;
+        }
+
         // Filter addresses that are too old.
         if (peerAddress.exceedsAge()) {
             return -1;
