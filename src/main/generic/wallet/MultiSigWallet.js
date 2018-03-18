@@ -164,13 +164,30 @@ class MultiSigWallet extends Wallet {
      * @param {RandomSecret} secret
      * @returns {PartialSignature}
      */
-    signTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
+    partiallySignTransaction(transaction, publicKeys, aggregatedCommitment, secret) {
         // Sort public keys to get the right combined public key.
         publicKeys = publicKeys.slice();
         publicKeys.sort((a, b) => a.compare(b));
 
         return PartialSignature.create(this._keyPair.privateKey, this._keyPair.publicKey, publicKeys,
             secret, aggregatedCommitment, transaction.serializeContent());
+    }
+
+    /**
+     * Sign a transaction by the owner of this Wallet.
+     * @param {Transaction} transaction The transaction to sign.
+     * @param {PublicKey} aggregatedPublicKey
+     * @param {Commitment} aggregatedCommitment
+     * @param {Array.<PartialSignature>} signatures
+     * @returns {SignatureProof} A signature proof for this transaction.
+     */
+    signTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
+        if (signatures.length !== this._minSignatures) {
+            throw 'Not enough signatures to complete this transaction';
+        }
+
+        const signature = Signature.fromPartialSignatures(aggregatedCommitment, signatures);
+        return SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
     }
 
     /**
@@ -181,12 +198,7 @@ class MultiSigWallet extends Wallet {
      * @returns {Transaction}
      */
     completeTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
-        if (signatures.length !== this._minSignatures) {
-            throw 'Not enough signatures to complete this transaction';
-        }
-
-        const signature = Signature.fromPartialSignatures(aggregatedCommitment, signatures);
-        const proof = SignatureProof.multiSig(aggregatedPublicKey, this._publicKeys, signature);
+        const proof = this.signTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures);
         transaction.proof = proof.serialize();
         return transaction;
     }

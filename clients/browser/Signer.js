@@ -96,7 +96,7 @@ class MultiSigSigner extends Signer {
         const commitmentPairs = this._signingWallets.map(wallet => wallet.createCommitment());
         const aggregatedCommitment = Nimiq.Commitment.sum(commitmentPairs.map(pair => pair.commitment));
         const partialSignatures = this._signingWallets.map((wallet, index) =>
-            wallet.signTransaction(tx, this._signingPublicKeys, aggregatedCommitment, commitmentPairs[index].secret));
+            wallet.partiallySignTransaction(tx, this._signingPublicKeys, aggregatedCommitment, commitmentPairs[index].secret));
         const signature = Nimiq.Signature.fromPartialSignatures(aggregatedCommitment, partialSignatures);
         const proof = Nimiq.SignatureProof.multiSig(this._aggregatedSigningPublicKey, this._combinationsPublicKeys,
             signature).serialize();

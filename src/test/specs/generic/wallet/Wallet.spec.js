@@ -2,7 +2,7 @@ describe('Wallet', () => {
     const recipient = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
     const value = 8888888;
     const fee = 888;
-    const nonce = 8;
+    const validityStartHeight = 8;
     const deepLockRounds = KeyPair.EXPORT_KDF_ROUNDS;
 
     beforeAll(() => {
@@ -17,8 +17,19 @@ describe('Wallet', () => {
     it('can create a signed transaction', (done) => {
         (async () => {
             const wallet = await Wallet.generate();
-            const transaction = await wallet.createTransaction(recipient, value, fee, nonce);
-            const isValid = await transaction.verify();
+            const transaction = await wallet.createTransaction(recipient, value, fee, validityStartHeight);
+            const isValid = transaction.verify();
+            expect(isValid).toBe(true);
+        })().then(done, done.fail);
+    });
+
+    it('can create a valid SignatureProof', (done) => {
+        (async () => {
+            const wallet = await Wallet.generate();
+            const transaction = new ExtendedTransaction(wallet.address, Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0));
+            const proof = wallet.signTransaction(transaction);
+            transaction.proof = proof.serialize();
+            const isValid = transaction.verify();
             expect(isValid).toBe(true);
         })().then(done, done.fail);
     });

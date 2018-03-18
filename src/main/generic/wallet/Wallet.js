@@ -58,6 +58,16 @@ class Wallet {
     }
 
     /**
+     * Sign a transaction by the owner of this Wallet.
+     * @param {Transaction} transaction The transaction to sign.
+     * @returns {SignatureProof} A signature proof for this transaction.
+     */
+    signTransaction(transaction) {
+        const signature = Signature.create(this._keyPair.privateKey, this._keyPair.publicKey, transaction.serializeContent());
+        return SignatureProof.singleSig(this._keyPair.publicKey, signature);
+    }
+
+    /**
      * @returns {Uint8Array}
      */
     exportPlain() {
