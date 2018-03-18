@@ -105,7 +105,8 @@ class WasmHelper {
                 if (!module) resolve(true);
             } else if (typeof window === 'object') {
                 await new Promise((resolve) => {
-                    WasmHelper._loadBrowserScript(script, resolve);
+                    WasmHelper._moduleLoadedCallbacks[module] = resolve;
+                    WasmHelper._loadBrowserScript(script);
                 });
                 WasmHelper._global[module] = WasmHelper._global[module](moduleSettings);
                 if (!module) resolve(true);
@@ -138,21 +139,11 @@ class WasmHelper {
         }
     }
 
-    static _loadBrowserScript(url, resolve) {
-        // Adding the script tag to the head as suggested before
+    static _loadBrowserScript(url) {
         const head = document.getElementsByTagName('head')[0];
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
-
-        // Then bind the event to the callback function.
-        // There are several events for cross browser compatibility.
-        // These events might occur before processing, so delay them a bit.
-        const ret = () => window.setTimeout(resolve, 100);
-        script.onreadystatechange = ret;
-        script.onload = ret;
-
-        // Fire the loading
         head.appendChild(script);
     }
 

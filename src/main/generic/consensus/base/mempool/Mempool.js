@@ -42,7 +42,6 @@ class Mempool extends Observable {
         // Check if we already know this transaction.
         const hash = transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
-            Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
             return Mempool.ReturnCode.KNOWN;
         }
 

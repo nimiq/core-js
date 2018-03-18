@@ -115,7 +115,6 @@ class FullChain extends BaseChain {
         const hash = block.hash();
         const knownBlock = await this._store.getBlock(hash);
         if (knownBlock) {
-            Log.v(FullChain, `Ignoring known block ${hash}`);
             this._blockKnownCount++;
             return FullChain.OK_KNOWN;
         }
