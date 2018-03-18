@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -25,14 +25,16 @@
 #endif
 #define VC_GE_2005(version) (version >= 1400)
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "core.h"
-#include "blake2.h"
-#include "blake2-impl.h"
+#if !defined(ARGON2_NO_THREADS)
+#include "thread.h"
+#endif
+#include "blake2/blake2.h"
+#include "blake2/blake2-impl.h"
 
 #ifdef GENKAT
 #include "genkat.h"
@@ -128,8 +130,8 @@ void NOT_OPTIMIZED secure_wipe_memory(void *v, size_t n) {
 #elif defined(__OpenBSD__)
     explicit_bzero(v, n);
 #else
-    //static void *(*const volatile memset_sec)(void *, int, size_t) = &memset;
-    memset(v, 0, n);
+    static void *(*const volatile memset_sec)(void *, int, size_t) = &memset;
+    memset_sec(v, 0, n);
 #endif
 }
 
@@ -263,12 +265,112 @@ static int fill_memory_blocks_st(argon2_instance_t *instance) {
     return ARGON2_OK;
 }
 
+#if !defined(ARGON2_NO_THREADS)
+
+#ifdef _WIN32
+static unsigned __stdcall fill_segment_thr(void *thread_data)
+#else
+static void *fill_segment_thr(void *thread_data)
+#endif
+{
+    argon2_thread_data *my_data = thread_data;
+    fill_segment(my_data->instance_ptr, my_data->pos);
+    argon2_thread_exit();
+    return 0;
+}
+
+/* Multi-threaded version for p > 1 case */
+static int fill_memory_blocks_mt(argon2_instance_t *instance) {
+    uint32_t r, s;
+    argon2_thread_handle_t *thread = NULL;
+    argon2_thread_data *thr_data = NULL;
+    int rc = ARGON2_OK;
+
+    /* 1. Allocating space for threads */
+    thread = calloc(instance->lanes, sizeof(argon2_thread_handle_t));
+    if (thread == NULL) {
+        rc = ARGON2_MEMORY_ALLOCATION_ERROR;
+        goto fail;
+    }
+
+    thr_data = calloc(instance->lanes, sizeof(argon2_thread_data));
+    if (thr_data == NULL) {
+        rc = ARGON2_MEMORY_ALLOCATION_ERROR;
+        goto fail;
+    }
+
+    for (r = 0; r < instance->passes; ++r) {
+        for (s = 0; s < ARGON2_SYNC_POINTS; ++s) {
+            uint32_t l;
+
+            /* 2. Calling threads */
+            for (l = 0; l < instance->lanes; ++l) {
+                argon2_position_t position;
+
+                /* 2.1 Join a thread if limit is exceeded */
+                if (l >= instance->threads) {
+                    if (argon2_thread_join(thread[l - instance->threads])) {
+                        rc = ARGON2_THREAD_FAIL;
+                        goto fail;
+                    }
+                }
+
+                /* 2.2 Create thread */
+                position.pass = r;
+                position.lane = l;
+                position.slice = (uint8_t)s;
+                position.index = 0;
+                thr_data[l].instance_ptr =
+                    instance; /* preparing the thread input */
+                memcpy(&(thr_data[l].pos), &position,
+                       sizeof(argon2_position_t));
+                if (argon2_thread_create(&thread[l], &fill_segment_thr,
+                                         (void *)&thr_data[l])) {
+                    rc = ARGON2_THREAD_FAIL;
+                    goto fail;
+                }
+
+                /* fill_segment(instance, position); */
+                /*Non-thread equivalent of the lines above */
+            }
+
+            /* 3. Joining remaining threads */
+            for (l = instance->lanes - instance->threads; l < instance->lanes;
+                 ++l) {
+                if (argon2_thread_join(thread[l])) {
+                    rc = ARGON2_THREAD_FAIL;
+                    goto fail;
+                }
+            }
+        }
+
+#ifdef GENKAT
+        internal_kat(instance, r); /* Print all memory blocks */
+#endif
+    }
+
+fail:
+    if (thread != NULL) {
+        free(thread);
+    }
+    if (thr_data != NULL) {
+        free(thr_data);
+    }
+    return rc;
+}
+
+#endif /* ARGON2_NO_THREADS */
 
 int fill_memory_blocks(argon2_instance_t *instance) {
 	if (instance == NULL || instance->lanes == 0) {
 	    return ARGON2_INCORRECT_PARAMETER;
     }
+#if defined(ARGON2_NO_THREADS)
     return fill_memory_blocks_st(instance);
+#else
+    return instance->threads == 1 ?
+			fill_memory_blocks_st(instance) : fill_memory_blocks_mt(instance);
+#endif
 }
 
 int validate_inputs(const argon2_context *context) {

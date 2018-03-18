@@ -17,7 +17,7 @@ int main() {
     start = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
 
     for(int i = 0; i < HARD_COUNT; ++i) {
-        nimiq_hard_hash(out, in, 5, 512);
+        nimiq_argon2(out, in, 5, 512);
         in[0]++;
     }
 
@@ -27,7 +27,7 @@ int main() {
     start = end;
 
     for(int i = 0; i < HARD_COUNT; ++i) {
-        nimiq_hard_hash(out, in, 5, 1024);
+        nimiq_argon2(out, in, 5, 1024);
         in[0]++;
     }
 
@@ -37,7 +37,7 @@ int main() {
     start = end;
 
     for(int i = 0; i < LIGHT_COUNT; ++i) {
-        nimiq_light_hash(out, in, 5);
+        nimiq_blake2(out, in, 5);
         in[0]++;
     }
 
@@ -50,7 +50,7 @@ int main() {
         free(in);
         in = malloc(32);
         snprintf(in, 31, "Test1%d0000", i);
-        uint32_t nonce = nimiq_hard_hash_target(out, in, strlen(in), 0x20000000u + (0xffff >> i), 0, (uint32_t)-1, 512);
+        uint32_t nonce = nimiq_argon2_target(out, in, strlen(in), 0x20000000u + (0xffff >> i), 0, (uint32_t)-1, 512);
     
         gettimeofday(&timecheck, NULL);
         end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;

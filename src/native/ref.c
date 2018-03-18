@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -22,9 +22,9 @@
 #include "argon2.h"
 #include "core.h"
 
-#include "blamka-round-ref.h"
-#include "blake2-impl.h"
-#include "blake2.h"
+#include "blake2/blamka-round-ref.h"
+#include "blake2/blake2-impl.h"
+#include "blake2/blake2.h"
 
 
 /*

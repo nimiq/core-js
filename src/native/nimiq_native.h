@@ -2,7 +2,7 @@
 #define __NIMIQ_NATIVE_H
 
 #include "argon2.h"
-#include "blake2.h"
+#include "blake2/blake2.h"
 #include "sha256.h"
 
 #define NIMIQ_ARGON2_SALT "nimiqrocks!"

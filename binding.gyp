@@ -4,11 +4,11 @@
             "target_name": "nimiq_node",
             "sources": [
                 "src/native/argon2.c",
-                "src/native/blake2b.c",
+                "src/native/blake2/blake2b.c",
                 "src/native/core.c",
                 "src/native/encoding.c",
                 "src/native/nimiq_native.c",
-                "src/native/ref.c",
+                "src/native/opt.c",
                 "src/native/sha256.c",
                 "src/native/ed25519/collective.c",
                 "src/native/ed25519/fe.c",
@@ -22,10 +22,14 @@
                 "src/native/nimiq_node.cc"
             ],
             "include_dirs": [
-                "<!(node -e \"require('nan')\")"
+                "<!(node -e \"require('nan')\")",
+                "src/native"
             ],
             "cflags_c": [
-                "-std=c99"
+                "-std=c99",
+                "-march=native",
+                "-mtune=native",
+                "-DARGON2_NO_THREADS"
             ]
         }
     ]
