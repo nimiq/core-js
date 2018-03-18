@@ -185,7 +185,7 @@ class Hash extends Serializable {
      */
     static getSize(algorithm) {
         const size = Hash.SIZE.get(algorithm);
-        if (!size) throw new Error('Invalid hash algorithm');
+        if (typeof size !== 'number') throw new Error('Invalid hash algorithm');
         return size;
     }
 
@@ -194,25 +194,31 @@ class Hash extends Serializable {
      * @returns {Uint8Array}
      */
     static computeBlake2b(input) {
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.BLAKE2B);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const wasmIn = Module.stackAlloc(input.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
-            const res = Module._nimiq_blake2(wasmOut, wasmIn, input.length);
-            if (res !== 0) {
-                throw res;
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.BLAKE2B));
+            nimiq_node.nimiq_node_blake2(out, new Uint8Array(input));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.BLAKE2B);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmIn = Module.stackAlloc(input.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                const res = Module._nimiq_blake2(wasmOut, wasmIn, input.length);
+                if (res !== 0) {
+                    throw res;
+                }
+                const hash = new Uint8Array(hashSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hash;
+            } catch (e) {
+                Log.w(Hash, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
             }
-            const hash = new Uint8Array(hashSize);
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-            return hash;
-        } catch (e) {
-            Log.w(Hash, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
         }
     }
 
@@ -221,22 +227,28 @@ class Hash extends Serializable {
      * @returns {Uint8Array}
      */
     static computeSha256(input) {
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.SHA256);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const wasmIn = Module.stackAlloc(input.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
-            Module._nimiq_sha256(wasmOut, wasmIn, input.length);
-            const hash = new Uint8Array(hashSize);
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-            return hash;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.SHA256));
+            nimiq_node.nimiq_node_sha256(out, new Uint8Array(input));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.SHA256);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmIn = Module.stackAlloc(input.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                Module._nimiq_sha256(wasmOut, wasmIn, input.length);
+                const hash = new Uint8Array(hashSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hash;
+            } catch (e) {
+                Log.w(Hash, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

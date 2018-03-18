@@ -108,23 +108,29 @@ class Signature extends Serializable {
         if (a.byteLength !== PartialSignature.SIZE || b.byteLength !== PartialSignature.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOutSum = Module.stackAlloc(PartialSignature.SIZE);
-            const wasmInA = Module.stackAlloc(a.length);
-            const wasmInB = Module.stackAlloc(b.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInA, a.length).set(a);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInB, b.length).set(b);
-            Module._ed25519_add_scalars(wasmOutSum, wasmInA, wasmInB);
-            const sum = new Uint8Array(PartialSignature.SIZE);
-            sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, PartialSignature.SIZE));
-            return sum;
-        } catch (e) {
-            Log.w(Signature, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PartialSignature.SIZE);
+            nimiq_node.nimiq_node_ed25519_add_scalars(out, new Uint8Array(a), new Uint8Array(b));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOutSum = Module.stackAlloc(PartialSignature.SIZE);
+                const wasmInA = Module.stackAlloc(a.length);
+                const wasmInB = Module.stackAlloc(b.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInA, a.length).set(a);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInB, b.length).set(b);
+                Module._ed25519_add_scalars(wasmOutSum, wasmInA, wasmInB);
+                const sum = new Uint8Array(PartialSignature.SIZE);
+                sum.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSum, PartialSignature.SIZE));
+                return sum;
+            } catch (e) {
+                Log.w(Signature, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -139,29 +145,35 @@ class Signature extends Serializable {
             || privateKey.byteLength !== PrivateKey.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        let stackPtr;
-        try {
-            const wasmOutSignature = Module.stackAlloc(Signature.SIZE);
-            const signatureBuffer = new Uint8Array(Module.HEAP8.buffer, wasmOutSignature, Signature.SIZE);
-            const wasmInMessage = Module.stackAlloc(message.length);
-            new Uint8Array(Module.HEAP8.buffer, wasmInMessage, message.length).set(message);
-            const wasmInPubKey = Module.stackAlloc(publicKey.length);
-            new Uint8Array(Module.HEAP8.buffer, wasmInPubKey, publicKey.length).set(publicKey);
-            const wasmInPrivKey = Module.stackAlloc(privateKey.length);
-            const privKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmInPrivKey, privateKey.length);
-            privKeyBuffer.set(privateKey);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Signature.SIZE);
+            nimiq_node.nimiq_node_ed25519_sign(out, new Uint8Array(message), new Uint8Array(publicKey), new Uint8Array(privateKey));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                const wasmOutSignature = Module.stackAlloc(Signature.SIZE);
+                const signatureBuffer = new Uint8Array(Module.HEAP8.buffer, wasmOutSignature, Signature.SIZE);
+                const wasmInMessage = Module.stackAlloc(message.length);
+                new Uint8Array(Module.HEAP8.buffer, wasmInMessage, message.length).set(message);
+                const wasmInPubKey = Module.stackAlloc(publicKey.length);
+                new Uint8Array(Module.HEAP8.buffer, wasmInPubKey, publicKey.length).set(publicKey);
+                const wasmInPrivKey = Module.stackAlloc(privateKey.length);
+                const privKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmInPrivKey, privateKey.length);
+                privKeyBuffer.set(privateKey);
 
-            Module._ed25519_sign(wasmOutSignature, wasmInMessage, message.byteLength, wasmInPubKey, wasmInPrivKey);
-            privKeyBuffer.fill(0);
+                Module._ed25519_sign(wasmOutSignature, wasmInMessage, message.byteLength, wasmInPubKey, wasmInPrivKey);
+                privKeyBuffer.fill(0);
 
-            const signature = new Uint8Array(Signature.SIZE);
-            signature.set(signatureBuffer);
-            return signature;
-        } catch (e) {
-            Log.w(Signature, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+                const signature = new Uint8Array(Signature.SIZE);
+                signature.set(signatureBuffer);
+                return signature;
+            } catch (e) {
+                Log.w(Signature, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -172,21 +184,25 @@ class Signature extends Serializable {
      * @returns {boolean}
      */
     static _signatureVerify(publicKey, message, signature) {
-        let stackPtr;
-        try {
-            const wasmInPubKey = Module.stackAlloc(publicKey.length);
-            new Uint8Array(Module.HEAP8.buffer, wasmInPubKey, publicKey.length).set(publicKey);
-            const wasmInMessage = Module.stackAlloc(message.length);
-            new Uint8Array(Module.HEAP8.buffer, wasmInMessage, message.length).set(message);
-            const wasmInSignature = Module.stackAlloc(signature.length);
-            new Uint8Array(Module.HEAP8.buffer, wasmInSignature, signature.length).set(signature);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            return !!nimiq_node.nimiq_node_ed25519_verify(new Uint8Array(signature), new Uint8Array(message), new Uint8Array(publicKey));
+        } else {
+            let stackPtr;
+            try {
+                const wasmInPubKey = Module.stackAlloc(publicKey.length);
+                new Uint8Array(Module.HEAP8.buffer, wasmInPubKey, publicKey.length).set(publicKey);
+                const wasmInMessage = Module.stackAlloc(message.length);
+                new Uint8Array(Module.HEAP8.buffer, wasmInMessage, message.length).set(message);
+                const wasmInSignature = Module.stackAlloc(signature.length);
+                new Uint8Array(Module.HEAP8.buffer, wasmInSignature, signature.length).set(signature);
 
-            return !!Module._ed25519_verify(wasmInSignature, wasmInMessage, message.byteLength, wasmInPubKey);
-        } catch (e) {
-            Log.w(Signature, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+                return !!Module._ed25519_verify(wasmInSignature, wasmInMessage, message.byteLength, wasmInPubKey);
+            } catch (e) {
+                Log.w(Signature, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

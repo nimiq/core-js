@@ -16,25 +16,34 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Uint8Array}
      */
     computeArgon2d(input) {
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const wasmIn = Module.stackAlloc(input.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
-            const res = Module._nimiq_argon2(wasmOut, wasmIn, input.length, 512);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
+            const res = nimiq_node.nimiq_node_argon2(out, new Uint8Array(input), 512);
             if (res !== 0) {
                 throw res;
             }
-            const hash = new Uint8Array(hashSize);
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-            return hash;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmIn = Module.stackAlloc(input.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                const res = Module._nimiq_argon2(wasmOut, wasmIn, input.length, 512);
+                if (res !== 0) {
+                    throw res;
+                }
+                const hash = new Uint8Array(hashSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hash;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -44,30 +53,42 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      */
     computeArgon2dBatch(inputs) {
         const hashes = [];
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const stackTmp = Module.stackSave();
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
             for(const input of inputs) {
-                Module.stackRestore(stackTmp);
-                const wasmIn = Module.stackAlloc(input.length);
-                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
-                const res = Module._nimiq_argon2(wasmOut, wasmIn, input.length, 512);
+                const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
+                const res = nimiq_node.nimiq_node_argon2(out, new Uint8Array(input), 512);
                 if (res !== 0) {
                     throw res;
                 }
-                const hash = new Uint8Array(hashSize);
-                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-                hashes.push(hash);
+                hashes.push(out);
             }
             return hashes;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const stackTmp = Module.stackSave();
+                for (const input of inputs) {
+                    Module.stackRestore(stackTmp);
+                    const wasmIn = Module.stackAlloc(input.length);
+                    new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                    const res = Module._nimiq_argon2(wasmOut, wasmIn, input.length, 512);
+                    if (res !== 0) {
+                        throw res;
+                    }
+                    const hash = new Uint8Array(hashSize);
+                    hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                    hashes.push(hash);
+                }
+                return hashes;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -78,27 +99,36 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Uint8Array}
      */
     kdf(key, salt, iterations) {
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const wasmIn = Module.stackAlloc(key.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
-            const wasmSalt = Module.stackAlloc(salt.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmSalt, salt.length).set(salt);
-            const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
+            const res = nimiq_node.nimiq_node_kdf(out, new Uint8Array(key), new Uint8Array(salt), 512, iterations);
             if (res !== 0) {
                 throw res;
             }
-            const hash = new Uint8Array(hashSize);
-            hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-            return hash;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmIn = Module.stackAlloc(key.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
+                const wasmSalt = Module.stackAlloc(salt.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmSalt, salt.length).set(salt);
+                const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
+                if (res !== 0) {
+                    throw res;
+                }
+                const hash = new Uint8Array(hashSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hash;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 

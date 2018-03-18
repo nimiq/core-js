@@ -79,27 +79,34 @@ class CommitmentPair extends Serializable {
      * @returns {{commitment:Uint8Array, secret:Uint8Array}}
      */
     static _commitmentCreate(randomness) {
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOutCommitment = Module.stackAlloc(PublicKey.SIZE);
-            const wasmOutSecret = Module.stackAlloc(PrivateKey.SIZE);
-            const wasmIn = Module.stackAlloc(randomness.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmIn, randomness.length).set(randomness);
-            const res = Module._ed25519_create_commitment(wasmOutSecret, wasmOutCommitment, wasmIn);
-            if (res !== 1) {
-                throw new Error(`Secret must not be 0 or 1: ${res}`);
-            }
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
             const commitment = new Uint8Array(PublicKey.SIZE);
             const secret = new Uint8Array(PrivateKey.SIZE);
-            commitment.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutCommitment, PublicKey.SIZE));
-            secret.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSecret, PrivateKey.SIZE));
+            nimiq_node.nimiq_node_ed25519_create_commitment(secret, commitment, randomness);
             return {commitment, secret};
-        } catch (e) {
-            Log.w(CommitmentPair, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOutCommitment = Module.stackAlloc(PublicKey.SIZE);
+                const wasmOutSecret = Module.stackAlloc(PrivateKey.SIZE);
+                const wasmIn = Module.stackAlloc(randomness.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, randomness.length).set(randomness);
+                const res = Module._ed25519_create_commitment(wasmOutSecret, wasmOutCommitment, wasmIn);
+                if (res !== 1) {
+                    throw new Error(`Secret must not be 0 or 1: ${res}`);
+                }
+                const commitment = new Uint8Array(PublicKey.SIZE);
+                const secret = new Uint8Array(PrivateKey.SIZE);
+                commitment.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutCommitment, PublicKey.SIZE));
+                secret.set(new Uint8Array(Module.HEAPU8.buffer, wasmOutSecret, PrivateKey.SIZE));
+                return {commitment, secret};
+            } catch (e) {
+                Log.w(CommitmentPair, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

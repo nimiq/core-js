@@ -70,21 +70,27 @@ class Commitment extends Serializable {
         for (let i = 0; i < commitments.length; ++i) {
             concatenatedCommitments.set(commitments[i], i * PublicKey.SIZE);
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(PublicKey.SIZE);
-            const wasmInCommitments = Module.stackAlloc(concatenatedCommitments.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInCommitments, concatenatedCommitments.length).set(concatenatedCommitments);
-            Module._ed25519_aggregate_commitments(wasmOut, wasmInCommitments, commitments.length);
-            const aggCommitments = new Uint8Array(PublicKey.SIZE);
-            aggCommitments.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
-            return aggCommitments;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PublicKey.SIZE);
+            nimiq_node.nimiq_node_ed25519_aggregate_commitments(out, concatenatedCommitments, commitments.length);
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const wasmInCommitments = Module.stackAlloc(concatenatedCommitments.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInCommitments, concatenatedCommitments.length).set(concatenatedCommitments);
+                Module._ed25519_aggregate_commitments(wasmOut, wasmInCommitments, commitments.length);
+                const aggCommitments = new Uint8Array(PublicKey.SIZE);
+                aggCommitments.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
+                return aggCommitments;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

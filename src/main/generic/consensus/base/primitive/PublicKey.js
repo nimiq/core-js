@@ -116,25 +116,32 @@ class PublicKey extends Serializable {
         if (privateKey.byteLength !== PrivateKey.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        let stackPtr;
-        try {
-            const wasmOut = Module.stackAlloc(Hash.getSize(Hash.Algorithm.SHA256));
-            const pubKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmOut, PrivateKey.SIZE);
-            pubKeyBuffer.set(privateKey);
-            const wasmIn = Module.stackAlloc(privateKey.length);
-            const privKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmIn, PrivateKey.SIZE);
-            privKeyBuffer.set(privateKey);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PublicKey.SIZE);
+            nimiq_node.nimiq_node_ed25519_public_key_derive(out, new Uint8Array(privateKey));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const pubKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmOut, PrivateKey.SIZE);
+                pubKeyBuffer.set(privateKey);
+                const wasmIn = Module.stackAlloc(privateKey.length);
+                const privKeyBuffer = new Uint8Array(Module.HEAP8.buffer, wasmIn, PrivateKey.SIZE);
+                privKeyBuffer.set(privateKey);
 
-            Module._ed25519_public_key_derive(wasmOut, wasmIn);
-            privKeyBuffer.fill(0);
-            const publicKey = new Uint8Array(PublicKey.SIZE);
-            publicKey.set(pubKeyBuffer);
-            return publicKey;
-        } catch (e) {
-            Log.w(PublicKey, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+                Module._ed25519_public_key_derive(wasmOut, wasmIn);
+                privKeyBuffer.fill(0);
+                const publicKey = new Uint8Array(PublicKey.SIZE);
+                publicKey.set(pubKeyBuffer);
+                return publicKey;
+            } catch (e) {
+                Log.w(PublicKey, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -150,22 +157,28 @@ class PublicKey extends Serializable {
         for (let i = 0; i < publicKeys.length; ++i) {
             concatenatedPublicKeys.set(publicKeys[i], i * PublicKey.SIZE);
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const hashSize = Hash.getSize(Hash.Algorithm.SHA512);
-            const wasmOut = Module.stackAlloc(hashSize);
-            const wasmInPublicKeys = Module.stackAlloc(concatenatedPublicKeys.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeys, concatenatedPublicKeys.length).set(concatenatedPublicKeys);
-            Module._ed25519_hash_public_keys(wasmOut, wasmInPublicKeys, publicKeys.length);
-            const hashedPublicKey = new Uint8Array(hashSize);
-            hashedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
-            return hashedPublicKey;
-        } catch (e) {
-            Log.w(PublicKey, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.SHA512));
+            nimiq_node.nimiq_node_ed25519_hash_public_keys(out, concatenatedPublicKeys, publicKeys.length);
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.SHA512);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmInPublicKeys = Module.stackAlloc(concatenatedPublicKeys.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeys, concatenatedPublicKeys.length).set(concatenatedPublicKeys);
+                Module._ed25519_hash_public_keys(wasmOut, wasmInPublicKeys, publicKeys.length);
+                const hashedPublicKey = new Uint8Array(hashSize);
+                hashedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hashedPublicKey;
+            } catch (e) {
+                Log.w(PublicKey, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -179,23 +192,29 @@ class PublicKey extends Serializable {
             || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(PublicKey.SIZE);
-            const wasmInPublicKey = Module.stackAlloc(publicKey.length);
-            const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
-            Module._ed25519_delinearize_public_key(wasmOut, wasmInPublicKeysHash, wasmInPublicKey);
-            const delinearizedPublicKey = new Uint8Array(PublicKey.SIZE);
-            delinearizedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
-            return delinearizedPublicKey;
-        } catch (e) {
-            Log.w(PublicKey, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PublicKey.SIZE);
+            nimiq_node.nimiq_node_ed25519_delinearize_public_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const wasmInPublicKey = Module.stackAlloc(publicKey.length);
+                const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
+                Module._ed25519_delinearize_public_key(wasmOut, wasmInPublicKeysHash, wasmInPublicKey);
+                const delinearizedPublicKey = new Uint8Array(PublicKey.SIZE);
+                delinearizedPublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
+                return delinearizedPublicKey;
+            } catch (e) {
+                Log.w(PublicKey, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 
@@ -213,23 +232,29 @@ class PublicKey extends Serializable {
         for (let i = 0; i < publicKeys.length; ++i) {
             concatenatedPublicKeys.set(publicKeys[i], i * PublicKey.SIZE);
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(PublicKey.SIZE);
-            const wasmInPublicKeys = Module.stackAlloc(concatenatedPublicKeys.length);
-            const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeys, concatenatedPublicKeys.length).set(concatenatedPublicKeys);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
-            Module._ed25519_aggregate_delinearized_public_keys(wasmOut, wasmInPublicKeysHash, wasmInPublicKeys, publicKeys.length);
-            const aggregatePublicKey = new Uint8Array(PublicKey.SIZE);
-            aggregatePublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
-            return aggregatePublicKey;
-        } catch (e) {
-            Log.w(PublicKey, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PublicKey.SIZE);
+            nimiq_node.nimiq_node_ed25519_aggregate_delinearized_public_keys(out, new Uint8Array(publicKeysHash), concatenatedPublicKeys, publicKeys.length);
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const wasmInPublicKeys = Module.stackAlloc(concatenatedPublicKeys.length);
+                const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeys, concatenatedPublicKeys.length).set(concatenatedPublicKeys);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
+                Module._ed25519_aggregate_delinearized_public_keys(wasmOut, wasmInPublicKeysHash, wasmInPublicKeys, publicKeys.length);
+                const aggregatePublicKey = new Uint8Array(PublicKey.SIZE);
+                aggregatePublicKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
+                return aggregatePublicKey;
+            } catch (e) {
+                Log.w(PublicKey, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

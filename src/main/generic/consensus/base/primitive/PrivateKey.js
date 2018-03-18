@@ -70,25 +70,31 @@ class PrivateKey extends Serializable {
             || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
-        let stackPtr;
-        try {
-            stackPtr = Module.stackSave();
-            const wasmOut = Module.stackAlloc(PublicKey.SIZE);
-            const wasmInPrivateKey = Module.stackAlloc(privateKey.length);
-            const wasmInPublicKey = Module.stackAlloc(publicKey.length);
-            const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPrivateKey, privateKey.length).set(privateKey);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
-            new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
-            Module._ed25519_derive_delinearized_private_key(wasmOut, wasmInPublicKeysHash, wasmInPublicKey, wasmInPrivateKey);
-            const delinearizedPrivateKey = new Uint8Array(PrivateKey.SIZE);
-            delinearizedPrivateKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PrivateKey.SIZE));
-            return delinearizedPrivateKey;
-        } catch (e) {
-            Log.w(CryptoWorkerImpl, e);
-            throw e;
-        } finally {
-            if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+        if (PlatformUtils.isNodeJs() && nimiq_node) {
+            const out = new Uint8Array(PublicKey.SIZE);
+            nimiq_node.nimiq_node_ed25519_derive_delinearized_private_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey), new Uint8Array(privateKey));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const wasmInPrivateKey = Module.stackAlloc(privateKey.length);
+                const wasmInPublicKey = Module.stackAlloc(publicKey.length);
+                const wasmInPublicKeysHash = Module.stackAlloc(publicKeysHash.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPrivateKey, privateKey.length).set(privateKey);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKey, publicKey.length).set(publicKey);
+                new Uint8Array(Module.HEAPU8.buffer, wasmInPublicKeysHash, publicKeysHash.length).set(publicKeysHash);
+                Module._ed25519_derive_delinearized_private_key(wasmOut, wasmInPublicKeysHash, wasmInPublicKey, wasmInPrivateKey);
+                const delinearizedPrivateKey = new Uint8Array(PrivateKey.SIZE);
+                delinearizedPrivateKey.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PrivateKey.SIZE));
+                return delinearizedPrivateKey;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
         }
     }
 }

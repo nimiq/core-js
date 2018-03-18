@@ -9,6 +9,7 @@
                 "src/native/encoding.c",
                 "src/native/nimiq_native.c",
                 "src/native/ref.c",
+                "src/native/sha256.c",
                 "src/native/ed25519/collective.c",
                 "src/native/ed25519/fe.c",
                 "src/native/ed25519/ge.c",

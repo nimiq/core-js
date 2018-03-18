@@ -90,7 +90,7 @@ class WasmHelper {
                         moduleSettings.preRun = () => resolve(true);
                         break;
                     case 'function':
-                        moduleSettings.preRun = [moduleSettings, () => resolve(true)];
+                        moduleSettings.preRun = [moduleSettings.preRun, () => resolve(true)];
                         break;
                     case 'object':
                         moduleSettings.preRun.push(() => resolve(true));

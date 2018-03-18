@@ -25,7 +25,6 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         this._superUpdateToSize = super._updateToSize;
 
         if (PlatformUtils.isNodeJs()) {
-            const nimiq_node = require(`${__dirname}/nimiq_node`);
             /**
              * @param {SerialBuffer} blockHeader
              * @param {number} compact
@@ -35,7 +34,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
              */
             this.multiMine = function (blockHeader, compact, minNonce, maxNonce) {
                 return new Promise((resolve, fail) => {
-                    nimiq_node.nimiq_argon2_target_async(async (nonce) => {
+                    nimiq_node.nimiq_node_argon2_target_async(async (nonce) => {
                         try {
                             if (nonce === maxNonce) {
                                 resolve(false);
