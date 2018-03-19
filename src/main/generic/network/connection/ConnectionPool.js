@@ -101,6 +101,10 @@ class ConnectionPool extends Observable {
         // When true, send a signal to network to close an established connection for a incoming one
         /** @type {boolean} */
         this._allowInboundExchange = false;
+
+        // Whether we allow inbound connections
+        /** @type {boolean} */
+        this._allowInboundWSConnections = false;
     }
 
     /**
@@ -386,6 +390,14 @@ class ConnectionPool extends Observable {
         if (this._addresses.isBanned(peer.peerAddress)) {
             peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED,
                 `Connection with banned address ${peer.peerAddress} (post version)`);
+            return false;
+        }
+
+        // Close websocket connection if we currently do not allow inbound websocket connections.
+        if (peer.peerAddress.protocol === Protocol.WS
+            && peerConnection.networkConnection.inbound && !this._allowInboundWSConnections) {
+            peerConnection.peerChannel.close(CloseType.INBOUND_WS_CONNECTIONS_BLOCKED,
+                'inbound websocket connections are blocked temporarily');
             return false;
         }
 
@@ -699,6 +711,11 @@ class ConnectionPool extends Observable {
     /** @param {boolean} value */
     set allowInboundExchange(value) {
         this._allowInboundExchange = value;
+    }
+
+    /** @param {boolean} value */
+    set allowInboundWSConnections(value) {
+        this._allowInboundWSConnections = value;
     }
 
 }

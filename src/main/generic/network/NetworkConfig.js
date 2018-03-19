@@ -116,6 +116,13 @@ class NetworkConfig {
     }
 
     /**
+     * @returns {boolean}
+     */
+    isSeed() {
+        return false;
+    }
+
+    /**
      * @type {PeerAddress}
      */
     get peerAddress() {
@@ -153,6 +160,15 @@ class WsNetworkConfig extends NetworkConfig {
             key: this._key,
             cert: this._cert
         };
+    }
+
+    /**
+     * @returns {boolean}
+     * @override
+     */
+    isSeed() {
+        const peerAddress = this.peerAddress;
+        return GenesisConfig.SEED_PEERS.some(seed => seed.equals(peerAddress));
     }
 
     /**

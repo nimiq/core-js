@@ -80,6 +80,10 @@ class Network extends Observable {
         this._connections.on('recycling-request', () => this._onRecyclingRequest());
         this._connections.on('connect-error', () => setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE));
 
+        if (this._networkConfig.isSeed()) {
+            this._connections.allowInboundWSConnections = true;
+        }
+
         /**
          * Helper object to pick PeerAddressBook.
          * @type {PeerScorer}
@@ -92,7 +96,12 @@ class Network extends Observable {
          * @private
          */
         this._houseKeepingIntervalId = null;
-    }       
+
+        /**
+         * @type {Timers}
+         */
+        this._timers = new Timers();
+    }
 
     connect() {
         this._autoConnect = true;
@@ -102,6 +111,13 @@ class Network extends Observable {
 
         // Start connecting to peers.
         this._checkPeerCount();
+
+        // Throttle inbound connections only for non-seed nodes.
+        if (!this._networkConfig.isSeed()) {
+            this._timers.setTimeout('inboundWSThrottle', () => {
+                this._connections.allowInboundWSConnections = true;
+            }, Network.INBOUND_WS_CONNECTIONS_THROTTLE);
+        }
     }
 
     /**
@@ -114,6 +130,10 @@ class Network extends Observable {
         clearInterval(this._houseKeepingIntervalId);
 
         this._connections.disconnect(reason);
+        this._timers.clearTimeout('inboundWSThrottle');
+        if (!this._networkConfig.isSeed()) {
+            this._connections.allowInboundWSConnections = false;
+        }
     }
 
     // XXX For testing
@@ -402,5 +422,10 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @constant
  */
 Network.CONNECT_THROTTLE = 300; // 300 ms
+/**
+ * @type {number}
+ * @constant
+ */
+Network.INBOUND_WS_CONNECTIONS_THROTTLE = 30000; // 30 s
 
 Class.register(Network);

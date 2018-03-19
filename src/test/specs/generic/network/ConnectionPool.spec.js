@@ -34,6 +34,8 @@ describe('ConnectionPool', () => {
             MockClock.speed = 20;
 
             const netConfig1 = Dummy.NETCONFIG;
+            // XXX Hack to disable inbound throttle for test.
+            netConfig1.isSeed = () => true;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
@@ -211,6 +213,8 @@ describe('ConnectionPool', () => {
             consensus1.network.connect();
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -219,6 +223,8 @@ describe('ConnectionPool', () => {
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
 
@@ -250,6 +256,8 @@ describe('ConnectionPool', () => {
             consensus1.network.connect();
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -258,6 +266,8 @@ describe('ConnectionPool', () => {
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
 
@@ -297,6 +307,8 @@ describe('ConnectionPool', () => {
             consensus1.network.connect();
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -305,6 +317,8 @@ describe('ConnectionPool', () => {
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            // XXX Hack to disable inbound throttle for test.
+            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
 
