@@ -30,7 +30,14 @@
                 "-march=native",
                 "-mtune=native",
                 "-DARGON2_NO_THREADS"
-            ]
+            ],
+            "xcode_settings": {
+                "OTHER_CFLAGS": [
+                    "-march=native",
+                    "-mtune=native",
+                    "-DARGON2_NO_THREADS"
+                ]
+            }
         }
     ]
 }
