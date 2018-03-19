@@ -1,9 +1,11 @@
 describe('ThreeNodes', () => {
     beforeEach(function () {
+        MockClock.install();
         MockNetwork.install();
     });
 
     afterEach(function () {
+        MockClock.uninstall();
         MockNetwork.uninstall();
     });
 
@@ -22,6 +24,8 @@ describe('ThreeNodes', () => {
             const netconfig1 = Dummy.NETCONFIG;
             consensus1 = await Consensus.volatileFull(netconfig1);
             consensus1.on('established', checkEstablished);
+            consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netconfig2 = new DumbNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netconfig2);

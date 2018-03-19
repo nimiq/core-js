@@ -1,9 +1,11 @@
 describe('TwoNodes', () => {
     beforeEach(function () {
+        MockClock.install();
         MockNetwork.install();
     });
 
     afterEach(function () {
+        MockClock.uninstall();
         MockNetwork.uninstall();
     });
 
@@ -19,6 +21,9 @@ describe('TwoNodes', () => {
             const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
+
+            consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const consensus2 = await Consensus.volatileFull();
             consensus2.on('established', checkEstablished);
@@ -49,6 +54,9 @@ describe('TwoNodes', () => {
             const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.on('established', checkEstablished);
+
+            consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netconfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileFull(netconfig2);

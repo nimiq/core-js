@@ -5,7 +5,10 @@ class WebRtcUtils {
         if (parts.length < 6) {
             return null;
         }
-        return NetAddress.fromIP(parts[4]);
+        // XXX The IP obtained from the ice candidate is not really reliable.
+        // But for the time being, we treat it as such as it only affects browser clients,
+        // which cannot obtain a more reliable form of net addresses.
+        return NetAddress.fromIP(parts[4], true);
     }
 }
 Class.register(WebRtcUtils);

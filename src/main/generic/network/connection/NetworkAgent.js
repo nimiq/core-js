@@ -123,8 +123,8 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        // Only relay addresses that the peer doesn't know yet. If the address
-        // the peer knows is older than RELAY_THROTTLE, relay the address again.
+        // Only relay addresses that the peer doesn't know yet or that have improved.
+        // If the address the peer knows is older than RELAY_THROTTLE, relay the address again.
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
             if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddressBook.MAX_DISTANCE) {
@@ -138,7 +138,9 @@ class NetworkAgent extends Observable {
 
             const knownAddress = this._knownAddresses.get(addr);
             return !addr.isSeed() // Never relay seed addresses.
-                && (!knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE);
+                && (!knownAddress // New address.
+                    || (addr.protocol === Protocol.RTC && knownAddress.distance > addr.distance) // Better distance.
+                    || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE); // Relay throttle.
         });
 
         if (filteredAddresses.length) {
@@ -251,7 +253,7 @@ class NetworkAgent extends Observable {
         }
 
         // The client might not send its netAddress. Set it from our address database if we have it.
-        if (!peerAddress.netAddress || peerAddress.netAddress.isPseudo()) {
+        if (!peerAddress.netAddress) {
             /** @type {PeerAddress} */
             const storedAddress = this._addresses.get(peerAddress);
             if (storedAddress && storedAddress.netAddress) {
@@ -391,7 +393,7 @@ class NetworkAgent extends Observable {
      * @param {AddrMessage} msg
      * @private
      */
-    _onAddr(msg) {
+    async _onAddr(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
@@ -413,6 +415,17 @@ class NetworkAgent extends Observable {
             if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
                 this._channel.close(CloseType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
                 return;
+            }
+            if (addr.protocol === Protocol.WS) {
+                // Resolve host to netAddress.
+                try {
+                    const netAddress = await DNSUtils.lookup(addr.host);
+                    if (!netAddress.isPseudo()) {
+                        addr.netAddress = netAddress;
+                    }
+                } catch (e) {
+                    Log.w(NetworkAgent, `DNS lookup for ${addr.host} threw error ${e}`);
+                }
             }
             this._knownAddresses.add(addr);
         }

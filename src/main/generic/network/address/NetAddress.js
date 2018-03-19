@@ -1,19 +1,23 @@
 class NetAddress {
     /**
      * @param {string} ip
+     * @param {boolean} reliable
      * @return {NetAddress}
      */
-    static fromIP(ip) {
+    static fromIP(ip, reliable = false) {
         const saneIp = NetUtils.sanitizeIP(ip);
-        return new NetAddress(saneIp);
+        return new NetAddress(saneIp, reliable);
     }
 
     /**
      * @param {string} ip
+     * @param {boolean} reliable
      */
-    constructor(ip) {
+    constructor(ip, reliable = false) {
         /** @type {string} */
         this._ip = ip;
+        /** @type {boolean} */
+        this._reliable = reliable;
     }
 
     /**
@@ -69,6 +73,11 @@ class NetAddress {
     /** @type {string} */
     get ip() {
         return this._ip;
+    }
+
+    /** @type {boolean} */
+    get reliable() {
+        return this._reliable;
     }
 
     /**

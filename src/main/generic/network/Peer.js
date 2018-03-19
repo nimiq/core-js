@@ -28,7 +28,10 @@ class Peer {
     _setNetAddress() {
         // If the connector was able the determine the peer's netAddress, update the peer's advertised netAddress.
         if (this.channel.netAddress) {
-            // TODO What to do if it doesn't match the currently advertised one?
+            /*
+             * TODO What to do if it doesn't match the currently advertised one?
+             * This might happen if multiple IPs are assigned to a host.
+             */
             if (this.peerAddress.netAddress && !this.peerAddress.netAddress.equals(this.channel.netAddress)) {
                 Log.w(Peer, `Got different netAddress ${this.channel.netAddress} for ${this.peerAddress} `
                     + `- advertised was ${this.peerAddress.netAddress}`);

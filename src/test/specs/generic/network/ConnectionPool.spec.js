@@ -34,10 +34,9 @@ describe('ConnectionPool', () => {
             MockClock.speed = 20;
 
             const netConfig1 = Dummy.NETCONFIG;
-            // XXX Hack to disable inbound throttle for test.
-            netConfig1.isSeed = () => true;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await createPeers(5, netConfig1.peerAddress);
 
@@ -48,6 +47,34 @@ describe('ConnectionPool', () => {
 
             expect(consensus1.network.peerCount).toBe(4);
             Network.PEER_COUNT_RECYCLING_ACTIVE = peerCountRecyclingActive;
+
+            done();
+        })().catch(done.fail);
+    });
+
+    it('should reject inbound ws connections at the beginning', (done) => {
+        (async () => {
+            GenesisConfig._config.SEED_PEERS = [];
+            MockClock.speed = 20;
+
+            const netConfig1 = Dummy.NETCONFIG;
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            consensus1.network.connect();
+
+            const netConfig2 = new RtcNetworkConfig();
+            const consensus2 = await Consensus.volatileNano(netConfig2);
+            consensus2.network._connections.connectOutbound(netConfig1.peerAddress);
+            await new Promise(resolve => consensus2.network._connections.on('connect-error', resolve));
+
+            expect(consensus1.network.peerCount).toBe(0);
+
+            // Wait until inbound connections are allowed.
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
+
+            consensus2.network._connections.connectOutbound(netConfig1.peerAddress);
+            await new Promise(resolve => consensus2.network._connections.on('connection', resolve));
+
+            expect(consensus1.network.peerCount).toBe(1);
 
             done();
         })().catch(done.fail);
@@ -70,6 +97,7 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await createPeers(5, netConfig1.peerAddress);
 
@@ -94,6 +122,7 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -134,6 +163,7 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -173,6 +203,7 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -211,22 +242,21 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);
@@ -254,22 +284,21 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);
@@ -305,22 +334,21 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig2.isSeed = () => true;
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
-            // XXX Hack to disable inbound throttle for test.
-            netConfig3.isSeed = () => true;
             const consensus3 = await Consensus.volatileLight(netConfig3);
             consensus3.network.connect();
+            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);

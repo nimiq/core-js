@@ -147,7 +147,7 @@ class SignalRouter {
      * @param {PeerChannel} signalChannel
      * @param {number} distance
      * @param {number} timestamp
-     * @returns {void}
+     * @returns {boolean} whether we have a new best route
      */
     addRoute(signalChannel, distance, timestamp) {
         const oldRoute = this._routes.get(signalChannel);
@@ -164,7 +164,9 @@ class SignalRouter {
 
             this._bestRoute = newRoute;
             this.peerAddress.distance = this._bestRoute.distance;
+            return true;
         }
+        return false;
     }
 
     /**

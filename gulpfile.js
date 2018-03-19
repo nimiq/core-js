@@ -22,7 +22,8 @@ const sources = {
             './src/main/generic/network/DataChannel.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
-            './src/main/platform/browser/network/websocket/WebSocketFactory.js'
+            './src/main/platform/browser/network/websocket/WebSocketFactory.js',
+            './src/main/platform/browser/network/DNSUtils.js'
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
@@ -31,7 +32,8 @@ const sources = {
             './src/main/generic/network/DataChannel.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcFactory.js',
-            './src/main/platform/nodejs/network/websocket/WebSocketFactory.js'
+            './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
+            './src/main/platform/nodejs/network/DNSUtils.js'
         ]
     },
     generic: [

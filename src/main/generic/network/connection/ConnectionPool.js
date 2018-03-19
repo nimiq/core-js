@@ -173,6 +173,8 @@ class ConnectionPool extends Observable {
      * @private
      */
     _addNetAddress(peerConnection, netAddress) {
+        // Only add reliable netAddresses.
+        if (!netAddress.reliable) return;
         if (this._connectionsByNetAddress.contains(netAddress)) {
             this._connectionsByNetAddress.get(netAddress).push(peerConnection);
         } else {
@@ -235,7 +237,7 @@ class ConnectionPool extends Observable {
         }
 
         // Forbid connection if we have too many connections to the peer's IP address.
-        if (peerAddress.netAddress && !peerAddress.netAddress.isPseudo()) {
+        if (peerAddress.netAddress && peerAddress.netAddress.reliable) {
             if (this.getConnectionsByNetAddress(peerAddress.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 Log.e(ConnectionPool, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
@@ -294,7 +296,7 @@ class ConnectionPool extends Observable {
      */
     _checkConnection(conn) {
         // Close connection if we have too many connections to the peer's IP address.
-        if (conn.netAddress && !conn.netAddress.isPseudo()) {
+        if (conn.netAddress && !conn.netAddress.isPseudo() && conn.netAddress.reliable) {
             if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
                 conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
                 return false;
@@ -394,7 +396,7 @@ class ConnectionPool extends Observable {
         }
 
         // Close websocket connection if we currently do not allow inbound websocket connections.
-        if (peer.peerAddress.protocol === Protocol.WS
+        if (peerConnection.networkConnection.protocol === Protocol.WS
             && peerConnection.networkConnection.inbound && !this._allowInboundWSConnections) {
             peerConnection.peerChannel.close(CloseType.INBOUND_WS_CONNECTIONS_BLOCKED,
                 'inbound websocket connections are blocked temporarily');
@@ -402,7 +404,7 @@ class ConnectionPool extends Observable {
         }
 
         // Close connection if we have too many connections to the peer's IP address.
-        if (peer.netAddress && !peer.netAddress.isPseudo()) {
+        if (peer.netAddress && !peer.netAddress.isPseudo() && peer.netAddress.reliable) {
             if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_IP_MAX) {
                 peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
                     `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post version)`);

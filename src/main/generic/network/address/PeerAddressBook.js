@@ -220,8 +220,10 @@ class PeerAddressBook extends Observable {
 
         // Check if we already know this address.
         let peerAddressState = this._get(peerAddress);
+        let knownAddress = null;
+        let changed = false;
         if (peerAddressState) {
-            const knownAddress = peerAddressState.peerAddress;
+            knownAddress = peerAddressState.peerAddress;
 
             // Ignore address if it is banned.
             if (peerAddressState.state === PeerAddressState.BANNED) {
@@ -233,14 +235,9 @@ class PeerAddressBook extends Observable {
                 return false;
             }
 
-            // Never erase NetAddresses.
-            if (knownAddress.netAddress && !peerAddress.netAddress) {
+            // Never erase NetAddresses and never overwrite reliable addresses.
+            if (knownAddress.netAddress && (!peerAddress.netAddress || knownAddress.netAddress.reliable)) {
                 peerAddress.netAddress = knownAddress.netAddress;
-            }
-
-            // Ignore address if it is a websocket address and we already know this address with a more recent timestamp.
-            if (peerAddress.protocol === Protocol.WS && knownAddress.timestamp >= peerAddress.timestamp) {
-                return false;
             }
         } else {
             // Add new peerAddressState.
@@ -250,17 +247,21 @@ class PeerAddressBook extends Observable {
                 // Index by peerId.
                 this._peerIds.put(peerAddress.peerId, peerAddressState);
             }
+            changed = true;
+        }
+
+        // Update address if we do not know this address or it has a more recent timestamp.
+        if (!knownAddress || knownAddress.timestamp < peerAddress.timestamp) {
+            peerAddressState.peerAddress = peerAddress;
+            changed = true;
         }
 
         // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
-            peerAddressState.signalRouter.addRoute(channel, peerAddress.distance, peerAddress.timestamp);
+            changed = peerAddressState.signalRouter.addRoute(channel, peerAddress.distance, peerAddress.timestamp) || changed;
         }
 
-        // Update the address.
-        peerAddressState.peerAddress = peerAddress;
-
-        return true;
+        return changed;
     }
 
     /**
