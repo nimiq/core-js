@@ -40,7 +40,7 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '  --metrics[=PORT]           Start Prometheus-compatible metrics server on port\n' +
         '           [:PASSWORD]       PORT (default: 8649). If PASSWORD is specified, it\n' +
         '                             is required to be used for username "metrics" via\n' +
-        '                             Basic Authentication.' +
+        '                             Basic Authentication.\n' +
         '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
