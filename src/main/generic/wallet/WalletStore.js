@@ -63,11 +63,12 @@ class WalletStore {
     /**
      * @param {Address} address
      * @param {Uint8Array|string} [key]
-     * @returns {Promise.<Wallet>}
+     * @returns {Promise.<?Wallet>}
      */
     async get(address, key) {
         const base64Address = address.toBase64();
         const buf = await this._walletStore.get(base64Address);
+        if (!buf) return null;
         if (key) {
             return Wallet.loadEncrypted(buf, key);
         }
@@ -122,11 +123,12 @@ class WalletStore {
     /**
      * @param {Address} address
      * @param {Uint8Array|string} [key]
-     * @returns {Promise.<MultiSigWallet>}
+     * @returns {Promise.<?MultiSigWallet>}
      */
     async getMultiSig(address, key) {
         const base64Address = address.toBase64();
         const buf = await this._multiSigStore.get(base64Address);
+        if (!buf) return null;
         if (key) {
             return MultiSigWallet.loadEncrypted(buf, key);
         }
