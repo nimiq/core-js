@@ -63,9 +63,10 @@ class PeerScorer extends Observable {
             return null;
         }
 
-        // Return the candidate with the highest score.
+        // Return a random candidate with a high score.
         const scores = candidates.keys().sort((a, b) => b - a);
-        const winner = candidates.get(scores[0]);
+        const goodCandidates = scores.slice(0, PeerScorer.PICK_SELECTION_SIZE);
+        const winner = candidates.get(ArrayUtils.randomElement(goodCandidates));
         return winner.peerAddress;
     }
 
@@ -293,5 +294,7 @@ PeerScorer.BEST_AGE_NANO = 5 * 60 * 1000; // 5 minutes
 PeerScorer.MAX_AGE_NANO = 30 * 60 * 1000; // 30 minutes
 
 PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION = 0.15; // 15%
+
+PeerScorer.PICK_SELECTION_SIZE = 10;
 
 Class.register(PeerScorer);
