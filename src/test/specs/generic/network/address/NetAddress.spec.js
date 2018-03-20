@@ -80,7 +80,7 @@ describe('NetAddress', () => {
     const short1v4 = '8.8.8.8';
 
     it('canonicalizes IPv4 addresses', () => {
-        expect(NetAddress.fromIP(long1v4).ip).toEqual(short1v4);
+        expect(NetAddress.fromIP(long1v4).toString()).toEqual(short1v4);
     });
 
 
@@ -106,16 +106,16 @@ describe('NetAddress', () => {
     const short10v6 = '1.2.3.4';
 
     it('canonicalizes IPv6 addresses', () => {
-        expect(NetAddress.fromIP(long1v6).ip).toEqual(short1v6);
-        expect(NetAddress.fromIP(long2v6).ip).toEqual(short2v6);
-        expect(NetAddress.fromIP(long3v6).ip).toEqual(short3v6);
-        expect(NetAddress.fromIP(long4v6).ip).toEqual(short4v6);
-        expect(NetAddress.fromIP(long5v6).ip).toEqual(short5v6);
-        expect(NetAddress.fromIP(long6v6).ip).toEqual(short6v6);
-        expect(NetAddress.fromIP(long7v6).ip).toEqual(short7v6);
-        expect(NetAddress.fromIP(long8v6).ip).toEqual(short8v6);
-        expect(NetAddress.fromIP(long9v6).ip).toEqual(short9v6);
-        expect(NetAddress.fromIP(long10v6).ip).toEqual(short10v6);
+        expect(NetAddress.fromIP(long1v6).toString()).toEqual(short1v6);
+        expect(NetAddress.fromIP(long2v6).toString()).toEqual(short2v6);
+        expect(NetAddress.fromIP(long3v6).toString()).toEqual(short3v6);
+        expect(NetAddress.fromIP(long4v6).toString()).toEqual(short4v6);
+        expect(NetAddress.fromIP(long5v6).toString()).toEqual(short5v6);
+        expect(NetAddress.fromIP(long6v6).toString()).toEqual(short6v6);
+        expect(NetAddress.fromIP(long7v6).toString()).toEqual(short7v6);
+        expect(NetAddress.fromIP(long8v6).toString()).toEqual(short8v6);
+        expect(NetAddress.fromIP(long9v6).toString()).toEqual(short9v6);
+        expect(NetAddress.fromIP(long10v6).toString()).toEqual(short10v6);
     });
 
 
@@ -123,6 +123,6 @@ describe('NetAddress', () => {
     const lowercase1v6 = '2001:db8::1';
 
     it('lowercases IPv6 addresses', () => {
-        expect(NetAddress.fromIP(uppercase1v6).ip).toEqual(lowercase1v6);
+        expect(NetAddress.fromIP(uppercase1v6).toString()).toEqual(lowercase1v6);
     });
 });

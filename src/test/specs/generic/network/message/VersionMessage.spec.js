@@ -1,5 +1,5 @@
 describe('VersionMessage', () => {
-    const addr = new DumbPeerAddress(0, 0, new NetAddress('127.0.0.1'), PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), 0, Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1)));
+    const addr = new DumbPeerAddress(0, 0, NetAddress.fromIP('127.0.0.1'), PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), 0, Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1)));
     const blockHash = Hash.fromBase64(Dummy.hash1);
     const challenge = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
 

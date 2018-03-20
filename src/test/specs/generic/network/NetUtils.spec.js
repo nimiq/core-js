@@ -43,6 +43,7 @@ describe('NetUtils', () => {
         expect(NetUtils.isPrivateIP('fd00:3456:789a:1::1')).toEqual(true);
         expect(NetUtils.isPrivateIP('fe00:3456:789a:1::1')).toEqual(false);
         expect(NetUtils.isPrivateIP('ff02:3456:789a:1::1')).toEqual(false);
+        expect(NetUtils.isPrivateIP('::3456:789a:1:1')).toEqual(false);
     });
 
     it('rejects invalid private IP addresses', () => {
@@ -61,5 +62,16 @@ describe('NetUtils', () => {
     it('accepts valid hostnames', () => {
         expect(NetUtils.hostGloballyReachable('dev.nimiq-network.com')).toEqual(true);
         expect(NetUtils.hostGloballyReachable('example.com')).toEqual(true);
+    });
+
+    it('correctly computes subnetted IPs', () => {
+        expect(NetUtils.ipToSubnet('128.128.128.128', 24)).toEqual('128.128.128.0');
+        expect(NetUtils.ipToSubnet('128.128.128.128', 16)).toEqual('128.128.0.0');
+        expect(NetUtils.ipToSubnet('255.128.128.128', 4)).toEqual('240.0.0.0');
+
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 2)).toEqual('c000::');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 8)).toEqual('ff00::');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 16)).toEqual('ffff::');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 32)).toEqual('ffff:ffff::');
     });
 });
