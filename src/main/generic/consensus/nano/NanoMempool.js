@@ -81,19 +81,19 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      */
     changeHead(block, transactions) {
-        this._evictTransactions(block.height, transactions);
+        this._evictTransactions(block.header, transactions);
     }
 
     /**
-     * @param {number} blockHeight
+     * @param {BlockHeader} blockHeader
      * @param {Array.<Transaction>} transactions
      * @private
      */
-    _evictTransactions(blockHeight, transactions) {
+    _evictTransactions(blockHeader, transactions) {
         // Remove expired transactions.
         for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
             const txHash = tx.hash();
-            if (blockHeight >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+            if (blockHeader.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this._transactionsByHash.remove(txHash);
 
                 /** @type {MempoolTransactionSet} */
@@ -122,7 +122,7 @@ class NanoMempool extends Observable {
                     this._transactionSetByAddress.remove(tx.sender);
                 }
 
-                this.fire('transaction-mined', tx);
+                this.fire('transaction-mined', { transaction: tx, header: blockHeader });
             }
         }
     }
