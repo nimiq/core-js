@@ -58,6 +58,8 @@ class NetUtils {
             }
             return ip[NetUtils.IPv6_LENGTH - 1] === 1;
         }
+
+        return false;
     }
 
     /**
