@@ -77,9 +77,9 @@ class PartialSignature extends Serializable {
         for (let i = 0; i < publicKeys.length; ++i) {
             concatenatedPublicKeys.set(publicKeys[i], i * PublicKey.SIZE);
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PartialSignature.SIZE);
-            nimiq_node.nimiq_node_ed25519_delinearized_partial_sign(out, new Uint8Array(message), new Uint8Array(aggregateCommitment), new Uint8Array(secret), new Uint8Array(concatenatedPublicKeys), publicKeys.length, new Uint8Array(publicKey), new Uint8Array(privateKey));
+            NodeNative.node_ed25519_delinearized_partial_sign(out, new Uint8Array(message), new Uint8Array(aggregateCommitment), new Uint8Array(secret), new Uint8Array(concatenatedPublicKeys), publicKeys.length, new Uint8Array(publicKey), new Uint8Array(privateKey));
             return out;
         } else {
             let stackPtr;

@@ -116,9 +116,9 @@ class PublicKey extends Serializable {
         if (privateKey.byteLength !== PrivateKey.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PublicKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_public_key_derive(out, new Uint8Array(privateKey));
+            NodeNative.node_ed25519_public_key_derive(out, new Uint8Array(privateKey));
             return out;
         } else {
             let stackPtr;
@@ -157,9 +157,9 @@ class PublicKey extends Serializable {
         for (let i = 0; i < publicKeys.length; ++i) {
             concatenatedPublicKeys.set(publicKeys[i], i * PublicKey.SIZE);
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Hash.getSize(Hash.Algorithm.SHA512));
-            nimiq_node.nimiq_node_ed25519_hash_public_keys(out, concatenatedPublicKeys, publicKeys.length);
+            NodeNative.node_ed25519_hash_public_keys(out, concatenatedPublicKeys, publicKeys.length);
             return out;
         } else {
             let stackPtr;
@@ -192,9 +192,9 @@ class PublicKey extends Serializable {
             || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PublicKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_delinearize_public_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey));
+            NodeNative.node_ed25519_delinearize_public_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey));
             return out;
         } else {
             let stackPtr;
@@ -232,9 +232,9 @@ class PublicKey extends Serializable {
         for (let i = 0; i < publicKeys.length; ++i) {
             concatenatedPublicKeys.set(publicKeys[i], i * PublicKey.SIZE);
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PublicKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_aggregate_delinearized_public_keys(out, new Uint8Array(publicKeysHash), concatenatedPublicKeys, publicKeys.length);
+            NodeNative.node_ed25519_aggregate_delinearized_public_keys(out, new Uint8Array(publicKeysHash), concatenatedPublicKeys, publicKeys.length);
             return out;
         } else {
             let stackPtr;

@@ -79,10 +79,10 @@ class CommitmentPair extends Serializable {
      * @returns {{commitment:Uint8Array, secret:Uint8Array}}
      */
     static _commitmentCreate(randomness) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const commitment = new Uint8Array(PublicKey.SIZE);
             const secret = new Uint8Array(PrivateKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_create_commitment(secret, commitment, randomness);
+            NodeNative.node_ed25519_create_commitment(secret, commitment, randomness);
             return {commitment, secret};
         } else {
             let stackPtr;

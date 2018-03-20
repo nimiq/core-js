@@ -70,9 +70,9 @@ class Commitment extends Serializable {
         for (let i = 0; i < commitments.length; ++i) {
             concatenatedCommitments.set(commitments[i], i * PublicKey.SIZE);
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PublicKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_aggregate_commitments(out, concatenatedCommitments, commitments.length);
+            NodeNative.node_ed25519_aggregate_commitments(out, concatenatedCommitments, commitments.length);
             return out;
         } else {
             let stackPtr;

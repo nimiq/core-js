@@ -16,9 +16,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Uint8Array}
      */
     computeArgon2d(input) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
-            const res = nimiq_node.nimiq_node_argon2(out, new Uint8Array(input), 512);
+            const res = NodeNative.node_argon2(out, new Uint8Array(input), 512);
             if (res !== 0) {
                 throw res;
             }
@@ -53,10 +53,10 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      */
     computeArgon2dBatch(inputs) {
         const hashes = [];
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             for(const input of inputs) {
                 const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
-                const res = nimiq_node.nimiq_node_argon2(out, new Uint8Array(input), 512);
+                const res = NodeNative.node_argon2(out, new Uint8Array(input), 512);
                 if (res !== 0) {
                     throw res;
                 }
@@ -99,9 +99,9 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @returns {Uint8Array}
      */
     kdf(key, salt, iterations) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
-            const res = nimiq_node.nimiq_node_kdf(out, new Uint8Array(key), new Uint8Array(salt), 512, iterations);
+            const res = NodeNative.node_kdf(out, new Uint8Array(key), new Uint8Array(salt), 512, iterations);
             if (res !== 0) {
                 throw res;
             }

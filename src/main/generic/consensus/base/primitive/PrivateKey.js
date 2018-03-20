@@ -70,9 +70,9 @@ class PrivateKey extends Serializable {
             || publicKeysHash.byteLength !== Hash.getSize(Hash.Algorithm.SHA512)) {
             throw Error('Wrong buffer size.');
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PublicKey.SIZE);
-            nimiq_node.nimiq_node_ed25519_derive_delinearized_private_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey), new Uint8Array(privateKey));
+            NodeNative.node_ed25519_derive_delinearized_private_key(out, new Uint8Array(publicKeysHash), new Uint8Array(publicKey), new Uint8Array(privateKey));
             return out;
         } else {
             let stackPtr;

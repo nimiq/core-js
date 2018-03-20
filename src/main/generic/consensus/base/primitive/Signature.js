@@ -108,9 +108,9 @@ class Signature extends Serializable {
         if (a.byteLength !== PartialSignature.SIZE || b.byteLength !== PartialSignature.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(PartialSignature.SIZE);
-            nimiq_node.nimiq_node_ed25519_add_scalars(out, new Uint8Array(a), new Uint8Array(b));
+            NodeNative.node_ed25519_add_scalars(out, new Uint8Array(a), new Uint8Array(b));
             return out;
         } else {
             let stackPtr;
@@ -145,9 +145,9 @@ class Signature extends Serializable {
             || privateKey.byteLength !== PrivateKey.SIZE) {
             throw Error('Wrong buffer size.');
         }
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Signature.SIZE);
-            nimiq_node.nimiq_node_ed25519_sign(out, new Uint8Array(message), new Uint8Array(publicKey), new Uint8Array(privateKey));
+            NodeNative.node_ed25519_sign(out, new Uint8Array(message), new Uint8Array(publicKey), new Uint8Array(privateKey));
             return out;
         } else {
             let stackPtr;
@@ -184,8 +184,8 @@ class Signature extends Serializable {
      * @returns {boolean}
      */
     static _signatureVerify(publicKey, message, signature) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
-            return !!nimiq_node.nimiq_node_ed25519_verify(new Uint8Array(signature), new Uint8Array(message), new Uint8Array(publicKey));
+        if (PlatformUtils.isNodeJs()) {
+            return !!NodeNative.node_ed25519_verify(new Uint8Array(signature), new Uint8Array(message), new Uint8Array(publicKey));
         } else {
             let stackPtr;
             try {

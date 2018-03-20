@@ -194,9 +194,9 @@ class Hash extends Serializable {
      * @returns {Uint8Array}
      */
     static computeBlake2b(input) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Hash.getSize(Hash.Algorithm.BLAKE2B));
-            nimiq_node.nimiq_node_blake2(out, new Uint8Array(input));
+            NodeNative.node_blake2(out, new Uint8Array(input));
             return out;
         } else {
             let stackPtr;
@@ -227,9 +227,9 @@ class Hash extends Serializable {
      * @returns {Uint8Array}
      */
     static computeSha256(input) {
-        if (PlatformUtils.isNodeJs() && nimiq_node) {
+        if (PlatformUtils.isNodeJs()) {
             const out = new Uint8Array(Hash.getSize(Hash.Algorithm.SHA256));
-            nimiq_node.nimiq_node_sha256(out, new Uint8Array(input));
+            NodeNative.node_sha256(out, new Uint8Array(input));
             return out;
         } else {
             let stackPtr;

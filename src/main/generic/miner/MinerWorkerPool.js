@@ -34,7 +34,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
              */
             this.multiMine = function (blockHeader, compact, minNonce, maxNonce) {
                 return new Promise((resolve, fail) => {
-                    nimiq_node.nimiq_node_argon2_target_async(async (nonce) => {
+                    NodeNative.node_argon2_target_async(async (nonce) => {
                         try {
                             if (nonce === maxNonce) {
                                 resolve(false);

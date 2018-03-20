@@ -74,7 +74,7 @@ class Argon2Worker : public AsyncWorker {
         int res;
 };
 
-NAN_METHOD(nimiq_node_argon2_target_async) {
+NAN_METHOD(node_argon2_target_async) {
     Callback* callback = new Callback(info[0].As<Function>());
 
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
@@ -89,7 +89,7 @@ NAN_METHOD(nimiq_node_argon2_target_async) {
     AsyncQueueWorker(new MinerWorker(callback, in, inlen, compact, min_nonce, max_nonce, m_cost));
 }
 
-NAN_METHOD(nimiq_node_sha256) {
+NAN_METHOD(node_sha256) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t inlen = in_array->Length();
@@ -98,7 +98,7 @@ NAN_METHOD(nimiq_node_sha256) {
     nimiq_sha256(out, in, inlen);
 }
 
-NAN_METHOD(nimiq_node_blake2) {
+NAN_METHOD(node_blake2) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t inlen = in_array->Length();
@@ -107,7 +107,7 @@ NAN_METHOD(nimiq_node_blake2) {
     nimiq_blake2(out, in, inlen);
 }
 
-NAN_METHOD(nimiq_node_argon2) {
+NAN_METHOD(node_argon2) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t m_cost = To<uint32_t>(info[2]).FromJust();
@@ -118,7 +118,7 @@ NAN_METHOD(nimiq_node_argon2) {
     info.GetReturnValue().Set(New<Number>(nimiq_argon2(out, in, inlen, m_cost)));
 }
 
-NAN_METHOD(nimiq_node_argon2_async) {
+NAN_METHOD(node_argon2_async) {
     Callback* callback = new Callback(info[0].As<Function>());
 
     Local<Uint8Array> out_array = info[1].As<Uint8Array>();
@@ -130,7 +130,7 @@ NAN_METHOD(nimiq_node_argon2_async) {
     AsyncQueueWorker(new Argon2Worker(callback, out, in, inlen, m_cost));
 }
 
-NAN_METHOD(nimiq_node_ed25519_public_key_derive) {
+NAN_METHOD(node_ed25519_public_key_derive) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint8_t* out = (uint8_t*) out_array->Buffer()->GetContents().Data();
@@ -139,7 +139,7 @@ NAN_METHOD(nimiq_node_ed25519_public_key_derive) {
     ed25519_public_key_derive(out, in);
 }
 
-NAN_METHOD(nimiq_node_ed25519_hash_public_keys) {
+NAN_METHOD(node_ed25519_hash_public_keys) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t length = To<uint32_t>(info[2]).FromJust();
@@ -149,7 +149,7 @@ NAN_METHOD(nimiq_node_ed25519_hash_public_keys) {
     ed25519_hash_public_keys(out, in, length);
 }
 
-NAN_METHOD(nimiq_node_ed25519_delinearize_public_key) {
+NAN_METHOD(node_ed25519_delinearize_public_key) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> hash_array = info[1].As<Uint8Array>();
     Local<Uint8Array> key_array = info[2].As<Uint8Array>();
@@ -160,7 +160,7 @@ NAN_METHOD(nimiq_node_ed25519_delinearize_public_key) {
     ed25519_delinearize_public_key(out, hash, key);
 }
 
-NAN_METHOD(nimiq_node_ed25519_aggregate_delinearized_public_keys) {
+NAN_METHOD(node_ed25519_aggregate_delinearized_public_keys) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> hash_array = info[1].As<Uint8Array>();
     Local<Uint8Array> keys_array = info[2].As<Uint8Array>();
@@ -172,7 +172,7 @@ NAN_METHOD(nimiq_node_ed25519_aggregate_delinearized_public_keys) {
     ed25519_aggregate_delinearized_public_keys(out, hash, keys, length);
 }
 
-NAN_METHOD(nimiq_node_ed25519_add_scalars) {
+NAN_METHOD(node_ed25519_add_scalars) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> a_array = info[1].As<Uint8Array>();
     Local<Uint8Array> b_array = info[2].As<Uint8Array>();
@@ -183,7 +183,7 @@ NAN_METHOD(nimiq_node_ed25519_add_scalars) {
     ed25519_add_scalars(out, a, b);
 }
 
-NAN_METHOD(nimiq_node_ed25519_sign) {
+NAN_METHOD(node_ed25519_sign) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> message_array = info[1].As<Uint8Array>();
     Local<Uint8Array> pubkey_array = info[2].As<Uint8Array>();
@@ -197,7 +197,7 @@ NAN_METHOD(nimiq_node_ed25519_sign) {
     ed25519_sign(out, message, message_length, pubkey, privkey);
 }
 
-NAN_METHOD(nimiq_node_ed25519_verify) {
+NAN_METHOD(node_ed25519_verify) {
     Local<Uint8Array> signature_array = info[0].As<Uint8Array>();
     Local<Uint8Array> message_array = info[1].As<Uint8Array>();
     Local<Uint8Array> pubkey_array = info[2].As<Uint8Array>();
@@ -209,7 +209,7 @@ NAN_METHOD(nimiq_node_ed25519_verify) {
     info.GetReturnValue().Set(New<Number>(ed25519_verify(signature, message, message_length, pubkey)));
 }
 
-NAN_METHOD(nimiq_node_kdf) {
+NAN_METHOD(node_kdf) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> key_array = info[1].As<Uint8Array>();
     Local<Uint8Array> salt_array = info[2].As<Uint8Array>();
@@ -224,7 +224,7 @@ NAN_METHOD(nimiq_node_kdf) {
     info.GetReturnValue().Set(New<Number>(nimiq_kdf(out, key, keylen, salt, saltlen, m_cost, iterations)));
 }
 
-NAN_METHOD(nimiq_node_ed25519_aggregate_commitments) {
+NAN_METHOD(node_ed25519_aggregate_commitments) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t length = To<uint32_t>(info[2]).FromJust();
@@ -234,7 +234,7 @@ NAN_METHOD(nimiq_node_ed25519_aggregate_commitments) {
     ed25519_aggregate_commitments(out, in, length);
 }
 
-NAN_METHOD(nimiq_node_ed25519_create_commitment) {
+NAN_METHOD(node_ed25519_create_commitment) {
     Local<Uint8Array> out_secret_array = info[0].As<Uint8Array>();
     Local<Uint8Array> out_commitment_array = info[1].As<Uint8Array>();
     Local<Uint8Array> in_array = info[2].As<Uint8Array>();
@@ -245,7 +245,7 @@ NAN_METHOD(nimiq_node_ed25519_create_commitment) {
     ed25519_create_commitment(out_secret, out_commitment, in);
 }
 
-NAN_METHOD(nimiq_node_ed25519_derive_delinearized_private_key) {
+NAN_METHOD(node_ed25519_derive_delinearized_private_key) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_hash_array = info[1].As<Uint8Array>();
     Local<Uint8Array> in_public_array = info[2].As<Uint8Array>();
@@ -258,7 +258,7 @@ NAN_METHOD(nimiq_node_ed25519_derive_delinearized_private_key) {
     ed25519_derive_delinearized_private_key(out, in_hash, in_public, in_private);
 }
 
-NAN_METHOD(nimiq_node_ed25519_delinearized_partial_sign) {
+NAN_METHOD(node_ed25519_delinearized_partial_sign) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> message_array = info[1].As<Uint8Array>();
     Local<Uint8Array> commitment_array = info[2].As<Uint8Array>();
@@ -281,40 +281,40 @@ NAN_METHOD(nimiq_node_ed25519_delinearized_partial_sign) {
 }
 
 NAN_MODULE_INIT(Init) {
-    Set(target, New<String>("nimiq_node_argon2_target_async").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_argon2_target_async)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_sha256").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_sha256)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_blake2").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_blake2)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_argon2").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_argon2)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_argon2_async").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_argon2_async)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_public_key_derive").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_public_key_derive)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_hash_public_keys").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_hash_public_keys)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_delinearize_public_key").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_delinearize_public_key)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_aggregate_delinearized_public_keys").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_aggregate_delinearized_public_keys)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_add_scalars").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_add_scalars)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_sign").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_sign)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_verify").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_verify)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_kdf").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_kdf)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_aggregate_commitments").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_aggregate_commitments)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_create_commitment").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_create_commitment)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_derive_delinearized_private_key").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_derive_delinearized_private_key)).ToLocalChecked());
-    Set(target, New<String>("nimiq_node_ed25519_delinearized_partial_sign").ToLocalChecked(),
-        GetFunction(New<FunctionTemplate>(nimiq_node_ed25519_delinearized_partial_sign)).ToLocalChecked());
+    Set(target, New<String>("node_argon2_target_async").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_argon2_target_async)).ToLocalChecked());
+    Set(target, New<String>("node_sha256").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_sha256)).ToLocalChecked());
+    Set(target, New<String>("node_blake2").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_blake2)).ToLocalChecked());
+    Set(target, New<String>("node_argon2").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_argon2)).ToLocalChecked());
+    Set(target, New<String>("node_argon2_async").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_argon2_async)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_public_key_derive").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_public_key_derive)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_hash_public_keys").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_hash_public_keys)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_delinearize_public_key").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_delinearize_public_key)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_aggregate_delinearized_public_keys").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_aggregate_delinearized_public_keys)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_add_scalars").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_add_scalars)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_sign").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_sign)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_verify").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_verify)).ToLocalChecked());
+    Set(target, New<String>("node_kdf").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_kdf)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_aggregate_commitments").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_aggregate_commitments)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_create_commitment").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_create_commitment)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_derive_delinearized_private_key").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_derive_delinearized_private_key)).ToLocalChecked());
+    Set(target, New<String>("node_ed25519_delinearized_partial_sign").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_ed25519_delinearized_partial_sign)).ToLocalChecked());
 }
 
 NODE_MODULE(nimiq_node, Init)
