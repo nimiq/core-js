@@ -368,7 +368,10 @@ class MockNetwork {
      */
     static _hostToIp(host) {
         const crc = CRC32.compute(BufferUtils.fromAscii(host)).toString(16);
-        let res = '2001:db8::';
+        let res = '2001:';
+        res += crc.substr(0, 2) + crc.substr(-2, 2);
+        res += '::';
+
         if (crc.length > 4) {
             res += crc.substring(0, crc.length - 4) + ':';
         }
