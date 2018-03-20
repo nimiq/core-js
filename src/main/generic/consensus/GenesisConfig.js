@@ -92,8 +92,8 @@ GenesisConfig.CONFIGS = {
                 Hash.fromBase64('1t/Zm91tN0p178+ePcxyR5bPxvC6jFLskqiidFFO3wY='),
                 BlockUtils.difficultyToCompact(1),
                 1,
-                1521242100,
-                117462,
+                1521588600,
+                38546,
                 BlockHeader.Version.V1),
             new BlockInterlink([], new Hash(null)),
             new BlockBody(Address.fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAA='), [], BufferUtils.fromBase64('RGV2TmV0'))
