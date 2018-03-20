@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+
+declare -r init_type='{{ node_deb_init }}'
+
+APT_CONFIG="`which apt-config 2> /dev/null`"
+
+# Will return true even if deletion fails
+delete_user() {
+  : "${1:?'User was not defined'}"
+  declare -r user="$1"
+
+  if hash deluser 2> /dev/null; then
+    deluser --quiet --system "$user" || echo "WARN: Failed to delete user $user"
+  elif hash userdel 2> /dev/null; then
+    userdel "$user" || echo "WARN: Failed to delete user $user"
+  else
+    echo "WARN: Could not delete user $user . No suitable program (deluser, userdel) found"
+  fi
+}
+
+# Will return true even if deletion fails
+delete_group() {
+  : "${1:?'Group was not defined'}"
+  declare -r group="$1"
+
+  if hash delgroup 2> /dev/null; then
+    delgroup --quiet --system "$group" || echo "WARN: Failed to delete group $group"
+  elif hash groupdel 2> /dev/null; then
+    groupdel "$group" || echo "WARN: Failed to delete group $group"
+  else
+    echo "WARN: Could not delete user $group . No suitable program (delgroup, groupdel) found"
+  fi
+}
+
+# Remove our custom sources list file.
+# Returns:
+# 0 - successfully removed, or not configured
+# !0 - failed to remove
+clean_sources_lists() {
+  eval $("$APT_CONFIG" shell APT_SOURCESDIR 'Dir::Etc::sourceparts/d')
+  rm -f "$APT_SOURCESDIR/nimiq.list"
+}
+
+case "$1" in
+  upgrade|remove|failed-upgrade|abort-upgrade|abort-install|disappear)
+    rm -rf '/etc/cron.daily/{{ node_deb_package_name }}'
+    ;;
+  purge)
+    if [[ "$init_type" != 'none' ]]; then
+      delete_user '{{ node_deb_user }}'
+      delete_group '{{ node_deb_group }}'
+    fi
+
+    clean_sources_lists
+    rm -rf '/etc/cron.daily/{{ node_deb_package_name }}'
+    rm -rf '/var/lib/{{ node_deb_package_name }}'
+    ;;
+  *)
+    echo "postinst called with unknown argument '$1'"
+    ;;
+esac
