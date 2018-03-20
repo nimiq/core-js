@@ -316,28 +316,28 @@ class Block {
      * @returns {Promise.<BlockInterlink>}
      */
     async getNextInterlink(nextTarget, nextVersion = BlockHeader.CURRENT_VERSION) {
-        // Compute the depth of this block relative to the next target.
-        const thisPowDepth = BlockUtils.getHashDepth(await this.pow());
-        const nextTargetDepth = BlockUtils.getTargetDepth(nextTarget);
-        const depth = thisPowDepth - nextTargetDepth;
-
-        // Start constructing the next interlink.
         /** @type {Array.<Hash>} */
         const hashes = [];
         const hash = this.hash();
 
-        // Push the current blockHash depth + 1 times onto the next interlink. If depth < 0, it won't be pushed.
-        for (let i = 0; i <= depth; i++) {
+        // Compute how many times this blockHash should be included in the next interlink.
+        const thisPowDepth = BlockUtils.getHashDepth(await this.pow());
+        const nextTargetDepth = BlockUtils.getTargetDepth(nextTarget);
+        const numOccurrences = Math.max(thisPowDepth - nextTargetDepth + 1, 0);
+
+        // Push this blockHash numOccurrences times onto the next interlink.
+        for (let i = 0; i < numOccurrences; i++) {
             hashes.push(hash);
         }
 
-        // Push the remaining hashes from the current interlink. If the target depth increases (i.e. the difficulty
-        // increases), we omit the block(s) at the beginning of the current interlink as they are not eligible for
-        // inclusion anymore.
+        // Compute how many blocks to omit from the beginning of this interlink.
         const thisTargetDepth = BlockUtils.getTargetDepth(this.target);
-        const offset = nextTargetDepth - thisTargetDepth;
-        for (let j = depth + offset + 1; j < this.interlink.length; j++) {
-            hashes.push(this.interlink.hashes[j]);
+        const targetOffset = nextTargetDepth - thisTargetDepth;
+        const interlinkOffset = numOccurrences + targetOffset;
+
+        // Push the remaining hashes from this interlink.
+        for (let i = interlinkOffset; i < this.interlink.length; i++) {
+            hashes.push(this.interlink.hashes[i]);
         }
         
         return new BlockInterlink(hashes, hash);
