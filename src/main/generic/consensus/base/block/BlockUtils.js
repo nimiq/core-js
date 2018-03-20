@@ -139,7 +139,7 @@ class BlockUtils {
     static getNextTarget(headBlock, tailBlock, deltaTotalDifficulty) {
         Assert.that((headBlock.height - tailBlock.height === Policy.DIFFICULTY_BLOCK_WINDOW)
             || (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW && tailBlock.height === 1),
-            `Tail and head block must be ${Policy.DIFFICULTY_BLOCK_WINDOW} blocks apart`);
+        `Tail and head block must be ${Policy.DIFFICULTY_BLOCK_WINDOW} blocks apart`);
 
         let actualTime = headBlock.timestamp - tailBlock.timestamp;
 

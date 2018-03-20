@@ -93,7 +93,7 @@ class Consensus {
         return new FullConsensus(blockchain, mempool, network);
     }
 
-        /**
+    /**
      * @param {NetworkConfig} [netconfig]
      * @return {Promise.<LightConsensus>}
      */

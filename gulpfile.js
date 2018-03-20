@@ -355,7 +355,7 @@ gulp.task('build-web', ['build-worker'], function () {
     return gulp.src(BROWSER_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
-        //.pipe(uglify(uglify_config))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
@@ -365,7 +365,7 @@ gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () 
     return gulp.src(BROWSER_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-istanbul.js'))
-        //.pipe(uglify(uglify_config))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
