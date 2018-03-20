@@ -13,7 +13,7 @@ Check out our testnet [Browser Miner](https://nimiq.com/miner) and [Wallet](http
 
 1. Install [Node.js](https://nodejs.org) v8.0.0 or higher.
 2. On Ubuntu, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
-    - On other Linux systems, install `git`, `python2.7`, `make` and `gcc`.
+    - On other Linux systems, install `git`, `python2.7`, `make`, `gcc` and `gcc-c++`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
 3. If you want to use `yarn` to manage the dependencies, run: `sudo npm install -g yarn`.
 4. Install `gulp` globally: `sudo npm install -g gulp` or `yarn global add gulp`.
@@ -34,9 +34,17 @@ Follow the Quickstart guide or use our CDN:
 <script src="https://cdn.nimiq.com/core/nimiq.js"></script>
 ```
 
-
 ### Run browser client
 Open `clients/browser/index.html` in your browser.
+
+### Build your own browser client
+Just include `<script src="dist/nimiq.js"></script>` in your project.
+
+### API
+Visit the [API Documentation](dist/API_DOCUMENTATION.md).
+
+
+## Node.js client
 
 ### Run Node.js client
 To run a Node.js client you will need a **publicly routable IP**, **Domain** and **SSL Certificate** (get a free one at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/index.js`.
@@ -64,12 +72,14 @@ node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FIL
 | `--wallet-seed=SEED` | Initialize wallet using SEED as a wallet seed. |
 | `--wallet-address=ADDRESS` | Initialize wallet using ADDRESS as a wallet address. |
 
-### Build your own browser client
-Just include `<script src="dist/nimiq.js"></script>` in your project.
+### Build binary packages for Linux distributions (currently only .deb packages are supported)
+After running `npm run build` or `yarn build` (from the Quickstart section):
 
-### API
-Visit the [API Documentation](dist/API_DOCUMENTATION.md).
+1. Make sure you have `dpkg`, `jq` and `fakeroot` installed (if you don't, they can be easily installed with `apt`).
+2. Run `npm run build-packages`.
+3. The .deb package will be located in the `dist/` directory.
 
+Note: packaging only works from a Debian-based distribution (Ubuntu, for example).
 
 ## Core Developers
 Developers are free to choose between `npm` and `yarn` for managing the dependencies.
