@@ -16,7 +16,7 @@ const TAG = 'Config';
  * @property {boolean} passive
  * @property {number} statistics
  * @property {{enabled: boolean, threads: string|number, throttleAfter: number, throttleWait: number}} miner
- * @property {{enabled: boolean, port: number}} rpcServer
+ * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>}} rpcServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
  * @property {{level: string, tags: object}} log
@@ -43,7 +43,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     },
     rpcServer: {
         enabled: false,
-        port: 8648
+        port: 8648,
+        corsdomain: null
     },
     metricsServer: {
         enabled: false,
@@ -85,7 +86,8 @@ const CONFIG_TYPES = {
     rpcServer: {
         type: 'object', sub: {
             enabled: 'boolean',
-            port: 'number'
+            port: 'number',
+            corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]}
         }
     },
     metricsServer: {

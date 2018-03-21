@@ -204,7 +204,7 @@ const $ = {};
     }
 
     if (config.rpcServer.enabled) {
-        $.rpcServer = new JsonRpcServer(config.rpcServer.port);
+        $.rpcServer = new JsonRpcServer(config.rpcServer);
         $.rpcServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
 

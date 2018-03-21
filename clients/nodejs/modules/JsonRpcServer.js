@@ -2,18 +2,29 @@ const http = require('http');
 const Nimiq = require('../../../dist/node.js');
 
 class JsonRpcServer {
-    constructor(rpcPort = 8648) {
+    /**
+     * @param {{port: number, corsdomain: string|Array.<string>}} config
+     */
+    constructor(config) {
+        if (typeof config.corsdomain === 'string') config.corsdomain = [config.corsdomain];
+        if (!config.corsdomain) config.corsdomain = [];
         http.createServer((req, res) => {
+            if (config.corsdomain.includes(req.headers.origin)) {
+                res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+                res.setHeader('Access-Control-Allow-Methods', 'POST');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+            }
             if (req.method === 'GET') {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
                 this._onRequest(req, res);
             } else {
-                res.writeHead(500);
+                res.writeHead(200);
                 res.end();
             }
-        }).listen(rpcPort, '127.0.0.1');
+        }).listen(config.port, '127.0.0.1');
+
 
         /** @type {Map.<string, function(*)>} */
         this._methods = new Map();
