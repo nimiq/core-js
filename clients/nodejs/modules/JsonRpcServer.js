@@ -1,5 +1,5 @@
 const http = require('http');
-const Nimiq = require('../../dist/node.js');
+const Nimiq = require('../../../dist/node.js');
 
 class JsonRpcServer {
     constructor(rpcPort = 8648) {

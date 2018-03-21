@@ -233,6 +233,12 @@ isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
 
+json5@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-1.0.1.tgz#779fb0018604fa854eacbf6252180d83543e3dbe"
+  dependencies:
+    minimist "^1.2.0"
+
 jungle-db@nimiq-network/jungle-db#v0.4.3:
   version "0.4.3"
   resolved "https://codeload.github.com/nimiq-network/jungle-db/tar.gz/36edc810a646e44d002aecb2f269b1a12b1872fd"
@@ -347,6 +353,10 @@ levelup@~0.19.0:
     readable-stream "~1.0.26"
     semver "~5.1.0"
     xtend "~3.0.0"
+
+lodash.merge@^4.6.1:
+  version "4.6.1"
+  resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.1.tgz#adc25d9cb99b9391c59624f379fbba60d7111d54"
 
 looper@^2.0.0:
   version "2.0.0"

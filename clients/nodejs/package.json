@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "minimist": "^1.2.0",
+    "json5": "^1.0.1",
+    "lodash.merge": "^4.6.1",
     "nimiq": "../.."
   }
 }

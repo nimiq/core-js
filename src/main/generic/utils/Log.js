@@ -22,7 +22,7 @@ class Log {
      * @param {Log.Level} level
      */
     setLoggable(tag, level) {
-        this._native.setLoggable(tag, level);
+        this._native.setLoggable(tag, Log.Level.get(level));
     }
 
     /** @type {Log.Level} */
@@ -32,7 +32,7 @@ class Log {
 
     /** @type {Log.Level} */
     set level(l) {
-        this._native._global_level = l;
+        this._native._global_level = Log.Level.get(l);
     }
 
     /**
@@ -156,8 +156,9 @@ class Log {
         Log.instance.msg(Log.TRACE, tag, args);
     }
 }
+
 /**
- * @enum {number}
+ * @enum {number|string}
  */
 Log.Level = {
     TRACE: 1,
@@ -170,6 +171,7 @@ Log.Level = {
 
     /**
      * @param {Log.Level} level
+     * @returns {string}
      */
     toStringTag: function (level) {
         switch (level) {
@@ -190,6 +192,42 @@ Log.Level = {
             default:
                 return '*';
         }
+    },
+
+    /**
+     * @param {string|number|Log.Level} v
+     * @returns {Log.Level}
+     */
+    get: function (v) {
+        if (typeof v === 'number') return /** @type {Log.Level} */ v;
+        if (!isNaN(parseInt(v))) return /** @type {Log.Level} */ parseInt(v);
+        switch (v.toLowerCase()) {
+            case 't':
+            case 'trace':
+                return Log.Level.TRACE;
+            case 'v':
+            case 'verbose':
+                return Log.Level.VERBOSE;
+            case 'd':
+            case 'debug':
+                return Log.Level.DEBUG;
+            case 'i':
+            case 'info':
+                return Log.Level.INFO;
+            case 'w':
+            case 'warn':
+            case 'warning':
+                return Log.Level.WARNING;
+            case 'e':
+            case 'error':
+            case 'exception':
+                return Log.Level.ERROR;
+            case 'a':
+            case 'assert':
+            case 'assertion':
+                return Log.Level.ASSERT;
+        }
+        return /** @type {Log.Level} */ 0;
     }
 };
 Log.TRACE = Log.Level.TRACE;

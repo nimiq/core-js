@@ -1,19 +1,16 @@
-const Nimiq = require('../../dist/node.js');
-const JsonRpcServer = require('./JsonRpcServer.js');
-const MetricsServer = require('./MetricsServer.js');
 const START = Date.now();
-/**
- * @type {{host: ?string, port: ?string, key: ?string, cert: ?string, dumb: ?boolean, type: ?string, help: ?boolean, miner: string|boolean, statistics: string|boolean, passive: boolean, log: string|boolean, help: boolean, network: ?string}}
- */
 const argv = require('minimist')(process.argv.slice(2));
+const Nimiq = require('../../dist/node.js');
+const JsonRpcServer = require('./modules/JsonRpcServer.js');
+const MetricsServer = require('./modules/MetricsServer.js');
+const config = require('./modules/Config.js')(argv);
 
-const type = typeof argv.type === 'string' ? argv.type : 'full';
-
-if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.help || (type !== 'full' && type !== 'light' && type !== 'nano')) {
+if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !config.dumb || argv.help) {
     console.log(
         'Nimiq NodeJS client\n' +
         '\n' +
         'Usage:\n' +
+        '    node index.js --config=CONFIG [options]\n' +
         '    node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]\n' +
         '    node index.js --dumb [options]\n' +
         '\n' +
@@ -31,9 +28,8 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
         '  --log[=LEVEL]              Configure global log level. Not specifying a log\n' +
         '                             level will enable verbose log output.\n' +
         '  --log-tag=TAG[:LEVEL]      Configure log level for a specific tag.\n' +
-        '  --miner[=THREADS           Activate mining on this node. The miner will be set\n' +
-        '         [:THROTTLE_AFTER    up to use THREADS parallel threads and can be\n' +
-        '         [:THROTTLE_WAIT]]]  throttled using THROTTLE_AFTER and _WAIT arguments.\n' +
+        '  --miner[=THREADS]          Activate mining on this node. The miner will be set\n' +
+        '                             up to use THREADS parallel threads.\n' +
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
         '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
@@ -56,82 +52,51 @@ if ((!argv.host || !argv.port || !argv.key || !argv.cert) && !argv.dumb || argv.
     process.exit();
 }
 
-const host = argv.host;
-const port = parseInt(argv.port);
-const key = argv.key;
-const cert = argv.cert;
-const dumb = argv.dumb;
-const minerOptions = argv.miner;
 const statisticsOptions = argv.statistics;
-const passive = argv.passive;
-const rpc = argv.rpc;
-const rpcPort = typeof rpc === 'number' ? rpc : 8648;
-const metrics = argv.metrics;
-let metricsPort = 8649, metricsPassword = null;
-if (typeof metrics === 'string') {
-    if (metrics.indexOf(':') > 0) {
-        metricsPassword = metrics.substring(metrics.indexOf(':') + 1);
-    }
-    metricsPort = parseInt(metrics);
-} else if (typeof metrics === 'number') {
-    metricsPort = metrics;
-}
-// TODO set default to 'main' for MainNet.
-const network = argv.network || 'dev';
-const walletSeed = argv['wallet-seed'] || null;
-const walletAddress = argv['wallet-address'] || null;
-const isNano = argv.type === 'nano';
+const isNano = config.type === 'nano';
 
-if (isNano && minerOptions) {
+if (isNano && config.miner.enabled) {
     console.error('Cannot mine when running as a nano client.');
     process.exit(1);
 }
-if (metrics && dumb) {
+if (config.metricsServer.enabled && config.dumb) {
     console.error('Cannot provide metrics when running as a dumb client.');
     process.exit(1);
 }
-if (metrics && isNano) {
+if (config.metricsServer.enabled && isNano) {
     console.error('Cannot provide metrics when running as a nano client.');
     process.exit(1);
 }
-if (!Nimiq.GenesisConfig.CONFIGS[network]) {
-    console.error('Invalid network name');
+if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
+    console.error(`Invalid network name: ${config.network}`);
     process.exit(1);
 }
-if (walletSeed && walletAddress) {
+if (config.wallet.seed && config.wallet.address) {
     console.error('Can only use one of wallet-seed or wallet-address, not both!');
     process.exit(1);
 }
 
-if (argv['log']) {
-    Nimiq.Log.instance.level = argv['log'] === true ? Nimiq.Log.VERBOSE : argv['log'];
-}
-if (argv['log-tag']) {
-    if (!Array.isArray(argv['log-tag'])) {
-        argv['log-tag'] = [argv['log-tag']];
-    }
-    argv['log-tag'].forEach((lt) => {
-        const s = lt.split(':');
-        Nimiq.Log.instance.setLoggable(s[0], s.length === 1 ? 2 : s[1]);
-    });
+Nimiq.Log.instance.level = config.log.level;
+for(const tag in config.log.tags) {
+    Nimiq.Log.instance.setLoggable(tag, config.log.tags[tag]);
 }
 
 const TAG = 'Node';
 const $ = {};
 
 (async () => {
-    Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${network}`
-        + `, ${host ? `host=${host}, port=${port}` : 'dumb'}`
-        + `, miner=${!!minerOptions}, rpc=${!!rpc}${rpc ? `@${rpcPort}` : ''}`
-        + `, metrics=${!!metrics}${metrics ? `@${metricsPort}` : ''})`);
+    Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${config.network}`
+        + `, ${config.host ? `host=${config.host}, port=${config.port}` : 'dumb'}`
+        + `, miner=${config.miner.enabled}, rpc=${config.rpcServer.enabled}${config.rpcServer.enabled ? `@${config.rpcServer.port}` : ''}`
+        + `, metrics=${config.metricsServer.enabled}${config.metricsServer.enabled ? `@${config.metricsServer.port}` : ''})`);
 
-    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[network]);
+    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
 
-    const networkConfig = dumb
+    const networkConfig = config.dumb
         ? new Nimiq.DumbNetworkConfig()
-        : new Nimiq.WsNetworkConfig(host, port, key, cert);
+        : new Nimiq.WsNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert);
 
-    switch (type) {
+    switch (config.type) {
         case 'full':
             $.consensus = await Nimiq.Consensus.full(networkConfig);
             break;
@@ -152,17 +117,17 @@ const $ = {};
 
     // TODO: Wallet key.
     $.walletStore = await new Nimiq.WalletStore();
-    if (!walletAddress && !walletSeed) {
+    if (!config.wallet.address && !config.wallet.seed) {
         // Load or create default wallet.
         $.wallet = await $.walletStore.getDefault();
-    } else if (walletSeed) {
+    } else if (config.wallet.seed) {
         // Load wallet from seed.
-        const mainWallet = await Nimiq.Wallet.loadPlain(walletSeed);
+        const mainWallet = await Nimiq.Wallet.loadPlain(config.wallet.seed);
         await $.walletStore.put(mainWallet);
         await $.walletStore.setDefault(mainWallet.address);
         $.wallet = mainWallet;
     } else {
-        const address = Nimiq.Address.fromUserFriendlyAddress(walletAddress);
+        const address = Nimiq.Address.fromUserFriendlyAddress(config.wallet.address);
         $.wallet = {address: address};
         // Check if we have a full wallet in store.
         const wallet = await $.walletStore.get(address);
@@ -193,28 +158,25 @@ const $ = {};
         Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
 
-    if (!passive) {
+    if (!config.passive) {
         $.network.connect();
     }
 
-    if (minerOptions) {
+    if (config.miner.enabled) {
         $.consensus.on('established', () => $.miner.startWork());
         $.consensus.on('lost', () => $.miner.stopWork());
-        if (typeof minerOptions === 'number') {
-            $.miner.threads = minerOptions;
-        } else if (typeof minerOptions === 'string') {
-            const margs = minerOptions.split(':');
-            $.miner.threads = parseInt(margs[0]);
-            if (margs.length >= 2) { $.miner.throttleAfter = parseInt(margs[1]) * $.miner.threads; }
-            if (margs.length >= 3) { $.miner.throttleWait = parseInt(margs[2]); }
-        }
-        if (passive) {
+        if (config.passive) {
             $.miner.startWork();
         }
     }
+    if (typeof config.miner.threads === 'number') {
+        $.miner.threads = config.miner.threads;
+    }
+    $.miner.throttleAfter = config.miner.throttleAfter;
+    $.miner.throttleWait = config.miner.throttleWait;
 
     $.consensus.on('established', () => {
-        Nimiq.Log.i(TAG, `Blockchain ${type}-consensus established in ${(Date.now() - START) / 1000}s.`);
+        Nimiq.Log.i(TAG, `Blockchain ${config.type}-consensus established in ${(Date.now() - START) / 1000}s.`);
         Nimiq.Log.i(TAG, `Current state: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash}`);
     });
 
@@ -241,13 +203,13 @@ const $ = {};
         });
     }
 
-    if (rpc) {
-        $.rpcServer = new JsonRpcServer(rpcPort);
+    if (config.rpcServer.enabled) {
+        $.rpcServer = new JsonRpcServer(config.rpcServer.port);
         $.rpcServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
 
-    if (metrics) {
-        $.metricsServer = new MetricsServer(networkConfig.sslConfig, metricsPort, metricsPassword);
+    if (config.metricsServer.enabled) {
+        $.metricsServer = new MetricsServer(networkConfig.sslConfig, config.metricsServer.port, config.metricsServer.password);
         $.metricsServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner);
     }
 })().catch(e => {
