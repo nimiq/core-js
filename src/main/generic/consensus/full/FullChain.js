@@ -70,12 +70,20 @@ class FullChain extends BaseChain {
     async _init() {
         this._headHash = await this._store.getHead();
         if (this._headHash) {
+            // Check that the correct genesis block is stored.
+            const genesis = await this._store.getChainData(GenesisConfig.GENESIS_HASH);
+            if (!genesis || !genesis.onMainChain) {
+                throw new Error('Invalid genesis block stored. Reset your consensus database.');
+            }
+
             // Load main chain from store.
             this._mainChain = await this._store.getChainData(this._headHash);
             Assert.that(!!this._mainChain, 'Failed to load main chain from storage');
 
-            // TODO Check if chain/accounts state is consistent!
-            Assert.that(this._mainChain.head.accountsHash.equals(await this._accounts.hash()), 'Corrupted store: Inconsistent chain/accounts state');
+            // Check that chain/accounts state is consistent.
+            if (!this._mainChain.head.accountsHash.equals(await this._accounts.hash())) {
+                throw new Error('Corrupted store: Inconsistent chain/accounts state');
+            }
 
             // Initialize TransactionCache.
             const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks - 1, false);
