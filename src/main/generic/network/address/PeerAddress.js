@@ -115,11 +115,11 @@ class PeerAddress {
         return o instanceof PeerAddress
             && this.protocol === o.protocol
             && (!this.publicKey || !o.publicKey || this.publicKey.equals(o.publicKey))
-            && (!this.peerId || !o.peerId || this.peerId.equals(o.peerId));
-        /* services is ignored */
-        /* timestamp is ignored */
-        /* netAddress is ignored */
-        /* distance is ignored */
+            && (!this.peerId || !o.peerId || this.peerId.equals(o.peerId))
+            /* services is ignored */
+            /* timestamp is ignored */
+            /* netAddress is ignored */
+            /* distance is ignored */;
     }
 
     /**
