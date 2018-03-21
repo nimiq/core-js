@@ -270,6 +270,9 @@ const uglify_config = {
         keep_classnames: true,
         safari10: true
     },
+    output: {
+        safari10: true
+    },
     compress: {
         sequences: false,
         typeofs: false,
