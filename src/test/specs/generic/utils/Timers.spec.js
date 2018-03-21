@@ -34,6 +34,7 @@ describe('Timers', () => {
             count++;
             if (count > 3) {
                 expect(count).toBe(4);
+                timers.clearInterval('done');
                 done();
             }
         }, 10);
