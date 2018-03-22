@@ -85,16 +85,7 @@ class WasmHelper {
         const moduleSettings = WasmHelper._global[module] || {};
         return new Promise(async (resolve, reject) => {
             if (module) {
-                switch (typeof moduleSettings.preRun) {
-                    case 'undefined':
-                        moduleSettings.preRun = () => resolve(true);
-                        break;
-                    case 'function':
-                        moduleSettings.preRun = [moduleSettings.preRun, () => resolve(true)];
-                        break;
-                    case 'object':
-                        moduleSettings.preRun.push(() => resolve(true));
-                }
+                moduleSettings.onRuntimeInitialized = () => resolve(true);
             }
             if (typeof importScripts === 'function') {
                 await new Promise((resolve) => {
