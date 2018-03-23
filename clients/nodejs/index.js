@@ -233,7 +233,7 @@ const $ = {};
             if (hashrates.length >= outputInterval) {
                 const account = await $.accounts.get($.wallet.address);
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
-                Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(Math.log10(hashrates.length)).padStart(7)} H/s`
+                Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(2).padStart(7)} H/s`
                     + (!isNano ? ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : '')
                     + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
                 hashrates.length = 0;
