@@ -4,7 +4,7 @@ class WalletStore {
      * @returns {Promise.<WalletStore>}
      */
     constructor(dbName = 'wallet') {
-        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION);
+        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION, undefined, { maxDbSize: 1024*1024*10, autoResize: true }); // 10 MB
         /** @type {ObjectStore} */
         this._walletStore = null;
         /** @type {ObjectStore} */
@@ -204,7 +204,14 @@ class WalletStoreCodec {
     /**
      * @type {string}
      */
-    get valueEncoding() {
+    get leveldbValueEncoding() {
         return 'binary';
+    }
+
+    /**
+     * @type {object}
+     */
+    get lmdbValueEncoding() {
+        return JDB.JungleDB.BINARY_ENCODING;
     }
 }

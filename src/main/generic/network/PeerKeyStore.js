@@ -4,7 +4,7 @@ class PeerKeyStore {
      */
     static async getPersistent() {
         if (!PeerKeyStore._instance) {
-            const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION);
+            const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION, undefined, { maxDbSize: 1024*1024*10 }); // 10 MB
 
             // Initialize object stores.
             jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
@@ -78,7 +78,14 @@ class PeerKeyStoreCodec {
     /**
      * @type {string}
      */
-    get valueEncoding() {
+    get leveldbValueEncoding() {
         return 'binary';
+    }
+
+    /**
+     * @type {object}
+     */
+    get lmdbValueEncoding() {
+        return JDB.JungleDB.BINARY_ENCODING;
     }
 }

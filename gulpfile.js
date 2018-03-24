@@ -246,7 +246,7 @@ const sources = {
     ]
 };
 
-const dependencies = ['./node_modules/jungle-db/dist/web.js']; // external dependencies
+const dependencies = ['./node_modules/@nimiq/jungle-db/dist/indexeddb.js']; // external dependencies
 
 const babel_config = {
     plugins: [['transform-runtime', {
