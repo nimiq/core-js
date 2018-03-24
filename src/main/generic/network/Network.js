@@ -326,6 +326,16 @@ class Network extends Observable {
     get bytesReceived() {
         return this._connections.bytesReceived;
     }
+
+    /** @type {PeerAddressBook} */
+    get addresses() {
+        return this._addresses;
+    }
+
+    /** @type {ConnectionPool} */
+    get connections() {
+        return this._connections;
+    }
 }
 /**
  * @type {number}

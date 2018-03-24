@@ -209,7 +209,7 @@ const $ = {};
 
     if (config.rpcServer.enabled) {
         $.rpcServer = new JsonRpcServer(config.rpcServer);
-        $.rpcServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
+        $.rpcServer.init($.consensus, $.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
 
     if (config.metricsServer.enabled) {

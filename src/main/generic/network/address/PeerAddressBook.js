@@ -246,10 +246,10 @@ class PeerAddressBook extends Observable {
             // Add new peerAddressState.
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
-            if (peerAddress.protocol === Protocol.RTC) {
-                // Index by peerId.
-                this._peerIds.put(peerAddress.peerId, peerAddressState);
-            }
+            //if (peerAddress.protocol === Protocol.RTC) {
+            // Index by peerId.
+            this._peerIds.put(peerAddress.peerId, peerAddressState);
+            //}
         }
 
         // Add route.
