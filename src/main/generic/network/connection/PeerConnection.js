@@ -59,21 +59,15 @@ class PeerConnection {
          */
         this._peer = null;
 
-        // Lifecycle state of connection
         /**
+         * Lifecycle state of connection
          * @type {number}
          * @private
          */
         this._state = PeerConnectionState.NEW;
 
         /**
-         * @type {number}
-         * @private
-         */
-        this._closingType = null;
-
-        // Latest score given, computed by PeerScorer
-        /**
+         * Latest score given, computed by PeerScorer
          * @type {number}
          * @private
          */
@@ -141,6 +135,13 @@ class PeerConnection {
     /** @param {NetworkAgent} value */
     set networkAgent(value) {
         this._networkAgent = value;
+    }
+
+    /**
+     * @returns {void}
+     */
+    negotiating() {
+        Assert.that(this._state === PeerConnectionState.CONNECTED);
         this._state = PeerConnectionState.NEGOTIATING;
     }
 
@@ -184,6 +185,17 @@ class PeerConnection {
     get statistics() {
         return this._statistics;
     }
+
+    /**
+     * @returns {void}
+     */
+    close() {
+        this._state = PeerConnectionState.CLOSED;
+        this._networkConnection = null;
+        this._networkAgent = null;
+        this._peerChannel = null;
+        this._peer = null;
+    }
 }
 // Used to generate unique PeerConnection ids.
 PeerConnection._instanceCount = 0;
@@ -196,4 +208,5 @@ PeerConnectionState.CONNECTING = 2;
 PeerConnectionState.CONNECTED = 3;
 PeerConnectionState.NEGOTIATING = 4;
 PeerConnectionState.ESTABLISHED = 5;
+PeerConnectionState.CLOSED = 6;
 Class.register(PeerConnectionState);

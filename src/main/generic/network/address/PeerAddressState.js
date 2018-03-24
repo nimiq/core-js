@@ -27,13 +27,18 @@ class PeerAddressState {
          * @private
          */
         this._closeTypes = new Map();
+
+        /**
+         * @type {HashSet.<NetAddress>}
+         * @private
+         */
+        this._addedBy = new HashSet();
     }
 
     /** @type {SignalRouter} */
     get signalRouter() {
         return this._signalRouter;
     }
-
 
     /** @type {number} */
     get maxFailedAttempts() {
@@ -114,6 +119,11 @@ class PeerAddressState {
         return `PeerAddressState{peerAddress=${this.peerAddress}, state=${this.state}, `
             + `lastConnected=${this.lastConnected}, failedAttempts=${this.failedAttempts}, `
             + `bannedUntil=${this.bannedUntil}}`;
+    }
+
+    /** @type {HashSet.<NetAddress>} */
+    get addedBy() {
+        return this._addedBy;
     }
 }
 PeerAddressState.NEW = 1;

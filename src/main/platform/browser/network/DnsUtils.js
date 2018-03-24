@@ -1,4 +1,4 @@
-class DNSUtils {
+class DnsUtils {
     /**
      * @static
      * @param {string} host
@@ -8,4 +8,4 @@ class DNSUtils {
         return Promise.resolve(NetAddress.UNSPECIFIED);
     }
 }
-Class.register(DNSUtils);
+Class.register(DnsUtils);

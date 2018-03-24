@@ -1,18 +1,18 @@
 class CloseType {
     /**
-     * @param {number} closingType
+     * @param {number} closeType
      * @return {boolean}
      */
-    static isBanningType(closingType){
-        return closingType >= 100 && closingType < 200;
+    static isBanningType(closeType){
+        return closeType >= 100 && closeType < 200;
     }
 
     /**
-     * @param {number} closingType
+     * @param {number} closeType
      * @return {boolean}
      */
-    static isFailingType(closingType){
-        return closingType >= 200;
+    static isFailingType(closeType){
+        return closeType >= 200;
     }
 }
 
@@ -45,16 +45,13 @@ CloseType.SENDING_OF_VERSION_MESSAGE_FAILED = 23;
 CloseType.SIMULTANEOUS_CONNECTION = 29;
 CloseType.DUPLICATE_CONNECTION = 30;
 CloseType.PEER_IS_BANNED = 31;
-CloseType.CONNECTION_LIMIT_PER_IP = 32;
 CloseType.MANUAL_NETWORK_DISCONNECT = 33;
 CloseType.MANUAL_WEBSOCKET_DISCONNECT = 34;
 CloseType.MAX_PEER_COUNT_REACHED = 35;
 
 CloseType.PEER_CONNECTION_RECYCLED = 36;
 CloseType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE = 37;
-CloseType.INBOUND_WS_CONNECTIONS_BLOCKED = 38;
-
-CloseType.CHANNEL_CLOSING = 41;
+CloseType.INBOUND_CONNECTIONS_BLOCKED = 38;
 
 CloseType.MANUAL_PEER_DISCONNECT = 90;
 
@@ -90,6 +87,8 @@ CloseType.VERSION_TIMEOUT = 204;
 CloseType.VERACK_TIMEOUT = 205;
 CloseType.ABORTED_SYNC = 206;
 CloseType.FAILED_TO_PARSE_MESSAGE_TYPE = 207;
+CloseType.CONNECTION_LIMIT_PER_IP = 208;
+CloseType.CHANNEL_CLOSING = 209;
 
 CloseType.MANUAL_PEER_FAIL = 290;
 

@@ -1,4 +1,4 @@
-class PeerScorer extends Observable {
+class PeerScorer {
     /**
      * @constructor
      * @param {NetworkConfig} networkConfig
@@ -6,8 +6,6 @@ class PeerScorer extends Observable {
      * @param {ConnectionPool} connections
      */
     constructor(networkConfig, addresses, connections) {
-        super();
-
         /**
          * @type {NetworkConfig}
          * @private
@@ -27,7 +25,7 @@ class PeerScorer extends Observable {
         this._connections = connections;
 
         /**
-         * @type {Array<PeerConnection>}
+         * @type {Array.<PeerConnection>}
          * @private
          */
         this._connectionScores = null;
@@ -37,26 +35,34 @@ class PeerScorer extends Observable {
      * @returns {?PeerAddress}
      */
     pickAddress() {
-        const addresses = this._addresses.values();
-        const numAddresses = addresses.length;
+        const findCandidates = (addressStates, numCandidates, allowBadPeers = false) => {
+            const numAddresses = addressStates.length;
 
-        // Pick a random start index.
-        const index = Math.floor(Math.random() * numAddresses);
+            // Pick a random start index.
+            const index = Math.floor(Math.random() * numAddresses);
 
-        // Score up to 1000 addresses starting from the start index and pick the
-        // one with the highest score. Never pick addresses with score < 0.
-        const minCandidates = Math.min(numAddresses, 1000);
-        const candidates = new HashMap();
-        for (let i = 0; i < numAddresses; i++) {
-            const idx = (index + i) % numAddresses;
-            const address = addresses[idx];
-            const score = this._scoreAddress(address);
-            if (score >= 0) {
-                candidates.put(score, address);
-                if (candidates.length >= minCandidates) {
-                    break;
+            // Compute address scores until we have found at 1000 candidates with score >= 0.
+            const minCandidates = Math.min(numAddresses, numCandidates);
+            const candidates = [];
+            for (let i = 0; i < numAddresses; i++) {
+                const idx = (index + i) % numAddresses;
+                const addressState = addressStates[idx];
+                const score = this._scoreAddress(addressState, allowBadPeers);
+                if (score >= 0) {
+                    candidates.push({score, addressState});
+                    if (candidates.length >= minCandidates) {
+                        break;
+                    }
                 }
             }
+
+            return candidates;
+        };
+
+        const addressStates = this._addresses.values();
+        let candidates = findCandidates(addressStates, 1000);
+        if (candidates.length === 0 && this.needsGoodPeers()) {
+            candidates = findCandidates(addressStates, 1000, true);
         }
 
         if (candidates.length === 0) {
@@ -64,18 +70,19 @@ class PeerScorer extends Observable {
         }
 
         // Return a random candidate with a high score.
-        const scores = candidates.keys().sort((a, b) => b - a);
+        const scores = candidates.sort((a, b) => b.score - a.score);
         const goodCandidates = scores.slice(0, PeerScorer.PICK_SELECTION_SIZE);
-        const winner = candidates.get(ArrayUtils.randomElement(goodCandidates));
-        return winner.peerAddress;
+        const winner = ArrayUtils.randomElement(goodCandidates);
+        return winner.addressState.peerAddress;
     }
 
     /**
      * @param {PeerAddressState} peerAddressState
+     * @param {boolean} [allowBadPeers]
      * @returns {number}
      * @private
      */
-    _scoreAddress(peerAddressState) {
+    _scoreAddress(peerAddressState, allowBadPeers = false) {
         const peerAddress = peerAddressState.peerAddress;
 
         // Filter addresses that we cannot connect to.
@@ -93,20 +100,18 @@ class PeerScorer extends Observable {
             return -1;
         }
 
-        // a channel to that peer address is CONNECTING, CONNECTED, NEGOTIATING OR ESTABLISHED
+        // A channel to that peer address is CONNECTING, CONNECTED, NEGOTIATING OR ESTABLISHED
         if (this._connections.getConnectionByPeerAddress(peerAddress)) {
             return -1;
         }
 
-        // Filter addresses that are too old.
-        if (peerAddress.exceedsAge()) {
+        // If we need more good peers, only allow good peers unless allowBadPeers is true.
+        if (this.needsGoodPeers() && !this.isGoodPeer(peerAddress) && !allowBadPeers) {
             return -1;
         }
 
-        // (protocol + services) * age
-        const score = (this._scoreProtocol(peerAddress) + this._scoreServices(peerAddress))
-            * ((peerAddress.timestamp / 1000) + 1);
-
+        // Give all peers the same base score. Penalize peers with failed connection attempts.
+        const score = 1;
         switch (peerAddressState.state) {
             case PeerAddressState.BANNED:
                 return -1;
@@ -125,43 +130,32 @@ class PeerScorer extends Observable {
     }
 
     /**
-     * @param {PeerAddress} peerAddress
-     * @returns {number}
-     * @private
+     * @returns {boolean}
      */
-    _scoreProtocol(peerAddress) {
-        let score = 1;
+    isGoodPeerSet() {
+        return !this.needsGoodPeers() && !this.needsMorePeers();
+    }
 
-        // We want at least two websocket connection
-        if (this._connections.peerCountWs < 2) {
-            score *= peerAddress.protocol === Protocol.WS ? 3 : 1;
-        } else {
-            score *= peerAddress.protocol === Protocol.RTC ? 3 : 1;
-        }
+    /**
+     * @returns {boolean}
+     */
+    needsGoodPeers() {
+        return this._connections.peerCountFullWsOutbound < PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND;
+    }
 
-        // Prefer WebRTC addresses with lower distance:
-        //  distance = 0: self
-        //  distance = 1: direct connection
-        //  distance = 2: 1 hop
-        //  ...
-        // We only expect distance >= 2 here.
-        if (peerAddress.protocol === Protocol.RTC) {
-            score *= 1 + ((PeerAddressBook.MAX_DISTANCE - peerAddress.distance) / 2);
-        }
-
-        return score;
+    /**
+     * @returns {boolean}
+     */
+    needsMorePeers() {
+        return this._connections.peerCountOutbound < PeerScorer.PEER_COUNT_MIN_OUTBOUND;
     }
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {number}
-     * @private
+     * @returns {boolean}
      */
-    _scoreServices(peerAddress) {
-        if (this._connections.peerCount > 2 && this._connections.peerCountFull === 0 && Services.isFullNode(peerAddress.services)) {
-            return 10;
-        }
-        return 0;
+    isGoodPeer(peerAddress) {
+        return Services.isFullNode(peerAddress.services) && peerAddress.protocol === Protocol.WS;
     }
 
     /**
@@ -212,28 +206,35 @@ class PeerScorer extends Observable {
      * @private
      */
     _scoreConnection(peerConnection) {
+        // Connection age
         const scoreAge = this._scoreConnectionAge(peerConnection);
 
-        // Connection type
-        const scoreType = peerConnection.networkConnection.inbound ? 0 : 1;
+        // Connection type (inbound/outbound)
+        const scoreOutbound = peerConnection.networkConnection.inbound ? 0 : 1;
 
-        // Protocol, when low on Websocket connections, give it some aid
-        const distribution = this._connections.peerCountWs / this._connections.peerCount;
+        // Node type (full/light/nano)
+        const peerAddress = peerConnection.peerAddress;
+        const scoreType = Services.isFullNode(peerAddress.services)
+            ? 1
+            : Services.isLightNode(peerAddress.services) ? 0.5 : 0;
+
+        // Protocol: Prefer WebSocket when low on WebSocket connections.
         let scoreProtocol = 0;
-        if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION) {
-            if (peerConnection.peerAddress.protocol === Protocol.WS) {
+        if (peerAddress.protocol === Protocol.WS) {
+            const distribution = this._connections.peerCountWs / this._connections.peerCount;
+            if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION || this._connections.peerCountFullWsOutbound <= PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND) {
                 scoreProtocol = 1;
             }
         }
 
         // Connection speed, based on ping-pong latency median
-        const medianDelay = peerConnection.statistics.latencyMedian;
+        const medianLatency = peerConnection.statistics.latencyMedian;
         let scoreSpeed = 0;
-        if (medianDelay > 0 && medianDelay < NetworkAgent.PING_TIMEOUT) {
-            scoreSpeed = 1 - medianDelay / NetworkAgent.PING_TIMEOUT;
+        if (medianLatency > 0 && medianLatency < NetworkAgent.PING_TIMEOUT) {
+            scoreSpeed = 1 - medianLatency / NetworkAgent.PING_TIMEOUT;
         }
 
-        return 0.4 * scoreAge + 0.2 * scoreType + 0.2 * scoreProtocol + 0.2 * scoreSpeed;
+        return 0.15 * scoreAge + 0.25 * scoreOutbound + 0.2 * scoreType + 0.2 * scoreProtocol + 0.2 * scoreSpeed;
     }
 
     /**
@@ -270,18 +271,40 @@ class PeerScorer extends Observable {
         }
     }
 
-    /** @type {Array.<PeerConnection>|null} */
-    get connectionScores() {
-        return this._connectionScores;
-    }
-
-    /** @type {number|null} */
+    /** @type {Number} */
     get lowestConnectionScore() {
-        return this._connectionScores && this._connectionScores.length > 0
+        if (!this._connectionScores) {
+            return null;
+        }
+
+        // Remove all closed connections from the end of connectionScores.
+        while (this._connectionScores.length > 0
+            && this._connectionScores[this._connectionScores.length - 1].state !== PeerConnectionState.ESTABLISHED) {
+
+            this._connectionScores.pop();
+        }
+
+        return this._connectionScores.length > 0
             ? this._connectionScores[this._connectionScores.length - 1].score
             : null;
     }
 }
+/**
+ * @type {number}
+ * @constant
+ */
+PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND = PlatformUtils.isNodeJs() ? 12 : 3;
+/**
+ * @type {number}
+ * @constant
+ */
+PeerScorer.PEER_COUNT_MIN_OUTBOUND = PlatformUtils.isNodeJs() ? 12 : 6;
+/**
+ * @type {number}
+ * @constant
+ */
+PeerScorer.PICK_SELECTION_SIZE = 100;
+
 PeerScorer.MIN_AGE_FULL = 5 * 60 * 1000; // 5 minutes
 PeerScorer.BEST_AGE_FULL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -294,7 +317,5 @@ PeerScorer.BEST_AGE_NANO = 5 * 60 * 1000; // 5 minutes
 PeerScorer.MAX_AGE_NANO = 30 * 60 * 1000; // 30 minutes
 
 PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION = 0.15; // 15%
-
-PeerScorer.PICK_SELECTION_SIZE = 10;
 
 Class.register(PeerScorer);

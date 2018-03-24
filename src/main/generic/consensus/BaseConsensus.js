@@ -86,7 +86,7 @@ class BaseConsensus extends Observable {
     _onPeerLeft(peer) {
         // Reset syncPeer if it left during the sync.
         if (peer.equals(this._syncPeer)) {
-            Log.w(BaseConsensus, `Peer ${peer.peerAddress} left during sync`);
+            Log.d(BaseConsensus, `Peer ${peer.peerAddress} left during sync`);
             this._syncPeer = null;
             this.fire('sync-failed', peer.peerAddress);
         }
@@ -99,29 +99,49 @@ class BaseConsensus extends Observable {
      * @protected
      */
     _syncBlockchain() {
+        const candidates = [];
+        let numSyncedFullNodes = 0;
+        for (const /** @type {BaseConsensusAgent} */ agent of this._agents.valueIterator()) {
+            if (!agent.synced) {
+                candidates.push(agent);
+            } else if (Services.isFullNode(agent.peer.peerAddress.services)) {
+                numSyncedFullNodes++;
+            }
+        }
+
+        // Report consensus-lost if we are synced with less than the minimum number of full nodes.
+        if (this._established && numSyncedFullNodes < BaseConsensus.MIN_FULL_NODES) {
+            this._established = false;
+            this.fire('lost');
+        }
+
         // Wait for ongoing sync to finish.
         if (this._syncPeer) {
             return;
         }
 
         // Choose a random peer which we aren't sync'd with yet.
-        const agent = ArrayUtils.randomElement(this._agents.values().filter(agent => !agent.synced));
+        const agent = ArrayUtils.randomElement(candidates);
         if (!agent) {
             // We are synced with all connected peers.
-            if (this._agents.length > 0) {
-                // Report consensus-established if we have at least one connected peer.
-                // TODO !!! Check peer types (at least one full node, etc.) !!!
+
+            // Report consensus-established if we are connected to the minimum number of full nodes.
+            if (numSyncedFullNodes >= BaseConsensus.MIN_FULL_NODES) {
                 if (!this._established) {
                     Log.i(BaseConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
                     Log.d(BaseConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
 
+                    // Report consensus-established.
                     this._established = true;
                     this.fire('established');
+
+                    // Allow inbound network connections after establishing consensus.
+                    this._network.allowInboundConnections = true;
                 }
-            } else {
-                // We are not connected to any peers anymore. Report consensus-lost.
-                this._established = false;
-                this.fire('lost');
+            }
+            // Otherwise, wait until more peer connections are established.
+            else {
+                this.fire('waiting');
             }
 
             return;
@@ -337,4 +357,5 @@ class BaseConsensus extends Observable {
     }
 }
 BaseConsensus.SYNC_THROTTLE = 1500; // ms
+BaseConsensus.MIN_FULL_NODES = 1;
 Class.register(BaseConsensus);

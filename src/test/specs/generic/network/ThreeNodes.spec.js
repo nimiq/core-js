@@ -21,14 +21,15 @@ describe('ThreeNodes', () => {
         }
 
         (async () => {
+            MockClock.speed = 20;
+
             const netconfig1 = Dummy.NETCONFIG;
             consensus1 = await Consensus.volatileFull(netconfig1);
             consensus1.on('established', checkEstablished);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netconfig2 = new DumbNetworkConfig();
-            const consensus2 = await Consensus.volatileLight(netconfig2);
+            const consensus2 = await Consensus.volatileFull(netconfig2);
             consensus2.on('established', checkEstablished);
             consensus2.network.connect();
 

@@ -23,7 +23,7 @@ const sources = {
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
-            './src/main/platform/browser/network/DNSUtils.js'
+            './src/main/platform/browser/network/DnsUtils.js'
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
@@ -33,7 +33,7 @@ const sources = {
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcFactory.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
-            './src/main/platform/nodejs/network/DNSUtils.js'
+            './src/main/platform/nodejs/network/DnsUtils.js'
         ]
     },
     generic: [
@@ -453,7 +453,7 @@ gulp.task('sectest-babel', ['watch'], function () {
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)
-        .pipe(eslint())
+        .pipe(eslint({quiet: true}))
         .pipe(eslint.format())
         .pipe(eslint.failAfterError());
 });

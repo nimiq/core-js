@@ -1,8 +1,8 @@
-class DNSUtils {
+class DnsUtils {
     /**
      * @static
      * @param {string} host
-     * @return {NetAddress}
+     * @returns {Promise.<NetAddress>}
      */
     static lookup(host) {
         return new Promise((resolve, reject) => {
@@ -16,4 +16,4 @@ class DNSUtils {
         });
     }
 }
-Class.register(DNSUtils);
+Class.register(DnsUtils);

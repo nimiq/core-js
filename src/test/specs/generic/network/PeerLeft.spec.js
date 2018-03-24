@@ -20,9 +20,7 @@ describe('PeerLeft', () => {
             const netconfig = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netconfig);
             consensus1.network.on('peer-left', peer => checkPeerLeft(peer));
-
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netconfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netconfig2);

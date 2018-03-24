@@ -38,9 +38,7 @@ describe('ConnectOutboundCheck', () => {
             consensus1.network.on('peer-joined', (peer) => banPeer(peer));
             consensus1.network.on('peer-left', (peer) => tryReconnectPeer(peer));
             expect(consensus1.network._connections.connectOutbound(null)).toBe(false);
-
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             consensus2 = await Consensus.volatileNano(netConfig2);

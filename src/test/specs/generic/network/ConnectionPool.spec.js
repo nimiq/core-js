@@ -1,7 +1,6 @@
 describe('ConnectionPool', () => {
     const peerCountMax = Network.PEER_COUNT_MAX;
     const peerCountRecyclingActive = Network.PEER_COUNT_RECYCLING_ACTIVE;
-    const seedPeers = GenesisConfig.SEED_PEERS;
 
     beforeEach(function () {
         MockClock.install();
@@ -14,8 +13,26 @@ describe('ConnectionPool', () => {
         MockClock.uninstall();
         MockNetwork.uninstall();
 
-        GenesisConfig._config.SEED_PEERS = seedPeers;
         Network.PEER_COUNT_MAX = peerCountMax;
+    });
+
+    it('immediately allows inbound connection if not connected/connecting to any peers', (done) => {
+        (async () => {
+            MockClock.speed = 20;
+
+            const netConfig1 = Dummy.NETCONFIG;
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            expect(consensus1.network.allowInboundConnections).toBe(false);
+            consensus1.network.connect();
+            expect(consensus1.network.allowInboundConnections).toBe(true);
+
+            const netConfig2 = new RtcNetworkConfig();
+            const consensus2 = await Consensus.volatileNano(netConfig2);
+            consensus2.network.connect();
+            await new Promise(resolve => consensus2.network._connections.on('connection', resolve));
+
+            expect(consensus1.network.peerCount).toBe(1);
+        })().then(done, done.fail);
     });
 
     it('should automatically recycle existing connections', (done) => {
@@ -29,14 +46,12 @@ describe('ConnectionPool', () => {
         }
 
         (async () => {
-            GenesisConfig._config.SEED_PEERS = [];
             Network.PEER_COUNT_RECYCLING_ACTIVE = 4;
             MockClock.speed = 20;
 
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await createPeers(5, netConfig1.peerAddress);
 
@@ -47,37 +62,7 @@ describe('ConnectionPool', () => {
 
             expect(consensus1.network.peerCount).toBe(4);
             Network.PEER_COUNT_RECYCLING_ACTIVE = peerCountRecyclingActive;
-
-            done();
-        })().catch(done.fail);
-    });
-
-    it('should reject inbound ws connections at the beginning', (done) => {
-        (async () => {
-            GenesisConfig._config.SEED_PEERS = [];
-            MockClock.speed = 20;
-
-            const netConfig1 = Dummy.NETCONFIG;
-            const consensus1 = await Consensus.volatileFull(netConfig1);
-            consensus1.network.connect();
-
-            const netConfig2 = new RtcNetworkConfig();
-            const consensus2 = await Consensus.volatileNano(netConfig2);
-            consensus2.network._connections.connectOutbound(netConfig1.peerAddress);
-            await new Promise(resolve => consensus2.network._connections.on('connect-error', resolve));
-
-            expect(consensus1.network.peerCount).toBe(0);
-
-            // Wait until inbound connections are allowed.
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
-
-            consensus2.network._connections.connectOutbound(netConfig1.peerAddress);
-            await new Promise(resolve => consensus2.network._connections.on('connection', resolve));
-
-            expect(consensus1.network.peerCount).toBe(1);
-
-            done();
-        })().catch(done.fail);
+        })().then(done, done.fail);
     });
 
     it('should recycle connections in exchange for inbound connections', (done) => {
@@ -97,7 +82,6 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await createPeers(5, netConfig1.peerAddress);
 
@@ -111,8 +95,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(5);
 
             Network.PEER_COUNT_RECYCLING_ACTIVE = peerCountRecyclingActive;
-            done();
-        })().catch(done.fail);
+        })().then(done, done.fail);
     });
 
     it('should reject duplicate connections to the same peer address', (done) => {
@@ -122,7 +105,6 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -152,8 +134,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
 
             expect(consensus2.established).toBe(true);
-            done();
-        })().catch(done.fail);
+        })().then(done, done.fail);
     });
 
     it('correctly deals with simultaneous RTC connections', (done) => {
@@ -163,7 +144,6 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -203,7 +183,6 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new RtcNetworkConfig();
             const consensus2 = await Consensus.volatileLight(netConfig2);
@@ -242,21 +221,58 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
-            const consensus3 = await Consensus.volatileLight(netConfig3);
+            const consensus3 = await Consensus.volatileFull(netConfig3);
+            // Allow inbound connections early
+            consensus3.network.allowInboundConnections = true;
             consensus3.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
+
+            setTimeout(() => {
+                expect(consensus1.network.peerCount).toBe(2);
+                expect(consensus2.network.peerCount).toBe(2);
+                expect(consensus3.network.peerCount).toBe(2);
+
+                expect(consensus1.network._connections._connectingCount).toBe(0);
+                expect(consensus2.network._connections._connectingCount).toBe(0);
+                expect(consensus3.network._connections._connectingCount).toBe(0);
+
+                expect(consensus1.network._connections.count).toBe(2);
+                expect(consensus2.network._connections.count).toBe(2);
+                expect(consensus3.network._connections.count).toBe(2);
+
+                done();
+            }, 30000);
+        })().catch(done.fail);
+    });
+
+    it('correctly deals with simultaneous WebSocket connections (inbound connections blocked)', (done) => {
+        (async () => {
+            MockClock.speed = 20;
+
+            const netConfig1 = Dummy.NETCONFIG;
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            consensus1.network.connect();
+
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const consensus2 = await Consensus.volatileFull(netConfig2);
+            consensus2.network.connect();
+
+            await new Promise(resolve => consensus2.on('established', resolve));
+            expect(consensus1.network.peerCount).toBe(1);
+            expect(consensus2.network.peerCount).toBe(1);
+
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const consensus3 = await Consensus.volatileFull(netConfig3);
+            consensus3.network.connect();
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);
@@ -284,21 +300,20 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
-            const consensus3 = await Consensus.volatileLight(netConfig3);
+            const consensus3 = await Consensus.volatileFull(netConfig3);
+            // Allow inbound connections early
+            consensus3.network.allowInboundConnections = true;
             consensus3.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);
@@ -334,12 +349,12 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
             const consensus2 = await Consensus.volatileFull(netConfig2);
+            // Allow inbound connections early
+            consensus2.network.allowInboundConnections = true;
             consensus2.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
 
             await new Promise(resolve => consensus2.on('established', resolve));
             expect(consensus1.network.peerCount).toBe(1);
@@ -347,8 +362,58 @@ describe('ConnectionPool', () => {
 
             const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
             const consensus3 = await Consensus.volatileLight(netConfig3);
+            // Allow inbound connections early
+            consensus3.network.allowInboundConnections = true;
             consensus3.network.connect();
-            MockClock.tick(Network.INBOUND_WS_CONNECTIONS_THROTTLE);
+
+            setTimeout(() => {
+                expect(consensus1.network.peerCount).toBe(2);
+                expect(consensus2.network.peerCount).toBe(2);
+                expect(consensus3.network.peerCount).toBe(2);
+
+                expect(consensus1.network._connections._connectingCount).toBe(0);
+                expect(consensus2.network._connections._connectingCount).toBe(0);
+                expect(consensus3.network._connections._connectingCount).toBe(0);
+
+                expect(consensus1.network._connections.count).toBe(2);
+                expect(consensus2.network._connections.count).toBe(2);
+                expect(consensus3.network._connections.count).toBe(2);
+
+                done();
+            }, 15000);
+        })().catch(done.fail);
+    });
+
+    it('correctly deals with simultaneous WebSocket connections (dropped verack, inbound connections blocked)', (done) => {
+        // Cause the second verack message to time out by dropping it.
+        const orgVerAck = PeerChannel.prototype.verack;
+        let numVerAcks = 0;
+        spyOn(PeerChannel.prototype, 'verack').and.callFake(function(...args) {
+            if (++numVerAcks === 2) return;
+            orgVerAck.apply(this, args);
+        });
+
+        (async () => {
+            MockClock.speed = 20;
+            MockNetwork.delay = 1500;
+
+            const netConfig1 = Dummy.NETCONFIG;
+            const consensus1 = await Consensus.volatileFull(netConfig1);
+            consensus1.network.connect();
+
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const consensus2 = await Consensus.volatileFull(netConfig2);
+            consensus2.network.connect();
+
+            await new Promise(resolve => consensus2.on('established', resolve));
+            expect(consensus1.network.peerCount).toBe(1);
+            expect(consensus2.network.peerCount).toBe(1);
+
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const consensus3 = await Consensus.volatileLight(netConfig3);
+            // Allow inbound connections early
+            consensus3.network.allowInboundConnections = true;
+            consensus3.network.connect();
 
             setTimeout(() => {
                 expect(consensus1.network.peerCount).toBe(2);

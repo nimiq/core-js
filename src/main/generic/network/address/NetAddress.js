@@ -6,15 +6,16 @@ class NetAddress {
      */
     static fromIP(ip, reliable = false) {
         const saneIp = NetUtils.ipToBytes(NetUtils.sanitizeIP(ip));
-        return new NetAddress(saneIp, NetUtils.isIPv4Address(saneIp) ? NetAddress.Type.IPv4 : NetAddress.Type.IPv6, reliable);
+        const type = NetUtils.isIPv4Address(saneIp) ? NetAddress.Type.IPv4 : NetAddress.Type.IPv6;
+        return new NetAddress(type, saneIp, reliable);
     }
 
     /**
-     * @param {Uint8Array} ipArray
      * @param {NetAddress.Type} type
+     * @param {Uint8Array} ipArray
      * @param {boolean} reliable
      */
-    constructor(ipArray, type, reliable = false) {
+    constructor(type, ipArray = null, reliable = false) {
         switch (type) {
             case NetAddress.Type.IPv4:
                 if (!(ipArray instanceof Uint8Array) || ipArray.length !== NetUtils.IPv4_LENGTH) throw new Error('Malformed ip');
@@ -43,7 +44,7 @@ class NetAddress {
      * @return {NetAddress}
      */
     static unserialize(buf) {
-        const type = buf.readUint8();
+        const type = /** @type {NetAddress.Type} */ buf.readUint8();
 
         let ipArray = null;
         switch (type) {
@@ -55,7 +56,7 @@ class NetAddress {
                 break;
         }
 
-        return new NetAddress(ipArray, type);
+        return new NetAddress(type, ipArray);
     }
 
     /**
@@ -148,8 +149,8 @@ class NetAddress {
      * @return {NetAddress}
      */
     subnet(bitCount) {
-        let ip = this._ip ? NetUtils.ipToSubnet(this._ip, bitCount) : null;
-        return new NetAddress(ip, this._type, this._reliable);
+        const ip = this._ip ? NetUtils.ipToSubnet(this._ip, bitCount) : null;
+        return new NetAddress(this._type, ip, this._reliable);
     }
 }
 /** @enum {number} */
@@ -159,6 +160,6 @@ NetAddress.Type = {
     UNSPECIFIED: 2,
     UNKNOWN: 3
 };
-NetAddress.UNSPECIFIED = new NetAddress(null, NetAddress.Type.UNSPECIFIED);
-NetAddress.UNKNOWN = new NetAddress(null, NetAddress.Type.UNKNOWN);
+NetAddress.UNSPECIFIED = new NetAddress(NetAddress.Type.UNSPECIFIED);
+NetAddress.UNKNOWN = new NetAddress(NetAddress.Type.UNKNOWN);
 Class.register(NetAddress);

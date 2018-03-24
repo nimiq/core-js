@@ -7,6 +7,12 @@ class PeerAddressBook extends Observable {
         super();
 
         /**
+         * @type {NetworkConfig}
+         * @private
+         */
+        this._networkConfig = netconfig;
+
+        /**
          * Set of PeerAddressStates of all peerAddresses we know.
          * @type {HashSet.<PeerAddressState>}
          * @private
@@ -18,14 +24,13 @@ class PeerAddressBook extends Observable {
          * @type {HashMap.<PeerId,PeerAddressState>}
          * @private
          */
-        this._peerIds = new HashMap();
+        this._stateByPeerId = new HashMap();
 
         /**
-         * @type {NetworkConfig}
+         * @type {HashMap.<NetAddress,Set.<PeerAddressState>>}
          * @private
          */
-        this._networkConfig = netconfig;
-
+        this._statesByNetAddress = new HashMap();
 
         // Init seed peers.
         this.add(/*channel*/ null, GenesisConfig.SEED_PEERS);
@@ -35,7 +40,7 @@ class PeerAddressBook extends Observable {
     }
 
     /**
-     * @returns {Array<PeerAddressState>}
+     * @returns {Array.<PeerAddressState>}
      */
     values() {
         return this._store.values();
@@ -55,14 +60,6 @@ class PeerAddressBook extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {?PeerAddressState}
-     */
-    getState(peerAddress) {
-        return this._get(peerAddress);
-    }
-
-    /**
-     * @param {PeerAddress} peerAddress
      * @returns {PeerAddress|null}
      */
     get(peerAddress) {
@@ -77,7 +74,7 @@ class PeerAddressBook extends Observable {
      */
     getByPeerId(peerId) {
         /** @type {PeerAddressState} */
-        const peerAddressState = this._peerIds.get(peerId);
+        const peerAddressState = this._stateByPeerId.get(peerId);
         return peerAddressState ? peerAddressState.peerAddress : null;
     }
 
@@ -86,7 +83,7 @@ class PeerAddressBook extends Observable {
      * @returns {PeerChannel}
      */
     getChannelByPeerId(peerId) {
-        const peerAddressState = this._peerIds.get(peerId);
+        const peerAddressState = this._stateByPeerId.get(peerId);
         if (peerAddressState && peerAddressState.signalRouter.bestRoute) {
             return peerAddressState.signalRouter.bestRoute.signalChannel;
         }
@@ -94,17 +91,25 @@ class PeerAddressBook extends Observable {
     }
 
     /**
-     * @todo improve this by returning the best addresses first.
      * @param {number} protocolMask
      * @param {number} serviceMask
      * @param {number} maxAddresses
      * @returns {Array.<PeerAddress>}
      */
     query(protocolMask, serviceMask, maxAddresses = 1000) {
+        const addressStates = this._store.values();
+        const numAddresses = addressStates.length;
+
+        // Pick a random start index.
+        const index = Math.floor(Math.random() * numAddresses);
+
         // XXX inefficient linear scan
         const now = Date.now();
         const addresses = [];
-        for (const peerAddressState of this._store.values()) {
+        for (let i = 0; i < numAddresses; i++) {
+            const idx = (index + i) % numAddresses;
+            const peerAddressState = addressStates[idx];
+
             // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED
                     || peerAddressState.state === PeerAddressState.FAILED) {
@@ -218,6 +223,9 @@ class PeerAddressBook extends Observable {
             }
         }
 
+        // Get the (reliable) netAddress of the peer that sent us this address.
+        const netAddress = channel && channel.netAddress && channel.netAddress.reliable ? channel.netAddress : null;
+
         // Check if we already know this address.
         let peerAddressState = this._get(peerAddress);
         let knownAddress = null;
@@ -240,12 +248,21 @@ class PeerAddressBook extends Observable {
                 peerAddress.netAddress = knownAddress.netAddress;
             }
         } else {
+            // If we know the IP address of the sender, check that we don't exceed the maximum number of addresses per IP.
+            if (netAddress) {
+                const states = this._statesByNetAddress.get(netAddress);
+                if (states && states.size >= PeerAddressBook.MAX_SIZE_PER_IP) {
+                    Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - max count per IP ${netAddress} reached`);
+                    return false;
+                }
+            }
+
             // Add new peerAddressState.
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
             if (peerAddress.peerId) {
                 // Index by peerId.
-                this._peerIds.put(peerAddress.peerId, peerAddressState);
+                this._stateByPeerId.put(peerAddress.peerId, peerAddressState);
             }
             changed = true;
         }
@@ -259,6 +276,18 @@ class PeerAddressBook extends Observable {
         // Add route.
         if (peerAddress.protocol === Protocol.RTC) {
             changed = peerAddressState.signalRouter.addRoute(channel, peerAddress.distance, peerAddress.timestamp) || changed;
+        }
+
+        // Track which IP address send us this address.
+        if (netAddress) {
+            peerAddressState.addedBy.add(channel.netAddress);
+
+            let states = this._statesByNetAddress.get(channel.netAddress);
+            if (!states) {
+                states = new Set();
+                this._statesByNetAddress.put(channel.netAddress, states);
+            }
+            states.add(peerAddressState);
         }
 
         return changed;
@@ -283,7 +312,7 @@ class PeerAddressBook extends Observable {
         }
 
         if (peerAddress.peerId) {
-            this._peerIds.put(peerAddress.peerId, peerAddressState);
+            this._stateByPeerId.put(peerAddress.peerId, peerAddressState);
         }
 
         peerAddressState.state = PeerAddressState.ESTABLISHED;
@@ -427,7 +456,18 @@ class PeerAddressBook extends Observable {
 
         // Delete from peerId index.
         if (peerAddress.peerId) {
-            this._peerIds.remove(peerAddress.peerId);
+            this._stateByPeerId.remove(peerAddress.peerId);
+        }
+
+        // Delete from netAddress index.
+        for (const netAddress of peerAddressState.addedBy) {
+            const states = this._statesByNetAddress.get(netAddress);
+            if (states) {
+                states.delete(peerAddressState);
+                if (states.size === 0) {
+                    this._statesByNetAddress.remove(netAddress);
+                }
+            }
         }
 
         // Don't delete bans.
@@ -474,8 +514,8 @@ class PeerAddressBook extends Observable {
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (addr.exceedsAge()) {
-                        Log.d(PeerAddressBook, `Deleting old peer address ${addr}`);
                         this._remove(addr);
+                        continue;
                     }
 
                     // Reset failed attempts after bannedUntil has expired.
@@ -540,5 +580,6 @@ PeerAddressBook.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 30; // 30 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
-PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 10000 : 200000;
+PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 15000 : 100000;
+PeerAddressBook.MAX_SIZE_PER_IP = 250;
 Class.register(PeerAddressBook);

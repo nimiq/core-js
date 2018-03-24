@@ -188,8 +188,10 @@ class NetworkConnection extends Observable {
      * @param {string} [reason]
      */
     close(type, reason) {
-        const connType = this._inbound ? 'inbound' : 'outbound';
-        Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : '') + ` (${type})`);
+        if (!this._closed) {
+            const connType = this._inbound ? 'inbound' : 'outbound';
+            Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : '') + ` (${type})`);
+        }
         this._close(type, reason);
     }
 

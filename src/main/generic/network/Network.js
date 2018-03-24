@@ -81,7 +81,7 @@ class Network extends Observable {
         this._connections.on('connect-error', () => setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE));
 
         /**
-         * Helper object to pick PeerAddressBook.
+         * Helper object to pick addresses from PeerAddressBook.
          * @type {PeerScorer}
          * @private
          */
@@ -99,6 +99,9 @@ class Network extends Observable {
         this._timers = new Timers();
     }
 
+    /**
+     * @returns {void}
+     */
     connect() {
         this._autoConnect = true;
 
@@ -107,15 +110,11 @@ class Network extends Observable {
 
         // Start connecting to peers.
         this._checkPeerCount();
-
-        // Throttle inbound connections.
-        this._timers.setTimeout('inboundWSThrottle', () => {
-            this._connections.allowInboundWSConnections = true;
-        }, Network.INBOUND_WS_CONNECTIONS_THROTTLE);
     }
 
     /**
      * @param {string|*} reason
+     * @returns {void}
      */
     disconnect(reason) {
         this._autoConnect = false;
@@ -124,8 +123,7 @@ class Network extends Observable {
         clearInterval(this._houseKeepingIntervalId);
 
         this._connections.disconnect(reason);
-        this._timers.clearTimeout('inboundWSThrottle');
-        this._connections.allowInboundWSConnections = false;
+        this._connections.allowInboundConnections = false;
     }
 
     // XXX For testing
@@ -137,9 +135,11 @@ class Network extends Observable {
 
     /**
      * @param {Peer} peer
+     * @returns {void}
      * @fires Network#peer-joined
+     * @private
      */
-    _onPeerJoined(peer){
+    _onPeerJoined(peer) {
         // Recalculate the network adjusted offset
         this._updateTimeOffset();
 
@@ -151,7 +151,9 @@ class Network extends Observable {
 
     /**
      * @param {Peer} peer
+     * @returns {void}
      * @fires Network#peer-left
+     * @private
      */
     _onPeerLeft(peer) {
         // Recalculate the network adjusted offset
@@ -161,7 +163,9 @@ class Network extends Observable {
     }
 
     /**
+     * @returns {void}
      * @fires Network#peers-changed
+     * @private
      */
     _onPeersChanged() {
         setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE);
@@ -169,6 +173,10 @@ class Network extends Observable {
         this.fire('peers-changed');
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
     _onRecyclingRequest() {
         this._scorer.recycleConnections(1, CloseType.PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE, 'Peer connection recycled inbound exchange');
 
@@ -204,16 +212,21 @@ class Network extends Observable {
         }
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
     _checkPeerCount() {
         if (this._autoConnect
-            && (this._connections.count < Network.PEER_COUNT_DESIRED || this._connections.peerCountFull === 0)
+            && !this._scorer.isGoodPeerSet()
             && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 
             // Pick a peer address that we are not connected to yet.
             const peerAddress = this._scorer.pickAddress();
 
-            // We can't connect if we don't know any more addresses.
-            if (!peerAddress) {
+            // We can't connect if we don't know any more addresses or only want connections to good peers.
+            const onlyGoodPeers = this._scorer.needsGoodPeers() && !this._scorer.needsMorePeers();
+            if (!peerAddress || onlyGoodPeers && !this._scorer.isGoodPeer(peerAddress)) {
                 // If no backoff has been triggered, trigger one.
                 // This helps us to check back whether we need more connections.
                 if (!this._backedOff) {
@@ -225,10 +238,15 @@ class Network extends Observable {
                         this._checkPeerCount();
                     }, oldBackoff);
 
-                    // If we are not connected to any peers (anymore), tell listeners that we are disconnected
-                    // and have given up on trying to connect for the time being. This is primarily useful for tests.
                     if (this._connections.count === 0) {
+                        // We are not connected to any peers (anymore) and don't know any more addresses to connect to.
+
+                        // Tell listeners that we are disconnected. This is primarily useful for tests.
                         this.fire('disconnected');
+
+                        // Allow inbound connections. This is important for the first seed node on the network which
+                        // will never establish a consensus and needs to accept incoming connections eventually.
+                        this._connections.allowInboundConnections = true;
                     }
                 }
 
@@ -339,6 +357,16 @@ class Network extends Observable {
         return this._connections.bytesReceived;
     }
 
+    /** @type {boolean} */
+    get allowInboundConnections() {
+        return this._connections.allowInboundConnections;
+    }
+
+    /** @param {boolean} allowInboundConnections */
+    set allowInboundConnections(allowInboundConnections) {
+        this._connections.allowInboundConnections = allowInboundConnections;
+    }
+
     /** @type {PeerAddressBook} */
     get addresses() {
         return this._addresses;
@@ -374,11 +402,6 @@ Network.IPV6_SUBNET_MASK = 96;
  * @constant
  */
 Network.PEER_COUNT_RECYCLING_ACTIVE = PlatformUtils.isBrowser() ? 5 : 1000;
-/**
- * @type {number}
- * @constant
- */
-Network.PEER_COUNT_DESIRED = 6;
 /**
  * @type {number}
  * @constant
@@ -424,10 +447,5 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @constant
  */
 Network.CONNECT_THROTTLE = 300; // 300 ms
-/**
- * @type {number}
- * @constant
- */
-Network.INBOUND_WS_CONNECTIONS_THROTTLE = 30000; // 30 s
 
 Class.register(Network);

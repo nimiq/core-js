@@ -167,7 +167,7 @@ class NetworkAgent extends Observable {
         // Try again in this case.
         if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce)) {
             this._versionAttempts++;
-            if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX) {
+            if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX || this._channel.closed) {
                 this._channel.close(CloseType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
                 return;
             }
@@ -406,27 +406,18 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        // Remember that the peer has sent us these addresses.
+        // Check the addresses the peer send us.
         for (const addr of msg.addresses) {
             if (!addr.verifySignature()) {
                 this._channel.close(CloseType.INVALID_ADDR, 'invalid addr');
                 return;
             }
+
             if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
                 this._channel.close(CloseType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
                 return;
             }
-            if (addr.protocol === Protocol.WS) {
-                // Resolve host to netAddress.
-                try {
-                    const netAddress = await DNSUtils.lookup(addr.host);
-                    if (!netAddress.isPseudo()) {
-                        addr.netAddress = netAddress;
-                    }
-                } catch (e) {
-                    Log.w(NetworkAgent, `DNS lookup for ${addr.host} threw error ${e}`);
-                }
-            }
+
             this._knownAddresses.add(addr);
         }
 
