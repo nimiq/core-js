@@ -21,6 +21,9 @@
                 "src/native/ed25519/verify.c",
                 "src/native/nimiq_node.cc"
             ],
+            "defines": [
+                "ARGON2_NO_THREADS"
+            ],
             "include_dirs": [
                 "<!(node -e \"require('nan')\")",
                 "src/native"
@@ -28,14 +31,12 @@
             "cflags_c": [
                 "-std=c99",
                 "-march=native",
-                "-mtune=native",
-                "-DARGON2_NO_THREADS"
+                "-mtune=native"
             ],
             "xcode_settings": {
                 "OTHER_CFLAGS": [
                     "-march=native",
-                    "-mtune=native",
-                    "-DARGON2_NO_THREADS"
+                    "-mtune=native"
                 ]
             }
         }
