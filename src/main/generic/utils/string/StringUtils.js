@@ -12,7 +12,7 @@ class StringUtils {
      * @returns {boolean}
      */
     static isHex(str) {
-        return /[0-9A-Fa-f]*/.test(str);
+        return /^[0-9A-Fa-f]*$/.test(str);
     }
 
     /**

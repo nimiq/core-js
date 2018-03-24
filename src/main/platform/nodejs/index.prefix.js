@@ -8,6 +8,7 @@ const WebSocket = require('ws');
 const NodeNative = require(`${__dirname}/nimiq_node`);
 
 global.Class = {
+    scope: module.exports,
     register: clazz => {
         module.exports[clazz.prototype.constructor.name] = clazz;
     }

@@ -81,6 +81,10 @@ for(const tag in config.log.tags) {
     Nimiq.Log.instance.setLoggable(tag, config.log.tags[tag]);
 }
 
+for(const key in config.constantOverrides) {
+    Nimiq.ConstantHelper.instance.set(key, config.constantOverrides[key]);
+}
+
 const TAG = 'Node';
 const $ = {};
 

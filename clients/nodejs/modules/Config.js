@@ -20,6 +20,7 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
  * @property {{level: string, tags: object}} log
+ * @property {object} constantOverrides
  */
 
 const DEFAULT_CONFIG = /** @type {Config} */ {
@@ -58,7 +59,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     log: {
         level: 'info',
         tags: {}
-    }
+    },
+    constantOverrides: {}
 };
 
 const CONFIG_TYPES = {
@@ -108,7 +110,8 @@ const CONFIG_TYPES = {
             level: {type: 'string', values: ['trace', 'verbose', 'debug', 'info', 'warning', 'error', 'assert']},
             tags: 'object'
         }
-    }
+    },
+    constantOverrides: 'object'
 };
 
 function validateItemType(config, key, type, error = true) {

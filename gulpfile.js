@@ -35,6 +35,7 @@ const sources = {
         ]
     },
     generic: [
+        './src/main/generic/utils/ConstantHelper.js',
         './src/main/generic/utils/Services.js',
         './src/main/generic/utils/Synchronizer.js',
         './src/main/generic/utils/MultiSynchronizer.js',
