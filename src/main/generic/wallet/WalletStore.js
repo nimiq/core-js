@@ -4,7 +4,11 @@ class WalletStore {
      * @returns {Promise.<WalletStore>}
      */
     constructor(dbName = 'wallet') {
-        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION, undefined, { maxDbSize: 1024*1024*10, autoResize: true }); // 10 MB
+        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION, undefined, {
+            maxDbSize: WalletStore.INITIAL_DB_SIZE,
+            autoResize: true,
+            minResize: WalletStore.MIN_RESIZE
+        });
         /** @type {ObjectStore} */
         this._walletStore = null;
         /** @type {ObjectStore} */
@@ -177,6 +181,8 @@ class WalletStore {
 Class.register(WalletStore);
 WalletStore._instance = null;
 WalletStore.VERSION = 1;
+WalletStore.INITIAL_DB_SIZE = 1024*1024*10; // 10 MB initially
+WalletStore.MIN_RESIZE = 1024*1024*10; // 10 MB
 WalletStore.WALLET_DATABASE = 'wallets';
 WalletStore.MULTISIG_WALLET_DATABASE = 'multisig-wallets';
 
