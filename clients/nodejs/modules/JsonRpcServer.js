@@ -69,6 +69,7 @@ class JsonRpcServer {
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
+        this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
         this._methods.set('mempool', this.mempool.bind(this));
 
         // Miner
@@ -80,6 +81,7 @@ class JsonRpcServer {
         this._methods.set('accounts', this.accounts.bind(this));
         this._methods.set('createAccount', this.createAccount.bind(this));
         this._methods.set('getBalance', this.getBalance.bind(this));
+        this._methods.set('getAccount', this.getAccount.bind(this));
 
         // Blockchain
         this._methods.set('blockNumber', this.blockNumber.bind(this));
@@ -225,7 +227,7 @@ class JsonRpcServer {
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
         if (block && block.transactions.length > txIndex) {
-            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex);
+            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
         return null;
     }
@@ -233,20 +235,24 @@ class JsonRpcServer {
     async getTransactionByBlockNumberAndIndex(number, txIndex) {
         const block = await this._getBlockByNumber(number);
         if (block && block.transactions.length > txIndex) {
-            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex);
+            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
         return null;
     }
 
     async getTransactionByHash(hash) {
-        const entry = await this._blockchain.getTransactionInfoByHash(Nimiq.Hash.fromString(hash));
+        return this._getTransactionByHash(Nimiq.Hash.fromString(hash));
+    }
+
+    async _getTransactionByHash(hash) {
+        const entry = await this._blockchain.getTransactionInfoByHash(hash);
         if (entry) {
             const block = await this._blockchain.getBlock(entry.blockHash);
-            return JsonRpcServer._transactionToObj(block.transactions[entry.index], block, entry.index);
+            return this._transactionToObj(block.transactions[entry.index], block, entry.index);
         }
-        const mempoolTx = this._mempool.getTransaction(Nimiq.Hash.fromString(hash));
+        const mempoolTx = this._mempool.getTransaction(hash);
         if (mempoolTx) {
-            return JsonRpcServer._transactionToObj(mempoolTx);
+            return this._transactionToObj(mempoolTx);
         }
         return null;
     }
@@ -263,6 +269,12 @@ class JsonRpcServer {
             confirmations: this._blockchain.height - entry.blockHeight,
             timestamp: block ? block.timestamp : undefined
         };
+    }
+
+    async getTransactionsByAddress(addr) {
+        const address = Nimiq.Address.fromString(addr);
+        const receipts = await this._blockchain.getTransactionReceiptsByAddress(address);
+        return Promise.all(receipts.map((r) => this._getTransactionByHash(r.transactionHash)));
     }
 
     mempool(includeTransactions) {
@@ -311,6 +323,12 @@ class JsonRpcServer {
         return (await this._accounts.get(Nimiq.Address.fromString(addrString))).balance;
     }
 
+    async getAccount(addr) {
+        const address = Nimiq.Address.fromString(addr);
+        const account = await this._accounts.get(address);
+        return this._accountToObj(account, address);
+    }
+
     /*
      * Blockchain
      */
@@ -354,6 +372,40 @@ class JsonRpcServer {
     }
 
     /**
+     * @param {Account} account
+     * @param {Address} address
+     * @returns {object}
+     * @private
+     */
+    _accountToObj(account, address) {
+        if (!account) return null;
+        const obj = {
+            id: address.toHex(),
+            address: address.toUserFriendlyAddress(),
+            balance: account.balance,
+            type: account.type
+        };
+        if (account instanceof Nimiq.VestingContract) {
+            obj.owner = account.owner.toHex();
+            obj.ownerAddress = account.owner.toUserFriendlyAddress();
+            obj.vestingStart = account.vestingStart;
+            obj.vestingStepBlocks = account.vestingStepBlocks;
+            obj.vestingStepAmount = account.vestingStepAmount;
+            obj.vestingTotalAmount = account.vestingTotalAmount;
+        } else if (account instanceof Nimiq.HashedTimeLockedContract) {
+            obj.sender = account.sender.toHex();
+            obj.senderAddress = account.sender.toUserFriendlyAddress();
+            obj.recipient = account.recipient.toHex();
+            obj.recipientAddress = account.recipient.toUserFriendlyAddress();
+            obj.hashRoot = account.hashRoot.toHex();
+            obj.hashCount = account.hashCount;
+            obj.timeout = account.timeout;
+            obj.totalAmount = account.totalAmount;
+        }
+        return obj;
+    }
+
+    /**
      * @param {PeerAddressState} peerAddressState
      * @param {PeerConnection} [connection]
      * @private
@@ -369,7 +421,10 @@ class JsonRpcServer {
             version: connection && connection.peer ? connection.peer.version : undefined,
             timeOffset: connection && connection.peer ? connection.peer.timeOffset : undefined,
             headHash: connection && connection.peer ? connection.peer.headHash.toHex() : undefined,
-            score: connection ? connection.score : undefined
+            score: connection ? connection.score : undefined,
+            latency: connection ? connection.statistics.latencyMedian : undefined,
+            rx: connection && connection.networkConnection ? connection.networkConnection.bytesReceived : undefined,
+            tx: connection && connection.networkConnection ? connection.networkConnection.bytesSent : undefined
         };
     }
 
@@ -405,11 +460,13 @@ class JsonRpcServer {
      * @param {number} [i]
      * @private
      */
-    static _transactionToObj(tx, block, i) {
+    _transactionToObj(tx, block, i) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
+            timestamp: block ? block.timestamp : undefined,
+            confirmations: block ? this._blockchain.height - block.height + 1 : undefined,
             transactionIndex: i,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),
