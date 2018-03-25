@@ -49,6 +49,14 @@ class BaseChain extends IBlockchain {
     }
 
     /**
+     * @param {Block} block
+     * @returns {Promise<Array.<Block>>}
+     */
+    async getSuccessorBlocks(block) {
+        return this._store.getSuccessorBlocks(block);
+    }
+
+    /**
      * @returns {Promise.<Array.<Hash>>}
      */
     async getBlockLocators() {

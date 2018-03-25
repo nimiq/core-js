@@ -43,11 +43,11 @@ class PoolClient extends Observable {
         };
         this._ws.onerror = (e) => {
             if (ws === this._ws) this._turnPoolOff();
-            Log.w(PoolClient, e);
+            Log.w(PoolClient, e.message || e);
             try {
                 ws.close();
             } catch (e2) {
-                Log.w(PoolClient, e2);
+                Log.w(PoolClient, e2.message || e2);
                 if (ws === this._ws) this._ws = null;
             }
         };

@@ -170,13 +170,26 @@ class ChainDataStore {
 
     /**
      * @param {number} height
+     * @returns {Promise.<?Array.<ChainData>>}
+     */
+    async getChainDataCandidatesAt(height) {
+        /** @type {Array.<ChainData>} */
+        const candidates = await this._chainStore.values(JDB.Query.eq('height', height));
+        if (!candidates || !candidates.length) {
+            return undefined;
+        }
+        return candidates;
+    }
+
+    /**
+     * @param {number} height
      * @param {boolean} [includeBody]
      * @returns {Promise.<?ChainData>}
      */
     async getChainDataAt(height, includeBody = false) {
         /** @type {Array.<ChainData>} */
-        const candidates = await this._chainStore.values(JDB.Query.eq('height', height));
-        if (!candidates || !candidates.length) {
+        const candidates = await this.getChainDataCandidatesAt(height);
+        if (!candidates) {
             return undefined;
         }
 
@@ -206,6 +219,24 @@ class ChainDataStore {
     async getBlockAt(height, includeBody = false) {
         const chainData = await this.getChainDataAt(height, includeBody);
         return chainData ? chainData.head : null;
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise<Array.<Block>>}
+     */
+    async getSuccessorBlocks(block) {
+        const candidates = await this.getChainDataCandidatesAt(block.height + 1);
+        if (!candidates) {
+            return [];
+        }
+        const res = [];
+        for (const chainData of candidates) {
+            if (chainData.head.prevHash.equals(block.hash())) {
+                res.push(chainData.head);
+            }
+        }
+        return res;
     }
 
     /**

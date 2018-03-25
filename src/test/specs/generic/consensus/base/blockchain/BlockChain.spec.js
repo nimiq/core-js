@@ -34,4 +34,34 @@ describe('BlockChain', () => {
             expect(await chain1.verify()).toBe(false);
         })().then(done, done.fail);
     });
+
+    it ('can get successor blocks', (done) => {
+        (async () => {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+            const forkBlockchain = await TestBlockchain.createVolatileTest(0, 2);
+
+            let succ = await testBlockchain.getSuccessorBlocks(GenesisConfig.GENESIS_BLOCK);
+            expect(succ.length).toBe(0);
+
+            let block1 = await testBlockchain.createBlock();
+            let status = await testBlockchain.pushBlock(block1);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            succ = await testBlockchain.getSuccessorBlocks(GenesisConfig.GENESIS_BLOCK);
+            expect(succ.length).toBe(1);
+            expect(succ.some(b => b.equals(block1.toLight()))).toBeTruthy();
+
+            let block2 = await forkBlockchain.createBlock({
+                timestamp: GenesisConfig.GENESIS_BLOCK.timestamp + Math.floor(Policy.BLOCK_TIME / 2),
+            });
+            status = await testBlockchain.pushBlock(block2);
+            expect(status).toBe(FullChain.OK_FORKED);
+
+            succ = await testBlockchain.getSuccessorBlocks(GenesisConfig.GENESIS_BLOCK);
+            expect(succ.length).toBe(2);
+            expect(succ.some(b => b.equals(block1.toLight()))).toBeTruthy();
+            expect(succ.some(b => b.equals(block2.toLight()))).toBeTruthy();
+        })().then(done, done.fail);
+
+    });
 });
