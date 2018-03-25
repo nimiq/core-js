@@ -35,6 +35,17 @@ class FullConsensusAgent extends BaseConsensusAgent {
         /** @type {Hash} */
         this._syncTarget = peer.headHash;
 
+        /** @type {RateLimit} */
+        this._chainProofLimit = new RateLimit(FullConsensusAgent.CHAIN_PROOF_RATE_LIMIT);
+        /** @type {RateLimit} */
+        this._accountsProofLimit = new RateLimit(FullConsensusAgent.ACCOUNTS_PROOF_RATE_LIMIT);
+        /** @type {RateLimit} */
+        this._accountsTreeChunkLimit = new RateLimit(FullConsensusAgent.ACCOUNTS_TREE_CHUNK_RATE_LIMIT);
+        /** @type {RateLimit} */
+        this._transactionsProofLimit = new RateLimit(FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT);
+        /** @type {RateLimit} */
+        this._transactionReceiptsLimit = new RateLimit(FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT);
+
         // Listen to consensus messages from the peer.
         peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
@@ -391,6 +402,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetChainProof(msg) {
+        if (!this._chainProofLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetChainProof message - rate-limit exceeded');
+            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            return;
+        }
         const proof = await this._blockchain.getChainProof();
         this._peer.channel.chainProof(proof);
     }
@@ -416,6 +432,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetAccountsProof(msg) {
+        if (!this._accountsProofLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetAccountsProof message - rate-limit exceeded');
+            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            return;
+        }
         const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
         this._peer.channel.accountsProof(msg.blockHash, proof);
     }
@@ -425,6 +446,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetTransactionsProof(msg) {
+        if (!this._transactionsProofLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetTransactionsProof message - rate-limit exceeded');
+            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            return;
+        }
         const proof = await this._blockchain.getTransactionsProof(msg.blockHash, msg.addresses);
         this._peer.channel.transactionsProof(msg.blockHash, proof);
     }
@@ -434,6 +460,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetAccountsTreeChunk(msg) {
+        if (!this._accountsTreeChunkLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetAccountsTreeChunk message - rate-limit exceeded');
+            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            return;
+        }
         const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
         this._peer.channel.accountsTreeChunk(msg.blockHash, chunk);
     }
@@ -443,6 +474,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetTransactions(msg) {
+        if (!this._transactionReceiptsLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetTransactionReceipts message - rate-limit exceeded');
+            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            return;
+        }
         const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address);
 
         let i = 0;
@@ -529,4 +565,9 @@ FullConsensusAgent.MEMPOOL_THROTTLE = 1000;
  * @type {number}
  */
 FullConsensusAgent.MEMPOOL_ENTRIES_MAX = 10000;
+FullConsensusAgent.CHAIN_PROOF_RATE_LIMIT = 3;
+FullConsensusAgent.ACCOUNTS_PROOF_RATE_LIMIT = 60;
+FullConsensusAgent.ACCOUNTS_TREE_CHUNK_RATE_LIMIT = 120;
+FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 120;
+FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 60;
 Class.register(FullConsensusAgent);

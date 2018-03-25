@@ -15,7 +15,7 @@ class ThrottledQueue extends Queue {
         this._timers = new Timers();
         this._timers.setInterval('allowance', () => {
             this._availableNow = Math.min(this._maxAtOnce, this._availableNow + allowanceNum);
-            if (typeof allowanceCallback === 'function') allowanceCallback();
+            if (typeof allowanceCallback === 'function' && this.isAvailable()) allowanceCallback();
         }, allowanceInterval);
     }
 

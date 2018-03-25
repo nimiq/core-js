@@ -102,6 +102,12 @@ class NetworkAgent extends Observable {
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         CryptoWorker.lib.getRandomValues(this._challengeNonce);
 
+        // XXX: Magic numbers should be constants, rely on other magic numbers
+        /** @type {ThrottledQueue} */
+        this._addrQueue = new ThrottledQueue(NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE, NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE, NetworkAgent.ADDR_QUEUE_INTERVAL, NetworkAgent.ADDR_RATE_LIMIT, () => this._relayNow());
+
+        this._addrLimit = new RateLimit(NetworkAgent.ADDR_RATE_LIMIT);
+
         // Listen to network/control messages from the peer.
         channel.on('version', msg => this._onVersion(msg));
         channel.on('verack', msg => this._onVerAck(msg));
@@ -122,6 +128,15 @@ class NetworkAgent extends Observable {
         if (!this._verackReceived || !this._versionSent) {
             return;
         }
+
+        for (const address of addresses) {
+            this._addrQueue.enqueue(address);
+        }
+    }
+
+    _relayNow() {
+        const addresses = this._addrQueue.dequeueMulti(NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE);
+        if (addresses.length === 0) return;
 
         // Only relay addresses that the peer doesn't know yet or that have improved.
         // If the address the peer knows is older than RELAY_THROTTLE, relay the address again.
@@ -400,9 +415,15 @@ class NetworkAgent extends Observable {
         }
 
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
-        if (msg.addresses.length > 1000) {
+        if (msg.addresses.length > NetworkAgent.MAX_ADDR_PER_MESSAGE) {
             Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
             this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
+            return;
+        }
+
+        if (!this._addrLimit.note(msg.addresses.length)) {
+            Log.w(NetworkAgent, 'Rejecting addr message - rate-limit exceeded');
+            this._channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
             return;
         }
 
@@ -440,7 +461,7 @@ class NetworkAgent extends Observable {
         }
 
         // Find addresses that match the given serviceMask.
-        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask);
+        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask, NetworkAgent.MAX_ADDR_PER_MESSAGE);
 
         const filteredAddresses = addresses.filter(addr => {
             // Exclude RTC addresses that are already at MAX_DISTANCE.
@@ -525,6 +546,7 @@ class NetworkAgent extends Observable {
     _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
+        this._addrQueue.stop();
     }
 
     /**
@@ -565,4 +587,8 @@ NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 5; // 5 minutes
 NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
 NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
 NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
+NetworkAgent.ADDR_RATE_LIMIT = 2000;
+NetworkAgent.ADDR_QUEUE_INTERVAL = 5000;
+NetworkAgent.MAX_ADDR_PER_MESSAGE = 1000;
+NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE = 10;
 Class.register(NetworkAgent);

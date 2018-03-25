@@ -54,6 +54,7 @@ const sources = {
         './src/main/generic/utils/assert/Assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
+        './src/main/generic/utils/RateLimit.js',
         './src/main/generic/utils/IWorker.js',
         './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
