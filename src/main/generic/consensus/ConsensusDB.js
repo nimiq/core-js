@@ -27,17 +27,12 @@ class ConsensusDB extends JDB.JungleDB {
      */
     constructor(dbName) {
         // Start with 500MB and resize at least 1GB at a time.
-        super(dbName, ConsensusDB.VERSION, undefined, {
+        super(dbName, ConsensusDB.VERSION, {
             maxDbSize: ConsensusDB.INITIAL_DB_SIZE,
             autoResize: true,
             minResize: ConsensusDB.MIN_RESIZE
         });
         return this._init();
-    }
-
-    doResize(increaseSize = 0) {
-        Log.d(ConsensusDB, 'Resize database');
-        super.doResize(increaseSize);
     }
 
     /**

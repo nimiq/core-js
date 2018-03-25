@@ -4,7 +4,7 @@ class WalletStore {
      * @returns {Promise.<WalletStore>}
      */
     constructor(dbName = 'wallet') {
-        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION, undefined, {
+        this._jdb = new JDB.JungleDB(dbName, WalletStore.VERSION, {
             maxDbSize: WalletStore.INITIAL_DB_SIZE,
             autoResize: true,
             minResize: WalletStore.MIN_RESIZE

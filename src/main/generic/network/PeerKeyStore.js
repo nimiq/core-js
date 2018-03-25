@@ -4,7 +4,7 @@ class PeerKeyStore {
      */
     static async getPersistent() {
         if (!PeerKeyStore._instance) {
-            const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION, undefined, { maxDbSize: PeerKeyStore.INITIAL_DB_SIZE });
+            const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION, { maxDbSize: PeerKeyStore.INITIAL_DB_SIZE });
 
             // Initialize object stores.
             jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
