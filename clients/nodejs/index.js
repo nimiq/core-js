@@ -72,7 +72,11 @@ if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
     process.exit(1);
 }
 if (config.wallet.seed && config.wallet.address) {
-    console.error('Can only use one of wallet-seed or wallet-address, not both!');
+    console.error('Cannot use both --wallet-seed and --wallet-address');
+    process.exit(1);
+}
+if (config.host && config.dumb) {
+    console.error('Cannot use both --host and --dumb');
     process.exit(1);
 }
 

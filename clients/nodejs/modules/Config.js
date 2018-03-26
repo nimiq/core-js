@@ -216,6 +216,7 @@ if (!validateObjectType(DEFAULT_CONFIG)) {
 
 /**
  * @param {string} file
+ * @param {object} oldConfig
  * @returns {Config|boolean}
  */
 function readFromFile(file, oldConfig = merge({}, DEFAULT_CONFIG)) {
@@ -244,6 +245,11 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
             return false;
         }
     }
+    if (typeof argv.host === 'string') config.host = argv.host;
+    if (typeof argv.port === 'number') config.port = argv.port;
+    if (typeof argv.port === 'string') config.port = parseInt(argv.port);
+    if (typeof argv.cert === 'string') config.tls.cert = argv.cert;
+    if (typeof argv.key === 'string') config.tls.key = argv.key;
     if (argv.dumb) config.dumb = true;
     if (typeof argv.type === 'string') config.type = argv.type;
     if (typeof argv.network === 'string') config.network = argv.network;
