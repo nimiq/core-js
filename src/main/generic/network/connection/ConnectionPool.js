@@ -452,27 +452,6 @@ class ConnectionPool extends Observable {
             return false;
         }
 
-        // Close connection if we have too many connections to the peer's IP address.
-        if (peer.netAddress && !peer.netAddress.isPseudo() && peer.netAddress.reliable) {
-            if (this.getConnectionsByNetAddress(peer.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
-                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
-                    `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post version)`);
-                return false;
-            }
-
-            const subnetConnections = peerConnection.networkConnection.outbound
-                ? this.getOutboundConnectionsBySubnet(peer.netAddress)
-                : this.getConnectionsBySubnet(peer.netAddress);
-            const subnetLimit = peerConnection.networkConnection.outbound
-                ? Network.OUTBOUND_PEER_COUNT_PER_SUBNET_MAX
-                : Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX;
-            if (subnetConnections.length >= subnetLimit) {
-                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
-                    `connection limit per ip (${subnetLimit}) reached (post version)`);
-                return false;
-            }
-        }
-
         // Duplicate/simultaneous connection check (post version):
         const storedConnection = this.getConnectionByPeerAddress(peer.peerAddress);
         if (storedConnection && storedConnection.id !== peerConnection.id) {
