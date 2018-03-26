@@ -2,6 +2,11 @@ class WasmHelper {
 
     static async doImportBrowser() {
         if (PlatformUtils.isNodeJs()) return;
+        if (WasmHelper._importStarted) {
+            Log.e(WasmHelper, 'doImportBrowser invoked twice');
+            return;
+        }
+        WasmHelper._importStarted = true;
         if (await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
             await WasmHelper.importScriptBrowser('worker-wasm.js');
         } else {
