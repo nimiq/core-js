@@ -1,8 +1,8 @@
 describe('BlockChain', () => {
     it('is serializable and unserializable', (done) => {
         (async () => {
-            const testBlockchain = await TestBlockchain.createVolatileTest(2);
-            const blocks = (await testBlockchain.getBlocks(1, 4)).map(b => b.toLight());
+            const testBlockchain = await TestBlockchain.createVolatileTest(4);
+            const blocks = (await testBlockchain.getBlocks(GenesisConfig.GENESIS_HASH, 4)).map(b => b.toLight());
             const chain1 = new BlockChain(blocks);
             const chain2 = BlockChain.unserialize(chain1.serialize());
 
@@ -13,8 +13,8 @@ describe('BlockChain', () => {
 
     it('can verify a valid chain', (done) => {
         (async () => {
-            const testBlockchain = await TestBlockchain.createVolatileTest(2);
-            const blocks = (await testBlockchain.getBlocks(1, 4)).map(b => b.toLight());
+            const testBlockchain = await TestBlockchain.createVolatileTest(4);
+            const blocks = (await testBlockchain.getBlocks(GenesisConfig.GENESIS_HASH, 4)).map(b => b.toLight());
             const chain1 = new BlockChain(blocks);
 
             expect(await chain1.verify()).toBe(true);
@@ -23,8 +23,8 @@ describe('BlockChain', () => {
 
     it('can falsify an unordered chain', (done) => {
         (async () => {
-            const testBlockchain = await TestBlockchain.createVolatileTest(2);
-            const blocks = (await testBlockchain.getBlocks(1, 4)).map(b => b.toLight());
+            const testBlockchain = await TestBlockchain.createVolatileTest(4);
+            const blocks = (await testBlockchain.getBlocks(GenesisConfig.GENESIS_HASH, 4)).map(b => b.toLight());
             // Swap blocks 1 and 2
             const tmp = blocks[1];
             blocks[1] = blocks[2];

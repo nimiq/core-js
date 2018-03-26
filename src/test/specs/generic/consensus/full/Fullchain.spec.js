@@ -266,7 +266,7 @@ describe('Blockchain', () => {
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
                 // Get that same block and check that they're the same
-                const resultBlock = await testBlockchain.getBlock(hash);
+                const resultBlock = await testBlockchain.getBlock(hash, false, true);
                 expect(resultBlock).toBe(block);
             }
 
@@ -281,7 +281,7 @@ describe('Blockchain', () => {
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
                 // Get that same block and check that they're the same
-                const resultBlock = await testBlockchain.getBlock(hash);
+                const resultBlock = await testBlockchain.getBlock(hash, false, true);
                 expect(resultBlock).toBe(block);
             }
 
@@ -306,7 +306,7 @@ describe('Blockchain', () => {
                 expect(status).toBe(FullChain.OK_EXTENDED);
 
                 // Get that same block and check that they're the same
-                const resultBlock = await testBlockchain.getBlock(hash);
+                const resultBlock = await testBlockchain.getBlock(hash, false, true);
                 expect(resultBlock).toBe(block);
 
                 expect(block.difficulty > difficulty).toBe(true);
@@ -374,6 +374,15 @@ describe('Blockchain', () => {
             status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.OK_EXTENDED);
             expect(testBlockchain.head).toBe(block);
+            expect(testBlockchain.height).toBe(5);
+
+            expect((await testBlockchain.getBlocks(GenesisConfig.GENESIS_HASH, 4, true))
+                .map(b => b.height)
+                .every((value, i) => value === i + 2)).toBe(true);
+
+            expect((await testBlockchain.getBlocks(block.hash(), 4, false))
+                .map(b => b.height)
+                .every((value, i) => value === 4 - i)).toBe(true);
 
             // Create second chain (5 blocks)
             const fork = await TestBlockchain.createVolatileTest(0, 2);
@@ -422,6 +431,14 @@ describe('Blockchain', () => {
             expect(status).toBe(FullChain.OK_EXTENDED);
             expect(testBlockchain.head).toBe(block);
             expect(testBlockchain.height).toBe(6);
+
+            expect((await testBlockchain.getBlocks(GenesisConfig.GENESIS_HASH, 5, true))
+                .map(b => b.height)
+                .every((value, i) => value === i + 2)).toBe(true);
+
+            expect((await testBlockchain.getBlocks(block.hash(), 5, false))
+                .map(b => b.height)
+                .every((value, i) => value === 5 - i)).toBe(true);
         })().then(done, done.fail);
     });
 

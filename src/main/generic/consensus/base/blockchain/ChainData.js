@@ -1,23 +1,5 @@
 class ChainData {
     /**
-     * @param {ChainData} o
-     * @returns {ChainData}
-     */
-    static copy(o) {
-        if (!o) return o;
-        const head = Block.unserialize(new SerialBuffer(o._head));
-        head.header._pow = Hash.unserialize(new SerialBuffer(o._pow));
-        const superBlockCounts = new SuperBlockCounts(o._superBlockCounts);
-        return new ChainData(
-            head,
-            o._totalDifficulty,
-            o._totalWork,
-            superBlockCounts,
-            o._onMainChain
-        );
-    }
-
-    /**
      * @param {Block} block
      * @param {SuperBlockCounts} [superBlockCounts]
      * @returns {Promise.<ChainData>}
@@ -42,28 +24,56 @@ class ChainData {
      * @param {number} totalDifficulty
      * @param {number} totalWork
      * @param {SuperBlockCounts} superBlockCounts
-     * @param {boolean} onMainChain
+     * @param {boolean} [onMainChain]
+     * @param {Hash} [mainChainSuccessor]
      */
-    constructor(head, totalDifficulty, totalWork, superBlockCounts, onMainChain = false) {
+    constructor(head, totalDifficulty, totalWork, superBlockCounts, onMainChain = false, mainChainSuccessor = null) {
         this._head = head;
         this._totalDifficulty = totalDifficulty;
         this._totalWork = totalWork;
         this._superBlockCounts = superBlockCounts;
         this._onMainChain = onMainChain;
+        this._mainChainSuccessor = mainChainSuccessor;
         this._height = head.height;
     }
 
-    stripDown() {
+    /**
+     * @returns {{_head: SerialBuffer, _totalDifficulty: number, _totalWork: number, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?SerialBuffer, _height: number, _pow: SerialBuffer}}
+     */
+    toObj() {
         Assert.that(this._head.header._pow instanceof Hash, 'Expected cached PoW hash');
         return {
-            _head: this._head.serialize(),
+            _head: this._head.toLight().serialize(),
             _totalDifficulty: this._totalDifficulty,
             _totalWork: this._totalWork,
             _superBlockCounts: this._superBlockCounts.array,
             _onMainChain: this._onMainChain,
-            _height: this._height,
+            _mainChainSuccessor: this._mainChainSuccessor ? this._mainChainSuccessor.serialize() : null,
+            _height: this._head.height,
             _pow: this._head.header._pow.serialize()
         };
+    }
+
+    /**
+     * @param {{_head: Uint8Array, _totalDifficulty: number, _totalWork: number, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?Uint8Array, _height: number, _pow: Uint8Array}} obj
+     * @param {string} [hashBase64]
+     * @returns {ChainData}
+     */
+    static fromObj(obj, hashBase64) {
+        if (!obj) return obj;
+        const head = Block.unserialize(new SerialBuffer(obj._head));
+        head.header._pow = Hash.unserialize(new SerialBuffer(obj._pow));
+        head.header._hash = hashBase64 ? Hash.fromBase64(hashBase64) : null;
+        const superBlockCounts = new SuperBlockCounts(obj._superBlockCounts);
+        const successor = obj._mainChainSuccessor ? Hash.unserialize(new SerialBuffer(obj._mainChainSuccessor)) : null;
+        return new ChainData(
+            head,
+            obj._totalDifficulty,
+            obj._totalWork,
+            superBlockCounts,
+            obj._onMainChain,
+            successor
+        );
     }
 
     /**
@@ -119,9 +129,19 @@ class ChainData {
         return this._onMainChain;
     }
 
-    /** @type {boolean} */
+    /** @param {boolean} onMainChain */
     set onMainChain(onMainChain) {
         this._onMainChain = onMainChain;
+    }
+
+    /** @type {Hash} */
+    get mainChainSuccessor() {
+        return this._mainChainSuccessor;
+    }
+
+    /** @param {Hash} mainChainSuccessor */
+    set mainChainSuccessor(mainChainSuccessor) {
+        this._mainChainSuccessor = mainChainSuccessor;
     }
 }
 Class.register(ChainData);

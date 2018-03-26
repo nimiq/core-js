@@ -180,7 +180,7 @@ class BaseConsensus extends Observable {
      * @protected
      */
     async _requestBlockProof(blockHashToProve, blockHeightToProve) {
-        const knownBlock = await this._blockchain.getNearestBlockAt(blockHeightToProve, false);
+        const knownBlock = await this._blockchain.getNearestBlockAt(blockHeightToProve, /*lower*/ false);
         if (!knownBlock) {
             throw new Error('No suitable reference block found for BlockProof');
         }

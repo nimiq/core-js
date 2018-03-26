@@ -230,7 +230,12 @@ class PartialLightChain extends LightChain {
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
             chainData.onMainChain = true;
-            await this._store.putChainData(blockHash, chainData);
+            prevData.mainChainSuccessor = blockHash;
+
+            const storeTx = this._store.synchronousTransaction();
+            storeTx.putChainDataSync(blockHash, chainData);
+            storeTx.putChainDataSync(block.prevHash, prevData, /*includeBody*/ false);
+            await storeTx.commit();
 
             // Update head.
             this._mainChain = chainData;
@@ -429,7 +434,7 @@ class PartialLightChain extends LightChain {
         }
 
         chainData.onMainChain = true;
-
+        chainData.mainChainSuccessor = this._proofHead.head.hash();
         await this._store.putChainData(blockHash, chainData);
 
         this._proofHead = chainData;

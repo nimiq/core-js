@@ -77,7 +77,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         // Check if we know head block.
-        const block = await this._blockchain.getBlock(this._syncTarget);
+        const block = await this._blockchain.getBlock(this._syncTarget, /*includeForks*/ true);
 
         /*
          * Three cases:

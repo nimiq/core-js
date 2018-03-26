@@ -13,19 +13,21 @@ class BaseChain extends IBlockchain {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeForks]
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}
      */
-    async getBlock(hash, includeForks = false) {
-        const chainData = await this._store.getChainData(hash);
+    async getBlock(hash, includeForks = false, includeBody = false) {
+        const chainData = await this._store.getChainData(hash, includeBody);
         return chainData && (chainData.onMainChain || includeForks) ? chainData.head : null;
     }
 
     /**
      * @param {number} height
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}
      */
-    getBlockAt(height) {
-        return this._store.getBlockAt(height) || null;
+    getBlockAt(height, includeBody = false) {
+        return this._store.getBlockAt(height, includeBody) || null;
     }
 
     /**
@@ -33,7 +35,7 @@ class BaseChain extends IBlockchain {
      * @param {boolean} [lower]
      * @returns {Promise.<?Block>}
      */
-    getNearestBlockAt(height, lower=true) {
+    getNearestBlockAt(height, lower = true) {
         return this._store.getNearestBlockAt(height, lower) || null;
     }
 

@@ -3,8 +3,10 @@ class ChainDataStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const store = jdb.createObjectStore('ChainData', new ChainDataStoreCodec());
-        ChainDataStore._createIndexes(store);
+        const chainStore = jdb.createObjectStore('ChainData', new ChainDataStoreCodec());
+        ChainDataStore._createIndexes(chainStore);
+
+        jdb.createObjectStore('Block', new BlockStoreCodec());
     }
 
     /**
@@ -12,87 +14,153 @@ class ChainDataStore {
      * @returns {ChainDataStore}
      */
     static getPersistent(jdb) {
-        return new ChainDataStore(jdb.getObjectStore('ChainData'));
+        const chainStore = jdb.getObjectStore('ChainData');
+        const blockStore = jdb.getObjectStore('Block');
+        return new ChainDataStore(chainStore, blockStore);
     }
 
     /**
      * @returns {ChainDataStore}
      */
     static createVolatile() {
-        const store = JDB.JungleDB.createVolatileObjectStore();
-        ChainDataStore._createIndexes(store);
-        return new ChainDataStore(store);
+        const chainStore = JDB.JungleDB.createVolatileObjectStore();
+        const blockStore = JDB.JungleDB.createVolatileObjectStore();
+        ChainDataStore._createIndexes(chainStore);
+        return new ChainDataStore(chainStore, blockStore);
     }
 
     /**
-     * @param {IObjectStore} store
+     * @param {IObjectStore} chainStore
      * @private
      */
-    static _createIndexes(store) {
-        store.createIndex('height', ['_height']);
+    static _createIndexes(chainStore) {
+        chainStore.createIndex('height', ['_height']);
     }
 
     /**
-     * @param {IObjectStore} store
+     * @param {IObjectStore} chainStore
+     * @param {IObjectStore} blockStore
      */
-    constructor(store) {
+    constructor(chainStore, blockStore) {
         /** @type {IObjectStore} */
-        this._store = store;
+        this._chainStore = chainStore;
+        /** @type {IObjectStore} */
+        this._blockStore = blockStore;
     }
 
     /**
      * @param {Hash} key
-     * @returns {Promise.<ChainData>}
+     * @param {boolean} [includeBody]
+     * @returns {Promise.<?ChainData>}
      */
-    getChainData(key) {
-        return this._store.get(key.toBase64());
+    async getChainData(key, includeBody = false) {
+        /** @type {ChainData} */
+        const chainData = await this._chainStore.get(key.toBase64());
+        if (!chainData || !includeBody) {
+            return chainData;
+        }
+
+        const block = await this._blockStore.get(key.toBase64());
+        if (block && block.isFull()) {
+            chainData.head._body = block.body;
+        }
+
+        return chainData;
     }
 
     /**
      * @param {Hash} key
      * @param {ChainData} chainData
+     * @param {boolean} [includeBody]
      * @returns {Promise.<void>}
      */
-    putChainData(key, chainData) {
-        return this._store.put(key.toBase64(), chainData);
+    putChainData(key, chainData, includeBody = true) {
+        if (this._chainStore instanceof JDB.Transaction) {
+            const promises = [this._chainStore.put(key.toBase64(), chainData)];
+            if (includeBody && chainData.head.isFull()) {
+                promises.push(this._blockStore.put(key.toBase64(), chainData.head));
+            }
+            return Promise.all(promises);
+        }
+
+        if (includeBody && chainData.head.isFull()) {
+            const chainTx = this._chainStore.synchronousTransaction();
+            chainTx.putSync(key.toBase64(), chainData);
+            const blockTx = this._blockStore.synchronousTransaction();
+            blockTx.putSync(key.toBase64(), chainData.head);
+            return JDB.JungleDB.commitCombined(chainTx, blockTx);
+        }
+
+        return this._chainStore.put(key.toBase64(), chainData);
     }
 
     /**
      * @param {Hash} key
-     * @returns {Block}
+     * @param {ChainData} chainData
+     * @param {boolean} [includeBody]
+     * @returns {void}
      */
-    async getBlock(key) {
-        const chainData = await this.getChainData(key);
-        return chainData ? chainData.head : undefined;
+    putChainDataSync(key, chainData, includeBody = true) {
+        Assert.that(this._chainStore instanceof JDB.SynchronousTransaction);
+        this._chainStore.putSync(key.toBase64(), chainData);
+        if (includeBody && chainData.head.isFull()) {
+            this._blockStore.putSync(key.toBase64(), chainData.head);
+        }
+    }
+
+    /**
+     * @param {Hash} key
+     * @param {boolean} [includeBody]
+     * @returns {?Block}
+     */
+    async getBlock(key, includeBody = false) {
+        if (includeBody) {
+            const block = await this._blockStore.get(key.toBase64());
+            if (block) {
+                return block;
+            }
+        }
+
+        const chainData = await this._chainStore.get(key.toBase64());
+        return chainData ? chainData.head : null;
     }
 
     /**
      * @param {number} height
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?ChainData>}
      */
-    async getChainDataAt(height) {
+    async getChainDataAt(height, includeBody = false) {
         /** @type {Array.<ChainData>} */
-        const candidates = await this._store.values(JDB.Query.eq('height', height));
+        const candidates = await this._chainStore.values(JDB.Query.eq('height', height));
         if (!candidates || !candidates.length) {
             return undefined;
         }
 
         for (const chainData of candidates) {
             if (chainData.onMainChain) {
+                if (includeBody) {
+                    // eslint-disable-next-line no-await-in-loop
+                    const block = await this._blockStore.get(chainData.head.hash().toBase64());
+                    if (block) {
+                        chainData._head = block;
+                    }
+                }
                 return chainData;
             }
         }
 
-        return undefined;
+        return null;
     }
 
     /**
      * @param {number} height
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}
      */
-    async getBlockAt(height) {
-        const chainData = await this.getChainDataAt(height);
-        return chainData ? chainData.head : undefined;
+    async getBlockAt(height, includeBody = false) {
+        const chainData = await this.getChainDataAt(height, includeBody);
+        return chainData ? chainData.head : null;
     }
 
     /**
@@ -100,8 +168,8 @@ class ChainDataStore {
      * @param {boolean} [lower]
      * @returns {Promise.<?Block>}
      */
-    async getNearestBlockAt(height, lower=true) {
-        const index = this._store.index('height');
+    async getNearestBlockAt(height, lower = true) {
+        const index = this._chainStore.index('height');
         /** @type {Array.<ChainData>} */
         const candidates = lower ?
             await index.maxValues(JDB.KeyRange.upperBound(height)) :
@@ -116,49 +184,107 @@ class ChainDataStore {
             }
         }
 
-        return undefined;
+        return null;
     }
 
+    // /**
+    //  * @param {number} startHeight
+    //  * @param {number} [count]
+    //  * @param {boolean} [forward]
+    //  * @returns {Promise.<Array.<Block>>}
+    //  */
+    // async getBlocks(startHeight, count = 500, forward = true) {
+    //     if (count <= 0) {
+    //         return [];
+    //     }
+    //     if (!forward) {
+    //         startHeight = startHeight - count;
+    //     }
+    //     /** @type {Array.<ChainData>} */
+    //     let candidates = await this._chainStore.values(JDB.Query.within('height', startHeight, startHeight + count - 1));
+    //     candidates = candidates
+    //         .filter(chainData => chainData.onMainChain)
+    //         .map(chainData => chainData.head);
+    //     const sortNumber = forward ? ((a, b) => a.height - b.height) : ((a, b) => b.height - a.height);
+    //     candidates.sort(sortNumber);
+    //     return candidates;
+    // }
+
     /**
-     * @param {number} startHeight
+     * @param {Hash} startBlockHash
      * @param {number} [count]
      * @param {boolean} [forward]
      * @returns {Promise.<Array.<Block>>}
      */
-    async getBlocks(startHeight, count = 500, forward = true) {
+    getBlocks(startBlockHash, count = 500, forward = true) {
         if (count <= 0) {
-            return [];
+            return Promise.resolve([]);
         }
-        if (!forward) {
-            startHeight = startHeight - count;
+
+        if (forward) {
+            return this.getBlocksForward(startBlockHash, count);
+        } else {
+            return this.getBlocksBackward(startBlockHash, count);
         }
-        /** @type {Array.<ChainData>} */
-        let candidates = await this._store.values(JDB.Query.within('height', startHeight, startHeight + count - 1));
-        candidates = candidates
-            .filter(chainData => chainData.onMainChain)
-            .map(chainData => chainData.head);
-        const sortNumber = forward ? ((a, b) => a.height - b.height) : ((a, b) => b.height - a.height);
-        candidates.sort(sortNumber);
-        return candidates;
     }
 
     /**
-     * @param {number} level
-     * @param {number} [startHeight]
-     * @returns {Promise.<Array.<ChainData>>}
+     * @param {Hash} startBlockHash
+     * @param {number} count
+     * @returns {Promise.<Array.<Block>>}
      */
-    async getSuperChain(level, startHeight = 1) {
-        const chain = await this._store.values(JDB.Query.and(JDB.Query.eq('level', level), JDB.Query.ge('height', startHeight)));
-        return chain
-            .filter(data => data.onMainChain)
-            .sort((a, b) => a.head.height - b.head.height);
+    async getBlocksForward(startBlockHash, count = 500) {
+        /** @type {ChainData} */
+        let chainData = await this._chainStore.get(startBlockHash.toBase64());
+        if (!chainData) {
+            return [];
+        }
+
+        const blocks = [];
+        while (blocks.length < count && chainData.mainChainSuccessor) {
+            chainData = await this._chainStore.get(chainData.mainChainSuccessor.toBase64());
+            if (!chainData) {
+                return blocks;
+            }
+            blocks.push(chainData.head);
+        }
+        return blocks;
     }
 
+    /**
+     * @param {Hash} startBlockHash
+     * @param {number} count
+     * @param {boolean} includeBody
+     * @returns {Promise.<Array.<Block>>}
+     */
+    async getBlocksBackward(startBlockHash, count = 500, includeBody = false) {
+        const getBlock = includeBody
+            ? key => this._blockStore.get(key)
+            : key => this._chainStore.get(key).then(data => data.head);
+
+        /** @type {Block} */
+        let block = await getBlock(startBlockHash.toBase64());
+        if (!block) {
+            return [];
+        }
+
+        const blocks = [];
+        while (blocks.length < count && block.height > 1) {
+            block = await getBlock(block.prevHash.toBase64());
+            if (!block) {
+                return blocks;
+            }
+            blocks.push(block);
+        }
+        return blocks;
+    }
+
+    /**
     /**
      * @returns {Promise.<Hash|undefined>}
      */
     async getHead() {
-        const key = await this._store.get('main');
+        const key = await this._chainStore.get('main');
         return key ? Hash.fromBase64(key) : undefined;
     }
 
@@ -167,7 +293,16 @@ class ChainDataStore {
      * @returns {Promise.<void>}
      */
     setHead(key) {
-        return this._store.put('main', key.toBase64());
+        return this._chainStore.put('main', key.toBase64());
+    }
+
+    /**
+     * @param {Hash} key
+     * @returns {void}
+     */
+    setHeadSync(key) {
+        Assert.that(this._chainStore instanceof JDB.SynchronousTransaction);
+        this._chainStore.putSync('main', key.toBase64());
     }
 
     /**
@@ -175,45 +310,68 @@ class ChainDataStore {
      * @returns {ChainDataStore}
      */
     transaction(enableWatchdog = true) {
-        const tx = this._store.transaction(enableWatchdog);
-        return new ChainDataStore(tx);
+        const chainTx = this._chainStore.transaction(enableWatchdog);
+        const blockTx = this._blockStore.transaction(enableWatchdog);
+        return new ChainDataStore(chainTx, blockTx);
+    }
+
+    /**
+     * @param {boolean} [enableWatchdog]
+     * @returns {ChainDataStore}
+     */
+    synchronousTransaction(enableWatchdog = true) {
+        const chainTx = this._chainStore.synchronousTransaction(enableWatchdog);
+        const blockTx = this._blockStore.synchronousTransaction(enableWatchdog);
+        return new ChainDataStore(chainTx, blockTx);
     }
 
     /**
      * @returns {Promise}
      */
     commit() {
-        return this._store.commit();
+        if (this._chainStore instanceof JDB.Transaction) {
+            return JDB.JungleDB.commitCombined(this._chainStore, this._blockStore);
+        }
+        return Promise.resolve();
     }
 
     /**
      * @returns {Promise}
      */
     abort() {
-        return this._store.abort();
+        return Promise.all([this._chainStore.abort(), this._blockStore.abort()]);
     }
 
     /**
      * @returns {ChainDataStore}
      */
     snapshot() {
-        const snapshot = this._store.snapshot();
-        return new ChainDataStore(snapshot);
+        const chainSnapshot = this._chainStore.snapshot();
+        const blockSnapshot = this._blockStore.snapshot();
+        return new ChainDataStore(chainSnapshot, blockSnapshot);
     }
 
     /**
      * @returns {Promise}
      */
     truncate() {
-        return this._store.truncate();
+        if (this._chainStore instanceof JDB.Transaction) {
+            return Promise.all([this._chainStore.truncate(), this._blockStore.truncate()]);
+        }
+
+        const chainTx = this._chainStore.synchronousTransaction();
+        chainTx.truncateSync();
+        const blockTx = this._blockStore.synchronousTransaction();
+        blockTx.truncateSync();
+        return JDB.JungleDB.commitCombined(chainTx, blockTx);
     }
 
-    /** @type {Transaction} */
-    get tx() {
-        if (this._store instanceof JDB.Transaction) {
-            return this._store;
+    /** @type {Array.<JDB.Transaction>} */
+    get txs() {
+        if (this._chainStore instanceof JDB.Transaction) {
+            return [this._chainStore, this._blockStore];
         }
-        return undefined;
+        return [];
     }
 }
 Class.register(ChainDataStore);
@@ -227,7 +385,7 @@ class ChainDataStoreCodec {
      * @returns {*} Encoded object.
      */
     encode(obj) {
-        return typeof obj === 'string' ? obj : obj.stripDown();
+        return typeof obj === 'string' ? obj : obj.toObj();
     }
 
     /**
@@ -236,7 +394,7 @@ class ChainDataStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        return typeof obj === 'string' ? obj : ChainData.copy(obj);
+        return typeof obj === 'string' ? obj : ChainData.fromObj(obj, key);
     }
 
     /**
@@ -244,5 +402,36 @@ class ChainDataStoreCodec {
      */
     get valueEncoding() {
         return JDB.JungleDB.JSON_ENCODING;
+    }
+}
+
+/**
+ * @implements {ICodec}
+ */
+class BlockStoreCodec {
+    /**
+     * @param {*} obj The object to encode before storing it.
+     * @returns {*} Encoded object.
+     */
+    encode(obj) {
+        return obj.serialize();
+    }
+
+    /**
+     * @param {*} obj The object to decode.
+     * @param {string} key The object's primary key.
+     * @returns {*} Decoded object.
+     */
+    decode(obj, key) {
+        const block = Block.unserialize(new SerialBuffer(obj));
+        block.header._hash = Hash.fromBase64(key);
+        return block;
+    }
+
+    /**
+     * @type {{encode: function(val:*):*, decode: function(val:*):*, buffer: boolean, type: string}|void}
+     */
+    get valueEncoding() {
+        return JDB.JungleDB.BINARY_ENCODING;
     }
 }

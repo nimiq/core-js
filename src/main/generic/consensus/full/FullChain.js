@@ -77,7 +77,7 @@ class FullChain extends BaseChain {
             }
 
             // Load main chain from store.
-            this._mainChain = await this._store.getChainData(this._headHash);
+            this._mainChain = await this._store.getChainData(this._headHash, /*includeBody*/ true);
             Assert.that(!!this._mainChain, 'Failed to load main chain from storage');
 
             // Check that chain/accounts state is consistent.
@@ -86,16 +86,16 @@ class FullChain extends BaseChain {
             }
 
             // Initialize TransactionCache.
-            const blocks = await this.getBlocks(this.head.height, this._transactionCache.missingBlocks - 1, false);
+            const blocks = await this._store.getBlocksBackward(this.headHash, this._transactionCache.missingBlocks - 1, /*includeBody*/ true);
             this._transactionCache.prependBlocks([...blocks.reverse(), this._mainChain.head]);
         } else {
             // Initialize chain & accounts with Genesis block.
             this._mainChain = await ChainData.initial(GenesisConfig.GENESIS_BLOCK);
             this._headHash = GenesisConfig.GENESIS_HASH;
 
-            const tx = this._store.transaction();
-            await tx.putChainData(GenesisConfig.GENESIS_HASH, this._mainChain);
-            await tx.setHead(GenesisConfig.GENESIS_HASH);
+            const tx = this._store.synchronousTransaction();
+            tx.putChainDataSync(GenesisConfig.GENESIS_HASH, this._mainChain);
+            tx.setHeadSync(GenesisConfig.GENESIS_HASH);
             await tx.commit();
 
             await this._accounts.initialize(GenesisConfig.GENESIS_BLOCK, GenesisConfig.GENESIS_ACCOUNTS);
@@ -178,7 +178,7 @@ class FullChain extends BaseChain {
         // Check if the block extends our current main chain.
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
-            if (!(await this._extend(hash, chainData))) {
+            if (!(await this._extend(hash, chainData, prevData))) {
                 this._blockInvalidCount++;
                 return FullChain.ERR_INVALID;
             }
@@ -224,11 +224,12 @@ class FullChain extends BaseChain {
     /**
      * @param {Hash} blockHash
      * @param {ChainData} chainData
+     * @param {ChainData} prevData
      * @returns {Promise.<boolean>}
      * @fires FullChain#head-changed
      * @private
      */
-    async _extend(blockHash, chainData) {
+    async _extend(blockHash, chainData, prevData) {
         const accountsTx = await this._accounts.transaction();
         try {
             await accountsTx.commitBlock(chainData.head, this._transactionCache);
@@ -241,17 +242,19 @@ class FullChain extends BaseChain {
         }
 
         chainData.onMainChain = true;
+        prevData.mainChainSuccessor = blockHash;
 
-        const tx = await this._store.transaction();
-        await tx.putChainData(blockHash, chainData);
-        await tx.setHead(blockHash);
+        const storeTx = await this._store.synchronousTransaction();
+        storeTx.putChainDataSync(blockHash, chainData);
+        storeTx.putChainDataSync(chainData.head.prevHash, prevData, /*includeBody*/ false);
+        storeTx.setHeadSync(blockHash);
 
         if (this._transactionStore) {
             const transactionStoreTx = this._transactionStore.transaction();
             await transactionStoreTx.put(chainData.head);
-            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx, transactionStoreTx.tx);
+            await JDB.JungleDB.commitCombined(...storeTx.txs, accountsTx.tx, transactionStoreTx.tx);
         } else {
-            await JDB.JungleDB.commitCombined(tx.tx, accountsTx.tx);
+            await JDB.JungleDB.commitCombined(...storeTx.txs, accountsTx.tx);
         }
 
         // New block on main chain, so store a new snapshot.
@@ -306,11 +309,14 @@ class FullChain extends BaseChain {
         // Find the common ancestor between our current main chain and the fork chain.
         // Walk up the fork chain until we find a block that is part of the main chain.
         // Store the chain along the way.
+        /** @type {Array.<ChainData>} */
         const forkChain = [];
-        const revertChain = [];
+        /** @type {Array.<Hash>} */
         const forkHashes = [];
 
+        /** @type {ChainData} */
         let curData = chainData;
+        /** @type {Hash} */
         let curHash = blockHash;
         while (!curData.onMainChain) {
             forkChain.push(curData);
@@ -318,11 +324,16 @@ class FullChain extends BaseChain {
 
             curHash = curData.head.prevHash;
             // TODO FIXME This can fail in the light client. It might not have the requested block at all or only the light block.
-            curData = await this._store.getChainData(curHash); // eslint-disable-line no-await-in-loop
+            curData = await this._store.getChainData(curHash, /*includeBody*/ true); // eslint-disable-line no-await-in-loop
             Assert.that(!!curData, 'Corrupted store: Failed to find fork predecessor while rebranching');
         }
 
         Log.v(FullChain, () => `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
+
+        /** @type {ChainData} */
+        const ancestorData = curData;
+        /** @type {Hash} */
+        const ancestorHash = curHash;
 
         // Validate all accountsHashes on the fork. Revert the AccountsTree to the common ancestor state first.
         const accountsTx = await this._accounts.transaction(false);
@@ -330,19 +341,23 @@ class FullChain extends BaseChain {
         // Also update transactions in index.
         const transactionStoreTx = this._transactionStore ? this._transactionStore.transaction() : null;
 
+        /** @type {Array.<ChainData>} */
+        const revertChain = [];
+        /** @type {Hash} */
         let headHash = this._headHash;
-        let head = this._mainChain.head;
-        while (!headHash.equals(curHash)) {
+        /** @type {ChainData} */
+        let headData = this._mainChain;
+        while (!headHash.equals(ancestorHash)) {
             try {
-                // This only works if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
-                await accountsTx.revertBlock(head, transactionCacheTx);
-                transactionCacheTx.revertBlock(head);
+                // This only works in the light client if we revert less than Policy.TRANSACTION_VALIDITY_WINDOW blocks.
+                await accountsTx.revertBlock(headData.head, transactionCacheTx);
+                transactionCacheTx.revertBlock(headData.head);
 
                 // Also update transactions in index.
                 if (this._transactionStore) {
-                    await transactionStoreTx.remove(head);
+                    await transactionStoreTx.remove(headData.head);
                 }
-                revertChain.push(head);
+                revertChain.push(headData);
             } catch (e) {
                 Log.e(FullChain, 'Failed to revert main chain while rebranching', e);
                 accountsTx.abort().catch(Log.w.tag(FullChain));
@@ -352,16 +367,16 @@ class FullChain extends BaseChain {
                 return false;
             }
 
-            headHash = head.prevHash;
-            head = await this._store.getBlock(headHash);
-            Assert.that(!!head, 'Corrupted store: Failed to find main chain predecessor while rebranching');
-            Assert.that(head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
+            headHash = headData.head.prevHash;
+            headData = await this._store.getChainData(headHash, /*includeBody*/ true);
+            Assert.that(!!headData, 'Corrupted store: Failed to find main chain predecessor while rebranching');
+            Assert.that(headData.head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
         }
 
         // Try to fetch missing transactions for the cache.
         // TODO FIXME The light client might not have all necessary blocks.
         const numMissingBlocks = transactionCacheTx.missingBlocks;
-        const blocks = await this.getBlocks(head.height, numMissingBlocks, false);
+        const blocks = await this._store.getBlocksBackward(headHash, numMissingBlocks, /*includeBody*/ true);
         transactionCacheTx.prependBlocks(blocks.reverse());
 
         // Try to apply all fork blocks.
@@ -386,32 +401,34 @@ class FullChain extends BaseChain {
             }
         }
 
-        // Fork looks good. Unset onMainChain flag on the current main chain up to (excluding) the common ancestor.
-        const chainTx = this._store.transaction(false);
-        headHash = this._headHash;
-        let headData = this._mainChain;
-        while (!headHash.equals(curHash)) {
-            headData.onMainChain = false;
-            await chainTx.putChainData(headHash, headData);
-
-            headHash = headData.head.prevHash;
-            headData = await chainTx.getChainData(headHash);
-            Assert.that(!!headData, 'Corrupted store: Failed to find main chain predecessor while rebranching');
+        // Fork looks good.
+        // Unset onMainChain flag / mainChainSuccessor on the current main chain up to (excluding) the common ancestor.
+        /** @type {ChainDataStore} */
+        const chainTx = this._store.synchronousTransaction(false);
+        for (const revertedData of revertChain) {
+            revertedData.onMainChain = false;
+            revertedData.mainChainSuccessor = null;
+            chainTx.putChainDataSync(revertedData.head.hash(), revertedData, /*includeBody*/ false);
         }
 
-        // Set onMainChain flag on the fork.
+        // Update the mainChainSuccessor of the common ancestor block.
+        ancestorData.mainChainSuccessor = forkHashes[forkHashes.length - 1];
+        chainTx.putChainDataSync(ancestorHash, ancestorData, /*includeBody*/ false);
+
+        // Set onMainChain flag / mainChainSuccessor on the fork.
         for (let i = forkChain.length - 1; i >= 0; i--) {
             const forkData = forkChain[i];
             forkData.onMainChain = true;
-            await chainTx.putChainData(forkHashes[i], forkData);
+            forkData.mainChainSuccessor = i > 0 ? forkHashes[i - 1] : null;
+            chainTx.putChainDataSync(forkHashes[i], forkData, /*includeBody*/ false);
         }
 
         // Update head & commit transactions.
-        await chainTx.setHead(blockHash);
+        chainTx.setHeadSync(blockHash);
         if (this._transactionStore) {
-            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx, transactionStoreTx.tx);
+            await JDB.JungleDB.commitCombined(...chainTx.txs, accountsTx.tx, transactionStoreTx.tx);
         } else {
-            await JDB.JungleDB.commitCombined(chainTx.tx, accountsTx.tx);
+            await JDB.JungleDB.commitCombined(...chainTx.txs, accountsTx.tx);
         }
         this._transactionCache = transactionCacheTx;
 
@@ -420,8 +437,8 @@ class FullChain extends BaseChain {
         this._proof = null;
 
         // Fire block-reverted event for each block reverted during rebranch
-        for (let i = 0; i < revertChain.length; i++) {
-            this.fire('block-reverted', revertChain[i]);
+        for (const revertedData of revertChain) {
+            this.fire('block-reverted', revertedData.head);
         }
 
         // Fire head-changed event for each fork block.
@@ -436,13 +453,13 @@ class FullChain extends BaseChain {
 
     /**
      *
-     * @param {number} startHeight
+     * @param {Hash} startBlockHash
      * @param {number} count
      * @param {boolean} forward
      * @returns {Promise.<Array.<Block>>}
      */
-    getBlocks(startHeight, count = 500, forward = true) {
-        return this._store.getBlocks(startHeight, count, forward);
+    getBlocks(startBlockHash, count = 500, forward = true) {
+        return this._store.getBlocks(startBlockHash, count, forward);
     }
 
     /**
@@ -484,7 +501,7 @@ class FullChain extends BaseChain {
      * @returns {Promise.<?TransactionsProof>}
      */
     async getTransactionsProof(blockHash, addresses) {
-        const block = await this.getBlock(blockHash);
+        const block = await this.getBlock(blockHash, /*includeForks*/ false, /*includeBody*/ true);
         if (!block || !block.isFull()) {
             return null;
         }
@@ -565,7 +582,7 @@ class FullChain extends BaseChain {
                 let currentHash = this._headHash;
                 // Save all snapshots up to blockHash (and stop when its predecessor would be next).
                 while (!block.prevHash.equals(currentHash)) {
-                    const currentBlock = await this.getBlock(currentHash);
+                    const currentBlock = await this.getBlock(currentHash, /*includeForks*/ false, /*includeBody*/ true);
 
                     if (!this._snapshots.contains(currentHash)) {
                         snapshot = await this._accounts.snapshot(tx);

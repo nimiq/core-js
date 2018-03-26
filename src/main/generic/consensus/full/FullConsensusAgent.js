@@ -163,12 +163,13 @@ class FullConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeForks]
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}
      * @protected
      * @override
      */
-    _getBlock(hash, includeForks = false) {
-        return this._blockchain.getBlock(hash, includeForks);
+    _getBlock(hash, includeForks = false, includeBody = false) {
+        return this._blockchain.getBlock(hash, includeForks, includeBody);
     }
 
     /**
@@ -372,7 +373,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
         // Collect up to GETBLOCKS_VECTORS_MAX inventory vectors for the blocks starting right
         // after the identified block on the main chain.
-        const blocks = await this._blockchain.getBlocks(startBlock.height + 1,
+        const blocks = await this._blockchain.getBlocks(startBlock.hash(),
             Math.min(msg.maxInvSize, FullConsensusAgent.GETBLOCKS_VECTORS_MAX),
             msg.direction === GetBlocksMessage.Direction.FORWARD);
         const vectors = [];

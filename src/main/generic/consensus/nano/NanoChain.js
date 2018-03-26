@@ -294,7 +294,12 @@ class NanoChain extends BaseChain {
         if (block.prevHash.equals(this.headHash)) {
             // Append new block to the main chain.
             chainData.onMainChain = true;
-            await this._store.putChainData(blockHash, chainData);
+            prevData.mainChainSuccessor = blockHash;
+
+            const storeTx = this._store.synchronousTransaction();
+            storeTx.putChainDataSync(blockHash, chainData);
+            storeTx.putChainDataSync(block.prevHash, prevData);
+            await storeTx.commit();
 
             // Update head.
             this._mainChain = chainData;
@@ -357,29 +362,57 @@ class NanoChain extends BaseChain {
 
         Log.v(NanoChain, () => `Found common ancestor ${curHash.toBase64()} ${forkChain.length} blocks up`);
 
-        // Unset onMainChain flag on the current main chain up to (excluding) the common ancestor.
+        /** @type {ChainData} */
+        const ancestorData = curData;
+        /** @type {Hash} */
+        const ancestorHash = curHash;
+
+        /** @type {ChainDataStore} */
+        const chainTx = this._store.synchronousTransaction(false);
+        /** @type {Array.<ChainData>} */
+        const revertChain = [];
+        /** @type {Hash} */
         let headHash = this._headHash;
+        /** @type {ChainData} */
         let headData = this._mainChain;
-        while (!headHash.equals(curHash)) {
+
+        // Unset onMainChain flag / mainChainSuccessor on the current main chain up to (excluding) the common ancestor.
+        while (!headHash.equals(ancestorHash)) {
             headData.onMainChain = false;
-            await this._store.putChainData(headHash, headData);
+            headData.mainChainSuccessor = null;
+            chainTx.putChainDataSync(headHash, headData);
+            revertChain.push(headData);
 
             headHash = headData.head.prevHash;
             headData = await this._store.getChainData(headHash);
             Assert.that(!!headData, 'Failed to find main chain predecessor while rebranching');
         }
 
+        // Update the mainChainSuccessor of the common ancestor block.
+        ancestorData.mainChainSuccessor = forkHashes[forkHashes.length - 1];
+        chainTx.putChainDataSync(ancestorHash, ancestorData);
+
+        // Set onMainChain flag / mainChainSuccessor on the fork.
+        for (let i = forkChain.length - 1; i >= 0; i--) {
+            const forkData = forkChain[i];
+            forkData.onMainChain = true;
+            forkData.mainChainSuccessor = i > 0 ? forkHashes[i - 1] : null;
+            chainTx.putChainDataSync(forkHashes[i], forkData);
+        }
+
+        await chainTx.commit();
+
         // Reset chain proof. We don't recompute the chain proof here, but do it lazily the next time it is needed.
         // TODO modify chain proof directly, don't recompute.
         this._proof = null;
 
-        // Set onMainChain flag on the fork.
-        for (let i = forkChain.length - 1; i >= 0; i--) {
-            const forkData = forkChain[i];
-            forkData.onMainChain = true;
-            await this._store.putChainData(forkHashes[i], forkData);
+        // Fire block-reverted event for each block reverted during rebranch
+        for (const revertedData of revertChain) {
+            this.fire('block-reverted', revertedData.head);
+        }
 
-            // Fire head-changed event for each fork block.
+        // Fire head-changed event for each fork block.
+        for (let i = forkChain.length - 1; i >= 0; i--) {
             this._mainChain = forkChain[i];
             this._headHash = forkHashes[i];
             this.fire('head-changed', this.head, /*rebranching*/ i > 0);

@@ -230,7 +230,7 @@ class JsonRpcServer {
     }
 
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         if (block && block.transactions.length > txIndex) {
             return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
@@ -252,7 +252,7 @@ class JsonRpcServer {
     async _getTransactionByHash(hash) {
         const entry = await this._blockchain.getTransactionInfoByHash(hash);
         if (entry) {
-            const block = await this._blockchain.getBlock(entry.blockHash);
+            const block = await this._blockchain.getBlock(entry.blockHash, /*includeForks*/ false, /*includeBody*/ true);
             return this._transactionToObj(block.transactions[entry.index], block, entry.index);
         }
         const mempoolTx = this._mempool.getTransaction(hash);
@@ -343,7 +343,7 @@ class JsonRpcServer {
     }
 
     async getBlockTransactionCountByHash(blockHash) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         return block ? block.transactionCount : null;
     }
 
@@ -353,7 +353,7 @@ class JsonRpcServer {
     }
 
     async getBlockByHash(blockHash, includeTransactions) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash));
+        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         return block ? JsonRpcServer._blockToObj(block, includeTransactions) : null;
     }
 
@@ -373,7 +373,7 @@ class JsonRpcServer {
             }
         }
         if (number === 0) number = 1;
-        return this._blockchain.getBlockAt(number);
+        return this._blockchain.getBlockAt(number, /*includeBody*/ true);
     }
 
     /**

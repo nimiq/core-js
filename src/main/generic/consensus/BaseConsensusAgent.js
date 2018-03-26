@@ -280,11 +280,12 @@ class BaseConsensusAgent extends Observable {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeForks]
+     * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}
      * @protected
      * @abstract
      */
-    _getBlock(hash, includeForks = false) {
+    _getBlock(hash, includeForks = false, includeBody = false) {
         // MUST be implemented by subclasses.
         throw new Error('not implemented');
     }
@@ -595,7 +596,7 @@ class BaseConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
-                    const block = await this._getBlock(vector.hash); // eslint-disable-line no-await-in-loop
+                    const block = await this._getBlock(vector.hash, /*includeForks*/ false, /*includeBody*/ true); // eslint-disable-line no-await-in-loop
                     if (block && block.isFull()) {
                         // We have found a requested block, send it back to the sender.
                         this._peer.channel.block(block);

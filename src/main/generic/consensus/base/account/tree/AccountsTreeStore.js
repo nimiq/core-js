@@ -160,7 +160,7 @@ class AccountsTreeStoreCodec {
      * @returns {*} Encoded object.
      */
     encode(obj) {
-        return obj.stripDown();
+        return obj.serialize();
     }
 
     /**
@@ -169,13 +169,13 @@ class AccountsTreeStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        return AccountsTreeNode.copy(obj);
+        return AccountsTreeNode.unserialize(new SerialBuffer(obj));
     }
 
     /**
      * @type {{encode: function(val:*):*, decode: function(val:*):*, buffer: boolean, type: string}|void}
      */
     get valueEncoding() {
-        return JDB.JungleDB.JSON_ENCODING;
+        return JDB.JungleDB.BINARY_ENCODING;
     }
 }

@@ -22,15 +22,6 @@ class AccountsTreeNode {
     }
 
     /**
-     * @param {AccountsTreeNode} o
-     * @returns {AccountsTreeNode}
-     */
-    static copy(o) {
-        if (!o) return o;
-        return AccountsTreeNode.unserialize(new SerialBuffer(o));
-    }
-
-    /**
      * @param type
      * @param {string} prefix
      * @param {Account|Array.<string>} arg
@@ -68,7 +59,6 @@ class AccountsTreeNode {
     static isBranchType(type) {
         return type === AccountsTreeNode.BRANCH;
     }
-
 
     /**
      * @param {SerialBuffer} buf
@@ -137,13 +127,6 @@ class AccountsTreeNode {
         return /*type*/ 1
             + SerialBuffer.varLengthStringSize(this._prefix)
             + payloadSize;
-    }
-
-    /**
-     * @returns {SerialBuffer}
-     */
-    stripDown() {
-        return this.serialize();
     }
 
     /**
