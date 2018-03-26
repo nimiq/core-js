@@ -460,8 +460,18 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _onMempool(msg) {
         // Query mempool for transactions
-        const allTransactions = this._mempool.getTransactions();
-        const transactions = new LimitIterable(allTransactions, FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+        let transactions = [];
+        switch (this._remoteSubscription.type) {
+            case Subscription.Type.ADDRESSES:
+                transactions = this._mempool.getTransactionsByAddresses(this._remoteSubscription.addresses, FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+                break;
+            case Subscription.Type.MIN_FEE:
+                transactions = new LimitIterable(this._mempool.transactionGenerator(/*maxSize*/ undefined, this._remoteSubscription.minFeePerByte), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+                break;
+            case Subscription.Type.ANY:
+                transactions = new LimitIterable(this._mempool.transactionGenerator(), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+                break;
+        }
 
         // Send an InvVector for each transaction in the mempool.
         // Split into multiple Inv messages if the mempool is large.

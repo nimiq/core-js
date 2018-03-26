@@ -16,6 +16,14 @@ class NanoConsensus extends BaseConsensus {
     }
 
     /**
+     * @param {Array.<Address>} addresses
+     */
+    subscribeAccounts(addresses) {
+        this.subscribe(Subscription.fromAddresses(addresses));
+        this._mempool.evictExceptAddresses(addresses);
+    }
+
+    /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
      * @override

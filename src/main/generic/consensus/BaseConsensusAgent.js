@@ -429,12 +429,11 @@ class BaseConsensusAgent extends Observable {
         this._objectsProcessing.add(vector);
 
         // Check whether we subscribed for this block.
-        if (!this._localSubscription.matchesBlock(msg.block)
-            && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
+        if (this._localSubscription.matchesBlock(msg.block)) {
+            await this._processBlock(hash, msg.block);
+        } else if (this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
             this._peer.channel.close(CloseType.RECEIVED_BLOCK_NOT_MATCHING_OUR_SUBSCRIPTION, 'received block not matching our subscription');
         }
-
-        await this._processBlock(hash, msg.block);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);
@@ -507,12 +506,11 @@ class BaseConsensusAgent extends Observable {
         this._objectsProcessing.add(vector);
 
         // Check whether we subscribed for this transaction.
-        if (!this._localSubscription.matchesTransaction(msg.transaction)
-            && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
+        if (this._localSubscription.matchesTransaction(msg.transaction)) {
+            await this._processTransaction(hash, msg.transaction);
+        } else if (this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
             this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
         }
-
-        await this._processTransaction(hash, msg.transaction);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);

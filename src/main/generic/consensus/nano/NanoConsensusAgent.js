@@ -58,6 +58,13 @@ class NanoConsensusAgent extends BaseConsensusAgent {
     _syncFinished() {
         this._syncing = false;
         this._synced = true;
+
+        // Request the peer's mempool.
+        // XXX Use a random delay here to prevent requests to multiple peers at once.
+        const delay = FullConsensusAgent.MEMPOOL_DELAY_MIN
+            + Math.random() * (FullConsensusAgent.MEMPOOL_DELAY_MAX - FullConsensusAgent.MEMPOOL_DELAY_MIN);
+        setTimeout(() => this._peer.channel.mempool(), delay);
+
         this.fire('sync');
     }
 
@@ -366,4 +373,14 @@ NanoConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
+/**
+ * Minimum time {ms} to wait before triggering the initial mempool request.
+ * @type {number}
+ */
+NanoConsensusAgent.MEMPOOL_DELAY_MIN = 1000 * 2; // 2 seconds
+/**
+ * Maximum time {ms} to wait before triggering the initial mempool request.
+ * @type {number}
+ */
+NanoConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 20; // 20 seconds
 Class.register(NanoConsensusAgent);

@@ -177,19 +177,25 @@ class Mempool extends Observable {
      * @param {number} [minFeePerByte]
      * @returns {Array.<Transaction>}
      */
-    getTransactions(maxSize = Infinity, minFeePerByte = 0) {
-        const transactions = [];
+    *transactionGenerator(maxSize = Infinity, minFeePerByte = 0) {
         let size = 0;
         for (const /** @type {Transaction} */ tx of this._transactionsByFeePerByte) {
             const txSize = tx.serializedSize;
             if (size + txSize >= maxSize) continue;
             if (tx.feePerByte < minFeePerByte) break;
 
-            transactions.push(tx);
+            yield tx;
             size += txSize;
         }
+    }
 
-        return transactions;
+    /**
+     * @param {number} [maxSize]
+     * @param {number} [minFeePerByte]
+     * @returns {Array.<Transaction>}
+     */
+    getTransactions(maxSize = Infinity, minFeePerByte = 0) {
+        return Array.from(this.transactionGenerator(maxSize, minFeePerByte));
     }
 
     /**
@@ -234,6 +240,62 @@ class Mempool extends Observable {
     getTransactionsByRecipient(address) {
         const set = this._transactionSetByRecipient.get(address);
         return set ? set.values() : [];
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     * @param {number} [maxTransactions]
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsByAddresses(addresses, maxTransactions = Infinity) {
+        const transactions = [];
+        for (const address of addresses) {
+            // Fetch transactions by sender first
+            /** @type {MempoolTransactionSet} */
+            const bySender = this.getTransactionsBySender(address);
+            for (const tx of bySender.transactions) {
+                if (transactions.length >= maxTransactions) return transactions;
+                transactions.push(tx);
+            }
+
+            // Fetch transactions by recipient second
+            /** @type {HashSet.<Transaction>} */
+            const byRecipient = this.getTransactionsByRecipient(address);
+            for (const tx of byRecipient.values()) {
+                if (transactions.length >= maxTransactions) return transactions;
+                transactions.push(tx);
+            }
+        }
+        return transactions;
+    }
+
+    /**
+     * @param {number} minFeePerByte
+     */
+    evictBelowMinFeePerByte(minFeePerByte) {
+        /** @type {Transaction} */
+        let transaction = this._transactionsByFeePerByte.peekLast();
+        while (transaction.feePerByte < minFeePerByte) {
+            this._transactionsByFeePerByte.pop();
+
+            this._transactionsByHash.remove(transaction.hash());
+            /** @type {MempoolTransactionSet} */
+            const bySender = this._transactionSetBySender.get(transaction.sender);
+            if (bySender && bySender.length === 1) {
+                this._transactionSetBySender.remove(transaction.sender);
+            } else {
+                bySender.remove(transaction.hash());
+            }
+            /** @type {HashSet} */
+            const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
+            if (byRecipient && byRecipient.length === 1) {
+                this._transactionSetByRecipient.remove(transaction.recipient);
+            } else {
+                byRecipient.remove(transaction.hash());
+            }
+
+            transaction = this._transactionsByFeePerByte.peekLast();
+        }
     }
 
     /**
@@ -317,7 +379,7 @@ class Mempool extends Observable {
 
 Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
 Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10; // max number of transactions considered free per sender
-Mempool.SIZE_MAX = 10000; // transactions
+Mempool.SIZE_MAX = 100000; // transactions
 
 /** @enum {number} */
 Mempool.ReturnCode = {

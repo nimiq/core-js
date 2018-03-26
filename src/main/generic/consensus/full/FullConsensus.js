@@ -13,6 +13,14 @@ class FullConsensus extends BaseConsensus {
     }
 
     /**
+     * @param {number} minFeePerByte
+     */
+    subscribeMinFeePerByte(minFeePerByte) {
+        this.subscribe(Subscription.fromMinFeePerByte(minFeePerByte));
+        this.mempool.evictBelowMinFeePerByte(minFeePerByte);
+    }
+
+    /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
      * @override

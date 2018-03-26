@@ -40,20 +40,6 @@ class BaseConsensus extends Observable {
     }
 
     /**
-     * @param {Array.<Address>} addresses
-     */
-    subscribeAccounts(addresses) {
-        this.subscribe(Subscription.fromAddresses(addresses));
-    }
-
-    /**
-     * @param {number} minFeePerByte
-     */
-    subscribeMinFeePerByte(minFeePerByte) {
-        this.subscribe(Subscription.fromMinFeePerByte(minFeePerByte));
-    }
-
-    /**
      * @param {Subscription} subscription
      */
     subscribe(subscription) {

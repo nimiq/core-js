@@ -85,6 +85,27 @@ class NanoMempool extends Observable {
     }
 
     /**
+     * @param {Array.<Address>} addresses
+     */
+    evictExceptAddresses(addresses) {
+        const addressSet = new HashSet();
+        addressSet.addAll(addresses);
+        for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
+            if (!addressSet.contains(tx.sender) && !addressSet.contains(tx.recipient)) {
+                this._transactionsByHash.remove(tx.hash());
+
+                /** @type {MempoolTransactionSet} */
+                const set = this._transactionSetByAddress.get(tx.sender);
+                set.remove(tx);
+
+                if (set.length === 0) {
+                    this._transactionSetByAddress.remove(tx.sender);
+                }
+            }
+        }
+    }
+
+    /**
      * @param {BlockHeader} blockHeader
      * @param {Array.<Transaction>} transactions
      * @private

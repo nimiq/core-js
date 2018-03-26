@@ -351,4 +351,36 @@ describe('Mempool', () => {
             Mempool.SIZE_MAX = oldMaxSize;
         })().then(done, done.fail);
     });
+
+    it('can evict by minFeePerByte', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
+            const mempool = new Mempool(blockchain, accounts);
+
+            /** @type {Array.<Wallet>} */
+            const wallets = [];
+            for (let i = 0; i < 20; i++) {
+                const wallet = await Wallet.generate();
+                await accounts._tree.put(wallet.address, new BasicAccount((i + 1) * 200 + 1));
+                wallets.push(wallet);
+            }
+
+            const feesPerByte = [];
+            for (let i = 0; i < 20; i++) {
+                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (20)].address, 1, (i + 1) * 200, 1); // eslint-disable-line no-await-in-loop
+                feesPerByte.push(transaction.feePerByte);
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+            }
+
+            let transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(20);
+
+            mempool.evictBelowMinFeePerByte(feesPerByte[10]);
+
+            transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(10);
+        })().then(done, done.fail);
+    });
 });

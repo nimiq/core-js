@@ -66,6 +66,14 @@ class SortedList {
         return this._list.pop();
     }
 
+    peekFirst() {
+        return this._list[0];
+    }
+
+    peekLast() {
+        return this._list[this._list.length - 1];
+    }
+
     remove(value) {
         const index = this.indexOf(value);
         if (index > -1) {
