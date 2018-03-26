@@ -338,7 +338,7 @@ describe('Mempool', () => {
             }
 
             for (let i = 0; i < Mempool.SIZE_MAX + 1; i++) {
-                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (Mempool.SIZE_MAX + 1)].address, 1, (i + 1) * 200, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (Mempool.SIZE_MAX + 1)].address, 1, (i + 1) * 200, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
             }
@@ -368,7 +368,7 @@ describe('Mempool', () => {
 
             const feesPerByte = [];
             for (let i = 0; i < 20; i++) {
-                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (20)].address, 1, (i + 1) * 200, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (20)].address, 1, (i + 1) * 200, 1);
                 feesPerByte.push(transaction.feePerByte);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);

@@ -204,4 +204,34 @@ describe('NanoMempool', () => {
             });
         })().then(done, done.fail);
     });
+
+    it('can evict transactions by addresses', (done) => {
+        (async function () {
+            const mempool = new NanoMempool({height: 1});
+
+            /** @type {Array.<Wallet>} */
+            const wallets = [];
+            /** @type {Array.<Address>} */
+            const addresses = [];
+            for (let i = 0; i < 20; i++) {
+                const wallet = await Wallet.generate();
+                wallets.push(wallet);
+                addresses.push(wallet.address);
+            }
+
+            for (let i = 0; i < 20; i++) {
+                const transaction = wallets[i].createTransaction(wallets[(i + 1) % 20].address, 1, (i + 1) * 200, 1);
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(true);
+            }
+
+            let transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(20);
+
+            mempool.evictExceptAddresses(addresses.slice(0, 10));
+
+            transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(11);
+        })().then(done, done.fail);
+    });
 });
