@@ -264,7 +264,11 @@ async function displayTransaction(transaction, hashOrNumber, index) {
     }
 }
 
-function displayPeerState(peerState) {
+function displayPeerState(peerState, desc) {
+    if (!peerState) {
+        console.log(chalk`Peer {bold ${desc}} not found.`);
+        return;
+    }
     console.log(chalk`Peer {bold ${peerState.id}}:`);
     console.log(`Address         | ${peerState.address}`);
     console.log(`Failed attempts | ${peerState.failedAttempts}`);
@@ -549,9 +553,8 @@ if (!args || args.length === 0) args = ['default'];
                 return;
             }
             const peerState = await jsonRpcFetch('peerState', args[1], args.length > 2 ? args[2] : undefined);
-            if (!peerState) console.log('');
-            await displayInfoHeader(peerState.address.length + 20);
-            displayPeerState(peerState);
+            await displayInfoHeader((peerState ? peerState.address.length : 0) + 20);
+            displayPeerState(peerState, args[1]);
             return;
         }
         case 'peer.json': {

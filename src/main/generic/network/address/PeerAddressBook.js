@@ -246,10 +246,10 @@ class PeerAddressBook extends Observable {
             // Add new peerAddressState.
             peerAddressState = new PeerAddressState(peerAddress);
             this._store.add(peerAddressState);
-            //if (peerAddress.protocol === Protocol.RTC) {
-            // Index by peerId.
-            this._peerIds.put(peerAddress.peerId, peerAddressState);
-            //}
+            if (peerAddress.peerId) {
+                // Index by peerId.
+                this._peerIds.put(peerAddress.peerId, peerAddressState);
+            }
         }
 
         // Add route.
@@ -278,11 +278,11 @@ class PeerAddressBook extends Observable {
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
 
-            if (peerAddress.protocol === Protocol.RTC) {
-                this._peerIds.put(peerAddress.peerId, peerAddressState);
-            }
-
             this._store.add(peerAddressState);
+        }
+
+        if (peerAddress.peerId) {
+            this._peerIds.put(peerAddress.peerId, peerAddressState);
         }
 
         peerAddressState.state = PeerAddressState.ESTABLISHED;
@@ -425,7 +425,7 @@ class PeerAddressBook extends Observable {
         }
 
         // Delete from peerId index.
-        if (peerAddress.protocol === Protocol.RTC) {
+        if (peerAddress.peerId) {
             this._peerIds.remove(peerAddress.peerId);
         }
 

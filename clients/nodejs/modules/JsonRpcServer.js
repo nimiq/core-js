@@ -137,12 +137,17 @@ class JsonRpcServer {
      * @param {string} peer
      */
     peerState(peer, set) {
-        const last = peer.lastIndexOf('/');
-        if (last > 0) {
-            peer = peer.substring(last + 1);
+        const split = peer.split('/');
+        let peerAddress;
+        if (split.length === 1 || (split.length === 4 && split[3].length > 0)) {
+            const peerId = Nimiq.PeerId.fromHex(split[split.length - 1]);
+            peerAddress = this._network.addresses.getByPeerId(peerId);
+        } else if (split[0] === 'wss:' && split.length >= 3) {
+            const colons = split[2].split(':', 2);
+            if (colons.length === 2) {
+                peerAddress = this._network.addresses.get(Nimiq.WsPeerAddress.seed(colons[0], parseInt(colons[1])));
+            }
         }
-        const peerId = Nimiq.PeerId.fromHex(peer);
-        const peerAddress = this._network.addresses.getByPeerId(peerId);
         const addressState = peerAddress ? this._network.addresses.getState(peerAddress) : null;
         const connection = peerAddress ? this._network.connections.getConnectionByPeerAddress(peerAddress) : null;
         if (typeof set === 'string') {
@@ -411,10 +416,12 @@ class JsonRpcServer {
      * @private
      */
     _peerAddressStateToPeerObj(peerAddressState, connection) {
+        if (!peerAddressState) return null;
         if (!connection) connection = this._network.connections.getConnectionByPeerAddress(peerAddressState.peerAddress);
+        const peerAddress = connection && connection.peer && connection.peer.peerAddress ? connection.peer.peerAddress : peerAddressState.peerAddress;
         return {
-            id: peerAddressState.peerAddress.peerId.toHex(),
-            address: peerAddressState.peerAddress.toString(),
+            id: peerAddress.peerId ? peerAddress.peerId.toHex() : null,
+            address: peerAddress.toString(),
             failedAttempts: peerAddressState.failedAttempts,
             addressState: peerAddressState.state,
             connectionState: connection ? connection.state : undefined,

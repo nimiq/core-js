@@ -85,6 +85,13 @@ for(const key in config.constantOverrides) {
     Nimiq.ConstantHelper.instance.set(key, config.constantOverrides[key]);
 }
 
+for(const seedPeer of config.seedPeers) {
+    if (!seedPeer.host || !seedPeer.port) {
+        console.error('Seed peers must have host and port attributes set');
+        process.exit(1);
+    }
+}
+
 const TAG = 'Node';
 const $ = {};
 
@@ -95,6 +102,10 @@ const $ = {};
         + `, metrics=${config.metricsServer.enabled}${config.metricsServer.enabled ? `@${config.metricsServer.port}` : ''})`);
 
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
+
+    for(const seedPeer of config.seedPeers) {
+        Nimiq.GenesisConfig.SEED_PEERS.push(Nimiq.WsPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey));
+    }
 
     const networkConfig = config.dumb
         ? new Nimiq.DumbNetworkConfig()

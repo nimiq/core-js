@@ -20,6 +20,7 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
  * @property {{level: string, tags: object}} log
+ * @property {Array.<{host: string, port: number, publicKey: string}>} seedPeers
  * @property {object} constantOverrides
  */
 
@@ -60,6 +61,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         level: 'info',
         tags: {}
     },
+    seedPeers: [],
     constantOverrides: {}
 };
 
@@ -111,6 +113,15 @@ const CONFIG_TYPES = {
             tags: 'object'
         }
     },
+    seedPeers: {
+        type: 'array', inner: {
+            type: 'object', sub: {
+                host: 'string',
+                port: 'number',
+                publicKey: 'string'
+            }
+        }
+    },
     constantOverrides: 'object'
 };
 
@@ -146,9 +157,9 @@ function validateItemType(config, key, type, error = true) {
                 if (error) Log.w(TAG, `Configuration option '${key}' should be an array.`);
                 valid = false;
             } else if (type.inner) {
-                for (const subkey in config[key]) {
-                    if (!validateItemType(config[key], subkey, type.inner, false)) {
-                        if (error) Log.w(TAG, `Element '${subkey}' of configuration option '${key}' is invalid.`);
+                for (let i = 0; i < config[key].length; i++) {
+                    if (!validateItemType(config[key], i, type.inner, false)) {
+                        if (error) Log.w(TAG, `Element ${i} of configuration option '${key}' is invalid.`);
                         valid = false;
                     }
                 }
@@ -160,7 +171,7 @@ function validateItemType(config, key, type, error = true) {
                 valid = false;
             }
         }
-        if (type.type === 'object' && typeof type.sub === 'object') {
+        if (typeof config[key] === 'object' && type.type === 'object' && typeof type.sub === 'object') {
             if (!validateObjectType(config[key], type.sub, error)) {
                 valid = false;
             }
