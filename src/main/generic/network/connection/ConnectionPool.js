@@ -51,6 +51,13 @@ class ConnectionPool extends Observable {
          */
         this._connectionsByNetAddress = new HashMap();
 
+        /**
+         * HashMap from subnet addresses to connections.
+         * @type {HashMap.<NetAddress, Array<PeerConnection>>}
+         * @private
+         */
+        this._connectionsBySubnet = new HashMap();
+
         // Total bytes sent/received on past connections.
         /** @type {number} */
         this._bytesSent = 0;
@@ -131,7 +138,15 @@ class ConnectionPool extends Observable {
      * @returns {Array<PeerConnection>}
      */
     getConnectionsByNetAddress(netAddress) {
-        return this._connectionsByNetAddress.get(this._getSubnetAddress(netAddress)) || [];
+        return this._connectionsByNetAddress.get(netAddress) || [];
+    }
+
+    /**
+     * @param {NetAddress} netAddress
+     * @returns {Array<PeerConnection>}
+     */
+    getConnectionsBySubnet(netAddress) {
+        return this._connectionsBySubnet.get(this._getSubnetAddress(netAddress)) || [];
     }
 
     /**
@@ -180,11 +195,17 @@ class ConnectionPool extends Observable {
             return;
         }
 
-        const subnetAddress = this._getSubnetAddress(netAddress);
-        if (this._connectionsByNetAddress.contains(subnetAddress)) {
-            this._connectionsByNetAddress.get(subnetAddress).push(peerConnection);
+        if (this._connectionsByNetAddress.contains(netAddress)) {
+            this._connectionsByNetAddress.get(netAddress).push(peerConnection);
         } else {
-            this._connectionsByNetAddress.put(subnetAddress, [peerConnection]);
+            this._connectionsByNetAddress.put(netAddress, [peerConnection]);
+        }
+
+        const subnetAddress = this._getSubnetAddress(netAddress);
+        if (this._connectionsBySubnet.contains(subnetAddress)) {
+            this._connectionsBySubnet.get(subnetAddress).push(peerConnection);
+        } else {
+            this._connectionsBySubnet.put(subnetAddress, [peerConnection]);
         }
     }
 
@@ -199,9 +220,8 @@ class ConnectionPool extends Observable {
             return;
         }
 
-        const subnetAddress = this._getSubnetAddress(netAddress);
-        if (this._connectionsByNetAddress.contains(subnetAddress)) {
-            const peerConnections = this._connectionsByNetAddress.get(subnetAddress);
+        if (this._connectionsByNetAddress.contains(netAddress)) {
+            const peerConnections = this._connectionsByNetAddress.get(netAddress);
 
             const index = peerConnections.indexOf(peerConnection);
             if (index >= 0) {
@@ -209,7 +229,21 @@ class ConnectionPool extends Observable {
             }
 
             if (peerConnections.length === 0) {
-                this._connectionsByNetAddress.remove(subnetAddress);
+                this._connectionsByNetAddress.remove(netAddress);
+            }
+        }
+
+        const subnetAddress = this._getSubnetAddress(netAddress);
+        if (this._connectionsBySubnet.contains(subnetAddress)) {
+            const peerConnections = this._connectionsBySubnet.get(subnetAddress);
+
+            const index = peerConnections.indexOf(peerConnection);
+            if (index >= 0) {
+                peerConnections.splice(index, 1);
+            }
+
+            if (peerConnections.length === 0) {
+                this._connectionsBySubnet.remove(subnetAddress);
             }
         }
     }
@@ -241,7 +275,12 @@ class ConnectionPool extends Observable {
 
         // Forbid connection if we have too many connections to the peer's IP address.
         if (peerAddress.netAddress && peerAddress.netAddress.reliable) {
-            if (this.getConnectionsByNetAddress(peerAddress.netAddress).length > Network.PEER_COUNT_PER_SUBNET_MAX) {
+            if (this.getConnectionsByNetAddress(peerAddress.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
+                Log.e(ConnectionPool, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                return false;
+            }
+
+            if (this.getConnectionsBySubnet(peerAddress.netAddress).length >= Network.PEER_COUNT_PER_SUBNET_MAX) {
                 Log.e(ConnectionPool, `connection limit per ip (${Network.PEER_COUNT_PER_SUBNET_MAX}) reached`);
                 return false;
             }
@@ -303,7 +342,12 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo() && conn.netAddress.reliable) {
-            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_SUBNET_MAX) {
+            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
+                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                return false;
+            }
+
+            if (this.getConnectionsBySubnet(conn.netAddress).length >= Network.PEER_COUNT_PER_SUBNET_MAX) {
                 conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_SUBNET_MAX}) reached`);
                 return false;
             }
@@ -402,7 +446,13 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many connections to the peer's IP address.
         if (peer.netAddress && !peer.netAddress.isPseudo() && peer.netAddress.reliable) {
-            if (this.getConnectionsByNetAddress(peer.netAddress).length > Network.PEER_COUNT_PER_SUBNET_MAX) {
+            if (this.getConnectionsByNetAddress(peer.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
+                peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
+                    `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached (post version)`);
+                return false;
+            }
+
+            if (this.getConnectionsBySubnet(peer.netAddress).length >= Network.PEER_COUNT_PER_SUBNET_MAX) {
                 peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_PER_IP,
                     `connection limit per ip (${Network.PEER_COUNT_PER_SUBNET_MAX}) reached (post version)`);
                 return false;

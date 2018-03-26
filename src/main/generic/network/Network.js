@@ -386,7 +386,12 @@ Network.PEER_COUNT_MAX = PlatformUtils.isBrowser() ? 15 : 50000;
  * @type {number}
  * @constant
  */
-Network.PEER_COUNT_PER_SUBNET_MAX = PlatformUtils.isBrowser() ? 1 : 25;
+Network.PEER_COUNT_PER_SUBNET_MAX = PlatformUtils.isBrowser() ? 2 : 50;
+/**
+ * @type {number}
+ * @constant
+ */
+Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 25;
 /**
  * @type {number}
  * @constant
