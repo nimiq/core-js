@@ -11,8 +11,8 @@ class NanoConsensus extends BaseConsensus {
         /** @type {NanoMempool} */
         this._mempool = mempool;
 
-        /** @type {Array.<Address>} */
-        this._addresses = [];
+        /** @type {Subscription} */
+        this._subscription = Subscription.BLOCKS_ONLY;
     }
 
     /**
@@ -21,7 +21,7 @@ class NanoConsensus extends BaseConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new NanoConsensusAgent(this._blockchain, this._mempool, this._network.time, peer);
+        return new NanoConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._subscription);
     }
 
     /**
@@ -33,9 +33,6 @@ class NanoConsensus extends BaseConsensus {
 
         // Forward sync events.
         this.bubble(agent, 'sync-chain-proof', 'verify-chain-proof');
-
-        // Subscribe to transaction announcements for our accounts.
-        agent.subscribeAccounts(this._addresses);
 
         return agent;
     }
@@ -49,7 +46,7 @@ class NanoConsensus extends BaseConsensus {
 
         // Update mempool.
         try {
-            const includedTransactions = await this._requestTransactionsProof(this._addresses, head);
+            const includedTransactions = await this._requestTransactionsProof(this._subscription.addresses, head);
             this._mempool.changeHead(head, includedTransactions);
         } catch (e) {
             Log.e(NanoConsensus, `Failed to retrieve transaction proof to update mempool: ${e.message || e}`);
@@ -101,16 +98,6 @@ class NanoConsensus extends BaseConsensus {
 
         // No peer supplied the requested account, fail.
         throw new Error(`Failed to retrieve accounts ${addresses}`);
-    }
-
-    /**
-     * @param {Array.<Address>} addresses
-     */
-    subscribeAccounts(addresses) {
-        this._addresses = addresses;
-        for (const /** @type {NanoConsensusAgent} */ agent of this._agents.values()) {
-            agent.subscribeAccounts(this._addresses);
-        }
     }
 
     /**

@@ -4,9 +4,10 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {NanoMempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer) {
-        super(time, peer);
+    constructor(blockchain, mempool, time, peer, targetSubscription) {
+        super(time, peer, targetSubscription);
         /** @type {NanoChain} */
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
@@ -32,21 +33,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
         // Subscribe to all announcements from the peer.
-        /** @type {Subscription} */
-        this._localSubscription = Subscription.BLOCKS_ONLY;
-        this._peer.channel.subscribe(this._localSubscription);
-    }
-
-    /**
-     * @param {Array.<Address>} addresses
-     */
-    subscribeAccounts(addresses) {
-        this._localSubscription = Subscription.fromAddresses(addresses);
-        this._peer.channel.subscribe(Subscription.BLOCKS_ONLY);
-        
-        this._timers.resetTimeout('subscription-change', () => {
-            this._peer.channel.subscribe(this._localSubscription);
-        }, NanoConsensusAgent.SUBSCRIPTION_CHANGE_THROTTLE);
+        this.subscribeTarget();
     }
 
     /**
@@ -223,9 +210,6 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @override
      */
     _processTransaction(hash, transaction) {
-        if (!this._localSubscription.matchesTransaction(transaction)) {
-            this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
-        }
         return this._mempool.pushTransaction(transaction);
     }
 
@@ -382,5 +366,4 @@ NanoConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT = 1000 * 10;
  * @type {number}
  */
 NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
-NanoConsensusAgent.SUBSCRIPTION_CHANGE_THROTTLE = 1000 * 2;
 Class.register(NanoConsensusAgent);

@@ -26,6 +26,9 @@ class BaseConsensus extends Observable {
         /** @type {Peer} */
         this._syncPeer = null;
 
+        /** @type {Subscription} */
+        this._subscription = Subscription.ANY;
+
         network.on('peer-joined', peer => this._onPeerJoined(peer));
         network.on('peer-left', peer => this._onPeerLeft(peer));
 
@@ -34,6 +37,30 @@ class BaseConsensus extends Observable {
 
         // Relay new (verified) transactions to peers.
         mempool.on('transaction-added', tx => this._onTransactionAdded(tx));
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     */
+    subscribeAccounts(addresses) {
+        this.subscribe(Subscription.fromAddresses(addresses));
+    }
+
+    /**
+     * @param {number} minFeePerByte
+     */
+    subscribeMinFeePerByte(minFeePerByte) {
+        this.subscribe(Subscription.fromMinFeePerByte(minFeePerByte));
+    }
+
+    /**
+     * @param {Subscription} subscription
+     */
+    subscribe(subscription) {
+        this._subscription = subscription;
+        for (const /** @type {BaseConsensusAgent} */ agent of this._agents.values()) {
+            agent.subscribe(subscription);
+        }
     }
 
     /**

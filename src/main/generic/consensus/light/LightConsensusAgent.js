@@ -4,9 +4,10 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @param {Mempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer) {
-        super(blockchain, mempool, time, peer);
+    constructor(blockchain, mempool, time, peer, targetSubscription) {
+        super(blockchain, mempool, time, peer, targetSubscription);
         /** @type {LightChain} */
         this._blockchain = blockchain;
         /** @type {PartialLightChain} */
@@ -168,7 +169,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     async _initChainProofSync() {
         // Subscribe to all announcements from the peer.
-        this._peer.channel.subscribe(Subscription.ANY);
+        this.subscribeTarget();
 
         this._syncing = true;
         this._synced = false;

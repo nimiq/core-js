@@ -4,9 +4,10 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @param {Mempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer) {
-        super(time, peer);
+    constructor(blockchain, mempool, time, peer, targetSubscription) {
+        super(time, peer, targetSubscription);
         /** @type {FullChain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
@@ -87,7 +88,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
     _syncFinished() {
         // Subscribe to all announcements from the peer.
-        this._peer.channel.subscribe(Subscription.ANY);
+        this.subscribeTarget();
 
         // Request the peer's mempool.
         // XXX Use a random delay here to prevent requests to multiple peers at once.
@@ -284,7 +285,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
         // Disable announcements from the peer once.
         if (!this._timers.timeoutExists('outOfSync')) {
-            this._peer.channel.subscribe(Subscription.NONE);
+            this._subscribe(Subscription.NONE);
         }
 
         // Set the orphaned block as the new sync target.

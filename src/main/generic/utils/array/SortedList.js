@@ -81,6 +81,13 @@ class SortedList {
         return this._list;
     }
 
+    /**
+     * @returns {Iterator.<V|*>}
+     */
+    [Symbol.iterator]() {
+        return this._list[Symbol.iterator]();
+    }
+
     copy() {
         return new SortedList(this._list.slice(), this._compare);
     }

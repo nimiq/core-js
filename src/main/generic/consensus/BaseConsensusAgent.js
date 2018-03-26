@@ -5,8 +5,9 @@ class BaseConsensusAgent extends Observable {
     /**
      * @param {Time} time
      * @param {Peer} peer
+     * @param {Subscription} [targetSubscription]
      */
-    constructor(time, peer) {
+    constructor(time, peer, targetSubscription) {
         super();
         /** @type {Time} */
         this._time = time;
@@ -43,6 +44,12 @@ class BaseConsensusAgent extends Observable {
         // Initially, we don't announce anything to the peer until it tells us otherwise.
         /** @type {Subscription} */
         this._remoteSubscription = Subscription.NONE;
+        // Subscribe to all announcements from the peer.
+        /** @type {Subscription} */
+        this._localSubscription = Subscription.NONE;
+        this._lastSubscriptionChange = null;
+        /** @type {Subscription} */
+        this._targetSubscription = targetSubscription || Subscription.ANY;
 
         // Helper object to keep track of timeouts & intervals.
         /** @type {Timers} */
@@ -87,6 +94,27 @@ class BaseConsensusAgent extends Observable {
 
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
+    }
+
+    /**
+     * @param {Subscription} subscription
+     */
+    subscribe(subscription) {
+        this._targetSubscription = subscription;
+        this._subscribe(subscription);
+    }
+
+    subscribeTarget() {
+        this._subscribe(this._targetSubscription);
+    }
+
+    /**
+     * @param {Subscription} subscription
+     */
+    _subscribe(subscription) {
+        this._localSubscription = subscription;
+        this._lastSubscriptionChange = Date.now();
+        this._peer.channel.subscribe(this._localSubscription);
     }
 
     /**
@@ -399,6 +427,13 @@ class BaseConsensusAgent extends Observable {
 
         // Process block.
         this._objectsProcessing.add(vector);
+
+        // Check whether we subscribed for this block.
+        if (!this._localSubscription.matchesBlock(msg.block)
+            && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
+            this._peer.channel.close(CloseType.RECEIVED_BLOCK_NOT_MATCHING_OUR_SUBSCRIPTION, 'received block not matching our subscription');
+        }
+
         await this._processBlock(hash, msg.block);
 
         // Mark object as processed.
@@ -470,6 +505,13 @@ class BaseConsensusAgent extends Observable {
 
         // Process transaction.
         this._objectsProcessing.add(vector);
+
+        // Check whether we subscribed for this transaction.
+        if (!this._localSubscription.matchesTransaction(msg.transaction)
+            && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
+            this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
+        }
+
         await this._processTransaction(hash, msg.transaction);
 
         // Mark object as processed.
@@ -983,4 +1025,9 @@ BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL = 15000; // ~100 legacy tr
  * @type {number}
  */
 BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
+/**
+ * Number of ms the peer may send non-matching transactions/blocks after a subscription change.
+ * @type {number}
+ */
+BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
 Class.register(BaseConsensusAgent);

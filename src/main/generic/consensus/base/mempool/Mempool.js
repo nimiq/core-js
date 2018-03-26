@@ -11,10 +11,14 @@ class Mempool extends Observable {
         this._accounts = accounts;
 
         // Our pool of transactions.
+        /** @type {SortedList.<Transaction>} */
+        this._transactionsByFeePerByte = new SortedList(); // uses Transaction.compare, by fee descending
         /** @type {HashMap.<Hash, Transaction>} */
         this._transactionsByHash = new HashMap();
         /** @type {HashMap.<Address, MempoolTransactionSet>} */
-        this._transactionSetByAddress = new HashMap();
+        this._transactionSetBySender = new HashMap();
+        /** @type {HashMap.<Address, HashSet.<Hash>>} */
+        this._transactionSetByRecipient = new HashMap();
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
 
@@ -45,12 +49,13 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.KNOWN;
         }
 
-        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
+        const set = this._transactionSetBySender.get(transaction.sender) || new MempoolTransactionSet();
         // Check limit for free transactions.
         if (transaction.fee / transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
             && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
             return Mempool.ReturnCode.FEE_TOO_LOW;
         }
+        // TODO: Check own min fee.
 
         // Intrinsic transaction verification
         if (!transaction.verify()) {
@@ -94,19 +99,69 @@ class Mempool extends Observable {
                     Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
                     return Mempool.ReturnCode.INVALID;
                 } else {
-                    this._transactionsByHash.remove(tx.hash());
+                    // Remove transaction
+                    this._removeTransaction(tx);
                 }
             }
         }
 
+        if (this._transactionsByFeePerByte.length >= Mempool.SIZE_MAX) {
+            this._popLowFeeTransaction();
+        }
+
         // Transaction is valid, add it to the mempool.
+        this._transactionsByFeePerByte.add(transaction);
         this._transactionsByHash.put(hash, transaction);
-        this._transactionSetByAddress.put(transaction.sender, new MempoolTransactionSet(transactions));
+        this._transactionSetBySender.put(transaction.sender, new MempoolTransactionSet(transactions));
+        /** @type {HashSet.<Hash>} */
+        const byRecipient = this._transactionSetByRecipient.get(transaction.recipient) || new HashSet();
+        byRecipient.add(transaction.hash());
+        this._transactionSetByRecipient.put(transaction.recipient, byRecipient);
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
 
         return Mempool.ReturnCode.ACCEPTED;
+    }
+
+    /**
+     * @private
+     */
+    _popLowFeeTransaction() {
+        // Remove transaction
+        const transaction = this._transactionsByFeePerByte.pop();
+
+        /** @type {MempoolTransactionSet} */
+        const set = this._transactionSetBySender.get(transaction.sender);
+        set.remove(transaction);
+
+        /** @type {HashSet.<Hash>} */
+        const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
+        if (byRecipient.length === 1) {
+            this._transactionSetByRecipient.remove(transaction.recipient);
+        } else {
+            byRecipient.remove(transaction.hash());
+        }
+
+        this._transactionsByHash.remove(transaction.hash());
+    }
+
+    /**
+     * Does *not* remove transaction from transactionsBySender!
+     * @param {Transaction} transaction
+     * @private
+     */
+    _removeTransaction(transaction) {
+        this._transactionsByHash.remove(transaction.hash());
+        // TODO: Optimise remove from this._transactionsByMinFee.
+        this._transactionsByFeePerByte.remove(transaction);
+        /** @type {HashSet} */
+        const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
+        if (byRecipient && byRecipient.length === 1) {
+            this._transactionSetByRecipient.remove(transaction.recipient);
+        } else {
+            byRecipient.remove(transaction.hash());
+        }
     }
 
     /**
@@ -119,14 +174,16 @@ class Mempool extends Observable {
 
     /**
      * @param {number} [maxSize]
+     * @param {number} [minFeePerByte]
      * @returns {Array.<Transaction>}
      */
-    getTransactions(maxSize = Infinity) {
+    getTransactions(maxSize = Infinity, minFeePerByte = 0) {
         const transactions = [];
         let size = 0;
-        for (const tx of this._transactionsByHash.values().sort((a, b) => a.compare(b))) {
+        for (const /** @type {Transaction} */ tx of this._transactionsByFeePerByte) {
             const txSize = tx.serializedSize;
             if (size + txSize >= maxSize) continue;
+            if (tx.feePerByte < minFeePerByte) break;
 
             transactions.push(tx);
             size += txSize;
@@ -158,8 +215,25 @@ class Mempool extends Observable {
      * @return {Array.<Transaction>}
      */
     getPendingTransactions(address) {
-        const set = this._transactionSetByAddress.get(address);
+        return this.getTransactionsBySender(address);
+    }
+
+    /**
+     * @param {Address} address
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsBySender(address) {
+        const set = this._transactionSetBySender.get(address);
         return set ? set.transactions : [];
+    }
+
+    /**
+     * @param {Address} address
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsByRecipient(address) {
+        const set = this._transactionSetByRecipient.get(address);
+        return set ? set.values() : [];
     }
 
     /**
@@ -193,9 +267,9 @@ class Mempool extends Observable {
         // Evict all transactions from the pool that have become invalid due
         // to changes in the account state (i.e. typically because the were included
         // in a newly mined block). No need to re-check signatures.
-        for (const sender of this._transactionSetByAddress.keys()) {
+        for (const sender of this._transactionSetBySender.keys()) {
             /** @type {MempoolTransactionSet} */
-            const set = this._transactionSetByAddress.get(sender);
+            const set = this._transactionSetBySender.get(sender);
 
             try {
                 const senderAccount = await this._accounts.get(set.sender, set.senderType);
@@ -215,20 +289,21 @@ class Mempool extends Observable {
                         transactions.push(tx);
                         account = tmpAccount;
                     } catch (e) {
-                        this._transactionsByHash.remove(tx.hash());
+                        // Remove transaction
+                        this._removeTransaction(tx);
                     }
                 }
                 if (transactions.length === 0) {
-                    this._transactionSetByAddress.remove(sender);
+                    this._transactionSetBySender.remove(sender);
                 } else {
-                    this._transactionSetByAddress.put(sender, new MempoolTransactionSet(transactions));
+                    this._transactionSetBySender.put(sender, new MempoolTransactionSet(transactions));
                 }
             } catch (e) {
                 // In case of an error, remove all transactions of this set.
                 for (const tx of set.transactions) {
-                    this._transactionsByHash.remove(tx.hash());
+                    this._removeTransaction(tx);
                 }
-                this._transactionSetByAddress.remove(sender);
+                this._transactionSetBySender.remove(sender);
             }
         }
 
@@ -242,6 +317,7 @@ class Mempool extends Observable {
 
 Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
 Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10; // max number of transactions considered free per sender
+Mempool.SIZE_MAX = 10000; // transactions
 
 /** @enum {number} */
 Mempool.ReturnCode = {

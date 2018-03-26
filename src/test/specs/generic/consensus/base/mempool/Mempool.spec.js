@@ -320,4 +320,35 @@ describe('Mempool', () => {
             expect(result).toBe(Mempool.ReturnCode.FEE_TOO_LOW);
         })().then(done, done.fail);
     });
+
+    it('has a maximum size', (done) => {
+        (async function () {
+            const accounts = await Accounts.createVolatile();
+            const blockchain = await FullChain.createVolatile(accounts, new Time());
+            const mempool = new Mempool(blockchain, accounts);
+            const oldMaxSize = Mempool.SIZE_MAX;
+            Mempool.SIZE_MAX = 20;
+
+            /** @type {Array.<Wallet>} */
+            const wallets = [];
+            for (let i = 0; i < Mempool.SIZE_MAX + 1; i++) {
+                const wallet = await Wallet.generate();
+                await accounts._tree.put(wallet.address, new BasicAccount((i + 1) * 200 + 1));
+                wallets.push(wallet);
+            }
+
+            for (let i = 0; i < Mempool.SIZE_MAX + 1; i++) {
+                const transaction = wallets[i].createTransaction(wallets[(i + 1) % (Mempool.SIZE_MAX + 1)].address, 1, (i + 1) * 200, 1); // eslint-disable-line no-await-in-loop
+                const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
+            }
+
+            const transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(Mempool.SIZE_MAX);
+            expect(transactions[0].fee).toBe((Mempool.SIZE_MAX + 1) * 200);
+            expect(transactions[transactions.length - 1].fee).toBe(2 * 200);
+
+            Mempool.SIZE_MAX = oldMaxSize;
+        })().then(done, done.fail);
+    });
 });

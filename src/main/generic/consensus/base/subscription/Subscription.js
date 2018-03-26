@@ -130,7 +130,7 @@ class Subscription {
             case Subscription.Type.ADDRESSES:
                 return this._addresses.contains(transaction.recipient) || this._addresses.contains(transaction.sender);
             case Subscription.Type.MIN_FEE:
-                return transaction.fee/transaction.serializedSize >= this._minFeePerByte;
+                return transaction.fee / transaction.serializedSize >= this._minFeePerByte;
             default:
                 throw new Error('Unknown type');
         }

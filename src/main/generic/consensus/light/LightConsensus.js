@@ -18,7 +18,7 @@ class LightConsensus extends BaseConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new LightConsensusAgent(this._blockchain, this._mempool, this._network.time, peer);
+        return new LightConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._subscription);
     }
 
     /**
