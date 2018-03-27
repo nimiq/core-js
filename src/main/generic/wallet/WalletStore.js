@@ -22,8 +22,8 @@ class WalletStore {
      */
     async _init() {
         // Initialize object stores.
-        this._walletStore = this._jdb.createObjectStore(WalletStore.WALLET_DATABASE, new WalletStoreCodec());
-        this._multiSigStore = this._jdb.createObjectStore(WalletStore.MULTISIG_WALLET_DATABASE, new WalletStoreCodec());
+        this._walletStore = this._jdb.createObjectStore(WalletStore.WALLET_DATABASE, { codec: new WalletStoreCodec() });
+        this._multiSigStore = this._jdb.createObjectStore(WalletStore.MULTISIG_WALLET_DATABASE, { codec: new WalletStoreCodec() });
 
         // Establish connection to database.
         await this._jdb.connect();

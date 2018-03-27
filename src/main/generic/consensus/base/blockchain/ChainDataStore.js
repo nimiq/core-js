@@ -3,10 +3,10 @@ class ChainDataStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const chainStore = jdb.createObjectStore('ChainData', new ChainDataStoreCodec());
+        const chainStore = jdb.createObjectStore('ChainData', { codec: new ChainDataStoreCodec() });
         ChainDataStore._createIndexes(chainStore);
 
-        jdb.createObjectStore('Block', new BlockStoreCodec());
+        jdb.createObjectStore('Block', { codec: new BlockStoreCodec() });
     }
 
     /**

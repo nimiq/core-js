@@ -3,7 +3,7 @@ class AccountsTreeStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        jdb.createObjectStore('Accounts', new AccountsTreeStoreCodec());
+        jdb.createObjectStore('Accounts', { codec: new AccountsTreeStoreCodec() });
     }
 
     /**

@@ -7,7 +7,7 @@ class PeerKeyStore {
             const jdb = new JDB.JungleDB('peer-key', PeerKeyStore.VERSION, { maxDbSize: PeerKeyStore.INITIAL_DB_SIZE });
 
             // Initialize object stores.
-            jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, new PeerKeyStoreCodec());
+            jdb.createObjectStore(PeerKeyStore.KEY_DATABASE, { codec: new PeerKeyStoreCodec() });
 
             // Establish connection to database.
             await jdb.connect();
