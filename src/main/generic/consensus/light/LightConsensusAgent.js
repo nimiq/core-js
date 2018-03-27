@@ -169,7 +169,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     async _initChainProofSync() {
         // Subscribe to all announcements from the peer.
-        this.subscribeTarget();
+        this._subscribeTarget();
 
         this._syncing = true;
         this._synced = false;

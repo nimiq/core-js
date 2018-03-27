@@ -33,7 +33,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
 
         // Subscribe to all announcements from the peer.
-        this.subscribeTarget();
+        this._subscribeTarget();
     }
 
     /**
@@ -51,6 +51,14 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         }
     }
 
+    requestMempool() {
+        // Request the peer's mempool.
+        // XXX Use a random delay here to prevent requests to multiple peers at once.
+        const delay = NanoConsensusAgent.MEMPOOL_DELAY_MIN
+            + Math.random() * (NanoConsensusAgent.MEMPOOL_DELAY_MAX - NanoConsensusAgent.MEMPOOL_DELAY_MIN);
+        setTimeout(() => this._peer.channel.mempool(), delay);
+    }
+
     /**
      * @returns {void}
      * @private
@@ -59,11 +67,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         this._syncing = false;
         this._synced = true;
 
-        // Request the peer's mempool.
-        // XXX Use a random delay here to prevent requests to multiple peers at once.
-        const delay = FullConsensusAgent.MEMPOOL_DELAY_MIN
-            + Math.random() * (FullConsensusAgent.MEMPOOL_DELAY_MAX - FullConsensusAgent.MEMPOOL_DELAY_MIN);
-        setTimeout(() => this._peer.channel.mempool(), delay);
+        this.requestMempool();
 
         this.fire('sync');
     }

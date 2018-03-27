@@ -88,7 +88,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
 
     _syncFinished() {
         // Subscribe to all announcements from the peer.
-        this.subscribeTarget();
+        this._subscribeTarget();
 
         // Request the peer's mempool.
         // XXX Use a random delay here to prevent requests to multiple peers at once.

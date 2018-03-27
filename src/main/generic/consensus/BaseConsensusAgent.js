@@ -104,7 +104,7 @@ class BaseConsensusAgent extends Observable {
         this._subscribe(subscription);
     }
 
-    subscribeTarget() {
+    _subscribeTarget() {
         this._subscribe(this._targetSubscription);
     }
 
