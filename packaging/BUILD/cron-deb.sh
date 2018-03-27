@@ -31,7 +31,7 @@ APT_CONFIG="`which apt-config 2> /dev/null`"
 SOURCES_PREAMBLE="### THIS FILE IS AUTOMATICALLY CONFIGURED ###
 # You may comment out this entry, but any other modifications may be lost.\n"
 
-# Install the repository/package signing keys, if they aren't already.
+# Install the repository/package signing key, if they aren't already.
 # (see also: XXX update this when the official repo is ready)
 install_key() {
   APT_KEY="`which apt-key 2> /dev/null`"
