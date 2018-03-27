@@ -39,8 +39,6 @@ const sources = {
     generic: [
         './src/main/generic/utils/ConstantHelper.js',
         './src/main/generic/utils/Services.js',
-        './src/main/generic/utils/Synchronizer.js',
-        './src/main/generic/utils/MultiSynchronizer.js',
         './src/main/generic/utils/Timers.js',
         './src/main/generic/utils/Version.js',
         './src/main/generic/utils/Time.js',
@@ -54,6 +52,9 @@ const sources = {
         './src/main/generic/utils/assert/Assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
+        './src/main/generic/utils/synchronizer/Synchronizer.js',
+        './src/main/generic/utils/synchronizer/MultiSynchronizer.js',
+        './src/main/generic/utils/synchronizer/PrioritySynchronizer.js',
         './src/main/generic/utils/RateLimit.js',
         './src/main/generic/utils/IWorker.js',
         './src/main/generic/utils/WasmHelper.js',

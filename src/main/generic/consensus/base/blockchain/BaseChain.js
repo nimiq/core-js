@@ -128,15 +128,12 @@ class BaseChain extends IBlockchain {
     /* NIPoPoW Prover functions */
 
     /**
+     * MUST be synchronized with .pushBlock() and variants!
      * @returns {Promise.<ChainProof>}
      * @protected
      */
-    async _getChainProof() {
-        const snapshot = this._store.snapshot();
-        const chain = new BaseChainSnapshot(snapshot, this.head);
-        const proof = await chain._prove(Policy.M, Policy.K, Policy.DELTA);
-        snapshot.abort().catch(Log.w.tag(BaseChain));
-        return proof;
+    _getChainProof() {
+        return this._prove(Policy.M, Policy.K, Policy.DELTA);
     }
 
     /**
@@ -452,23 +449,11 @@ class BaseChain extends IBlockchain {
     }
 
     /**
+     * MUST be synchronized with .pushBlock() and variants!
      * @param {Block} blockToProve
      * @param {Block} knownBlock
      * @returns {Promise.<?BlockChain>}
-     **/
-    async getBlockProof(blockToProve, knownBlock) {
-        const snapshot = this._store.snapshot();
-        const chain = new BaseChainSnapshot(snapshot, this.head);
-        const proof = await chain._getBlockProof(blockToProve, knownBlock);
-        snapshot.abort().catch(Log.w.tag(BaseChain));
-        return proof;
-    }
-
-    /**
-     * @param {Block} blockToProve
-     * @param {Block} knownBlock
-     * @returns {Promise.<?BlockChain>}
-     * @private
+     * @protected
      */
     async _getBlockProof(blockToProve, knownBlock) {
         /**
@@ -608,25 +593,3 @@ class BaseChain extends IBlockchain {
     }
 }
 Class.register(BaseChain);
-
-class BaseChainSnapshot extends BaseChain {
-    /**
-     * @param {ChainDataStore} store
-     * @param {Block} head
-     */
-    constructor(store, head) {
-        super(store);
-        this._head = head;
-    }
-
-    /** @type {Block} */
-    get head() {
-        return this._head;
-    }
-
-    /** @type {number} */
-    get height() {
-        return this._head.height;
-    }
-}
-Class.register(BaseChainSnapshot);

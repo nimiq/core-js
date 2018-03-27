@@ -56,8 +56,8 @@ class FullChain extends BaseChain {
         /** @type {TransactionStore} */
         this._transactionStore = transactionStore;
 
-        /** @type {MultiSynchronizer} */
-        this._synchronizer = new MultiSynchronizer();
+        /** @type {PrioritySynchronizer} */
+        this._synchronizer = new PrioritySynchronizer(2);
 
         /** @type {number} */
         this._blockKnownCount = this._blockInvalidCount = this._blockOrphanCount = this._blockExtendedCount = this._blockRebranchedCount = this._blockForkedCount = 0;
@@ -109,7 +109,7 @@ class FullChain extends BaseChain {
      * @returns {Promise.<number>}
      */
     pushBlock(block) {
-        return this._synchronizer.push('pushBlock',
+        return this._synchronizer.push(/*priority*/ 0,
             this._pushBlock.bind(this, block));
     }
 
@@ -467,12 +467,22 @@ class FullChain extends BaseChain {
      * @override
      */
     getChainProof() {
-        return this._synchronizer.push('getChainProof', async () => {
+        return this._synchronizer.push(/*priority*/ 1, async () => {
             if (!this._proof) {
                 this._proof = await this._getChainProof();
             }
             return this._proof;
         });
+    }
+
+    /**
+     * @param {Block} blockToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<?BlockChain>}
+     **/
+    getBlockProof(blockToProve, knownBlock) {
+        return this._synchronizer.push(/*priority*/ 1,
+            this._getBlockProof.bind(this, blockToProve, knownBlock));
     }
 
     /**
@@ -567,7 +577,7 @@ class FullChain extends BaseChain {
      */
     _getSnapshot(blockHash) {
         // TODO Does this have to be synchronized with pushBlock() ?
-        return this._synchronizer.push('pushBlock', async () => {
+        return this._synchronizer.push(/*priority*/ 1, async () => {
             const block = await this.getBlock(blockHash);
             // Check if blockHash is a block on the main chain within the allowed window.
             if (!block || this._mainChain.head.height - block.height > Policy.NUM_SNAPSHOTS_MAX) {

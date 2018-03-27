@@ -35,7 +35,7 @@ class Synchronizer extends Observable {
         this._working = true;
         this.fire('work-start', this);
 
-        while (this._queue.length) {
+        while (this._queue.length > 0) {
             const job = this._queue.shift();
             try {
                 const result = await job.fn();

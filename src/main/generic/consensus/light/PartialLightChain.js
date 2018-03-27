@@ -29,7 +29,7 @@ class PartialLightChain extends LightChain {
      */
     pushProof(proof) {
         // Synchronize with .pushBlock()
-        return this._synchronizer.push('pushBlock',
+        return this._synchronizer.push(/*priority*/ 0,
             this._pushProof.bind(this, proof));
     }
 
@@ -121,7 +121,7 @@ class PartialLightChain extends LightChain {
         }
 
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
-        const currentProof = await this.getChainProof();
+        const currentProof = this._proof || await this._getChainProof();
         if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         } else {
@@ -476,7 +476,7 @@ class PartialLightChain extends LightChain {
             this._accountsTx = null;
         }
 
-        const currentProof = await this.getChainProof();
+        const currentProof = this._proof || await this._getChainProof();
         this.fire('complete', currentProof, this._headHash, this._mainChain);
     }
 
@@ -491,7 +491,7 @@ class PartialLightChain extends LightChain {
         const result = await JDB.JungleDB.commitCombined(...this._store.txs, this._partialTree.tx);
         this._partialTree = null;
 
-        const currentProof = await this.getChainProof();
+        const currentProof = this._proof || await this._getChainProof();
         this.fire('committed', currentProof, this._headHash, this._mainChain);
 
         return result;

@@ -15,8 +15,8 @@ class NanoChain extends BaseChain {
         /** @type {Hash} */
         this._headHash = GenesisConfig.GENESIS_HASH;
 
-        /** @type {MultiSynchronizer} */
-        this._synchronizer = new MultiSynchronizer();
+        /** @type {PrioritySynchronizer} */
+        this._synchronizer = new PrioritySynchronizer(2);
 
         return this._init();
     }
@@ -33,7 +33,7 @@ class NanoChain extends BaseChain {
      * @returns {Promise.<boolean>}
      */
     pushProof(proof) {
-        return this._synchronizer.push('pushProof',
+        return this._synchronizer.push(/*priority*/ 0,
             this._pushProof.bind(this, proof));
     }
 
@@ -125,7 +125,7 @@ class NanoChain extends BaseChain {
         }
 
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
-        const currentProof = await this.getChainProof();
+        const currentProof = this._proof || await this._getChainProof();
         if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         }
@@ -217,7 +217,7 @@ class NanoChain extends BaseChain {
      */
     pushHeader(header) {
         // Synchronize with .pushProof()
-        return this._synchronizer.push('pushProof',
+        return this._synchronizer.push(/*priority*/ 0,
             this._pushHeader.bind(this, header));
     }
 
@@ -424,7 +424,7 @@ class NanoChain extends BaseChain {
      * @override
      */
     getChainProof() {
-        return this._synchronizer.push('getChainProof', async () => {
+        return this._synchronizer.push(/*priority*/ 1, async () => {
             if (!this._proof) {
                 this._proof = await this._getChainProof();
             }
