@@ -386,17 +386,17 @@ Network.PEER_COUNT_MAX = PlatformUtils.isBrowser() ? 15 : 50000;
  * @type {number}
  * @constant
  */
-Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX = PlatformUtils.isBrowser() ? 2 : 25;
+Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX = PlatformUtils.isBrowser() ? 2 : 100;
 /**
  * @type {number}
  * @constant
  */
-Network.OUTBOUND_PEER_COUNT_PER_SUBNET_MAX = PlatformUtils.isBrowser() ? 2 : 50;
+Network.OUTBOUND_PEER_COUNT_PER_SUBNET_MAX = 2;
 /**
  * @type {number}
  * @constant
  */
-Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 25;
+Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 20;
 /**
  * @type {number}
  * @constant
