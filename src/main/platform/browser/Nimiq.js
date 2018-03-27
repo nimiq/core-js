@@ -63,7 +63,7 @@ class Nimiq {
                         path = './';
                     }
                 }
-                
+
                 Nimiq._path = path;
                 Nimiq._fullScript = Nimiq._path + Nimiq._script;
 
@@ -71,13 +71,15 @@ class Nimiq {
                     if (!Nimiq._loaded) {
                         error(Nimiq.ERR_UNKNOWN);
                     } else {
-                        Nimiq.WasmHelper.doImportBrowser()
-                            .then(resolve)
-                            .catch(error.bind(null, Nimiq.ERR_UNKNOWN));
+                        resolve();
                     }
                 };
                 Nimiq._loadScript(Nimiq._fullScript, Nimiq._onload);
-            });
+            }).then(() => new Promise((resolve, reject) =>
+                Nimiq.WasmHelper.doImportBrowser()
+                    .then(resolve)
+                    .catch(reject.bind(null, Nimiq.ERR_UNKNOWN))
+            ));
         return Nimiq._loadPromise;
     }
 
@@ -87,15 +89,6 @@ class Nimiq {
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url;
-
-        // Then bind the event to the callback function.
-        // There are several events for cross browser compatibility.
-        // These events might occur before processing, so delay them a bit.
-        const ret = () => window.setTimeout(resolve, 1000);
-        script.onreadystatechange = ret;
-        script.onload = ret;
-
-        // Fire the loading
         head.appendChild(script);
     }
 
@@ -106,7 +99,7 @@ class Nimiq {
      */
     static loadToScope(...classes) {
         return Nimiq.load()
-            .then(function() {
+            .then(function () {
                 for (const clazz of classes) {
                     self[clazz] = Nimiq[clazz];
                 }
@@ -174,11 +167,11 @@ class Nimiq {
         // Wait until there is only a single browser window open for this origin.
         WindowDetector.get().waitForSingleWindow(function () {
             Nimiq.load()
-                .then(function() {
+                .then(function () {
                     console.log('Nimiq engine loaded.');
                     if (ready) ready();
                 })
-                .catch(function(e) {
+                .catch(function (e) {
                     if (Number.isInteger(e)) {
                         if (error) error(e);
                     } else {
@@ -191,6 +184,7 @@ class Nimiq {
         });
     }
 }
+
 Nimiq._currentScript = document.currentScript;
 if (!Nimiq._currentScript) {
     // Heuristic

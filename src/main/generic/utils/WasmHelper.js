@@ -12,6 +12,7 @@ class WasmHelper {
         } else {
             await WasmHelper.importScriptBrowser('worker-js.js');
         }
+        WasmHelper._importFinished = true;
     }
 
     static doImportNodeJs() {
