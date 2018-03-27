@@ -427,13 +427,7 @@ class BaseConsensusAgent extends Observable {
 
         // Process block.
         this._objectsProcessing.add(vector);
-
-        // Check whether we subscribed for this block.
-        if (this._localSubscription.matchesBlock(msg.block)) {
-            await this._processBlock(hash, msg.block);
-        } else if (this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
-            this._peer.channel.close(CloseType.RECEIVED_BLOCK_NOT_MATCHING_OUR_SUBSCRIPTION, 'received block not matching our subscription');
-        }
+        await this._processBlock(hash, msg.block);
 
         // Mark object as processed.
         this._onObjectProcessed(vector);

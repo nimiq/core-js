@@ -21,7 +21,7 @@ class NanoConsensus extends BaseConsensus {
     subscribeAccounts(addresses) {
         this.subscribe(Subscription.fromAddresses(addresses));
         this._mempool.evictExceptAddresses(addresses);
-        for (const /** @type {NanoConsensusAgent} */ agent of agents) {
+        for (const /** @type {NanoConsensusAgent} */ agent of this._agents.valueIterator()) {
             agent.requestMempool();
         }
     }
