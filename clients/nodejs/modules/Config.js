@@ -279,7 +279,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         }
     }
     if (typeof argv['wallet-seed'] === 'string') config.wallet.seed = argv['wallet-seed'];
-    if (typeof argv['walled-address'] === 'string') config.wallet.address = argv['wallet-address'];
+    if (typeof argv['wallet-address'] === 'string') config.wallet.address = argv['wallet-address'];
     if (argv.log || argv.verbose) {
         config.log.level = 'verbose';
         if (typeof argv.log === 'number') config.log.level = argv.log;
