@@ -434,7 +434,6 @@ gulp.task('build-node-istanbul', ['build-istanbul'], function () {
 
 const RELEASE_SOURCES = [
     'dist/VERSION',
-    'packaging/cron-deb.sh',
     process.execPath
 ];
 
@@ -445,13 +444,13 @@ const RELEASE_LIB = [
 ];
 
 gulp.task('prepare-packages', ['build-node'], function () {
-    gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/src'));
-    gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/fakeroot/etc/nimiq'));
-    gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${util.env.architecture}"`)).pipe(gulp.dest('packaging/src'));
-    gulp.src(['clients/nodejs/index.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/src'));
-    gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/node.js', '../lib/node.js')).pipe(gulp.dest('packaging/src/modules'));
-    gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/src'));
-    gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/src/lib'));
+    gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
+    gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${util.env.architecture}"`)).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/index.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/node.js', '../lib/node.js')).pipe(gulp.dest('packaging/BUILD/modules'));
+    gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
 });
 
 gulp.task('test', ['watch'], function () {

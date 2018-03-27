@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "gulp build-node",
     "build": "gulp build",
-    "build-packages": "gulp --architecture=`dpkg --print-architecture` prepare-packages && cd packaging/src && mv lib/nimiq_node_generic.node lib/nimiq_node.node && mv ../fakeroot/etc/nimiq/sample.conf ../fakeroot/etc/nimiq/nimiq.conf && node-deb --no-default-package-dependencies x -- node *.js cron-deb.sh VERSION lib/ modules/ && mv *.deb ../../dist/",
+    "build-packages": "gulp --architecture=`dpkg --print-architecture` prepare-packages && cd packaging/BUILD && mv lib/nimiq_node_generic.node lib/nimiq_node.node && mv fakeroot/etc/nimiq/sample.conf fakeroot/etc/nimiq/nimiq.conf && node-deb --no-default-package-dependencies x -- node *.js cron-deb.sh VERSION lib/ modules/ && mv *.deb ../../dist/",
     "esdoc": "esdoc",
     "test": "jasmine && gulp test",
     "test-node": "jasmine",
@@ -35,14 +35,14 @@
     "install_strategy": "copy",
     "description": "Nimiq node.js client",
     "maintainer": "The Nimiq Core Development Team <info@nimiq.com>",
-    "extra_files": "../fakeroot",
+    "extra_files": "fakeroot",
     "templates": {
-      "executable": "../executable",
-      "default_variables": "../default",
-      "postinst": "../postinst",
-      "postrm": "../postrm",
-      "prerm": "../prerm",
-      "systemd_service": "../systemd.service"
+      "executable": "executable",
+      "default_variables": "default",
+      "postinst": "postinst",
+      "postrm": "postrm",
+      "prerm": "prerm",
+      "systemd_service": "systemd.service"
     },
     "entrypoints": {
       "daemon": "app/node /usr/share/nimiq/app/index.js"
