@@ -6,6 +6,7 @@ class WebSocketConnector extends Observable {
      */
     constructor(networkConfig) {
         super();
+        this._networkConfig = networkConfig;
 
         if (networkConfig.peerAddress.protocol === Protocol.WS) {
             this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
@@ -38,7 +39,7 @@ class WebSocketConnector extends Observable {
 
         const ws = WebSocketFactory.newWebSocket(`wss://${peerAddress.host}:${peerAddress.port}`, {
             handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
-        });
+        }, this._networkConfig);
         ws.binaryType = 'arraybuffer';
         ws.onopen = () => {
             this._timers.clearTimeout(timeoutKey);

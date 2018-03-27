@@ -368,7 +368,7 @@ class MockNetwork {
      */
     static _hostToIp(host) {
         const crc = CRC32.compute(BufferUtils.fromAscii(host)).toString(16);
-        let res = '2001:';
+        let res = '2001:db8:';
         res += crc.substr(0, 2) + crc.substr(-2, 2);
         res += '::';
 
@@ -396,8 +396,12 @@ class MockNetwork {
             return server;
         });
 
-        spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url) => {
-            const address = MockNetwork._hostToIp(`reserved${MockNetwork._clientSerial++}.test`);
+        spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url, options, netconfig) => {
+            const peerAddress = netconfig.peerAddress;
+            const seed = peerAddress.protocol === Protocol.WS ?
+                `wss://${peerAddress.host}:${peerAddress.port}` :
+                `reserved${MockNetwork._clientSerial++}.test`;
+            const address = MockNetwork._hostToIp(seed);
 
             const client = new MockWebSocket(address);
             const server = MockNetwork._servers.get(url);
