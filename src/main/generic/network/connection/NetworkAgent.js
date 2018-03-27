@@ -102,9 +102,13 @@ class NetworkAgent extends Observable {
         this._challengeNonce = new Uint8Array(VersionMessage.CHALLENGE_SIZE);
         CryptoWorker.lib.getRandomValues(this._challengeNonce);
 
-        // XXX: Magic numbers should be constants, rely on other magic numbers
         /** @type {ThrottledQueue} */
-        this._addrQueue = new ThrottledQueue(NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE, NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE, NetworkAgent.ADDR_QUEUE_INTERVAL, NetworkAgent.ADDR_RATE_LIMIT, () => this._relayNow());
+        this._addrQueue = new ThrottledQueue(
+            NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE,
+            NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE,
+            NetworkAgent.ADDR_QUEUE_INTERVAL,
+            NetworkAgent.ADDR_RATE_LIMIT,
+            () => this._relayNow());
 
         this._addrLimit = new RateLimit(NetworkAgent.ADDR_RATE_LIMIT);
 
