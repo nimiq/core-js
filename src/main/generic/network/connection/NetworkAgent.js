@@ -485,7 +485,6 @@ class NetworkAgent extends Observable {
         }
     }
 
-
     /* Connectivity Check */
 
     _checkConnectivity() {

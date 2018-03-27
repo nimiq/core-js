@@ -178,6 +178,9 @@ Message.Type = {
     GET_BLOCK_PROOF:            51,
     BLOCK_PROOF:                52,
 
+    GET_HEAD:   60,
+    HEAD:       61,
+
     VERACK:   90
 };
 Class.register(Message);

@@ -103,8 +103,37 @@ class BaseConsensusAgent extends Observable {
         peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
         peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
 
+        peer.channel.on('get-head', msg => this._onGetHead(msg));
+        peer.channel.on('head', msg => this._onHead(msg));
+
         // Clean up when the peer disconnects.
         peer.channel.on('close', () => this._onClose());
+
+        this._requestHead();
+    }
+
+    _requestHead() {
+        this._peer.channel.getHead();
+    }
+
+    onHeadUpdated() {
+        this._timers.resetTimeout('get-next-head', () => this._requestHead(), BaseConsensusAgent.HEAD_REQUEST_INTERVAL);
+    }
+
+    /**
+     * @param {GetHeadMessage} msg
+     * @private
+     */
+    _onGetHead(msg) {
+        this._peer.channel.head(this._blockchain.head.header);
+    }
+
+    /**
+     * @param {HeadMessage} msg
+     */
+    _onHead(msg) {
+        this._peer.head = msg.header;
+        this.onHeadUpdated();
     }
 
     /**
@@ -436,6 +465,11 @@ class BaseConsensusAgent extends Observable {
             }
         }
 
+        if ((!this._peer.head && this._peer.headHash.equals(hash)) || (this._peer.head && this._peer.head.height < msg.block.height)) {
+            this._peer.head = msg.block.header;
+            this.onHeadUpdated();
+        }
+
         // Mark object as received.
         this._onObjectReceived(vector);
 
@@ -469,6 +503,11 @@ class BaseConsensusAgent extends Observable {
         if (!this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited header ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
+        }
+
+        if ((!this._peer.head && this._peer.headHash.equals(hash)) || (this._peer.head && this._peer.head.height < msg.header.height)) {
+            this._peer.head = msg.header;
+            this.onHeadUpdated();
         }
 
         // Mark object as received.
@@ -1045,4 +1084,5 @@ BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
  * @type {number}
  */
 BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
+BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give client time to announce new head without request
 Class.register(BaseConsensusAgent);

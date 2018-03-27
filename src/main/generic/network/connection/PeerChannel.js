@@ -357,6 +357,21 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @returns {boolean}
+     */
+    getHead() {
+        return this._send(new GetHeadMessage());
+    }
+
+    /**
+     * @param {BlockHeader} header
+     * @returns {boolean}
+     */
+    head(header) {
+        return this._send(new HeadMessage(header));
+    }
+
+    /**
      * @param {PeerChannel} o
      * @return {boolean}
      */
@@ -451,4 +466,6 @@ PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS] = 'get-transaction-rece
 PeerChannel.Event[Message.Type.TRANSACTION_RECEIPTS] = 'transaction-receipts';
 PeerChannel.Event[Message.Type.GET_BLOCK_PROOF] = 'get-block-proof';
 PeerChannel.Event[Message.Type.BLOCK_PROOF] = 'block-proof';
+PeerChannel.Event[Message.Type.GET_HEAD] = 'get-head';
+PeerChannel.Event[Message.Type.HEAD] = 'head';
 PeerChannel.Event[Message.Type.VERACK] = 'verack';

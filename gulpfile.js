@@ -162,6 +162,8 @@ const sources = {
         './src/main/generic/network/message/TransactionReceiptsMessage.js',
         './src/main/generic/network/message/GetBlockProofMessage.js',
         './src/main/generic/network/message/BlockProofMessage.js',
+        './src/main/generic/network/message/GetHeadMessage.js',
+        './src/main/generic/network/message/HeadMessage.js',
         './src/main/generic/network/message/MessageFactory.js',
         './src/main/generic/network/webrtc/WebRtcConnector.js',
         './src/main/generic/network/webrtc/WebRtcDataChannel.js',

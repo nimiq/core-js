@@ -12,6 +12,8 @@ class Peer {
         this._version = version;
         /** @type {Hash} */
         this._headHash = headHash;
+        /** @type {BlockHeader} */
+        this._head = null;
         /**
          * Offset between the peer's time and our local time.
          * @type {number}
@@ -66,6 +68,17 @@ class Peer {
     /** @type {Hash} */
     get headHash() {
         return this._headHash;
+    }
+
+    /** @type {BlockHeader} */
+    get head() {
+        return this._head;
+    }
+
+    /** @param {BlockHeader} head */
+    set head(head) {
+        this._head = head;
+        this._headHash = head.hash();
     }
 
     /** @type {number} */
