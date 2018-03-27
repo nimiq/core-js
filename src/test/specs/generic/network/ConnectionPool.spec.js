@@ -432,4 +432,36 @@ describe('ConnectionPool', () => {
             }, 15000);
         })().catch(done.fail);
     });
+
+    it('rejects connections to blocked IPs', (done) => {
+        (async () => {
+            const netConfig = Dummy.NETCONFIG;
+            const consensus = await Consensus.volatileFull(netConfig);
+            consensus.network.connect();
+
+            const netConfig1 = new WsNetworkConfig('attacker.test', 9000, 'key1', 'cert1');
+            netConfig1._keyPair = KeyPair.generate();
+
+            const sameIP1 = await Consensus.volatileFull(netConfig1);
+            sameIP1.network._connections.connectOutbound(netConfig.peerAddress);
+
+            const conn = await new Promise(resolve => consensus.network._connections.on('connection', (conn) => { resolve(conn); }));
+            await new Promise(resolve => sameIP1.on('established', () => {
+                conn.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                resolve();
+            }));
+
+            const netConfig2 = new WsNetworkConfig('attacker.test', 9000, 'key2', 'cert2');
+            netConfig2._keyPair = KeyPair.generate();
+
+            const sameIP2 = await Consensus.volatileFull(netConfig2);
+            sameIP2.network._connections.connectOutbound(netConfig.peerAddress);
+
+            const disconnected = new Promise(resolve => sameIP2.network.on('disconnected', resolve));
+            sameIP2.on('established', done.fail);
+            sameIP2.network.connect();
+            await disconnected;
+            done();
+        })().catch(done.fail);
+    });
 });

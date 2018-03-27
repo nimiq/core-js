@@ -116,6 +116,14 @@ class ConnectionPool extends Observable {
         // Whether we allow inbound connections. Does not apply to WebRTC connections.
         /** @type {boolean} */
         this._allowInboundConnections = false;
+
+        /** @type {HashMap.<NetAddress, number>} */
+        this._bannedIPv4IPs = new HashMap();
+
+        /** @type {HashMap.<Uint8Array, number>} */
+        this._bannedIPv6IPs = new HashMap();
+
+        setInterval(() => this._checkUnbanIps(), ConnectionPool.UNBAN_IPS_INTERVAL);
     }
 
     /**
@@ -445,7 +453,13 @@ class ConnectionPool extends Observable {
      * @private
      */
     _checkHandshake(peerConnection, peer) {
-        // Close connection if this peer is banned.
+        // Close connection if peer's IP is banned.
+        if (peer.netAddress && this._isIpBanned(peer.netAddress)) {
+            peerConnection.peerChannel.close(CloseType.BANNED_IP, `connection with banned ip ${peer.peerAddress} (post version)`);
+            return false;
+        }
+
+        // Close connection if peer's address is banned.
         if (this._addresses.isBanned(peer.peerAddress)) {
             peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED,
                 `connection with banned address ${peer.peerAddress} (post version)`);
@@ -592,6 +606,11 @@ class ConnectionPool extends Observable {
 
         // Check if the handshake with this peer has completed.
         if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
+            // If closing is due to a ban, also ban the IP
+            if (CloseType.isBanningType(type) && peerConnection.peer.netAddress){
+                this._banIp(peerConnection.peer.netAddress);
+            }
+
             this._updateConnectedPeerCount(peerConnection, -1);
 
             // Tell listeners that this peer has gone away.
@@ -619,6 +638,52 @@ class ConnectionPool extends Observable {
 
         // Set the peer connection to closed state.
         peerConnection.close();
+    }
+
+    /**
+     * @param {NetAddress} netAddress
+     * @private
+     */
+    _banIp(netAddress) {
+        if (!netAddress.isPseudo() && netAddress.reliable) {
+            Log.w(ConnectionPool, `Banning IP ${netAddress}`);
+            if (netAddress.isIPv4()) {
+                this._bannedIPv4IPs.put(peerNetAddresss, Date.now() + ConnectionPool.DEFAULT_BAN_TIME);
+            } else if (netAddress.isIPv6()) {
+                // Ban IPv6 IPs prefix based
+                this._bannedIPv6IPs.put(netAddress.ip.subarray(0,8), Date.now() + ConnectionPool.DEFAULT_BAN_TIME);
+            }
+        }
+    }
+
+    /**
+     * @param {NetAddress} netAddress
+     * @returns {boolean}
+     * @private
+     */
+    _isIpBanned(netAddress) {
+        if (netAddress.isPseudo()) return false;
+        if (netAddress.isIPv4()) {
+            return this._bannedIPv4IPs.contains(netAddress);
+        } else if (netAddress.isIPv6()) {
+            const prefix = netAddress.ip.subarray(0, 8);
+            return this._bannedIPv6IPs.contains(prefix);
+        }
+        return false;
+    }
+
+    _checkUnbanIps() {
+        const now = Date.now();
+        for (const netAddress of this._bannedIPv4IPs.keys()) {
+            if (this._bannedIPv4IPs.get(netAddress) < now) {
+                this._bannedIPv4IPs.remove(netAddress);
+            }
+        }
+        for (const prefix of this._bannedIPv6IPs.keys()) {
+            if (this._bannedIPv6IPs.get(prefix) < now) {
+                this._bannedIPv6IPs.remove(prefix);
+            }
+        }
     }
 
     /**
@@ -797,4 +862,7 @@ class ConnectionPool extends Observable {
     }
 
 }
+ConnectionPool.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
+ConnectionPool.UNBAN_IPS_INTERVAL = 1000 * 60; // 1 minute
+
 Class.register(ConnectionPool);
