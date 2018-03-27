@@ -21,6 +21,13 @@ class FullConsensus extends BaseConsensus {
     }
 
     /**
+     * @type {number} minFeePerByte
+     */
+    get minFeePerByte() {
+        return this._subscription.type === Subscription.Type.MIN_FEE ? this._subscription.minFeePerByte : 0;
+    }
+
+    /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
      * @override

@@ -275,7 +275,7 @@ class Mempool extends Observable {
     evictBelowMinFeePerByte(minFeePerByte) {
         /** @type {Transaction} */
         let transaction = this._transactionsByFeePerByte.peekLast();
-        while (transaction.feePerByte < minFeePerByte) {
+        while (transaction && transaction.feePerByte < minFeePerByte) {
             this._transactionsByFeePerByte.pop();
 
             this._transactionsByHash.remove(transaction.hash());

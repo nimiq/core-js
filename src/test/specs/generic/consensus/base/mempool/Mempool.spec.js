@@ -381,6 +381,16 @@ describe('Mempool', () => {
 
             transactions = mempool.getTransactions();
             expect(transactions.length).toBe(10);
+
+            mempool.evictBelowMinFeePerByte(feesPerByte[19] + 1);
+
+            transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(0);
+
+            mempool.evictBelowMinFeePerByte(0);
+
+            transactions = mempool.getTransactions();
+            expect(transactions.length).toBe(0);
         })().then(done, done.fail);
     });
 });

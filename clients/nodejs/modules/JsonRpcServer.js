@@ -33,7 +33,7 @@ class JsonRpcServer {
     }
 
     /**
-     * @param {BaseConsensus} consensus
+     * @param {FullConsensus} consensus
      * @param {FullChain} blockchain
      * @param {Accounts} accounts
      * @param {Mempool} mempool
@@ -71,6 +71,7 @@ class JsonRpcServer {
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
         this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
         this._methods.set('mempool', this.mempool.bind(this));
+        this._methods.set('minFeePerByte', this.minFeePerByte.bind(this));
 
         // Miner
         this._methods.set('mining', this.mining.bind(this));
@@ -284,6 +285,13 @@ class JsonRpcServer {
 
     mempool(includeTransactions) {
         return this._mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex());
+    }
+
+    minFeePerByte(minFeePerByte) {
+        if (typeof minFeePerByte === 'number') {
+            this._consensus.subscribeMinFeePerByte(minFeePerByte);
+        }
+        return this._consensus.minFeePerByte;
     }
 
     /*

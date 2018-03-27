@@ -525,6 +525,33 @@ if (!args || args.length === 0) args = ['default'];
             console.log(JSON.stringify(await jsonRpcFetch('getTransactionsByAddress', args[1])));
             return;
         }
+        case 'mempool': {
+            let includeTransactions = args.length === 2 && isTrue(args[1]);
+            const transactions = await jsonRpcFetch('mempool', includeTransactions);
+            console.log(chalk`Mempool content ({bold ${transactions.length}} transactions):`);
+            for (const tx of transactions) {
+                if (includeTransactions) {
+                    const date = new Date(tx.timestamp * 1000);
+                    let dateStr = date.getDate().toString();
+                    if (dateStr.length === 1) dateStr = ` ${dateStr} `;
+                    else dateStr = `${dateStr[0]}${dateStr[1]} `;
+                    console.log(chalk`${dateStr} | ${tx.fromString} -> ${tx.toString} | ${nimValueFormat(tx.value, 10)} | ${nimValueFormat(tx.fee, 10)}`);
+                    console.log(`ID: ${tx.hash}`);
+                } else {
+                    console.log(tx);
+                }
+            }
+            return;
+        }
+        case 'mempool.json': {
+            let includeTransactions = args.length === 2 && isTrue(args[1]);
+            console.log(JSON.stringify(await jsonRpcFetch('mempool', includeTransactions)));
+            return;
+        }
+        case 'consensus.min_fee_per_byte': {
+            console.log(await jsonRpcFetch('minFeePerByte', args[1]));
+            return;
+        }
         case 'constant': {
             if (args.length < 2) {
                 console.error('Specify constant name');
@@ -611,6 +638,11 @@ Actions:
                             properties. The sending account must be a local
                             account.
     transactions ADDR       Display transactions involving address ADDR.
+    mempool [INCLUDE_TX]    Display mempool content. If INCLUDE_TX is given,
+                            full transactions instead of transaction hashes
+                            are requested.
+    consensus.min_fee_per_byte [FEE]
+                            Read or change the current min fee per byte setting.
 
 Most actions support output either in human-readable text form (default) or as
 JSON by appending '.json' to the action name. Addresses may be given in user-
