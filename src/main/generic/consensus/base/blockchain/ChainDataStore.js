@@ -262,12 +262,14 @@ class ChainDataStore {
             ? key => this._blockStore.get(key)
             : key => this._chainStore.get(key).then(data => data.head);
 
-        /** @type {Block} */
-        let block = await getBlock(startBlockHash.toBase64());
-        if (!block) {
+        /** @type {ChainData} */
+        const chainData = await this._chainStore.get(startBlockHash.toBase64());
+        if (!chainData) {
             return [];
         }
 
+        /** @type {Block} */
+        let block = chainData.head;
         const blocks = [];
         while (blocks.length < count && block.height > 1) {
             block = await getBlock(block.prevHash.toBase64());
@@ -354,15 +356,15 @@ class ChainDataStore {
     /**
      * @returns {Promise}
      */
-    truncate() {
+    async truncate() {
         if (this._chainStore instanceof JDB.Transaction) {
             return Promise.all([this._chainStore.truncate(), this._blockStore.truncate()]);
         }
 
-        const chainTx = this._chainStore.synchronousTransaction();
-        chainTx.truncateSync();
-        const blockTx = this._blockStore.synchronousTransaction();
-        blockTx.truncateSync();
+        const chainTx = this._chainStore.transaction();
+        await chainTx.truncate();
+        const blockTx = this._blockStore.transaction();
+        await blockTx.truncate();
         return JDB.JungleDB.commitCombined(chainTx, blockTx);
     }
 

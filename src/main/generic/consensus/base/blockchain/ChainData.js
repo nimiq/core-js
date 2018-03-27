@@ -129,7 +129,7 @@ class ChainData {
         return this._onMainChain;
     }
 
-    /** @param {boolean} onMainChain */
+    /** @type {boolean} */
     set onMainChain(onMainChain) {
         this._onMainChain = onMainChain;
     }
@@ -139,7 +139,7 @@ class ChainData {
         return this._mainChainSuccessor;
     }
 
-    /** @param {Hash} mainChainSuccessor */
+    /** @type {Hash} */
     set mainChainSuccessor(mainChainSuccessor) {
         this._mainChainSuccessor = mainChainSuccessor;
     }

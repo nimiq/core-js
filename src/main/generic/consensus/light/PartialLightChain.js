@@ -232,10 +232,8 @@ class PartialLightChain extends LightChain {
             chainData.onMainChain = true;
             prevData.mainChainSuccessor = blockHash;
 
-            const storeTx = this._store.synchronousTransaction();
-            storeTx.putChainDataSync(blockHash, chainData);
-            storeTx.putChainDataSync(block.prevHash, prevData, /*includeBody*/ false);
-            await storeTx.commit();
+            await this._store.putChainData(blockHash, chainData);
+            await this._store.putChainData(block.prevHash, prevData, /*includeBody*/ false);
 
             // Update head.
             this._mainChain = chainData;
@@ -490,7 +488,7 @@ class PartialLightChain extends LightChain {
             await this._accountsTx.abort();
         }
 
-        const result = await JDB.JungleDB.commitCombined(this._store.tx, this._partialTree.tx);
+        const result = await JDB.JungleDB.commitCombined(...this._store.txs, this._partialTree.tx);
         this._partialTree = null;
 
         const currentProof = await this.getChainProof();
