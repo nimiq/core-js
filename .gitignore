@@ -22,3 +22,4 @@
 /.istanbul/
 settings.json
 /coverage
+/packaging/src

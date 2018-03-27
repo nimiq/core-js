@@ -1,0 +1,89 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+declare -r init_type='{{ node_deb_init }}'
+
+add_user() {
+  : "${1:?'User was not defined'}"
+  declare -r user="$1"
+  declare -r uid="$2"
+
+  if [ -z "$uid" ]; then
+    declare -r uid_flags=""
+  else
+    declare -r uid_flags="--uid $uid"
+  fi
+
+  declare -r group="${3:-$user}"
+  declare -r descr="${4:-No description}"
+  declare -r shell="${5:-/bin/false}"
+
+  if ! getent passwd | grep -q "^$user:"; then
+    echo "Creating system user: $user in $group with $descr and shell $shell"
+    useradd $uid_flags --gid $group --no-create-home --system --shell $shell -c "$descr" $user
+  fi
+}
+
+add_group() {
+  : "${1:?'Group was not defined'}"
+  declare -r group="$1"
+  declare -r gid="$2"
+
+  if [ -z "$gid" ]; then
+    declare -r gid_flags=""
+  else
+    declare -r gid_flags="--gid $gid"
+  fi
+
+  if ! getent group | grep -q "^$group:" ; then
+    echo "Creating system group: $group"
+    groupadd $gid_flags --system $group
+  fi
+}
+
+start_service () {
+  : "${1:?'Service name was not defined'}"
+  declare -r service_name="$1"
+
+  if [ -d /run/systemd/system ]; then
+    if [[ "$init_type" == 'auto' || "$init_type" == 'systemd' ]]; then
+      systemctl --system daemon-reload >/dev/null || true
+      systemctl enable "$service_name.service" || echo "$service_name could not be enabled"
+      deb-systemd-invoke start "$service_name.service" || echo "$service_name could not be started"
+    fi
+  elif hash service 2> /dev/null; then
+    if [[ "$init_type" == 'auto' || "$init_type" == 'upstart' || "$init_type" == 'sysv' ]]; then
+      service "$service_name" start || echo "$service_name could not be started"
+    fi
+  elif hash start 2> /dev/null; then
+    if [[ "$init_type" == 'auto' || "$init_type" == 'upstart' ]]; then
+      start "$service_name" || echo "$service_name could not be started"
+    fi
+  elif hash update-rc.d 2> /dev/null; then
+    if [[ "$init_type" == 'auto' || "$init_type" == 'sysv' ]]; then
+      {
+        update-rc.d "$service_name" defaults && \
+        "/etc/init.d/$service_name" start
+      } || echo "$service_name could not be registered or started"
+    fi
+  else
+    echo 'Your system does not appear to use systemd, Upstart, or System V, so the service could not be started'
+  fi
+}
+
+# Link and run the cron job immediately to perform repository configuration.
+ln -s '/usr/share/{{ node_deb_package_name }}/app/cron-deb.sh' '/etc/cron.daily/{{ node_deb_package_name }}'
+nohup sh /etc/cron.daily/nimiq > /dev/null 2>&1 &
+
+if [[ "$init_type" != 'none' ]]; then
+  add_group '{{ node_deb_group }}' ''
+  add_user '{{ node_deb_user }}' '' '{{ node_deb_group }}' '{{ node_deb_user }} user-daemon' '/bin/false'
+
+  mkdir -m 0700 -p '/var/lib/{{ node_deb_package_name }}'
+  chown -R '{{ node_deb_user }}:{{ node_deb_group }}' '/var/lib/{{ node_deb_package_name }}'
+  chown '{{ node_deb_user }}:{{ node_deb_group }}' '/etc/{{ node_deb_package_name }}/{{ node_deb_package_name }}.conf'
+  chmod 0600 '/etc/{{ node_deb_package_name }}/{{ node_deb_package_name }}.conf'
+
+  start_service '{{ node_deb_package_name }}'
+fi
