@@ -45,7 +45,7 @@
       "systemd_service": "../systemd.service"
     },
     "entrypoints": {
-      "daemon": "node /usr/share/nimiq/app/index.js"
+      "daemon": "app/node /usr/share/nimiq/app/index.js"
     }
   },
   "dependencies": {

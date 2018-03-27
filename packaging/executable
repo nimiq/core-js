@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-/usr/share/{{ node_deb_package_name }}/app/{{ cli_entrypoint }} "$@"
+/usr/share/nimiq/{{ cli_entrypoint }} "$@"

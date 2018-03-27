@@ -1,14 +1,14 @@
 [Unit]
-Description={{ node_deb_package_description }}
+Description=Nimiq node.js client
 Requires=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/var/lib/{{ node_deb_package_name }}
-ExecStart=/usr/bin/{{ node_deb_package_name }} --config=/etc/nimiq/nimiq.conf
+WorkingDirectory=/var/lib/nimiq
+ExecStart=/usr/bin/nimiq --config=/etc/nimiq/nimiq.conf
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
-User={{ node_deb_user }}
+User=nimiq
 PermissionsStartOnly=true
 
 [Install]
