@@ -4,8 +4,8 @@ class TransactionStore {
      */
     static initPersistent(jdb) {
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec() });
-        store.createIndex('sender', 'senderKey', true);
-        store.createIndex('recipient', 'recipientKey', true);
+        store.createIndex('sender', ['senderKey']);
+        store.createIndex('recipient', ['recipientKey']);
     }
 
     /**
@@ -21,8 +21,8 @@ class TransactionStore {
      */
     static createVolatile() {
         const store = JDB.JungleDB.createVolatileObjectStore();
-        store.createIndex('sender', 'senderKey', true);
-        store.createIndex('recipient', 'recipientKey', true);
+        store.createIndex('sender', ['senderKey']);
+        store.createIndex('recipient', ['recipientKey']);
         return new TransactionStore(store);
     }
 
