@@ -46,6 +46,7 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
         '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
         '                             The wallet cannot be used to sign transactions when\n' +
         '                             using this option.\n' +
+        '  --extraData=EXTRA_DATA     Extra data to add to every mined block.\n' +
         '  --network=NAME             Configure the network to connect to, one of\n' +
         '                             main (default), test, dev, or bounty.\n');
 
@@ -165,7 +166,8 @@ const $ = {};
 
     Nimiq.Log.i(TAG, `Blockchain state: height=${$.blockchain.height}, headHash=${$.blockchain.headHash}`);
 
-    $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address);
+    const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : undefined;
+    $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, extraData);
 
     $.blockchain.on('head-changed', (head) => {
         if ($.consensus.established || head.height % 100 === 0) {
