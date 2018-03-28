@@ -162,7 +162,8 @@ class ConnectionPool extends Observable {
      * @returns {Array.<PeerConnection>}
      */
     getOutboundConnectionsBySubnet(netAddress) {
-        return (this._connectionsBySubnet.get(this._getSubnetAddress(netAddress)) || []).filter(/** @type {PeerConnection} */ peerConnection => peerConnection.networkConnection.outbound);
+        return (this._connectionsBySubnet.get(this._getSubnetAddress(netAddress)) || [])
+            .filter(/** @type {PeerConnection} */ peerConnection => peerConnection.networkConnection.outbound);
     }
 
     /**
@@ -356,15 +357,22 @@ class ConnectionPool extends Observable {
             return false;
         }
 
-        // Close connection if we have too many connections to the peer's IP address.
         if (conn.netAddress && !conn.netAddress.isPseudo() && conn.netAddress.reliable) {
-            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
-                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+            // Close connection if peer's IP is banned.
+            if (this._isIpBanned(conn.netAddress)) {
+                conn.close(CloseType.BANNED_IP, `connection with banned IP ${conn.netAddress}`);
                 return false;
             }
 
+            // Close connection if we have too many connections to the peer's IP address.
+            if (this.getConnectionsByNetAddress(conn.netAddress).length >= Network.PEER_COUNT_PER_IP_MAX) {
+                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per IP (${Network.PEER_COUNT_PER_IP_MAX}) reached`);
+                return false;
+            }
+
+            // Close connection if we have too many connections to the peer's subnet.
             if (this.getConnectionsBySubnet(conn.netAddress).length >= Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX) {
-                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per ip (${Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX}) reached`);
+                conn.close(CloseType.CONNECTION_LIMIT_PER_IP, `connection limit per subnet (${Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX}) reached`);
                 return false;
             }
         }
@@ -453,12 +461,6 @@ class ConnectionPool extends Observable {
      * @private
      */
     _checkHandshake(peerConnection, peer) {
-        // Close connection if peer's IP is banned.
-        if (peer.netAddress && this._isIpBanned(peer.netAddress)) {
-            peerConnection.peerChannel.close(CloseType.BANNED_IP, `connection with banned ip ${peer.peerAddress} (post version)`);
-            return false;
-        }
-
         // Close connection if peer's address is banned.
         if (this._addresses.isBanned(peer.peerAddress)) {
             peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED,
@@ -642,13 +644,14 @@ class ConnectionPool extends Observable {
 
     /**
      * @param {NetAddress} netAddress
+     * @returns {void}
      * @private
      */
     _banIp(netAddress) {
         if (!netAddress.isPseudo() && netAddress.reliable) {
             Log.w(ConnectionPool, `Banning IP ${netAddress}`);
             if (netAddress.isIPv4()) {
-                this._bannedIPv4IPs.put(peerNetAddresss, Date.now() + ConnectionPool.DEFAULT_BAN_TIME);
+                this._bannedIPv4IPs.put(netAddress, Date.now() + ConnectionPool.DEFAULT_BAN_TIME);
             } else if (netAddress.isIPv6()) {
                 // Ban IPv6 IPs prefix based
                 this._bannedIPv6IPs.put(netAddress.ip.subarray(0,8), Date.now() + ConnectionPool.DEFAULT_BAN_TIME);
@@ -672,6 +675,10 @@ class ConnectionPool extends Observable {
         return false;
     }
 
+    /**
+     * @returns {void}
+     * @private
+     */
     _checkUnbanIps() {
         const now = Date.now();
         for (const netAddress of this._bannedIPv4IPs.keys()) {
