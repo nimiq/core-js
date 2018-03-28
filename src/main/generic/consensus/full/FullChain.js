@@ -251,7 +251,7 @@ class FullChain extends BaseChain {
 
         if (this._transactionStore) {
             const transactionStoreTx = this._transactionStore.transaction();
-            await transactionStoreTx.put(chainData.head);
+            transactionStoreTx.putSync(chainData.head);
             await JDB.JungleDB.commitCombined(...storeTx.txs, accountsTx.tx, transactionStoreTx.tx);
         } else {
             await JDB.JungleDB.commitCombined(...storeTx.txs, accountsTx.tx);
@@ -355,7 +355,7 @@ class FullChain extends BaseChain {
 
                 // Also update transactions in index.
                 if (this._transactionStore) {
-                    await transactionStoreTx.remove(headData.head);
+                    transactionStoreTx.removeSync(headData.head);
                 }
                 revertChain.push(headData);
             } catch (e) {
@@ -387,7 +387,7 @@ class FullChain extends BaseChain {
 
                 // Also update transactions in index.
                 if (this._transactionStore) {
-                    await transactionStoreTx.put(forkChain[i].head);
+                    transactionStoreTx.putSync(forkChain[i].head);
                 }
             } catch (e) {
                 // A fork block is invalid.

@@ -104,13 +104,13 @@ class WalletStore {
     async remove(address) {
         const base64Address = address.toBase64();
         const tx = this._walletStore.transaction();
-        await tx.remove(base64Address);
+        tx.removeSync(base64Address);
         // Remove default address as well if they coincide.
         let defaultAddress = await this._walletStore.get('default');
         if (defaultAddress) {
             defaultAddress = new Address(defaultAddress);
             if (address.equals(defaultAddress)) {
-                await tx.remove('default');
+                tx.removeSync('default');
             }
         }
         return tx.commit();
