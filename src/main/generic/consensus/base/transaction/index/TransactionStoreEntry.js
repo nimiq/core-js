@@ -14,8 +14,6 @@ class TransactionStoreEntry {
         this._blockHeight = blockHeight;
         this._blockHash = blockHash;
         this._index = index;
-        this.senderKey = sender.toBase64();
-        this.recipientKey = recipient.toBase64();
     }
 
     /**
@@ -35,14 +33,14 @@ class TransactionStoreEntry {
 
     /**
      * @param {string} transactionKey
-     * @param {{senderKey: string, recipientKey: string, blockHeight: number, blockHash: string, index: number}} o
+     * @param {{sender: Uint8Array, recipient: Uint8Array, blockHeight: number, blockHash: string, index: number}} o
      * @returns {TransactionStoreEntry}
      */
     static fromJSON(transactionKey, o) {
         return new TransactionStoreEntry(
             Hash.fromBase64(transactionKey),
-            Address.fromBase64(o.senderKey),
-            Address.fromBase64(o.recipientKey),
+            Address.unserialize(o.sender),
+            Address.unserialize(o.recipient),
             o.blockHeight,
             Hash.fromBase64(o.blockHash),
             o.index
@@ -50,12 +48,12 @@ class TransactionStoreEntry {
     }
 
     /**
-     * @returns {{senderKey: string, recipientKey: string, blockHeight: number, blockHash: string, index: number}}
+     * @returns {{sender: Uint8Array, recipient: Uint8Array, blockHeight: number, blockHash: string, index: number}}
      */
     toJSON() {
         return {
-            senderKey: this.senderKey,
-            recipientKey: this.recipientKey,
+            senderKey: this.sender.serialize(),
+            recipientKey: this.recipient.serialize(),
             blockHeight: this.blockHeight,
             blockHash: this.blockHash.toBase64(),
             index: this.index

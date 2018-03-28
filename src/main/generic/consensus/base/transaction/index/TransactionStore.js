@@ -4,8 +4,8 @@ class TransactionStore {
      */
     static initPersistent(jdb) {
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec() });
-        store.createIndex('sender', ['senderKey']);
-        store.createIndex('recipient', ['recipientKey']);
+        store.createIndex('sender', ['senderKey'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        store.createIndex('recipient', ['recipientKey'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
     }
 
     /**
