@@ -65,13 +65,11 @@ class TransactionStore {
      * @returns {Promise}
      */
     async put(block) {
-        const indexedTransactions = await TransactionStoreEntry.fromBlock(block);
+        const indexedTransactions = TransactionStoreEntry.fromBlock(block);
         const tx = this._store.transaction();
-        const promises = [];
         for (const indexedTransaction of indexedTransactions) {
-            promises.push(tx.put(indexedTransaction.key, indexedTransaction));
+            tx.putSync(indexedTransaction.key, indexedTransaction);
         }
-        await Promise.all(promises);
         return tx.commit();
     }
 
@@ -82,11 +80,9 @@ class TransactionStore {
      */
     async remove(block) {
         const tx = this._store.transaction();
-        const promises = [];
         for (const transaction of block.transactions) {
-            promises.push(tx.remove(transaction.hash().toBase64()));
+            tx.removeSync(transaction.hash().toBase64());
         }
-        await Promise.all(promises);
         return tx.commit();
     }
 
