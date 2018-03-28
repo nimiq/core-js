@@ -19,9 +19,9 @@
     normalize-path "^2.0.1"
     through2 "^2.0.3"
 
-"@nimiq/jungle-db@^0.6.3":
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.6.3.tgz#88ab11ca8c485bf4107145f6c34933e4b7904405"
+"@nimiq/jungle-db@^0.7.0":
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.7.0.tgz#53eb7f749290ecfb8d873eb44c182f95379dc1c9"
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"
@@ -29,7 +29,7 @@
     level-sublevel "^6.6.1"
     leveldown "^3.0.0"
     levelup "^2.0.2"
-    node-lmdb "^0.5.0"
+    node-lmdb "^0.5.1"
 
 JSONStream@^1.0.3:
   version "1.3.2"
@@ -5458,9 +5458,9 @@ node-abi@^2.2.0:
   dependencies:
     semver "^5.4.1"
 
-node-lmdb@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/node-lmdb/-/node-lmdb-0.5.0.tgz#e98f3a481bdb00a7facb665a16623aee52ce7694"
+node-lmdb@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/node-lmdb/-/node-lmdb-0.5.1.tgz#a1ac3a8641ccd22512d0d8da17569547ef4b1a25"
   dependencies:
     bindings "^1.2.1"
     nan "^2.6.2"

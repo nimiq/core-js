@@ -1,7 +1,7 @@
 module.exports = {};
 const atob = require('atob');
 const btoa = require('btoa');
-const JDB = require('../../jungle-db/dist/lmdb.js');
+const JDB = require('@nimiq/jungle-db');
 const fs = require('fs');
 const dns = require('dns');
 const https = require('https');
