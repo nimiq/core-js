@@ -4,8 +4,8 @@ class TransactionStore {
      */
     static initPersistent(jdb) {
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec() });
-        store.createIndex('sender', ['senderKey'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
-        store.createIndex('recipient', ['recipientKey'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        store.createIndex('sender', ['senderBuffer'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        store.createIndex('recipient', ['recipientBuffer'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
     }
 
     /**
@@ -21,8 +21,8 @@ class TransactionStore {
      */
     static createVolatile() {
         const store = JDB.JungleDB.createVolatileObjectStore();
-        store.createIndex('sender', ['senderKey']);
-        store.createIndex('recipient', ['recipientKey']);
+        store.createIndex('sender', ['senderBuffer']);
+        store.createIndex('recipient', ['recipientBuffer']);
         return new TransactionStore(store);
     }
 
@@ -47,7 +47,7 @@ class TransactionStore {
      */
     getBySender(sender) {
         const index = this._store.index('sender');
-        return index.values(JDB.KeyRange.only(sender.toBase64()));
+        return index.values(JDB.KeyRange.only(sender.serialize()));
     }
 
     /**
@@ -56,7 +56,7 @@ class TransactionStore {
      */
     getByRecipient(recipient) {
         const index = this._store.index('recipient');
-        return index.values(JDB.KeyRange.only(recipient.toBase64()));
+        return index.values(JDB.KeyRange.only(recipient.serialize()));
     }
 
     /**

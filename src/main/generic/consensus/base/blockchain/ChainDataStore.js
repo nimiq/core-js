@@ -34,7 +34,7 @@ class ChainDataStore {
      * @private
      */
     static _createIndexes(chainStore) {
-        chainStore.createIndex('height', ['_height']);
+        chainStore.createIndex('height', ['_height'], { lmdbKeyEncoding: JDB.JungleDB.NUMBER_ENCODING, leveldbKeyEncoding: JDB.JungleDB.NUMBER_ENCODING });
     }
 
     /**

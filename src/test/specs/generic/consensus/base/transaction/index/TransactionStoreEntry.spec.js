@@ -47,7 +47,7 @@ describe('TransactionStoreEntry', () => {
             const entry = new TransactionStoreEntry(transactionHash, sender, recipient, 2, blockHash, 3);
             const json = entry.toJSON();
             expect(entry.key).toBe(transactionHash.toBase64());
-            expect(json).toEqual({senderKey: sender.toBase64(), recipientKey: recipient.toBase64(), blockHash: blockHash.toBase64(), blockHeight: 2, index: 3});
+            expect(json).toEqual({senderBuffer: sender.serialize(), recipientBuffer: recipient.serialize(), blockHash: blockHash.toBase64(), blockHeight: 2, index: 3});
 
             const entry2 = TransactionStoreEntry.fromJSON(entry.key, json);
             expect(entry2.transactionHash.equals(entry.transactionHash)).toBeTruthy();
