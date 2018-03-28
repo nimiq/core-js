@@ -18,7 +18,7 @@ function jsonRpcFetch(method, ...params) {
             params: params
         });
         const req = http.request({
-            hostname: '127.0.0.1',
+            hostname: host,
             port: port,
             method: 'POST',
             headers: {'Content-Length': jsonrpc.length}
@@ -314,14 +314,13 @@ function formatMonth(month) {
     return '???';
 }
 
-let args = argv._;
-if (!args || args.length === 0) args = ['default'];
-
-(async () => {
+async function action(args, repl) {
     switch (args[0]) {
         // Miner
         case 'mining': {
-            await displayInfoHeader();
+            if (!repl) {
+                await displayInfoHeader();
+            }
             const enabled = await jsonRpcFetch('mining');
             if (!enabled) {
                 console.log('Mining is disabled.');
@@ -354,7 +353,9 @@ if (!args || args.length === 0) args = ['default'];
         }
         // Accounts
         case 'accounts': {
-            await displayInfoHeader(68);
+            if (!repl) {
+                await displayInfoHeader(68);
+            }
             const accounts = await jsonRpcFetch('accounts');
             accounts.sort((a, b) => a.address > b.address);
             for (const account of accounts) {
@@ -377,7 +378,9 @@ if (!args || args.length === 0) args = ['default'];
             return;
         }
         case 'account': {
-            await displayInfoHeader(81);
+            if (!repl) {
+                await displayInfoHeader(81);
+            }
             if (args.length === 2) {
                 await displayAccount(await jsonRpcFetch('getAccount', args[1]), args[1]);
                 return;
@@ -395,7 +398,9 @@ if (!args || args.length === 0) args = ['default'];
         }
         // Blocks
         case 'block': {
-            await displayInfoHeader(79);
+            if (!repl) {
+                await displayInfoHeader(79);
+            }
             if (args.length === 2) {
                 if (args[1].length === 64 || args[1].length === 44) {
                     displayBlock(await jsonRpcFetch('getBlockByHash', args[1]), args[1]);
@@ -423,7 +428,9 @@ if (!args || args.length === 0) args = ['default'];
         }
         // Transactions
         case 'transaction': {
-            await displayInfoHeader(79);
+            if (!repl) {
+                await displayInfoHeader(79);
+            }
             if (args.length === 2) {
                 await displayTransaction(await jsonRpcFetch('getTransactionByHash', args[1]), args[1]);
                 return;
@@ -456,7 +463,9 @@ if (!args || args.length === 0) args = ['default'];
             return;
         }
         case 'transaction.send': {
-            await displayInfoHeader(74);
+            if (!repl) {
+                await displayInfoHeader(74);
+            }
             if (args.length < 5 || args.length > 6) {
                 console.error('Arguments for \'transaction.send\': from, to, value, fee, [data]');
                 return;
@@ -471,7 +480,9 @@ if (!args || args.length === 0) args = ['default'];
             return;
         }
         case 'transaction.receipt': {
-            await displayInfoHeader(74);
+            if (!repl) {
+                await displayInfoHeader(74);
+            }
             if (args.length !== 2) {
                 console.error('Specify transaction hash');
                 return;
@@ -499,7 +510,9 @@ if (!args || args.length === 0) args = ['default'];
                 console.error('Specify account address');
                 return;
             }
-            await displayInfoHeader(75);
+            if (!repl) {
+                await displayInfoHeader(75);
+            }
             const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1])).sort((a, b) => a.timestamp > b.timestamp);
             const self = Nimiq.Address.fromString(args[1]);
             console.log(chalk`Transaction log for {bold ${self.toUserFriendlyAddress()}}:`);
@@ -510,8 +523,11 @@ if (!args || args.length === 0) args = ['default'];
                 const date = new Date(tx.timestamp * 1000);
                 const value = sent ? -(tx.value + tx.fee) : tx.value;
                 let dateStr = date.getDate().toString();
-                if (dateStr.length === 1) dateStr = ` ${dateStr} `;
-                else dateStr = `${dateStr[0]}${dateStr[1]} `;
+                if (dateStr.length === 1) {
+                    dateStr = ` ${dateStr} `;
+                } else {
+                    dateStr = `${dateStr[0]}${dateStr[1]} `;
+                }
                 console.log(chalk`${dateStr} | ${dir} ${other} | {${sent ? 'red' : 'green'} ${nimValueFormat(value, 10, true)}}`);
                 console.log(`${formatMonth(date.getMonth())} | ID: ${tx.hash}`);
             }
@@ -533,8 +549,11 @@ if (!args || args.length === 0) args = ['default'];
                 if (includeTransactions) {
                     const date = new Date(tx.timestamp * 1000);
                     let dateStr = date.getDate().toString();
-                    if (dateStr.length === 1) dateStr = ` ${dateStr} `;
-                    else dateStr = `${dateStr[0]}${dateStr[1]} `;
+                    if (dateStr.length === 1) {
+                        dateStr = ` ${dateStr} `;
+                    } else {
+                        dateStr = `${dateStr[0]}${dateStr[1]} `;
+                    }
                     console.log(chalk`${dateStr} | ${tx.fromString} -> ${tx.toString} | ${nimValueFormat(tx.value, 10)} | ${nimValueFormat(tx.fee, 10)}`);
                     console.log(`ID: ${tx.hash}`);
                 } else {
@@ -563,7 +582,9 @@ if (!args || args.length === 0) args = ['default'];
         case 'peers': {
             const peerList = (await jsonRpcFetch('peerList')).sort((a, b) => a.addressState === 2 ? -1 : b.addressState === 2 ? 1 : a.addressState < b.addressState ? 1 : a.addressState > b.addressState ? -1 : a.address > b.address);
             const maxAddrLength = peerList.map(p => p.address.length).reduce((a, b) => Math.max(a, b), 0);
-            await displayInfoHeader(maxAddrLength + 15);
+            if (!repl) {
+                await displayInfoHeader(maxAddrLength + 15);
+            }
             for (const peer of peerList) {
                 const space = Array(maxAddrLength - peer.address.length + 1).join(' ');
                 console.log(chalk`${peer.address}${space} | ${peer.connectionState ? connectionStateName(peer.connectionState) : peerAddressStateName(peer.addressState)}`);
@@ -580,7 +601,9 @@ if (!args || args.length === 0) args = ['default'];
                 return;
             }
             const peerState = await jsonRpcFetch('peerState', args[1], args.length > 2 ? args[2] : undefined);
-            await displayInfoHeader((peerState ? peerState.address.length : 0) + 20);
+            if (!repl) {
+                await displayInfoHeader((peerState ? peerState.address.length : 0) + 20);
+            }
             displayPeerState(peerState, args[1]);
             return;
         }
@@ -601,9 +624,23 @@ if (!args || args.length === 0) args = ['default'];
             console.log('Use `help` command for usage instructions.');
             return;
         }
+        case 'status': {
+            try {
+                await displayInfoHeader(79);
+            } catch (e) {
+                console.log('Client not running.');
+            }
+            return;
+        }
         case 'help':
         default:
-            console.log(`Nimiq NodeJS JSON-RPC-Client
+            if (repl && args[0] !== 'help') {
+                console.log('Unknown command. Use `help` command for usage instructions.');
+                return;
+            }
+
+            if (!repl) {
+                console.log(`Nimiq NodeJS JSON-RPC-Client
 
 Usage:
     node remote.js [options] action [args]
@@ -614,7 +651,9 @@ Options:
     --port PORT             Define port corresponding to HOST.
                             Defaults to 8648.
 
-Actions:
+`);
+            }
+            console.log(`Actions:
     account ADDR            Display details for account with address ADDR.
     accounts                List local accounts.
     block BLOCK             Display details of block BLOCK.
@@ -651,4 +690,71 @@ in hex or base64 format or by the height on the main chain. Transactions are
 understood in hex or base64 format of their hash. Peers may be given as their
 peer id in hex or peer address.`);
     }
-})().catch(console.error);
+}
+
+
+let args = argv._;
+if (!args || args.length === 0) {
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        removeHistoryDuplicates: true,
+        completer: function (line, callback) {
+            if (line.indexOf(' ') < 0) {
+                const completions = ['account', 'accounts', 'accounts.create', 'block', 'constant',
+                    'mining', 'mining.enabled', 'mining.threads', 'peer', 'peers',
+                    'transaction', 'transaction.receipt', 'transaction.send', 'transactions',
+                    'mempool', 'consensus.min_fee_per_byte'];
+                const hits = completions.filter((c) => c.startsWith(line));
+                callback(null, [hits.length ? hits : completions, line]);
+            } else {
+                callback(null, []);
+            }
+        }
+    });
+    rl.on('line', async (line) => {
+        line = line.trim();
+        if (line === 'exit') {
+            rl.close();
+            return;
+        }
+        let args = [];
+        while (line) {
+            if (line[0] === '\'' || line[0] === '"') {
+                const close = line.indexOf(line[0], 1);
+                if (close < 0 || (line.length !== close + 1 && line[close + 1] !== ' ')) {
+                    console.log('Invalid quoting');
+                    line = null;
+                    args = null;
+                    break;
+                }
+                args.push(line.substring(1, close));
+                line = line.substring(close + 1).trim();
+            } else {
+                let close = line.indexOf(' ');
+                if (close < 0) close = line.length;
+                args.push(line.substring(0, close));
+                line = line.substring(close + 1).trim();
+            }
+        }
+        if (args != null) {
+            try {
+                await action(args, true);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        rl.prompt();
+    });
+    rl.on('close', () => {
+        process.exit(0);
+    });
+    displayInfoHeader(79).then(() => rl.prompt()).catch(() => {
+        console.log(`Could not connect to Nimiq NodeJS client via RPC on ${host}:${port}.`);
+        console.log('Use `help` command for usage instructions.');
+        rl.close();
+    });
+} else {
+    action(args, false).catch(console.error);
+}
