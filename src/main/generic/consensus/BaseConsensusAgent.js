@@ -30,7 +30,7 @@ class BaseConsensusAgent extends Observable {
         /** @type {ThrottledQueue.<InvVector>} */
         this._txsToRequest = new ThrottledQueue(
             BaseConsensusAgent.TRANSACTIONS_AT_ONCE + BaseConsensusAgent.FREE_TRANSACTIONS_AT_ONCE,
-            BaseInventoryMessage.TRANSACTIONS_PER_SECOND + BaseInventoryMessage.FREE_TRANSACTIONS_PER_SECOND,
+            BaseConsensusAgent.TRANSACTIONS_PER_SECOND + BaseConsensusAgent.FREE_TRANSACTIONS_PER_SECOND,
             1000, BaseConsensusAgent.REQUEST_TRANSACTIONS_WAITING_MAX);
 
         // Objects that are currently being requested from the peer.
@@ -64,7 +64,7 @@ class BaseConsensusAgent extends Observable {
         /** @type {ThrottledQueue.<InvVector>} */
         this._waitingInvVectors = new ThrottledQueue(
             BaseConsensusAgent.TRANSACTIONS_AT_ONCE,
-            BaseInventoryMessage.TRANSACTIONS_PER_SECOND,
+            BaseConsensusAgent.TRANSACTIONS_PER_SECOND,
             1000, BaseConsensusAgent.REQUEST_TRANSACTIONS_WAITING_MAX);
         this._timers.setInterval('invVectors', () => this._sendWaitingInvVectors(), BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL);
 
@@ -72,7 +72,7 @@ class BaseConsensusAgent extends Observable {
         /** @type {ThrottledQueue.<{serializedSize:number, vector:InvVector}>} */
         this._waitingFreeInvVectors = new ThrottledQueue(
             BaseConsensusAgent.FREE_TRANSACTIONS_AT_ONCE,
-            BaseInventoryMessage.FREE_TRANSACTIONS_PER_SECOND,
+            BaseConsensusAgent.FREE_TRANSACTIONS_PER_SECOND,
             1000, BaseConsensusAgent.REQUEST_TRANSACTIONS_WAITING_MAX);
         this._timers.setInterval('freeInvVectors', () => this._sendFreeWaitingInvVectors(), BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL);
 
@@ -316,9 +316,9 @@ class BaseConsensusAgent extends Observable {
             }
         }
 
-        Log.v(BaseConsensusAgent, `[INV] ${msg.vectors.length} vectors (${unknownBlocks.length} new) received from ${this._peer.peerAddress}`);
+        Log.v(BaseConsensusAgent, () => `[INV] ${msg.vectors.length} vectors (${unknownBlocks.length} new blocks, ${unknownTxs.length} new txs) received from ${this._peer.peerAddress}`);
 
-        if (unknownBlocks.length > 0 || unknownTxs > 0) {
+        if (unknownBlocks.length > 0 || unknownTxs.length > 0) {
             // Store unknown vectors in objectsToRequest.
             this._blocksToRequest.enqueueAllNew(unknownBlocks);
             this._txsToRequest.enqueueAllNew(unknownTxs);
@@ -416,9 +416,9 @@ class BaseConsensusAgent extends Observable {
         // Request queued objects from the peer. Only request up to VECTORS_MAX_COUNT objects at a time.
         const vectorsMaxCount = BaseInventoryMessage.VECTORS_MAX_COUNT;
         /** @type {Array.<InvVector>} */
-        const vectors = this._blocksToRequest.dequeueMulti(vectorsMaxCount);
+        let vectors = this._blocksToRequest.dequeueMulti(vectorsMaxCount);
         if (vectors.length < vectorsMaxCount) {
-            vectors.concat(this._txsToRequest.dequeueMulti(vectorsMaxCount - vectors.length));
+            vectors = vectors.concat(this._txsToRequest.dequeueMulti(vectorsMaxCount - vectors.length));
         }
 
         // Mark the requested objects as in-flight.

@@ -147,5 +147,10 @@ class NanoMempool extends Observable {
             }
         }
     }
+
+    /** @type {number} */
+    get length() {
+        return this._transactionsByHash.length;
+    }
 }
 Class.register(NanoMempool);

@@ -109,8 +109,8 @@ class BaseConsensus extends Observable {
             }
         }
 
-        // Report consensus-lost if we are synced with less than the minimum number of full nodes.
-        if (this._established && numSyncedFullNodes < BaseConsensus.MIN_FULL_NODES) {
+        // Report consensus-lost if we are synced with less than the minimum number of full nodes or have no connections at all.
+        if (this._established && (numSyncedFullNodes < BaseConsensus.MIN_FULL_NODES || this._agents.length === 0)) {
             this._established = false;
             this.fire('lost');
         }
@@ -213,9 +213,14 @@ class BaseConsensus extends Observable {
      * @protected
      */
     async _requestBlockProof(blockHashToProve, blockHeightToProve) {
+        /** @type {Block} */
         const knownBlock = await this._blockchain.getNearestBlockAt(blockHeightToProve, /*lower*/ false);
         if (!knownBlock) {
             throw new Error('No suitable reference block found for BlockProof');
+        }
+
+        if (blockHashToProve.equals(knownBlock.hash())) {
+            return knownBlock;
         }
 
         const agents = this._agents.values().filter(agent =>
@@ -300,7 +305,7 @@ class BaseConsensus extends Observable {
     /**
      * @param {Address} address
      * @returns {Promise.<Array.<{transaction: Transaction, header: BlockHeader}>>}
-     * @private
+     * @protected
      */
     async _requestTransactionHistory(address) {
         // 1. Get transaction receipts.

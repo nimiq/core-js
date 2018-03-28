@@ -85,7 +85,7 @@ class NetAddress {
     equals(o) {
         return o instanceof NetAddress
             && this._type === o._type
-            && this._ip === o.ip;
+            && BufferUtils.equals(this._ip, o.ip);
     }
 
     hashCode() {

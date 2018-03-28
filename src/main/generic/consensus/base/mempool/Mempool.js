@@ -388,6 +388,11 @@ class Mempool extends Observable {
          */
         this.fire('transactions-ready');
     }
+
+    /** @type {number} */
+    get length() {
+        return this._transactionsByHash.length;
+    }
 }
 
 Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
