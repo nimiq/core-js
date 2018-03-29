@@ -153,7 +153,7 @@ function blockNumberFormat(blockNumber, head) {
     if (blockNumber === head.height) return `${blockNumber} (Now)`;
     const targetTimestamp = head.timestamp - (head.height - blockNumber) * Nimiq.Policy.BLOCK_TIME;
     const diff = targetTimestamp - Date.now() / 1000;
-    return `${blockNumber} (${diff < 0 ? 'in ' : ''}${approxTimeDifference((head.height - blockNumber) * 60), true}${diff > 0 ? ' ago' : ''})`;
+    return `${blockNumber} (${diff < 0 ? 'in ' : ''}${approxTimeDifference((head.height - blockNumber) * 60, true)}${diff > 0 ? ' ago' : ''})`;
 }
 
 function blockAmountFormat(blocks) {
@@ -632,6 +632,26 @@ async function action(args, repl) {
             }
             return;
         }
+        case 'log': {
+            if (args.length < 2) {
+                args.push('verbose');
+            }
+            if (args.length < 3) {
+                args.splice(1, 0, '*');
+            }
+            if (args.length > 3) {
+                console.error('Too many args');
+                return;
+            }
+            args[2] = Nimiq.Log.Level.toString(Nimiq.Log.Level.get(args[2]));
+            JSON.stringify(await jsonRpcFetch('log', args[1], args[2]));
+            if (args[1] === '*') {
+                console.log(`Global log level set to ${args[2]}`);
+            } else {
+                console.log(`Log level for tag ${args[1]} set to ${args[2]}`);
+            }
+            return;
+        }
         case 'help':
         default:
             if (repl && args[0] !== 'help') {
@@ -738,7 +758,7 @@ if (!args || args.length === 0) {
                 line = line.substring(close + 1).trim();
             }
         }
-        if (args != null) {
+        if (args !== null && args.length > 0) {
             try {
                 await action(args, true);
             } catch (e) {

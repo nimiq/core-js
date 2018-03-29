@@ -175,22 +175,43 @@ Log.Level = {
      */
     toStringTag: function (level) {
         switch (level) {
-            case Log.TRACE:
+            case Log.Level.TRACE:
                 return 'T';
-            case Log.VERBOSE:
+            case Log.Level.VERBOSE:
                 return 'V';
-            case Log.DEBUG:
+            case Log.Level.DEBUG:
                 return 'D';
-            case Log.INFO:
+            case Log.Level.INFO:
                 return 'I';
-            case Log.WARNING:
+            case Log.Level.WARNING:
                 return 'W';
-            case Log.ERROR:
+            case Log.Level.ERROR:
                 return 'E';
-            case Log.ASSERT:
+            case Log.Level.ASSERT:
                 return 'A';
             default:
                 return '*';
+        }
+    },
+
+    toString: function (level) {
+        switch (level) {
+            case Log.Level.TRACE:
+                return 'trace';
+            case Log.Level.VERBOSE:
+                return 'verbose';
+            case Log.Level.DEBUG:
+                return 'debug';
+            case Log.Level.INFO:
+                return 'info';
+            case Log.Level.WARNING:
+                return 'warn';
+            case Log.Level.ERROR:
+                return 'error';
+            case Log.Level.ASSERT:
+                return 'assert';
+            default:
+                return 'unknown';
         }
     },
 

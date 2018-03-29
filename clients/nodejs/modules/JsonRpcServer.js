@@ -92,6 +92,7 @@ class JsonRpcServer {
         this._methods.set('getBlockByNumber', this.getBlockByNumber.bind(this));
 
         this._methods.set('constant', this.constant.bind(this));
+        this._methods.set('log', this.log.bind(this));
     }
 
     constant(constant, value) {
@@ -104,6 +105,19 @@ class JsonRpcServer {
             }
         }
         return Nimiq.ConstantHelper.instance.get(constant);
+    }
+
+    log(tag, level) {
+        if (tag && level) {
+            if (tag === '*') {
+                Nimiq.Log.instance.level = level;
+            } else {
+                Nimiq.Log.instance.setLoggable(tag, level);
+            }
+            return true;
+        } else {
+            throw new Error('Missing argument');
+        }
     }
 
 
