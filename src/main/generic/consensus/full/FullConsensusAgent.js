@@ -121,7 +121,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _requestBlocks(maxInvSize) {
         // Only one getBlocks request at a time.
         if (this._peer.channel.isExpectingMessage(Message.Type.INV)) {
-            Log.e(FullConsensusAgent, 'Duplicate _requestBlocks()');
             return;
         }
 

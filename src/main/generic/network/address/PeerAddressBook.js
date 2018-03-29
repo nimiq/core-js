@@ -45,6 +45,7 @@ class PeerAddressBook extends Observable {
     values() {
         return this._store.values();
     }
+
     /**
      * @param {PeerAddress} peerAddress
      * @returns {?PeerAddressState}
@@ -56,6 +57,14 @@ class PeerAddressBook extends Observable {
             if (localPeerAddress) return localPeerAddress;
         }
         return this._store.get(peerAddress);
+    }
+
+    /**
+     * @param {PeerAddress} peerAddress
+     * @returns {?PeerAddressState}
+     */
+    getState(peerAddress) {
+        return this._get(peerAddress);
     }
 
     /**
