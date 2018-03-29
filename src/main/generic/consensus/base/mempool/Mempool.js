@@ -87,19 +87,28 @@ class Mempool extends Observable {
         const transactions = [];
         let tmpAccount = senderAccount;
         for (const tx of set.copyAndAdd(transaction).transactions) {
+            let error = 'transactions per sender exceeded';
             try {
-                tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
-                transactions.push(tx);
-            } catch (e) {
-                // If the rejected transaction is the one we're pushing, fail.
-                // Otherwise, evict the rejected transaction from the mempool.
-                if (tx.equals(transaction)) {
-                    Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
-                    return Mempool.ReturnCode.INVALID;
-                } else {
-                    // Remove transaction
-                    this._removeTransaction(tx);
+                if (transactions.length < Mempool.TRANSACTIONS_PER_SENDER_MAX) {
+                    tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
+                    transactions.push(tx);
+
+                    // Transaction ok, move to next one.
+                    continue;
                 }
+            } catch (e) {
+                error = e.message;
+            }
+
+            // An error occurred processing this transaction.
+            // If the rejected transaction is the one we're pushing, fail.
+            // Otherwise, evict the rejected transaction from the mempool.
+            if (tx.equals(transaction)) {
+                Log.w(Mempool, `Rejected transaction - ${error}`, transaction);
+                return Mempool.ReturnCode.INVALID;
+            } else {
+                // Remove transaction
+                this._removeTransaction(tx);
             }
         }
 
@@ -404,9 +413,26 @@ class Mempool extends Observable {
     }
 }
 
-Mempool.TRANSACTION_RELAY_FEE_MIN = 1; // sat/byte; transactions below that threshold are considered "free"
-Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10; // max number of transactions considered free per sender
-Mempool.SIZE_MAX = 100000; // transactions
+/**
+ * Fee threshold in sat/byte below which transactions are considered "free".
+ * @type {number}
+ */
+Mempool.TRANSACTION_RELAY_FEE_MIN = 1;
+/**
+ * Maximum number of transactions per sender.
+ * @type {number}
+ */
+Mempool.TRANSACTIONS_PER_SENDER_MAX = 500;
+/**
+ * Maximum number of "free" transactions per sender.
+ * @type {number}
+ */
+Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10;
+/**
+ * Maximum number of transactions in the mempool.
+ * @type {number}
+ */
+Mempool.SIZE_MAX = 100000;
 
 /** @enum {number} */
 Mempool.ReturnCode = {
