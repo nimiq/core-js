@@ -16,6 +16,7 @@ class HashSet {
      * @private
      */
     static _hash(o) {
+        if (o === null || o === undefined) return o;
         return o.hashCode ? o.hashCode() : o.toString();
     }
 

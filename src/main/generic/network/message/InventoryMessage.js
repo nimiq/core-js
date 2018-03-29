@@ -70,8 +70,11 @@ class InvVector {
             && this._hash.equals(o.hash);
     }
 
+    /**
+     * @returns {string}
+     */
     hashCode() {
-        return `${this._type}|${this._hash}`;
+        return `${this._type}|${this._hash.toBase64()}`;
     }
 
     /**

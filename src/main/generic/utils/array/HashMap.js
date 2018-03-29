@@ -2,6 +2,9 @@
  * @template K,V
  */
 class HashMap {
+    /**
+     * @param {function(o: object): string} [fnHash]
+     */
     constructor(fnHash = HashMap._hash) {
         /** @type {Map.<string,V>} */
         this._map = new Map();
@@ -15,6 +18,7 @@ class HashMap {
      * @private
      */
     static _hash(o) {
+        if (o === null || o === undefined) return o;
         return o.hashCode ? o.hashCode() : o.toString();
     }
 

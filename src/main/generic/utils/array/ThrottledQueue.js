@@ -1,4 +1,4 @@
-class ThrottledQueue extends Queue {
+class ThrottledQueue extends UniqueQueue {
     /**
      * @param {number} [maxAtOnce]
      * @param {number} [allowanceNum]

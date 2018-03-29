@@ -25,8 +25,8 @@ class BaseConsensusAgent extends Observable {
 
         // InvVectors we want to request via getData are collected here and
         // periodically requested.
-        /** @type {Queue.<InvVector>} */
-        this._blocksToRequest = new Queue();
+        /** @type {UniqueQueue.<InvVector>} */
+        this._blocksToRequest = new UniqueQueue();
         /** @type {ThrottledQueue.<InvVector>} */
         this._txsToRequest = new ThrottledQueue(
             BaseConsensusAgent.TRANSACTIONS_AT_ONCE + BaseConsensusAgent.FREE_TRANSACTIONS_AT_ONCE,
