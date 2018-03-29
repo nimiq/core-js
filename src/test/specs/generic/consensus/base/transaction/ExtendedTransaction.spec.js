@@ -44,5 +44,6 @@ describe('ExtendedTransaction', () => {
         expect(tx2.networkId).toEqual(networkId);
         expect(BufferUtils.equals(tx2.data, data)).toBeTruthy();
         expect(BufferUtils.equals(tx2.proof, proof)).toBeTruthy();
+        expect(tx2.equals(tx1)).toBe(true);
     });
 });

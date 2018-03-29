@@ -37,6 +37,7 @@ describe('BasicTransaction', () => {
         expect(tx2.validityStartHeight).toEqual(validityStartHeight);
         expect(tx2.networkId).toEqual(networkId);
         expect(tx2.signature.equals(signature)).toBeTruthy();
+        expect(tx2.equals(tx1)).toBe(true);
     });
 
     it('can falsify an invalid signature', () => {
