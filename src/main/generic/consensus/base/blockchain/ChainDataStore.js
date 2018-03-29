@@ -3,10 +3,10 @@ class ChainDataStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const chainStore = jdb.createObjectStore('ChainData', { codec: new ChainDataStoreCodec() });
+        const chainStore = jdb.createObjectStore('ChainData', { codec: new ChainDataStoreCodec(), enableLruCache: true });
         ChainDataStore._createIndexes(chainStore);
 
-        jdb.createObjectStore('Block', { codec: new BlockStoreCodec() });
+        jdb.createObjectStore('Block', { codec: new BlockStoreCodec(), enableLruCache: true, lruCacheSize: 0, rawLruCacheSize: 500 });
     }
 
     /**
@@ -66,6 +66,26 @@ class ChainDataStore {
         }
 
         return chainData;
+    }
+
+    /**
+     * @param {Hash} hash
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Uint8Array>}
+     */
+    async getRawBlock(hash, includeForks = false) {
+        /** @type {ChainData} */
+        const chainData = await this._chainStore.get(key.toBase64());
+        if (!chainData || (!chainData.onMainChain && !includeForks)) {
+            return null;
+        }
+
+        const block = await this._blockStore.get(key.toBase64(), { raw: true });
+        if (block) {
+            return new Uint8Array(block);
+        }
+
+        return null;
     }
 
     /**

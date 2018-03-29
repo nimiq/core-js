@@ -360,6 +360,19 @@ class BaseConsensusAgent extends Observable {
         // MUST be implemented by subclasses.
         throw new Error('not implemented');
     }
+
+    /**
+     * @param {Hash} hash
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Uint8Array>}
+     * @protected
+     * @abstract
+     */
+    _getRawBlock(hash, includeForks = false) {
+        // MUST be implemented by subclasses.
+        throw new Error('not implemented');
+    }
+
     /**
      * @param {Hash} hash
      * @returns {Promise.<?Transaction>}
@@ -683,10 +696,10 @@ class BaseConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             switch (vector.type) {
                 case InvVector.Type.BLOCK: {
-                    const block = await this._getBlock(vector.hash, /*includeForks*/ false, /*includeBody*/ true); // eslint-disable-line no-await-in-loop
-                    if (block && block.isFull()) {
+                    const block = await this._getRawBlock(vector.hash, /*includeForks*/ false); // eslint-disable-line no-await-in-loop
+                    if (block) {
                         // We have found a requested block, send it back to the sender.
-                        this._peer.channel.block(block);
+                        this._peer.channel.rawBlock(block);
                     } else {
                         // Requested block is unknown.
                         unknownObjects.push(vector);

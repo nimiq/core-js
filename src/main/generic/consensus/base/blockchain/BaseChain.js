@@ -22,6 +22,15 @@ class BaseChain extends IBlockchain {
     }
 
     /**
+     * @param {Hash} hash
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Uint8Array>}
+     */
+    getRawBlock(hash, includeForks = false) {
+        return this._store.getRawBlock(hash, includeForks);
+    }
+
+    /**
      * @param {number} height
      * @param {boolean} [includeBody]
      * @returns {Promise.<?Block>}

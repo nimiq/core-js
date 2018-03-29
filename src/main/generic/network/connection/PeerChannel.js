@@ -155,6 +155,14 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {Uint8Array} block
+     * @return {boolean}
+     */
+    rawBlock(block) {
+        return this._send(new RawBlockMessage(block));
+    }
+
+    /**
      * @param {BlockHeader} header
      * @return {boolean}
      */
