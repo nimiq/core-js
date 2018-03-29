@@ -80,7 +80,7 @@ class ChainDataStore {
             if (includeBody && chainData.head.isFull()) {
                 this._blockStore.putSync(key.toBase64(), chainData.head);
             }
-            return;
+            return Promise.resolve(true);
         }
 
         if (includeBody && chainData.head.isFull()) {
@@ -356,11 +356,11 @@ class ChainDataStore {
     /**
      * @returns {Promise}
      */
-    async truncate() {
+    truncate() {
         if (this._chainStore instanceof JDB.Transaction) {
             this._chainStore.truncateSync();
             this._blockStore.truncateSync();
-            return;
+            return Promise.resolve(true);
         }
 
         const chainTx = this._chainStore.transaction();
