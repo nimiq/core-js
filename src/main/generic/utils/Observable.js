@@ -38,13 +38,16 @@ class Observable {
     /**
      * @param {string} type
      * @param {...*} args
+     * @returns {Promise|null}
      */
     fire(type, ...args) {
+        const promises = [];
         // Notify listeners for this event type.
         if (this._listeners.has(type)) {
             for (const i in this._listeners.get(type)) {
                 const listener = this._listeners.get(type)[i];
-                listener.apply(null, args);
+                const res = listener.apply(null, args);
+                if (res instanceof Promise) promises.push(res);
             }
         }
 
@@ -52,9 +55,13 @@ class Observable {
         if (this._listeners.has(Observable.WILDCARD)) {
             for (const i in this._listeners.get(Observable.WILDCARD)) {
                 const listener = this._listeners.get(Observable.WILDCARD)[i];
-                listener.apply(null, arguments);
+                const res = promises.push(listener.apply(null, arguments));
+                if (res instanceof Promise) promises.push(res);
             }
         }
+
+        if (promises.length > 0) return Promise.all(promises);
+        return null;
     }
 
     /**

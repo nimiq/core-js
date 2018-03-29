@@ -16,7 +16,8 @@ class PeerChannel extends Observable {
      * @param {Uint8Array} rawMsg
      * @private
      */
-    _onMessage(rawMsg) {
+    async _onMessage(rawMsg) {
+        const start = Date.now();
         let msg = null, type = null;
 
         try {
@@ -52,8 +53,8 @@ class PeerChannel extends Observable {
         this._conn.confirmExpectedMessage(type, true);
 
         try {
-            this.fire(PeerChannel.Event[msg.type], msg, this);
-            this.fire('message-log', msg, this);
+            await this.fire(PeerChannel.Event[msg.type], msg, this);
+            this.fire('message-log', msg, this, Date.now() - start);
         } catch (e) {
             Log.w(PeerChannel, `Error while processing '${PeerChannel.Event[msg.type]}' message from ${this.peerAddress || this.netAddress}: ${e}`);
         }

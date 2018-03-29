@@ -1,6 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const btoa = require('btoa');
+const Nimiq = require('../../../dist/node.js');
 
 class MetricsServer {
     constructor(sslConfig, port, password) {
@@ -22,6 +23,9 @@ class MetricsServer {
                 res.end();
             }
         }).listen(port);
+
+        /** @type {Map.<string, {occurrences: number, timeSpentProcessing: number}>} */
+        this._messageMeasures = new Map();
     }
 
     /**
@@ -32,11 +36,43 @@ class MetricsServer {
      * @param {Miner} miner
      */
     init(blockchain, accounts, mempool, network, miner) {
+        /** @type {FullChain} */
         this._blockchain = blockchain;
+        /** @type {Accounts} */
         this._accounts = accounts;
+        /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {Network} */
         this._network = network;
+        /** @type {Miner} */
         this._miner = miner;
+
+        this._network.on('peer-joined', (peer) => this._onPeerJoined(peer));
+    }
+
+    /**
+     * @param {Peer} peer
+     * @private
+     */
+    _onPeerJoined(peer) {
+        peer.channel.on('message-log', (msg, peerChannel, time) => this._measureMessage(msg, time));
+    }
+
+
+    /**
+     * @param {Message} msg
+     * @param {number} time
+     * @private
+     */
+    _measureMessage(msg, time) {
+        if (!Nimiq.PeerChannel.Event[msg.type]) return;
+        const str = Nimiq.PeerChannel.Event[msg.type];
+        if (!this._messageMeasures.has(str)) {
+            this._messageMeasures.set(str, {occurrences: 0, timeSpentProcessing: 0});
+        }
+        const obj = this._messageMeasures.get(str);
+        obj.occurrences++;
+        if (time > 0) obj.timeSpentProcessing += time;
     }
 
     get _desc() {
@@ -98,6 +134,12 @@ class MetricsServer {
         MetricsServer._metric(res, 'network_time_now', this._desc, this._network.time.now());
         MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'sent'}), this._network.bytesSent);
         MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'received'}), this._network.bytesReceived);
+        for(const type of this._messageMeasures.keys()) {
+            const obj = this._messageMeasures.get(type);
+            MetricsServer._metric(res, 'message_rx_count', this._with({'type': type}), obj.occurrences);
+            MetricsServer._metric(res, 'message_rx_processing_time', this._with({'type': type}), obj.timeSpentProcessing);
+        }
+
     }
 
     _minerMetrics(res) {
