@@ -7,6 +7,7 @@ const dns = require('dns');
 const https = require('https');
 const WebSocket = require('ws');
 const NodeNative = require(`${__dirname}/nimiq_node`);
+const chalk = require('chalk');
 
 global.Class = {
     scope: module.exports,
