@@ -3,7 +3,7 @@ describe('Blockchain', () => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 1);
             const sender = testBlockchain.users[0];
-            const numTransactions = 8000;
+            const numTransactions = 1500;
 
             const transactions = [];
             for (let i = 0; i < numTransactions; i++) {
@@ -14,8 +14,6 @@ describe('Blockchain', () => {
 
             const block = await testBlockchain.createBlock({
                 transactions: transactions
-                // prunedAccounts: [],
-                // accountsHash: Hash.fromBase64('2nnH1sSFvM2ADcJhk9Tq4DuZctVkYX5VOH4B3ZswD54=')
             });
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
@@ -108,7 +106,7 @@ describe('Blockchain', () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 2);
             const sender = testBlockchain.users[0];
             const receiver = testBlockchain.users[1];
-            const numTransactions = 1000;
+            const numTransactions = 700;
 
             const transactions = [];
             for (let i = 0; i < numTransactions; i++) {

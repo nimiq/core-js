@@ -22,8 +22,7 @@ class Mempool extends Observable {
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
 
-        // Listen for changes in the blockchain head to evict transactions that
-        // have become invalid.
+        // Listen for changes in the blockchain head to evict transactions that have become invalid.
         blockchain.on('head-changed', () => this._evictTransactions());
         blockchain.on('block-reverted', (block) => this._restoreTransactions(block));
     }
@@ -136,10 +135,14 @@ class Mempool extends Observable {
 
         /** @type {HashSet.<Hash>} */
         const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
-        if (byRecipient.length === 1) {
-            this._transactionSetByRecipient.remove(transaction.recipient);
+        if (byRecipient) {
+            if (byRecipient.length === 1) {
+                this._transactionSetByRecipient.remove(transaction.recipient);
+            } else {
+                byRecipient.remove(transaction.hash());
+            }
         } else {
-            byRecipient.remove(transaction.hash());
+            Log.e(Mempool, `Invalid state: no transactionsByRecipient for ${transaction}`);
         }
 
         this._transactionsByHash.remove(transaction.hash());
@@ -152,14 +155,20 @@ class Mempool extends Observable {
      */
     _removeTransaction(transaction) {
         this._transactionsByHash.remove(transaction.hash());
+
         // TODO: Optimise remove from this._transactionsByMinFee.
         this._transactionsByFeePerByte.remove(transaction);
+
         /** @type {HashSet.<Hash>} */
         const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
-        if (byRecipient.length === 1) {
-            this._transactionSetByRecipient.remove(transaction.recipient);
+        if (byRecipient) {
+            if (byRecipient.length === 1) {
+                this._transactionSetByRecipient.remove(transaction.recipient);
+            } else {
+                byRecipient.remove(transaction.hash());
+            }
         } else {
-            byRecipient.remove(transaction.hash());
+            Log.e(Mempool, `Invalid state: no transactionsByRecipient for ${transaction}`);
         }
     }
 

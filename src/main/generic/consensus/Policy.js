@@ -102,7 +102,7 @@ Policy.BLOCK_TIME = 60;
  * @type {number}
  * @constant
  */
-Policy.BLOCK_SIZE_MAX = 1e6; // 1 MB
+Policy.BLOCK_SIZE_MAX = 1e5; // 100 kb
 
 /**
  * The highest (easiest) block PoW target.

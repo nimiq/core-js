@@ -184,7 +184,7 @@ describe('Accounts', () => {
         (async function test() {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 4);
             const accounts = testBlockchain.accounts;
-            const numTransactions = 7000;
+            const numTransactions = 720;
             const sender = testBlockchain.users[0];
 
             const transactions = [];
@@ -196,9 +196,7 @@ describe('Accounts', () => {
 
             const time = new Time();
             const block = await testBlockchain.createBlock({
-                transactions: transactions,
-                prunedAccounts: [],
-                accountsHash: Hash.fromBase64('UEnDCYaynX3v/AxoQK9uldXgrxGS+KCb4bSGXFwH9u0=') // TODO
+                transactions: transactions
             });
             expect(await block.verify(time)).toBeTruthy();
             expect(await accounts.commitBlock(block, testBlockchain.transactionCache)).toBeTruthy();
