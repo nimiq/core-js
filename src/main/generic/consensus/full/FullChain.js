@@ -420,7 +420,8 @@ class FullChain extends BaseChain {
             const forkData = forkChain[i];
             forkData.onMainChain = true;
             forkData.mainChainSuccessor = i > 0 ? forkHashes[i - 1] : null;
-            chainTx.putChainDataSync(forkHashes[i], forkData, /*includeBody*/ false);
+            // Include the body of the new block (at position 0).
+            chainTx.putChainDataSync(forkHashes[i], forkData, /*includeBody*/ i === 0);
         }
 
         // Update head & commit transactions.
