@@ -76,11 +76,11 @@ class ChainDataStore {
      */
     putChainData(key, chainData, includeBody = true) {
         if (this._chainStore instanceof JDB.Transaction) {
-            const promises = [this._chainStore.put(key.toBase64(), chainData)];
+            this._chainStore.putSync(key.toBase64(), chainData);
             if (includeBody && chainData.head.isFull()) {
-                promises.push(this._blockStore.put(key.toBase64(), chainData.head));
+                this._blockStore.putSync(key.toBase64(), chainData.head);
             }
-            return Promise.all(promises);
+            return;
         }
 
         if (includeBody && chainData.head.isFull()) {
@@ -101,7 +101,7 @@ class ChainDataStore {
      * @returns {void}
      */
     putChainDataSync(key, chainData, includeBody = true) {
-        Assert.that(this._chainStore instanceof JDB.SynchronousTransaction);
+        Assert.that(this._chainStore instanceof JDB.Transaction);
         this._chainStore.putSync(key.toBase64(), chainData);
         if (includeBody && chainData.head.isFull()) {
             this._blockStore.putSync(key.toBase64(), chainData.head);
@@ -358,13 +358,15 @@ class ChainDataStore {
      */
     async truncate() {
         if (this._chainStore instanceof JDB.Transaction) {
-            return Promise.all([this._chainStore.truncate(), this._blockStore.truncate()]);
+            this._chainStore.truncateSync();
+            this._blockStore.truncateSync();
+            return;
         }
 
         const chainTx = this._chainStore.transaction();
-        await chainTx.truncate();
+        chainTx.truncateSync();
         const blockTx = this._blockStore.transaction();
-        await blockTx.truncate();
+        blockTx.truncateSync();
         return JDB.JungleDB.commitCombined(chainTx, blockTx);
     }
 
