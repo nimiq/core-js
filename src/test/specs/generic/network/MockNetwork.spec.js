@@ -100,23 +100,6 @@ class MockGenericSender extends Observable {
         if (this._closed) return;
         this._phy.send(msg);
     }
-
-    /**
-     * @returns {void}
-     */
-    close() {
-        if (this._closed) return;
-        this._closed = true;
-
-        if (this._readyState === DataChannel.ReadyState.OPEN) {
-            setTimeout(() => {
-                if (this.onclose) this.onclose();
-            }, 0);
-            this._channel.close();
-        }
-
-        this._readyState = DataChannel.ReadyState.CLOSED;
-    }
 }
 
 class MockWebSocket extends MockGenericSender {
@@ -142,7 +125,23 @@ class MockWebSocket extends MockGenericSender {
         super.link(channel);
         this._socket = channel.localAddress ? { remoteAddress: channel.localAddress } : undefined;
         this._readyState = DataChannel.ReadyState.OPEN;
+    }
 
+    /**
+     * @returns {void}
+     */
+    close() {
+        if (this._closed) return;
+        this._closed = true;
+
+        if (this._readyState === DataChannel.ReadyState.OPEN) {
+            setTimeout(() => {
+                if (this.onclose) this.onclose();
+            }, 0);
+            this._channel.close();
+        }
+
+        this._readyState = DataChannel.ReadyState.CLOSED;
     }
 }
 class MockRTCDataChannel extends MockGenericSender {
@@ -163,6 +162,23 @@ class MockRTCDataChannel extends MockGenericSender {
     link(channel) {
         super.link(channel);
         this._readyState = 'open';
+    }
+
+    /**
+     * @returns {void}
+     */
+    close() {
+        if (this._closed) return;
+        this._closed = true;
+
+        if (this._readyState === 'open') {
+            setTimeout(() => {
+                if (this.onclose) this.onclose();
+            }, 0);
+            this._channel.close();
+        }
+
+        this._readyState = 'closed';
     }
 }
 
