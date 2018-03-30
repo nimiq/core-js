@@ -265,7 +265,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         config.miner.enabled = true;
         if (typeof argv.miner === 'number') config.miner.threads = argv.miner;
         if (typeof argv.miner === 'string') config.miner.threads = parseInt(argv.miner);
-        if (typeof argv.extraData === 'string') config.miner.extraData = argv.extraData;
+        if (typeof argv['extra-data'] === 'string') config.miner.extraData = argv['extra-data'];
     }
     if (argv.rpc) {
         config.rpcServer.enabled = true;
