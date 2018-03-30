@@ -258,6 +258,9 @@ class PeerConnector extends Observable {
     _onDataChannel(event) {
         const channel = new WebRtcDataChannel(event.channel || event.target);
 
+        // Make sure to close the corresponding RTCPeerConnection when the RTCDataChannel is closed
+        channel.on('close', () => this._rtcConnection.close());
+
         // There is no API to get the remote IP address. As a crude heuristic, we parse the IP address
         // from the last ICE candidate seen before the connection was established.
         // TODO Can we improve this?
