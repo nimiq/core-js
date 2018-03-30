@@ -7,7 +7,8 @@ class BlockBody {
         return Address.SERIALIZED_SIZE
             + /*extraDataLength*/ 1
             + extraData.byteLength
-            + /*transactionsLength*/ 2;
+            + /*transactionsLength*/ 2
+            + /*prunedAccountsLength*/ 2;
     }
 
     /**
