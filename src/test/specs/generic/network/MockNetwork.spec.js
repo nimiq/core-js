@@ -229,6 +229,7 @@ class MockPeerConnection extends Observable {
         if (this._dataChannel) {
             this._dataChannel.close();
         }
+        MockNetwork._peerConnectionCounter--;
     }
 
     /**
@@ -402,6 +403,7 @@ class MockNetwork {
      * @returns {void}
      */
     static install(delay = 0, lossrate = 0) {
+        MockNetwork._peerConnectionCounter = 0;
         MockNetwork._delay = delay;
         MockNetwork._lossrate = lossrate;
 
@@ -427,8 +429,10 @@ class MockNetwork {
         });
 
         spyOn(WebRtcFactory, 'newPeerConnection').and.callFake((configuration) => {
+            MockNetwork._peerConnectionCounter++;
             return new MockPeerConnection(configuration);
         });
+
         spyOn(WebRtcFactory, 'newSessionDescription').and.callFake((rtcSessionDescriptionInit) => {
             return rtcSessionDescriptionInit;
         });
@@ -480,6 +484,7 @@ MockNetwork._servers = new Map();
  * @private
  */
 MockNetwork._peerConnections = new Map();
+MockNetwork._peerConnectionCounter = 0;
 MockNetwork._delay = 0;
 MockNetwork._lossrate = 0;
 MockNetwork._clientSerial = 1;
