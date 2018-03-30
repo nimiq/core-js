@@ -41,5 +41,9 @@ class PongMessage extends Message {
     get nonce() {
         return this._nonce;
     }
+
+    toString() {
+        return `PongMessage{nonce=${this._nonce}}`;
+    }
 }
 Class.register(PongMessage);

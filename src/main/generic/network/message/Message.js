@@ -26,7 +26,7 @@ class Message {
         // Reset the read position to original.
         buf.readPos = pos;
 
-        return type;
+        return /** @type {Message.Type} */ type;
     }
 
     /**
@@ -137,6 +137,11 @@ class Message {
     /** @type {Message.Type} */
     get type() {
         return this._type;
+    }
+
+    /** @returns {string} */
+    toString() {
+        return `Message{type=${this.type}, size=${this.serializedSize}}`;
     }
 }
 Message.MAGIC = 0x42042042;

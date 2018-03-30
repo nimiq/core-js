@@ -81,6 +81,10 @@ class RejectMessage extends Message {
     get extraData() {
         return this._extraData;
     }
+
+    toString() {
+        return `RejectMessage{type=${this._messageType}, code=${this._code}, reason=${this._reason}}`;
+    }
 }
 /**
  * @enum {number}

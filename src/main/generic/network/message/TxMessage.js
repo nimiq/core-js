@@ -67,5 +67,9 @@ class TxMessage extends Message {
     get accountsProof() {
         return this._accountsProof;
     }
+
+    toString() {
+        return `TxMessage{hash=${this._transaction.hash()}}`;
+    }
 }
 Class.register(TxMessage);

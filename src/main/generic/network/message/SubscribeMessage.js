@@ -36,5 +36,9 @@ class SubscribeMessage extends Message {
     get subscription() {
         return this._subscription;
     }
+
+    toString() {
+        return `SubscribeMessage{${this._subscription}}`;
+    }
 }
 Class.register(SubscribeMessage);

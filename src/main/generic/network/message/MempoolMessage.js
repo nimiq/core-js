@@ -27,5 +27,9 @@ class MempoolMessage extends Message {
     get serializedSize() {
         return super.serializedSize;
     }
+
+    toString() {
+        return 'MempoolMessage{}';
+    }
 }
 Class.register(MempoolMessage);

@@ -40,5 +40,9 @@ class HeaderMessage extends Message {
     get header() {
         return this._header;
     }
+
+    toString() {
+        return `HeaderMessage{height=${this._header.height}, hash=${this._header.hash()}}`;
+    }
 }
 Class.register(HeaderMessage);

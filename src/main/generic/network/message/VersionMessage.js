@@ -90,6 +90,10 @@ class VersionMessage extends Message {
     get challengeNonce() {
         return this._challengeNonce;
     }
+
+    toString() {
+        return `VersionMessage{version=${this._version}, peer=${this._peerAddress}, genesis=${this._genesisHash}, head=${this._headHash}}`;
+    }
 }
 
 VersionMessage.CHALLENGE_SIZE = 32;

@@ -41,5 +41,9 @@ class BlockMessage extends Message {
     get block() {
         return this._block;
     }
+
+    toString() {
+        return `BlockMessage{height=${this._block.height}, hash=${this._block.hash()}}`;
+    }
 }
 Class.register(BlockMessage);

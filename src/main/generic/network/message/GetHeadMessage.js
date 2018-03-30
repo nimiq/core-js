@@ -22,5 +22,9 @@ class GetHeadMessage extends Message {
         super._setChecksum(buf);
         return buf;
     }
+
+    toString() {
+        return 'GetHeadMessage{}';
+    }
 }
 Class.register(GetHeadMessage);

@@ -51,5 +51,9 @@ class GetAddrMessage extends Message {
     get serviceMask() {
         return this._serviceMask;
     }
+
+    toString() {
+        return `GetAddrMessage{protocol=${this._protocolMask}, services=${this._serviceMask}}`;
+    }
 }
 Class.register(GetAddrMessage);

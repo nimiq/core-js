@@ -52,5 +52,9 @@ class AddrMessage extends Message {
     get addresses() {
         return this._addresses;
     }
+
+    toString() {
+        return `AddrMessage{size=${this._addresses.length}}`;
+    }
 }
 Class.register(AddrMessage);

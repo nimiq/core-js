@@ -51,5 +51,9 @@ class VerAckMessage extends Message {
     get signature() {
         return this._signature;
     }
+
+    toString() {
+        return 'VerAckMessage{}';
+    }
 }
 Class.register(VerAckMessage);

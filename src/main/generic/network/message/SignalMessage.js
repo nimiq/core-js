@@ -168,6 +168,10 @@ class SignalMessage extends Message {
     isTtlExceeded() {
         return (this._flags & SignalMessage.Flag.TTL_EXCEEDED) !== 0;
     }
+
+    toString() {
+        return `SignalMessage{sender=${this._senderId}, recipient=${this._recipientId}, nonce=${this._nonce}, ttl=${this._ttl}, flags=${this._flags}}`;
+    }
 }
 /**
  * @enum {number}

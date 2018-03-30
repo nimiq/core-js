@@ -161,6 +161,11 @@ class BaseInventoryMessage extends Message {
     get vectors() {
         return this._vectors;
     }
+
+    // noinspection JSCheckFunctionSignatures
+    toString(subtype = 'InventoryMessage') {
+        return `${subtype}{transactions=${this._vectors.filter(vector => vector.type === InvVector.Type.TRANSACTION).length}, blocks=${this._vectors.filter(vector => vector.type === InvVector.Type.BLOCK).length}}`;
+    }
 }
 BaseInventoryMessage.VECTORS_MAX_COUNT = 1000;
 Class.register(BaseInventoryMessage);
@@ -186,6 +191,10 @@ class InvMessage extends BaseInventoryMessage {
         }
         return new InvMessage(vectors);
     }
+
+    toString() {
+        return super.toString('InvMessage');
+    }
 }
 Class.register(InvMessage);
 
@@ -209,6 +218,10 @@ class GetDataMessage extends BaseInventoryMessage {
             vectors.push(InvVector.unserialize(buf));
         }
         return new GetDataMessage(vectors);
+    }
+
+    toString() {
+        return super.toString('GetDataMessage');
     }
 }
 Class.register(GetDataMessage);
@@ -234,6 +247,10 @@ class GetHeaderMessage extends BaseInventoryMessage {
         }
         return new GetHeaderMessage(vectors);
     }
+
+    toString() {
+        return super.toString('GetHeaderMessage');
+    }
 }
 Class.register(GetHeaderMessage);
 
@@ -257,6 +274,10 @@ class NotFoundMessage extends BaseInventoryMessage {
             vectors.push(InvVector.unserialize(buf));
         }
         return new NotFoundMessage(vectors);
+    }
+
+    toString() {
+        return super.toString('NotFoundMessage');
     }
 }
 Class.register(NotFoundMessage);

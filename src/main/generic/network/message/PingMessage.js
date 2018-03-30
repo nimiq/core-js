@@ -41,5 +41,9 @@ class PingMessage extends Message {
     get nonce() {
         return this._nonce;
     }
+
+    toString() {
+        return `PingMessage{nonce=${this._nonce}}`;
+    }
 }
 Class.register(PingMessage);

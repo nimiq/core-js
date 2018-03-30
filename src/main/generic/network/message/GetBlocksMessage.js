@@ -75,6 +75,10 @@ class GetBlocksMessage extends Message {
     get maxInvSize() {
         return this._maxInvSize;
     }
+
+    toString() {
+        return `GetBlocksMessage{direction=${this._direction === GetBlocksMessage.Direction.FORWARD ? 'forward' : 'backward'}, maxInvSize=${this._maxInvSize}}`;
+    }
 }
 /**
  * @enum {number}
