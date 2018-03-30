@@ -72,7 +72,7 @@ node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FIL
 | `--wallet-seed=SEED` | Initialize wallet using SEED as a wallet seed. |
 | `--wallet-address=ADDRESS` | Initialize wallet using ADDRESS as a wallet address. |
 
-### Build binary packages for Linux distributions (currently only .deb packages are supported)
+### Build binary packages for Linux distributions
 
 #### Debian/Ubuntu (deb package format)
 After running `npm install` or `yarn` (from the Quickstart section):
