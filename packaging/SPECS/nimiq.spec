@@ -1,10 +1,11 @@
 %global __os_install_post %{nil}
 %global __arch_install_post %{nil}
 %define debug_package %{nil}
+%define _topdir %(echo $PWD)/
 
 Name:           nimiq
 Version:        0.1.1
-Release:        1%{?dist}
+Release:        1
 Summary:        Nimiq node.js client
 
 License:        ASL 2.0
@@ -18,6 +19,8 @@ Requires:       bash
 Requires:       systemd
 
 Requires(pre): shadow-utils
+
+AutoReqProv: no
 
 
 %description

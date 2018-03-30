@@ -73,13 +73,25 @@ node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FIL
 | `--wallet-address=ADDRESS` | Initialize wallet using ADDRESS as a wallet address. |
 
 ### Build binary packages for Linux distributions (currently only .deb packages are supported)
-After running `npm run build` or `yarn build` (from the Quickstart section):
+
+#### Debian/Ubuntu (deb package format)
+After running `npm install` or `yarn` (from the Quickstart section):
 
 1. Make sure you have `dpkg`, `jq` and `fakeroot` installed (if you don't, they can be easily installed with `apt`).
-2. Run `npm run build-packages`.
+2. Run `npm run build-deb`.
 3. The .deb package will be located in the `dist/` directory.
 
-Note: packaging only works from a Debian-based distribution (Ubuntu, for example).
+Note: creating deb packages only works on Debian-based distributions (only has been extensively tested on Ubuntu).
+
+#### Fedora/CentOS/RHEL (rpm package format)
+After running `npm install` or `yarn` (from the Quickstart section):
+
+1. Make sure you have `rpm-build` installed (if you don't, it can be easily installed with `yum` or `dnf`).
+2. Run `npm run build-rpm`.
+3. The .rpm package will be located in the `dist/` directory.
+
+Note: creating rpm packages only works on rpm-based distributions (only has been extensively tested on Fedora).
+
 
 ## Core Developers
 Developers are free to choose between `npm` and `yarn` for managing the dependencies.
