@@ -1,9 +1,9 @@
-class RawBlockMessage extends BlockMessage {
+class RawBlockMessage extends /*Block*/Message {
     /**
      * @param {Uint8Array} block
      */
     constructor(block) {
-        super(null);
+        super(Message.Type.BLOCK);
         /** @type {Uint8Array} */
         this._block = block;
     }
@@ -19,6 +19,12 @@ class RawBlockMessage extends BlockMessage {
         super._setChecksum(buf);
         return buf;
     }
+
+    /*
+        unserialize is not implemented,
+        because this message will serialize
+        to a BlockMessage
+     */
 
     /** @type {number} */
     get serializedSize() {
