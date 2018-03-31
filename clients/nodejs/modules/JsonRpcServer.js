@@ -14,11 +14,16 @@ class JsonRpcServer {
                 res.setHeader('Access-Control-Allow-Methods', 'POST');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
             }
+
             if (req.method === 'GET') {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
-                this._onRequest(req, res);
+                if (config.secure) {
+                    this._authenticate(req, res, config);
+                } else {
+                    this._onRequest(req, res);
+                }
             } else {
                 res.writeHead(200);
                 res.end();
@@ -118,6 +123,30 @@ class JsonRpcServer {
             return true;
         } else {
             throw new Error('Missing argument');
+        }
+    }
+
+    _authenticate(req, res, config) {
+        var auth = req.headers['authorization'];
+
+        if(!auth) {
+            res.statusCode = 401;
+            res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+
+            res.end('Credentials Required\n');
+        } else if (auth) {
+            var tmp = auth.split(' ');
+            var buf = new Buffer(tmp[1], 'base64');
+            var plain_auth = buf.toString();
+            var creds = plain_auth.split(':');
+
+            if((creds[0] == config.user) && (creds[1] == config.pass)) {
+               this._onRequest(req, res);
+            } else {
+               res.statusCode = 401;
+               res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+               res.end('Incorrect Credentials\n');
+            }
         }
     }
 
