@@ -30,6 +30,7 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
         '  --log-tag=TAG[:LEVEL]      Configure log level for a specific tag.\n' +
         '  --miner[=THREADS]          Activate mining on this node. The miner will be set\n' +
         '                             up to use THREADS parallel threads.\n' +
+        '  --pool=SERVER:PORT         Mine shares for mining pool with address SERVER:PORT\n' +
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
         '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
@@ -202,6 +203,18 @@ const $ = {};
     }
     $.miner.throttleAfter = config.miner.throttleAfter;
     $.miner.throttleWait = config.miner.throttleWait;
+
+    if (config.poolMining.enabled) {
+        // This should be fairly unique device id number, generated from the peer key, without leaking anything about key or peer id
+        const deviceId = Nimiq.Hash.blake2b([
+            Nimiq.BufferUtils.fromAscii('pool_device_id'),
+            networkConfig.keyPair.privateKey.serialize().read(4),
+            networkConfig.peerId.serialize()
+        ].reduce(Nimiq.BufferUtils.concatTypedArrays)).serialize().readUint32();
+        Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.server} using device id ${deviceId}.`);
+        $.pool = new Nimiq.PoolClient($.miner, $.wallet.address, deviceId);
+        $.pool.connect(config.poolMining.server, config.poolMining.port);
+    }
 
     $.consensus.on('established', () => {
         Nimiq.Log.i(TAG, `Blockchain ${config.type}-consensus established in ${(Date.now() - START) / 1000}s.`);

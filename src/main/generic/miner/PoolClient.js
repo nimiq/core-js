@@ -26,9 +26,9 @@ class PoolClient extends Observable {
         }
     }
 
-    connect(pool) {
+    connect(server, port) {
         if (this._ws) throw new Error('Call disconnect() first');
-        const ws = this._ws = new WebSocket(pool);
+        const ws = this._ws = new WebSocket(`${server}:${port}`);
         this._ws.onopen = () => {
             if (ws !== this._ws) {
                 ws.close();

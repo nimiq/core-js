@@ -16,6 +16,7 @@ const TAG = 'Config';
  * @property {boolean} passive
  * @property {number} statistics
  * @property {{enabled: boolean, threads: string|number, throttleAfter: number, throttleWait: number, extraData: string}} miner
+ * @property {{enabled: boolean, host: string, port: number}} pool
  * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>}} rpcServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
@@ -42,6 +43,11 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         throttleAfter: Infinity,
         throttleWait: 100,
         extraData: ''
+    },
+    poolMining: {
+        enabled: false,
+        host: null,
+        port: -1
     },
     rpcServer: {
         enabled: false,
@@ -88,6 +94,13 @@ const CONFIG_TYPES = {
             throttleAfter: 'number',
             throttleWait: 'number',
             extraData: 'string'
+        }
+    },
+    poolMining: {
+        type: 'object', sub: {
+            enabled: 'boolean',
+            host: 'string',
+            port: 'number',
         }
     },
     rpcServer: {
@@ -269,6 +282,12 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         if (typeof argv.miner === 'number') config.miner.threads = argv.miner;
         if (typeof argv.miner === 'string') config.miner.threads = parseInt(argv.miner);
         if (typeof argv['extra-data'] === 'string') config.miner.extraData = argv['extra-data'];
+    }
+    if (argv.pool) {
+        config.poolMining.enabled = true;
+        const split = argv.pool.split(':', 3);
+        config.poolMining.server = split[0] + ':' + split[1];
+        config.poolMining.port = parseInt(split[2]);
     }
     if (argv.rpc) {
         config.rpcServer.enabled = true;
