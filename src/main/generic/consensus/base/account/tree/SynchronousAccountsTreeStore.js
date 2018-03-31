@@ -20,7 +20,7 @@ class SynchronousAccountsTreeStore extends AccountsTreeStore {
      * @returns {AccountsTreeNode}
      */
     getSync(key, expectedToBePresent = true) {
-        return this._syncStore.getSync(key, expectedToBePresent);
+        return this._syncStore.getSync(key, { expectPresence: expectedToBePresent });
     }
 
     /**
