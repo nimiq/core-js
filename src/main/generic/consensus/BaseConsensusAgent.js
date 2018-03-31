@@ -1020,6 +1020,7 @@ class BaseConsensusAgent extends Observable {
         Log.d(BaseConsensusAgent, () => `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionReceipts.length}`);
 
         // Check if we have requested transaction receipts, reject unsolicited ones.
+        // TODO: How about more than one transactionReceipts message?
         if (!this._transactionReceiptsRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited transaction receipts received from ${this._peer.peerAddress}`);
             // TODO close/ban?

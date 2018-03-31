@@ -233,7 +233,7 @@ class BaseConsensus extends Observable {
 
         // Try agents first that (we think) know the reference block hash.
         const knownBlockHash = knownBlock.hash();
-        agents.sort((a, b) => b.knowsBlock(knownBlockHash) - a.knowsBlock(knownBlockHash));
+        agents.sort((a, b) => b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash) ? -a.knowsBlock(knownBlockHash) : Math.random() - 0.5);
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
@@ -266,7 +266,7 @@ class BaseConsensus extends Observable {
 
         // Try agents first that (we think) know the reference block hash.
         const blockHash = block.hash();
-        agents.sort((a, b) => b.knowsBlock(blockHash) - a.knowsBlock(blockHash));
+        agents.sort((a, b) => b.knowsBlock(blockHash) !== a.knowsBlock(blockHash) ? -a.knowsBlock(blockHash) : Math.random() - 0.5);
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
@@ -290,7 +290,7 @@ class BaseConsensus extends Observable {
         const agents = this._agents.values().filter(agent =>
             agent.synced
             && Services.isFullNode(agent.peer.peerAddress.services)
-        );
+        ).sort(() => Math.random() - 0.5);
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {

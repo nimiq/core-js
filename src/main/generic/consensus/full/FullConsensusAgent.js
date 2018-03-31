@@ -46,6 +46,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._transactionsProofLimit = new RateLimit(FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT);
         /** @type {RateLimit} */
         this._transactionReceiptsLimit = new RateLimit(FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT);
+        /** @type {RateLimit} */
+        this._blockProofLimit = new RateLimit(FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT);
 
         // Listen to consensus messages from the peer.
         peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
@@ -427,6 +429,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @private
      */
     async _onGetBlockProof(msg) {
+        if (!this._blockProofLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetBlockProof message - rate-limit exceeded');
+            this._peer.channel.blockProof(null);
+            return;
+        }
         const blockToProve = await this._blockchain.getBlock(msg.blockHashToProve);
         const knownBlock = await this._blockchain.getBlock(msg.knownBlockHash);
         if (!blockToProve || !knownBlock) {
@@ -445,7 +452,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetAccountsProof(msg) {
         if (!this._accountsProofLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetAccountsProof message - rate-limit exceeded');
-            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            this._peer.channel.accountsProof(msg.blockHash, null);
             return;
         }
         const proof = await this._blockchain.getAccountsProof(msg.blockHash, msg.addresses);
@@ -459,7 +466,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetTransactionsProof(msg) {
         if (!this._transactionsProofLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetTransactionsProof message - rate-limit exceeded');
-            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            this._peer.channel.transactionsProof(msg.blockHash, null);
             return;
         }
         const proof = await this._blockchain.getTransactionsProof(msg.blockHash, msg.addresses);
@@ -473,7 +480,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetAccountsTreeChunk(msg) {
         if (!this._accountsTreeChunkLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetAccountsTreeChunk message - rate-limit exceeded');
-            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            this._peer.channel.accountsTreeChunk(msg.blockHash, null);
             return;
         }
         const chunk = await this._blockchain.getAccountsTreeChunk(msg.blockHash, msg.startPrefix);
@@ -487,16 +494,13 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetTransactions(msg) {
         if (!this._transactionReceiptsLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetTransactionReceipts message - rate-limit exceeded');
-            this._peer.channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
             return;
         }
         const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address);
 
-        let i = 0;
-        while (i < TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) {
+        for (let i = 0; i < transactionReceipts.length && i === 0; i += TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) {
             const receipts = transactionReceipts.slice(i, i + TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
             this._peer.channel.transactionReceipts(receipts);
-            i += TransactionReceiptsMessage.RECEIPTS_MAX_COUNT;
         }
     }
 
@@ -584,6 +588,7 @@ FullConsensusAgent.MEMPOOL_ENTRIES_MAX = 10000;
 FullConsensusAgent.CHAIN_PROOF_RATE_LIMIT = 3;
 FullConsensusAgent.ACCOUNTS_PROOF_RATE_LIMIT = 60;
 FullConsensusAgent.ACCOUNTS_TREE_CHUNK_RATE_LIMIT = 120;
-FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 120;
-FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 60;
+FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 60;
+FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 30;
+FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT = 60;
 Class.register(FullConsensusAgent);
