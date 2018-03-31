@@ -205,12 +205,7 @@ const $ = {};
     $.miner.throttleWait = config.miner.throttleWait;
 
     if (config.poolMining.enabled) {
-        // This should be fairly unique device id number, generated from the peer key, without leaking anything about key or peer id
-        const deviceId = Nimiq.Hash.blake2b([
-            Nimiq.BufferUtils.fromAscii('pool_device_id'),
-            networkConfig.keyPair.privateKey.serialize().read(4),
-            networkConfig.peerId.serialize()
-        ].reduce(Nimiq.BufferUtils.concatTypedArrays)).serialize().readUint32();
+        const deviceId = Nimiq.PoolClient.generateDeviceId(networkConfig);
         Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.server} using device id ${deviceId}.`);
         $.pool = new Nimiq.PoolClient($.miner, $.wallet.address, deviceId);
         $.pool.connect(config.poolMining.server, config.poolMining.port);

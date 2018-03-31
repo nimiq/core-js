@@ -28,40 +28,64 @@ class PoolClient extends Observable {
 
     connect(server, port) {
         if (this._ws) throw new Error('Call disconnect() first');
+        this._server = server;
+        this._port = port;
         const ws = this._ws = new WebSocket(`${server}:${port}`);
-        this._ws.onopen = () => {
-            if (ws !== this._ws) {
-                ws.close();
-            } else {
-                // Register
-                this._send({
-                    message: 'register',
-                    address: this._address.toUserFriendlyAddress(),
-                    deviceId: this._deviceId
-                });
-            }
-        };
-        this._ws.onerror = (e) => {
-            if (ws === this._ws) this._turnPoolOff();
-            Log.w(PoolClient, e.message || e);
-            try {
-                ws.close();
-            } catch (e2) {
-                Log.w(PoolClient, e2.message || e2);
-                if (ws === this._ws) this._ws = null;
-            }
-        };
+        this._ws.onopen = () => this._onOpen(ws);
+        this._ws.onerror = (e) => this._onError(ws, e);
         this._ws.onmessage = (msg) => this._onMessage(JSON.parse(msg.data));
-        this._ws.onclose = () => {
-            if (ws === this._ws) this._turnPoolOff();
-            if (ws === this._ws) this._ws = null;
-        };
+        this._ws.onclose = () => this._onClose(ws);
+    }
+
+    _onOpen(ws) {
+        if (ws !== this._ws) {
+            ws.close();
+        } else {
+            // Register
+            this._send({
+                message: 'register',
+                mode: 'smart',
+                address: this._address.toUserFriendlyAddress(),
+                deviceId: this._deviceId
+            });
+        }
+    }
+
+    _onError(ws, e) {
+        Log.w(PoolClient, e.message || e);
+        if (ws === this._ws) {
+            this._timeoutReconnect();
+        }
+        try {
+            ws.close();
+        } catch (e2) {
+            Log.w(PoolClient, e2.message || e2);
+        }
+    }
+
+    _onClose(ws) {
+        if (ws === this._ws) {
+            this._timeoutReconnect();
+        }
+    }
+
+    _timeoutReconnect() {
+        this.disconnect();
+        setTimeout(() => {
+            this.connect(this._server, this._port);
+        }, 30000); // after 30 sec
     }
 
     disconnect() {
         this._turnPoolOff();
-        this._ws.close();
-        this._ws = null;
+        if (this._ws) {
+            try {
+                this._ws.close();
+            } catch (e2) {
+                Log.w(PoolClient, e2.message || e2);
+            }
+            this._ws = null;
+        }
     }
 
     _onMessage(msg) {
@@ -74,10 +98,6 @@ class PoolClient extends Observable {
                     } else {
                         this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.target);
                     }
-                    break;
-                case 'bye':
-                    this._turnPoolOff();
-                    this._ws.close();
                     break;
                 case 'balance':
                     if (!msg.balance) {
@@ -133,6 +153,17 @@ class PoolClient extends Observable {
         this._miner.address = address;
         this._miner.extraData = extraData;
         this._miner.shareTarget = target;
+    }
+
+    /**
+     * @param {NetworkConfig} networkConfig
+     * @returns {number}
+     */
+    static generateDeviceId(networkConfig) {
+        return Hash.blake2b([
+            BufferUtils.fromAscii('pool_device_id'),
+            networkConfig.keyPair.privateKey.serialize()
+        ].reduce(BufferUtils.concatTypedArrays)).serialize().readUint32();
     }
 }
 
