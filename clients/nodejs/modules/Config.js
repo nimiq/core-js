@@ -47,7 +47,10 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     rpcServer: {
         enabled: false,
         port: 8648,
-        corsdomain: null
+        corsdomain: null,
+        secure: true,
+        user: 'super',
+        pass: 'secret'
     },
     metricsServer: {
         enabled: false,
@@ -93,7 +96,10 @@ const CONFIG_TYPES = {
         type: 'object', sub: {
             enabled: 'boolean',
             port: 'number',
-            corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]}
+            corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
+            authenticate: 'boolean',
+            user: 'string',
+            pass: 'string'
         }
     },
     metricsServer: {
