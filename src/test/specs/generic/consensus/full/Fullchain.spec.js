@@ -265,7 +265,7 @@ describe('Blockchain', () => {
 
                 // Get that same block and check that they're the same
                 const resultBlock = await testBlockchain.getBlock(hash, false, true);
-                expect(resultBlock).toBe(block);
+                expect(block.equals(resultBlock)).toBe(true);
             }
 
             nextTarget = await testBlockchain.getNextTarget();
@@ -280,7 +280,7 @@ describe('Blockchain', () => {
 
                 // Get that same block and check that they're the same
                 const resultBlock = await testBlockchain.getBlock(hash, false, true);
-                expect(resultBlock).toBe(block);
+                expect(block.equals(resultBlock)).toBe(true);
             }
 
             nextTarget = await testBlockchain.getNextTarget();
@@ -305,7 +305,7 @@ describe('Blockchain', () => {
 
                 // Get that same block and check that they're the same
                 const resultBlock = await testBlockchain.getBlock(hash, false, true);
-                expect(resultBlock).toBe(block);
+                expect(block.equals(resultBlock)).toBe(true);
 
                 expect(block.difficulty > difficulty).toBe(true);
                 difficulty = block.difficulty;
