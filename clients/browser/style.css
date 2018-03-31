@@ -353,7 +353,7 @@ label strong {
     opacity: 0.8;
 }
 [blockchain-ui] .syncing::after {
-    content: "Syncronizing...";
+    content: "Synchronizing...";
 }
 [blockchain-ui] .sync-chain-proof::after {
     content: "Downloading proof...";
