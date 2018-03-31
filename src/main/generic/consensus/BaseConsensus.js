@@ -233,7 +233,10 @@ class BaseConsensus extends Observable {
 
         // Try agents first that (we think) know the reference block hash.
         const knownBlockHash = knownBlock.hash();
-        agents.sort((a, b) => b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash) ? -a.knowsBlock(knownBlockHash) : Math.random() - 0.5);
+        agents.sort((a, b) =>
+            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+                ? -a.knowsBlock(knownBlockHash) + 0.5
+                : Math.random() - 0.5);
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
@@ -266,7 +269,10 @@ class BaseConsensus extends Observable {
 
         // Try agents first that (we think) know the reference block hash.
         const blockHash = block.hash();
-        agents.sort((a, b) => b.knowsBlock(blockHash) !== a.knowsBlock(blockHash) ? -a.knowsBlock(blockHash) : Math.random() - 0.5);
+        agents.sort((a, b) =>
+            b.knowsBlock(blockHash) !== a.knowsBlock(blockHash)
+                ? -a.knowsBlock(blockHash) + 0.5
+                : Math.random() - 0.5);
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
@@ -327,7 +333,7 @@ class BaseConsensus extends Observable {
                 } else {
                     const request = this._requestBlockProof(receipt.blockHash, receipt.blockHeight)
                         .catch(e => Log.e(BaseConsensus, `Failed to retrieve proof for block ${receipt.blockHash}`
-                            + ` (${e.message || e}) - transaction history may be incomplete`));
+                            + ` (${e}) - transaction history may be incomplete`));
                     blockRequests.push(request);
                 }
 
@@ -343,8 +349,8 @@ class BaseConsensus extends Observable {
 
             const request = this._requestTransactionsProof([address], block)
                 .then(txs => txs.map(tx => ({ transaction: tx, header: block.header })))
-                .catch(e => Log.e(BaseConsensus, `Failed to retrieve transactions for block ${block.hash}`
-                    + ` (${e.message || e}) - transaction history may be incomplete`));
+                .catch(e => Log.e(BaseConsensus, `Failed to retrieve transactions for block ${block.hash()}`
+                    + ` (${e}) - transaction history may be incomplete`));
             transactionRequests.push(request);
         }
 
