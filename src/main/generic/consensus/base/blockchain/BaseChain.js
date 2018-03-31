@@ -177,7 +177,7 @@ class BaseChain extends IBlockchain {
             // if good_(delta,m)(C, alpha, mu) then
             if (BaseChain._isGoodSuperChain(alpha, depth, m, delta)) {
                 Assert.that(alpha.length >= m, `Good superchain expected to be at least ${m} long`);
-                Log.v(BaseChain, `Found good superchain at depth ${depth} with length ${alpha.length} (#${startHeight} - #${headData.head.height})`);
+                Log.v(BaseChain, () => `Found good superchain at depth ${depth} with length ${alpha.length} (#${startHeight} - #${headData.head.height})`);
                 // B <- alpha[-m]
                 startHeight = alpha[alpha.length - m].head.height;
             }
@@ -289,43 +289,52 @@ class BaseChain extends IBlockchain {
 
             for (let mu = depth; mu >= 1; mu--) {
                 const upperChainLength = headData.superBlockCounts.get(mu) - tailData.superBlockCounts.get(mu);
-                /*
-                // Original paper badness check:
-                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
-                if (lowerChainLength > Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength) {
-                    Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
-                        + ` with ${upperChainLength}/${Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength}/${lowerChainLength} blocks`);
-                    return false;
-                }
-                */
 
-                /*
-                // Alternative badness check:
-                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
-                if (2 * upperChainLength < Math.pow(1 - delta, 1 / depth) * lowerChainLength) {
-                    Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
-                        + ` with ${upperChainLength}/${Math.pow(1 - delta, 1 / depth) * lowerChainLength}/${lowerChainLength} blocks`);
-                    return false;
-                }
-                */
+                switch (BaseChain.MULTILEVEL_STRATEGY) {
+                    case BaseChain.MultilevelStrategy.STRICT: {
+                        const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
 
-                // Relaxed badness check:
-                for (let j = mu - 1; j >= 0; j--) {
-                    const lowerChainLength = headData.superBlockCounts.get(j) - tailData.superBlockCounts.get(j);
-                    if (!BaseChain._isLocallyGood(upperChainLength, lowerChainLength, mu - j, delta)) {
-                        Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}/${j}`);
-                        return false;
+                        /*
+                        // Original paper badness check:
+                        if (lowerChainLength > Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength) {
+                            Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
+                                + ` with ${upperChainLength}/${Math.pow(1 + delta, 1 / depth) * 2 * upperChainLength}/${lowerChainLength} blocks`);
+                            return false;
+                        }
+                        */
+
+                        // Alternative badness check:
+                        if (2 * upperChainLength < Math.pow(1 - delta, 1 / depth) * lowerChainLength) {
+                            Log.d(BaseChain, `Chain badness detected at depth ${depth}, failing at ${mu}/${mu - 1}`
+                                + ` with ${upperChainLength}/${Math.pow(1 - delta, 1 / depth) * lowerChainLength}/${lowerChainLength} blocks`);
+                            return false;
+                        }
+                        break;
+                    }
+
+                    default:
+                    case BaseChain.MultilevelStrategy.MODERATE: {
+                        // Relaxed badness check:
+                        for (let j = mu - 1; j >= 0; j--) {
+                            const lowerChainLength = headData.superBlockCounts.get(j) - tailData.superBlockCounts.get(j);
+                            if (!BaseChain._isLocallyGood(upperChainLength, lowerChainLength, mu - j, delta)) {
+                                Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}/${j}`);
+                                return false;
+                            }
+                        }
+                        break;
+                    }
+
+                    case BaseChain.MultilevelStrategy.RELAXED: {
+                        // Local goodness only:
+                        const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
+                        if (!BaseChain._isLocallyGood(lowerChainLength, headData.head.height - tailData.head.height, depth, delta)) {
+                            Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}`);
+                            return false;
+                        }
+                        break;
                     }
                 }
-
-                /*
-                // Local goodness only:
-                const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
-                if (!BaseChain._isLocallyGood(lowerChainLength, headData.head.height - tailData.head.height, depth, delta)) {
-                    Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}`);
-                    return false;
-                }
-                */
             }
         }
 
@@ -601,4 +610,10 @@ class BaseChain extends IBlockchain {
         return maxScore;
     }
 }
+BaseChain.MultilevelStrategy = {
+    STRICT: 1,
+    MODERATE: 2,
+    RELAXED: 3
+};
+BaseChain.MULTILEVEL_STRATEGY = BaseChain.MultilevelStrategy.MODERATE;
 Class.register(BaseChain);
