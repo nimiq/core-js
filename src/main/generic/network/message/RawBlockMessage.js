@@ -1,4 +1,4 @@
-class RawBlockMessage extends /*Block*/Message {
+class RawBlockMessage extends Message {
     /**
      * @param {Uint8Array} block
      */

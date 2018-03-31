@@ -69,26 +69,6 @@ class ChainDataStore {
     }
 
     /**
-     * @param {Hash} hash
-     * @param {boolean} [includeForks]
-     * @returns {Promise.<?Uint8Array>}
-     */
-    async getRawBlock(hash, includeForks = false) {
-        /** @type {ChainData} */
-        const chainData = await this._chainStore.get(key.toBase64());
-        if (!chainData || (!chainData.onMainChain && !includeForks)) {
-            return null;
-        }
-
-        const block = await this._blockStore.get(key.toBase64(), { raw: true });
-        if (block) {
-            return new Uint8Array(block);
-        }
-
-        return null;
-    }
-
-    /**
      * @param {Hash} key
      * @param {ChainData} chainData
      * @param {boolean} [includeBody]
@@ -143,6 +123,26 @@ class ChainDataStore {
 
         const chainData = await this._chainStore.get(key.toBase64());
         return chainData ? chainData.head : null;
+    }
+
+    /**
+     * @param {Hash} key
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Uint8Array>}
+     */
+    async getRawBlock(key, includeForks = false) {
+        /** @type {ChainData} */
+        const chainData = await this._chainStore.get(key.toBase64());
+        if (!chainData || (!chainData.onMainChain && !includeForks)) {
+            return null;
+        }
+
+        const block = await this._blockStore.get(key.toBase64(), { raw: true });
+        if (block) {
+            return new Uint8Array(block);
+        }
+
+        return null;
     }
 
     /**

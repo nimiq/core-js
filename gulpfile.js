@@ -139,6 +139,7 @@ const sources = {
         './src/main/generic/network/message/Message.js',
         './src/main/generic/network/message/AddrMessage.js',
         './src/main/generic/network/message/BlockMessage.js',
+        './src/main/generic/network/message/RawBlockMessage.js',
         './src/main/generic/network/message/GetAddrMessage.js',
         './src/main/generic/network/message/GetBlocksMessage.js',
         './src/main/generic/network/message/HeaderMessage.js',
