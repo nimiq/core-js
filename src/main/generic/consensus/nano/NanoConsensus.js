@@ -32,7 +32,7 @@ class NanoConsensus extends BaseConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new NanoConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._subscription);
+        return new NanoConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._invRequestManager, this._subscription);
     }
 
     /**

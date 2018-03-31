@@ -4,10 +4,11 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @param {NanoMempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {InvRequestManager} invRequestManager
      * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer, targetSubscription) {
-        super(time, peer, targetSubscription);
+    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
+        super(time, peer, invRequestManager, targetSubscription);
         /** @type {NanoChain} */
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
@@ -360,6 +361,11 @@ class NanoConsensusAgent extends BaseConsensusAgent {
         // Clear the synchronizer queue.
         this._synchronizer.clear();
         super._onClose();
+    }
+
+    /** @type {boolean} */
+    get syncing() {
+        return this._syncing;
     }
 }
 /**

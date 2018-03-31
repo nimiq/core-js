@@ -4,10 +4,11 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @param {Mempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {InvRequestManager} invRequestManager
      * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer, targetSubscription) {
-        super(blockchain, mempool, time, peer, targetSubscription);
+    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
+        super(blockchain, mempool, time, peer, invRequestManager, targetSubscription);
         /** @type {LightChain} */
         this._blockchain = blockchain;
         /** @type {PartialLightChain} */
@@ -571,6 +572,11 @@ class LightConsensusAgent extends FullConsensusAgent {
             return this._partialChain;
         }
         return this._blockchain;
+    }
+
+    /** @type {boolean} */
+    get syncing() {
+        return this._syncing;
     }
 }
 /**

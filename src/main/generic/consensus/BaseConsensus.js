@@ -29,6 +29,9 @@ class BaseConsensus extends Observable {
         /** @type {Subscription} */
         this._subscription = Subscription.ANY;
 
+        /** @type {InvRequestManager} */
+        this._invRequestManager = new InvRequestManager();
+
         network.on('peer-joined', peer => this._onPeerJoined(peer));
         network.on('peer-left', peer => this._onPeerLeft(peer));
 
@@ -359,6 +362,10 @@ class BaseConsensus extends Observable {
     /** @type {Network} */
     get network() {
         return this._network;
+    }
+
+    get invRequestManager() {
+        return this._invRequestManager;
     }
 }
 BaseConsensus.SYNC_THROTTLE = 1500; // ms

@@ -4,10 +4,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
      * @param {Mempool} mempool
      * @param {Time} time
      * @param {Peer} peer
+     * @param {InvRequestManager} invRequestManager
      * @param {Subscription} targetSubscription
      */
-    constructor(blockchain, mempool, time, peer, targetSubscription) {
-        super(time, peer, targetSubscription);
+    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
+        super(time, peer, invRequestManager, targetSubscription);
         /** @type {FullChain} */
         this._blockchain = blockchain;
         /** @type {Mempool} */
@@ -535,6 +536,11 @@ class FullConsensusAgent extends BaseConsensusAgent {
         if (vectors.length > 0) {
             this._peer.channel.inv(vectors);
         }
+    }
+
+    /** @type {boolean} */
+    get syncing() {
+        return this._syncing;
     }
 }
 /**

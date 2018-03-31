@@ -120,6 +120,7 @@ const sources = {
         './src/main/generic/consensus/base/blockchain/ChainDataStore.js',
         './src/main/generic/consensus/base/mempool/MempoolTransactionSet.js',
         './src/main/generic/consensus/base/mempool/Mempool.js',
+        './src/main/generic/consensus/InvRequestManager.js',
         './src/main/generic/consensus/BaseConsensusAgent.js',
         './src/main/generic/consensus/BaseConsensus.js',
         './src/main/generic/consensus/full/FullChain.js',

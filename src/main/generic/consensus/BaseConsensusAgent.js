@@ -5,9 +5,10 @@ class BaseConsensusAgent extends Observable {
     /**
      * @param {Time} time
      * @param {Peer} peer
+     * @param {InvRequestManager} invRequestManager
      * @param {Subscription} [targetSubscription]
      */
-    constructor(time, peer, targetSubscription) {
+    constructor(time, peer, invRequestManager, targetSubscription) {
         super();
         /** @type {Time} */
         this._time = time;
@@ -87,6 +88,9 @@ class BaseConsensusAgent extends Observable {
 
         /** @type {MultiSynchronizer} */
         this._synchronizer = new MultiSynchronizer();
+
+        /** @type {InvRequestManager} */
+        this._invRequestManager = invRequestManager;
 
         // Listen to consensus messages from the peer.
         peer.channel.on('inv', msg => this._onInv(msg));
@@ -319,23 +323,35 @@ class BaseConsensusAgent extends Observable {
         Log.v(BaseConsensusAgent, () => `[INV] ${msg.vectors.length} vectors (${unknownBlocks.length} new blocks, ${unknownTxs.length} new txs) received from ${this._peer.peerAddress}`);
 
         if (unknownBlocks.length > 0 || unknownTxs.length > 0) {
-            // Store unknown vectors in objectsToRequest.
-            this._blocksToRequest.enqueueAllNew(unknownBlocks);
-            this._txsToRequest.enqueueAllNew(unknownTxs);
-
-            // Clear the request throttle timeout.
-            this._timers.clearTimeout('inv');
-
-            // If there are enough objects queued up, send out a getData request.
-            if (this._blocksToRequest.length + this._txsToRequest.available >= BaseConsensusAgent.REQUEST_THRESHOLD) {
-                this._requestData();
+            for (const vector of unknownBlocks) {
+                this._invRequestManager.askToRequestVector(this, vector);
             }
-            // Otherwise, wait a short time for more inv messages to arrive, then request.
-            else {
-                this._timers.setTimeout('inv', () => this._requestData(), BaseConsensusAgent.REQUEST_THROTTLE);
+            for (const vector of unknownTxs) {
+                this._invRequestManager.askToRequestVector(this, vector);
             }
         } else {
             this._onNoUnknownObjects();
+        }
+    }
+
+    /**
+     * @param {InvVector} vector
+     */
+    requestVector(...vector) {
+        // Store unknown vectors in objectsToRequest.
+        this._blocksToRequest.enqueueAllNew(vector.filter(v => v.type === InvVector.Type.BLOCK));
+        this._txsToRequest.enqueueAllNew(vector.filter(v => v.type === InvVector.Type.TRANSACTION));
+
+        // Clear the request throttle timeout.
+        this._timers.clearTimeout('inv');
+
+        // If there are enough objects queued up, send out a getData request.
+        if (this._blocksToRequest.length + this._txsToRequest.available >= BaseConsensusAgent.REQUEST_THRESHOLD) {
+            this._requestData();
+        }
+        // Otherwise, wait a short time for more inv messages to arrive, then request.
+        else {
+            this._timers.setTimeout('inv', () => this._requestData(), BaseConsensusAgent.REQUEST_THROTTLE);
         }
     }
 
@@ -492,6 +508,8 @@ class BaseConsensusAgent extends Observable {
 
         // Mark object as processed.
         this._onObjectProcessed(vector);
+
+        this._invRequestManager.noteVectorReceived(InvVector.fromBlock(msg.block));
     }
 
     /**
@@ -559,6 +577,8 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
+        this._invRequestManager.noteVectorReceived(InvVector.fromTransaction(msg.transaction));
+
         // Mark object as received.
         this._onObjectReceived(vector);
 
@@ -598,6 +618,7 @@ class BaseConsensusAgent extends Observable {
             if (!this._objectsInFlight.contains(vector)) {
                 continue;
             }
+            this._invRequestManager.noteVectorNotReceived(this, vector);
 
             // Mark object as received.
             this._onObjectReceived(vector);
@@ -630,6 +651,10 @@ class BaseConsensusAgent extends Observable {
     _noMoreData() {
         // Cancel the request timeout timer.
         this._timers.clearTimeout('getData');
+
+        for(const vector of this._objectsInFlight.values()) {
+            this._invRequestManager.noteVectorNotReceived(this, vector);
+        }
 
         // Reset objects in flight.
         this._objectsThatFlew.addAll(this._objectsInFlight.values());
@@ -1034,6 +1059,11 @@ class BaseConsensusAgent extends Observable {
     /** @type {boolean} */
     get synced() {
         return this._synced;
+    }
+
+    /** @type {boolean} */
+    get syncing() {
+        return false;
     }
 }
 /**

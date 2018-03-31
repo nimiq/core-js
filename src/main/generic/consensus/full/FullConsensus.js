@@ -33,7 +33,7 @@ class FullConsensus extends BaseConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new FullConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._subscription);
+        return new FullConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._invRequestManager, this._subscription);
     }
 
     /** @type {FullChain} */
