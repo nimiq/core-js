@@ -10,6 +10,9 @@ class LightConsensus extends BaseConsensus {
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
+
+        /** @type {PartialChainManager} */
+        this._partialChainManager = new PartialChainManager();
     }
 
     /**
@@ -18,7 +21,7 @@ class LightConsensus extends BaseConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new LightConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._invRequestManager, this._subscription);
+        return new LightConsensusAgent(this._blockchain, this._mempool, this._network.time, peer, this._invRequestManager, this._subscription, this._partialChainManager);
     }
 
     /**
@@ -45,3 +48,41 @@ class LightConsensus extends BaseConsensus {
     }
 }
 Class.register(LightConsensus);
+
+class PartialChainManager {
+    constructor() {
+        /** @type {PartialLightChain} */
+        this._partialChain = null;
+    }
+
+    /** @type {boolean} */
+    get closed() {
+        return !this._partialChain || this._partialChain.aborted || this._partialChain.committed;
+    }
+
+    /**
+     * @param {LightChain} blockchain
+     * @returns {PartialLightChain}
+     */
+    async init(blockchain) {
+        if (!this._partialChain) {
+            this._partialChain = await blockchain.partialChain();
+        }
+        return this._partialChain;
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    abort() {
+        if (!this.closed) {
+            return this._partialChain.abort();
+        }
+        return Promise.resolve();
+    }
+
+    /** @type {PartialLightChain} */
+    get partialChain() {
+        return this._partialChain;
+    }
+}

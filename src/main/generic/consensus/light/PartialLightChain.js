@@ -21,6 +21,9 @@ class PartialLightChain extends LightChain {
         this._accountsTx = null;
         /** @type {ChainData} */
         this._proofHead = null;
+
+        this._aborted = false;
+        this._committed = false;
     }
 
     /**
@@ -494,6 +497,7 @@ class PartialLightChain extends LightChain {
         const currentProof = this._proof || await this._getChainProof();
         this.fire('committed', currentProof, this._headHash, this._mainChain);
 
+        this._committed = result;
         return result;
     }
 
@@ -501,6 +505,7 @@ class PartialLightChain extends LightChain {
      * @returns {Promise.<void>}
      */
     async abort() {
+        this._aborted = true;
         this._state = PartialLightChain.State.ABORTED;
         if (this._accountsTx) {
             await this._accountsTx.abort();
@@ -559,6 +564,16 @@ class PartialLightChain extends LightChain {
     /** @type {number} */
     get proofHeadHeight() {
         return this._proofHead.head.height;
+    }
+
+    /** @type {boolean} */
+    get aborted() {
+        return this._aborted;
+    }
+
+    /** @type {boolean} */
+    get committed() {
+        return this._committed;
     }
 }
 /**

@@ -6,13 +6,16 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @param {Peer} peer
      * @param {InvRequestManager} invRequestManager
      * @param {Subscription} targetSubscription
+     * @param {PartialChainManager} partialChainManager
      */
-    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
+    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription, partialChainManager) {
         super(blockchain, mempool, time, peer, invRequestManager, targetSubscription);
         /** @type {LightChain} */
         this._blockchain = blockchain;
         /** @type {PartialLightChain} */
         this._partialChain = null;
+        /** @type {PartialChainManager} */
+        this._partialChainManager = partialChainManager;
 
         /** @type {boolean} */
         this._syncing = false;
@@ -50,6 +53,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @override
      */
     async syncBlockchain() {
+
         // We don't sync with nano nodes.
         if (Services.isNanoNode(this._peer.peerAddress.services)) {
             this._syncFinished();
@@ -71,10 +75,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Ban peer if the sync failed more often than allowed.
         if (this._failedSyncs >= LightConsensusAgent.SYNC_ATTEMPTS_MAX) {
             this._peer.channel.close(CloseType.BLOCKCHAIN_SYNC_FAILED, 'blockchain sync failed');
-            if (this._partialChain) {
-                await this._partialChain.abort();
-                this._partialChain = null;
-            }
             return;
         }
 
@@ -119,6 +119,10 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Case 3: We are syncing.
         if (this._syncing && !this._busy) {
             if (this._catchup) {
+                if (!this._partialChainManager.closed) {
+                    await this._partialChainManager.abort();
+                    this._partialChain = null;
+                }
                 await FullConsensusAgent.prototype.syncBlockchain.call(this);
             } else {
                 // Initialize partial chain on first call.
@@ -177,11 +181,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._catchup = false;
         this._onMainChain = true;
 
-        if (this._partialChain) {
-            await this._partialChain.abort();
-        }
-
-        this._partialChain = await this._blockchain.partialChain();
+        this._partialChain = await this._partialChainManager.init(this._blockchain);
     }
 
     /**
@@ -320,7 +320,8 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         if (!msg.hasChunk()) {
             // Restart syncing.
-            await this._partialChain.abort();
+            // TODO: Request chain proof and check whether it is better
+            await this._partialChainManager.abort();
             this._partialChain = null;
             this._busy = false;
             this._failedSyncs++;
@@ -555,19 +556,6 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         resolve(header);
-    }
-
-    /**
-     * @returns {void}
-     * @protected
-     * @override
-     */
-    _onClose() {
-        if (this._partialChain) {
-            this._partialChain.abort().catch(Log.w.tag(LightConsensusAgent));
-        }
-
-        super._onClose();
     }
 
     /** @type {LightChain} */
