@@ -532,17 +532,18 @@ class FullChain extends BaseChain {
 
     /**
      * @param {Address} address
+     * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    async getTransactionReceiptsByAddress(address) {
+    async getTransactionReceiptsByAddress(address, limit = null) {
         if (!this._transactionStore) {
             throw new Error('Invalid request');
         }
 
         const transactionReceipts = [];
 
-        const entriesBySender = await this._transactionStore.getBySender(address);
-        const entriesByRecipient = await this._transactionStore.getByRecipient(address);
+        const entriesBySender = await this._transactionStore.getBySender(address, limit);
+        const entriesByRecipient = await this._transactionStore.getByRecipient(address, Math.max(0, limit - entriesBySender.length));
 
         entriesBySender.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));

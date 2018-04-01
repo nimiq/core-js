@@ -23,8 +23,8 @@ class ChainDataStore {
      * @returns {ChainDataStore}
      */
     static createVolatile() {
-        const chainStore = JDB.JungleDB.createVolatileObjectStore(new ChainDataStoreCodec());
-        const blockStore = JDB.JungleDB.createVolatileObjectStore(new BlockStoreCodec());
+        const chainStore = JDB.JungleDB.createVolatileObjectStore({ codec: new ChainDataStoreCodec() });
+        const blockStore = JDB.JungleDB.createVolatileObjectStore({ codec: new BlockStoreCodec() });
         ChainDataStore._createIndexes(chainStore);
         return new ChainDataStore(chainStore, blockStore);
     }

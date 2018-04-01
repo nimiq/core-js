@@ -43,20 +43,22 @@ class TransactionStore {
 
     /**
      * @param {Address} sender
+     * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
-    getBySender(sender) {
+    getBySender(sender, limit = null) {
         const index = this._store.index('sender');
-        return index.values(JDB.KeyRange.only(sender.serialize()));
+        return index.values(JDB.KeyRange.only(sender.serialize()), limit);
     }
 
     /**
      * @param {Address} recipient
+     * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
-    getByRecipient(recipient) {
+    getByRecipient(recipient, limit = null) {
         const index = this._store.index('recipient');
-        return index.values(JDB.KeyRange.only(recipient.serialize()));
+        return index.values(JDB.KeyRange.only(recipient.serialize()), limit);
     }
 
     /**
