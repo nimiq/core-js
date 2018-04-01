@@ -15,6 +15,8 @@ class PartialLightChain extends LightChain {
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
+        /** @type {PartialLightChain.State} */
+        this._previousState = PartialLightChain.State.PROVE_CHAIN;
         /** @type {PartialAccountsTree} */
         this._partialTree = null;
         /** @type {Accounts} */
@@ -24,6 +26,18 @@ class PartialLightChain extends LightChain {
 
         this._aborted = false;
         this._committed = false;
+    }
+
+    recheckProof() {
+        if (this.aborted || this.committed) return;
+        this._previousState = this._state;
+        this._state = PartialLightChain.State.CHECK_PROOF;
+    }
+
+    resetState() {
+        if (this._state === PartialLightChain.State.CHECK_PROOF) {
+            this._state = this._previousState;
+        }
     }
 
     /**
@@ -128,8 +142,15 @@ class PartialLightChain extends LightChain {
         if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
             await this._acceptProof(proof, suffixBlocks);
         } else {
-            await this.abort();
-            this._state = PartialLightChain.State.WEAK_PROOF;
+            if (this._state === PartialLightChain.State.CHECK_PROOF) {
+                // Do not change anything.
+                this._state = this._previousState;
+            } else {
+                await this.abort();
+                this._previousState = this._state;
+                this._state = PartialLightChain.State.WEAK_PROOF;
+            }
+            return false;
         }
 
         return true;
@@ -187,7 +208,12 @@ class PartialLightChain extends LightChain {
             Assert.that(result >= 0);
         }
 
+        this._previousState = this._state;
         this._state = PartialLightChain.State.PROVE_ACCOUNTS_TREE;
+        // If we came here because of a better proof, abort old state
+        if (this._partialTree) {
+            await this._partialTree.abort();
+        }
         this._partialTree = await this._accounts.partialAccountsTree();
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
@@ -461,6 +487,7 @@ class PartialLightChain extends LightChain {
 
         // If we're done, prepare next phase.
         if (result === PartialAccountsTree.Status.OK_COMPLETE) {
+            this._previousState = this._state;
             this._state = PartialLightChain.State.PROVE_BLOCKS;
             this._accountsTx = new Accounts(this._partialTree.transaction(false));
         }
@@ -473,6 +500,7 @@ class PartialLightChain extends LightChain {
      * @private
      */
     async _complete() {
+        this._previousState = this._state;
         this._state = PartialLightChain.State.COMPLETE;
         if (this._accountsTx) {
             await this._accountsTx.abort();
@@ -506,6 +534,7 @@ class PartialLightChain extends LightChain {
      */
     async abort() {
         this._aborted = true;
+        this._previousState = this._state;
         this._state = PartialLightChain.State.ABORTED;
         if (this._accountsTx) {
             await this._accountsTx.abort();
@@ -585,6 +614,7 @@ PartialLightChain.State = {
     PROVE_CHAIN: 0,
     PROVE_ACCOUNTS_TREE: 1,
     PROVE_BLOCKS: 2,
-    COMPLETE: 3
+    COMPLETE: 3,
+    CHECK_PROOF: 4
 };
 Class.register(PartialLightChain);

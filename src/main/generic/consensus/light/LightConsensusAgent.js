@@ -132,6 +132,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
                 switch (this._partialChain.state) {
                     case PartialLightChain.State.PROVE_CHAIN:
+                    case PartialLightChain.State.CHECK_PROOF:
                         this._requestChainProof();
                         this.fire('sync-chain-proof', this._peer.peerAddress);
                         break;
@@ -219,7 +220,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @private
      */
     _requestChainProof() {
-        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
+        Assert.that(this._partialChain && (this._partialChain.state === PartialLightChain.State.PROVE_CHAIN || this._partialChain.state === PartialLightChain.State.CHECK_PROOF));
         Assert.that(!this._requestedChainProof);
         this._busy = true;
 
@@ -230,6 +231,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Drop the peer if it doesn't send the chain proof within the timeout.
         // TODO should we ban here instead?
         this._peer.channel.expectMessage(Message.Type.CHAIN_PROOF, () => {
+            this._partialChain.resetState(); // Reset state to allow other peers to interact again
             this._peer.channel.close(CloseType.GET_CHAIN_PROOF_TIMEOUT, 'getChainProof timeout');
         }, LightConsensusAgent.CHAINPROOF_REQUEST_TIMEOUT, LightConsensusAgent.CHAINPROOF_CHUNK_TIMEOUT);
     }
@@ -240,7 +242,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      * @private
      */
     async _onChainProof(msg) {
-        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
+        Assert.that(this._partialChain && (this._partialChain.state === PartialLightChain.State.PROVE_CHAIN || this._partialChain.state === PartialLightChain.State.CHECK_PROOF));
         Log.d(LightConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
 
         // Check if we have requested an interlink chain, reject unsolicited ones.
@@ -258,6 +260,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Push the proof into the LightChain.
         if (!(await this._partialChain.pushProof(msg.proof))) {
             Log.w(LightConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
+            this._partialChain.resetState(); // Reset state to allow other peers to interact again
             // TODO ban instead?
             this._peer.channel.close(CloseType.INVALID_CHAIN_PROOF, 'invalid chain proof');
             return;
@@ -319,9 +322,8 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._accountsRequest = null;
 
         if (!msg.hasChunk()) {
-            // Restart syncing.
-            // TODO: Request chain proof and check whether it is better
-            await this._partialChainManager.abort();
+            // Restart syncing by requesting new proof.
+            this._partialChain.recheckProof();
             this._partialChain = null;
             this._busy = false;
             this._failedSyncs++;
