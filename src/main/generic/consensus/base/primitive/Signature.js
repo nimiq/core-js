@@ -152,6 +152,7 @@ class Signature extends Serializable {
         } else {
             let stackPtr;
             try {
+                stackPtr = Module.stackSave();
                 const wasmOutSignature = Module.stackAlloc(Signature.SIZE);
                 const signatureBuffer = new Uint8Array(Module.HEAP8.buffer, wasmOutSignature, Signature.SIZE);
                 const wasmInMessage = Module.stackAlloc(message.length);
@@ -189,6 +190,7 @@ class Signature extends Serializable {
         } else {
             let stackPtr;
             try {
+                stackPtr = Module.stackSave();
                 const wasmInPubKey = Module.stackAlloc(publicKey.length);
                 new Uint8Array(Module.HEAP8.buffer, wasmInPubKey, publicKey.length).set(publicKey);
                 const wasmInMessage = Module.stackAlloc(message.length);
