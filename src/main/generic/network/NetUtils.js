@@ -37,7 +37,7 @@ class NetUtils {
             return false;
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -161,13 +161,7 @@ class NetUtils {
      * @return {string}
      */
     static sanitizeIP(ip) {
-        const saneIp = NetUtils._normalizeIP(ip);
-        // FIXME
-        if (NetUtils.IP_BLACKLIST.indexOf(saneIp) >= 0) {
-            throw `Malformed IP address ${ip}`;
-        }
-        // TODO reject IPv6 broadcast addresses
-        return saneIp;
+        return NetUtils._normalizeIP(ip);
     }
 
     /**
@@ -262,7 +256,7 @@ class NetUtils {
             return parts.join(':');
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -320,7 +314,7 @@ class NetUtils {
             return new Uint8Array(bytes);
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -341,7 +335,7 @@ class NetUtils {
             return NetUtils.sanitizeIP(ipv6.join(':'));
         }
 
-        throw `Malformed IP address ${ip}`;
+        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -400,11 +394,6 @@ class NetUtils {
 }
 NetUtils.IPv4_LENGTH = 4;
 NetUtils.IPv6_LENGTH = 16;
-NetUtils.IP_BLACKLIST = [
-    '0.0.0.0',
-    '255.255.255.255',
-    '::',
-];
 NetUtils.IPv4_PRIVATE_NETWORK = [
     '10.0.0.0/8',
     '172.16.0.0/12',

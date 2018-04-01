@@ -47,7 +47,7 @@ describe('NetUtils', () => {
     });
 
     it('rejects invalid private IP addresses', () => {
-        expect(() => NetUtils.isPrivateIP('not-an-ip')).toThrow('Malformed IP address not-an-ip');
+        expect(() => NetUtils.isPrivateIP('not-an-ip')).toThrowError('Malformed IP address not-an-ip');
     });
 
     it('rejects non-globally-connectable WS', () => {
