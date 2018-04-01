@@ -1,4 +1,14 @@
 class GenesisConfig {
+    static main() {
+        // TODO
+        GenesisConfig.init(GenesisConfig.CONFIGS['bounty']);
+    }
+
+    static test() {
+        // TODO
+        GenesisConfig.init(GenesisConfig.CONFIGS['bounty']);
+    }
+
     static dev() {
         GenesisConfig.init(GenesisConfig.CONFIGS['dev']);
     }
