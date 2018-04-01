@@ -391,8 +391,12 @@ class LightConsensusAgent extends FullConsensusAgent {
             this._peer.channel.close(CloseType.GET_BLOCKS_TIMEOUT, 'getBlocks timeout');
         }, BaseConsensusAgent.REQUEST_TIMEOUT);
 
+        // Request the full block for our proof head.
+        const locators = this._partialChain.getBlockLocators();
+        this.requestVector(new InvVector(InvVector.Type.BLOCK, locators[0]));
+
         // Request blocks from peer.
-        this._peer.channel.getBlocks(this._partialChain.getBlockLocators(), this._partialChain.numBlocksNeeded(), false);
+        this._peer.channel.getBlocks(locators, this._partialChain.numBlocksNeeded(), false);
     }
 
     // Block processing.
