@@ -67,7 +67,7 @@ class Mempool extends Observable {
             recipientAccount = await this._accounts.get(transaction.recipient);
             recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
         } catch (e) {
-            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+            Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${e.message}`);
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -77,7 +77,7 @@ class Mempool extends Observable {
         try {
             senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
         } catch (e) {
-            Log.w(Mempool, `Rejected transaction - ${e.message}`, transaction);
+            Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${e.message}`);
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -104,7 +104,7 @@ class Mempool extends Observable {
             // If the rejected transaction is the one we're pushing, fail.
             // Otherwise, evict the rejected transaction from the mempool.
             if (tx.equals(transaction)) {
-                Log.w(Mempool, `Rejected transaction - ${error}`, transaction);
+                Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${error}`);
                 return Mempool.ReturnCode.INVALID;
             } else {
                 // Remove transaction
