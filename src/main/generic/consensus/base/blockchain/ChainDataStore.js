@@ -3,10 +3,19 @@ class ChainDataStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const chainStore = jdb.createObjectStore('ChainData', { codec: new ChainDataStoreCodec(), enableLruCache: true });
+        const chainStore = jdb.createObjectStore('ChainData', {
+            codec: new ChainDataStoreCodec(),
+            enableLruCache: ChainDataStore.CHAINDATA_CACHING_ENABLED,
+            lruCacheSize: ChainDataStore.CHAINDATA_CACHE_SIZE
+        });
         ChainDataStore._createIndexes(chainStore);
 
-        jdb.createObjectStore('Block', { codec: new BlockStoreCodec(), enableLruCache: true, lruCacheSize: 0, rawLruCacheSize: 500 });
+        jdb.createObjectStore('Block', {
+            codec: new BlockStoreCodec(),
+            enableLruCache: ChainDataStore.BLOCKS_CACHING_ENABLED,
+            lruCacheSize: ChainDataStore.BLOCKS_CACHE_SIZE,
+            rawLruCacheSize: ChainDataStore.BLOCKS_RAW_CACHE_SIZE
+        });
     }
 
     /**
@@ -398,6 +407,11 @@ class ChainDataStore {
         return [];
     }
 }
+ChainDataStore.CHAINDATA_CACHING_ENABLED = true;
+ChainDataStore.CHAINDATA_CACHE_SIZE = 5000;
+ChainDataStore.BLOCKS_CACHING_ENABLED = true;
+ChainDataStore.BLOCKS_CACHE_SIZE = 0;
+ChainDataStore.BLOCKS_RAW_CACHE_SIZE = 500;
 Class.register(ChainDataStore);
 
 /**
