@@ -541,7 +541,6 @@ class FullChain extends BaseChain {
         }
 
         const transactionReceipts = [];
-
         const entriesBySender = await this._transactionStore.getBySender(address, limit);
         const entriesByRecipient = await this._transactionStore.getByRecipient(address, limit === null ? null : Math.max(0, limit - entriesBySender.length));
 
