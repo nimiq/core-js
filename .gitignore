@@ -1,13 +1,9 @@
 .DS_Store
 /node_modules
 /SpecRunner.html
-/src/main/platform/nodejs/node_modules
-/src/main/platform/nodejs/database/tables
-/src/main/platform/nodejs/database/keys
-/clients/nodejs/node_modules
-/clients/nodejs/database
-/clients/nodejs/full-consensus
-/clients/nodejs/light-consensus
+/clients/nodejs/*-full-consensus
+/clients/nodejs/*-light-consensus
+/clients/nodejs/peer-key
 /clients/nodejs/wallet
 /clients/nodejs/localhost.*
 /dist/nimiq*

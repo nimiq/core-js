@@ -98,26 +98,10 @@ Developers are free to choose between `npm` and `yarn` for managing the dependen
 ### Installation for Core Developers (using npm)
 - Node.js latest version (> 8.0.0)
 - Dependencies: `npm install`
-- Node.js dependencies:
-
-	```bash
-	cd src/main/platform/nodejs/
-	npm install
-	cd clients/nodejs/
-	npm install
-	```
 
 ### Installation for Core Developers (using yarn)
 - Node.js latest version (> 8.0.0)
 - Dependencies: `yarn`
-- Node.js dependencies:
-
-	```bash
-	cd src/main/platform/nodejs/
-	yarn
-	cd clients/nodejs/
-	yarn
-	```
 
 ### Test and Build
 
