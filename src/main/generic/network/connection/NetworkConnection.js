@@ -272,6 +272,11 @@ class NetworkConnection extends Observable {
     get closed() {
         return this._closed;
     }
+
+    /** @type {number} */
+    get lastMessageReceivedAt() {
+        return this._channel.lastMessageReceivedAt;
+    }
 }
 // Used to generate unique NetworkConnection ids.
 NetworkConnection._instanceCount = 0;

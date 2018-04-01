@@ -498,15 +498,19 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        // Save ping timestamp to detect the speed of the connection
-        this._pingTimes.set(nonce, Date.now());
+        // Save ping timestamp to detect the speed of the connection.
+        const startTime = Date.now();
+        this._pingTimes.set(nonce, startTime);
 
-        // Drop peer if it doesn't answer with a matching pong message within the timeout.
-        this._timers.setTimeout(`ping_${nonce}`, () => {
-            this._timers.clearTimeout(`ping_${nonce}`);
-            this._channel.close(CloseType.PING_TIMEOUT, 'ping timeout');
-            this._pingTimes.delete(nonce);
-        }, NetworkAgent.PING_TIMEOUT);
+        // Expect the peer to answer with a pong message if we haven't heard anything from it
+        // within the last CONNECTIVITY_CHECK_INTERVAL. Drop the peer otherwise.
+        if (this._channel.lastMessageReceivedAt < startTime - NetworkAgent.CONNECTIVITY_CHECK_INTERVAL) {
+            this._timers.setTimeout(`ping_${nonce}`, () => {
+                this._timers.clearTimeout(`ping_${nonce}`);
+                this._pingTimes.delete(nonce);
+                this._channel.close(CloseType.PING_TIMEOUT, 'ping timeout');
+            }, NetworkAgent.PING_TIMEOUT);
+        }
     }
 
     /**

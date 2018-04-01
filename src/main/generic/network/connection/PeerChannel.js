@@ -442,6 +442,11 @@ class PeerChannel extends Observable {
     get closed() {
         return this._conn.closed;
     }
+
+    /** @type {number} */
+    get lastMessageReceivedAt() {
+        return this._conn.lastMessageReceivedAt;
+    }
 }
 Class.register(PeerChannel);
 

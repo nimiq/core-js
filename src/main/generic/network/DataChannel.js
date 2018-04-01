@@ -24,6 +24,9 @@ class DataChannel extends Observable {
 
         /** @type {Timers} */
         this._timers = new Timers();
+
+        /** @type {number} */
+        this._lastChunkReceivedAt = 0;
     }
 
     /**
@@ -168,6 +171,9 @@ class DataChannel extends Observable {
             this._buffer.write(chunk);
             remainingBytes -= effectiveChunkLength;
 
+            // Update last chunk timestamp.
+            this._lastChunkReceivedAt = Date.now();
+
             const expectedMsg = this._expectedMessagesByType.get(this._msgType);
             if (remainingBytes === 0) {
                 const msg = this._buffer.buffer;
@@ -247,7 +253,6 @@ class DataChannel extends Observable {
      * @abstract
      * @param {Uint8Array} msg
      */
-
     /* istanbul ignore next */
     sendChunk(msg) { throw  new Error('Not implemented'); }
 
@@ -255,9 +260,13 @@ class DataChannel extends Observable {
      * @abstract
      * @type {DataChannel.ReadyState}
      */
-
     /* istanbul ignore next */
     get readyState() { throw new Error('Not implemented'); }
+
+    /** @type {number} */
+    get lastMessageReceivedAt() {
+        return this._lastChunkReceivedAt;
+    }
 }
 
 DataChannel.CHUNK_SIZE_MAX = 1024 * 16; // 16 kb
