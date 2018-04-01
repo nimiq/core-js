@@ -73,21 +73,21 @@ describe('NetAddress', () => {
 
 
     const long1v6 = '2001:db8:0:0:0:0:2:1';
-    const short1v6 = '2001:db8::2:1';
+    const short1v6 = '2001:0db8:0000:0000:0000:0000:0002:0001';
     const long2v6 = '2001:db8:0000:1:1:1:1:1';
-    const short2v6 = '2001:db8:0:1:1:1:1:1';
+    const short2v6 = '2001:0db8:0000:0001:0001:0001:0001:0001';
     const long3v6 = '2001:db8:0:0:1:0:0:1';
-    const short3v6 = '2001:db8::1:0:0:1';
+    const short3v6 = '2001:0db8:0000:0000:0001:0000:0000:0001';
     const long4v6 = '2001:0db8::0001';
-    const short4v6 = '2001:db8::1';
+    const short4v6 = '2001:0db8:0000:0000:0000:0000:0000:0001';
     const long5v6 = '0:0::0:2:1';
-    const short5v6 = '::2:1';
+    const short5v6 = '0000:0000:0000:0000:0000:0000:0002:0001';
     const long6v6 = '1:0:0:4:5::8';
-    const short6v6 = '1::4:5:0:0:8';
+    const short6v6 = '0001:0000:0000:0004:0005:0000:0000:0008';
     const long7v6 = '::08.008.8.000008';
     const short7v6 = '8.8.8.8';
     const long8v6 = '1:0:0:4:5::8';
-    const short8v6 = '1::4:5:0:0:8';
+    const short8v6 = '0001:0000:0000:0004:0005:0000:0000:0008';
     const long9v6 = '0:0:0::0:1.2.3.4';
     const short9v6 = '1.2.3.4';
     const long10v6 = '0:0:0::4:1.2.3.4';
@@ -108,7 +108,7 @@ describe('NetAddress', () => {
 
 
     const uppercase1v6 = '2001:DB8::1';
-    const lowercase1v6 = '2001:db8::1';
+    const lowercase1v6 = '2001:0db8:0000:0000:0000:0000:0000:0001';
 
     it('lowercases IPv6 addresses', () => {
         expect(NetAddress.fromIP(uppercase1v6).toString()).toEqual(lowercase1v6);

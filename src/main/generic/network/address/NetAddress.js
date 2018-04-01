@@ -5,7 +5,7 @@ class NetAddress {
      * @return {NetAddress}
      */
     static fromIP(ip, reliable = false) {
-        const saneIp = NetUtils.ipToBytes(NetUtils.sanitizeIP(ip));
+        const saneIp = NetUtils.ipToBytes(ip);
         const type = NetUtils.isIPv4Address(saneIp) ? NetAddress.Type.IPv4 : NetAddress.Type.IPv6;
         return new NetAddress(type, saneIp, reliable);
     }

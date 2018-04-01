@@ -69,9 +69,9 @@ describe('NetUtils', () => {
         expect(NetUtils.ipToSubnet('128.128.128.128', 16)).toEqual('128.128.0.0');
         expect(NetUtils.ipToSubnet('255.128.128.128', 4)).toEqual('240.0.0.0');
 
-        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 2)).toEqual('c000::');
-        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 8)).toEqual('ff00::');
-        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 16)).toEqual('ffff::');
-        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 32)).toEqual('ffff:ffff::');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 2)).toEqual('c000:0000:0000:0000:0000:0000:0000:0000');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 8)).toEqual('ff00:0000:0000:0000:0000:0000:0000:0000');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 16)).toEqual('ffff:0000:0000:0000:0000:0000:0000:0000');
+        expect(NetUtils.ipToSubnet('ffff:ffff:ffff::', 32)).toEqual('ffff:ffff:0000:0000:0000:0000:0000:0000');
     });
 });

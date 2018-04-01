@@ -157,14 +157,6 @@ class NetUtils {
     }
 
     /**
-     * @param {string} ip
-     * @return {string}
-     */
-    static sanitizeIP(ip) {
-        return NetUtils._normalizeIP(ip);
-    }
-
-    /**
      * @param {string} host
      * @returns {boolean}
      */
@@ -178,85 +170,6 @@ class NetUtils {
             return false;
         }
         return true;
-    }
-
-    /**
-     * @param {string} ip
-     * @return {string}
-     */
-    static _normalizeIP(ip) {
-        if (NetUtils.isIPv4Address(ip)) {
-            // Re-create IPv4 address to strip possible leading zeros.
-            // Embed into IPv6 format.
-            const match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-            return `${parseInt(match[1])}.${parseInt(match[2])}.${parseInt(match[3])}.${parseInt(match[4])}`;
-        }
-
-        if (NetUtils.isIPv6Address(ip)) {
-            // Shorten IPv6 address according to RFC 5952.
-
-            // Only use lower-case letters.
-            ip = ip.toLowerCase();
-
-            // Split into parts.
-            let parts = ip.split(':');
-
-            // Return normalized IPv4 address if embedded.
-            if (NetUtils.isIPv4Address(parts[parts.length - 1])) {
-                return NetUtils._normalizeIP(parts[parts.length - 1]);
-            }
-
-            // If it is already shortened at one point, blow it up again.
-            parts = NetUtils._extendIPv6(parts);
-
-            let maxZeroSeqStart = -1;
-            let maxZeroSeqLength = 0;
-            let curZeroSeqStart = -1;
-            let curZeroSeqLength = 1;
-            for (let i = 0; i < parts.length; ++i) {
-                // Remove leading zeros from each part, but keep at least one number.
-                parts[i] = parts[i].replace(/^0+([a-f0-9])/, '$1');
-
-                // We look for the longest, leftmost consecutive sequence of zero parts.
-                if (parts[i] === '0') {
-                    // Freshly started sequence.
-                    if (curZeroSeqStart < 0) {
-                        curZeroSeqStart = i;
-                    } else {
-                        // Known sequence, so increment length.
-                        curZeroSeqLength++;
-                    }
-                } else {
-                    // A sequence just ended, check if it is of better length.
-                    if (curZeroSeqStart >= 0 && curZeroSeqLength > maxZeroSeqLength) {
-                        maxZeroSeqStart = curZeroSeqStart;
-                        maxZeroSeqLength = curZeroSeqLength;
-                        curZeroSeqStart = -1;
-                        curZeroSeqLength = 1;
-                    }
-                }
-            }
-
-            if (curZeroSeqStart >= 0 && curZeroSeqLength > maxZeroSeqLength) {
-                maxZeroSeqStart = curZeroSeqStart;
-                maxZeroSeqLength = curZeroSeqLength;
-            }
-
-            // Remove consecutive zeros.
-            if (maxZeroSeqStart >= 0 && maxZeroSeqLength > 1) {
-                if (maxZeroSeqLength === parts.length) {
-                    return '::';
-                } else if (maxZeroSeqStart === 0 || maxZeroSeqStart + maxZeroSeqLength === parts.length) {
-                    parts.splice(maxZeroSeqStart, maxZeroSeqLength, ':');
-                } else {
-                    parts.splice(maxZeroSeqStart, maxZeroSeqLength, '');
-                }
-            }
-
-            return parts.join(':');
-        }
-
-        throw new Error(`Malformed IP address ${ip}`);
     }
 
     /**
@@ -332,7 +245,7 @@ class NetUtils {
             for (let i = 0; i < 8; i++) {
                 ipv6.push(hexIp[i*2] + hexIp[i*2+1]);
             }
-            return NetUtils.sanitizeIP(ipv6.join(':'));
+            return ipv6.join(':');
         }
 
         throw new Error(`Malformed IP address ${ip}`);
