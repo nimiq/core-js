@@ -3,6 +3,7 @@ class TransactionStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
+        // TODO: NUMBER_ENCODING in LMDB stores 32bit integers. This will only be safe for the next ~11 years assuming only full blocks.
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec(), keyEncoding: JDB.JungleDB.NUMBER_ENCODING });
         store.createIndex('sender', ['senderBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
         store.createIndex('recipient', ['recipientBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
@@ -77,9 +78,15 @@ class TransactionStore {
      * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
-    getBySender(sender, limit = null) {
+    async getBySender(sender, limit = null) {
         const index = this._store.index('sender');
-        return index.values(JDB.KeyRange.only(sender.serialize()), limit);
+        const entries = [];
+        await index.valueStream((value, key) => {
+            if (limit !== null && entries.length >= limit) return false;
+            entries.push(value);
+            return true;
+        }, /*ascending*/ false, JDB.KeyRange.only(sender.serialize()));
+        return entries;
     }
 
     /**
@@ -87,9 +94,15 @@ class TransactionStore {
      * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
-    getByRecipient(recipient, limit = null) {
+    async getByRecipient(recipient, limit = null) {
         const index = this._store.index('recipient');
-        return index.values(JDB.KeyRange.only(recipient.serialize()), limit);
+        const entries = [];
+        await index.valueStream((value, key) => {
+            if (limit !== null && entries.length >= limit) return false;
+            entries.push(value);
+            return true;
+        }, /*ascending*/ false, JDB.KeyRange.only(recipient.serialize()));
+        return entries;
     }
 
     /**

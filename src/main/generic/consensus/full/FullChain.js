@@ -543,7 +543,7 @@ class FullChain extends BaseChain {
         const transactionReceipts = [];
 
         const entriesBySender = await this._transactionStore.getBySender(address, limit);
-        const entriesByRecipient = await this._transactionStore.getByRecipient(address, Math.max(0, limit - entriesBySender.length));
+        const entriesByRecipient = await this._transactionStore.getByRecipient(address, limit === null ? null : Math.max(0, limit - entriesBySender.length));
 
         entriesBySender.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));

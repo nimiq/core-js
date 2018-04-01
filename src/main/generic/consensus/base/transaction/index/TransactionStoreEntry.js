@@ -36,7 +36,7 @@ class TransactionStoreEntry {
 
     /**
      * @param {string} id
-     * @param {{transactionHashBuffer: string, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}} o
+     * @param {{transactionHashBuffer: Uint8Array, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}} o
      * @returns {TransactionStoreEntry}
      */
     static fromJSON(id, o) {
@@ -51,7 +51,7 @@ class TransactionStoreEntry {
     }
 
     /**
-     * @returns {{transactionHashBuffer: string, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}}
+     * @returns {{transactionHashBuffer: Uint8Array, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}}
      */
     toJSON() {
         return {
