@@ -1,8 +1,16 @@
 class MultiSynchronizer extends Observable {
-    constructor() {
+    /**
+     * @param {number} [throttleAfter]
+     * @param {number} [throttleWait]
+     */
+    constructor(throttleAfter, throttleWait) {
         super();
         /** @type {Map.<string, Synchronizer>} */
         this._synchronizers = new Map();
+        /** @type {number} */
+        this._throttleAfter = throttleAfter;
+        /** @type {number} */
+        this._throttleWait = throttleWait;
     }
 
     /**
@@ -15,7 +23,7 @@ class MultiSynchronizer extends Observable {
     push(tag, fn) {
         let synchonizer = this._synchronizers.get(tag);
         if (!synchonizer) {
-            synchonizer = new Synchronizer();
+            synchonizer = new Synchronizer(this._throttleAfter, this._throttleWait);
             synchonizer.on('work-start', () => this.fire('work-start', synchonizer, tag, this));
             synchonizer.on('work-end', () => this.fire('work-end', synchonizer, tag, this));
             this._synchronizers.set(tag, synchonizer);

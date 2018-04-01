@@ -16,7 +16,7 @@ class NanoChain extends BaseChain {
         this._headHash = GenesisConfig.GENESIS_HASH;
 
         /** @type {PrioritySynchronizer} */
-        this._synchronizer = new PrioritySynchronizer(2);
+        this._synchronizer = new PrioritySynchronizer(2, NanoChain.SYNCHRONIZER_THROTTLE_AFTER, NanoChain.SYNCHRONIZER_THROTTLE_WAIT);
 
         return this._init();
     }
@@ -453,4 +453,8 @@ NanoChain.OK_KNOWN = 0;
 NanoChain.OK_EXTENDED = 1;
 NanoChain.OK_REBRANCHED = 2;
 NanoChain.OK_FORKED = 3;
+
+NanoChain.SYNCHRONIZER_THROTTLE_AFTER = 500; // ms
+NanoChain.SYNCHRONIZER_THROTTLE_WAIT = 30; // ms
+
 Class.register(NanoChain);

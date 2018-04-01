@@ -1,14 +1,26 @@
 class PrioritySynchronizer extends Observable {
     /**
      * @param {number} numPriorities
+     * @param {?number} [throttleAfter]
+     * @param {?number} [throttleWait]
      */
-    constructor(numPriorities) {
+    constructor(numPriorities, throttleAfter, throttleWait) {
         super();
+
+        /** @type {Array.<Array.<object>>} */
         this._queues = [];
         for (let i = 0; i < numPriorities; i++) {
             this._queues[i] = [];
         }
+
+        /** @type {boolean} */
         this._working = false;
+        /** @type {?number} */
+        this._throttleAfter = throttleAfter;
+        /** @type {?number} */
+        this._throttleWait = throttleWait;
+        /** @type {number} */
+        this._elapsed = 0;
     }
 
     /**
@@ -24,6 +36,7 @@ class PrioritySynchronizer extends Observable {
         return new Promise((resolve, reject) => {
             this._queues[priority].push({fn: fn, resolve: resolve, reject: reject});
             if (!this._working) {
+                this.fire('work-start', this);
                 this._doWork().catch(Log.w.tag(PrioritySynchronizer));
             }
         });
@@ -44,10 +57,11 @@ class PrioritySynchronizer extends Observable {
 
     async _doWork() {
         this._working = true;
-        this.fire('work-start', this);
 
         for (const queue of this._queues) {
             while (queue.length > 0) {
+                const start = Date.now();
+
                 const job = queue.shift();
                 try {
                     const result = await job.fn();
@@ -55,10 +69,20 @@ class PrioritySynchronizer extends Observable {
                 } catch (e) {
                     if (job.reject) job.reject(e);
                 }
+
+                if (this._throttleAfter !== undefined) {
+                    this._elapsed += Date.now() - start;
+                    if (this._elapsed >= this._throttleAfter) {
+                        this._elapsed = 0;
+                        setTimeout(this._doWork.bind(this), this._throttleWait);
+                        return;
+                    }
+                }
             }
         }
 
         this._working = false;
+        this._elapsed = 0;
         this.fire('work-end', this);
     }
 

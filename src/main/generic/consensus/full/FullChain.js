@@ -57,7 +57,7 @@ class FullChain extends BaseChain {
         this._transactionStore = transactionStore;
 
         /** @type {PrioritySynchronizer} */
-        this._synchronizer = new PrioritySynchronizer(2);
+        this._synchronizer = new PrioritySynchronizer(2, FullChain.SYNCHRONIZER_THROTTLE_AFTER, FullChain.SYNCHRONIZER_THROTTLE_WAIT);
 
         /** @type {number} */
         this._blockKnownCount = this._blockInvalidCount = this._blockOrphanCount = this._blockExtendedCount = this._blockRebranchedCount = this._blockForkedCount = 0;
@@ -728,4 +728,8 @@ FullChain.OK_KNOWN = 0;
 FullChain.OK_EXTENDED = 1;
 FullChain.OK_REBRANCHED = 2;
 FullChain.OK_FORKED = 3;
+
+FullChain.SYNCHRONIZER_THROTTLE_AFTER = 500; // ms
+FullChain.SYNCHRONIZER_THROTTLE_WAIT = 30; // ms
+
 Class.register(FullChain);
