@@ -506,14 +506,14 @@ async function action(args, repl) {
             return;
         }
         case 'transactions': {
-            if (args.length !== 2) {
+            if (args.length < 2) {
                 console.error('Specify account address');
                 return;
             }
             if (!repl) {
                 await displayInfoHeader(75);
             }
-            const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1])).sort((a, b) => a.timestamp > b.timestamp);
+            const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1], args[2])).sort((a, b) => a.timestamp > b.timestamp);
             const self = Nimiq.Address.fromString(args[1]);
             console.log(chalk`Transaction log for {bold ${self.toUserFriendlyAddress()}}:`);
             for (const tx of transactions) {
@@ -534,11 +534,11 @@ async function action(args, repl) {
             return;
         }
         case 'transactions.json': {
-            if (args.length !== 2) {
+            if (args.length < 2) {
                 console.error('Specify account address');
                 return;
             }
-            console.log(JSON.stringify(await jsonRpcFetch('getTransactionsByAddress', args[1])));
+            console.log(JSON.stringify(await jsonRpcFetch('getTransactionsByAddress', args[1], args[2])));
             return;
         }
         case 'mempool': {
@@ -696,7 +696,8 @@ Options:
                             Create, sign and send a transaction with the given
                             properties. The sending account must be a local
                             account.
-    transactions ADDR       Display transactions involving address ADDR.
+    transactions ADDR [LIMIT]
+                            Display at most LIMIT transactions involving address ADDR.
     mempool [INCLUDE_TX]    Display mempool content. If INCLUDE_TX is given,
                             full transactions instead of transaction hashes
                             are requested.

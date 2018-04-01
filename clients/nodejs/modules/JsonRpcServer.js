@@ -291,9 +291,9 @@ class JsonRpcServer {
         };
     }
 
-    async getTransactionsByAddress(addr) {
+    async getTransactionsByAddress(addr, limit = 1000) {
         const address = Nimiq.Address.fromString(addr);
-        const receipts = await this._blockchain.getTransactionReceiptsByAddress(address);
+        const receipts = await this._blockchain.getTransactionReceiptsByAddress(address, limit);
         const result = [];
         for (const r of receipts) {
             result.push(await this._getTransactionByHash(r.transactionHash));
