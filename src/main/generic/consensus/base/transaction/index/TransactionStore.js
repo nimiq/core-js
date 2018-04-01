@@ -3,9 +3,10 @@ class TransactionStore {
      * @param {JungleDB} jdb
      */
     static initPersistent(jdb) {
-        const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec() });
-        store.createIndex('sender', ['senderBuffer'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
-        store.createIndex('recipient', ['recipientBuffer'], { lmdbKeyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec(), keyEncoding: JDB.JungleDB.NUMBER_ENCODING });
+        store.createIndex('sender', ['senderBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        store.createIndex('recipient', ['recipientBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
+        store.createIndex('transactionHash', ['transactionHashBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING, unique: true });
     }
 
     /**
@@ -23,6 +24,7 @@ class TransactionStore {
         const store = JDB.JungleDB.createVolatileObjectStore();
         store.createIndex('sender', ['senderBuffer']);
         store.createIndex('recipient', ['recipientBuffer']);
+        store.createIndex('transactionHash', ['transactionHashBuffer'], { unique: true });
         return new TransactionStore(store);
     }
 
@@ -34,11 +36,40 @@ class TransactionStore {
     }
 
     /**
+     * @param {JDB.Transaction} [tx]
+     * @returns {Promise.<number>}
+     * @private
+     */
+    async _currentId(tx) {
+        tx = tx || this._store;
+        return (await tx.maxKey()) || 0;
+    }
+
+    /**
+     * @param {Hash} transactionHash
+     * @param {JDB.Transaction} [tx]
+     * @returns {Promise.<number>}
+     * @private
+     */
+    async _idForHash(transactionHash, tx) {
+        tx = tx || this._store;
+        const index = tx.index('transactionHash');
+        const result = await index.keys(JDB.KeyRange.only(transactionHash.serialize()));
+        // Should only contain one result due to unique constraint
+        for (const id of result) {
+            return id;
+        }
+        return null;
+    }
+
+    /**
      * @param {Hash} transactionHash
      * @returns {Promise.<TransactionStoreEntry>}
      */
-    get(transactionHash) {
-        return this._store.get(transactionHash.toBase64());
+    async get(transactionHash) {
+        const index = this._store.index('transactionHash');
+        const result = await index.values(JDB.KeyRange.only(transactionHash.serialize()));
+        return result && result.length > 0 ? result[0] : null;
     }
 
     /**
@@ -69,8 +100,10 @@ class TransactionStore {
     async put(block) {
         const indexedTransactions = TransactionStoreEntry.fromBlock(block);
         const tx = this._store.transaction();
+        let currentId = await this._currentId(tx);
         for (const indexedTransaction of indexedTransactions) {
-            tx.putSync(indexedTransaction.key, indexedTransaction);
+            currentId++;
+            tx.putSync(currentId, indexedTransaction);
         }
         return tx.commit();
     }
@@ -83,7 +116,7 @@ class TransactionStore {
     async remove(block) {
         const tx = this._store.transaction();
         for (const transaction of block.transactions) {
-            tx.removeSync(transaction.hash().toBase64());
+            tx.removeSync(await this._idForHash(transaction.hash(), tx));  // eslint-disable-line no-await-in-loop
         }
         return tx.commit();
     }

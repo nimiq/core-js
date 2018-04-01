@@ -16,6 +16,7 @@ class TransactionStoreEntry {
         this._index = index;
         this.senderBuffer = this._sender.serialize();
         this.recipientBuffer = this._recipient.serialize();
+        this.transactionHashBuffer = this._transactionHash.serialize();
     }
 
     /**
@@ -34,13 +35,13 @@ class TransactionStoreEntry {
     }
 
     /**
-     * @param {string} transactionKey
-     * @param {{senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}} o
+     * @param {string} id
+     * @param {{transactionHashBuffer: string, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}} o
      * @returns {TransactionStoreEntry}
      */
-    static fromJSON(transactionKey, o) {
+    static fromJSON(id, o) {
         return new TransactionStoreEntry(
-            Hash.fromBase64(transactionKey),
+            Hash.unserialize(new SerialBuffer(o.transactionHashBuffer)),
             Address.unserialize(new SerialBuffer(o.senderBuffer)),
             Address.unserialize(new SerialBuffer(o.recipientBuffer)),
             o.blockHeight,
@@ -50,10 +51,11 @@ class TransactionStoreEntry {
     }
 
     /**
-     * @returns {{sender: Uint8Array, recipient: Uint8Array, blockHeight: number, blockHash: string, index: number}}
+     * @returns {{transactionHashBuffer: string, senderBuffer: Uint8Array, recipientBuffer: Uint8Array, blockHeight: number, blockHash: string, index: number}}
      */
     toJSON() {
         return {
+            transactionHashBuffer: this.transactionHashBuffer,
             senderBuffer: this.senderBuffer,
             recipientBuffer: this.recipientBuffer,
             blockHeight: this.blockHeight,
@@ -90,11 +92,6 @@ class TransactionStoreEntry {
     /** @type {number} */
     get index() {
         return this._index;
-    }
-
-    /** @type {string} */
-    get key() {
-        return this.transactionHash.toBase64();
     }
 }
 Class.register(TransactionStoreEntry);
