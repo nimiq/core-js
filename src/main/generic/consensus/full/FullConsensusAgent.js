@@ -500,10 +500,8 @@ class FullConsensusAgent extends BaseConsensusAgent {
         const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address, FullConsensusAgent.TRANSACTION_RECEIPTS_LIMIT);
 
         // TODO recipients current only support a single transaction-receipts message.
-        for (let i = 0; i < transactionReceipts.length && /* TODO Remove me */ i === 0; i += TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) {
-            const receipts = transactionReceipts.slice(i, i + TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
-            this._peer.channel.transactionReceipts(receipts);
-        }
+        const receipts = transactionReceipts.slice(0, TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
+        this._peer.channel.transactionReceipts(receipts);
     }
 
     /**
