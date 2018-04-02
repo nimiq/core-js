@@ -65,21 +65,21 @@ class InclusionHashSet {
     }
 
     /**
-     * @returns {Array.<V|*>}
+     * @returns {Array.<string>}
      */
     values() {
         return Array.from(this._set.values());
     }
 
     /**
-     * @returns {Iterator.<V|*>}
+     * @returns {Iterator.<string>}
      */
     valueIterator() {
         return this._set.values();
     }
 
     /**
-     * @returns {Iterator.<V|*>}
+     * @returns {Iterator.<string>}
      */
     [Symbol.iterator]() {
         return this.valueIterator();
@@ -97,6 +97,23 @@ class InclusionHashSet {
      */
     isEmpty() {
         return this._set.size === 0;
+    }
+
+    /**
+     * @param {string} hash
+     * @private
+     */
+    _addHashed(hash) {
+        this._set.add(hash);
+    }
+
+    /**
+     * @returns {InclusionHashSet}
+     */
+    clone() {
+        const set = new InclusionHashSet(this._fnHash);
+        this.values().forEach(hash => set._addHashed(hash));
+        return set;
     }
 }
 Class.register(InclusionHashSet);

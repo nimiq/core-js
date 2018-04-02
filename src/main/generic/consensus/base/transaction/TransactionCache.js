@@ -7,13 +7,12 @@
 
 class TransactionCache {
     /**
-     * @param {Iterable.<Hash>} [transactionHashes]
+     * @param {InclusionHashSet.<Hash>} [transactionHashes]
      * @param {Array.<BlockDescriptor>} [blockOrder]
      */
-    constructor(transactionHashes = [], blockOrder = []) {
-        /** @type {HashSet.<Hash>} */
-        this._transactions = new HashSet(txHash => txHash.toBase64());
-        this._transactions.addAll(transactionHashes);
+    constructor(transactionHashes = null, blockOrder = []) {
+        /** @type {InclusionHashSet.<Hash>} */
+        this._transactionHashes = transactionHashes ? transactionHashes : new InclusionHashSet(txHash => txHash.toBase64());
         /** @type {Array.<BlockDescriptor>} */
         this._blockOrder = blockOrder;
     }
@@ -23,7 +22,7 @@ class TransactionCache {
      * @returns {boolean}
      */
     containsTransaction(transaction) {
-        return this._transactions.contains(transaction.hash());
+        return this._transactionHashes.contains(transaction.hash());
     }
 
     /**
@@ -47,7 +46,7 @@ class TransactionCache {
         const blockDescriptor = TransactionCache._getBlockDescriptor(block);
 
         this._blockOrder.push(blockDescriptor);
-        this._transactions.addAll(blockDescriptor.transactions);
+        this._transactionHashes.addAll(blockDescriptor.transactions);
 
         if (this._blockOrder.length > Policy.TRANSACTION_VALIDITY_WINDOW) {
             this.shiftBlock();
@@ -57,7 +56,7 @@ class TransactionCache {
     shiftBlock() {
         const blockDescriptor = this._blockOrder.shift();
         if (blockDescriptor) {
-            this._transactions.removeAll(blockDescriptor.transactions);
+            this._transactionHashes.removeAll(blockDescriptor.transactions);
         }
     }
 
@@ -74,7 +73,7 @@ class TransactionCache {
         // If there is a block to remove
         if (blockDescriptorFromOrder) {
             Assert.that(blockDescriptorFromOrder.hash.equals(block.hash()), 'Invalid block to revert');
-            this._transactions.removeAll(blockDescriptorFromOrder.transactions);
+            this._transactionHashes.removeAll(blockDescriptorFromOrder.transactions);
         }
 
         return this.missingBlocks;
@@ -90,7 +89,7 @@ class TransactionCache {
         Assert.that(!this.tail || blocks.length === 0 || this.tail.prevHash.equals(blocks[blocks.length - 1].hash()), 'Not a predecessor of tail');
         const blockDescriptors = blocks.map(block => TransactionCache._getBlockDescriptor(block));
         this._blockOrder.unshift(...blockDescriptors);
-        blockDescriptors.forEach(b => this._transactions.addAll(b.transactions));
+        blockDescriptors.forEach(b => this._transactionHashes.addAll(b.transactions));
     }
 
     /** @type {number} */
@@ -98,16 +97,16 @@ class TransactionCache {
         return Policy.TRANSACTION_VALIDITY_WINDOW - this._blockOrder.length;
     }
 
-    /** @type {HashSet.<Hash>} */
+    /** @type {InclusionHashSet.<Transaction>} */
     get transactions() {
-        return this._transactions;
+        return this._transactionHashes;
     }
 
     /**
      * @returns {TransactionCache}
      */
     clone() {
-        return new TransactionCache(/** @type {Iterable.<Hash>} */ this._transactions, this._blockOrder.slice());
+        return new TransactionCache(/** @type {InclusionHashSet.<Hash>} */ this._transactionHashes.clone(), this._blockOrder.slice());
     }
 
     /**

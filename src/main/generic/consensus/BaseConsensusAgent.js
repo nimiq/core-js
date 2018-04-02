@@ -20,8 +20,8 @@ class BaseConsensusAgent extends Observable {
         this._synced = false;
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
-        /** @type {HashSet.<InvVector>} */
-        this._knownObjects = new HashSet();
+        /** @type {InclusionHashSet.<InvVector>} */
+        this._knownObjects = new InclusionHashSet();
         this._knownObjects.add(new InvVector(InvVector.Type.BLOCK, peer.headHash));
 
         // InvVectors we want to request via getData are collected here and
