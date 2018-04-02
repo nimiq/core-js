@@ -52,7 +52,7 @@ class ConsensusDB extends JDB.JungleDB {
     }
 }
 ConsensusDB._instance = null;
-ConsensusDB.VERSION = 5;
+ConsensusDB.VERSION = 6;
 ConsensusDB.INITIAL_DB_SIZE = 1024*1024*500; // 500 MB initially
 ConsensusDB.MIN_RESIZE = 1 << 30; // 1 GB
 Class.register(ConsensusDB);
