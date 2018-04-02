@@ -50,12 +50,12 @@ class TransactionStore {
     /**
      * @param {number} id
      * @param {JDB.Transaction} [tx]
-     * @returns {Promise.<number>}
+     * @returns {Promise}
      * @private
      */
-    async _setCurrentId(id, tx) {
+    _setCurrentId(id, tx) {
         tx = tx || this._store;
-        await tx.put(TransactionStore.CURRENT_ID_KEY, id);
+        return tx.put(TransactionStore.CURRENT_ID_KEY, id);
     }
 
     /**
