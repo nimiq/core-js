@@ -25,15 +25,18 @@ describe('TransactionCache', () => {
 
             // Shift
             const tail = cache.tail;
-            const tx2 = tail.transactions[0];
+            let tailBlock = await testBlockchain.getBlock(tail.hash, false, true);
+            const tx2 = tailBlock.transactions[0];
             expect(cache.containsTransaction(tx2)).toBe(true);
             cache.shiftBlock();
             expect(cache.containsTransaction(tx2)).toBe(false);
 
             // Prepend
-            cache.prependBlocks([tail]);
+            cache.prependBlocks([tailBlock]);
             expect(cache.containsTransaction(tx2)).toBe(true);
-            expect(cache.head.height - cache.tail.height).toBe(4);
+            const headBlock = await testBlockchain.getBlock(cache.head.hash);
+            tailBlock = await testBlockchain.getBlock(cache.tail.hash);
+            expect(headBlock.height - tailBlock.height).toBe(4);
         })().then(done, done.fail);
     });
 });

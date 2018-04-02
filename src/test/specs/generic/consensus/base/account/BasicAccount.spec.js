@@ -122,7 +122,7 @@ describe('BasicAccount', () => {
         expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Balance Error!');
 
         transaction = new BasicTransaction(pubKey, recipient, 1, 0, 0);
-        cache.transactions.add(transaction);
+        cache.transactions.add(transaction.hash());
         expect(() => account.withOutgoingTransaction(transaction, 1, cache)).toThrowError('Double Transaction Error!');
     });
 
@@ -136,7 +136,7 @@ describe('BasicAccount', () => {
         account = account.withOutgoingTransaction(transaction, 1, cache);
 
         expect(account.balance).toBe(99);
-        cache.transactions.add(transaction);
+        cache.transactions.add(transaction.hash());
 
         account = account.withOutgoingTransaction(transaction, 1, cache, true);
 

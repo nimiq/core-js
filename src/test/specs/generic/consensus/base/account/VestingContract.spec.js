@@ -141,7 +141,7 @@ describe('VestingContract', () => {
         account = account.withOutgoingTransaction(transaction, 1, cache);
 
         expect(account.balance).toBe(99);
-        cache.transactions.add(transaction);
+        cache.transactions.add(transaction.hash());
 
         account = account.withOutgoingTransaction(transaction, 1, cache, true);
 
