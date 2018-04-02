@@ -542,8 +542,23 @@ async function action(args, repl) {
             return;
         }
         case 'mempool': {
+            const mempoolStats = await jsonRpcFetch('mempool');
+            console.log(chalk`Mempool stats ({bold ${mempoolStats.total}} transactions in total).`);
+            console.log('By fee per byte:');
+            for (let i = 0; i < mempoolStats.buckets.length; i++) {
+                const bucket = mempoolStats.buckets[i];
+                const count = mempoolStats[bucket];
+                if (i === 0) {
+                    console.log(`> ${bucket}:\t${count} transactions`);
+                } else {
+                    console.log(`${bucket}-${mempoolStats.buckets[i-1]}:\t${count} transactions`);
+                }
+            }
+            return;
+        }
+        case 'mempool.content': {
             let includeTransactions = args.length === 2 && isTrue(args[1]);
-            const transactions = await jsonRpcFetch('mempool', includeTransactions);
+            const transactions = await jsonRpcFetch('mempoolContent', includeTransactions);
             console.log(chalk`Mempool content ({bold ${transactions.length}} transactions):`);
             for (const tx of transactions) {
                 if (includeTransactions) {
@@ -562,9 +577,9 @@ async function action(args, repl) {
             }
             return;
         }
-        case 'mempool.json': {
+        case 'mempool.content.json': {
             let includeTransactions = args.length === 2 && isTrue(args[1]);
-            console.log(JSON.stringify(await jsonRpcFetch('mempool', includeTransactions)));
+            console.log(JSON.stringify(await jsonRpcFetch('mempoolContent', includeTransactions)));
             return;
         }
         case 'consensus.min_fee_per_byte': {
@@ -698,7 +713,9 @@ Options:
                             account.
     transactions ADDR [LIMIT]
                             Display at most LIMIT transactions involving address ADDR.
-    mempool [INCLUDE_TX]    Display mempool content. If INCLUDE_TX is given,
+    mempool                 Display mempool stats.
+    mempool.content [INCLUDE_TX]
+                            Display mempool content. If INCLUDE_TX is given,
                             full transactions instead of transaction hashes
                             are requested.
     consensus.min_fee_per_byte [FEE]

@@ -70,6 +70,7 @@ class JsonRpcServer {
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
         this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
+        this._methods.set('mempoolContent', this.mempoolContent.bind(this));
         this._methods.set('mempool', this.mempool.bind(this));
         this._methods.set('minFeePerByte', this.minFeePerByte.bind(this));
 
@@ -302,8 +303,27 @@ class JsonRpcServer {
         return result;
     }
 
-    mempool(includeTransactions) {
+    mempoolContent(includeTransactions) {
         return this._mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex());
+    }
+
+    mempool() {
+        const transactions = this._mempool.getTransactions();
+        const buckets = [10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0];
+        const transactionsPerBucket = { total: transactions.length, buckets: [] };
+        let i = 0;
+        // Transactions are ordered by feePerByte
+        for (const tx of transactions) {
+            // Find appropriate bucked
+            while (tx.feePerByte < buckets[i]) i++;
+            const bucket = buckets[i];
+            if (!transactionsPerBucket[bucket]) {
+                transactionsPerBucket[bucket] = 0;
+                transactionsPerBucket.buckets.push(bucket);
+            }
+            transactionsPerBucket[bucket]++;
+        }
+        return transactionsPerBucket;
     }
 
     minFeePerByte(minFeePerByte) {
