@@ -46,6 +46,7 @@ const sources = {
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/array/HashMap.js',
         './src/main/generic/utils/array/HashSet.js',
+        './src/main/generic/utils/array/InclusionHashSet.js',
         './src/main/generic/utils/array/LimitIterable.js',
         './src/main/generic/utils/array/Queue.js',
         './src/main/generic/utils/array/UniqueQueue.js',
