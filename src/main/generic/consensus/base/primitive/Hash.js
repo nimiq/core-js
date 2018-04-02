@@ -1,15 +1,5 @@
 class Hash extends Serializable {
     /**
-     * @param {Hash} o
-     * @returns {Hash}
-     */
-    static copy(o) {
-        if (!o) return o;
-        const obj = new Uint8Array(o._obj);
-        return new Hash(obj);
-    }
-
-    /**
      * @param {?Uint8Array} arg
      * @param {Hash.Algorithm} [algorithm]
      * @private

@@ -77,6 +77,13 @@ class ChainData {
     }
 
     /**
+     * @returns {ChainData}
+     */
+    shallowCopy() {
+        return new ChainData(this.head.shallowCopy(), this.totalDifficulty, this.totalWork, this.superBlockCounts, this.onMainChain, this.mainChainSuccessor);
+    }
+
+    /**
      * @param {Block} block
      * @returns {Promise.<ChainData>}
      */

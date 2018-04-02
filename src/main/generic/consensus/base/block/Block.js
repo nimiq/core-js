@@ -1,18 +1,5 @@
 class Block {
     /**
-     * @param {Block} o
-     * @returns {Block}
-     */
-    static copy(o) {
-        if (!o) return o;
-        return new Block(
-            BlockHeader.copy(o._header),
-            BlockInterlink.copy(o._interlink),
-            BlockBody.copy(o._body)
-        );
-    }
-
-    /**
      * @param {BlockHeader} header
      * @param {BlockInterlink} interlink
      * @param {BlockBody} [body]
@@ -341,6 +328,13 @@ class Block {
         }
         
         return new BlockInterlink(hashes, hash);
+    }
+
+    /**
+     * @returns {Block}
+     */
+    shallowCopy() {
+        return new Block(this._header, this._interlink, this._body);
     }
 
     /**

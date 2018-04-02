@@ -64,13 +64,15 @@ class ChainDataStore {
      */
     async getChainData(key, includeBody = false) {
         /** @type {ChainData} */
-        const chainData = await this._chainStore.get(key.toBase64());
+        let chainData = await this._chainStore.get(key.toBase64());
         if (!chainData || !includeBody) {
             return chainData;
         }
 
         const block = await this._blockStore.get(key.toBase64());
         if (block && block.isFull()) {
+            // Do not modify object from store, since it might be cached
+            chainData = chainData.shallowCopy();
             chainData.head._body = block.body;
         }
 
@@ -84,8 +86,11 @@ class ChainDataStore {
      * @returns {Promise.<void>}
      */
     putChainData(key, chainData, includeBody = true) {
+        // Do not modify object from store, since it might be cached
+        const cleanChainData = chainData.shallowCopy();
+
         if (this._chainStore instanceof JDB.Transaction) {
-            this._chainStore.putSync(key.toBase64(), chainData);
+            this._chainStore.putSync(key.toBase64(), cleanChainData);
             if (includeBody && chainData.head.isFull()) {
                 this._blockStore.putSync(key.toBase64(), chainData.head);
             }
@@ -94,13 +99,13 @@ class ChainDataStore {
 
         if (includeBody && chainData.head.isFull()) {
             const chainTx = this._chainStore.synchronousTransaction();
-            chainTx.putSync(key.toBase64(), chainData);
+            chainTx.putSync(key.toBase64(), cleanChainData);
             const blockTx = this._blockStore.synchronousTransaction();
             blockTx.putSync(key.toBase64(), chainData.head);
             return JDB.JungleDB.commitCombined(chainTx, blockTx);
         }
 
-        return this._chainStore.put(key.toBase64(), chainData);
+        return this._chainStore.put(key.toBase64(), cleanChainData);
     }
 
     /**
@@ -110,8 +115,11 @@ class ChainDataStore {
      * @returns {void}
      */
     putChainDataSync(key, chainData, includeBody = true) {
+        // Do not modify object from store, since it might be cached
+        const cleanChainData = chainData.shallowCopy();
+
         Assert.that(this._chainStore instanceof JDB.Transaction);
-        this._chainStore.putSync(key.toBase64(), chainData);
+        this._chainStore.putSync(key.toBase64(), cleanChainData);
         if (includeBody && chainData.head.isFull()) {
             this._blockStore.putSync(key.toBase64(), chainData.head);
         }
@@ -168,14 +176,16 @@ class ChainDataStore {
 
         for (const chainData of candidates) {
             if (chainData.onMainChain) {
+                // Do not modify object from store, since it might be cached
+                const finalChainData = chainData.shallowCopy();
                 if (includeBody) {
                     // eslint-disable-next-line no-await-in-loop
                     const block = await this._blockStore.get(chainData.head.hash().toBase64());
                     if (block) {
-                        chainData._head = block;
+                        finalChainData._head = block;
                     }
                 }
-                return chainData;
+                return finalChainData;
             }
         }
 
@@ -209,7 +219,7 @@ class ChainDataStore {
 
         for (const chainData of candidates) {
             if (chainData.onMainChain) {
-                return chainData.head;
+                return chainData.head.shallowCopy();
             }
         }
 

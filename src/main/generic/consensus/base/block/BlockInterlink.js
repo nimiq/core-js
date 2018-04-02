@@ -1,17 +1,5 @@
 class BlockInterlink {
     /**
-     * @param {BlockInterlink} o
-     * @returns {BlockInterlink}
-     */
-    static copy(o) {
-        if (!o) return o;
-        const hashes = o._hashes.map(it => Hash.copy(it));
-        const repeatBits = new Uint8Array(o._repeatBits);
-        const compressed = o._compressed.map(it => Hash.copy(it));
-        return new BlockInterlink(hashes, undefined, repeatBits, compressed);
-    }
-
-    /**
      * @param {Array.<Hash>} hashes
      * @param {Hash} prevHash
      * @returns {{repeatBits: Uint8Array, compressed: Array.<Hash>}}
