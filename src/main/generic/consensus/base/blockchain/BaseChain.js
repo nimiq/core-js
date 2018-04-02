@@ -328,7 +328,8 @@ class BaseChain extends IBlockchain {
                     case BaseChain.MultilevelStrategy.RELAXED: {
                         // Local goodness only:
                         const lowerChainLength = headData.superBlockCounts.get(mu - 1) - tailData.superBlockCounts.get(mu - 1);
-                        if (!BaseChain._isLocallyGood(lowerChainLength, headData.head.height - tailData.head.height, depth, delta)) {
+                        const underlyingLength = headData.head.height - tailData.head.height + 1;
+                        if (!BaseChain._isLocallyGood(lowerChainLength, underlyingLength, depth, delta)) {
                             Log.d(BaseChain, `Chain badness detected at depth ${depth}[${i}:${i + k1}], failing at ${mu}`);
                             return false;
                         }

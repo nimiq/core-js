@@ -23,6 +23,7 @@ class TransactionCache {
      * @param {Block} block
      */
     pushBlock(block) {
+        Assert.that(!this.head || block.prevHash.equals(this.head.hash()), 'Not a successor of head');
         this._blockOrder.push(block);
         this._transactions.addAll(block.transactions);
 
@@ -43,7 +44,7 @@ class TransactionCache {
      * @returns {number}
      */
     revertBlock(block) {
-        if (this._transactions.isEmpty()) {
+        if (this._blockOrder.length === 0) {
             return this.missingBlocks;
         }
 
@@ -63,6 +64,7 @@ class TransactionCache {
         if (blocks.length + this._blockOrder.length > Policy.TRANSACTION_VALIDITY_WINDOW) {
             throw new Error('Exceeding transaction cache size');
         }
+        Assert.that(!this.tail || blocks.length === 0 || this.tail.prevHash.equals(blocks[blocks.length - 1].hash()), 'Not a predecessor of tail');
         this._blockOrder.unshift(...blocks);
         blocks.forEach(b => this._transactions.addAll(b.transactions));
     }
@@ -82,6 +84,25 @@ class TransactionCache {
      */
     clone() {
         return new TransactionCache(/** @type {Iterable.<Transaction>} */ this._transactions, this._blockOrder.slice());
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this._blockOrder.length === 0;
+    }
+
+    /** @type {?Block} */
+    get head() {
+        if (this._blockOrder.length === 0) return null;
+        return this._blockOrder[this._blockOrder.length - 1];
+    }
+
+    /** @type {?Block} */
+    get tail() {
+        if (this._blockOrder.length === 0) return null;
+        return this._blockOrder[0];
     }
 }
 Class.register(TransactionCache);

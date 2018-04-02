@@ -1,5 +1,4 @@
 describe('TransactionCache', () => {
-
     it('correctly finds transactions', (done) => {
         (async () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(5, 10);
@@ -15,22 +14,26 @@ describe('TransactionCache', () => {
             expect(cache.transactions.length).toBe(testBlockchain.transactionCache.transactions.length);
 
             // New block
-            expect(cache.containsTransaction(tx)).toBeFalsy();
+            expect(cache.containsTransaction(tx)).toBe(false);
             cache.pushBlock(block);
-            expect(testBlockchain.transactionCache.containsTransaction(tx)).toBeFalsy();
-            expect(cache.containsTransaction(tx)).toBeTruthy();
+            expect(testBlockchain.transactionCache.containsTransaction(tx)).toBe(false);
+            expect(cache.containsTransaction(tx)).toBe(true);
 
             // Revert
             cache.revertBlock(block);
-            expect(cache.containsTransaction(tx)).toBeFalsy();
-
-            // Prepend
-            cache.prependBlocks([block]);
-            expect(cache.containsTransaction(tx)).toBeTruthy();
+            expect(cache.containsTransaction(tx)).toBe(false);
 
             // Shift
+            const tail = cache.tail;
+            const tx2 = tail.transactions[0];
+            expect(cache.containsTransaction(tx2)).toBe(true);
             cache.shiftBlock();
-            expect(cache.containsTransaction(tx)).toBeFalsy();
+            expect(cache.containsTransaction(tx2)).toBe(false);
+
+            // Prepend
+            cache.prependBlocks([tail]);
+            expect(cache.containsTransaction(tx2)).toBe(true);
+            expect(cache.head.height - cache.tail.height).toBe(4);
         })().then(done, done.fail);
     });
 });
