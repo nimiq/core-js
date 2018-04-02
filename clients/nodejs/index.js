@@ -171,8 +171,25 @@ const $ = {};
 
     Nimiq.Log.i(TAG, `Blockchain state: height=${$.blockchain.height}, headHash=${$.blockchain.headHash}`);
 
-    const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : undefined;
-    $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, extraData);
+    const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : new Uint8Array(0);
+    if (config.poolMining.enabled) {
+        const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
+        switch (config.poolMining.mode) {
+            case 'nano':
+                $.miner = new Nimiq.NanoPoolMiner($.blockchain, $.network.time, $.wallet.address, deviceId);
+                break;
+            case 'smart':
+            default:
+                $.miner = new Nimiq.SmartPoolMiner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, deviceId, extraData);
+                break;
+        }
+        $.consensus.on('established', () => {
+            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${config.poolMining.mode} client.`);
+            $.miner.connect(config.poolMining.host, config.poolMining.port);
+        });
+    } else {
+        $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, extraData);
+    }
 
     $.blockchain.on('head-changed', (head) => {
         if ($.consensus.established || head.height % 100 === 0) {
@@ -203,13 +220,6 @@ const $ = {};
     }
     $.miner.throttleAfter = config.miner.throttleAfter;
     $.miner.throttleWait = config.miner.throttleWait;
-
-    if (config.poolMining.enabled) {
-        const deviceId = Nimiq.PoolClient.generateDeviceId(networkConfig);
-        Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.server} using device id ${deviceId}.`);
-        $.pool = new Nimiq.PoolClient($.miner, $.wallet.address, deviceId);
-        $.pool.connect(config.poolMining.server, config.poolMining.port);
-    }
 
     $.consensus.on('established', () => {
         Nimiq.Log.i(TAG, `Blockchain ${config.type}-consensus established in ${(Date.now() - START) / 1000}s.`);

@@ -1,18 +1,22 @@
-class PoolClient extends Observable {
+/**
+ * @abstract
+ */
+class BasePoolMiner extends Miner {
     /**
-     * @param {Miner} miner
+     * @param {BaseChain} blockchain
+     * @param {Accounts} accounts
+     * @param {Mempool} mempool
+     * @param {Time} time
      * @param {Address} address
-     * @param {number} [deviceId]
+     * @param {number} deviceId
+     * @param {Uint8Array} [extraData=new Uint8Array(0)]
      */
-    constructor(miner, address, deviceId) {
-        super();
-
-        /** @type {Miner} */
-        this._miner = miner;
-        this._miner.on('share', (block) => this._onBlockMined(block));
+    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0)) {
+        super(blockchain, accounts, mempool, time, address, extraData);
 
         /** @type {Address} */
-        this._address = address;
+        this._ourAddress = address;
+        this._ourExtraData = extraData;
 
         /** @type {WebSocket} */
         this._ws = null;
@@ -26,11 +30,11 @@ class PoolClient extends Observable {
         }
     }
 
-    connect(server, port) {
+    connect(host, port) {
         if (this._ws) throw new Error('Call disconnect() first');
-        this._server = server;
+        this._server = host;
         this._port = port;
-        const ws = this._ws = new WebSocket(`${server}:${port}`);
+        const ws = this._ws = new WebSocket(`wss://${host}:${port}`);
         this._ws.onopen = () => this._onOpen(ws);
         this._ws.onerror = (e) => this._onError(ws, e);
         this._ws.onmessage = (msg) => this._onMessage(JSON.parse(msg.data));
@@ -41,25 +45,25 @@ class PoolClient extends Observable {
         if (ws !== this._ws) {
             ws.close();
         } else {
-            // Register
-            this._send({
-                message: 'register',
-                mode: 'smart',
-                address: this._address.toUserFriendlyAddress(),
-                deviceId: this._deviceId
-            });
+            this._register();
         }
     }
 
+    /**
+     * @abstract
+     */
+    _register() {
+    }
+
     _onError(ws, e) {
-        Log.w(PoolClient, e.message || e);
+        Log.w(BasePoolMiner, e.message || e);
         if (ws === this._ws) {
             this._timeoutReconnect();
         }
         try {
             ws.close();
         } catch (e2) {
-            Log.w(PoolClient, e2.message || e2);
+            Log.w(BasePoolMiner, e2.message || e2);
         }
     }
 
@@ -82,7 +86,7 @@ class PoolClient extends Observable {
             try {
                 this._ws.close();
             } catch (e2) {
-                Log.w(PoolClient, e2.message || e2);
+                Log.w(BasePoolMiner, e2.message || e2);
             }
             this._ws = null;
         }
@@ -108,25 +112,12 @@ class PoolClient extends Observable {
                     }
                     break;
                 case 'invalid-share':
-                    Log.w(PoolClient, 'Pool denied share: ', msg.reason);
+                    Log.w(BasePoolMiner, 'Pool denied share: ', msg.reason);
                     break;
             }
         } else {
             this._ws.close();
         }
-    }
-
-    /**
-     * @param {Block} block
-     * @private
-     */
-    async _onBlockMined(block) {
-        this._send({
-            message: 'share',
-            blockHeader: BufferUtils.toBase64(block.header.serialize()),
-            minerAddrProof: BufferUtils.toBase64((await MerklePath.compute(block.body.getMerkleLeafs(), block.minerAddr)).serialize()),
-            extraDataProof: BufferUtils.toBase64((await MerklePath.compute(block.body.getMerkleLeafs(), block.body.extraData)).serialize())
-        });
     }
 
     /**
@@ -138,9 +129,9 @@ class PoolClient extends Observable {
     }
 
     _turnPoolOff() {
-        this._miner.address = this._address;
-        this._miner.extraData = new Uint8Array(0);
-        this._miner.shareTarget = null;
+        this.address = this._ourAddress;
+        this.extraData = this._ourExtraData;
+        this.shareTarget = null;
     }
 
     /**
@@ -150,9 +141,9 @@ class PoolClient extends Observable {
      * @private
      */
     _onNewPoolSettings(address, extraData, target) {
-        this._miner.address = address;
-        this._miner.extraData = extraData;
-        this._miner.shareTarget = target;
+        this.address = address;
+        this.extraData = extraData;
+        this.shareTarget = target;
     }
 
     /**
@@ -167,4 +158,4 @@ class PoolClient extends Observable {
     }
 }
 
-Class.register(PoolClient);
+Class.register(BasePoolMiner);

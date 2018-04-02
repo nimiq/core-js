@@ -1,6 +1,6 @@
 class Miner extends Observable {
     /**
-     * @param {IBlockchain} blockchain
+     * @param {BaseChain} blockchain
      * @param {Accounts} accounts
      * @param {Mempool} mempool
      * @param {Time} time
@@ -12,7 +12,7 @@ class Miner extends Observable {
      */
     constructor(blockchain, accounts, mempool, time, minerAddress, extraData = new Uint8Array(0)) {
         super();
-        /** @type {IBlockchain} */
+        /** @type {BaseChain} */
         this._blockchain = blockchain;
         /** @type {Accounts} */
         this._accounts = accounts;
@@ -114,14 +114,16 @@ class Miner extends Observable {
         this._shareCompact = 0;
         this._shareCompactSet = false;
 
-        // Listen to changes in the mempool which evicts invalid transactions
-        // after every blockchain head change and then fires 'transactions-ready'
-        // when the eviction process finishes. Restart work on the next block
-        // with fresh transactions when this fires.
-        this._mempool.on('transactions-ready', () => this._startWork());
+        if (this._mempool) {
+            // Listen to changes in the mempool which evicts invalid transactions
+            // after every blockchain head change and then fires 'transactions-ready'
+            // when the eviction process finishes. Restart work on the next block
+            // with fresh transactions when this fires.
+            this._mempool.on('transactions-ready', () => this._startWork());
 
-        // Immediately start processing transactions when they come in.
-        this._mempool.on('transaction-added', () => this._mempoolChanged = true);
+            // Immediately start processing transactions when they come in.
+            this._mempool.on('transaction-added', () => this._mempoolChanged = true);
+        }
     }
 
     startWork() {
@@ -159,11 +161,16 @@ class Miner extends Observable {
             // Construct next block.
             this._retry = 0;
             const block = await this.getNextBlock();
+            if (block === null) {
+                this.stopWork();
+                return;
+            }
 
-            Log.d(Miner, `Starting work on block #${block.header.height} with ${block.transactionCount} transactions (${this._hashrate} H/s)`);
+            Log.d(Miner, `Starting work on block #${block.header.height} with ${block.isFull() ? block.transactionCount : '(set by pool)'} transactions (${this._hashrate} H/s)`);
 
             this._workerPool.startMiningOnBlock(block, this._shareCompactSet ? this._shareCompact : undefined).catch(Log.w.tag(Miner));
         } catch (e) {
+            Log.e(Miner, e);
             Log.w(Miner, 'Failed to start work, retrying in 100ms');
             this.stopWork();
             setTimeout(() => this.startWork(), 100);
@@ -182,7 +189,7 @@ class Miner extends Observable {
             Log.d(Miner, () => `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
             if (!this._submittingBlock) {
                 obj.block.header.nonce = obj.nonce;
-                if (BlockUtils.isProofOfWork(obj.hash, obj.block.target)) {
+                if (BlockUtils.isProofOfWork(obj.hash, obj.block.target) && obj.block.isFull()) {
                     this._submittingBlock = true;
                     if (await obj.block.header.verifyProofOfWork()) {
                         // Tell listeners that we've mined a block.
