@@ -4,16 +4,17 @@ describe('TransactionStore', () => {
     /** @type {Array.<Transaction>} */
     let transactions;
     let block, senderAddress, recipientAddress1, recipientAddress2;
+    let testBlockchain;
 
     beforeAll((done) => {
         (async () => {
             transactionStore = TransactionStore.createVolatile();
 
-            const blockchain = await TestBlockchain.createVolatileTest(0, 3);
-            const senderPubKey = blockchain.users[0].publicKey;
-            senderAddress = blockchain.users[0].address;
-            recipientAddress1 = blockchain.users[1].address;
-            recipientAddress2 = blockchain.users[2].address;
+            testBlockchain = await TestBlockchain.createVolatileTest(0, 3);
+            const senderPubKey = testBlockchain.users[0].publicKey;
+            senderAddress = testBlockchain.users[0].address;
+            recipientAddress1 = testBlockchain.users[1].address;
+            recipientAddress2 = testBlockchain.users[2].address;
             const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
             const proof = BufferUtils.fromAscii('ABCD');
             const tx1 = new BasicTransaction(senderPubKey, recipientAddress1, 1, 1, 1, signature);
@@ -24,7 +25,7 @@ describe('TransactionStore', () => {
             transactions = [tx1, tx2, tx3];
             transactions.sort((a, b) => a.compareBlockOrder(b));
 
-            block = await blockchain.createBlock({transactions});
+            block = await testBlockchain.createBlock({transactions});
         })().then(done, done.fail);
     });
 
@@ -86,6 +87,36 @@ describe('TransactionStore', () => {
                 expect(entry.blockHeight).toBe(block.height, 'wrong block height');
                 expect(entry.index).toBe(i, 'wrong index');
                 expect(entry.blockHash.equals(blockHash)).toBeTruthy('wrong block hash');
+            }
+            await transactionStore.truncate();
+        })().then(done, done.fail);
+    });
+
+    it('can rebranch', (done) => {
+        (async () => {
+            await transactionStore.put(block);
+
+            const rebranchedBlock1 = await testBlockchain.createBlock({nonce: 1, transactions: [transactions[2]]});
+            const rebranchedBlock2 = await testBlockchain.createBlock({nonce: 1, transactions: [transactions[0]]});
+
+            const tx = transactionStore.transaction();
+            await tx.remove(block);
+            await tx.put(rebranchedBlock1);
+            await tx.put(rebranchedBlock2);
+            await tx.commit();
+
+            for (let i=0; i<transactions.length; ++i) {
+                const hash = transactions[i].hash();
+                const entry = await transactionStore.get(hash);
+                if (i == 1) {
+                    expect(entry).toBe(null);
+                    continue;
+                }
+                expect(entry.transactionHash.equals(hash)).toBeTruthy('wrong transactionHash');
+                expect(entry.sender.equals(transactions[i].sender)).toBeTruthy('wrong sender');
+                expect(entry.recipient.equals(transactions[i].recipient)).toBeTruthy('wrong recipient');
+                expect(entry.blockHeight).toBe(block.height, 'wrong block height');
+                expect(entry.index).toBe(0, 'wrong index');
             }
             await transactionStore.truncate();
         })().then(done, done.fail);
