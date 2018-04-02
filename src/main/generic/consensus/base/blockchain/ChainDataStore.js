@@ -65,14 +65,18 @@ class ChainDataStore {
     async getChainData(key, includeBody = false) {
         /** @type {ChainData} */
         let chainData = await this._chainStore.get(key.toBase64());
+
+        // Do not modify object from store, since it might be cached
+        if (chainData) {
+            chainData = chainData.shallowCopy();
+        }
+
         if (!chainData || !includeBody) {
             return chainData;
         }
 
         const block = await this._blockStore.get(key.toBase64());
         if (block && block.isFull()) {
-            // Do not modify object from store, since it might be cached
-            chainData = chainData.shallowCopy();
             chainData.head._body = block.body;
         }
 
@@ -88,6 +92,7 @@ class ChainDataStore {
     putChainData(key, chainData, includeBody = true) {
         // Do not modify object from store, since it might be cached
         const cleanChainData = chainData.shallowCopy();
+        cleanChainData.head._body = null;
 
         if (this._chainStore instanceof JDB.Transaction) {
             this._chainStore.putSync(key.toBase64(), cleanChainData);
@@ -117,6 +122,7 @@ class ChainDataStore {
     putChainDataSync(key, chainData, includeBody = true) {
         // Do not modify object from store, since it might be cached
         const cleanChainData = chainData.shallowCopy();
+        cleanChainData.head._body = null;
 
         Assert.that(this._chainStore instanceof JDB.Transaction);
         this._chainStore.putSync(key.toBase64(), cleanChainData);
@@ -182,7 +188,7 @@ class ChainDataStore {
                     // eslint-disable-next-line no-await-in-loop
                     const block = await this._blockStore.get(chainData.head.hash().toBase64());
                     if (block) {
-                        finalChainData._head = block;
+                        finalChainData.head._body = block.body;
                     }
                 }
                 return finalChainData;
@@ -219,7 +225,7 @@ class ChainDataStore {
 
         for (const chainData of candidates) {
             if (chainData.onMainChain) {
-                return chainData.head.shallowCopy();
+                return chainData.head;
             }
         }
 

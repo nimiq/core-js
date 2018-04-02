@@ -3,7 +3,7 @@
  * @implements {Iterable.<V>}
  */
 class InclusionHashSet {
-    constructor(fnHash = HashSet._hash) {
+    constructor(fnHash = InclusionHashSet._hash) {
         /** @type {Set.<string>} */
         this._set = new Set();
         /** @type {function(o: object): string} */
@@ -112,7 +112,9 @@ class InclusionHashSet {
      */
     clone() {
         const set = new InclusionHashSet(this._fnHash);
-        this.values().forEach(hash => set._addHashed(hash));
+        for (const hash of this) {
+            set._addHashed(hash);
+        }
         return set;
     }
 }

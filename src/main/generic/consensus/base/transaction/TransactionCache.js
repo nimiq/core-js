@@ -65,10 +65,6 @@ class TransactionCache {
      * @returns {number}
      */
     revertBlock(block) {
-        if (this._blockOrder.length === 0) {
-            return this.missingBlocks;
-        }
-
         const blockDescriptorFromOrder = this._blockOrder.pop();
         // If there is a block to remove
         if (blockDescriptorFromOrder) {
