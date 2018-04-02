@@ -1,14 +1,14 @@
 class TransactionReceiptsMessage extends Message {
     /**
-     * @param {Array.<TransactionReceipt>} transactionReceipts
+     * @param {Array.<TransactionReceipt>} [receipts]
      */
-    constructor(transactionReceipts) {
+    constructor(receipts = null) {
         super(Message.Type.TRANSACTION_RECEIPTS);
-        if (!Array.isArray(transactionReceipts) || !NumberUtils.isUint16(transactionReceipts.length)
-            || transactionReceipts.some(it => !(it instanceof TransactionReceipt))
-            || transactionReceipts.length > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) throw new Error('Malformed transactionReceipts');
+        if (receipts && (!Array.isArray(receipts) || !NumberUtils.isUint16(receipts.length)
+            || receipts.some(it => !(it instanceof TransactionReceipt))
+            || receipts.length > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT)) throw new Error('Malformed receipts');
         /** @type {Array.<TransactionReceipt>} */
-        this._transactionReceipts = transactionReceipts;
+        this._receipts = receipts;
     }
 
     /**
@@ -17,12 +17,16 @@ class TransactionReceiptsMessage extends Message {
      */
     static unserialize(buf) {
         Message.unserialize(buf);
-        const count = buf.readUint16();
-        const transactionReceipts = [];
-        for (let i = 0; i < count; ++i) {
-            transactionReceipts.push(TransactionReceipt.unserialize(buf));
+        const hasReceipts = buf.readUint8();
+        let receipts = null;
+        if (hasReceipts !== 0) {
+            const count = buf.readUint16();
+            receipts = [];
+            for (let i = 0; i < count; ++i) {
+                receipts.push(TransactionReceipt.unserialize(buf));
+            }
         }
-        return new TransactionReceiptsMessage(transactionReceipts);
+        return new TransactionReceiptsMessage(receipts);
     }
 
     /**
@@ -32,9 +36,12 @@ class TransactionReceiptsMessage extends Message {
     serialize(buf) {
         buf = buf || new SerialBuffer(this.serializedSize);
         super.serialize(buf);
-        buf.writeUint16(this._transactionReceipts.length);
-        for (const receipt of this._transactionReceipts) {
-            receipt.serialize(buf);
+        buf.writeUint8(this.hasReceipts() ? 1 : 0);
+        if (this.hasReceipts()) {
+            buf.writeUint16(this._receipts.length);
+            for (const receipt of this._receipts) {
+                receipt.serialize(buf);
+            }
         }
         super._setChecksum(buf);
         return buf;
@@ -43,13 +50,22 @@ class TransactionReceiptsMessage extends Message {
     /** @type {number} */
     get serializedSize() {
         return super.serializedSize
-            + /*count*/ 2
-            + this._transactionReceipts.reduce((sum, receipt) => sum + receipt.serializedSize, 0);
+            + /*success bit*/ 1
+            + (this.hasReceipts()
+                ? /*count*/ 2 + this._receipts.reduce((sum, receipt) => sum + receipt.serializedSize, 0)
+                : 0);
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    hasReceipts() {
+        return !!this._receipts;
     }
 
     /** @type {Array.<TransactionReceipt>} */
-    get transactionReceipts() {
-        return this._transactionReceipts;
+    get receipts() {
+        return this._receipts;
     }
 }
 Class.register(TransactionReceiptsMessage);

@@ -104,7 +104,7 @@ class TransactionStore {
 
     /**
      * @param {Address} recipient
-     * @param {number} [limit]
+     * @param {?number} [limit]
      * @returns {Promise.<Array.<TransactionStoreEntry>>}
      */
     async getByRecipient(recipient, limit = null) {

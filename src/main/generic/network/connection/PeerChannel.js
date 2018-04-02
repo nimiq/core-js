@@ -341,7 +341,7 @@ class PeerChannel extends Observable {
     }
 
     /**
-     * @param {Array.<TransactionReceipt>} transactionReceipts
+     * @param {?Array.<TransactionReceipt>} transactionReceipts
      * @returns {boolean}
      */
     transactionReceipts(transactionReceipts) {

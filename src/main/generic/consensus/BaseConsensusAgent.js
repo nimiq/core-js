@@ -812,7 +812,7 @@ class BaseConsensusAgent extends Observable {
     _getBlockProof(blockHashToProve, knownBlock) {
         Assert.that(this._blockProofRequest === null);
 
-        Log.d(BaseConsensusAgent, () => `Requesting BlockProof for ${blockHashToProve} from ${this._peer.peerAddress}`);
+        Log.v(BaseConsensusAgent, () => `Requesting BlockProof for ${blockHashToProve} from ${this._peer.peerAddress}`);
 
         return new Promise((resolve, reject) => {
             this._blockProofRequest = {
@@ -837,7 +837,7 @@ class BaseConsensusAgent extends Observable {
      * @private
      */
     async _onBlockProof(msg) {
-        Log.d(BaseConsensusAgent, () => `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
+        Log.v(BaseConsensusAgent, () => `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
         // Check if we have requested a header proof, reject unsolicited ones.
         if (!this._blockProofRequest) {
@@ -911,7 +911,7 @@ class BaseConsensusAgent extends Observable {
     _getTransactionsProof(block, addresses) {
         Assert.that(this._transactionsProofRequest === null);
 
-        Log.d(BaseConsensusAgent, () => `Requesting TransactionsProof for ${addresses}@${block.height} from ${this._peer.peerAddress}`);
+        Log.v(BaseConsensusAgent, () => `Requesting TransactionsProof for ${addresses}@${block.height} from ${this._peer.peerAddress}`);
 
         return new Promise((resolve, reject) => {
             this._transactionsProofRequest = {
@@ -938,7 +938,8 @@ class BaseConsensusAgent extends Observable {
      * @private
      */
     _onTransactionsProof(msg) {
-        Log.d(BaseConsensusAgent, () => `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
+        Log.v(BaseConsensusAgent, () => `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}:`
+            + ` blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
         // Check if we have requested a transactions proof, reject unsolicited ones.
         if (!this._transactionsProofRequest) {
@@ -1017,7 +1018,8 @@ class BaseConsensusAgent extends Observable {
      * @private
      */
     _onTransactionReceipts(msg) {
-        Log.d(BaseConsensusAgent, () => `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}: ${msg.transactionReceipts.length}`);
+        Log.v(BaseConsensusAgent, () => `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}:`
+            + ` ${msg.hasReceipts() ? msg.receipts.length : '<rejected>'}`);
 
         // Check if we have requested transaction receipts, reject unsolicited ones.
         // TODO: How about more than one transactionReceipts message?
@@ -1027,12 +1029,18 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        const {resolve} = this._transactionReceiptsRequest;
+        const {resolve, reject} = this._transactionReceiptsRequest;
         this._transactionReceiptsRequest = null;
+
+        if (!msg.hasReceipts()) {
+            Log.w(BaseConsensusAgent, `TransactionReceipts request was rejected by ${this._peer.peerAddress}`);
+            reject(new Error('TransactionReceipts request was rejected'));
+            return;
+        }
 
         // TODO Verify that the transaction receipts match the given address.
 
-        resolve(msg.transactionReceipts);
+        resolve(msg.receipts);
     }
 
     /**

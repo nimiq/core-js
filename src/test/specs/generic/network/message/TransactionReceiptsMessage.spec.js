@@ -11,32 +11,32 @@ describe('TransactionReceiptsMessage', () => {
     it('is correctly constructed', () => {
         const msg = new TransactionReceiptsMessage([receipt1, receipt2]);
 
-        expect(msg.transactionReceipts.length).toEqual(2);
+        expect(msg.receipts.length).toEqual(2);
 
-        expect(msg.transactionReceipts[0].transactionHash.equals(transactionHash1)).toBeTruthy();
-        expect(msg.transactionReceipts[1].transactionHash.equals(transactionHash2)).toBeTruthy();
-        expect(msg.transactionReceipts[0].blockHash.equals(blockHash1)).toBeTruthy();
-        expect(msg.transactionReceipts[1].blockHash.equals(blockHash2)).toBeTruthy();
-        expect(msg.transactionReceipts[0].blockHeight === blockHeight1).toBeTruthy();
-        expect(msg.transactionReceipts[1].blockHeight === blockHeight2).toBeTruthy();
+        expect(msg.receipts[0].transactionHash.equals(transactionHash1)).toBeTruthy();
+        expect(msg.receipts[1].transactionHash.equals(transactionHash2)).toBeTruthy();
+        expect(msg.receipts[0].blockHash.equals(blockHash1)).toBeTruthy();
+        expect(msg.receipts[1].blockHash.equals(blockHash2)).toBeTruthy();
+        expect(msg.receipts[0].blockHeight === blockHeight1).toBeTruthy();
+        expect(msg.receipts[1].blockHeight === blockHeight2).toBeTruthy();
     });
 
     it('is serializable and unserializable', () => {
         const msg1 = new TransactionReceiptsMessage([receipt1, receipt2]);
         const msg2 = TransactionReceiptsMessage.unserialize(msg1.serialize());
 
-        expect(msg2.transactionReceipts.length).toEqual(2);
-        expect(msg2.transactionReceipts[0].transactionHash.equals(transactionHash1)).toBeTruthy();
-        expect(msg2.transactionReceipts[1].transactionHash.equals(transactionHash2)).toBeTruthy();
-        expect(msg2.transactionReceipts[0].blockHash.equals(blockHash1)).toBeTruthy();
-        expect(msg2.transactionReceipts[1].blockHash.equals(blockHash2)).toBeTruthy();
-        expect(msg2.transactionReceipts[0].blockHeight === blockHeight1).toBeTruthy();
-        expect(msg2.transactionReceipts[1].blockHeight === blockHeight2).toBeTruthy();
+        expect(msg2.receipts.length).toEqual(2);
+        expect(msg2.receipts[0].transactionHash.equals(transactionHash1)).toBeTruthy();
+        expect(msg2.receipts[1].transactionHash.equals(transactionHash2)).toBeTruthy();
+        expect(msg2.receipts[0].blockHash.equals(blockHash1)).toBeTruthy();
+        expect(msg2.receipts[1].blockHash.equals(blockHash2)).toBeTruthy();
+        expect(msg2.receipts[0].blockHeight === blockHeight1).toBeTruthy();
+        expect(msg2.receipts[1].blockHeight === blockHeight2).toBeTruthy();
     });
 
     it('must have well defined arguments', () => {
         expect( () => {
-            new TransactionReceiptsMessage(undefined);
+            new TransactionReceiptsMessage(5);
         }).toThrow();
         expect( () => {
             new TransactionReceiptsMessage([undefined]);
