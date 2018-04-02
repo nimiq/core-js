@@ -1,7 +1,8 @@
 describe('HashSet', () => {
     it('can clear itself', () => {
         const set = new HashSet();
-        set.addAll([1, 2, 3]);
+        set.addAll([1, 2]);
+        set.add(3);
 
         expect(set.isEmpty()).toBeFalsy();
         expect(set.length).toBe(3);
@@ -23,5 +24,19 @@ describe('HashSet', () => {
 
         expect(set.contains(2)).toBeTruthy();
         expect(set.contains(4)).toBeFalsy();
+    });
+
+    it('can bulk remove', () => {
+        const set = new HashSet();
+        set.addAll([1, 2, 3]);
+
+        set.removeAll([1, 2]);
+
+        expect(set.values()).toEqual([3]);
+
+        // Test iterator
+        for (const v of set) {
+            expect(v).toBe(3);
+        }
     });
 });
