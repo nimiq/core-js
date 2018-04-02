@@ -1,3 +1,6 @@
+/**
+ * @template V
+ */
 class ThrottledQueue extends UniqueQueue {
     /**
      * @param {number} [maxAtOnce]
@@ -23,11 +26,31 @@ class ThrottledQueue extends UniqueQueue {
         this._timers.clearAll();
     }
 
+    /**
+     * @param {V|*} value
+     * @returns {void}
+     * @override
+     */
     enqueue(value) {
         if (this.length >= this._maxSize) return;
         super.enqueue(value);
     }
 
+    /**
+     * @param {V|*} value
+     * @returns {void}
+     * @override
+     */
+    enqueueUnique(value) {
+        if (this.length >= this._maxSize) return;
+        super.enqueueUnique(value);
+    }
+
+    /**
+     * @param {V|*} value
+     * @returns {void}
+     * @override
+     */
     enqueueFirst(value) {
         super.enqueueFirst(value);
         if (this.length > this._maxSize) this._queue.pop();

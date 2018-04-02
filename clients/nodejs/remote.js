@@ -318,7 +318,7 @@ async function action(args, repl) {
     switch (args[0]) {
         // Miner
         case 'mining': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader();
             }
             const enabled = await jsonRpcFetch('mining');
@@ -348,12 +348,12 @@ async function action(args, repl) {
             return;
         }
         case 'mining.threads': {
-            console.log(await jsonRpcFetch('minerThreads', args[1]));
+            console.log(await jsonRpcFetch('minerThreads', args.length > 1 ? parseInt(args[1]) : undefined));
             return;
         }
         // Accounts
         case 'accounts': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(68);
             }
             const accounts = await jsonRpcFetch('accounts');
@@ -378,7 +378,7 @@ async function action(args, repl) {
             return;
         }
         case 'account': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(81);
             }
             if (args.length === 2) {
@@ -398,7 +398,7 @@ async function action(args, repl) {
         }
         // Blocks
         case 'block': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -428,7 +428,7 @@ async function action(args, repl) {
         }
         // Transactions
         case 'transaction': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -463,7 +463,7 @@ async function action(args, repl) {
             return;
         }
         case 'transaction.send': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(74);
             }
             if (args.length < 5 || args.length > 6) {
@@ -480,7 +480,7 @@ async function action(args, repl) {
             return;
         }
         case 'transaction.receipt': {
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(74);
             }
             if (args.length !== 2) {
@@ -510,7 +510,7 @@ async function action(args, repl) {
                 console.error('Specify account address');
                 return;
             }
-            if (!repl) {
+            if (!repl && !argv.silent) {
                 await displayInfoHeader(75);
             }
             const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1], args[2])).sort((a, b) => a.timestamp > b.timestamp);
