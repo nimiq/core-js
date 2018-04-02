@@ -335,7 +335,7 @@ class ConnectionPool extends Observable {
             this._connectingCount++;
         } else {
             this._remove(peerConnection);
-            Log.d(Network, `Outbound attempt not connecting: ${peerAddress}`);
+            Log.d(Network, () => `Outbound attempt not connecting: ${peerAddress}`);
             return false;
         }
 
@@ -432,7 +432,7 @@ class ConnectionPool extends Observable {
         }
 
         const connType = conn.inbound ? 'inbound' : 'outbound';
-        Log.d(ConnectionPool, `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
+        Log.d(ConnectionPool, () => `Connection established (${connType}) #${conn.id} ${conn.netAddress || conn.peerAddress || '<pending>'}`);
 
         // Let listeners know about this connection.
         this.fire('connection', conn);
@@ -511,7 +511,7 @@ class ConnectionPool extends Observable {
                     case PeerConnectionState.CONNECTING:
                         // Abort the stored connection attempt and accept this connection.
                         Assert.that(peer.peerAddress.protocol === Protocol.WS, 'Duplicate connection to non-WS node');
-                        Log.d(ConnectionPool, `Aborting connection attempt to ${peer.peerAddress}, simultaneous inbound connection succeeded`);
+                        Log.d(ConnectionPool, () => `Aborting connection attempt to ${peer.peerAddress}, simultaneous inbound connection succeeded`);
                         this._wsConnector.abort(peer.peerAddress);
                         Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), 'PeerConnection not removed');
                         break;
@@ -623,14 +623,14 @@ class ConnectionPool extends Observable {
 
             const kbTransferred = ((peerConnection.networkConnection.bytesSent
                 + peerConnection.networkConnection.bytesReceived) / 1000).toFixed(2);
-            Log.d(ConnectionPool, `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
+            Log.d(ConnectionPool, () => `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
                 + `(version=${peerConnection.peer.version}, transferred=${kbTransferred} kB, closeType=${type} ${reason})`);
         } else {
             if (peerConnection.networkConnection.inbound) {
                 this._inboundCount--;
-                Log.w(ConnectionPool, `Inbound connection #${peerConnection.networkConnection.id} closed pre-handshake: ${reason} (${type})`);
+                Log.d(ConnectionPool, () => `Inbound connection #${peerConnection.networkConnection.id} closed pre-handshake: ${reason} (${type})`);
             } else {
-                Log.w(ConnectionPool, `Connection #${peerConnection.networkConnection.id} to ${peerConnection.peerAddress} closed pre-handshake: ${reason} (${type})`);
+                Log.d(ConnectionPool, () => `Connection #${peerConnection.networkConnection.id} to ${peerConnection.peerAddress} closed pre-handshake: ${reason} (${type})`);
                 this.fire('connect-error', peerConnection.peerAddress, `${reason} (${type})`);
             }
         }
@@ -702,7 +702,7 @@ class ConnectionPool extends Observable {
      * @private
      */
     _onConnectError(peerAddress, reason) {
-        Log.w(ConnectionPool, `Connection to ${peerAddress} failed` + (typeof reason === 'string' ? ` - ${reason}` : ''));
+        Log.d(ConnectionPool, () => `Connection to ${peerAddress} failed` + (typeof reason === 'string' ? ` - ${reason}` : ''));
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
         Assert.that(!!peerConnection, `PeerAddress not stored ${peerAddress}`);

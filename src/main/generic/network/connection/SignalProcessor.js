@@ -54,7 +54,7 @@ class SignalProcessor {
 
         // Discard signals from myself.
         if (msg.senderId.equals(myPeerId)) {
-            Log.w(SignalProcessor, `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${myPeerId})`);
+            Log.d(SignalProcessor, () => `Received signal from myself to ${msg.recipientId} from ${channel.peerAddress} (myId: ${myPeerId})`);
             return;
         }
 
@@ -79,7 +79,7 @@ class SignalProcessor {
 
         // Discard signals that have reached their TTL.
         if (msg.ttl <= 0) {
-            Log.d(SignalProcessor, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
+            Log.d(SignalProcessor, () => `Discarding signal from ${msg.senderId} to ${msg.recipientId} - TTL reached`);
             // Send signal containing TTL_EXCEEDED flag back in reverse direction.
             if (msg.flags === 0) {
                 channel.signal(/*senderId*/ msg.recipientId, /*recipientId*/ msg.senderId, msg.nonce, Network.SIGNAL_TTL_INITIAL, SignalMessage.Flag.TTL_EXCEEDED);
@@ -90,7 +90,7 @@ class SignalProcessor {
         // Otherwise, try to forward the signal to the intended recipient.
         const signalChannel = this._addresses.getChannelByPeerId(msg.recipientId);
         if (!signalChannel) {
-            Log.d(SignalProcessor, `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
+            Log.d(SignalProcessor, () => `Failed to forward signal from ${msg.senderId} to ${msg.recipientId} - no route found`);
             // If we don't know a route to the intended recipient, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             if (msg.flags === 0) {
@@ -102,7 +102,7 @@ class SignalProcessor {
         // Discard signal if our shortest route to the target is via the sending peer.
         // XXX Why does this happen?
         if (signalChannel.peerAddress.equals(channel.peerAddress)) {
-            Log.w(SignalProcessor, `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
+            Log.d(SignalProcessor, () => `Discarding signal from ${msg.senderId} to ${msg.recipientId} - shortest route via sending peer`);
             // If our best route is via the sending peer, return signal to sender with unroutable flag set and payload removed.
             // Only do this if the signal is not already a unroutable response.
             if (msg.flags === 0) {

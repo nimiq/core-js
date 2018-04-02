@@ -494,6 +494,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     async _onGetTransactions(msg) {
         if (!this._transactionReceiptsLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetTransactionReceipts message - rate-limit exceeded');
+            this._peer.channel.transactionReceipts(null);
             return;
         }
 

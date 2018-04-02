@@ -142,6 +142,10 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
     }
 
     _startMiner() {
+        if (this._activeNonces.length >= this.poolSize) {
+            return;
+        }
+
         const minNonce = this._activeNonces.length === 0 ? 0 : Math.max.apply(null, this._activeNonces.map((a) => a.maxNonce));
         const maxNonce = minNonce + this._noncesPerRun;
         const nonceRange = {minNonce, maxNonce};

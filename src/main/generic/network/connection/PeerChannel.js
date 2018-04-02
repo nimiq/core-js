@@ -25,7 +25,7 @@ class PeerChannel extends Observable {
             type = MessageFactory.peekType(buf);
             msg = MessageFactory.parse(buf);
         } catch(e) {
-            Log.w(PeerChannel, `Failed to parse '${PeerChannel.Event[type]}' message from ${this.peerAddress || this.netAddress}`, e.message || e);
+            Log.d(PeerChannel, () => `Failed to parse '${PeerChannel.Event[type]}' message from ${this.peerAddress || this.netAddress}`, e.message || e);
 
             // Confirm that message arrived but could not be parsed successfully.
             this._conn.confirmExpectedMessage(type, false);

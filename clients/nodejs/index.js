@@ -178,6 +178,9 @@ const $ = {};
     $.network.on('peer-joined', (peer) => {
         Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
+    $.network.on('peer-left', (peer) => {
+        Nimiq.Log.i(TAG, `Disconnected from ${peer.peerAddress.toString()}`);
+    });
 
     if (!config.passive) {
         $.network.connect();
@@ -202,7 +205,7 @@ const $ = {};
     });
 
     $.miner.on('block-mined', (block) => {
-        Nimiq.Log.i(TAG, `Block mined: ${block.header}`);
+        Nimiq.Log.i(TAG, `Block mined: #${block.header.height}, hash=${block.header.hash()}`);
     });
 
     if (statisticsOptions) {

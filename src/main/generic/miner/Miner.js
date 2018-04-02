@@ -157,7 +157,7 @@ class Miner extends Observable {
             this._retry = 0;
             const block = await this.getNextBlock();
 
-            Log.i(Miner, `Starting work on ${block.header}, transactionCount=${block.transactionCount}, hashrate=${this._hashrate} H/s`);
+            Log.d(Miner, `Starting work on block #${block.header.height} with ${block.transactionCount} transactions (${this._hashrate} H/s)`);
 
             this._workerPool.startMiningOnBlock(block).catch(Log.w.tag(Miner));
         } catch (e) {
