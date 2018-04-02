@@ -497,7 +497,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             return;
         }
 
-        const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address, FullConsensusAgent.TRANSACTION_RECEIPTS_LIMIT);
+        const transactionReceipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address, TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
 
         // TODO recipients current only support a single transaction-receipts message.
         const receipts = transactionReceipts.slice(0, TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
@@ -590,6 +590,5 @@ FullConsensusAgent.ACCOUNTS_PROOF_RATE_LIMIT = 60;
 FullConsensusAgent.ACCOUNTS_TREE_CHUNK_RATE_LIMIT = 120;
 FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 60;
 FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 30;
-FullConsensusAgent.TRANSACTION_RECEIPTS_LIMIT = 1000;
 FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT = 60;
 Class.register(FullConsensusAgent);
