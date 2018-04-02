@@ -4,7 +4,7 @@ class TransactionStore {
      */
     static initPersistent(jdb) {
         // TODO: NUMBER_ENCODING in LMDB stores 32bit integers. This will only be safe for the next ~11 years assuming only full blocks.
-        jdb.deleteObjectStore('Transactions', {upgradeCondition: oldVersion => oldVersion < 4, indexNames: ['sender', 'recipient']}); // New transaction store layout starting in ConsensusDB 4
+        jdb.deleteObjectStore('Transactions', {upgradeCondition: oldVersion => oldVersion < 5, indexNames: ['sender', 'recipient']}); // New transaction store layout starting in ConsensusDB 5
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec(), keyEncoding: JDB.JungleDB.NUMBER_ENCODING });
         store.createIndex('sender', ['senderBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
         store.createIndex('recipient', ['recipientBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
@@ -42,9 +42,20 @@ class TransactionStore {
      * @returns {Promise.<number>}
      * @private
      */
-    async _currentId(tx) {
+    async _getCurrentId(tx) {
         tx = tx || this._store;
-        return (await tx.maxKey()) || 0;
+        return (await tx.get(TransactionStore.CURRENT_ID_KEY)) || 1;
+    }
+
+    /**
+     * @param {number} id
+     * @param {JDB.Transaction} [tx]
+     * @returns {Promise.<number>}
+     * @private
+     */
+    async _setCurrentId(id, tx) {
+        tx = tx || this._store;
+        await tx.put(TransactionStore.CURRENT_ID_KEY, id);
     }
 
     /**
@@ -114,11 +125,12 @@ class TransactionStore {
     async put(block) {
         const indexedTransactions = TransactionStoreEntry.fromBlock(block);
         const tx = this._store.transaction();
-        let currentId = await this._currentId(tx);
+        let currentId = await this._getCurrentId(tx);
         for (const indexedTransaction of indexedTransactions) {
-            currentId++;
             tx.putSync(currentId, indexedTransaction);
+            currentId++;
         }
+        await this._setCurrentId(currentId, tx);
         return tx.commit();
     }
 
@@ -185,6 +197,7 @@ class TransactionStore {
         return undefined;
     }
 }
+TransactionStore.CURRENT_ID_KEY = 0; // This id is not used for anything but storing the current id.
 Class.register(TransactionStore);
 
 /**
@@ -196,7 +209,7 @@ class TransactionStoreCodec {
      * @returns {*} Encoded object.
      */
     encode(obj) {
-        return obj.toJSON();
+        return obj instanceof TransactionStoreEntry ? obj.toJSON() : obj;
     }
 
     /**
@@ -205,7 +218,7 @@ class TransactionStoreCodec {
      * @returns {*} Decoded object.
      */
     decode(obj, key) {
-        return TransactionStoreEntry.fromJSON(key, obj);
+        return key === 0 ? obj : TransactionStoreEntry.fromJSON(key, obj);
     }
 
     /**
