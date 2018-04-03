@@ -373,7 +373,7 @@ class FullChain extends BaseChain {
             Assert.that(headData.head.accountsHash.equals(await accountsTx.hash()), 'Failed to revert main chain - inconsistent state');
         }
 
-        Assert.that(!transactionCacheTx.head || headHash.equals(transactionCacheTx.head.hash()), 'Invalid TransactionCache head');
+        Assert.that(!transactionCacheTx.head || headHash.equals(transactionCacheTx.head.hash), 'Invalid TransactionCache head');
 
         // Try to fetch missing transactions for the cache.
         // TODO FIXME The light client might not have all necessary blocks.

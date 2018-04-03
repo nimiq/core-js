@@ -136,14 +136,14 @@ class NetworkConnection extends Observable {
 
         // Fire close event (early) if channel is closing/closed.
         if (this._isChannelClosing() || this._isChannelClosed()) {
-            Log.w(NetworkConnection, `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
+            Log.d(NetworkConnection, () => `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
             this._onClose(CloseType.CHANNEL_CLOSING, 'channel closing');
             return false;
         }
 
         // Don't attempt to send if channel is not (yet) open.
         if (!this._isChannelOpen()) {
-            Log.w(NetworkConnection, `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
+            Log.d(NetworkConnection, () => `Not sending data to ${logAddress} - channel not open (${this._channel.readyState})`);
             return false;
         }
 
