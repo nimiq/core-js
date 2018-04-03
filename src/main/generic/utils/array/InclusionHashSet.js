@@ -3,6 +3,9 @@
  * @implements {Iterable.<V>}
  */
 class InclusionHashSet {
+    /**
+     * @param {{function(o: object): string}} fnHash
+     */
     constructor(fnHash = InclusionHashSet._hash) {
         /** @type {Set.<string>} */
         this._set = new Set();

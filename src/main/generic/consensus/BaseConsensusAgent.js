@@ -21,7 +21,7 @@ class BaseConsensusAgent extends Observable {
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
         /** @type {InclusionHashSet.<InvVector>} */
-        this._knownObjects = new InclusionHashSet();
+        this._knownObjects = new LimitInclusionHashSet(BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX);
         this._knownObjects.add(new InvVector(InvVector.Type.BLOCK, peer.headHash));
 
         // InvVectors we want to request via getData are collected here and
@@ -1137,4 +1137,6 @@ BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
  */
 BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
 BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give client time to announce new head without request
+
+BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX = 40000;
 Class.register(BaseConsensusAgent);
