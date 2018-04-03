@@ -1,6 +1,6 @@
 {
   "name": "nimiq",
-  "version": "0.1.1",
+  "version": "0.9.1",
   "homepage": "https://nimiq.com/",
   "description": "",
   "private": true,
@@ -38,7 +38,7 @@
     "maintainer": "The Nimiq Core Development Team <info@nimiq.com>",
     "extra_files": "fakeroot",
     "templates": {
-      "executable": "executable",
+      "executable": "nimiq",
       "default_variables": "default",
       "postinst": "postinst",
       "postrm": "postrm",

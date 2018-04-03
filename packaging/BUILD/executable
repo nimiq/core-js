@@ -1,4 +1,0 @@
-#!/bin/bash
-set -e
-
-/usr/share/nimiq/{{ cli_entrypoint }} "$@"
