@@ -381,7 +381,7 @@ class FullChain extends BaseChain {
         /** @type {Hash} */
         const startHash = transactionCacheTx.isEmpty()
             ? ancestorData.mainChainSuccessor
-            : transactionCacheTx.tail.hash();
+            : transactionCacheTx.tail.hash;
         const blocks = await this._store.getBlocksBackward(startHash, numMissingBlocks, /*includeBody*/ true);
         transactionCacheTx.prependBlocks(blocks.reverse());
 
