@@ -4,7 +4,7 @@
 %define _topdir %(echo $PWD)/
 
 Name:           nimiq
-Version:        0.1.1
+Version:        0.9.1
 Release:        1
 Summary:        Nimiq node.js client
 
@@ -30,7 +30,7 @@ Nimiq node.js client
 %install
 rm -rf $RPM_BUILD_ROOT
 
-sed 's:{{ cli_entrypoint }}:node /usr/share/nimiq/index.js:' executable > nimiq
+sed -i 's:{{ cli_entrypoint }}:node /usr/share/nimiq/index.js:' nimiq
 
 mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
