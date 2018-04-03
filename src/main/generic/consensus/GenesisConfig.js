@@ -1,12 +1,10 @@
 class GenesisConfig {
     static main() {
-        // TODO
-        GenesisConfig.init(GenesisConfig.CONFIGS['bounty']);
+        GenesisConfig.init(GenesisConfig.CONFIGS['main']);
     }
 
     static test() {
-        // TODO
-        GenesisConfig.init(GenesisConfig.CONFIGS['bounty']);
+        GenesisConfig.init(GenesisConfig.CONFIGS['test']);
     }
 
     static dev() {
@@ -328,3 +326,6 @@ GenesisConfig.CONFIGS = {
             'AAEAAAtAAAAFuCjI7ZcAACJQ9LWRhw=='
     }
 };
+// TODO
+GenesisConfig.CONFIGS['main'] = GenesisConfig.CONFIGS['bounty'];
+GenesisConfig.CONFIGS['test'] = GenesisConfig.CONFIGS['bounty'];
