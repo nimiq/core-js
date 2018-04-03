@@ -7,7 +7,7 @@ class Subscription {
     }
 
     /**
-     * @param {number} addresses
+     * @param {number} minFeePerByte
      */
     static fromMinFeePerByte(minFeePerByte) {
         return new Subscription(Subscription.Type.MIN_FEE, minFeePerByte);
