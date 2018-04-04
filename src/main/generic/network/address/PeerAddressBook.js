@@ -401,7 +401,7 @@ class PeerAddressBook extends Observable {
         }
 
         if (!peerAddressState.signalRouter.bestRoute || !peerAddressState.signalRouter.bestRoute.signalChannel.equals(channel)) {
-            Log.w(PeerAddressBook, `Got unroutable for ${peerAddress} on a channel other than the best route.`);
+            Log.d(PeerAddressBook, () => `Got unroutable for ${peerAddress} on a channel other than the best route.`);
             return;
         }
 

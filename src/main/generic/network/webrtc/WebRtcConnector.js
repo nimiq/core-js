@@ -123,6 +123,7 @@ class WebRtcConnector extends Observable {
             this._timers.setTimeout(`connect_${msg.senderId}`, () => {
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
                 this._connectors.remove(msg.senderId);
+                connector.rtcConnection.close();
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
 

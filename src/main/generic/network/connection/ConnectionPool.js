@@ -781,7 +781,7 @@ class ConnectionPool extends Observable {
         // Close all websocket connections.
         for (const connection of this.values()) {
             if (connection.peerChannel && connection.peerAddress && connection.peerAddress.protocol === Protocol.WS) {
-                connection.channel.close(CloseType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
+                connection.peerChannel.close(CloseType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
             }
         }
     }
