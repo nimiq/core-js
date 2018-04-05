@@ -106,7 +106,7 @@ class NanoPoolMiner extends BasePoolMiner {
             message: 'register',
             mode: 'nano',
             address: this._ourAddress.toUserFriendlyAddress(),
-            deviceId: this._deviceId
+            deviceId: this._deviceId,
         });
     }
 

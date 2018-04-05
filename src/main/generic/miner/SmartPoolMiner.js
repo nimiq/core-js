@@ -32,7 +32,7 @@ class SmartPoolMiner extends BasePoolMiner {
             message: 'register',
             mode: 'smart',
             address: this._ourAddress.toUserFriendlyAddress(),
-            deviceId: this._deviceId
+            deviceId: this._deviceId,
         });
     }
 }

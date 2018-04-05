@@ -16,17 +16,30 @@ class BasePoolMiner extends Miner {
 
         /** @type {Address} */
         this._ourAddress = address;
+
+        /** @type {Uint8Array} */
         this._ourExtraData = extraData;
 
         /** @type {WebSocket} */
         this._ws = null;
 
+        /** @type {number} */
         this._deviceId = deviceId;
+    }
+
+    requestPayout() {
+        this._send({
+            message: 'payout',
+        });
     }
 
     _send(msg) {
         if (this._ws) {
-            this._ws.send(JSON.stringify(msg));
+            try {
+                this._ws.send(JSON.stringify(msg));
+            } catch (e) {
+                Log.w(BasePoolMiner, 'Error sending: ' + e.message || e);
+            }
         }
     }
 
@@ -100,15 +113,16 @@ class BasePoolMiner extends Miner {
                         this._turnPoolOff();
                         this._ws.close();
                     } else {
-                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.target);
+                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.target, msg.nonce);
                     }
                     break;
                 case 'balance':
-                    if (!msg.balance) {
+                    if (msg.balance === undefined || msg.confirmedBalance === undefined) {
                         this._turnPoolOff();
                         this._ws.close();
                     } else {
-                        this._onBalance(msg.balance);
+                        this._onBalance(msg.balance, msg.confirmedBalance);
+                        this.payoutRequestActive = msg.payoutRequestActive;
                     }
                     break;
                 case 'invalid-share':
@@ -116,16 +130,19 @@ class BasePoolMiner extends Miner {
                     break;
             }
         } else {
+            Log.w(BasePoolMiner, 'Received unknown message from pool server: ' + msg.message);
             this._ws.close();
         }
     }
 
     /**
-     * @param {number} poolBalance
+     * @param {number} balance
+     * @param {number} confirmedBalance
      * @private
      */
-    _onBalance(poolBalance) {
-        this.fire('pool-balance', poolBalance);
+    _onBalance(balance, confirmedBalance) {
+        this.fire('balance', balance);
+        this.fire('confirmed-balance', confirmedBalance);
     }
 
     _turnPoolOff() {
@@ -138,12 +155,14 @@ class BasePoolMiner extends Miner {
      * @param {Address} address
      * @param {Uint8Array} extraData
      * @param {number} target
+     * @param {number} nonce
      * @private
      */
-    _onNewPoolSettings(address, extraData, target) {
+    _onNewPoolSettings(address, extraData, target, nonce) {
         this.address = address;
         this.extraData = extraData;
         this.shareTarget = target;
+        this.nonce = nonce;
     }
 
     /**
@@ -157,5 +176,6 @@ class BasePoolMiner extends Miner {
         ].reduce(BufferUtils.concatTypedArrays)).serialize().readUint32();
     }
 }
+BasePoolMiner.PAYOUT_NONCE_PREFIX = 'POOL_PAYOUT';
 
 Class.register(BasePoolMiner);
