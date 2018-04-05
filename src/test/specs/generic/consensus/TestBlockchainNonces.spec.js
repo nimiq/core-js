@@ -157,5 +157,16 @@ TestBlockchain.NONCES = {
     'Vv934Whj9SNqcF2Ddi5oaSXFb8s+jMo6rZD0zHSHohk=': 8612,
     '7J2aHEKazZOR5VNSTwF4JjKXbA5mHx7u5AtZTG8tLgU=': 65375,
     'Vwgl39ZoAP9vNBiwStMFHkjcFEKF/lQ7RJ9pcDHaphU=': 222197,
-    'TUS6Dki9f7Wr4wzE1VjjGW2X1TuBhbPItWXRvON83s4=': 247256
+    'TUS6Dki9f7Wr4wzE1VjjGW2X1TuBhbPItWXRvON83s4=': 247256,
+    'Nc0axvM4Y7lkS5xtsIWcEaWZC/WLa+bknPxADKhEEDg=': 6160,
+    'fP31lhbAFv7UEpr9PANAV2moObjm0QWonSyo/A5DGzw=': 38042,
+    'wqmRg4ifaYP+GLikLhFmeU3ogDpocCIfDsqxmjSLX1Y=': 66054,
+    'l4Wy2RzDJVg3y/Hx/xJaqCkjYBeB2sgnL4E1XGwcF30=': 37949,
+    'Nv5hlxHIJoIgXkO1y7v93mDaCbjGSqDzk1FPeB2QMGQ=': 31758,
+    'BzzkoEMrSjhi/IeEl+nhhNzHOjv/ByeNN6KkaSQoU6Q=': 54851,
+    'YB2cIQ2qFOtofvIvcYJ6Pc/5CeHYeM1U9ISfAnVdRKc=': 146763,
+    'kUHtZ2ZYr8IKttRndG5ABbfYGEgtQolj+KWrVnmfvOg=': 114587,
+    'QZxZTV/KvygauAlC2FFpuOA+cIqwnyUep75cuJi2gwY=': 307754,
+    'wJ9Iy7cECPF7ABDkZsFU+/dGacFNWmKVVjQp8oFrQ94=': 238172,
+    'f2OJGmDgid/k6B4RWyiSg49/hiFdZjx6moTukZzT/2I=': 515848
 };

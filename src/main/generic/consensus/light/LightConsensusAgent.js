@@ -111,8 +111,8 @@ class LightConsensusAgent extends FullConsensusAgent {
             }
 
             // Check how to sync based on heuristic:
-            this._catchup = header.height >= this._blockchain.height
-                && header.height - this._blockchain.height <= Policy.NUM_BLOCKS_VERIFICATION;
+            // Allow catchup sync in a window of NUM_BLOCKS_VERIFICATION in both directions
+            this._catchup = Math.abs(header.height - this._blockchain.height) <= Policy.NUM_BLOCKS_VERIFICATION;
             Log.d(LightConsensusAgent, `Start syncing, catchup mode: ${this._catchup}`);
         }
 

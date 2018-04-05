@@ -55,7 +55,7 @@ class LightChain extends FullChain {
      */
     async partialChain() {
         const proof = await this.getChainProof();
-        const partialChain = new PartialLightChain(this._store, this._accounts, this._time, proof);
+        const partialChain = new PartialLightChain(this._store, this._accounts, this._time, proof, this._synchronizer);
         partialChain.on('committed', (proof, headHash, mainChain) => {
             this._proof = proof;
             this._headHash = headHash;
