@@ -98,6 +98,8 @@ class NetworkConnection extends Observable {
 
         // Close the native channel.
         this._channel.close();
+        this._channel = null;
+        this._offAll();
     }
 
     /**
@@ -105,7 +107,7 @@ class NetworkConnection extends Observable {
      * @private
      */
     _isChannelOpen() {
-        return this._channel.readyState === DataChannel.ReadyState.OPEN;
+        return this._channel && this._channel.readyState === DataChannel.ReadyState.OPEN;
     }
 
     /**
@@ -113,7 +115,7 @@ class NetworkConnection extends Observable {
      * @private
      */
     _isChannelClosing() {
-        return this._channel.readyState === DataChannel.ReadyState.CLOSING;
+        return this._channel && this._channel.readyState === DataChannel.ReadyState.CLOSING;
     }
 
     /**
@@ -121,7 +123,7 @@ class NetworkConnection extends Observable {
      * @private
      */
     _isChannelClosed() {
-        return this._channel.readyState === DataChannel.ReadyState.CLOSED;
+        return !this._channel || this._channel.readyState === DataChannel.ReadyState.CLOSED;
     }
 
     /**

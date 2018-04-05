@@ -152,6 +152,7 @@ class WebRtcConnector extends Observable {
         this._timers.clearTimeout(`connect_${peerId}`);
     }
 }
+
 WebRtcConnector.CONNECT_TIMEOUT = 8000; // ms
 Class.register(WebRtcConnector);
 
@@ -179,12 +180,14 @@ class PeerConnector extends Observable {
         /** @type {RTCPeerConnection} */
         this._rtcConnection = WebRtcFactory.newPeerConnection(this._networkConfig.rtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
+        this._rtcConnection.onconnectionstatechange = e => this._onConnectionStateChange(e);
 
         this._lastIceCandidate = null;
         this._iceCandidateQueue = [];
     }
 
     onSignal(signal) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         if (signal.sdp) {
             this._rtcConnection.setRemoteDescription(WebRtcFactory.newSessionDescription(signal))
                 .then(() => {
@@ -202,12 +205,29 @@ class PeerConnector extends Observable {
         }
     }
 
+    _onConnectionStateChange(e) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        switch (this._rtcConnection.connectionState) {
+            case 'failed':
+            case 'disconnected':
+            case 'closed':
+                this._onClose();
+        }
+    }
+
+    _onClose() {
+        this._rtcConnection = null;
+        this._signalChannel = null;
+        this._offAll();
+    }
+
     /**
      * @param {*} signal
      * @returns {Promise}
      * @private
      */
     _addIceCandidate(signal) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         this._lastIceCandidate = WebRtcFactory.newIceCandidate(signal);
 
         // Do not try to add ICE candidates before the remote description is set.
@@ -221,6 +241,7 @@ class PeerConnector extends Observable {
     }
 
     async _handleCandidateQueue() {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         // Handle ICE candidates if they already arrived.
         for (const candidate of this._iceCandidateQueue) {
             await this._addIceCandidate(candidate);
@@ -229,6 +250,7 @@ class PeerConnector extends Observable {
     }
 
     _signal(signal) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._networkConfig.keyPair;
         const peerId = this._networkConfig.peerId;
@@ -245,22 +267,28 @@ class PeerConnector extends Observable {
     }
 
     _onIceCandidate(event) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         if (event.candidate !== null) {
             this._signal(event.candidate);
         }
     }
 
     _onDescription(description) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         this._rtcConnection.setLocalDescription(description)
             .then(() => this._signal(this._rtcConnection.localDescription))
             .catch(Log.e.tag(PeerConnector));
     }
 
     _onDataChannel(event) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
         const channel = new WebRtcDataChannel(event.channel || event.target);
 
         // Make sure to close the corresponding RTCPeerConnection when the RTCDataChannel is closed
-        channel.on('close', () => this._rtcConnection.close());
+        channel.on('close', () => {
+            if (!this._rtcConnection) throw new Error('RTC connection closed');
+            this._rtcConnection.close();
+        });
 
         // There is no API to get the remote IP address. As a crude heuristic, we parse the IP address
         // from the last ICE candidate seen before the connection was established.
@@ -293,6 +321,7 @@ class PeerConnector extends Observable {
         return this._rtcConnection;
     }
 }
+
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
@@ -301,14 +330,22 @@ class OutboundPeerConnector extends PeerConnector {
         this._peerAddress = peerAddress;
 
         // Create offer.
-        const channel = this._rtcConnection.createDataChannel('data-channel');
-        channel.binaryType = 'arraybuffer';
-        channel.onopen = e => this._onDataChannel(e);
+        this._channel = this._rtcConnection.createDataChannel('data-channel');
+        this._channel.binaryType = 'arraybuffer';
+        this._channel.onopen = e => this._onDataChannel(e);
         this._rtcConnection.createOffer()
             .then(description => this._onDescription(description))
             .catch(Log.e.tag(OutboundPeerConnector));
     }
+
+    _onClose() {
+        super._onClose();
+        if (!this._channel) return;
+        this._channel.onopen = null;
+        this._channel = null;
+    }
 }
+
 Class.register(OutboundPeerConnector);
 
 class InboundPeerConnector extends PeerConnector {
@@ -320,4 +357,5 @@ class InboundPeerConnector extends PeerConnector {
         this.onSignal(offer);
     }
 }
+
 Class.register(InboundPeerConnector);

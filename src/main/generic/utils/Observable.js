@@ -12,6 +12,10 @@ class Observable {
         this._listeners = new Map();
     }
 
+    _offAll() {
+        this._listeners.clear();
+    }
+
     /**
      * @param {string} type
      * @param {Function} callback

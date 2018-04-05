@@ -92,6 +92,7 @@ class DataChannel extends Observable {
     _onClose() {
         this._timers.clearAll();
         this.fire('close', this);
+        this._offAll();
     }
 
     /**

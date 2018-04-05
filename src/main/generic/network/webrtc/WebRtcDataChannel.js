@@ -34,6 +34,7 @@ class WebRtcDataChannel extends DataChannel {
      * @override
      */
     sendChunk(msg) {
+        if (!this._channel) throw new Error('Channel is dead');
         this._channel.send(msg);
     }
 
@@ -41,7 +42,18 @@ class WebRtcDataChannel extends DataChannel {
      * @override
      */
     close() {
+        if (!this._channel) throw new Error('Channel is dead');
         this._channel.close();
+    }
+
+    _onClose() {
+        super._onClose();
+        if (this._channel) {
+            this._channel.onmessage = null;
+            this._channel.onclose = null;
+            this._channel.onerror = null;
+        }
+        this._channel = null;
     }
 
     /**
