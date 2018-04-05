@@ -134,8 +134,8 @@ class SignalStore {
     constructor(maxSize = 1000) {
         /** @type {number} */
         this._maxSize = maxSize;
-        /** @type {Queue.<ForwardedSignal>} */
-        this._queue = new Queue();
+        /** @type {UniqueQueue.<ForwardedSignal>} */
+        this._queue = new UniqueQueue();
         /** @type {HashMap.<ForwardedSignal, number>} */
         this._store = new HashMap();
     }
@@ -196,10 +196,11 @@ class SignalStore {
         const valid = lastSeen + ForwardedSignal.SIGNAL_MAX_AGE > Date.now();
         if (!valid) {
             // Because of the ordering, we know that everything after that is invalid too.
-            const toDelete = this._queue.dequeueUntil(signal);
-            for (const dSignal of toDelete) {
-                this._store.remove(dSignal);
-            }
+            let signalToDelete;
+            do {
+                signalToDelete = this._queue.dequeue();
+                this._store.remove(signalToDelete);
+            } while (this._queue.length > 0 && !signal.equals(signalToDelete));
         }
         return valid;
     }

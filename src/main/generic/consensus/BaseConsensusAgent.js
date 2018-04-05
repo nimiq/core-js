@@ -339,8 +339,8 @@ class BaseConsensusAgent extends Observable {
      */
     requestVector(...vector) {
         // Store unknown vectors in objectsToRequest.
-        this._blocksToRequest.enqueueAllNew(vector.filter(v => v.type === InvVector.Type.BLOCK));
-        this._txsToRequest.enqueueAllNew(vector.filter(v => v.type === InvVector.Type.TRANSACTION));
+        this._blocksToRequest.enqueueAll(vector.filter(v => v.type === InvVector.Type.BLOCK));
+        this._txsToRequest.enqueueAll(vector.filter(v => v.type === InvVector.Type.TRANSACTION));
 
         // Clear the request throttle timeout.
         this._timers.clearTimeout('inv');

@@ -30,17 +30,6 @@ describe('Queue', () => {
         expect(q.dequeue()).toBeFalsy();
     });
 
-    it('can indexOf', () => {
-        const q = new Queue();
-
-        q.enqueue(3);
-        q.enqueue(1);
-
-        expect(q.indexOf(3)).toBe(0);
-        expect(q.indexOf(1)).toBe(1);
-        expect(q.indexOf(2)).toBe(-1);
-    });
-
     it('can peek', () => {
         const q = new Queue();
 

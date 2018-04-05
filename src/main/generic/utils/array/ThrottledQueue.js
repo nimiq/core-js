@@ -22,6 +22,9 @@ class ThrottledQueue extends UniqueQueue {
         }, allowanceInterval);
     }
 
+    /**
+     * @returns {void}
+     */
     stop() {
         this._timers.clearAll();
     }
@@ -32,30 +35,16 @@ class ThrottledQueue extends UniqueQueue {
      * @override
      */
     enqueue(value) {
-        if (this.length >= this._maxSize) return;
+        if (this.length >= this._maxSize) {
+            super.dequeue();
+        }
         super.enqueue(value);
     }
 
     /**
-     * @param {V|*} value
-     * @returns {void}
+     * @returns {V|*}
      * @override
      */
-    enqueueUnique(value) {
-        if (this.length >= this._maxSize) return;
-        super.enqueueUnique(value);
-    }
-
-    /**
-     * @param {V|*} value
-     * @returns {void}
-     * @override
-     */
-    enqueueFirst(value) {
-        super.enqueueFirst(value);
-        if (this.length > this._maxSize) this._queue.pop();
-    }
-
     dequeue() {
         if (this.available > 0) {
             this._availableNow--;
@@ -65,12 +54,12 @@ class ThrottledQueue extends UniqueQueue {
     }
 
     /**
-     * @param count
-     * @returns {Array}
+     * @param {number} count
+     * @returns {Array.<V|*>}
+     * @override
      */
     dequeueMulti(count) {
         count = Math.min(this.available, count);
-        this._availableNow -= count;
         return super.dequeueMulti(count);
     }
 
@@ -81,9 +70,9 @@ class ThrottledQueue extends UniqueQueue {
         return this.available > 0;
     }
 
+    /** @type {number} */
     get available() {
         return Math.min(this._availableNow, this.length);
     }
 }
-
 Class.register(ThrottledQueue);

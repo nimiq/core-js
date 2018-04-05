@@ -104,7 +104,7 @@ class InclusionHashSet {
 
     /**
      * @param {string} hash
-     * @private
+     * @protected
      */
     _addHashed(hash) {
         this._set.add(hash);

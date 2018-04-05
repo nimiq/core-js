@@ -49,6 +49,8 @@ const sources = {
         './src/main/generic/utils/array/InclusionHashSet.js',
         './src/main/generic/utils/array/LimitInclusionHashSet.js',
         './src/main/generic/utils/array/LimitIterable.js',
+        './src/main/generic/utils/array/LinkedList.js',
+        './src/main/generic/utils/array/UniqueLinkedList.js',
         './src/main/generic/utils/array/Queue.js',
         './src/main/generic/utils/array/UniqueQueue.js',
         './src/main/generic/utils/array/ThrottledQueue.js',
