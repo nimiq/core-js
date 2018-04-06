@@ -43,7 +43,7 @@ describe('Miner', () => {
         })().then(done, done.fail);
     });
 
-    xit('can mine a block', (done) => {
+    it('can mine a block', (done) => {
         if (typeof WebAssembly === 'undefined') {
             // Do not run this test without WASM.
             done();
@@ -54,15 +54,32 @@ describe('Miner', () => {
             const testBlockchain = await TestBlockchain.createVolatileTest(0);
 
             // Choose the timestamp such that the block is mined quickly.
-            spyOn(testBlockchain.time, 'now').and.returnValue(1800);
+            spyOn(testBlockchain.time, 'now').and.returnValue(0);
 
             const mempool = new Mempool(testBlockchain, testBlockchain.accounts);
             const miner = new Miner(testBlockchain, testBlockchain.accounts, mempool, testBlockchain.time, GenesisConfig.GENESIS_BLOCK.minerAddr);
+
+            let unsuccessfulOnce = false;
+            const SUCCESS_NONCE = 201203;
+            miner._workerPool.multiMineBackup = miner._workerPool.multiMine;
+            miner.threads = 1;
+            miner._workerPool.multiMine = ((blockHeader, compact, minNonce, maxNonce) => {
+                if (!unsuccessfulOnce) {
+                    unsuccessfulOnce = true;
+                    return miner._workerPool.multiMineBackup(blockHeader, compact, minNonce, maxNonce);
+                }
+                if (minNonce <= SUCCESS_NONCE && maxNonce >= SUCCESS_NONCE) {
+                    const promise = miner._workerPool.multiMineBackup(blockHeader, compact, minNonce, maxNonce);
+                    miner.stopWork();
+                    return promise;
+                }
+                return false;
+            });
             const block = await new Promise((resolve) => {
                 miner.on('block-mined', resolve);
                 miner.startWork();
             });
-            miner.stopWork();
+            expect(block.header.nonce).toEqual(SUCCESS_NONCE);
             expect(await block.verify(testBlockchain._time)).toBeTruthy();
             expect(await testBlockchain.pushBlock(block)).toBeGreaterThan(-1);
         })().then(done, done.fail);
