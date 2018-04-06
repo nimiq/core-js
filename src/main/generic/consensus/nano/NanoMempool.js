@@ -17,10 +17,11 @@ class NanoMempool extends Observable {
 
     /**
      * @param {Transaction} transaction
+     * @param {boolean} [isSelfRelayed]
      * @fires Mempool#transaction-added
      * @returns {Promise.<boolean>}
      */
-    async pushTransaction(transaction) {
+    async pushTransaction(transaction, isSelfRelayed = false) {
         // Check if we already know this transaction.
         const hash = transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
@@ -46,7 +47,7 @@ class NanoMempool extends Observable {
         this._transactionSetByAddress.put(transaction.sender, set);
 
         // Tell listeners about the new transaction we received.
-        this.fire('transaction-added', transaction);
+        this.fire('transaction-added', transaction, isSelfRelayed);
 
         return true;
     }
