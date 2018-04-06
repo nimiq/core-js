@@ -56,11 +56,7 @@ class NanoMempool extends Observable {
      * @returns {Transaction}
      */
     getTransaction(hash) {
-        const transaction = this._transactionsByHash.get(hash);
-        if (transaction) {
-            this.fire('transaction-requested', transaction);
-        }
-        return transaction;
+        return this._transactionsByHash.get(hash);
     }
 
     /**
