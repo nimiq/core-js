@@ -40,6 +40,7 @@ class BaseConsensus extends Observable {
 
         // Relay new (verified) transactions to peers.
         mempool.on('transaction-added', tx => this._onTransactionAdded(tx));
+        mempool.on('transaction-removed', tx => this._onTransactionRemoved(tx));
     }
 
     /**
@@ -206,6 +207,16 @@ class BaseConsensus extends Observable {
 
         for (const agent of this._agents.values()) {
             agent.relayTransaction(tx);
+        }
+    }
+
+    /**
+     * @param {Transaction} tx
+     * @protected
+     */
+    _onTransactionRemoved(tx) {
+        for (const agent of this._agents.values()) {
+            agent.removeTransaction(tx);
         }
     }
 

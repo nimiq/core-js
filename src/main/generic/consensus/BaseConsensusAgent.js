@@ -70,7 +70,7 @@ class BaseConsensusAgent extends Observable {
         this._timers.setInterval('invVectors', () => this._sendWaitingInvVectors(), BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL);
 
         // Queue of "free" transaction inv vectors waiting to be sent out
-        /** @type {ThrottledQueue.<{serializedSize:number, vector:InvVector}>} */
+        /** @type {ThrottledQueue.<FreeTransactionVector>} */
         this._waitingFreeInvVectors = new ThrottledQueue(
             BaseConsensusAgent.FREE_TRANSACTIONS_AT_ONCE,
             BaseConsensusAgent.FREE_TRANSACTIONS_PER_SECOND,
@@ -206,9 +206,9 @@ class BaseConsensusAgent extends Observable {
         let size = 0;
         while (invVectors.length <= BaseInventoryMessage.VECTORS_MAX_COUNT && this._waitingFreeInvVectors.length > 0
             && size < BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL) {
-            const {serializedSize, vector} = this._waitingFreeInvVectors.dequeue();
-            invVectors.push(vector);
-            size += serializedSize;
+            const freeTransaction = this._waitingFreeInvVectors.dequeue();
+            invVectors.push(freeTransaction.inv);
+            size += freeTransaction.serializedSize;
         }
         if (invVectors.length > 0) {
             this._peer.channel.inv(invVectors);
@@ -237,7 +237,7 @@ class BaseConsensusAgent extends Observable {
         // Relay transaction to peer later.
         const serializedSize = transaction.serializedSize;
         if (transaction.fee / serializedSize < BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN) {
-            this._waitingFreeInvVectors.enqueue({serializedSize, vector});
+            this._waitingFreeInvVectors.enqueue(new FreeTransactionVector(vector, serializedSize));
         } else {
             this._waitingInvVectors.enqueue(vector);
         }
@@ -246,6 +246,18 @@ class BaseConsensusAgent extends Observable {
         this._knownObjects.add(vector);
 
         return true;
+    }
+
+    /**
+     * @param {Transaction} transaction
+     */
+    removeTransaction(transaction) {
+        // Create InvVector.
+        const vector = InvVector.fromTransaction(transaction);
+
+        // Remove transaction from relay queues.
+        this._waitingFreeInvVectors.remove(vector); // InvVector and FreeTransactionVector have the same hashCode.
+        this._waitingInvVectors.remove(vector);
     }
 
     /**
@@ -276,7 +288,7 @@ class BaseConsensusAgent extends Observable {
         for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
             this._waitingInvVectors.remove(vector);
-            this._waitingFreeInvVectors.remove(vector);
+            this._waitingFreeInvVectors.remove(vector); // The inv vector has the same hashCode as a FreeTransactionVector
         }
 
         // Check which of the advertised objects we know
@@ -1140,3 +1152,38 @@ BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give clie
 
 BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX = 40000;
 Class.register(BaseConsensusAgent);
+
+class FreeTransactionVector {
+    /**
+     * @param {InvVector} inv
+     * @param {number} serializedSize
+     */
+    constructor(inv, serializedSize) {
+        this._inv = inv;
+        this._serializedSize = serializedSize;
+    }
+
+    /**
+     * @returns {string}
+     */
+    hashCode() {
+        return this._inv.hashCode();
+    }
+
+    /**
+     * @returns {string}
+     */
+    toString() {
+        return this._inv.toString();
+    }
+
+    /** @type {InvVector} */
+    get inv() {
+        return this._inv;
+    }
+
+    /** @type {number} */
+    get serializedSize() {
+        return this._serializedSize;
+    }
+}

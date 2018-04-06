@@ -126,6 +126,7 @@ class NanoMempool extends Observable {
                 }
 
                 this.fire('transaction-expired', tx);
+                this.fire('transaction-removed', tx);
             }
         }
 
@@ -144,6 +145,7 @@ class NanoMempool extends Observable {
                 }
 
                 this.fire('transaction-mined', tx, blockHeader);
+                this.fire('transaction-removed', tx);
             }
         }
     }
