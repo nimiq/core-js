@@ -33,6 +33,7 @@ class SmartPoolMiner extends BasePoolMiner {
             mode: 'smart',
             address: this._ourAddress.toUserFriendlyAddress(),
             deviceId: this._deviceId,
+            genesisHash: BufferUtils.toBase64(GenesisConfig.GENESIS_HASH.serialize())
         });
     }
 }

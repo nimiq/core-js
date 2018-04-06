@@ -25,6 +25,9 @@ class BasePoolMiner extends Miner {
 
         /** @type {number} */
         this._deviceId = deviceId;
+
+        /** @type {BasePoolMiner.ConnectionState} */
+        this.connectionState = BasePoolMiner.ConnectionState.CLOSED;
     }
 
     requestPayout() {
@@ -52,6 +55,8 @@ class BasePoolMiner extends Miner {
         this._ws.onerror = (e) => this._onError(ws, e);
         this._ws.onmessage = (msg) => this._onMessage(JSON.parse(msg.data));
         this._ws.onclose = () => this._onClose(ws);
+
+        this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTING);
     }
 
     _onOpen(ws) {
@@ -81,6 +86,7 @@ class BasePoolMiner extends Miner {
     }
 
     _onClose(ws) {
+        this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
         if (ws === this._ws) {
             this._timeoutReconnect();
         }
@@ -121,16 +127,18 @@ class BasePoolMiner extends Miner {
                         this._turnPoolOff();
                         this._ws.close();
                     } else {
-                        this._onBalance(msg.balance, msg.confirmedBalance);
-                        this.payoutRequestActive = msg.payoutRequestActive;
+                        this._onBalance(msg.balance, msg.confirmedBalance, msg.payoutRequestActive);
                     }
                     break;
-                case 'invalid-share':
-                    Log.w(BasePoolMiner, 'Pool denied share: ', msg.reason);
+                case 'registered':
+                    this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTED);
+                    break;
+                case 'error':
+                    Log.w(BasePoolMiner, 'Error from pool:', msg.reason);
                     break;
             }
         } else {
-            Log.w(BasePoolMiner, 'Received unknown message from pool server: ' + msg.message);
+            Log.w(BasePoolMiner, 'Received unknown message from pool server:', msg.message);
             this._ws.close();
         }
     }
@@ -138,11 +146,22 @@ class BasePoolMiner extends Miner {
     /**
      * @param {number} balance
      * @param {number} confirmedBalance
+     * @param {boolean} payoutRequestActive
      * @private
      */
-    _onBalance(balance, confirmedBalance) {
-        this.fire('balance', balance);
-        this.fire('confirmed-balance', confirmedBalance);
+    _onBalance(balance, confirmedBalance, payoutRequestActive) {
+        this.payoutRequestActive = payoutRequestActive;
+        if (this.balance !== balance || this.confirmedBalance !== confirmedBalance) {
+            Log.i(BasePoolMiner, 'Pool balance:', balance / Policy.SATOSHIS_PER_COIN, 'NIM (confirmed', confirmedBalance / Policy.SATOSHIS_PER_COIN, 'NIM)');
+        }
+        if (this.balance !== balance) {
+            this.fire('balance', balance);
+        }
+        if (this.confirmedBalance !== confirmedBalance) {
+            this.fire('confirmed-balance', confirmedBalance);
+        }
+        this.balance = balance;
+        this.confirmedBalance = confirmedBalance;
     }
 
     _turnPoolOff() {
@@ -165,6 +184,11 @@ class BasePoolMiner extends Miner {
         this.nonce = nonce;
     }
 
+    _changeConnectionState(connectionState) {
+        this.connectionState = connectionState;
+        this.fire('connection-state', connectionState);
+    }
+
     /**
      * @param {NetworkConfig} networkConfig
      * @returns {number}
@@ -177,5 +201,8 @@ class BasePoolMiner extends Miner {
     }
 }
 BasePoolMiner.PAYOUT_NONCE_PREFIX = 'POOL_PAYOUT';
+
+/** @enum {number} */
+BasePoolMiner.ConnectionState = { CONNECTED: 0, CONNECTING: 1, CLOSED: 2 };
 
 Class.register(BasePoolMiner);
