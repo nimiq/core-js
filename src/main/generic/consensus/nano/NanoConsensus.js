@@ -122,7 +122,7 @@ class NanoConsensus extends BaseConsensus {
         }
 
         // Store transaction in mempool.
-        if (!(await this._mempool.pushTransaction(transaction))) {
+        if (!(await this._mempool.pushTransaction(transaction, true))) {
             throw new Error('Failed to relay transaction - mempool rejected transaction');
         }
 
