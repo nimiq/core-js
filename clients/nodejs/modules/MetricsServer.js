@@ -55,23 +55,25 @@ class MetricsServer {
      * @private
      */
     _onPeerJoined(peer) {
-        peer.channel.on('message-log', (msg, peerChannel, time) => this._measureMessage(msg, time));
+        peer.channel.on('message-log', (msg, peerChannel, time, rawSize) => this._measureMessage(msg, time, rawSize));
     }
 
 
     /**
      * @param {Message} msg
      * @param {number} time
+     * @param {number} size
      * @private
      */
-    _measureMessage(msg, time) {
+    _measureMessage(msg, time, size) {
         if (!Nimiq.PeerChannel.Event[msg.type]) return;
         const str = Nimiq.PeerChannel.Event[msg.type];
         if (!this._messageMeasures.has(str)) {
-            this._messageMeasures.set(str, {occurrences: 0, timeSpentProcessing: 0});
+            this._messageMeasures.set(str, {occurrences: 0, timeSpentProcessing: 0, totalBytes: 0});
         }
         const obj = this._messageMeasures.get(str);
         obj.occurrences++;
+        if (size > 0) obj.totalBytes += size;
         if (time > 0) obj.timeSpentProcessing += time;
     }
 
@@ -138,6 +140,7 @@ class MetricsServer {
             const obj = this._messageMeasures.get(type);
             MetricsServer._metric(res, 'message_rx_count', this._with({'type': type}), obj.occurrences);
             MetricsServer._metric(res, 'message_rx_processing_time', this._with({'type': type}), obj.timeSpentProcessing);
+            MetricsServer._metric(res, 'message_rx_total_bytes', this._with({'type': type}), obj.totalBytes);
         }
 
     }
