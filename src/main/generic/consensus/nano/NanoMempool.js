@@ -98,7 +98,7 @@ class NanoMempool extends Observable {
             this._transactionSetByAddress.remove(transaction.sender);
         }
 
-        this.fire('transaction-removed', tx);
+        this.fire('transaction-removed', transaction);
     }
 
     /**
