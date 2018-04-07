@@ -78,5 +78,10 @@ class Synchronizer extends Observable {
     get working() {
         return this._working;
     }
+
+    /** @type {number} */
+    get length() {
+        return this._queue.length;
+    }
 }
 Class.register(Synchronizer);

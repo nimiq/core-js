@@ -90,5 +90,10 @@ class PrioritySynchronizer extends Observable {
     get working() {
         return this._working;
     }
+
+    /** @type {number} */
+    get length() {
+        return this._queues.reduce((sum, q) => sum + q.length, 0);
+    }
 }
 Class.register(PrioritySynchronizer);
