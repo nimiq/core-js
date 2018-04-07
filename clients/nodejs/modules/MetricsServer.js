@@ -108,7 +108,11 @@ class MetricsServer {
         MetricsServer._metric(res, 'chain_head_difficulty', this._desc, head.difficulty);
         MetricsServer._metric(res, 'chain_head_transactions', this._desc, head.transactionCount);
         MetricsServer._metric(res, 'chain_total_work', this._desc, this._blockchain.totalWork);
-        MetricsServer._metric(res, 'chain_queue_length', this._desc, this._blockchain.queueLength);
+
+        MetricsServer._metric(res, 'chain_queue_jobs', this._desc, this._blockchain.queue.totalJobs);
+        MetricsServer._metric(res, 'chain_queue_elapsed', this._desc, this._blockchain.queue.totalElapsed);
+        MetricsServer._metric(res, 'chain_queue_throttles', this._desc, this._blockchain.queue.totalThrottles);
+        MetricsServer._metric(res, 'chain_queue_length', this._desc, this._blockchain.queue.length);
 
         MetricsServer._metric(res, 'chain_block', this._with({'action': 'forked'}), this._blockchain.blockForkedCount);
         MetricsServer._metric(res, 'chain_block', this._with({'action': 'rebranched'}), this._blockchain.blockRebranchedCount);
@@ -126,7 +130,11 @@ class MetricsServer {
         }
         MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `>=${group[group.length - 1]}`}), txs.filter((tx) => tx.feePerByte >= group[group.length - 1]).length);
         MetricsServer._metric(res, 'mempool_size', this._desc, txs.reduce((a, b) => a + b.serializedSize, 0));
-        MetricsServer._metric(res, 'mempool_queue_length', this._desc, this._mempool.queueLength);
+
+        MetricsServer._metric(res, 'mempool_queue_jobs', this._desc, this._mempool.queue.totalJobs);
+        MetricsServer._metric(res, 'mempool_queue_elapsed', this._desc, this._mempool.queue.totalElapsed);
+        MetricsServer._metric(res, 'mempool_queue_throttles', this._desc, this._mempool.queue.totalThrottles);
+        MetricsServer._metric(res, 'mempool_queue_length', this._desc, this._mempool.queue.length);
     }
 
     _networkMetrics(res) {

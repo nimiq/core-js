@@ -414,9 +414,9 @@ class Mempool extends Observable {
         return this._transactionsByHash.length;
     }
 
-    /** @type {number} */
-    get queueLength() {
-        return this._synchronizer.length;
+    /** @type {Synchronizer} */
+    get queue() {
+        return this._synchronizer;
     }
 }
 

@@ -721,9 +721,9 @@ class FullChain extends BaseChain {
         return this._accounts.hash();
     }
 
-    /** @type {number} */
-    get queueLength() {
-        return this._synchronizer.length;
+    /** @type {PrioritySynchronizer} */
+    get queue() {
+        return this._synchronizer;
     }
 }
 

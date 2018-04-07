@@ -16,6 +16,12 @@ class Synchronizer extends Observable {
         this._throttleWait = throttleWait;
         /** @type {number} */
         this._elapsed = 0;
+        /** @type {number} */
+        this._totalElapsed = 0;
+        /** @type {number} */
+        this._totalJobs = 0;
+        /** @type {number} */
+        this._totalThrottles = 0;
     }
 
     /**
@@ -59,9 +65,13 @@ class Synchronizer extends Observable {
                 if (job.reject) job.reject(e);
             }
 
+            this._totalJobs++;
+
             if (this._throttleAfter !== undefined) {
                 this._elapsed += Date.now() - start;
                 if (this._elapsed >= this._throttleAfter) {
+                    this._totalElapsed += this._elapsed;
+                    this._totalThrottles++;
                     this._elapsed = 0;
                     setTimeout(this._doWork.bind(this), this._throttleWait);
                     return;
@@ -70,6 +80,7 @@ class Synchronizer extends Observable {
         }
 
         this._working = false;
+        this._totalElapsed += this._elapsed;
         this._elapsed = 0;
         this.fire('work-end', this);
     }
@@ -82,6 +93,21 @@ class Synchronizer extends Observable {
     /** @type {number} */
     get length() {
         return this._queue.length;
+    }
+
+    /** @type {number} */
+    get totalElapsed() {
+        return this._totalElapsed;
+    }
+
+    /** @type {number} */
+    get totalJobs() {
+        return this._totalJobs;
+    }
+
+    /** @type {number} */
+    get totalThrottles() {
+        return this._totalThrottles;
     }
 }
 Class.register(Synchronizer);
