@@ -43,7 +43,7 @@ class NanoConsensus extends BaseConsensus {
         const agent = super._onPeerJoined(peer);
 
         // Forward sync events.
-        this.bubble(agent, 'sync-chain-proof', 'verify-chain-proof');
+        this.bubble(agent, 'sync-chain-proof', 'verify-chain-proof', 'transaction-relayed');
 
         return agent;
     }
