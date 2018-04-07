@@ -208,10 +208,10 @@ const $ = {};
         Nimiq.Log.i(TAG, `Block mined: #${block.header.height}, hash=${block.header.hash()}`);
     });
 
-    if (statisticsOptions) {
+    if (config.statistics > 0) {
         // Output regular statistics
         const hashrates = [];
-        const outputInterval = typeof statisticsOptions === 'number' ? statisticsOptions : 10; // seconds
+        const outputInterval = config.statistics;
 
         $.miner.on('hashrate-changed', async (hashrate) => {
             hashrates.push(hashrate);
