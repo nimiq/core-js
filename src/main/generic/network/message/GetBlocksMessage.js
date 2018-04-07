@@ -7,6 +7,7 @@ class GetBlocksMessage extends Message {
     constructor(locators, maxInvSize=BaseInventoryMessage.VECTORS_MAX_COUNT, direction=GetBlocksMessage.Direction.FORWARD) {
         super(Message.Type.GET_BLOCKS);
         if (!locators || !NumberUtils.isUint16(locators.length)
+            || locators.length > GetBlocksMessage.LOCATORS_MAX_COUNT
             || locators.some(it => !Hash.isHash(it))) throw 'Malformed locators';
         if (!NumberUtils.isUint16(maxInvSize)) throw 'Malformed maxInvSize';
         if (!NumberUtils.isUint8(direction)) throw 'Malformed direction';
@@ -87,4 +88,8 @@ GetBlocksMessage.Direction = {
     FORWARD: 0x1,
     BACKWARD: 0x2
 };
+/**
+ * @type {number}
+ */
+GetBlocksMessage.LOCATORS_MAX_COUNT = 128;
 Class.register(GetBlocksMessage);

@@ -64,5 +64,9 @@ class GetAccountsProofMessage extends Message {
         return this._blockHash;
     }
 }
+
+/**
+ * @type {number}
+ */
 GetAccountsProofMessage.ADDRESSES_MAX_COUNT = 256;
 Class.register(GetAccountsProofMessage);

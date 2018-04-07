@@ -1,6 +1,6 @@
 class RateLimit {
     /**
-     * @param {number} allowedOccurences
+     * @param {number} allowedOccurences Occurences per timeRange (default 1min)
      * @param {number} [timeRange=60000]
      */
     constructor(allowedOccurences, timeRange = 60000) {

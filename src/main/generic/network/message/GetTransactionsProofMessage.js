@@ -63,5 +63,8 @@ class GetTransactionsProofMessage extends Message {
         return this._blockHash;
     }
 }
+/**
+ * @type {number}
+ */
 GetTransactionsProofMessage.ADDRESSES_MAX_COUNT = 256;
 Class.register(GetTransactionsProofMessage);
