@@ -7,6 +7,7 @@ class GetTransactionsProofMessage extends Message {
         super(Message.Type.GET_TRANSACTIONS_PROOF);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
         if (!addresses || !NumberUtils.isUint16(addresses.length)
+            || addresses.length > GetTransactionsProofMessage.ADDRESSES_MAX_COUNT
             || addresses.some(it => !(it instanceof Address))) throw new Error('Malformed addresses');
         this._blockHash = blockHash;
         /** @type {Array.<Address>} */
@@ -62,4 +63,5 @@ class GetTransactionsProofMessage extends Message {
         return this._blockHash;
     }
 }
+GetTransactionsProofMessage.ADDRESSES_MAX_COUNT = 256;
 Class.register(GetTransactionsProofMessage);
