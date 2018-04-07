@@ -577,7 +577,7 @@ class BaseChain extends IBlockchain {
         const score1 = await NanoChain._getProofScore(proof1.prefix, lca, m);
         const score2 = await NanoChain._getProofScore(proof2.prefix, lca, m);
         return score1 === score2
-            ? proof1.suffix.totalDifficulty() >= proof2.suffix.totalDifficulty()
+            ? proof1.suffix.totalDifficulty() > proof2.suffix.totalDifficulty()
             : score1 > score2;
     }
 
