@@ -56,7 +56,7 @@ class SerialBuffer extends Uint8Array {
     read(length) {
         const value = this.subarray(this._readPos, this._readPos + length);
         this._readPos += length;
-        return value;
+        return new Uint8Array(value);
     }
 
     /**
