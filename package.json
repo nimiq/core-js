@@ -50,14 +50,14 @@
     }
   },
   "dependencies": {
+    "@nimiq/jungle-db": "^0.9.9",
     "atob": "^2.0.3",
     "btoa": "^1.1.2",
     "chalk": "^2.3.2",
     "json5": "^1.0.1",
     "lodash.merge": "^4.6.1",
-    "@nimiq/jungle-db": "^0.9.9",
     "nan": "^2.10.0",
-    "ws": "^5.1.0"
+    "ws": "^5.1.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -101,5 +101,9 @@
     "node-deb": "^0.10.4",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^3.0.4",
+    "utf-8-validate": "^4.0.1"
   }
 }
