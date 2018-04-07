@@ -48,7 +48,7 @@ class Nimiq {
                         error(Nimiq.ERR_UNSUPPORTED);
                         return;
                     } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                        Nimiq.script = 'web-babel.js';
+                        Nimiq._script = 'web-babel.js';
                         console.warn('Client lacks native support for async');
                     } else {
                         Nimiq._script = 'web.js';
@@ -74,7 +74,7 @@ class Nimiq {
                         resolve();
                     }
                 };
-                Nimiq._loadScript(Nimiq._fullScript, Nimiq._onload);
+                Nimiq._loadScript(Nimiq._fullScript);
             }).then(() => new Promise((resolve, reject) =>
                 Nimiq.WasmHelper.doImportBrowser()
                     .then(resolve)
@@ -83,8 +83,7 @@ class Nimiq {
         return Nimiq._loadPromise;
     }
 
-    static _loadScript(url, resolve) {
-        // Adding the script tag to the head as suggested before
+    static _loadScript(url) {
         const head = document.getElementsByTagName('head')[0];
         const script = document.createElement('script');
         script.type = 'text/javascript';
