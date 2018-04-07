@@ -26,6 +26,13 @@ const sources = {
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
             './src/main/platform/browser/network/DnsUtils.js'
         ],
+        keyguard: [
+            './src/main/platform/browser/Class.js',
+            './src/main/platform/browser/utils/LogNative.js',
+            './src/main/generic/utils/Log.js',
+            './src/main/generic/utils/Observable.js',
+            './src/main/platform/browser/crypto/CryptoLib.js',
+        ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
@@ -206,6 +213,50 @@ const sources = {
         './src/main/generic/miner/MinerWorkerImpl.js',
         './src/main/generic/miner/MinerWorkerPool.js'
     ],
+    keyguard: [
+        './src/main/generic/utils/array/ArrayUtils.js',
+        // './src/main/generic/utils/array/HashMap.js',
+        // './src/main/generic/utils/array/HashSet.js',
+        // './src/main/generic/utils/array/LimitIterable.js',
+        // './src/main/generic/utils/array/Queue.js',
+        // './src/main/generic/utils/array/SortedList.js',
+        // './src/main/generic/utils/assert/Assert.js',
+        './src/main/generic/utils/buffer/BufferUtils.js',
+        './src/main/generic/utils/buffer/SerialBuffer.js',
+        // './src/main/generic/utils/crypto/Crypto.js',
+        // './src/main/generic/utils/crc/CRC32.js',
+        './src/main/generic/utils/number/NumberUtils.js',
+        // './src/main/generic/utils/merkle/MerkleTree.js',
+        './src/main/generic/utils/merkle/MerklePath.js',
+        // './src/main/generic/utils/merkle/MerkleProof.js',
+        './src/main/generic/utils/platform/PlatformUtils.js',
+        // './src/main/generic/utils/string/StringUtils.js',
+        // './src/main/generic/consensus/Policy.js',
+        './src/main/generic/consensus/base/primitive/Serializable.js',
+        './src/main/generic/consensus/base/primitive/Hash.js',
+        './src/main/generic/consensus/base/primitive/PrivateKey.js',
+        './src/main/generic/consensus/base/primitive/PublicKey.js',
+        './src/main/generic/consensus/base/primitive/KeyPair.js',
+        './src/main/generic/consensus/base/primitive/RandomSecret.js',
+        './src/main/generic/consensus/base/primitive/Signature.js',
+        // './src/main/generic/consensus/base/primitive/Commitment.js',
+        // './src/main/generic/consensus/base/primitive/CommitmentPair.js',
+        // './src/main/generic/consensus/base/primitive/PartialSignature.js',
+        './src/main/generic/consensus/base/account/Address.js',
+        './src/main/generic/consensus/base/account/Account.js',
+        // './src/main/generic/consensus/base/account/Contract.js',
+        // './src/main/generic/consensus/base/account/HashedTimeLockedContract.js',
+        // './src/main/generic/consensus/base/account/VestingContract.js',
+        './src/main/generic/consensus/base/transaction/Transaction.js',
+        './src/main/generic/consensus/base/transaction/SignatureProof.js',
+        './src/main/generic/consensus/base/transaction/BasicTransaction.js',
+        // './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
+        './src/main/generic/utils/IWorker.js',
+        './src/main/generic/utils/WasmHelper.js',
+        './src/main/generic/utils/crypto/CryptoWorker.js',
+        // './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
+        './src/main/generic/consensus/GenesisConfigKeyguard.js'
+    ],
     test: [
         'src/test/specs/**/*.spec.js'
     ],
@@ -380,6 +431,58 @@ gulp.task('build-web', ['build-worker'], function () {
         .pipe(connect.reload());
 });
 
+const KEYGUARD_SOURCES = [
+    './node_modules/jungle-db/dist/web.js',
+    './src/main/platform/browser/index.prefix.js',
+    ...sources.platform.keyguard,
+    ...sources.keyguard,
+    './src/main/platform/browser/index.suffix.js'
+];
+
+gulp.task('build-keyguard-babel', function () {
+    return merge(
+        browserify([], {
+            require: [
+                'babel-runtime/core-js/array/from',
+                'babel-runtime/core-js/object/values',
+                'babel-runtime/core-js/object/freeze',
+                'babel-runtime/core-js/object/keys',
+                'babel-runtime/core-js/json/stringify',
+                'babel-runtime/core-js/number/is-integer',
+                'babel-runtime/core-js/number/max-safe-integer',
+                'babel-runtime/core-js/math/clz32',
+                'babel-runtime/core-js/math/fround',
+                'babel-runtime/core-js/math/imul',
+                'babel-runtime/core-js/math/trunc',
+                'babel-runtime/core-js/promise',
+                'babel-runtime/core-js/get-iterator',
+                'babel-runtime/regenerator',
+                'babel-runtime/helpers/asyncToGenerator'
+            ]
+        }).bundle()
+            .pipe(source('babel.js'))
+            .pipe(buffer()),
+        gulp.src(KEYGUARD_SOURCES, {base: '.'})
+            .pipe(sourcemaps.init({loadMaps: true}))
+            .pipe(concat('keyguard.js'))
+            .pipe(babel(babel_config)))
+        .pipe(sourcemaps.init())
+        .pipe(concat('keyguard-babel.js'))
+        .pipe(uglify(uglify_babel))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build-keyguard', function () {
+    return gulp.src(KEYGUARD_SOURCES, {base: '.'})
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(concat('keyguard.js'))
+        //.pipe(uglify(uglify_config))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'))
+        .pipe(connect.reload());
+});
+
 gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () {
     return gulp.src(BROWSER_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
@@ -506,6 +609,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-loader', 'build-node', 'build-node-istanbul']);
+gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-keyguard', 'build-keyguard-babel', 'build-loader', 'build-node', 'build-node-istanbul']);
 
 gulp.task('default', ['build', 'serve']);
