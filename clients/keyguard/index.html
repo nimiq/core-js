@@ -1,34 +1,38 @@
 <script src="../../dist/nimiq.js"></script>
 <script>
-    Nimiq.init(() => {
-        const $ = {};
-        window.$ = $;
-        (new Nimiq.WalletStore()).then(async walletStore => {
-            $.walletStore = walletStore;
+    (async function() {
+        if (window.Nimiq) {
+            await Nimiq.load();
+            Nimiq.GenesisConfig['test']();
+        }
 
-            console.log("Create volatile wallet");
-            $.wallet = await Nimiq.Wallet.generate();
-            console.warn("Nimiq.Wallet.createVolatile()", $.wallet);
+        const _privateKey = Nimiq.PrivateKey.unserialize(Nimiq.BufferUtils.fromBase64('boH8Y6CujNS+wBCAs3XBDXzU/1SZW3+KEK+neC1nc8w='));
+        const storedKeyPair = Nimiq.KeyPair.derive(_privateKey);
 
-            const recipient = await Nimiq.Wallet.generate();
+        const recipient = Nimiq.Address.fromUserFriendlyAddress('NQ26 8MMT 8317 VD0D NNKE 3NVA GBVE UY1E 9YDF');
 
-            console.log("Create new transaction");
-            const canonicals = {
-                value: 100,
-                fee: 1,
-                validityStart: 1000
-            };
-            const tx = new Nimiq.BasicTransaction($.wallet.publicKey, recipient.address, canonicals.value, canonicals.fee, canonicals.validityStart);
-            console.warn("new Nimiq.BasicTransaction()", tx);
+        console.log("Export keypair encrypted");
+        const encryptedKeyPair = await storedKeyPair.exportEncrypted('my very long pass phrase');
+        console.info(encryptedKeyPair);
 
-            console.log("Signing transaction");
-            const signature = Nimiq.Signature.create($.wallet.keyPair.privateKey, $.wallet.keyPair.publicKey, tx.serializeContent());
-            console.warn("Nimiq.Signature.create()", signature);
+        console.log('Import encrypted keypair');
+        const keyPair = await Nimiq.KeyPair.fromEncrypted(encryptedKeyPair, 'my very long pass phrase');
 
-            console.log("Creating signature proof");
-            const proof = Nimiq.SignatureProof.singleSig($.wallet.keyPair.publicKey, signature);
-            const serializedProof = proof.serialize();
-            console.warn("Nimiq.SignatureProof.singleSig()", proof, serializedProof);
-        });
-    });
+        console.log("Create new transaction");
+        const canonicals = {
+            value: 10000000,
+            fee: 1,
+            validityStart: 1000
+        };
+        const tx = new Nimiq.BasicTransaction(keyPair.publicKey, recipient, canonicals.value, canonicals.fee, canonicals.validityStart);
+        console.info(tx);
+
+        console.log("Signing transaction");
+        const signature = Nimiq.Signature.create(keyPair.privateKey, keyPair.publicKey, tx.serializeContent());
+        console.info(signature);
+
+        console.log("Creating signature proof");
+        tx.signature = signature;
+        console.info("Finished:", tx);
+    })();
 </script>
