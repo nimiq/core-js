@@ -155,14 +155,14 @@ class LinkedList {
     }
 
     /**
-     * @returns {{next: function():object}}
+     * @returns {Iterator.<V|*>}
      */
     [Symbol.iterator]() {
         return this.iterator();
     }
 
     /**
-     * @returns {{next: function():object}}
+     * @returns {Iterator.<V|*>}
      */
     *iterator() {
         let entry = this._tail;

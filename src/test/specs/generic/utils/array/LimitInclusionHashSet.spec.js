@@ -29,4 +29,11 @@ describe('LimitInclusionHashSet', () => {
     it('cannot limit to 0', () => {
         expect(() =>  new LimitInclusionHashSet(0)).toThrow();
     });
+
+    it('is efficient', () => {
+        const set = new LimitInclusionHashSet(40000);
+        for (let i = 0; i < 500000; i++) {
+            set.add(i);
+        }
+    });
 });
