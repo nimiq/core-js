@@ -188,7 +188,7 @@ class DataChannel extends Observable {
                 this.fire('chunk', this._buffer);
             }
         } catch (e) {
-            this._error(`Error occurred while parsing incoming message, ${e.message}`);
+            this._error(`Error occurred while parsing incoming message: ${e.message || e}`);
         }
     }
 

@@ -48,8 +48,12 @@ class Observable {
         const promises = [];
         // Notify listeners for this event type.
         if (this._listeners.has(type)) {
-            for (const i in this._listeners.get(type)) {
-                const listener = this._listeners.get(type)[i];
+            const listeners = this._listeners.get(type);
+            for (const key in listeners) {
+                // Skip non-numeric properties.
+                if (isNaN(key)) continue;
+
+                const listener = listeners[key];
                 const res = listener.apply(null, args);
                 if (res instanceof Promise) promises.push(res);
             }
@@ -57,9 +61,13 @@ class Observable {
 
         // Notify wildcard listeners. Pass event type as first argument
         if (this._listeners.has(Observable.WILDCARD)) {
-            for (const i in this._listeners.get(Observable.WILDCARD)) {
-                const listener = this._listeners.get(Observable.WILDCARD)[i];
-                const res = promises.push(listener.apply(null, arguments));
+            const listeners = this._listeners.get(Observable.WILDCARD);
+            for (const key in listeners) {
+                // Skip non-numeric properties.
+                if (isNaN(key)) continue;
+
+                const listener = listeners[key];
+                const res = listener.apply(null, arguments);
                 if (res instanceof Promise) promises.push(res);
             }
         }
@@ -75,7 +83,7 @@ class Observable {
     bubble(observable, ...types) {
         for (const type of types) {
             let callback;
-            if (type == Observable.WILDCARD) {
+            if (type === Observable.WILDCARD) {
                 callback = function() {
                     this.fire.apply(this, arguments);
                 };
