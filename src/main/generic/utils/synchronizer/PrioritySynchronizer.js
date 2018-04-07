@@ -7,10 +7,10 @@ class PrioritySynchronizer extends Observable {
     constructor(numPriorities, throttleAfter, throttleWait) {
         super();
 
-        /** @type {Array.<Array.<object>>} */
+        /** @type {Array.<LinkedList.<object>>} */
         this._queues = [];
         for (let i = 0; i < numPriorities; i++) {
-            this._queues[i] = [];
+            this._queues[i] = new LinkedList();
         }
 
         /** @type {boolean} */
@@ -51,6 +51,7 @@ class PrioritySynchronizer extends Observable {
             for (const job of queue) {
                 if (job.reject) job.reject();
             }
+            queue.clear();
         }
         this._queues = [];
     }

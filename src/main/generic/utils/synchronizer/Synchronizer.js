@@ -6,8 +6,8 @@ class Synchronizer extends Observable {
     constructor(throttleAfter, throttleWait) {
         super();
 
-        /** @type {Array.<object>} */
-        this._queue = [];
+        /** @type {LinkedList.<object>} */
+        this._queue = new LinkedList();
         /** @type {boolean} */
         this._working = false;
         /** @type {?number} */
@@ -42,7 +42,7 @@ class Synchronizer extends Observable {
         for (const job of this._queue) {
             if (job.reject) job.reject();
         }
-        this._queue = [];
+        this._queue.clear();
     }
 
     async _doWork() {
