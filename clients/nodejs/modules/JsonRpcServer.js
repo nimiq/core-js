@@ -1,9 +1,10 @@
 const http = require('http');
+const btoa = require('btoa');
 const Nimiq = require('../../../dist/node.js');
 
 class JsonRpcServer {
     /**
-     * @param {{port: number, corsdomain: string|Array.<string>}} config
+     * @param {{port: number, corsdomain: string|Array.<string>, username: ?string, password: ?string}} config
      */
     constructor(config) {
         if (typeof config.corsdomain === 'string') config.corsdomain = [config.corsdomain];
@@ -19,9 +20,7 @@ class JsonRpcServer {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
-                if (config.secure) {
-                    this._authenticate(req, res, config);
-                } else {
+                if (JsonRpcServer._authenticate(req, res, config.username, config.password)) {
                     this._onRequest(req, res);
                 }
             } else {
@@ -126,28 +125,22 @@ class JsonRpcServer {
         }
     }
 
-    _authenticate(req, res, config) {
-        var auth = req.headers['authorization'];
-
-        if(!auth) {
-            res.statusCode = 401;
-            res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
-
-            res.end('Credentials Required\n');
-        } else if (auth) {
-            var tmp = auth.split(' ');
-            var buf = new Buffer(tmp[1], 'base64');
-            var plain_auth = buf.toString();
-            var creds = plain_auth.split(':');
-
-            if((creds[0] == config.user) && (creds[1] == config.pass)) {
-               this._onRequest(req, res);
-            } else {
-               res.statusCode = 401;
-               res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
-               res.end('Incorrect Credentials\n');
-            }
+    /**
+     * @param req
+     * @param res
+     * @param {?string} username
+     * @param {?string} password
+     * @returns {boolean}
+     * @private
+     */
+    static _authenticate(req, res, username, password) {
+        if (username && password && req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
+            res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
+            res.end();
+            return false;
         }
+
+        return true;
     }
 
 

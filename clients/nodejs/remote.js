@@ -1,12 +1,47 @@
 const http = require('http');
 const Nimiq = require('../../dist/node.js');
 const chalk = require('chalk');
+const btoa = require('btoa');
 const argv = require('minimist')(process.argv.slice(2));
 
 let host = '127.0.0.1';
 let port = 8648;
+let user = null;
+let password = null;
 if (argv.host) host = argv.host;
 if (argv.port) port = parseInt(argv.port);
+if (argv.user) {
+    user = argv.user;
+    const readline = require('readline');
+    const Writable = require('stream').Writable;
+    // Hide password in command line.
+    const mutableStdout = new Writable({
+        write: function(chunk, encoding, callback) {
+            if (!this.muted) {
+                process.stdout.write(chunk, encoding);
+            }
+            callback();
+        }
+    });
+    mutableStdout.muted = false;
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: mutableStdout,
+        terminal: true
+    });
+
+    // Request password.
+    rl.question(`Password for ${user}: `, (pw) => {
+        password = pw;
+        rl.close();
+        main(argv._);
+    });
+    mutableStdout.muted = true;
+} else {
+    // Continue without authentication.
+    main(argv._);
+}
 
 function jsonRpcFetch(method, ...params) {
     return new Promise((resolve, fail) => {
@@ -17,12 +52,21 @@ function jsonRpcFetch(method, ...params) {
             method: method,
             params: params
         });
+        const headers = {'Content-Length': jsonrpc.length};
+        if (user && password) {
+            headers['Authorization'] = `Basic ${btoa(`${user}:${password}`)}`;
+        }
         const req = http.request({
             hostname: host,
             port: port,
             method: 'POST',
-            headers: {'Content-Length': jsonrpc.length}
+            headers: headers
         }, (res) => {
+            if (res.statusCode === 401) {
+                fail(new Error(`Request Failed: Authentication Required. Status Code: ${res.statusCode}`));
+                res.resume();
+                return;
+            }
             if (res.statusCode !== 200) {
                 fail(new Error(`Request Failed. Status Code: ${res.statusCode}`));
                 res.resume();
@@ -685,6 +729,8 @@ Options:
                             server to connect to. Defaults to local host.
     --port PORT             Define port corresponding to HOST.
                             Defaults to 8648.
+    --user USER             Use basic authentication with username USER.
+                            The password will be prompted for.
 
 `);
             }
@@ -730,69 +776,72 @@ peer id in hex or peer address.`);
     }
 }
 
-
-let args = argv._;
-if (!args || args.length === 0) {
-    const readline = require('readline');
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        removeHistoryDuplicates: true,
-        completer: function (line, callback) {
-            if (line.indexOf(' ') < 0) {
-                const completions = ['account', 'accounts', 'accounts.create', 'block', 'constant',
-                    'mining', 'mining.enabled', 'mining.threads', 'peer', 'peers',
-                    'transaction', 'transaction.receipt', 'transaction.send', 'transactions',
-                    'mempool', 'consensus.min_fee_per_byte'];
-                const hits = completions.filter((c) => c.startsWith(line));
-                callback(null, [hits.length ? hits : completions, line]);
-            } else {
-                callback(null, []);
-            }
-        }
-    });
-    rl.on('line', async (line) => {
-        line = line.trim();
-        if (line === 'exit') {
-            rl.close();
-            return;
-        }
-        let args = [];
-        while (line) {
-            if (line[0] === '\'' || line[0] === '"') {
-                const close = line.indexOf(line[0], 1);
-                if (close < 0 || (line.length !== close + 1 && line[close + 1] !== ' ')) {
-                    console.log('Invalid quoting');
-                    line = null;
-                    args = null;
-                    break;
+function main(args) {
+    if (!args || args.length === 0) {
+        const readline = require('readline');
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            removeHistoryDuplicates: true,
+            completer: function (line, callback) {
+                if (line.indexOf(' ') < 0) {
+                    const completions = ['account', 'accounts', 'accounts.create', 'block', 'constant',
+                        'mining', 'mining.enabled', 'mining.threads', 'peer', 'peers',
+                        'transaction', 'transaction.receipt', 'transaction.send', 'transactions',
+                        'mempool', 'consensus.min_fee_per_byte'];
+                    const hits = completions.filter((c) => c.startsWith(line));
+                    callback(null, [hits.length ? hits : completions, line]);
+                } else {
+                    callback(null, []);
                 }
-                args.push(line.substring(1, close));
-                line = line.substring(close + 1).trim();
-            } else {
-                let close = line.indexOf(' ');
-                if (close < 0) close = line.length;
-                args.push(line.substring(0, close));
-                line = line.substring(close + 1).trim();
             }
-        }
-        if (args !== null && args.length > 0) {
-            try {
-                await action(args, true);
-            } catch (e) {
-                console.error(e);
+        });
+        rl.on('line', async (line) => {
+            line = line.trim();
+            if (line === 'exit') {
+                rl.close();
+                return;
             }
-        }
-        rl.prompt();
-    });
-    rl.on('close', () => {
-        process.exit(0);
-    });
-    displayInfoHeader(79).then(() => rl.prompt()).catch(() => {
-        console.log(`Could not connect to Nimiq NodeJS client via RPC on ${host}:${port}.`);
-        console.log('Use `help` command for usage instructions.');
-        rl.close();
-    });
-} else {
-    action(args, false).catch(console.error);
+            let args = [];
+            while (line) {
+                if (line[0] === '\'' || line[0] === '"') {
+                    const close = line.indexOf(line[0], 1);
+                    if (close < 0 || (line.length !== close + 1 && line[close + 1] !== ' ')) {
+                        console.log('Invalid quoting');
+                        line = null;
+                        args = null;
+                        break;
+                    }
+                    args.push(line.substring(1, close));
+                    line = line.substring(close + 1).trim();
+                } else {
+                    let close = line.indexOf(' ');
+                    if (close < 0) close = line.length;
+                    args.push(line.substring(0, close));
+                    line = line.substring(close + 1).trim();
+                }
+            }
+            if (args !== null && args.length > 0) {
+                try {
+                    await action(args, true);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            rl.prompt();
+        });
+        rl.on('close', () => {
+            process.exit(0);
+        });
+        displayInfoHeader(79).then(() => rl.prompt()).catch((error) => {
+            console.log(`Could not connect to Nimiq NodeJS client via RPC on ${host}:${port}.`);
+            if (error.message) {
+                console.log(error.message);
+            }
+            console.log('Use `help` command for usage instructions.');
+            rl.close();
+        });
+    } else {
+        action(args, false).catch(console.error);
+    }
 }

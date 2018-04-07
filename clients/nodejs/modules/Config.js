@@ -48,9 +48,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         enabled: false,
         port: 8648,
         corsdomain: null,
-        secure: true,
-        user: 'super',
-        pass: 'secret'
+        username: null,
+        password: null
     },
     metricsServer: {
         enabled: false,
@@ -97,9 +96,8 @@ const CONFIG_TYPES = {
             enabled: 'boolean',
             port: 'number',
             corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
-            authenticate: 'boolean',
-            user: 'string',
-            pass: 'string'
+            username: 'string',
+            password: 'string'
         }
     },
     metricsServer: {
