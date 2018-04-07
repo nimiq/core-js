@@ -4,7 +4,7 @@
  */
 class InclusionHashSet {
     /**
-     * @param {{function(o: object): string}} [fnHash]
+     * @param {function(o: object): string} [fnHash]
      */
     constructor(fnHash = InclusionHashSet._hash) {
         /** @type {Set.<string>} */

@@ -20,7 +20,7 @@ class BaseConsensusAgent extends Observable {
         this._synced = false;
 
         // Set of all objects (InvVectors) that we think the remote peer knows.
-        /** @type {InclusionHashSet.<InvVector>} */
+        /** @type {LimitInclusionHashSet.<InvVector>} */
         this._knownObjects = new LimitInclusionHashSet(BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX);
         this._knownObjects.add(new InvVector(InvVector.Type.BLOCK, peer.headHash));
 
