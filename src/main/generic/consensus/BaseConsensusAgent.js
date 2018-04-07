@@ -748,6 +748,7 @@ class BaseConsensusAgent extends Observable {
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
                         this._peer.channel.tx(tx);
+                        this.fire('transaction-relayed', tx);
                     } else {
                         // Requested transaction is unknown.
                         unknownObjects.push(vector);
