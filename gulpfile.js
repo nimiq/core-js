@@ -26,7 +26,7 @@ const sources = {
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
             './src/main/platform/browser/network/DnsUtils.js'
         ],
-        secure_origin: [
+        keyguard: [
             './src/main/platform/browser/Class.js',
             './src/main/platform/browser/utils/LogNative.js',
             './src/main/generic/utils/Log.js',
@@ -213,7 +213,7 @@ const sources = {
         './src/main/generic/miner/MinerWorkerImpl.js',
         './src/main/generic/miner/MinerWorkerPool.js'
     ],
-    secure_origin: [
+    keyguard: [
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/array/HashMap.js',
         './src/main/generic/utils/array/HashSet.js',
@@ -433,15 +433,15 @@ gulp.task('build-web', ['build-worker'], function () {
         .pipe(connect.reload());
 });
 
-const SECURE_ORIGIN_SOURCES = [
+const KEYGUARD_SOURCES = [
     './node_modules/jungle-db/dist/web.js',
     './src/main/platform/browser/index.prefix.js',
-    ...sources.platform.secure_origin,
-    ...sources.secure_origin,
+    ...sources.platform.keyguard,
+    ...sources.keyguard,
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-secure-origin-babel', function () {
+gulp.task('build-keyguard-babel', function () {
     return merge(
         browserify([], {
             require: [
@@ -464,21 +464,21 @@ gulp.task('build-secure-origin-babel', function () {
         }).bundle()
             .pipe(source('babel.js'))
             .pipe(buffer()),
-        gulp.src(SECURE_ORIGIN_SOURCES, {base: '.'})
+        gulp.src(KEYGUARD_SOURCES, {base: '.'})
             .pipe(sourcemaps.init({loadMaps: true}))
-            .pipe(concat('secure-origin.js'))
+            .pipe(concat('keyguard.js'))
             .pipe(babel(babel_config)))
         .pipe(sourcemaps.init())
-        .pipe(concat('secure-origin-babel.js'))
+        .pipe(concat('keyguard-babel.js'))
         .pipe(uglify(uglify_babel))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-secure-origin', function () {
-    return gulp.src(SECURE_ORIGIN_SOURCES, {base: '.'})
+gulp.task('build-keyguard', function () {
+    return gulp.src(KEYGUARD_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
-        .pipe(concat('secure-origin.js'))
+        .pipe(concat('keyguard.js'))
         //.pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
@@ -611,6 +611,6 @@ gulp.task('serve', ['watch'], function () {
     });
 });
 
-gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-secure-origin', 'build-secure-origin-babel', 'build-loader', 'build-node', 'build-node-istanbul']);
+gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-keyguard', 'build-keyguard-babel', 'build-loader', 'build-node', 'build-node-istanbul']);
 
 gulp.task('default', ['build', 'serve']);

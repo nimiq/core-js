@@ -48,11 +48,11 @@ class Nimiq {
                         error(Nimiq.ERR_UNSUPPORTED);
                         return;
                     } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                        if(window.location.hostname.startsWith('secure.')) Nimiq.script = 'secure-origin-babel.js';
+                        if(window.location.hostname.startsWith('keyguard.')) Nimiq.script = 'keyguard-babel.js';
                         else Nimiq.script = 'web-babel.js';
                         console.warn('Client lacks native support for async');
                     } else {
-                        if(window.location.hostname.startsWith('secure.')) Nimiq._script = 'secure-origin.js';
+                        if(window.location.hostname.startsWith('keyguard.')) Nimiq._script = 'keyguard.js';
                         else Nimiq._script = 'web.js';
                     }
                 }
