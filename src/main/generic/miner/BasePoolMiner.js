@@ -28,6 +28,8 @@ class BasePoolMiner extends Miner {
 
         /** @type {BasePoolMiner.ConnectionState} */
         this.connectionState = BasePoolMiner.ConnectionState.CLOSED;
+
+        this._reconnectTimeout = null;
     }
 
     requestPayout() {
@@ -41,14 +43,14 @@ class BasePoolMiner extends Miner {
             try {
                 this._ws.send(JSON.stringify(msg));
             } catch (e) {
-                Log.w(BasePoolMiner, 'Error sending: ' + e.message || e);
+                Log.w(BasePoolMiner, 'Error sending:', e.message || e);
             }
         }
     }
 
     connect(host, port) {
         if (this._ws) throw new Error('Call disconnect() first');
-        this._server = host;
+        this._host = host;
         this._port = port;
         const ws = this._ws = new WebSocket(`wss://${host}:${port}`);
         this._ws.onopen = () => this._onOpen(ws);
@@ -94,21 +96,23 @@ class BasePoolMiner extends Miner {
 
     _timeoutReconnect() {
         this.disconnect();
-        setTimeout(() => {
-            this.connect(this._server, this._port);
+        this._reconnectTimeout = setTimeout(() => {
+            this.connect(this._host, this._port);
         }, 30000); // after 30 sec
     }
 
     disconnect() {
         this._turnPoolOff();
         if (this._ws) {
-            try {
-                this._ws.close();
-            } catch (e2) {
-                Log.w(BasePoolMiner, e2.message || e2);
-            }
+            const ws = this._ws;
             this._ws = null;
+            try {
+                ws.close();
+            } catch (e) {
+                Log.w(BasePoolMiner, e.message || e);
+            }
         }
+        clearTimeout(this._reconnectTimeout);
     }
 
     _onMessage(msg) {
@@ -152,7 +156,7 @@ class BasePoolMiner extends Miner {
     _onBalance(balance, confirmedBalance, payoutRequestActive) {
         this.payoutRequestActive = payoutRequestActive;
         if (this.balance !== balance || this.confirmedBalance !== confirmedBalance) {
-            Log.i(BasePoolMiner, 'Pool balance:', balance / Policy.SATOSHIS_PER_COIN, 'NIM (confirmed', confirmedBalance / Policy.SATOSHIS_PER_COIN, 'NIM)');
+            Log.i(BasePoolMiner, `Pool balance: ${Policy.satoshisToCoins(balance)} NIM (confirmed ${Policy.satoshisToCoins(confirmedBalance)} NIM)`);
         }
         if (this.balance !== balance) {
             this.fire('balance', balance);
@@ -165,9 +169,9 @@ class BasePoolMiner extends Miner {
     }
 
     _turnPoolOff() {
-        this.address = this._ourAddress;
-        this.extraData = this._ourExtraData;
-        this.shareTarget = null;
+        super.address = this._ourAddress;
+        super.extraData = this._ourExtraData;
+        super.shareTarget = null;
     }
 
     /**
@@ -178,15 +182,44 @@ class BasePoolMiner extends Miner {
      * @private
      */
     _onNewPoolSettings(address, extraData, target, nonce) {
-        this.address = address;
-        this.extraData = extraData;
-        this.shareTarget = target;
-        this.nonce = nonce;
+        super.address = address;
+        super.extraData = extraData;
+        super.shareTarget = target;
+        super.nonce = nonce;
     }
 
     _changeConnectionState(connectionState) {
         this.connectionState = connectionState;
         this.fire('connection-state', connectionState);
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isConnected() {
+        return this.connectionState === BasePoolMiner.ConnectionState.CONNECTED;
+    }
+
+    /**
+     * @type {Address}
+     * @override
+     */
+    get address() {
+        return this._ourAddress;
+    }
+
+    /**
+     * @type {Address}
+     * @override
+     */
+    set address(address) {
+        this._ourAddress = address;
+        if (this.isConnected()) {
+            this.disconnect();
+            this.connect(this._host, this._port);
+        } else {
+            super.address = address;
+        }
     }
 
     /**
@@ -203,6 +236,10 @@ class BasePoolMiner extends Miner {
 BasePoolMiner.PAYOUT_NONCE_PREFIX = 'POOL_PAYOUT';
 
 /** @enum {number} */
-BasePoolMiner.ConnectionState = { CONNECTED: 0, CONNECTING: 1, CLOSED: 2 };
+BasePoolMiner.ConnectionState = {
+    CONNECTED: 0,
+    CONNECTING: 1,
+    CLOSED: 2
+};
 
 Class.register(BasePoolMiner);

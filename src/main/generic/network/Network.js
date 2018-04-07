@@ -382,6 +382,11 @@ class Network extends Observable {
     get connections() {
         return this._connections;
     }
+
+    /** @type {NetworkConfig} */
+    get config() {
+        return this._networkConfig;
+    }
 }
 /**
  * @type {number}

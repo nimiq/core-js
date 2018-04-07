@@ -431,11 +431,36 @@
                 <hr/>
             </div>
 
-
-            <div class="info" hide-nano miner-ui>
+            <div class="info" miner-ui>
                 <div class="info-title">Miner</div>
                 <hr/>
 
+                <form>
+                    <div class="input-group">
+                        <label>
+                            <strong>Mode</strong>
+                            <select miner-mode-selector name="miner-mode">
+                                <option value="solo" miner-mode-solo>Solo</option>
+                                <option value="smart" miner-mode-smart>Pool Smart</option>
+                                <option value="nano" miner-mode-nano>Pool Nano</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            <strong>Pool Server</strong>
+                            <select pool-server-selector name="pool-server">
+                                <option value="pool.nimiq-network.com:8080" selected>pool.nimiq-network.com:8080 (bounty)</option>
+                            </select>
+                        </label>
+                    </div>
+                </form>
+
+                <div class="info-block">
+                    <strong>Pool Connection</strong>
+                    <span pool-connection-state></span>
+                </div>
                 <div class="info-block">
                     <strong>Miner Address</strong>
                     <select miner-address></select>

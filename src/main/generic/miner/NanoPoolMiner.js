@@ -112,8 +112,8 @@ class NanoPoolMiner extends BasePoolMiner {
     }
 
     _turnPoolOff() {
-        super._turnPoolOff();
         this.stopWork();
+        super._turnPoolOff();
     }
 }
 

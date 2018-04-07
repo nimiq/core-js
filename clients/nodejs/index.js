@@ -174,7 +174,8 @@ const $ = {};
     const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : new Uint8Array(0);
     if (config.poolMining.enabled) {
         const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
-        switch (config.poolMining.mode) {
+        const poolMode = isNano ? 'nano' : config.poolMining.mode;
+        switch (poolMode) {
             case 'nano':
                 $.miner = new Nimiq.NanoPoolMiner($.blockchain, $.network.time, $.wallet.address, deviceId);
                 break;
@@ -184,7 +185,7 @@ const $ = {};
                 break;
         }
         $.consensus.on('established', () => {
-            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${config.poolMining.mode} client.`);
+            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
             $.miner.connect(config.poolMining.host, config.poolMining.port);
         });
     } else {

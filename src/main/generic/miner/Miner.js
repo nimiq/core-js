@@ -320,7 +320,7 @@ class Miner extends Observable {
         this._workerPool.stop();
         this.fire('stop', this);
 
-        Log.i(Miner, 'Stopped work');
+        Log.d(Miner, 'Stopped work');
     }
 
     /**
@@ -360,12 +360,11 @@ class Miner extends Observable {
 
     /** @type {Address} */
     set address(addr) {
-        if (!addr.equals(this._address)) {
+        if (addr && !addr.equals(this._address)) {
             this._address = addr;
-            this._startWork().catch(Miner._log);
+            this._startWork().catch(Log.w.tag(Miner));
         }
     }
-
 
     /** @type {boolean} */
     get working() {
@@ -422,7 +421,7 @@ class Miner extends Observable {
     set extraData(extra) {
         if (!BufferUtils.equals(extra, this._extraData)) {
             this._extraData = extra;
-            this._startWork().catch(Miner._log);
+            this._startWork().catch(Log.w.tag(Miner));
         }
     }
 

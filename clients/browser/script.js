@@ -22,10 +22,7 @@ class DevUi {
         this._blockchainUi = new BlockchainUi(this.$el.querySelector('[blockchain-ui]'), this.$);
         this._mempoolUi = new MempoolUi(this.$el.querySelector('[mempool-ui]'), this.$);
         this._networkUi = new NetworkUi(this.$el.querySelector('[network-ui]'), this.$);
-
-        if (this.clientType !== DevUi.ClientType.NANO) {
-            this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), this.$);
-        }
+        this._minerUi = new MinerUi(this.$el.querySelector('[miner-ui]'), this.$);
 
         this._accountsUi.on('account-selected', address => this._accountInfoUi.address = address);
         this._accountsUi.on('accounts-changed', () => {
@@ -66,7 +63,6 @@ class DevUi {
 
                     if (this.clientType !== DevUi.ClientType.NANO) {
                         $.accounts = $.blockchain.accounts;
-                        $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, null);
                     }
 
                     $.walletStore = promiseResults[1];
