@@ -93,7 +93,10 @@ class NetworkConnection extends Observable {
      * @private
      */
     _close(type, reason) {
-        if (this._closed) return;
+        if (this._closed) {
+            return;
+        }
+
         // Don't wait for the native close event to fire.
         this._onClose(type, reason);
 
@@ -167,6 +170,9 @@ class NetworkConnection extends Observable {
      * @param {number} [chunkTimeout]
      */
     expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout) {
+        if (this._closed) {
+            return;
+        }
         this._channel.expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout);
     }
 
@@ -175,6 +181,9 @@ class NetworkConnection extends Observable {
      * @returns {boolean}
      */
     isExpectingMessage(type) {
+        if (this._closed) {
+            return false;
+        }
         return this._channel.isExpectingMessage(type);
     }
 
@@ -183,6 +192,9 @@ class NetworkConnection extends Observable {
      * @param {boolean} success
      */
     confirmExpectedMessage(type, success) {
+        if (this._closed) {
+            return;
+        }
         this._channel.confirmExpectedMessage(type, success);
     }
 
@@ -278,6 +290,9 @@ class NetworkConnection extends Observable {
 
     /** @type {number} */
     get lastMessageReceivedAt() {
+        if (this._closed) {
+            return 0;
+        }
         return this._channel.lastMessageReceivedAt;
     }
 }

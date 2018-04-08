@@ -1,11 +1,11 @@
 class Timers {
     constructor() {
-        this._timeouts = {};
-        this._intervals = {};
+        this._timeouts = Object.create(null);
+        this._intervals = Object.create(null);
     }
 
     setTimeout(key, fn, waitTime) {
-        if (this._timeouts[key]) throw 'Duplicate timeout for key ' + key;
+        if (this._timeouts[key]) throw new Error(`Duplicate timeout for key ${key}`);
         this._timeouts[key] = setTimeout(fn, waitTime);
     }
 
@@ -24,7 +24,7 @@ class Timers {
     }
 
     setInterval(key, fn, intervalTime) {
-        if (this._intervals[key]) throw 'Duplicate interval for key ' + key;
+        if (this._intervals[key]) throw new Error(`Duplicate interval for key ${key}`);
         this._intervals[key] = setInterval(fn, intervalTime);
     }
 
