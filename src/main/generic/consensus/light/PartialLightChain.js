@@ -337,7 +337,10 @@ class PartialLightChain extends LightChain {
 
         // Check whether we're complete.
         if (!this.needsMoreBlocks()) {
-            await this._complete();
+            const result = await this._complete();
+            if (!result) {
+                return FullChain.ERR_INVALID;
+            }
         }
 
         return FullChain.OK_EXTENDED;
@@ -416,14 +419,14 @@ class PartialLightChain extends LightChain {
         }
 
         chainData.onMainChain = true;
-        chainData.mainChainSuccessor = this._proofHead.head.hash();
+        chainData.mainChainSuccessor = chainData.head.hash().equals(this._proofHead.head.hash()) ? null : this._proofHead.head.hash();
         await this._store.putChainData(blockHash, chainData);
 
         this._proofHead = chainData;
 
         // Check whether we're complete.
         if (!this.needsMoreBlocks()) {
-            await this._complete();
+            return this._complete();
         }
 
         return true;
@@ -450,10 +453,25 @@ class PartialLightChain extends LightChain {
     }
 
     /**
-     * @returns {Promise.<void>}
+     * @returns {Promise.<boolean>}
      * @private
      */
     async _complete() {
+        // Build up transaction cache and validate against double spends
+        this._transactionCache = new TransactionCache();
+        let chainData = this._proofHead;
+        while (chainData) {
+            // Check against transaction cache
+            for (const tx of chainData.head.transactions) {
+                if (this._transactionCache.containsTransaction(tx)) {
+                    Log.w(PartialLightChain, `Rejecting block - Double Transaction Error!`);
+                    return false;
+                }
+            }
+            this._transactionCache.pushBlock(chainData.head);
+            chainData = chainData.mainChainSuccessor ? await this._store.getChainData(chainData.mainChainSuccessor, true) : null;
+        }
+
         this._state = PartialLightChain.State.COMPLETE;
         if (this._accountsTx) {
             await this._accountsTx.abort();
@@ -461,7 +479,8 @@ class PartialLightChain extends LightChain {
         }
 
         const currentProof = this._proof || await this._getChainProof();
-        this.fire('complete', currentProof, this._headHash, this._mainChain);
+        this.fire('complete', currentProof, this._headHash, this._mainChain, this._transactionCache);
+        return true;
     }
 
     /**
@@ -478,6 +497,7 @@ class PartialLightChain extends LightChain {
     async _commit() {
         if (this._accountsTx) {
             await this._accountsTx.abort();
+            this._accountsTx = null;
         }
 
         const result = await JDB.JungleDB.commitCombined(...this._store.txs, this._partialTree.tx);
@@ -486,7 +506,7 @@ class PartialLightChain extends LightChain {
         const currentProof = this._proof || await this._getChainProof();
         // Only set values in FullChain if commit was successful
         if (result) {
-            this.fire('committed', currentProof, this._headHash, this._mainChain);
+            this.fire('committed', currentProof, this._headHash, this._mainChain, this._transactionCache);
         }
 
         return result;
@@ -496,12 +516,15 @@ class PartialLightChain extends LightChain {
      * @returns {Promise.<void>}
      */
     async abort() {
+        if (this._state === PartialLightChain.State.ABORTED) return;
         this._state = PartialLightChain.State.ABORTED;
         if (this._accountsTx) {
             await this._accountsTx.abort();
+            this._accountsTx = null;
         }
         if (this._partialTree) {
             await this._partialTree.abort();
+            this._partialTree = null;
         }
         await this._store.abort();
         this.fire('aborted');
