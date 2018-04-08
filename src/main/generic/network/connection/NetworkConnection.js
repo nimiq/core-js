@@ -93,6 +93,7 @@ class NetworkConnection extends Observable {
      * @private
      */
     _close(type, reason) {
+        if (this._closed) return;
         // Don't wait for the native close event to fire.
         this._onClose(type, reason);
 
