@@ -38,57 +38,19 @@ class Nimiq {
      * @returns {Promise} Promise that resolves once the library was loaded.
      */
     static load(path) {
-        if (!Nimiq._hasNativePromise()) return Nimiq._unsupportedPromise();
-        if (Nimiq._loaded) return Promise.resolve();
-        Nimiq._loadPromise = Nimiq._loadPromise ||
-            new Promise((resolve, error) => {
-                if (!Nimiq._script) {
-                    if (!Nimiq._hasNativeClassSupport() || !Nimiq._hasProperScoping()) {
-                        console.error('Unsupported browser');
-                        error(Nimiq.ERR_UNSUPPORTED);
-                        return;
-                    } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                        Nimiq._script = 'web-babel.js';
-                        console.warn('Client lacks native support for async');
-                    } else {
-                        Nimiq._script = 'web.js';
-                    }
-                }
-
-                if (!path) {
-                    if (Nimiq._currentScript && Nimiq._currentScript.src.indexOf('/') !== -1) {
-                        path = Nimiq._currentScript.src.substring(0, Nimiq._currentScript.src.lastIndexOf('/') + 1);
-                    } else {
-                        // Fallback
-                        path = './';
-                    }
-                }
-
-                Nimiq._path = path;
-                Nimiq._fullScript = Nimiq._path + Nimiq._script;
-
-                Nimiq._onload = () => {
-                    if (!Nimiq._loaded) {
-                        error(Nimiq.ERR_UNKNOWN);
-                    } else {
-                        resolve();
-                    }
-                };
-                Nimiq._loadScript(Nimiq._fullScript);
-            }).then(() => new Promise((resolve, reject) =>
-                Nimiq.WasmHelper.doImportBrowser()
-                    .then(resolve)
-                    .catch(reject.bind(null, Nimiq.ERR_UNKNOWN))
-            ));
-        return Nimiq._loadPromise;
+        return Nimiq._load(path, 'web');
     }
 
     /**
-     * Load the Nimiq library.
+     * Load the reduced offline version of the Nimiq library.
      * @param {?string} [path] Path that contains the required files to load the library.
      * @returns {Promise} Promise that resolves once the library was loaded.
      */
     static loadOffline(path) {
+        return Nimiq._load(path, 'web-offline');
+    }
+
+    static _load(path, script) {
         if (!Nimiq._hasNativePromise()) return Nimiq._unsupportedPromise();
         if (Nimiq._loaded) return Promise.resolve();
         Nimiq._loadPromise = Nimiq._loadPromise ||
@@ -99,10 +61,10 @@ class Nimiq {
                         error(Nimiq.ERR_UNSUPPORTED);
                         return;
                     } else if (!Nimiq._hasAsyncAwaitSupport()) {
-                        Nimiq._script = 'web-offline-babel.js';
+                        Nimiq._script = `${script}-babel.js`;
                         console.warn('Client lacks native support for async');
                     } else {
-                        Nimiq._script = 'web-offline.js';
+                        Nimiq._script = `${script}.js`;
                     }
                 }
 

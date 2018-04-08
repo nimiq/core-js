@@ -132,5 +132,12 @@ module.exports = function (config) {
     if (process.env.EXCLUDE_MINER) {
         configuration.exclude.push('src/test/specs/generic/miner/Miner.spec.js');
     }
+    if (process.env.USE_OFFLINE) {
+        configuration.files[0] = 'dist/web-offline.js';
+        configuration.files[1] = 'src/test/specs/generic/DummyData.spec.js';
+        configuration.files.push('src/test/specs/generic/consensus/base/primitive/*.spec.js');
+        configuration.files.push('src/test/specs/generic/consensus/base/account/Address.spec.js');
+        configuration.files.push('src/test/specs/generic/consensus/base/transaction/ExtendedTransaction.spec.js');
+    }
     config.set(configuration);
 };
