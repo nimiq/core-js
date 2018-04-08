@@ -38,15 +38,18 @@ Class.register(GenesisConfig);
 GenesisConfig.CONFIGS = {
     // TODO 'main': { }
     'test': {
-        NETWORK_ID: 1
+        NETWORK_ID: 1,
+        NETWORK_NAME: 'test'
     },
 
     'dev': {
-        NETWORK_ID: 2
+        NETWORK_ID: 2,
+        NETWORK_NAME: 'dev'
     },
 
     'bounty': {
-        NETWORK_ID: 3
+        NETWORK_ID: 3,
+        NETWORK_NAME: 'bounty'
     }
 };
 // TODO
