@@ -108,8 +108,12 @@ Dummy.partialSignatureTestVectors = [
     }
 ];
 
-Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
-Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a83356ea443ac68969824184b82903a5ea83e7ee0c8c7ad863c3ceffd31a63679e1ea34a5f89e3ae0f90c5d281d4a900');
+const offlineTarget = typeof WsNetworkConfig === 'undefined';
+
+if (!offlineTarget) {
+    Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+    Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a83356ea443ac68969824184b82903a5ea83e7ee0c8c7ad863c3ceffd31a63679e1ea34a5f89e3ae0f90c5d281d4a900');
+}
 
 beforeAll((done) => {
     // This has no effect on Node.js.
@@ -122,24 +126,30 @@ if (typeof WebAssembly === 'undefined') {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
 }
 
-GenesisConfig.CONFIGS['tests'] = {
-    NETWORK_ID: 4,
-    NETWORK_NAME: 'tests',
-    GENESIS_BLOCK: new Block(
-        new BlockHeader(
-            new Hash(null),
-            new Hash(null),
-            Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
-            Hash.fromBase64('v6zYHGQ3Z/O/G/ZCyXtO/TPa7/Kw00HGEzRK5wbu2zg='),
-            BlockUtils.difficultyToCompact(1),
-            1,
-            0,
-            101720,
-            BlockHeader.Version.V1),
-        new BlockInterlink([], new Hash(null)),
-        new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
-    ),
-    GENESIS_ACCOUNTS: 'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
-    SEED_PEERS: [WsPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
-};
+if (!offlineTarget) {
+    GenesisConfig.CONFIGS['tests'] = {
+        NETWORK_ID: 4,
+        NETWORK_NAME: 'tests',
+        GENESIS_BLOCK: new Block(
+            new BlockHeader(
+                new Hash(null),
+                new Hash(null),
+                Hash.fromBase64('nVtxMP3RlCdAbx1Hd4jsH4ZsZQsu/1UK+zUFsUNWgbs='),
+                Hash.fromBase64('v6zYHGQ3Z/O/G/ZCyXtO/TPa7/Kw00HGEzRK5wbu2zg='),
+                BlockUtils.difficultyToCompact(1),
+                1,
+                0,
+                101720,
+                BlockHeader.Version.V1),
+            new BlockInterlink([], new Hash(null)),
+            new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
+        ),
+        GENESIS_ACCOUNTS: 'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
+        SEED_PEERS: [WsPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
+    };
+} else {
+    GenesisConfig.CONFIGS['tests'] = {
+        NETWORK_ID: 4
+    };
+}
 GenesisConfig.init(GenesisConfig.CONFIGS['tests']);

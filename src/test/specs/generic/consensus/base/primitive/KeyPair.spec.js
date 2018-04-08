@@ -102,31 +102,39 @@ describe('KeyPair', () => {
         })().then(done, done.fail);
     });
 
-    it('can create keys of proposed size', (done) => {
-        (async function () {
-            const keyPair = KeyPair.generate();
-            expect(keyPair.publicKey.serialize().byteLength).toEqual(PublicKey.SIZE);
-            expect(keyPair.privateKey.serialize().byteLength).toEqual(PrivateKey.SIZE);
-        })().then(done, done.fail);
+    it('can create keys of proposed size', () => {
+        const keyPair = KeyPair.generate();
+        expect(keyPair.publicKey.serialize().byteLength).toEqual(PublicKey.SIZE);
+        expect(keyPair.privateKey.serialize().byteLength).toEqual(PrivateKey.SIZE);
     });
 
-    it('can derive a functional key pair from private key', (done) => {
-        (async function () {
+    it('can derive a functional key pair from private key', () => {
+        const keyPair = KeyPair.generate();
+        const data = new Uint8Array([1, 2, 3]);
+        const keyPair2 = KeyPair.derive(keyPair.privateKey);
+
+        const sign = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
+        const verify = sign.verify(keyPair.publicKey, data);
+        expect(verify).toBe(true, 'can verify original with original key');
+        const verify2 = sign.verify(keyPair2.publicKey, data);
+        expect(verify2).toBe(true, 'can verify original with derived key');
+
+        const sign2 = Signature.create(keyPair2.privateKey, keyPair2.publicKey, data);
+        const verify3 = sign2.verify(keyPair.publicKey, data);
+        expect(verify3).toBe(true, 'can verify derived with original key');
+        const verify4 = sign2.verify(keyPair2.publicKey, data);
+        expect(verify4).toBe(true, 'can verify derived with derived key');
+    });
+
+    it('can export and import an encrypted key pair', (done) => {
+        (async () => {
             const keyPair = KeyPair.generate();
-            const data = new Uint8Array([1, 2, 3]);
-            const keyPair2 = KeyPair.derive(keyPair.privateKey);
+            const encKey = BufferUtils.fromAscii('secret');
+            const exported = await keyPair.exportEncrypted(encKey);
 
-            const sign = Signature.create(keyPair.privateKey, keyPair.publicKey, data);
-            const verify = sign.verify(keyPair.publicKey, data);
-            expect(verify).toBe(true, 'can verify original with original key');
-            const verify2 = sign.verify(keyPair2.publicKey, data);
-            expect(verify2).toBe(true, 'can verify original with derived key');
-
-            const sign2 = Signature.create(keyPair2.privateKey, keyPair2.publicKey, data);
-            const verify3 = sign2.verify(keyPair.publicKey, data);
-            expect(verify3).toBe(true, 'can verify derived with original key');
-            const verify4 = sign2.verify(keyPair2.publicKey, data);
-            expect(verify4).toBe(true, 'can verify derived with derived key');
+            const imported = await KeyPair.fromEncrypted(exported, encKey);
+            expect(imported.publicKey.equals(keyPair.publicKey));
+            expect(imported.privateKey.equals(keyPair.privateKey));
         })().then(done, done.fail);
     });
 });

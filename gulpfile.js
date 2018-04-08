@@ -215,23 +215,14 @@ const sources = {
     ],
     offline: [
         './src/main/generic/utils/array/ArrayUtils.js',
-        // './src/main/generic/utils/array/HashMap.js',
-        // './src/main/generic/utils/array/HashSet.js',
-        // './src/main/generic/utils/array/LimitIterable.js',
-        // './src/main/generic/utils/array/Queue.js',
-        // './src/main/generic/utils/array/SortedList.js',
-        // './src/main/generic/utils/assert/Assert.js',
+        './src/main/generic/utils/assert/Assert.js',
         './src/main/generic/utils/buffer/BufferUtils.js',
         './src/main/generic/utils/buffer/SerialBuffer.js',
-        // './src/main/generic/utils/crypto/Crypto.js',
-        // './src/main/generic/utils/crc/CRC32.js',
         './src/main/generic/utils/number/NumberUtils.js',
-        // './src/main/generic/utils/merkle/MerkleTree.js',
         './src/main/generic/utils/merkle/MerklePath.js',
-        // './src/main/generic/utils/merkle/MerkleProof.js',
         './src/main/generic/utils/platform/PlatformUtils.js',
-        // './src/main/generic/utils/string/StringUtils.js',
-        // './src/main/generic/consensus/Policy.js',
+        './src/main/generic/utils/string/StringUtils.js',
+        './src/main/generic/consensus/Policy.js',
         './src/main/generic/consensus/base/primitive/Serializable.js',
         './src/main/generic/consensus/base/primitive/Hash.js',
         './src/main/generic/consensus/base/primitive/PrivateKey.js',
@@ -239,22 +230,18 @@ const sources = {
         './src/main/generic/consensus/base/primitive/KeyPair.js',
         './src/main/generic/consensus/base/primitive/RandomSecret.js',
         './src/main/generic/consensus/base/primitive/Signature.js',
-        // './src/main/generic/consensus/base/primitive/Commitment.js',
-        // './src/main/generic/consensus/base/primitive/CommitmentPair.js',
-        // './src/main/generic/consensus/base/primitive/PartialSignature.js',
+        './src/main/generic/consensus/base/primitive/Commitment.js',
+        './src/main/generic/consensus/base/primitive/CommitmentPair.js',
+        './src/main/generic/consensus/base/primitive/PartialSignature.js',
         './src/main/generic/consensus/base/account/Address.js',
         './src/main/generic/consensus/base/account/Account.js',
-        // './src/main/generic/consensus/base/account/Contract.js',
-        // './src/main/generic/consensus/base/account/HashedTimeLockedContract.js',
-        // './src/main/generic/consensus/base/account/VestingContract.js',
         './src/main/generic/consensus/base/transaction/Transaction.js',
         './src/main/generic/consensus/base/transaction/SignatureProof.js',
         './src/main/generic/consensus/base/transaction/BasicTransaction.js',
-        // './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
+        './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
         './src/main/generic/utils/IWorker.js',
         './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
-        // './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
         './src/main/generic/consensus/GenesisConfigOffline.js'
     ],
     test: [
@@ -476,7 +463,7 @@ gulp.task('build-offline', function () {
     return gulp.src(OFFLINE_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-offline.js'))
-        //.pipe(uglify(uglify_config))
+        .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());
