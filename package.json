@@ -55,7 +55,7 @@
     "chalk": "^2.3.2",
     "json5": "^1.0.1",
     "lodash.merge": "^4.6.1",
-    "@nimiq/jungle-db": "^0.9.6",
+    "@nimiq/jungle-db": "^0.9.7",
     "nan": "^2.10.0",
     "ws": "^5.1.0"
   },
