@@ -35,5 +35,13 @@ class UniqueQueue extends Queue {
     remove(value) {
         this._queue.remove(value);
     }
+
+    /**
+     * @param {V|*} value
+     * @returns {void}
+     */
+    requeue(value) {
+        this._queue.moveBack(value);
+    }
 }
 Class.register(UniqueQueue);

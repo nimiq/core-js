@@ -155,8 +155,7 @@ class SignalStore {
         if (this.contains(senderId, recipientId, nonce)) {
             const signal = new ForwardedSignal(senderId, recipientId, nonce);
             this._store.put(signal, Date.now());
-            this._queue.remove(signal);
-            this._queue.enqueue(signal);
+            this._queue.requeue(signal);
             return;
         }
 
