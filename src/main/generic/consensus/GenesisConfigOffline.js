@@ -21,6 +21,7 @@ class GenesisConfig {
     static init(config) {
         if (GenesisConfig._config) throw new Error('GenesisConfig already initialized');
         if (!config.NETWORK_ID) throw new Error('Config is missing network id');
+        if (!config.NETWORK_NAME) throw new Error('Config is missing database prefix');
 
         GenesisConfig._config = config;
     }
@@ -31,6 +32,14 @@ class GenesisConfig {
     static get NETWORK_ID() {
         if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
         return GenesisConfig._config.NETWORK_ID;
+    }
+
+    /**
+     * @type {string}
+     */
+    static get NETWORK_NAME() {
+        if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._config.NETWORK_NAME;
     }
 }
 Class.register(GenesisConfig);
