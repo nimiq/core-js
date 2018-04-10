@@ -142,7 +142,7 @@ class BasePoolMiner extends Miner {
                     break;
             }
         } else {
-            Log.w(BasePoolMiner, 'Received unknown message from pool server:', msg.message);
+            Log.w(BasePoolMiner, 'Received unknown message from pool server:', JSON.stringify(msg));
             this._ws.close();
         }
     }
