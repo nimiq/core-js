@@ -154,18 +154,19 @@ class BasePoolMiner extends Miner {
      * @private
      */
     _onBalance(balance, confirmedBalance, payoutRequestActive) {
-        this.payoutRequestActive = payoutRequestActive;
-        if (this.balance !== balance || this.confirmedBalance !== confirmedBalance) {
-            Log.i(BasePoolMiner, `Pool balance: ${Policy.satoshisToCoins(balance)} NIM (confirmed ${Policy.satoshisToCoins(confirmedBalance)} NIM)`);
-        }
-        if (this.balance !== balance) {
-            this.fire('balance', balance);
-        }
-        if (this.confirmedBalance !== confirmedBalance) {
-            this.fire('confirmed-balance', confirmedBalance);
-        }
+        const oldBalance = this.balance, oldConfirmedBalance = this.confirmedBalance;
         this.balance = balance;
         this.confirmedBalance = confirmedBalance;
+        this.payoutRequestActive = payoutRequestActive;
+        if (balance !== oldBalance || confirmedBalance !== oldConfirmedBalance) {
+            Log.i(BasePoolMiner, `Pool balance: ${Policy.satoshisToCoins(balance)} NIM (confirmed ${Policy.satoshisToCoins(confirmedBalance)} NIM)`);
+        }
+        if (balance !== oldBalance) {
+            this.fire('balance', balance);
+        }
+        if (confirmedBalance !== oldConfirmedBalance) {
+            this.fire('confirmed-balance', confirmedBalance);
+        }
     }
 
     _turnPoolOff() {
