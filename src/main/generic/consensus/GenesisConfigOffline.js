@@ -16,12 +16,12 @@ class GenesisConfig {
     }
 
     /**
-     * @param {{NETWORK_ID:number}} config
+     * @param {{NETWORK_ID:number,NETWORK_NAME:string}} config
      */
     static init(config) {
         if (GenesisConfig._config) throw new Error('GenesisConfig already initialized');
         if (!config.NETWORK_ID) throw new Error('Config is missing network id');
-        if (!config.NETWORK_NAME) throw new Error('Config is missing database prefix');
+        if (!config.NETWORK_NAME) throw new Error('Config is missing network name');
 
         GenesisConfig._config = config;
     }

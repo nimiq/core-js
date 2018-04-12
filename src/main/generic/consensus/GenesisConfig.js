@@ -21,7 +21,7 @@ class GenesisConfig {
     static init(config) {
         if (GenesisConfig._config) throw new Error('GenesisConfig already initialized');
         if (!config.NETWORK_ID) throw new Error('Config is missing network id');
-        if (!config.NETWORK_NAME) throw new Error('Config is missing database prefix');
+        if (!config.NETWORK_NAME) throw new Error('Config is missing network name');
         if (!config.GENESIS_BLOCK) throw new Error('Config is missing genesis block');
         if (!config.GENESIS_ACCOUNTS) throw new Error('Config is missing genesis accounts');
         if (!config.SEED_PEERS) throw new Error('Config is missing seed peers');
