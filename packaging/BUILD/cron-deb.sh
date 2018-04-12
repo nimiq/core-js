@@ -21,9 +21,9 @@
 # System-wide package configuration.
 DEFAULTS_FILE="/etc/default/nimiq"
 
-# sources.list setting for nimiq updates. XXX update this when the official repo is ready
-REPOCONFIG="deb [arch=amd64] https://test.nimiq.space/repo stable main"
-REPOCONFIGREGEX="deb (\[arch=[^]]*\bamd64\b[^]]*\][[:space:]]*) https?://test.nimiq.space/repo stable main"
+# sources.list setting for nimiq updates.
+REPOCONFIG="deb [arch=amd64] http://repo.nimiq.com/deb stable main"
+REPOCONFIGREGEX="deb (\[arch=[^]]*\bamd64\b[^]]*\][[:space:]]*) https?://repo.nimiq.com/deb stable main"
 
 APT_GET="`which apt-get 2> /dev/null`"
 APT_CONFIG="`which apt-config 2> /dev/null`"
@@ -32,7 +32,6 @@ SOURCES_PREAMBLE="### THIS FILE IS AUTOMATICALLY CONFIGURED ###
 # You may comment out this entry, but any other modifications may be lost.\n"
 
 # Install the repository/package signing key, if they aren't already.
-# (see also: XXX update this when the official repo is ready)
 install_key() {
   APT_KEY="`which apt-key 2> /dev/null`"
   if [ ! -x "$APT_KEY" ]; then
@@ -42,7 +41,7 @@ install_key() {
   NEED_KEYS=0
 
   # 2018 signing subkey XXX: update the key when the official one is ready
-  "$APT_KEY" export 24C4AE2E552F62A223FCE972C4E3ED6A1F7126FE 2>&1 | \
+  "$APT_KEY" export 7CFB047916EB673E0D928C14F84031083785D050 2>&1 | \
     grep -q -- "-----BEGIN PGP PUBLIC KEY BLOCK-----"
   if [ $? -ne 0 ]; then
     NEED_KEYS=1
@@ -52,32 +51,78 @@ install_key() {
     "$APT_KEY" add - >/dev/null 2>&1 <<KEYDATA
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-mQENBFqu95ABCADSveT8gm+UNNyQ+BOULxwaST53Hc8iMTN7zmq5ei6f1T5R6HHu
-RLe06R4YJnQn0xP9pyrmfiFLQLUUKcAAgfwSdwHxeP4Ytg+T6Q7QxssWxtBZv0pN
-3PdSWHgLKzGo56NNdXDeo6lvi+8RG+uaVGbc8M3ggait+93G7B2C8KCLhPp0LGMG
-fQhkqCfpHfZBPSNOaGXQXdRijbOvkoD4Ktr9V99BSpDfhX76Qbtzzc0nQThGVjrq
-13mG8Sy3Q1WDcaNX9sOi+GlYzNMASvBAEW2bKWTtbO3vozEoSgkqAE+ZOWkA1Xcl
-o+bwQalxdm1vMceLqeYI7cd+5Eftt893DW7XABEBAAG0G05pbWlxIFRlYW0gPGlu
-Zm9AbmltaXEuY29tPokBNwQTAQgAIQUCWq73kAIbAwULCQgHAgYVCAkKCwIEFgID
-AQIeAQIXgAAKCRDE4+1qH3Em/u5EB/4sksjphH6TjKpOd+4c4msMbaA7QfAdD9Xn
-wet24njE+eYwiaH6+Dg+rziGkewvZ6fTY9QbOWugqiZ98QD1e0Er7EM03iAbNZSr
-mb+BGlx9CH5V3+zMIxfOOD3qTJXaEr89Jz9o9VkBLXGyy4SgvUsrrDDZJ/4G24dA
-LXjpoU7TsSaTOpPEu8lkWoUyvzxdqqqslYErsRU6xXJrVpsarfFVtNQkWhNVdrNq
-K5YvDs1AQ4gxJkIoJbPrBNhreVKPz37TVopGgbYHmSEkV6x4jAwpf8As5631wkkW
-RZcsXNUw/650sseJBAMhCyLm+Hm7GbVlqJHZx4ZLdab5ALLt0rkquQENBFqu95AB
-CACwZlLwG3NOclxcteiJX+qn0vDB8HoXvNs2rcJzL6+I5Peavkowy9T2+iI67TRC
-miQOsCRXmKY2itFaylvapIMqakV0AmWwvig9+lgyhjHYaTMQHNkDej5CpZ2ixfc4
-2aCZc+bbs9zYB/5YXGmIp2H4wV4fiorKLI8h2tgbudrUvr5ezNQFXAqxdafsuC2a
-d2taPiBlal93zh43hO5k3dS/EX4QNJ16RVg8v+JPM5/YcXhqxMs+rkwfI/+sCgU9
-rfWLedTPLzy6mEuBAMsQLZ76b4NBWhruRfao63XNftID5bgy8hZxejP2My+LcEkZ
-QTfO+G214CIHH5onmOFLrgI5ABEBAAGJAR8EGAEIAAkFAlqu95ACGwwACgkQxOPt
-ah9xJv5PlQgApCTLNoUSOLRFiBMuQ/rJvI5vg5XR8QBEPZ6nboxq6sJ3t9Uy4Mql
-+eeo5jgxa5A15Ziy/3vVfCoH7sr7nUcwCcI+m9WbQ6qjQUotnjWMGJvaKjk0HqAF
-VhKEVAYrIp7iG92AiBLWLnCCMNZDBqb6gULCZ/nrZHv14s+i3qRDWtn6J2t577YZ
-/AqZJ+QZ4rYLvoBCJsncsEApPMckafpHWXgdQ4Nw3vQKSr4iS2Lm/SM7o4ak1/xL
-605X8D1wDpD7auH3ZMnv+hLWdRss7zwM3i2V6CezsC7f+OuZGwZi7noCtaVp0sR3
-hZeZpI6aEx0gB8we29ZOJz14IrjcgXDjSA==
-=h1YC
+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
+=CFGF
 -----END PGP PUBLIC KEY BLOCK-----
 KEYDATA
   fi
