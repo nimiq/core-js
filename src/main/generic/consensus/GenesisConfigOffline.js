@@ -45,7 +45,11 @@ class GenesisConfig {
 Class.register(GenesisConfig);
 
 GenesisConfig.CONFIGS = {
-    // TODO 'main': { }
+    'main': {
+        NETWORK_ID: 42,
+        NETWORK_NAME: 'main'
+    },
+
     'test': {
         NETWORK_ID: 1,
         NETWORK_NAME: 'test'
@@ -61,5 +65,3 @@ GenesisConfig.CONFIGS = {
         NETWORK_NAME: 'bounty'
     }
 };
-// TODO
-GenesisConfig.CONFIGS['main'] = GenesisConfig.CONFIGS['test'];

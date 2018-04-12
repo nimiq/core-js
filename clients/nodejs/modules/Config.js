@@ -30,11 +30,10 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         cert: null,
         key: null
     },
-    port: 8080,
+    port: 8443,
     dumb: false,
     type: 'full',
-    // TODO set default to 'main' for MainNet.
-    network: 'dev',
+    network: 'main',
     passive: false,
     statistics: 0,
     miner: {
