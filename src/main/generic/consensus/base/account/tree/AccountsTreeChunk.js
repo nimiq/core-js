@@ -95,7 +95,7 @@ class AccountsTreeChunk {
 
     /** @type {AccountsTreeNode} */
     get head() {
-        return this._nodes[0];
+        return this._nodes.length > 0 ? this._nodes[0] : this.tail;
     }
 
     /** @type {AccountsTreeNode} */
