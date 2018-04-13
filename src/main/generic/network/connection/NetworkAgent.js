@@ -594,8 +594,8 @@ NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 5; // 5 minutes
 NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
 NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
 NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
-NetworkAgent.ADDR_RATE_LIMIT = 2000;
-NetworkAgent.ADDR_QUEUE_INTERVAL = 5000;
+NetworkAgent.ADDR_RATE_LIMIT = 2000; // per minute
+NetworkAgent.ADDR_QUEUE_INTERVAL = 5000; // 5 seconds
 NetworkAgent.MAX_ADDR_PER_MESSAGE = 1000;
 NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE = 10;
 Class.register(NetworkAgent);
