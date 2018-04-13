@@ -105,19 +105,26 @@ class PeerAddressBook extends Observable {
      * @param {number} maxAddresses
      * @returns {Array.<PeerAddress>}
      */
-    query(protocolMask, serviceMask, maxAddresses = 1000) {
-        const addressStates = this._store.values();
-        const numAddresses = addressStates.length;
+    query(protocolMask, serviceMask, maxAddresses = NetworkAgent.MAX_ADDR_PER_MESSAGE) {
+        const numAddresses = this._store.length;
 
-        // Pick a random start index.
-        const index = Math.floor(Math.random() * numAddresses);
+        // Pick a random start index if we have a lot of addresses.
+        let startIndex = 0, endIndex = numAddresses;
+        if (numAddresses > maxAddresses) {
+            startIndex = Math.floor(Math.random() * numAddresses);
+            endIndex = (startIndex + maxAddresses) % numAddresses;
+        }
+        const overflow = startIndex > endIndex;
 
         // XXX inefficient linear scan
         const now = Date.now();
         const addresses = [];
-        for (let i = 0; i < numAddresses; i++) {
-            const idx = (index + i) % numAddresses;
-            const peerAddressState = addressStates[idx];
+        let index = 0;
+        for (const peerAddressState of this._store.valueIterator()) {
+            if (!overflow && index < startIndex) continue;
+            if (!overflow && index >= endIndex) break;
+            if (overflow && (index >= endIndex && index < startIndex)) continue;
+            index++;
 
             // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED
@@ -156,11 +163,6 @@ class PeerAddressBook extends Observable {
 
             // Return this address.
             addresses.push(address);
-
-            // Stop if we have collected maxAddresses.
-            if (addresses.length >= maxAddresses) {
-                break;
-            }
         }
         return addresses;
     }
