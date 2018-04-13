@@ -134,6 +134,13 @@ class ConnectionPool extends Observable {
     }
 
     /**
+     * @returns {Iterator.<PeerConnection>}
+     */
+    valueIterator() {
+        return this._connectionsByPeerAddress.valueIterator();
+    }
+
+    /**
      * @param {PeerAddress} peerAddress
      * @returns {PeerConnection|null}
      */
@@ -769,7 +776,7 @@ class ConnectionPool extends Observable {
      */
     disconnect(reason) {
         // Close all active connections.
-        for (const connection of this.values()) {
+        for (const connection of this.valueIterator()) {
             if (connection.peerChannel) {
                 connection.peerChannel.close(CloseType.MANUAL_NETWORK_DISCONNECT, reason || 'manual network disconnect');
             }
@@ -779,7 +786,7 @@ class ConnectionPool extends Observable {
     // XXX For testing
     disconnectWebSocket() {
         // Close all websocket connections.
-        for (const connection of this.values()) {
+        for (const connection of this.valueIterator()) {
             if (connection.peerChannel && connection.peerAddress && connection.peerAddress.protocol === Protocol.WS) {
                 connection.peerChannel.close(CloseType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
             }
@@ -843,14 +850,24 @@ class ConnectionPool extends Observable {
 
     /** @type {number} */
     get bytesSent() {
-        return this._bytesSent
-            + this.values().reduce((n, peerConnection) => n + (peerConnection.networkConnection ? peerConnection.networkConnection.bytesSent : 0), 0);
+        let bytesSent = this._bytesSent;
+        for (const peerConnection of this.valueIterator()) {
+            if (peerConnection.networkConnection) {
+                bytesSent += peerConnection.networkConnection.bytesSent;
+            }
+        }
+        return bytesSent;
     }
 
     /** @type {number} */
     get bytesReceived() {
-        return this._bytesReceived
-            + this.values().reduce((n, peerConnection) => n + (peerConnection.networkConnection ? peerConnection.networkConnection.bytesReceived : 0), 0);
+        let bytesReceived = this._bytesReceived;
+        for (const peerConnection of this.valueIterator()) {
+            if (peerConnection.networkConnection) {
+                bytesReceived += peerConnection.networkConnection.bytesReceived;
+            }
+        }
+        return bytesReceived;
     }
 
     /** @param {boolean} value */

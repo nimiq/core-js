@@ -164,7 +164,7 @@ class PeerScorer {
     scoreConnections() {
         const candidates = [];
 
-        for (const peerConnection of this._connections.values()) {
+        for (const peerConnection of this._connections.valueIterator()) {
             if (peerConnection.state === PeerConnectionState.ESTABLISHED) {
                 // Grant new connections a grace period from recycling.
                 if (peerConnection.ageEstablished > PeerScorer._getMinAge(peerConnection.peerAddress)) {

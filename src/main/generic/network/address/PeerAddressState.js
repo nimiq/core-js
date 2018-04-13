@@ -221,7 +221,7 @@ class SignalRouter {
     updateBestRoute() {
         let bestRoute = null;
         // Choose the route with minimal distance and maximal timestamp.
-        for (const route of this._routes.values()) {
+        for (const route of this._routes.valueIterator()) {
             if (bestRoute === null || route.score > bestRoute.score
                 || (route.score === bestRoute.score && route.timestamp > bestRoute.timestamp)) {
 

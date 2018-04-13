@@ -48,7 +48,7 @@ class BaseConsensus extends Observable {
      */
     subscribe(subscription) {
         this._subscription = subscription;
-        for (const /** @type {BaseConsensusAgent} */ agent of this._agents.values()) {
+        for (const /** @type {BaseConsensusAgent} */ agent of this._agents.valueIterator()) {
             agent.subscribe(subscription);
         }
     }
@@ -192,7 +192,7 @@ class BaseConsensus extends Observable {
         // Don't announce head changes if we are not synced yet.
         if (!this._established) return;
 
-        for (const agent of this._agents.values()) {
+        for (const agent of this._agents.valueIterator()) {
             agent.relayBlock(head);
         }
     }
@@ -205,7 +205,7 @@ class BaseConsensus extends Observable {
         // Don't relay transactions if we are not synced yet.
         if (!this._established) return;
 
-        for (const agent of this._agents.values()) {
+        for (const agent of this._agents.valueIterator()) {
             agent.relayTransaction(tx);
         }
     }
@@ -215,7 +215,7 @@ class BaseConsensus extends Observable {
      * @protected
      */
     _onTransactionRemoved(tx) {
-        for (const agent of this._agents.values()) {
+        for (const agent of this._agents.valueIterator()) {
             agent.removeTransaction(tx);
         }
     }

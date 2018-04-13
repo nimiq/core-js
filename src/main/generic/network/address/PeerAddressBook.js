@@ -496,7 +496,7 @@ class PeerAddressBook extends Observable {
      */
     _removeBySignalChannel(channel) {
         // XXX inefficient linear scan
-        for (const peerAddressState of this._store.values()) {
+        for (const peerAddressState of this._store.valueIterator()) {
             if (peerAddressState.peerAddress.protocol === Protocol.RTC) {
                 peerAddressState.signalRouter.deleteRoute(channel);
                 if (!peerAddressState.signalRouter.hasRoute()) {
@@ -514,7 +514,7 @@ class PeerAddressBook extends Observable {
         const now = Date.now();
         const unbannedAddresses = [];
 
-        for (/** @type {PeerAddressState} */ const peerAddressState of this._store.values()) {
+        for (/** @type {PeerAddressState} */ const peerAddressState of this._store.valueIterator()) {
             const addr = peerAddressState.peerAddress;
 
             switch (peerAddressState.state) {
