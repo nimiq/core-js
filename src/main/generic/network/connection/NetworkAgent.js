@@ -33,10 +33,10 @@ class NetworkAgent extends Observable {
 
         /**
          * All peerAddresses that we think the remote peer knows.
-         * @type {HashSet.<PeerAddress>}
+         * @type {LimitHashSet.<KnownAddress>}
          * @private
          */
-        this._knownAddresses = new HashSet();
+        this._knownAddresses = new LimitHashSet(NetworkAgent.KNOWN_ADDRESSES_COUNT_MAX);
 
         /**
          * Helper object to keep track of timeouts & intervals.
@@ -134,40 +134,48 @@ class NetworkAgent extends Observable {
         }
 
         for (const address of addresses) {
+            // Exclude RTC addresses that are already at MAX_DISTANCE.
+            if (address.protocol === Protocol.RTC && address.distance >= PeerAddressBook.MAX_DISTANCE) {
+                continue;
+            }
+
+            // Exclude DumbPeerAddresses.
+            if (address.protocol === Protocol.DUMB) {
+                continue;
+            }
+
+            // Never relay seed addresses.
+            if (address.isSeed()) {
+                continue;
+            }
+
             this._addrQueue.enqueue(address);
         }
     }
 
     _relayNow() {
+        /** @type {Array.<PeerAddress>} */
         const addresses = this._addrQueue.dequeueMulti(NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE);
         if (addresses.length === 0) return;
 
-        // Only relay addresses that the peer doesn't know yet or that have improved.
-        // If the address the peer knows is older than RELAY_THROTTLE, relay the address again.
-        const filteredAddresses = addresses.filter(addr => {
-            // Exclude RTC addresses that are already at MAX_DISTANCE.
-            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddressBook.MAX_DISTANCE) {
-                return false;
+        // Filter out addresses that the peer already knows.
+        const now = Date.now();
+        const filteredAddresses = [];
+        for (const address of addresses) {
+            // PeerAddress and KnownAddress have identical hashCodes.
+            const knownAddress = this._knownAddresses.get(address);
+            if (!knownAddress || knownAddress.relayedAt < now - NetworkAgent.RELAY_THROTTLE) {
+                filteredAddresses.push(address);
             }
-
-            // Exclude DumbPeerAddresses.
-            if (addr.protocol === Protocol.DUMB) {
-                return false;
-            }
-
-            const knownAddress = this._knownAddresses.get(addr);
-            return !addr.isSeed() // Never relay seed addresses.
-                && (!knownAddress // New address.
-                    || (addr.protocol === Protocol.RTC && knownAddress.distance > addr.distance) // Better distance.
-                    || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE); // Relay throttle.
-        });
+            // (addr.protocol === Protocol.RTC && knownAddress.distance > addr.distance) // Better distance.
+        }
 
         if (filteredAddresses.length) {
             this._channel.addr(filteredAddresses);
 
             // We assume that the peer knows these addresses now.
             for (const address of filteredAddresses) {
-                this._knownAddresses.add(address);
+                this._knownAddresses.add(new KnownAddress(address, now));
             }
         }
     }
@@ -369,7 +377,7 @@ class NetworkAgent extends Observable {
         }
 
         // Remember that the peer has sent us this address.
-        this._knownAddresses.add(this._channel.peerAddress);
+        this._knownAddresses.add(new KnownAddress(this._channel.peerAddress, Date.now()));
 
         this._verackReceived = true;
 
@@ -412,7 +420,7 @@ class NetworkAgent extends Observable {
      * @param {AddrMessage} msg
      * @private
      */
-    async _onAddr(msg) {
+    _onAddr(msg) {
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
             return;
@@ -421,17 +429,18 @@ class NetworkAgent extends Observable {
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > NetworkAgent.MAX_ADDR_PER_MESSAGE) {
             Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
-            this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
+            // this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
             return;
         }
 
         if (!this._addrLimit.note(msg.addresses.length)) {
             Log.w(NetworkAgent, 'Rejecting addr message - rate-limit exceeded');
-            this._channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
+            // this._channel.close(CloseType.RATE_LIMIT_EXCEEDED, 'rate-limit exceeded');
             return;
         }
 
         // Check the addresses the peer send us.
+        const now = Date.now();
         for (const addr of msg.addresses) {
             if (!addr.verifySignature()) {
                 this._channel.close(CloseType.INVALID_ADDR, 'invalid addr');
@@ -443,7 +452,7 @@ class NetworkAgent extends Observable {
                 return;
             }
 
-            this._knownAddresses.add(addr);
+            this._knownAddresses.add(new KnownAddress(addr, now));
         }
 
         // Put the new addresses in the address pool.
@@ -467,21 +476,26 @@ class NetworkAgent extends Observable {
         // Find addresses that match the given serviceMask.
         const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask, NetworkAgent.MAX_ADDR_PER_MESSAGE);
 
-        const filteredAddresses = addresses.filter(addr => {
-            // Exclude RTC addresses that are already at MAX_DISTANCE.
-            if (addr.protocol === Protocol.RTC && addr.distance >= PeerAddressBook.MAX_DISTANCE) {
-                return false;
+        // Filter out addresses that the peer already knows.
+        const now = Date.now();
+        const filteredAddresses = [];
+        for (const address of addresses) {
+            // PeerAddress and KnownAddress have identical hashCodes.
+            const knownAddress = this._knownAddresses.get(address);
+            if (!knownAddress || knownAddress.relayedAt < now - NetworkAgent.RELAY_THROTTLE) {
+                filteredAddresses.push(address);
             }
-
-            // Exclude known addresses from the response unless they are older than RELAY_THROTTLE.
-            const knownAddress = this._knownAddresses.get(addr);
-            return !knownAddress || knownAddress.timestamp < Date.now() - NetworkAgent.RELAY_THROTTLE;
-        });
+        }
 
         // Send the addresses back to the peer.
         // If we don't have any new addresses, don't send the message at all.
         if (filteredAddresses.length) {
             this._channel.addr(filteredAddresses);
+
+            // We assume that the peer knows these addresses now.
+            for (const address of filteredAddresses) {
+                this._knownAddresses.add(new KnownAddress(address, now));
+            }
         }
     }
 
@@ -586,16 +600,43 @@ class NetworkAgent extends Observable {
         return this._peer;
     }
 }
-
 NetworkAgent.HANDSHAKE_TIMEOUT = 1000 * 4; // 4 seconds
 NetworkAgent.PING_TIMEOUT = 1000 * 10; // 10 seconds
 NetworkAgent.CONNECTIVITY_CHECK_INTERVAL = 1000 * 60; // 1 minute
-NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 5; // 5 minutes
-NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 2; // 2 minutes
+NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
+NetworkAgent.RELAY_THROTTLE = 1000 * 60 * 5; // 5 minutes
 NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
 NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
-NetworkAgent.ADDR_RATE_LIMIT = 2000; // per minute
-NetworkAgent.ADDR_QUEUE_INTERVAL = 5000; // 5 seconds
-NetworkAgent.MAX_ADDR_PER_MESSAGE = 1000;
+NetworkAgent.ADDR_RATE_LIMIT = 1000; // per minute
+NetworkAgent.ADDR_QUEUE_INTERVAL = 15000; // 15 seconds
+NetworkAgent.MAX_ADDR_PER_MESSAGE = 500;
 NetworkAgent.MAX_ADDR_RELAY_PER_MESSAGE = 10;
+NetworkAgent.KNOWN_ADDRESSES_COUNT_MAX = 10000;
 Class.register(NetworkAgent);
+
+class KnownAddress {
+    /**
+     * @param {PeerAddress} peerAddress
+     * @param {number} relayedAt
+     */
+    constructor(peerAddress, relayedAt) {
+        this._hashCode = peerAddress.hashCode();
+        this.relayedAt = relayedAt;
+    }
+
+    /**
+     * @param {KnownAddress|*} o
+     * @returns {boolean}
+     */
+    equals(o) {
+        return o instanceof KnownAddress
+            && this._hashCode === o._hashCode;
+    }
+
+    /**
+     * @returns {string}
+     */
+    hashCode() {
+        return this._hashCode;
+    }
+}

@@ -431,12 +431,12 @@ Network.SIGNAL_TTL_INITIAL = 3;
  * @type {number}
  * @constant
  */
-Network.CONNECT_BACKOFF_INITIAL = 1000; // 1 second
+Network.CONNECT_BACKOFF_INITIAL = 2000; // 2 seconds
 /**
  * @type {number}
  * @constant
  */
-Network.CONNECT_BACKOFF_MAX = 5 * 60 * 1000; // 5 minutes
+Network.CONNECT_BACKOFF_MAX = 10 * 60 * 1000; // 10 minutes
 /**
  * @type {number}
  * @constant
@@ -456,6 +456,6 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @type {number}
  * @constant
  */
-Network.CONNECT_THROTTLE = 300; // 300 ms
+Network.CONNECT_THROTTLE = 1000; // 1 second
 
 Class.register(Network);

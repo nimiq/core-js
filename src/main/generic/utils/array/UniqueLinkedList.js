@@ -9,12 +9,19 @@ class UniqueLinkedList extends LinkedList {
 
     /**
      * @param {V|*} value
+     * @param {boolean} moveBack
      * @returns {void}
      * @override
      */
-    push(value) {
-        if (!this._map.contains(value)) {
+    push(value, moveBack = false) {
+        const entry = this._map.get(value);
+        if (!entry) {
             super.push(value);
+        } else {
+            entry.value = value;
+            if (moveBack) {
+                this._moveBack(entry);
+            }
         }
     }
 
@@ -77,6 +84,15 @@ class UniqueLinkedList extends LinkedList {
 
     /**
      * @param {V|*} value
+     * @returns {V|*}
+     */
+    get(value) {
+        const entry = this._map.get(value);
+        return entry && entry.value;
+    }
+
+    /**
+     * @param {V|*} value
      * @returns {boolean}
      */
     contains(value) {
@@ -110,23 +126,32 @@ class UniqueLinkedList extends LinkedList {
          */
         const entry = this._map.get(value);
         if (entry) {
-            if (entry === this._head) {
-                return;
-            } else if (entry === this._tail) {
-                entry.next.prev = null;
-                this._tail = entry.next;
-            } else {
-                entry.prev.next = entry.next;
-                entry.next.prev = entry.prev;
-            }
-            entry.next = null;
-            entry.prev = this._head;
-            this._head.next = entry;
-            this._head = entry;
+            this._moveBack(entry);
         } else {
             // Do not check again for presence in the map.
             super.push(value);
         }
+    }
+
+    /**
+     * @param {LinkedListEntry} entry
+     * @returns {void}
+     * @protected
+     */
+    _moveBack(entry) {
+        if (entry === this._head) {
+            return;
+        } else if (entry === this._tail) {
+            entry.next.prev = null;
+            this._tail = entry.next;
+        } else {
+            entry.prev.next = entry.next;
+            entry.next.prev = entry.prev;
+        }
+        entry.next = null;
+        entry.prev = this._head;
+        this._head.next = entry;
+        this._head = entry;
     }
 }
 Class.register(UniqueLinkedList);

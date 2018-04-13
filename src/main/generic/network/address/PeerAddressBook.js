@@ -148,12 +148,18 @@ class PeerAddressBook extends Observable {
                 continue;
             }
 
+            // XXX Why is this here?
             // Update timestamp for connected peers.
-            if (peerAddressState.state === PeerAddressState.ESTABLISHED) {
-                // Also update timestamp for RTC connections
-                if (peerAddressState.signalRouter.bestRoute) {
-                    peerAddressState.signalRouter.bestRoute.timestamp = now;
-                }
+            // if (peerAddressState.state === PeerAddressState.ESTABLISHED) {
+            //     // Also update timestamp for RTC connections
+            //     if (peerAddressState.signalRouter.bestRoute) {
+            //         peerAddressState.signalRouter.bestRoute.timestamp = now;
+            //     }
+            // }
+
+            // Exclude RTC addresses that are already at MAX_DISTANCE.
+            if (address.protocol === Protocol.RTC && address.distance >= PeerAddressBook.MAX_DISTANCE) {
+                continue;
             }
 
             // Never return addresses that are too old.
@@ -581,7 +587,7 @@ class PeerAddressBook extends Observable {
     }
 }
 PeerAddressBook.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
-PeerAddressBook.MAX_AGE_WEBRTC = 1000 * 60 * 10; // 10 minutes
+PeerAddressBook.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 10 minutes
 PeerAddressBook.MAX_AGE_DUMB = 1000 * 60; // 1 minute
 PeerAddressBook.MAX_DISTANCE = 4;
 PeerAddressBook.MAX_FAILED_ATTEMPTS_WS = 3;

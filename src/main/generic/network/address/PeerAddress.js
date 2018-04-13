@@ -123,6 +123,13 @@ class PeerAddress {
     }
 
     /**
+     * @returns {string}
+     */
+    hashCode() {
+        throw new Error('unimplemented');
+    }
+
+    /**
      * @returns {boolean}
      */
     verifySignature() {
