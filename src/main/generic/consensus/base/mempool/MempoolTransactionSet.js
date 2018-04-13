@@ -3,6 +3,7 @@ class MempoolTransactionSet {
      * @param {Array.<Transaction>} [sortedTransactions]
      */
     constructor(sortedTransactions) {
+        // Sorted descending by fee per byte
         /** @type {SortedList.<Transaction>} */
         this._transactions = new SortedList(sortedTransactions);
     }
@@ -60,7 +61,14 @@ class MempoolTransactionSet {
      * @return {number}
      */
     numBelowFeePerByte(feePerByte) {
-        return this._transactions.values().filter(t => t.fee / t.serializedSize < feePerByte).length;
+        let count = 0;
+        // TODO optimise, since we know it is sorted
+        for (const t of this._transactions) {
+            if (t.feePerByte < feePerByte) {
+                count++;
+            }
+        }
+        return count;
     }
 
     toString() {
