@@ -544,7 +544,7 @@ gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
     gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${util.env.architecture}"`)).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/nimiq']).pipe(replace('node index.js', '/usr/share/nimiq/{{ cli_entrypoint }}')).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/nimiq']).pipe(replace('node "\\$SCRIPT_PATH/index.js"', '/usr/share/nimiq/{{ cli_entrypoint }}')).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(['clients/nodejs/index.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/node.js', '../lib/node.js')).pipe(gulp.dest('packaging/BUILD/modules'));
     gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));

@@ -80,6 +80,10 @@ if (config.host && config.dumb) {
     console.error('Cannot use both --host and --dumb');
     process.exit(1);
 }
+if (config.type === 'light') {
+    console.error('Light node type is temporarily disabled.');
+    process.exit(1);
+}
 
 Nimiq.Log.instance.level = config.log.level;
 for(const tag in config.log.tags) {
