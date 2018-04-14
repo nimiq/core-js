@@ -92,10 +92,10 @@ class NetworkAgent extends Observable {
         this._pingTimes = new Map();
 
         /**
-         * @type {boolean}
+         * @type {{maxResults:number}}
          * @private
          */
-        this._addressRequest = false;
+        this._addressRequest = null;
 
         /**
          * @type {RateLimit}
@@ -166,7 +166,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVersion(msg) {
-        Log.d(NetworkAgent, () => `[VERSION] ${msg.peerAddress} ${msg.headHash.toBase64()}`);
+        Log.v(NetworkAgent, () => `[VERSION] ${msg.peerAddress} ${msg.headHash.toBase64()}`);
 
         const now = Date.now();
 
@@ -280,7 +280,7 @@ class NetworkAgent extends Observable {
      * @private
      */
     _onVerAck(msg) {
-        Log.d(NetworkAgent, () => `[VERACK] from ${this._channel.peerAddress}`);
+        Log.v(NetworkAgent, () => `[VERACK] from ${this._channel.peerAddress}`);
 
         // Make sure this is a valid message in our current state.
         if (!this._canAcceptMessage(msg)) {
@@ -343,14 +343,18 @@ class NetworkAgent extends Observable {
 
     /* Addresses */
 
-    requestAddresses() {
+    requestAddresses(maxResults = NetworkAgent.NUM_ADDR_PER_REQUEST) {
+        Log.d(Network, () => `Requesting addresses from ${this._peer.peerAddress}`);
+
+        this._addressRequest = {
+            maxResults
+        };
+
         // Request addresses from peer.
-        this._channel.getAddr(this._networkConfig.protocolMask, this._networkConfig.services.accepted);
+        this._channel.getAddr(this._networkConfig.protocolMask, this._networkConfig.services.accepted, maxResults);
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.
-
-        this._addressRequest = true;
     }
 
     /**
@@ -365,22 +369,30 @@ class NetworkAgent extends Observable {
 
         // Reject unsolicited address messages unless it is the peer's own address.
         const isOwnAddress = msg.addresses.length === 1 && this._peer.peerAddress.equals(msg.addresses[0]);
-        if (!this._addressRequest || !isOwnAddress) {
-            Log.w(NetworkAgent, 'Rejecting addr message - unsolicited');
+        if (!this._addressRequest && !isOwnAddress) {
             return;
         }
 
-        this._addressRequest = false;
+        const { maxResults } = this._addressRequest;
+        if (!isOwnAddress) {
+            this._addressRequest = null;
+        }
 
         // Reject messages that contain more than 1000 addresses, ban peer (bitcoin).
         if (msg.addresses.length > NetworkAgent.MAX_ADDR_PER_MESSAGE) {
             Log.w(NetworkAgent, 'Rejecting addr message - too many addresses');
-            // this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
+            this._channel.close(CloseType.ADDR_MESSAGE_TOO_LARGE, 'addr message too large');
             return;
         }
 
+        Log.v(NetworkAgent, () => `[ADDR] ${msg.addresses.length} addresses from ${this._peer.peerAddress}`);
+
+        // XXX Discard any addresses beyond the ones we requested.
+        // TODO reject addr messages not matching our request.
+        const addresses = msg.addresses.slice(0, maxResults);
+
         // Check the addresses the peer send us.
-        for (const addr of msg.addresses) {
+        for (const addr of addresses) {
             if (!addr.verifySignature()) {
                 this._channel.close(CloseType.INVALID_ADDR, 'invalid addr');
                 return;
@@ -393,15 +405,15 @@ class NetworkAgent extends Observable {
         }
 
         // Put the new addresses in the address pool.
-        this._addresses.add(this._channel, msg.addresses);
+        this._addresses.add(this._channel, addresses);
 
         // Update peer with new address.
         if (isOwnAddress) {
-            this._peer.peerAddress = msg.addresses[0];
+            this._peer.peerAddress = addresses[0];
         }
 
         // Tell listeners that we have received new addresses.
-        this.fire('addr', msg.addresses, this);
+        this.fire('addr', addresses, this);
     }
 
     /**
@@ -421,7 +433,8 @@ class NetworkAgent extends Observable {
         }
 
         // Find addresses that match the given protocolMask & serviceMask.
-        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask, NetworkAgent.MAX_ADDR_PER_MESSAGE);
+        const numResults = Math.min(msg.maxResults, NetworkAgent.MAX_ADDR_PER_REQUEST);
+        const addresses = this._addresses.query(msg.protocolMask, msg.serviceMask, numResults);
         this._channel.addr(addresses);
     }
 
@@ -494,7 +507,6 @@ class NetworkAgent extends Observable {
     _onClose() {
         // Clear all timers and intervals when the peer disconnects.
         this._timers.clearAll();
-        this._addrQueue.stop();
     }
 
     /**
@@ -505,12 +517,12 @@ class NetworkAgent extends Observable {
     _canAcceptMessage(msg) {
         // The first message must be the version message.
         if (!this._versionReceived && msg.type !== Message.Type.VERSION) {
-            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel}`
+            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel.peerAddress || this._channel.netAddress}`
                 + ' - no version message received previously');
             return false;
         }
         if (this._versionReceived && !this._verackReceived && msg.type !== Message.Type.VERACK) {
-            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel}`
+            Log.w(NetworkAgent, `Discarding '${PeerChannel.Event[msg.type] || msg.type}' message from ${this._channel.peerAddress || this._channel.netAddress}`
                 + ' - no verack message received previously');
             return false;
         }
@@ -534,7 +546,9 @@ NetworkAgent.ANNOUNCE_ADDR_INTERVAL = 1000 * 60 * 10; // 10 minutes
 NetworkAgent.VERSION_ATTEMPTS_MAX = 10;
 NetworkAgent.VERSION_RETRY_DELAY = 500; // 500 ms
 NetworkAgent.GETADDR_RATE_LIMIT = 3; // per minute
-NetworkAgent.MAX_ADDR_PER_MESSAGE = 500;
+NetworkAgent.MAX_ADDR_PER_MESSAGE = 1000;
+NetworkAgent.MAX_ADDR_PER_REQUEST = 500;
+NetworkAgent.NUM_ADDR_PER_REQUEST = 200;
 NetworkAgent.KNOWN_ADDRESSES_COUNT_MAX = 10000;
 Class.register(NetworkAgent);
 

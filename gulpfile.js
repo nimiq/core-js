@@ -514,7 +514,7 @@ gulp.task('build-node', function () {
     return gulp.src(NODE_SOURCES)
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
-        .pipe(uglify(uglify_config))
+        //.pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });

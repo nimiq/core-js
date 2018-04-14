@@ -319,6 +319,11 @@ class PeerScorer {
             ? this._connectionScores[this._connectionScores.length - 1].score
             : null;
     }
+
+    /** @type {Array.<PeerConnection>} */
+    get connectionScores() {
+        return this._connectionScores;
+    }
 }
 /**
  * @type {number}

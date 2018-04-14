@@ -279,11 +279,41 @@ class Network extends Observable {
         this._connections.allowInboundExchange = this._scorer.lowestConnectionScore !== null
             ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE
             : false;
+
+
+        // Request fresh addresses.
+        this._refreshAddresses();
     }
 
-
     _refreshAddresses() {
+        if (this._scorer.connectionScores && this._scorer.connectionScores.length > 0) {
+            for (let i = 0; i < Math.min(Network.ADDRESS_REQUEST_PEERS, this._scorer.connectionScores.length); i++) {
+                const index = Math.floor(Math.random() * Math.min(this._scorer.connectionScores.length, Network.ADDRESS_REQUEST_CUTOFF));
+                const peerConnection = this._scorer.connectionScores[index];
+                Log.v(Network, () => `Requesting addresses from ${peerConnection.peerAddress} (score idx ${index})`);
+                peerConnection.networkAgent.requestAddresses();
+            }
+        } else {
+            const index = Math.floor(Math.random() * Math.min(this._connections.count, 10));
 
+            /** @type {PeerConnection} */
+            let peerConnection;
+            let i = 0;
+            for (const conn of this._connections.valueIterator()) {
+                if (conn.state === PeerConnectionState.ESTABLISHED) {
+                    peerConnection = conn;
+                }
+                if (i >= index && peerConnection) {
+                    break;
+                }
+                i++;
+            }
+
+            if (peerConnection) {
+                Log.v(Network, () => `Requesting addresses from ${peerConnection.peerAddress} (rand idx ${index})`);
+                peerConnection.networkAgent.requestAddresses();
+            }
+        }
     }
 
     /** @type {Time} */
@@ -426,5 +456,8 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @constant
  */
 Network.CONNECT_THROTTLE = 1000; // 1 second
+
+Network.ADDRESS_REQUEST_CUTOFF = 250;
+Network.ADDRESS_REQUEST_PEERS = 2;
 
 Class.register(Network);

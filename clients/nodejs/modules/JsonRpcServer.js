@@ -168,7 +168,11 @@ class JsonRpcServer {
     }
 
     peerList() {
-        return this._network.addresses.values().map((a) => this._peerAddressStateToPeerObj(a));
+        const peers = [];
+        for (const peerAddressState of this._network.addresses.iterator()) {
+            peers.push(this._peerAddressStateToPeerObj(peerAddressState));
+        }
+        return peers;
     }
 
     /**

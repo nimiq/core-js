@@ -226,10 +226,11 @@ class PeerChannel extends Observable {
     /**
      * @param {number} protocolMask
      * @param {number} serviceMask
+     * @param {number} maxResults
      * @return {boolean}
      */
-    getAddr(protocolMask, serviceMask) {
-        return this._send(new GetAddrMessage(protocolMask, serviceMask));
+    getAddr(protocolMask, serviceMask, maxResults) {
+        return this._send(new GetAddrMessage(protocolMask, serviceMask, maxResults));
     }
 
     /**

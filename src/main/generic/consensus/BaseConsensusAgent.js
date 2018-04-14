@@ -274,7 +274,6 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     _onSubscribe(msg) {
-        Log.d(BaseConsensusAgent, `[SUBSCRIBE] ${this._peer.peerAddress} ${msg.subscription}`);
         this._remoteSubscription = msg.subscription;
     }
 

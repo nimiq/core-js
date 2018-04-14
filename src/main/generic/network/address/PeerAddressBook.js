@@ -303,7 +303,7 @@ class PeerAddressBook extends Observable {
                 return false;
             }
             // Check max size per protocol.
-            switch (peerAddressState.peerAddress.protocol) {
+            switch (peerAddress.protocol) {
                 case Protocol.WS:
                     if (this._wsStates.length >= PeerAddressBook.MAX_SIZE_WS) {
                         return false;
