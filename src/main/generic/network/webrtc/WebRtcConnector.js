@@ -181,9 +181,11 @@ class PeerConnector extends Observable {
         this._rtcConnection = WebRtcFactory.newPeerConnection(this._networkConfig.rtcConfig);
         this._rtcConnection.onicecandidate = e => this._onIceCandidate(e);
         this._rtcConnection.onconnectionstatechange = e => this._onConnectionStateChange(e);
+        this._rtcConnection.onicegatheringstatechange = e => this._onIceGatheringStateChange(e);
 
         this._lastIceCandidate = null;
         this._iceCandidateQueue = [];
+        this._localIceCandidates = [];
     }
 
     onSignal(signal) {
@@ -201,6 +203,12 @@ class PeerConnector extends Observable {
                 })
                 .catch(Log.e.tag(PeerConnector));
         } else if (signal.candidate) {
+            // Parse other candidates if present and keep original order.
+            if (signal.otherCandidates) {
+                for (const iceCandidate of signal.otherCandidates) {
+                    this._addIceCandidate(iceCandidate).catch(Log.w.tag(PeerConnector));
+                }
+            }
             this._addIceCandidate(signal).catch(Log.w.tag(PeerConnector));
         }
     }
@@ -269,7 +277,22 @@ class PeerConnector extends Observable {
     _onIceCandidate(event) {
         if (!this._rtcConnection) throw new Error('RTC connection closed');
         if (event.candidate !== null) {
-            this._signal(event.candidate);
+            this._localIceCandidates.push(event.candidate);
+        }
+    }
+
+    _onIceGatheringStateChange(event) {
+        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (this._rtcConnection.iceGatheringState === 'complete' && this._localIceCandidates.length > 0) {
+            // Build backwards compatible structure:
+            // We assume the last ice candidate to be the most promising one for old clients.
+            let lastIceCandidate = this._localIceCandidates.pop();
+            // Not all browsers support toJSON.
+            lastIceCandidate = lastIceCandidate.toJSON ? lastIceCandidate.toJSON() : JSON.parse(JSON.stringify(lastIceCandidate));
+            // Embed other candidates in this one ice candidate.
+            lastIceCandidate.otherCandidates = this._localIceCandidates;
+            this._signal(lastIceCandidate);
+            this._localIceCandidates = [];
         }
     }
 
