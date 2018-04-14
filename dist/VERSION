@@ -1,5 +1,5 @@
 {
-  "code": 2,
-  "name": "Luna Update 2",
-  "minRequiredVersion": 2
+  "code": 1,
+  "name": "Nimiq Testnet",
+  "minRequiredVersion": 1
 }
