@@ -13,4 +13,4 @@ else
 fi
 
 UV_THREADPOOL_SIZE=$NUM_CORES NODE_OPTIONS="--max_old_space_size=$MB_MEMORY" node "$SCRIPT_PATH/index.js" "$@"
-g
+
