@@ -50,7 +50,7 @@ class SignalProcessor {
         }
 
         // Can be undefined for non-rtc nodes.
-        const myPeerId = this._networkConfig.peerAddress.peerId;
+        const myPeerId = this._networkConfig.peerId;
 
         // Discard signals from myself.
         if (msg.senderId.equals(myPeerId)) {
