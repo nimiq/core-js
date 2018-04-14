@@ -238,11 +238,6 @@ class PeerAddressBook extends Observable {
      * @private
      */
     _add(channel, peerAddress) {
-        // Max book size reached
-        if (this._store.length >= PeerAddressBook.MAX_SIZE) {
-            return false;
-        }
-
         // Ignore our own address.
         if (this._networkConfig.peerAddress.equals(peerAddress)) {
             return false;
@@ -285,6 +280,7 @@ class PeerAddressBook extends Observable {
         let knownAddress = null;
         let changed = false;
         if (peerAddressState) {
+            // Update address.
             knownAddress = peerAddressState.peerAddress;
 
             // Ignore address if it is banned.
@@ -302,6 +298,26 @@ class PeerAddressBook extends Observable {
                 peerAddress.netAddress = knownAddress.netAddress;
             }
         } else {
+            // New address, check max book size.
+            if (this._store.length >= PeerAddressBook.MAX_SIZE) {
+                return false;
+            }
+            // Check max size per protocol.
+            switch (peerAddressState.peerAddress.protocol) {
+                case Protocol.WS:
+                    if (this._wsStates.length >= PeerAddressBook.MAX_SIZE_WS) {
+                        return false;
+                    }
+                    break;
+                case Protocol.RTC:
+                    if (this._rtcStates.length >= PeerAddressBook.MAX_SIZE_RTC) {
+                        return false;
+                    }
+                    break;
+                default:
+                // Dumb addresses are only part of global limit.
+            }
+
             // If we know the IP address of the sender, check that we don't exceed the maximum number of addresses per IP.
             if (netAddress) {
                 const states = this._statesByNetAddress.get(netAddress);
@@ -666,6 +682,16 @@ class PeerAddressBook extends Observable {
     get knownAddressesCount() {
         return this._store.length;
     }
+
+    /** @type {number} */
+    get knownWsAddressesCount() {
+        return this._wsStates.length;
+    }
+
+    /** @type {number} */
+    get knownRtcAddressesCount() {
+        return this._rtcStates.length;
+    }
 }
 PeerAddressBook.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
 PeerAddressBook.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 10 minutes
@@ -678,6 +704,8 @@ PeerAddressBook.HOUSEKEEPING_INTERVAL = 1000 * 60; // 1 minute
 PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 30; // 30 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
-PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 15000 : 100000;
+PeerAddressBook.MAX_SIZE_WS = PlatformUtils.isBrowser() ? 1000 : 10000;
+PeerAddressBook.MAX_SIZE_RTC = PlatformUtils.isBrowser() ? 1000 : 10000;
+PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 2500 : 20500; // Includes dumb peers
 PeerAddressBook.MAX_SIZE_PER_IP = 250;
 Class.register(PeerAddressBook);

@@ -35,22 +35,43 @@ class PeerScorer {
      * @returns {?PeerAddress}
      */
     pickAddress() {
-        const findCandidates = (addressStates, numCandidates, allowBadPeers = false) => {
-            const numAddresses = addressStates.length;
+        let it, numAddresses;
+        switch (this._networkConfig.protocolMask) {
+            case Protocol.WS:
+                it = this._addresses.wsIterator();
+                numAddresses = this._addresses.knownWsAddressesCount;
+                break;
+            case Protocol.RTC:
+                it = this._addresses.rtcIterator();
+                numAddresses = this._addresses.knownRtcAddressesCount;
+                break;
+            default:
+                it = this._addresses.iterator();
+                numAddresses = this._addresses.knownAddressesCount;
+        }
 
-            // Pick a random start index.
-            const index = Math.floor(Math.random() * numAddresses);
+        const findCandidates = (addressStatesIterator, numAddresses, numCandidates, allowBadPeers = false) => {
+            // Pick a random start index if we have a lot of addresses.
+            let startIndex = 0, endIndex = numAddresses;
+            if (numAddresses > numCandidates) {
+                startIndex = Math.floor(Math.random() * numAddresses);
+                endIndex = (startIndex + numCandidates) % numAddresses;
+            }
+            const overflow = startIndex > endIndex;
 
             // Compute address scores until we have found at 1000 candidates with score >= 0.
-            const minCandidates = Math.min(numAddresses, numCandidates);
             const candidates = [];
-            for (let i = 0; i < numAddresses; i++) {
-                const idx = (index + i) % numAddresses;
-                const addressState = addressStates[idx];
+            let index = 0;
+            for (const addressState of addressStatesIterator) {
+                if (!overflow && index < startIndex) continue;
+                if (!overflow && index >= endIndex) break;
+                if (overflow && (index >= endIndex && index < startIndex)) continue;
+                index++;
+
                 const score = this._scoreAddress(addressState, allowBadPeers);
                 if (score >= 0) {
                     candidates.push({score, addressState});
-                    if (candidates.length >= minCandidates) {
+                    if (candidates.length >= numCandidates) {
                         break;
                     }
                 }
@@ -59,11 +80,19 @@ class PeerScorer {
             return candidates;
         };
 
-        const addressStates = this._addresses.values();
-
-        let candidates = findCandidates(addressStates, 1000);
+        let candidates = findCandidates(it, numAddresses, 1000);
         if (candidates.length === 0 && this.needsGoodPeers()) {
-            candidates = findCandidates(addressStates, 1000, true);
+            switch (this._networkConfig.protocolMask) {
+                case Protocol.WS:
+                    it = this._addresses.wsIterator();
+                    break;
+                case Protocol.RTC:
+                    it = this._addresses.rtcIterator();
+                    break;
+                default:
+                    it = this._addresses.iterator();
+            }
+            candidates = findCandidates(it, numAddresses, 1000, true);
         }
 
         if (candidates.length === 0) {
@@ -71,6 +100,7 @@ class PeerScorer {
         }
 
         // Return a random candidate with a high score.
+        /** @type {Array.<{score: number, addressState: PeerAddressState}>} */
         const scores = candidates.sort((a, b) => b.score - a.score);
         const goodCandidates = scores.slice(0, PeerScorer.PICK_SELECTION_SIZE);
         const winner = ArrayUtils.randomElement(goodCandidates);
@@ -86,7 +116,7 @@ class PeerScorer {
     _scoreAddress(peerAddressState, allowBadPeers = false) {
         const peerAddress = peerAddressState.peerAddress;
 
-        // Filter addresses that we cannot connect to.
+        // Filter addresses that we cannot connect to (needed to filter out dumb peers).
         if (!this._networkConfig.canConnect(peerAddress.protocol)) {
             return -1;
         }
