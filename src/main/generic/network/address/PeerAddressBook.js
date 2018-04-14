@@ -156,12 +156,12 @@ class PeerAddressBook extends Observable {
 
         // XXX inefficient linear scan
         const addresses = [];
-        let index = 0;
+        let index = -1;
         for (const peerAddressState of store.valueIterator()) {
+            index++;
             if (!overflow && index < startIndex) continue;
             if (!overflow && index >= endIndex) break;
             if (overflow && (index >= endIndex && index < startIndex)) continue;
-            index++;
 
             // Never return banned or failed addresses.
             if (peerAddressState.state === PeerAddressState.BANNED

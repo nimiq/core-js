@@ -61,12 +61,12 @@ class PeerScorer {
 
             // Compute address scores until we have found at 1000 candidates with score >= 0.
             const candidates = [];
-            let index = 0;
+            let index = -1;
             for (const addressState of addressStatesIterator) {
+                index++;
                 if (!overflow && index < startIndex) continue;
                 if (!overflow && index >= endIndex) break;
                 if (overflow && (index >= endIndex && index < startIndex)) continue;
-                index++;
 
                 const score = this._scoreAddress(addressState, allowBadPeers);
                 if (score >= 0) {
