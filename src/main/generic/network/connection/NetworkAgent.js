@@ -373,7 +373,7 @@ class NetworkAgent extends Observable {
             return;
         }
 
-        const { maxResults } = this._addressRequest;
+        const { maxResults = NetworkAgent.MAX_ADDR_PER_REQUEST } = this._addressRequest || {};
         if (!isOwnAddress) {
             this._addressRequest = null;
         }

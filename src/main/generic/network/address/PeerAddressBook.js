@@ -246,13 +246,13 @@ class PeerAddressBook extends Observable {
         // Ignore address if it is too old.
         // Special case: allow seed addresses (timestamp == 0) via null channel.
         if (channel && peerAddress.exceedsAge()) {
-            Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
+            Log.v(PeerAddressBook, () => `Ignoring address ${peerAddress} - too old (${new Date(peerAddress.timestamp)})`);
             return false;
         }
 
         // Ignore address if its timestamp is too far in the future.
         if (peerAddress.timestamp > Date.now() + PeerAddressBook.MAX_TIMESTAMP_DRIFT) {
-            Log.d(PeerAddressBook, `Ignoring addresses ${peerAddress} - timestamp in the future`);
+            Log.v(PeerAddressBook, () => `Ignoring addresses ${peerAddress} - timestamp in the future`);
             return false;
         }
 
@@ -262,7 +262,7 @@ class PeerAddressBook extends Observable {
 
             // Ignore address if it exceeds max distance.
             if (peerAddress.distance > PeerAddressBook.MAX_DISTANCE) {
-                Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - max distance exceeded`);
+                Log.v(PeerAddressBook, () => `Ignoring address ${peerAddress} - max distance exceeded`);
                 // Drop any route to this peer over the current channel. This may prevent loops.
                 const peerAddressState = this._get(peerAddress);
                 if (peerAddressState) {
@@ -322,7 +322,7 @@ class PeerAddressBook extends Observable {
             if (netAddress) {
                 const states = this._statesByNetAddress.get(netAddress);
                 if (states && states.size >= PeerAddressBook.MAX_SIZE_PER_IP) {
-                    Log.d(PeerAddressBook, `Ignoring address ${peerAddress} - max count per IP ${netAddress} reached`);
+                    Log.v(PeerAddressBook, () => `Ignoring address ${peerAddress} - max count per IP ${netAddress} reached`);
                     return false;
                 }
             }
