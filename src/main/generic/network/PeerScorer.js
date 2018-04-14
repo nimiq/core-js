@@ -60,6 +60,7 @@ class PeerScorer {
         };
 
         const addressStates = this._addresses.values();
+
         let candidates = findCandidates(addressStates, 1000);
         if (candidates.length === 0 && this.needsGoodPeers()) {
             candidates = findCandidates(addressStates, 1000, true);

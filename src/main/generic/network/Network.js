@@ -61,12 +61,10 @@ class Network extends Observable {
          */
         this._addresses = new PeerAddressBook(this._networkConfig);
 
-        // Relay new addresses to peers.
-        this._addresses.on('added', addresses => {
-            this._relayAddresses(addresses);
-            this._checkPeerCount();
+        this._addresses.on('added', () => {
+            setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE);
         });
-       
+
         /**
          * Peer connections database & operator
          * @type {ConnectionPool}
@@ -143,9 +141,6 @@ class Network extends Observable {
         // Recalculate the network adjusted offset
         this._updateTimeOffset();
 
-        // Tell others about the address that we just connected to.
-        this._relayAddresses([peer.peerAddress]);
-
         this.fire('peer-joined', peer);
     }
 
@@ -184,32 +179,6 @@ class Network extends Observable {
         this._connections.allowInboundExchange = this._scorer.lowestConnectionScore !== null
             ? this._scorer.lowestConnectionScore < Network.SCORE_INBOUND_EXCHANGE
             : false;
-    }
-
-    /**
-     * @param {Array.<PeerAddress>} addresses
-     * @returns {void}
-     * @private
-     */
-    _relayAddresses(addresses) {
-        // Pick PEER_COUNT_RELAY random peers and relay addresses to them if:
-        // - number of addresses <= 10
-        // TODO more restrictions, see Bitcoin
-        if (addresses.length > 10) {
-            return;
-        }
-
-        // XXX We don't protect against picking the same peer more than once.
-        // The NetworkAgent will take care of not sending the addresses twice.
-        // In that case, the address will simply be relayed to less peers. Also,
-        // the peer that we pick might already know the address.
-        const peerConnections = this._connections.values();
-        for (let i = 0; i < Network.PEER_COUNT_RELAY; ++i) {
-            const peerConnection = ArrayUtils.randomElement(peerConnections);
-            if (peerConnection && peerConnection.state === PeerConnectionState.ESTABLISHED && peerConnection.networkAgent) {
-                peerConnection.networkAgent.relayAddresses(addresses);
-            }
-        }
     }
 
     /**
@@ -312,6 +281,11 @@ class Network extends Observable {
             : false;
     }
 
+
+    _refreshAddresses() {
+
+    }
+
     /** @type {Time} */
     get time() {
         return this._time;
@@ -412,11 +386,6 @@ Network.IPV6_SUBNET_MASK = 96;
  * @constant
  */
 Network.PEER_COUNT_RECYCLING_ACTIVE = PlatformUtils.isBrowser() ? 5 : 1000;
-/**
- * @type {number}
- * @constant
- */
-Network.PEER_COUNT_RELAY = 4;
 /**
  * @type {number}
  * @constant

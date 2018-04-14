@@ -96,6 +96,11 @@ class Peer {
         return this._channel.peerAddress;
     }
 
+    /** @type {PeerAddress} */
+    set peerAddress(value) {
+        this._channel.peerAddress = value;
+    }
+
     /** @type {NetAddress} */
     get netAddress() {
         return this._channel.netAddress;

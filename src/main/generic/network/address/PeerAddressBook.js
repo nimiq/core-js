@@ -20,6 +20,18 @@ class PeerAddressBook extends Observable {
         this._store = new HashSet();
 
         /**
+         * @type {HashSet}
+         * @private
+         */
+        this._wsStates = new HashSet();
+
+        /**
+         * @type {HashSet}
+         * @private
+         */
+        this._rtcStates = new HashSet();
+
+        /**
          * Map from peerIds to RTC peerAddresses.
          * @type {HashMap.<PeerId,PeerAddressState>}
          * @private
@@ -40,10 +52,24 @@ class PeerAddressBook extends Observable {
     }
 
     /**
-     * @returns {Array.<PeerAddressState>}
+     * @returns {Iterator.<PeerAddressState>}
      */
-    values() {
-        return this._store.values();
+    iterator() {
+        return this._store.valueIterator();
+    }
+
+    /**
+     * @returns {Iterator.<PeerAddressState>}
+     */
+    wsIterator() {
+        return this._wsStates.valueIterator();
+    }
+
+    /**
+     * @returns {Iterator.<PeerAddressState>}
+     */
+    rtcIterator() {
+        return this._rtcStates.valueIterator();
     }
 
     /**
@@ -106,7 +132,19 @@ class PeerAddressBook extends Observable {
      * @returns {Array.<PeerAddress>}
      */
     query(protocolMask, serviceMask, maxAddresses = NetworkAgent.MAX_ADDR_PER_MESSAGE) {
-        const numAddresses = this._store.length;
+        let store;
+        switch (protocolMask) {
+            case Protocol.WS:
+                store = this._wsStates;
+                break;
+            case Protocol.RTC:
+                store = this._rtcStates;
+                break;
+            default:
+                store = this._store;
+        }
+
+        const numAddresses = store.length;
 
         // Pick a random start index if we have a lot of addresses.
         let startIndex = 0, endIndex = numAddresses;
@@ -117,10 +155,9 @@ class PeerAddressBook extends Observable {
         const overflow = startIndex > endIndex;
 
         // XXX inefficient linear scan
-        const now = Date.now();
         const addresses = [];
         let index = 0;
-        for (const peerAddressState of this._store.valueIterator()) {
+        for (const peerAddressState of store.valueIterator()) {
             if (!overflow && index < startIndex) continue;
             if (!overflow && index >= endIndex) break;
             if (overflow && (index >= endIndex && index < startIndex)) continue;
@@ -276,11 +313,7 @@ class PeerAddressBook extends Observable {
 
             // Add new peerAddressState.
             peerAddressState = new PeerAddressState(peerAddress);
-            this._store.add(peerAddressState);
-            if (peerAddress.peerId) {
-                // Index by peerId.
-                this._stateByPeerId.put(peerAddress.peerId, peerAddressState);
-            }
+            this._addToStore(peerAddressState);
             changed = true;
         }
 
@@ -296,18 +329,55 @@ class PeerAddressBook extends Observable {
         }
 
         // Track which IP address send us this address.
-        if (netAddress) {
-            peerAddressState.addedBy.add(channel.netAddress);
+        this._trackByNetAddress(peerAddressState, netAddress);
 
-            let states = this._statesByNetAddress.get(channel.netAddress);
-            if (!states) {
-                states = new Set();
-                this._statesByNetAddress.put(channel.netAddress, states);
-            }
-            states.add(peerAddressState);
-        }
 
         return changed;
+    }
+
+    /**
+     * @param {PeerAddressState} peerAddressState
+     * @private
+     */
+    _addToStore(peerAddressState) {
+        this._store.add(peerAddressState);
+
+        // Index by peerId.
+        if (peerAddressState.peerAddress.peerId) {
+            this._stateByPeerId.put(peerAddressState.peerAddress.peerId, peerAddressState);
+        }
+
+        // Index by protocol.
+        switch (peerAddressState.peerAddress.protocol) {
+            case Protocol.WS:
+                this._wsStates.add(peerAddressState);
+                break;
+            case Protocol.RTC:
+                this._rtcStates.add(peerAddressState);
+                break;
+            default:
+                // Dumb addresses are ignored.
+        }
+    }
+
+    /**
+     * @param {PeerAddressState} peerAddressState
+     * @param {NetAddress} netAddress
+     * @private
+     */
+    _trackByNetAddress(peerAddressState, netAddress) {
+        if (!netAddress) {
+            return;
+        }
+
+        peerAddressState.addedBy.add(netAddress);
+
+        let states = this._statesByNetAddress.get(netAddress);
+        if (!states) {
+            states = new Set();
+            this._statesByNetAddress.put(netAddress, states);
+        }
+        states.add(peerAddressState);
     }
 
     /**
@@ -324,13 +394,12 @@ class PeerAddressBook extends Observable {
         
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
-
-            this._store.add(peerAddressState);
+            this._addToStore(peerAddressState);
         }
 
-        if (peerAddress.peerId) {
-            this._stateByPeerId.put(peerAddress.peerId, peerAddressState);
-        }
+        // Get the (reliable) netAddress of the peer that sent us this address.
+        const netAddress = channel && channel.netAddress && channel.netAddress.reliable ? channel.netAddress : null;
+        this._trackByNetAddress(peerAddressState, netAddress);
 
         peerAddressState.state = PeerAddressState.ESTABLISHED;
         peerAddressState.lastConnected = Date.now();
@@ -378,7 +447,7 @@ class PeerAddressBook extends Observable {
             if (peerAddressState.failedAttempts >= peerAddressState.maxFailedAttempts) {
                 // Remove address only if we have tried the maximum number of backoffs.
                 if (peerAddressState.banBackoff >= PeerAddressBook.MAX_FAILED_BACKOFF) {
-                    this._remove(peerAddress);
+                    this._removeFromStore(peerAddress);
                 } else {
                     peerAddressState.bannedUntil = Date.now() + peerAddressState.banBackoff;
                     peerAddressState.banBackoff = Math.min(PeerAddressBook.MAX_FAILED_BACKOFF, peerAddressState.banBackoff * 2);
@@ -388,7 +457,7 @@ class PeerAddressBook extends Observable {
 
         // Immediately delete dumb addresses, since we cannot connect to those anyway.
         if (peerAddress.protocol === Protocol.DUMB) {
-            this._remove(peerAddress);
+            this._removeFromStore(peerAddress);
         }
     }
 
@@ -415,7 +484,7 @@ class PeerAddressBook extends Observable {
 
         peerAddressState.signalRouter.deleteBestRoute();
         if (!peerAddressState.signalRouter.hasRoute()) {
-            this._remove(peerAddressState.peerAddress);
+            this._removeFromStore(peerAddressState.peerAddress);
         }
     }
 
@@ -459,7 +528,7 @@ class PeerAddressBook extends Observable {
      * @returns {void}
      * @private
      */
-    _remove(peerAddress) {
+    _removeFromStore(peerAddress) {
         const peerAddressState = this._get(peerAddress);
         if (!peerAddressState) {
             return;
@@ -487,6 +556,18 @@ class PeerAddressBook extends Observable {
             }
         }
 
+        // Remove from protocol index.
+        switch (peerAddressState.peerAddress.protocol) {
+            case Protocol.WS:
+                this._wsStates.remove(peerAddressState);
+                break;
+            case Protocol.RTC:
+                this._rtcStates.remove(peerAddressState);
+                break;
+            default:
+                // Dumb addresses are ignored.
+        }
+
         // Don't delete bans.
         if (peerAddressState.state === PeerAddressState.BANNED) {
             return;
@@ -508,7 +589,7 @@ class PeerAddressBook extends Observable {
             if (peerAddressState.peerAddress.protocol === Protocol.RTC) {
                 peerAddressState.signalRouter.deleteRoute(channel);
                 if (!peerAddressState.signalRouter.hasRoute()) {
-                    this._remove(peerAddressState.peerAddress);
+                    this._removeFromStore(peerAddressState.peerAddress);
                 }
             }
         }
@@ -531,7 +612,7 @@ class PeerAddressBook extends Observable {
                 case PeerAddressState.FAILED:
                     // Delete all new peer addresses that are older than MAX_AGE.
                     if (addr.exceedsAge()) {
-                        this._remove(addr);
+                        this._removeFromStore(addr);
                         continue;
                     }
 
