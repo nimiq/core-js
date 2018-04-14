@@ -287,8 +287,10 @@ class Network extends Observable {
 
     _refreshAddresses() {
         if (this._scorer.connectionScores && this._scorer.connectionScores.length > 0) {
+            const cutoff = Math.min(this._connections.peerCountWs * 2, Network.ADDRESS_REQUEST_CUTOFF);
+            const length = Math.min(this._scorer.connectionScores.length, cutoff);
             for (let i = 0; i < Math.min(Network.ADDRESS_REQUEST_PEERS, this._scorer.connectionScores.length); i++) {
-                const index = Math.floor(Math.random() * Math.min(this._scorer.connectionScores.length, Network.ADDRESS_REQUEST_CUTOFF));
+                const index = Math.floor(Math.random() * length);
                 const peerConnection = this._scorer.connectionScores[index];
                 Log.v(Network, () => `Requesting addresses from ${peerConnection.peerAddress} (score idx ${index})`);
                 peerConnection.networkAgent.requestAddresses();
