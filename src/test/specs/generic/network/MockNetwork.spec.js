@@ -208,6 +208,8 @@ class MockPeerConnection extends Observable {
         this._remoteDescription = null;
         this._dataChannel = null;
         this._closed = false;
+        // TODO: Model behaviour of iceGatheringState.
+        this.iceGatheringState = 'complete';
     }
 
     /**
@@ -280,6 +282,8 @@ class MockPeerConnection extends Observable {
             setTimeout(() => {
                 this.onicecandidate(new MockRTCIceCandidate(firstOctet, secondOctet));
                 peer.onicecandidate(new MockRTCIceCandidate(peerSecondOctet, peerFirstOctet));
+                this.onicegatheringstatechange();
+                peer.onicegatheringstatechange();
             }, 0);
         }
 
