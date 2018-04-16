@@ -1,8 +1,5 @@
 FROM node:8.1
 
-# Environment Variables which can be overriden at runtime
-ENV RELEASE="https://github.com/nimiq-network/core/archive/master.tar.gz"
-
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y python build-essential
 RUN apt-get install git
@@ -17,7 +14,7 @@ RUN node-gyp configure
 RUN node-gyp build
 RUN node_modules/.bin/gulp prepare-packages
 
-# mandatory
+# mandatory arguments
 ARG PRIVATE_KEY_PATH=""
 ARG CERT_PATH=""
 ARG WALLET_ADDRESS
@@ -28,7 +25,7 @@ ENV CERT_PATH="${CERT_PATH}"
 ENV WALLET_ADDRESS="${WALLET_ADDRESS}"
 ENV HOST="${HOST}"
 
-# optional
+# optional arguments
 ARG THREADS="4"
 ARG NETWORK="main"
 ARG EXTRA_DATA=""

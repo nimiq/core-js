@@ -50,4 +50,6 @@ The -p argument specifies the host-port:container-port mapping (e.g. host-port, 
 
 #### Showing logs after Docker container is run
 
-`docker logs -f <instance_id_or_name>`
+```
+docker logs -f <instance_id_or_name>
+```

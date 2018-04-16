@@ -39,4 +39,6 @@ docker run -it nimiq
 
 #### Showing logs after Docker container is run
 
-`docker logs -f <instance_id_or_name>`
+```
+docker logs -f <instance_id_or_name>
+```
