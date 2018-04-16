@@ -1,6 +1,6 @@
 # Full node Dockerfile
 
-This ![Dockerfile](./Dockerfile) builds a full node, the pre-requesites for setting up a full node are:
+This [Dockerfile](./Dockerfile) builds a full node, the pre-requesites for setting up a full node are:
 
 * SSL certs are required - see [Lets Encrypt](https://letsencrypt.org/) to generate full certificates
 * A domain name and server that is publicly reachable
