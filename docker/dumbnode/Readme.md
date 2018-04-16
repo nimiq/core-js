@@ -1,6 +1,6 @@
 # Full node Dockerfile
 
-This [Dockerfile]('./Dockerfile') builds a dumb node which is a miner that can connect and mine on the network however it does not add additional security to the network as other miner's can not connect to it.
+This ![Dockerfile]('./Dockerfile') builds a dumb node which is a miner that can connect and mine on the network however it does not add additional security to the network as other miner's can not connect to it.
 
 If you are looking to mine with the simplest way going forward with minimal set up then this is the recommended approach.
 
