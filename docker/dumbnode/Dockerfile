@@ -18,32 +18,19 @@ RUN node-gyp build
 RUN node_modules/.bin/gulp prepare-packages
 
 # mandatory
-ARG PRIVATE_KEY_PATH=""
-ARG CERT_PATH=""
 ARG WALLET_ADDRESS
-ARG HOST
 
-ENV PRIVATE_KEY_PATH="${PRIVATE_KEY_PATH}"
-ENV CERT_PATH="${CERT_PATH}"
 ENV WALLET_ADDRESS="${WALLET_ADDRESS}"
-ENV HOST="${HOST}"
 
 # optional
 ARG THREADS="4"
 ARG NETWORK="main"
 ARG EXTRA_DATA=""
-ARG PORT="80"
 ARG STATISTICS="60"
 
 ENV THREADS="${THREADS}"
 ENV NETWORK="${NETWORK}"
 ENV EXTRA_DATA="${EXTRA_DATA}"
-ENV PORT="${PORT}"
 ENV STATISTICS="${STATISTICS}"
 
-ADD ${PRIVATE_KEY_PATH} /privkey.pem
-ADD ${CERT_PATH} /fullchain.pem
-
-EXPOSE ${PORT}
-
-ENTRYPOINT UV_THREADPOOL_SIZE=${THREADS} node /core/clients/nodejs/index.js --host ${HOST} --port ${PORT} --key /privkey.pem --cert /fullchain.pem --miner=${THREADS} --network=${NETWORK} --statistics=${STATISTICS} --wallet-address=${WALLET_ADDRESS} --metrics
+ENTRYPOINT UV_THREADPOOL_SIZE=${THREADS} node /core/clients/nodejs/index.js --miner=${THREADS} --network=${NETWORK} --statistics=${STATISTICS} --wallet-address=${WALLET_ADDRESS} --dumb
