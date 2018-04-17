@@ -189,11 +189,14 @@ class Miner extends Observable {
             Log.d(Miner, () => `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
             if (!this._submittingBlock) {
                 obj.block.header.nonce = obj.nonce;
-                if (BlockUtils.isProofOfWork(obj.hash, obj.block.target) && obj.block.isFull()) {
+
+                let blockValid = false;
+                if (obj.block.isFull() && BlockUtils.isProofOfWork(obj.hash, obj.block.target)) {
                     this._submittingBlock = true;
                     if (await obj.block.header.verifyProofOfWork()) {
                         // Tell listeners that we've mined a block.
                         this.fire('block-mined', obj.block, this);
+                        blockValid = true;
 
                         // Push block into blockchain.
                         if ((await this._blockchain.pushBlock(obj.block)) < 0) {
@@ -207,7 +210,8 @@ class Miner extends Observable {
                         Log.d(Miner, `Ignoring invalid share: ${await obj.block.header.pow()}`);
                     }
                 }
-                this.fire('share', obj.block, this);
+
+                this.fire('share', obj.block, blockValid, this);
             }
         }
         if (this._mempoolChanged && this._lastRestart + Miner.MIN_TIME_ON_BLOCK < Date.now()) {
@@ -217,7 +221,6 @@ class Miner extends Observable {
 
     /**
      * @return {Promise.<Block>}
-     * @private
      */
     async getNextBlock() {
         this._retry++;
@@ -240,7 +243,7 @@ class Miner extends Observable {
      * @param {BlockInterlink} interlink
      * @param {BlockBody} body
      * @return {Promise.<BlockHeader>}
-     * @private
+     * @protected
      */
     async _getNextHeader(nextTarget, interlink, body) {
         const prevHash = this._blockchain.headHash;
@@ -269,7 +272,7 @@ class Miner extends Observable {
     /**
      * @param {number} nextTarget
      * @returns {Promise.<BlockInterlink>}
-     * @private
+     * @protected
      */
     _getNextInterlink(nextTarget) {
         return this._blockchain.head.getNextInterlink(nextTarget);
@@ -278,7 +281,7 @@ class Miner extends Observable {
     /**
      * @param {number} interlinkSize
      * @return {BlockBody}
-     * @private
+     * @protected
      */
     async _getNextBody(interlinkSize) {
         const maxSize = Policy.BLOCK_SIZE_MAX
@@ -292,7 +295,7 @@ class Miner extends Observable {
 
     /**
      * @return {number}
-     * @private
+     * @protected
      */
     _getNextTimestamp() {
         const now = Math.floor(this._time.now() / 1000);
