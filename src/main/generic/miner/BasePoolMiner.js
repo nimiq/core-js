@@ -89,6 +89,7 @@ class BasePoolMiner extends Miner {
 
     _onClose(ws) {
         this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
+        Log.w(BasePoolMiner, 'Disconnected from pool');
         if (ws === this._ws) {
             this._timeoutReconnect();
         }
@@ -124,6 +125,7 @@ class BasePoolMiner extends Miner {
                         this._ws.close();
                     } else {
                         this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.target, msg.nonce);
+                        Log.d(BasePoolMiner, `Received settings from pool: address ${msg.address}, target ${msg.target}, extraData ${msg.extraData}`);
                     }
                     break;
                 case 'balance':
@@ -132,10 +134,12 @@ class BasePoolMiner extends Miner {
                         this._ws.close();
                     } else {
                         this._onBalance(msg.balance, msg.confirmedBalance, msg.payoutRequestActive);
+                        Log.d(BasePoolMiner, `Received balance from pool: ${msg.balance} (${msg.confirmedBalance} confirmed), payout request active: ${msg.payoutRequestActive}`);
                     }
                     break;
                 case 'registered':
                     this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTED);
+                    Log.i(BasePoolMiner, 'Connected to pool');
                     break;
                 case 'error':
                     Log.w(BasePoolMiner, 'Error from pool:', msg.reason);
