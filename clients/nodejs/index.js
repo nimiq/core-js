@@ -87,15 +87,15 @@ if (config.type === 'light') {
 }
 
 Nimiq.Log.instance.level = config.log.level;
-for(const tag in config.log.tags) {
+for (const tag in config.log.tags) {
     Nimiq.Log.instance.setLoggable(tag, config.log.tags[tag]);
 }
 
-for(const key in config.constantOverrides) {
+for (const key in config.constantOverrides) {
     Nimiq.ConstantHelper.instance.set(key, config.constantOverrides[key]);
 }
 
-for(const seedPeer of config.seedPeers) {
+for (const seedPeer of config.seedPeers) {
     if (!seedPeer.host || !seedPeer.port) {
         console.error('Seed peers must have host and port attributes set');
         process.exit(1);

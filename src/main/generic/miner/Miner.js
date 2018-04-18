@@ -111,8 +111,14 @@ class Miner extends Observable {
         /** @type {boolean} */
         this._submittingBlock = false;
 
+        /** @type {number} */
         this._shareCompact = 0;
+
+        /** @type {boolean} */
         this._shareCompactSet = false;
+
+        /** @type {number} */
+        this._numBlocksMined = 0;
 
         if (this._mempool) {
             // Listen to changes in the mempool which evicts invalid transactions
@@ -194,9 +200,11 @@ class Miner extends Observable {
                 if (obj.block.isFull() && BlockUtils.isProofOfWork(obj.hash, obj.block.target)) {
                     this._submittingBlock = true;
                     if (await obj.block.header.verifyProofOfWork()) {
+                        this._numBlocksMined++;
+                        blockValid = true;
+
                         // Tell listeners that we've mined a block.
                         this.fire('block-mined', obj.block, this);
-                        blockValid = true;
 
                         // Push block into blockchain.
                         if ((await this._blockchain.pushBlock(obj.block)) < 0) {
@@ -420,7 +428,7 @@ class Miner extends Observable {
         return this._extraData;
     }
 
-    /** @param {Uint8Array} extra */
+    /** @type {Uint8Array} */
     set extraData(extra) {
         if (!BufferUtils.equals(extra, this._extraData)) {
             this._extraData = extra;
@@ -428,6 +436,7 @@ class Miner extends Observable {
         }
     }
 
+    /** @type {number} */
     set shareTarget(target) {
         if (!target) {
             this._shareCompactSet = false;
@@ -435,6 +444,11 @@ class Miner extends Observable {
             this._shareCompact = BlockUtils.targetToCompact(target);
             this._shareCompactSet = true;
         }
+    }
+
+    /** @type {number} */
+    get numBlocksMined() {
+        return this._numBlocksMined;
     }
 }
 

@@ -158,6 +158,7 @@ class MetricsServer {
     _minerMetrics(res) {
         MetricsServer._metric(res, 'miner_hashrate', this._desc, this._miner.hashrate);
         MetricsServer._metric(res, 'miner_working', this._desc, this._miner.working ? 1 : 0);
+        MetricsServer._metric(res, 'miner_blocks_mined', this._desc, this._miner.numBlocksMined);
     }
 
     /**
