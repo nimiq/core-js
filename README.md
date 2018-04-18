@@ -31,7 +31,7 @@ A good way to get started is to have a look at [the most simple web application 
 Follow the Quickstart guide or use our CDN:
 
 ```
-<script src="https://cdn.nimiq.com/core/nimiq.js"></script>
+<script src="https://cdn.nimiq.com/nimiq.js"></script>
 ```
 
 ### Run browser client
