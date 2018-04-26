@@ -1,12 +1,21 @@
-# Node.js Client
+# Nimiq Node.js Client
 
 ## Usage
 
+### With a configuration file (recommended)
+
+```bash
+clients/nodejs/nimiq --config=CONFIG [options]
+```
+
+Use the [sample configuration](../clients/nodejs/sample.conf) to get started.
+
+### From the command line
 ```bash
 clients/nodejs/nimiq --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]
 ```
 
-### Configuration
+#### Configuration
 
 | **Configuration** | **Description** |
 | :--- | :--- |
@@ -15,7 +24,7 @@ clients/nodejs/nimiq --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_
 | `--cert=SSL_CERT_FILE` | SSL certificate file for your domain. CN should match HOSTNAME. |
 | `--key=SSL_KEY_FILE` | SSL private key file for your domain. |
 
-### Options
+#### Options
 
 | **Options** | **Description** |
 | :--- | :--- |
@@ -26,7 +35,6 @@ clients/nodejs/nimiq --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_
 | `--passive` | Do not actively connect to the network. |
 | `--rpc[=PORT]` | Start JSON-RPC server on port PORT (default: 8648). |
 | `--metrics[=PORT]` | Start Prometheus-compatible metrics server on port `PORT` (default: 8649).  |
-| &emsp;&emsp;&emsp;&emsp;&emsp;`[:PASSWORD]` | If PASSWORD is specified, it is required to be used for username "metrics" via Basic Authentication. |
 | `--statistics[=INTERVAL]` | Output miner statistics every INTERVAL seconds. |
 | `--type=TYPE` | Configure the consensus type, one of full (default), light or nano. |
 | `--wallet-seed=SEED` | Initialize wallet using SEED as a wallet seed. |
