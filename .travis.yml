@@ -2,7 +2,7 @@ dist: trusty
 
 language: node_js
 node_js:
-- node
+- "9"
 
 cache: yarn
 
