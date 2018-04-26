@@ -5,7 +5,7 @@
 ### With a configuration file (recommended)
 
 ```bash
-clients/nodejs/nimiq --config=CONFIG [options]
+clients/nodejs/nimiq --config=CONFIG
 ```
 
 Use the [sample configuration](../clients/nodejs/sample.conf) to get started.
