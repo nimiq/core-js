@@ -5,14 +5,17 @@
 ## Resources
 
 - [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084): High-level introduction of the Nimiq payment protocol.
-- [Nimiq Developer Reference](https://nimiq.com/developer-reference): Details of the protocol architecture.
-- [Code Documentation](https://doc.esdoc.org/github.com/nimiq-network/core/): Documentation on Nimiq Core library code and API.
-- [Node.js Client Documentation](doc/nodejs-client.md): Usage and configuration documentation for the Nimiq.js Client.
+- [Nimiq Developer Reference](https://nimiq-network.github.io/developer-reference/): Details of the protocol architecture.
+- [Core API Documentation](https://doc.esdoc.org/github.com/nimiq-network/core/): Documentation of the Nimiq Core library API.
+- [Node.js Client Documentation](doc/nodejs-client.md): Usage and configuration documentation for the Nimiq Node.js Client.
 - [JSON-RPC Client Documentation](doc/json-rpc-client.md): Usage instructions for the Nimiq JSON-RPC Client.
 - [Docker Documentation](doc/docker.md): Instuctions on setting up a Nimiq Node using Docker.
 
 ## Demo
 Check out our [Testnet](https://nimiq-testnet.com).
+
+## Prebuilt binaries
+See our [Downloads page](https://nimiq.com/#downloads) for Linux and Windows binaries.
 
 ## Quickstart
 
@@ -20,7 +23,7 @@ Check out our [Testnet](https://nimiq-testnet.com).
 2. On Ubuntu and Debian, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
     - On other Linux systems, install `git`, `python2.7`, `make`, `gcc` and `gcc-c++`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
-3. Install yarn: `sudo npm install -g yarn`.
+3. Install `yarn` globally: `sudo npm install -g yarn`.
 4. Install `gulp` globally:  `yarn global add gulp`.
 5. Clone this repository: `git clone https://github.com/nimiq-network/core`.
 6. Build the project: `cd core && yarn && yarn build`.
@@ -34,7 +37,7 @@ A good way to get started is to have a look at [the most simple web application 
 Follow the [Quickstart](#quickstart) guide or make use of our CDN:
 
 ```
-<script src="https://cdn.nimiq.com/core/nimiq.js"></script>
+<script src="https://cdn.nimiq.com/nimiq.js"></script>
 ```
 
 ## Browser client
@@ -43,8 +46,20 @@ Open `clients/browser/index.html` in your browser or include `<script src="dist/
 
 ## Node.js client
 
-### Run Node.js client
 To run a Node.js client you will need a **publicly routable IP**, **Domain**, and **SSL Certificate** (get a free certificate at [letsencrypt.org](https://letsencrypt.org/)). Start the client by running `clients/nodejs/nimiq` with the respective [configuration](doc/nodejs-client.md).
+
+## Test and Build
+
+### Run Testsuite
+- `yarn test` runs browser and Node.js tests.
+- `yarn test-browser` runs the testsuite in your browser only.
+- `yarn test-node` runs the testsuite in Node.js only.
+
+### Run ESLint
+`yarn lint` runs the ESLint javascript linter.
+
+### Build
+Executing `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ### Build binary packages for Linux distributions
 
@@ -69,19 +84,6 @@ Note: creating deb packages only works on Debian-based distributions and has bee
 3. The rpm package will be located in the `dist/` directory.
 
 Note: creating rpm packages only works on rpm-based distributions and has been tested extensively on Fedora only.
-
-### Test and Build
-
-#### Run Testsuite
-- `yarn test` runs browser and Node.js tests.
-- `yarn test-browser` runs the testsuite in your browser only.
-- `yarn test-node` runs the testsuite in Node.js only.
-
-#### Run ESLint
-`yarn lint` runs the ESLint javascript linter.
-
-#### Build
-Executing `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
 
 ## Contribute
 
