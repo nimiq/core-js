@@ -50,7 +50,7 @@
     }
   },
   "dependencies": {
-    "@nimiq/jungle-db": "^0.9.9",
+    "@nimiq/jungle-db": "^0.9.11",
     "atob": "^2.0.3",
     "btoa": "^1.1.2",
     "chalk": "^2.3.2",

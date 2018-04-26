@@ -549,32 +549,4 @@ NetworkAgent.GETADDR_RATE_LIMIT = 3; // per minute
 NetworkAgent.MAX_ADDR_PER_MESSAGE = 1000;
 NetworkAgent.MAX_ADDR_PER_REQUEST = 500;
 NetworkAgent.NUM_ADDR_PER_REQUEST = 200;
-NetworkAgent.KNOWN_ADDRESSES_COUNT_MAX = 10000;
 Class.register(NetworkAgent);
-
-class KnownAddress {
-    /**
-     * @param {PeerAddress} peerAddress
-     * @param {number} relayedAt
-     */
-    constructor(peerAddress, relayedAt) {
-        this._hashCode = peerAddress.hashCode();
-        this.relayedAt = relayedAt;
-    }
-
-    /**
-     * @param {KnownAddress|*} o
-     * @returns {boolean}
-     */
-    equals(o) {
-        return o instanceof KnownAddress
-            && this._hashCode === o._hashCode;
-    }
-
-    /**
-     * @returns {string}
-     */
-    hashCode() {
-        return this._hashCode;
-    }
-}

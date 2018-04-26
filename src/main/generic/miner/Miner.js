@@ -264,10 +264,10 @@ class Miner extends Observable {
         try {
             await accounts.commitBlockBody(body, height, this._blockchain.transactionCache);
             accountsHash = await accounts.hash();
-            await accounts.abort();
         } catch (e) {
-            await accounts.abort();
             throw new Error(`Invalid block body: ${e.message}`);
+        } finally {
+            await accounts.abort();
         }
 
         const bodyHash = body.hash();
