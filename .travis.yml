@@ -29,6 +29,7 @@ jobs:
         - yarn
         - node_modules/.bin/gulp build
         - cp -r dist ~/shared
+        - cp -r build ~/shared
         - tar czf node_modules.tar.gz node_modules
         - cp node_modules.tar.gz ~/shared
         - if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then aws s3 sync ~/shared s3://nimiq-travis-builds/shared/$TRAVIS_BUILD_ID --region eu-central-1; fi
