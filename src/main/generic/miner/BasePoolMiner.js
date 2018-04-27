@@ -30,6 +30,7 @@ class BasePoolMiner extends Miner {
         this.connectionState = BasePoolMiner.ConnectionState.CLOSED;
 
         this._reconnectTimeout = null;
+        this._exponentialBackoffReconnect = BasePoolMiner.RECONNECT_TIMEOUT;
     }
 
     requestPayout() {
@@ -56,7 +57,7 @@ class BasePoolMiner extends Miner {
         this._ws.onopen = () => this._onOpen(ws);
         this._ws.onerror = (e) => this._onError(ws, e);
         this._ws.onmessage = (msg) => this._onMessage(JSON.parse(msg.data));
-        this._ws.onclose = () => this._onClose(ws);
+        this._ws.onclose = (e) => this._onClose(ws, e);
 
         this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTING);
     }
@@ -76,7 +77,7 @@ class BasePoolMiner extends Miner {
     }
 
     _onError(ws, e) {
-        Log.w(BasePoolMiner, e.message || e);
+        Log.d(BasePoolMiner, `WebSocket connection errored ${JSON.stringify(e)}`);
         if (ws === this._ws) {
             this._timeoutReconnect();
         }
@@ -87,7 +88,8 @@ class BasePoolMiner extends Miner {
         }
     }
 
-    _onClose(ws) {
+    _onClose(ws, e) {
+        Log.d(BasePoolMiner, `WebSocket connection closed ${JSON.stringify(e)}`);
         this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
         Log.w(BasePoolMiner, 'Disconnected from pool');
         if (ws === this._ws) {
@@ -99,7 +101,8 @@ class BasePoolMiner extends Miner {
         this.disconnect();
         this._reconnectTimeout = setTimeout(() => {
             this.connect(this._host, this._port);
-        }, 30000); // after 30 sec
+        }, this._exponentialBackoffReconnect);
+        this._exponentialBackoffReconnect = Math.min(this._exponentialBackoffReconnect * 2, BasePoolMiner.RECONNECT_TIMEOUT_MAX);
     }
 
     disconnect() {
@@ -139,6 +142,7 @@ class BasePoolMiner extends Miner {
                     break;
                 case 'registered':
                     this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTED);
+                    this._exponentialBackoffReconnect = BasePoolMiner.RECONNECT_TIMEOUT;
                     Log.i(BasePoolMiner, 'Connected to pool');
                     break;
                 case 'error':
@@ -239,6 +243,8 @@ class BasePoolMiner extends Miner {
     }
 }
 BasePoolMiner.PAYOUT_NONCE_PREFIX = 'POOL_PAYOUT';
+BasePoolMiner.RECONNECT_TIMEOUT = 3000; // 3 seconds
+BasePoolMiner.RECONNECT_TIMEOUT_MAX = 30000; // 30 seconds
 
 /** @enum {number} */
 BasePoolMiner.ConnectionState = {
