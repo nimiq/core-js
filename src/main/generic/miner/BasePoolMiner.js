@@ -127,7 +127,7 @@ class BasePoolMiner extends Miner {
                         this._turnPoolOff();
                         this._ws.close();
                     } else {
-                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.target, msg.nonce);
+                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.targetCompact || BlockUtils.targetToCompact(msg.target), msg.nonce);
                         Log.d(BasePoolMiner, `Received settings from pool: address ${msg.address}, target ${msg.target}, extraData ${msg.extraData}`);
                     }
                     break;
@@ -180,20 +180,20 @@ class BasePoolMiner extends Miner {
     _turnPoolOff() {
         super.address = this._ourAddress;
         super.extraData = this._ourExtraData;
-        super.shareTarget = null;
+        super.shareCompact = null;
     }
 
     /**
      * @param {Address} address
      * @param {Uint8Array} extraData
-     * @param {number} target
+     * @param {number} targetCompact
      * @param {number} nonce
      * @private
      */
-    _onNewPoolSettings(address, extraData, target, nonce) {
+    _onNewPoolSettings(address, extraData, targetCompact, nonce) {
         super.address = address;
         super.extraData = extraData;
-        super.shareTarget = target;
+        super.shareCompact = targetCompact;
         super.nonce = nonce;
     }
 

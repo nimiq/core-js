@@ -437,11 +437,11 @@ class Miner extends Observable {
     }
 
     /** @type {number} */
-    set shareTarget(target) {
-        if (!target) {
+    set shareCompact(targetCompact) {
+        if (!targetCompact) {
             this._shareCompactSet = false;
         } else {
-            this._shareCompact = BlockUtils.targetToCompact(target);
+            this._shareCompact = targetCompact;
             this._shareCompactSet = true;
         }
     }
