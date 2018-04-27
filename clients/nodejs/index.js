@@ -54,7 +54,6 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
     process.exit();
 }
 
-const statisticsOptions = argv.statistics;
 const isNano = config.type === 'nano';
 
 if (isNano && config.miner.enabled) {

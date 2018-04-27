@@ -1,10 +1,12 @@
 /**
  * @typedef {object} BlockDescriptor
+ */
+
+/**
  * @property {Hash} hash
  * @property {Hash} prevHash
  * @property {Array.<Hash>} transactionHashes
  */
-
 class TransactionCache {
     /**
      * @param {InclusionHashSet.<Hash>} [transactionHashes]

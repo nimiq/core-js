@@ -1,7 +1,10 @@
 /**
+ * @typedef {{next: ?LinkedListEntry, prev: ?LinkedListEntry, value: V|*}} LinkedListEntry
+ */
+
+/**
  * @template V
  * @implements {Iterable.<V>}
- * @typedef {{next: ?LinkedListEntry, prev: ?LinkedListEntry, value: V|*}} LinkedListEntry
  */
 class LinkedList {
     /**

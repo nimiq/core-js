@@ -274,6 +274,7 @@ DataChannel.CHUNK_SIZE_MAX = 1024 * 16; // 16 kb
 DataChannel.MESSAGE_SIZE_MAX = 10 * 1024 * 1024; // 10 mb
 DataChannel.CHUNK_TIMEOUT = 1000 * 5; // 5 seconds
 DataChannel.MESSAGE_TIMEOUT = (DataChannel.MESSAGE_SIZE_MAX / DataChannel.CHUNK_SIZE_MAX) * DataChannel.CHUNK_TIMEOUT;
+Class.register(DataChannel);
 
 class ExpectedMessage {
     /**
@@ -298,26 +299,24 @@ DataChannel.ReadyState = {
     CONNECTING: 0,
     OPEN: 1,
     CLOSING: 2,
-    CLOSED: 3
-};
+    CLOSED: 3,
 
-/**
- * @param {string} str
- * @return {DataChannel.ReadyState}
- */
-DataChannel.ReadyState.fromString = function (str) {
-    switch (str) {
-        case 'connecting':
-            return DataChannel.ReadyState.CONNECTING;
-        case 'open':
-            return DataChannel.ReadyState.OPEN;
-        case 'closing':
-            return DataChannel.ReadyState.CLOSING;
-        case 'closed':
-            return DataChannel.ReadyState.CLOSED;
-        default:
-            throw new Error('Invalid string');
+    /**
+     * @param {string} str
+     * @returns {DataChannel.ReadyState}
+     */
+    fromString: function (str) {
+        switch (str) {
+            case 'connecting':
+                return DataChannel.ReadyState.CONNECTING;
+            case 'open':
+                return DataChannel.ReadyState.OPEN;
+            case 'closing':
+                return DataChannel.ReadyState.CLOSING;
+            case 'closed':
+                return DataChannel.ReadyState.CLOSED;
+            default:
+                throw new Error('Invalid string');
+        }
     }
 };
-
-Class.register(DataChannel);

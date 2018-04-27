@@ -391,6 +391,7 @@ class BaseConsensus extends Observable {
         return this._network;
     }
 
+    /** @type {InvRequestManager} */
     get invRequestManager() {
         return this._invRequestManager;
     }
