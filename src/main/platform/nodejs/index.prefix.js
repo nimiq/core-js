@@ -6,7 +6,7 @@ const fs = require('fs');
 const dns = require('dns');
 const https = require('https');
 const WebSocket = require('uws');
-const NodeNative = require(`${__dirname}/nimiq_node`);
+const NodeNative = require('bindings')('nimiq_node.node');
 const chalk = require('chalk');
 
 global.Class = {

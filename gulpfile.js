@@ -513,7 +513,6 @@ const NODE_SOURCES = [
 ];
 
 gulp.task('build-node', function () {
-    gulp.src(['build/Release/nimiq_node.node']).pipe(gulp.dest('dist'));
     return gulp.src(NODE_SOURCES)
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
@@ -523,7 +522,6 @@ gulp.task('build-node', function () {
 });
 
 gulp.task('build-node-istanbul', ['build-istanbul'], function () {
-    gulp.src(['build/Release/nimiq_node.node']).pipe(gulp.dest('dist'));
     return gulp.src(NODE_SOURCES.map(f => `./.istanbul/${f}`))
         .pipe(sourcemaps.init())
         .pipe(concat('node-istanbul.js'))
