@@ -1,9 +1,9 @@
 {
-  "name": "nimiq",
-  "version": "1.0.0",
+  "name": "@nimiq/core",
+  "version": "1.1.0-alpha.1",
+  "main": "dist/node.js",
   "homepage": "https://nimiq.com/",
   "description": "",
-  "private": true,
   "scripts": {
     "prepare": "gulp build-node",
     "build": "gulp build",
@@ -30,6 +30,9 @@
   "engines": {
     "node": ">=7.9.0"
   },
+  "files": [
+    "dist/node.js"
+  ],
   "node_deb": {
     "init": "systemd",
     "architecture": "none",
@@ -49,6 +52,7 @@
       "daemon": "app/node /usr/share/nimiq/app/index.js"
     }
   },
+  "gypfile": true,
   "dependencies": {
     "@nimiq/jungle-db": "^0.9.11",
     "atob": "^2.0.3",
@@ -100,6 +104,7 @@
     "karma-sauce-launcher": "^1.2.0",
     "merge2": "^1.2.1",
     "node-deb": "^0.10.4",
+    "node-gyp": "^3.6.2",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   },
