@@ -4,7 +4,7 @@
 %define _topdir %(echo $PWD)/
 
 Name:           nimiq
-Version:        1.0.0
+Version:        1.1.0
 Release:        1
 Summary:        Nimiq node.js client
 
@@ -46,7 +46,7 @@ install -m 0666 nimiq.repo %{buildroot}%{_sysconfdir}/yum.repos.d/
 install -m 0666 RPM-GPG-KEY-nimiq %{buildroot}%{_sysconfdir}/pki/rpm-gpg/
 install -m 0755 node %{buildroot}%{_datarootdir}/%{name}/
 install -m 0644 index.js package.json VERSION %{buildroot}%{_datarootdir}/%{name}/
-cp -r lib/ modules/ node_modules/ %{buildroot}%{_datarootdir}/%{name}/
+cp -r build/ lib/ modules/ node_modules/ %{buildroot}%{_datarootdir}/%{name}/
 install -m 0644 systemd.service %{buildroot}%{_unitdir}/%{name}.service
 
 
@@ -59,6 +59,7 @@ install -m 0644 systemd.service %{buildroot}%{_unitdir}/%{name}.service
 %{_datarootdir}/%{name}/package.json
 %{_datarootdir}/%{name}/VERSION
 %{_datarootdir}/%{name}/lib
+%{_datarootdir}/%{name}/build
 %{_datarootdir}/%{name}/modules
 %{_datarootdir}/%{name}/node_modules
 %{_unitdir}/%{name}.service

@@ -538,7 +538,6 @@ const RELEASE_SOURCES = [
 const RELEASE_LIB = [
     'dist/node.*',
     'dist/worker-*',
-    'build/Release/nimiq_node_generic.node'
 ];
 
 gulp.task('prepare-packages', ['build-node'], function () {
@@ -550,6 +549,7 @@ gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/node.js', '../lib/node.js')).pipe(gulp.dest('packaging/BUILD/modules'));
     gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
+    gulp.src('build/Release/nimiq_node_generic.node').pipe(gulp.dest('packaging/BUILD/build'));
 });
 
 gulp.task('test', ['watch'], function () {

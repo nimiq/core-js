@@ -21,6 +21,7 @@ settings.json
 packaging/BUILD/VERSION
 packaging/BUILD/fakeroot/
 packaging/BUILD/index.js
+packaging/BUILD/build/
 packaging/BUILD/lib/
 packaging/BUILD/modules/
 packaging/BUILD/nimiq
