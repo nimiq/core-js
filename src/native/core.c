@@ -114,7 +114,9 @@ int allocate_memory(const argon2_context *context, uint8_t **memory,
 void free_memory(const argon2_context *context, uint8_t *memory,
                  size_t num, size_t size) {
     size_t memory_size = num*size;
+    if (!(context->flags & ARGON2_FLAG_NO_WIPE)) {
     clear_internal_memory(memory, memory_size);
+    }
     if (context->free_cbk) {
         (context->free_cbk)(memory, memory_size);
     } else {
@@ -164,8 +166,10 @@ void finalize(const argon2_context *context, argon2_instance_t *instance) {
             blake2b_long(context->out, context->outlen, blockhash_bytes,
                          ARGON2_BLOCK_SIZE);
             /* clear blockhash and blockhash_bytes */
+            if (!(context->flags & ARGON2_FLAG_NO_WIPE)) {
             clear_internal_memory(blockhash.v, ARGON2_BLOCK_SIZE);
             clear_internal_memory(blockhash_bytes, ARGON2_BLOCK_SIZE);
+            }
         }
 
 #ifdef GENKAT
@@ -520,7 +524,9 @@ void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
         load_block(&instance->memory[l * instance->lane_length + 1],
                    blockhash_bytes);
     }
+    if (!(instance->context_ptr->flags & ARGON2_FLAG_NO_WIPE)) {
     clear_internal_memory(blockhash_bytes, ARGON2_BLOCK_SIZE);
+    }
 }
 
 void initial_hash(uint8_t *blockhash, argon2_context *context,
@@ -618,9 +624,11 @@ int initialize(argon2_instance_t *instance, argon2_context *context) {
     /* Hashing all inputs */
     initial_hash(blockhash, context, instance->type);
     /* Zeroing 8 extra bytes */
+    if (!(context->flags & ARGON2_FLAG_NO_WIPE)) {
     clear_internal_memory(blockhash + ARGON2_PREHASH_DIGEST_LENGTH,
                           ARGON2_PREHASH_SEED_LENGTH -
                               ARGON2_PREHASH_DIGEST_LENGTH);
+    }
 
 #ifdef GENKAT
     initial_kat(blockhash, context, instance->type);
@@ -630,7 +638,9 @@ int initialize(argon2_instance_t *instance, argon2_context *context) {
      */
     fill_first_blocks(blockhash, instance);
     /* Clearing the hash */
+    if (!(context->flags & ARGON2_FLAG_NO_WIPE)) {
     clear_internal_memory(blockhash, ARGON2_PREHASH_SEED_LENGTH);
+    }
 
     return ARGON2_OK;
 }
