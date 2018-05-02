@@ -6,7 +6,7 @@ DISTDIR := ../../dist
 EMCC_BASE_FLAGS := -s NO_FILESYSTEM=1 -s ASSERTIONS=0 -s USE_CLOSURE_COMPILER=1 -s EXPORTED_RUNTIME_METHODS=[]
 EMCC_WASM_FLAGS := -s WASM=1 -s DEMANGLE_SUPPORT=0 -s WARN_UNALIGNED=1
 EMCC_LIB_FLAGS := -s NO_EXIT_RUNTIME=1 -s MODULARIZE=1 \
-    -s 'EXPORTED_FUNCTIONS=["_nimiq_blake2","_nimiq_argon2","_nimiq_argon2_verify","_nimiq_argon2_target","_nimiq_kdf","_nimiq_sha256","_ed25519_sign","_ed25519_verify","_get_static_memory_start","_get_static_memory_size","_ed25519_public_key_derive","_ed25519_create_commitment","_ed25519_add_scalars","_ed25519_aggregate_commitments","_ed25519_hash_public_keys","_ed25519_delinearize_public_key","_ed25519_aggregate_delinearized_public_keys","_ed25519_derive_delinearized_private_key","_ed25519_delinearized_partial_sign"]'
+    -s 'EXPORTED_FUNCTIONS=["_nimiq_blake2","_nimiq_argon2","_nimiq_argon2_no_wipe","_nimiq_argon2_verify","_nimiq_argon2_target","_nimiq_kdf","_nimiq_sha256","_ed25519_sign","_ed25519_verify","_get_static_memory_start","_get_static_memory_size","_ed25519_public_key_derive","_ed25519_create_commitment","_ed25519_add_scalars","_ed25519_aggregate_commitments","_ed25519_hash_public_keys","_ed25519_delinearize_public_key","_ed25519_aggregate_delinearized_public_keys","_ed25519_derive_delinearized_private_key","_ed25519_delinearized_partial_sign"]'
 EMCC_OPT_FLAGS := -msse2
 
 BASE_FILES := nimiq_native.c \

@@ -85,8 +85,16 @@ void nimiq_sha256(void *out, const void *in, const size_t inlen) {
     sha256_final(&ctx, out);
 }
 
+inline int nimiq_argon2_flags(void *out, const void *in, const size_t inlen, const uint32_t m_cost, const uint32_t flags) {
+    return argon2d_hash_raw_flags(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32, flags);
+}
+
 int nimiq_argon2(void *out, const void *in, const size_t inlen, const uint32_t m_cost) {
-    return argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32);
+    return nimiq_argon2_flags(out, in, inlen, m_cost, ARGON2_DEFAULT_FLAGS);
+}
+
+int nimiq_argon2_no_wipe(void *out, const void *in, const size_t inlen, const uint32_t m_cost) {
+    return nimiq_argon2_flags(out, in, inlen, m_cost, ARGON2_DEFAULT_FLAGS | ARGON2_FLAG_NO_WIPE);
 }
 
 int nimiq_kdf(void *out, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
@@ -105,7 +113,7 @@ uint32_t nimiq_argon2_target(void *out, void *in, const size_t inlen, const uint
     uint256 target = uint256_new(), hash = uint256_new();
     uint256_set_compact(target, compact);
     for(noncer[0] = htonl(min_nonce); ntohl(noncer[0]) < max_nonce; noncer[0] = htonl(ntohl(noncer[0])+1)) {
-        nimiq_argon2(out, in, inlen, m_cost);
+        nimiq_argon2_no_wipe(out, in, inlen, m_cost);
         uint256_set_bytes(hash, out);
         if (uint256_compare(target, hash) > 0) {
             break;

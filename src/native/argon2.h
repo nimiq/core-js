@@ -91,6 +91,7 @@ extern "C" {
 #define ARGON2_DEFAULT_FLAGS UINT32_C(0)
 #define ARGON2_FLAG_CLEAR_PASSWORD (UINT32_C(1) << 0)
 #define ARGON2_FLAG_CLEAR_SECRET (UINT32_C(1) << 1)
+#define ARGON2_FLAG_NO_WIPE (UINT32_C(1) << 2)
 
 /* Global flag to determine if we are wiping internal memory buffers. This flag
  * is defined in core.c and deafults to 1 (wipe internal memory). */
@@ -302,6 +303,12 @@ ARGON2_PUBLIC int argon2d_hash_raw(const uint32_t t_cost, const uint32_t m_cost,
                                    const size_t pwdlen, const void *salt,
                                    const size_t saltlen, void *hash,
                                    const size_t hashlen);
+
+ARGON2_PUBLIC int argon2d_hash_raw_flags(const uint32_t t_cost, const uint32_t m_cost,
+                                   const uint32_t parallelism, const void *pwd,
+                                   const size_t pwdlen, const void *salt,
+                                   const size_t saltlen, void *hash,
+                                   const size_t hashlen, const uint32_t flags);
 
 ARGON2_PUBLIC int argon2id_hash_encoded(const uint32_t t_cost,
                                         const uint32_t m_cost,
