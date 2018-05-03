@@ -5,6 +5,23 @@ require('module').Module._initPaths();
 const Nimiq = require(process.env.USE_ISTANBUL ? 'node-istanbul.js' : 'node.js');
 for (let i in Nimiq) global[i] = Nimiq[i];
 
+if (process.env.JASMINE_VERBOSE) {
+    const JasmineConsoleReporter = require('jasmine-console-reporter');
+    const reporter = new JasmineConsoleReporter({
+        colors: 1,           // (0|false)|(1|true)|2
+        cleanStack: 1,       // (0|false)|(1|true)|2|3
+        verbosity: 4,        // (0|false)|1|2|(3|true)|4
+        listStyle: 'indent', // "flat"|"indent"
+        activity: true
+    });
+    
+    // initialize and execute
+    jasmine.getEnv().clearReporters();
+    jasmine.getEnv().addReporter(reporter);
+}
+
+Nimiq.Log.instance._native._global_prefix = String.fromCharCode(27) + '[1K\r';
+
 global.Class = {
     register: clazz => {
         global[clazz.prototype.constructor.name] = clazz;

@@ -2,6 +2,7 @@ class LogNative {
     constructor() {
         this._global_level = Log.INFO;
         this._tag_levels = {};
+        this._global_prefix = '';
     }
 
     isLoggable(tag, level) {
@@ -25,7 +26,7 @@ class LogNative {
         if (!this.isLoggable(tag, level)) return;
         if (tag && tag.name) tag = tag.name;
         if (tag) args.unshift(chalk.bold(tag) + ':');
-        let prefix = `[${Log.Level.toStringTag(level)} ${new Date().toTimeString().substr(0, 8)}] `;
+        let prefix = `${this._global_prefix}[${Log.Level.toStringTag(level)} ${new Date().toTimeString().substr(0, 8)}] `;
         if (level >= Log.ERROR) {
             console.log(prefix + chalk.red(args.join(' ')));
         } else if (level >= Log.WARNING) {
