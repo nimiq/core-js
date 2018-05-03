@@ -21,8 +21,8 @@ class ChainData {
 
     /**
      * @param {Block} head
-     * @param {number} totalDifficulty
-     * @param {number} totalWork
+     * @param {BigNumber} totalDifficulty
+     * @param {BigNumber} totalWork
      * @param {SuperBlockCounts} superBlockCounts
      * @param {boolean} [onMainChain]
      * @param {Hash} [mainChainSuccessor]
@@ -38,14 +38,14 @@ class ChainData {
     }
 
     /**
-     * @returns {{_head: SerialBuffer, _totalDifficulty: number, _totalWork: number, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?SerialBuffer, _height: number, _pow: SerialBuffer}}
+     * @returns {{_head: SerialBuffer, _totalDifficulty: string, _totalWork: string, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?SerialBuffer, _height: number, _pow: SerialBuffer}}
      */
     toObj() {
         Assert.that(this._head.header._pow instanceof Hash, 'Expected cached PoW hash');
         return {
             _head: this._head.toLight().serialize(),
-            _totalDifficulty: this._totalDifficulty,
-            _totalWork: this._totalWork,
+            _totalDifficulty: this._totalDifficulty.toString(),
+            _totalWork: this._totalWork.toString(),
             _superBlockCounts: this._superBlockCounts.array,
             _onMainChain: this._onMainChain,
             _mainChainSuccessor: this._mainChainSuccessor ? this._mainChainSuccessor.serialize() : null,
@@ -55,12 +55,12 @@ class ChainData {
     }
 
     /**
-     * @param {{_head: Uint8Array, _totalDifficulty: number, _totalWork: number, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?Uint8Array, _height: number, _pow: Uint8Array}} obj
+     * @param {{_head: Uint8Array, _totalDifficulty: string, _totalWork: string, _superBlockCounts: Array.<number>, _onMainChain: boolean, _mainChainSuccessor: ?Uint8Array, _height: number, _pow: Uint8Array}} obj
      * @param {string} [hashBase64]
      * @returns {ChainData}
      */
     static fromObj(obj, hashBase64) {
-        if (!obj) return obj;
+        if (!obj) return null;
         const head = Block.unserialize(new SerialBuffer(obj._head));
         head.header._pow = Hash.unserialize(new SerialBuffer(obj._pow));
         head.header._hash = hashBase64 ? Hash.fromBase64(hashBase64) : null;
@@ -68,8 +68,8 @@ class ChainData {
         const successor = obj._mainChainSuccessor ? Hash.unserialize(new SerialBuffer(obj._mainChainSuccessor)) : null;
         return new ChainData(
             head,
-            obj._totalDifficulty,
-            obj._totalWork,
+            new BigNumber(obj._totalDifficulty),
+            new BigNumber(obj._totalWork),
             superBlockCounts,
             obj._onMainChain,
             successor
@@ -91,8 +91,8 @@ class ChainData {
         Assert.that(this._totalDifficulty > 0);
 
         const pow = await block.pow();
-        const totalDifficulty = this.totalDifficulty + block.difficulty;
-        const totalWork = this.totalWork + BlockUtils.realDifficulty(pow);
+        const totalDifficulty = this.totalDifficulty.plus(block.difficulty);
+        const totalWork = this.totalWork.plus(BlockUtils.realDifficulty(pow));
         const superBlockCounts = this.superBlockCounts.copyAndAdd(BlockUtils.getHashDepth(pow));
         return new ChainData(block, totalDifficulty, totalWork, superBlockCounts);
     }
@@ -105,8 +105,8 @@ class ChainData {
         Assert.that(this._totalDifficulty > 0);
 
         const pow = await this.head.pow();
-        const totalDifficulty = this.totalDifficulty - this.head.difficulty;
-        const totalWork = this.totalWork - BlockUtils.realDifficulty(pow);
+        const totalDifficulty = this.totalDifficulty.minus(this.head.difficulty);
+        const totalWork = this.totalWork.minus(BlockUtils.realDifficulty(pow));
         const superBlockCounts = this.superBlockCounts.copyAndSubtract(BlockUtils.getHashDepth(pow));
         return new ChainData(block, totalDifficulty, totalWork, superBlockCounts);
     }
@@ -116,12 +116,12 @@ class ChainData {
         return this._head;
     }
 
-    /** @type {number} */
+    /** @type {BigNumber} */
     get totalDifficulty() {
         return this._totalDifficulty;
     }
 
-    /** @type {number} */
+    /** @type {BigNumber} */
     get totalWork() {
         return this._totalWork;
     }

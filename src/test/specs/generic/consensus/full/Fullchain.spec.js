@@ -54,7 +54,7 @@ describe('Blockchain', () => {
 
             // Now try to push a block with the wrong difficulty
             const correctDifficulty = BlockUtils.targetToDifficulty(await testBlockchain.getNextTarget());
-            const compactWrongDifficulty = BlockUtils.difficultyToCompact(correctDifficulty + 1);
+            const compactWrongDifficulty = BlockUtils.difficultyToCompact(correctDifficulty.plus(1));
             const block = await testBlockchain.createBlock({nBits: compactWrongDifficulty});
             const status = await testBlockchain.pushBlock(block);
             expect(status).toBe(FullChain.ERR_INVALID);
@@ -544,7 +544,7 @@ describe('Blockchain', () => {
 
             // Check that the getters return the expected values
             expect(testBlockchain.head.equals(block)).toBe(true);
-            expect(testBlockchain.totalDifficulty).toBe(2);
+            expect(testBlockchain.totalDifficulty).toEqual(new BigNumber(2));
             expect(testBlockchain.height).toBe(2);
             expect(testBlockchain.headHash.equals(block.hash())).toBe(true);
 
@@ -561,7 +561,7 @@ describe('Blockchain', () => {
 
             // Check that the getters return the new expected values
             expect(testBlockchain.head).toBe(block);
-            expect(testBlockchain.totalDifficulty).toBe(4);
+            expect(testBlockchain.totalDifficulty).toEqual(new BigNumber(4));
             expect(testBlockchain.height).toBe(4);
             expect(testBlockchain.headHash.equals(block.hash())).toBe(true);
 

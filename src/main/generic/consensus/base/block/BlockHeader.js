@@ -204,12 +204,12 @@ class BlockHeader {
         return this._nBits;
     }
 
-    /** @type {number} */
+    /** @type {BigNumber} */
     get target() {
         return BlockUtils.compactToTarget(this._nBits);
     }
 
-    /** @type {number} */
+    /** @type {BigNumber} */
     get difficulty() {
         return BlockUtils.compactToDifficulty(this._nBits);
     }

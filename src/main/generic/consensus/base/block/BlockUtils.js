@@ -1,21 +1,21 @@
 class BlockUtils {
     /**
      * @param {number} compact
-     * @returns {number}
+     * @returns {BigNumber}
      */
     static compactToTarget(compact) {
-        return (compact & 0xffffff) * Math.pow(2, (8 * ((compact >> 24) - 3)));
+        return new BigNumber(compact & 0xffffff).times(new BigNumber(2).pow(8 * ((compact >> 24) - 3)));
     }
 
     /**
-     * @param {number} target
+     * @param {BigNumber} target
      * @returns {number}
      */
     static targetToCompact(target) {
-        if (!Number.isFinite(target) || Number.isNaN(target)) throw 'Invalid Target';
+        if (!target.isFinite() || target.isNaN()) throw 'Invalid Target';
 
         // Divide to get first byte
-        let size = Math.max(Math.ceil(Math.log2(target) / 8), 1);
+        let size = Math.max(Math.ceil(Math.log2(target.toNumber()) / 8), 1);
         const firstByte = target / Math.pow(2, (size - 1) * 8);
 
         // If the first (most significant) byte is greater than 127 (0x7f),
@@ -33,15 +33,16 @@ class BlockUtils {
     }
 
     /**
-     * @param {number} target
+     * @param {BigNumber} target
      * @returns {number}
      */
     static getTargetHeight(target) {
-        return Math.ceil(Math.log2(target));
+        // Precision loss should be ok here.
+        return Math.ceil(Math.log2(target.toNumber()));
     }
 
     /**
-     * @param {number} target
+     * @param {BigNumber} target
      * @returns {number}
      */
     static getTargetDepth(target) {
@@ -50,14 +51,14 @@ class BlockUtils {
 
     /**
      * @param {number} compact
-     * @returns {number}
+     * @returns {BigNumber}
      */
     static compactToDifficulty(compact) {
-        return Policy.BLOCK_TARGET_MAX / BlockUtils.compactToTarget(compact);
+        return Policy.BLOCK_TARGET_MAX.div(BlockUtils.compactToTarget(compact));
     }
 
     /**
-     * @param {number} difficulty
+     * @param {BigNumber} difficulty
      * @returns {number}
      */
     static difficultyToCompact(difficulty) {
@@ -65,32 +66,32 @@ class BlockUtils {
     }
 
     /**
-     * @param {number} difficulty
-     * @returns {number}
+     * @param {BigNumber} difficulty
+     * @returns {BigNumber}
      */
     static difficultyToTarget(difficulty) {
-        return Policy.BLOCK_TARGET_MAX / difficulty;
+        return Policy.BLOCK_TARGET_MAX.div(difficulty);
     }
 
     /**
-     * @param {number} target
-     * @returns {number}
+     * @param {BigNumber} target
+     * @returns {BigNumber}
      */
     static targetToDifficulty(target) {
-        return Policy.BLOCK_TARGET_MAX / target;
+        return Policy.BLOCK_TARGET_MAX.div(target);
     }
 
     /**
      * @param {Hash} hash
-     * @returns {number}
+     * @returns {BigNumber}
      */
     static hashToTarget(hash) {
-        return parseInt(hash.toHex(), 16);
+        return new BigNumber(hash.toHex(), 16);
     }
 
     /**
      * @param {Hash} hash
-     * @returns {number}
+     * @returns {BigNumber}
      */
     static realDifficulty(hash) {
         return BlockUtils.targetToDifficulty(BlockUtils.hashToTarget(hash));
@@ -123,18 +124,18 @@ class BlockUtils {
     }
 
     /**
-     * @param {number} target
+     * @param {BigNumber} target
      * @returns {boolean}
      */
     static isValidTarget(target) {
-        return target >= 1 && target <= Policy.BLOCK_TARGET_MAX;
+        return target.gte(1) && target.lte(Policy.BLOCK_TARGET_MAX);
     }
 
     /**
      * @param {BlockHeader} headBlock
      * @param {BlockHeader} tailBlock
-     * @param {number} deltaTotalDifficulty
-     * @returns {number}
+     * @param {BigNumber} deltaTotalDifficulty
+     * @returns {BigNumber}
      */
     static getNextTarget(headBlock, tailBlock, deltaTotalDifficulty) {
         Assert.that(
@@ -148,7 +149,7 @@ class BlockUtils {
         // a sliding window that starts before the genesis block. Assume difficulty = 1 for these blocks.
         if (headBlock.height <= Policy.DIFFICULTY_BLOCK_WINDOW) {
             actualTime += (Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1) * Policy.BLOCK_TIME;
-            deltaTotalDifficulty += Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1;
+            deltaTotalDifficulty = deltaTotalDifficulty.plus(Policy.DIFFICULTY_BLOCK_WINDOW - headBlock.height + 1);
         }
 
         // Compute the target adjustment factor.
@@ -160,17 +161,18 @@ class BlockUtils {
         adjustment = Math.min(adjustment, Policy.DIFFICULTY_MAX_ADJUSTMENT_FACTOR);
 
         // Compute the next target.
-        const averageDifficulty = deltaTotalDifficulty / Policy.DIFFICULTY_BLOCK_WINDOW;
+        const averageDifficulty = deltaTotalDifficulty.div(Policy.DIFFICULTY_BLOCK_WINDOW);
         const averageTarget = BlockUtils.difficultyToTarget(averageDifficulty);
-        let nextTarget = averageTarget * adjustment;
+        let nextTarget = averageTarget.times(adjustment);
 
         // Make sure the target is below or equal the maximum allowed target (difficulty 1).
         // Also enforce a minimum target of 1.
-        nextTarget = Math.min(nextTarget, Policy.BLOCK_TARGET_MAX);
-        nextTarget = Math.max(nextTarget, 1);
+        nextTarget = BigNumber.min(nextTarget, Policy.BLOCK_TARGET_MAX);
+        nextTarget = BigNumber.max(nextTarget, 1);
 
         // XXX Reduce target precision to nBits precision.
         const nBits = BlockUtils.targetToCompact(nextTarget);
+        if (headBlock.height > 36455 && headBlock.height < 36460) console.log(headBlock.height + 1, actualTime, averageDifficulty, averageTarget, nextTarget);
         return BlockUtils.compactToTarget(nBits);
     }
 }

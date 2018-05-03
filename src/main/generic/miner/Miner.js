@@ -237,7 +237,7 @@ class Miner extends Observable {
             const interlink = await this._getNextInterlink(nextTarget);
             const body = await this._getNextBody(interlink.serializedSize);
             const header = await this._getNextHeader(nextTarget, interlink, body);
-            if ((await this._blockchain.getNextTarget()) !== nextTarget) return this.getNextBlock();
+            if (!(await this._blockchain.getNextTarget()).equals(nextTarget)) return this.getNextBlock();
             return new Block(header, interlink, body);
         } catch (e) {
             // Retry up to three times.
@@ -247,7 +247,7 @@ class Miner extends Observable {
     }
 
     /**
-     * @param {number} nextTarget
+     * @param {BigNumber} nextTarget
      * @param {BlockInterlink} interlink
      * @param {BlockBody} body
      * @return {Promise.<BlockHeader>}
@@ -278,7 +278,7 @@ class Miner extends Observable {
     }
 
     /**
-     * @param {number} nextTarget
+     * @param {BigNumber} nextTarget
      * @returns {Promise.<BlockInterlink>}
      * @protected
      */

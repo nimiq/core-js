@@ -1,2 +1,3 @@
+src/main/generic/utils/number/BigNumber.js
 *.prefix.js
 *.suffix.js
