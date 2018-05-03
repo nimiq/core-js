@@ -71,11 +71,11 @@ class ChainProof {
         const denseChain = denseSuffix.concat(this.suffix.headers);
 
         // Compute totalDifficulty for each block of the dense chain.
-        let totalDifficulty = 0;
+        let totalDifficulty = new BigNumber(0);
         const totalDifficulties = [];
         for (let i = 0; i < denseChain.length; i++) {
-            totalDifficulty += denseChain[i].difficulty;
-            totalDifficulties[i] = totalDifficulty;
+            totalDifficulty = totalDifficulty.plus(denseChain[i].difficulty);
+            totalDifficulties[i] = new BigNumber(totalDifficulty);
         }
 
         let headIndex = denseChain.length - 2;
@@ -83,7 +83,7 @@ class ChainProof {
         while (tailIndex >= 0 && headIndex >= 0) {
             const headBlock = denseChain[headIndex];
             const tailBlock = denseChain[tailIndex];
-            const deltaTotalDifficulty = totalDifficulties[headIndex] - totalDifficulties[tailIndex];
+            const deltaTotalDifficulty = totalDifficulties[headIndex].minus(totalDifficulties[tailIndex]);
             const target = BlockUtils.getNextTarget(headBlock, tailBlock, deltaTotalDifficulty);
             const nBits = BlockUtils.targetToCompact(target);
 

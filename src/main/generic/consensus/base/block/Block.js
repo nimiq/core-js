@@ -298,7 +298,7 @@ class Block {
     }
 
     /**
-     * @param {number} nextTarget
+     * @param {BigNumber} nextTarget
      * @param {number} [nextVersion]
      * @returns {Promise.<BlockInterlink>}
      */
@@ -437,14 +437,14 @@ class Block {
     }
 
     /**
-     * @type {number}
+     * @type {BigNumber}
      */
     get target() {
         return this._header.target;
     }
 
     /**
-     * @type {number}
+     * @type {BigNumber}
      */
     get difficulty() {
         return this._header.difficulty;
@@ -506,6 +506,10 @@ class Block {
      */
     pow(buf) {
         return this._header.pow(buf);
+    }
+
+    toString() {
+        return `Block{height=${this.height},prev=${this.prevHash}}`;
     }
 
 }

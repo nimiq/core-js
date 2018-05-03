@@ -163,7 +163,7 @@ describe('BlockHeader', () => {
         expect(blockHeader2.prevHash.equals(prevHash)).toBe(true);
         expect(blockHeader2.bodyHash.equals(bodyHash)).toBe(true);
         expect(blockHeader2.accountsHash.equals(accountsHash)).toBe(true);
-        expect(blockHeader2.difficulty).toBe(BlockUtils.compactToDifficulty(difficulty));
+        expect(blockHeader2.difficulty).toEqual(BlockUtils.compactToDifficulty(difficulty));
         expect(blockHeader2.timestamp).toBe(timestamp);
     });
 

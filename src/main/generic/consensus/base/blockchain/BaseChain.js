@@ -100,7 +100,7 @@ class BaseChain extends IBlockchain {
      * Computes the target value for the block after the given block or the head of this chain if no block is given.
      * @param {Block} [block]
      * @param {Block} [next]
-     * @returns {Promise.<number>}
+     * @returns {Promise.<BigNumber>}
      */
     async getNextTarget(block, next) {
         /** @type {ChainData} */
@@ -132,7 +132,7 @@ class BaseChain extends IBlockchain {
                 prevData = await this._store.getChainData(prevData.head.prevHash);
                 if (!prevData) {
                     // Not enough blocks are available to compute the next target, fail.
-                    return -1;
+                    return null;
                 }
             }
 
@@ -145,10 +145,10 @@ class BaseChain extends IBlockchain {
 
         if (!tailData || tailData.totalDifficulty < 1) {
             // Not enough blocks are available to compute the next target, fail.
-            return -1;
+            return null;
         }
 
-        const deltaTotalDifficulty = headData.totalDifficulty - tailData.totalDifficulty;
+        const deltaTotalDifficulty = headData.totalDifficulty.minus(tailData.totalDifficulty);
         return BlockUtils.getNextTarget(headData.head.header, tailData.head.header, deltaTotalDifficulty);
     }
 

@@ -1,6 +1,7 @@
 class Class {
     static get scope() {
         if (typeof exports !== 'undefined') return exports;
+        if (typeof self !== 'undefined') return self;
         return window;
     }
 

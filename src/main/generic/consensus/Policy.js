@@ -106,10 +106,10 @@ Policy.BLOCK_SIZE_MAX = 1e5; // 100 kb
 
 /**
  * The highest (easiest) block PoW target.
- * @type {number}
+ * @type {BigNumber}
  * @constant
  */
-Policy.BLOCK_TARGET_MAX = Math.pow(2, 240);
+Policy.BLOCK_TARGET_MAX = new BigNumber(2).pow(240);
 
 /**
  * Number of blocks we take into account to calculate next difficulty.
