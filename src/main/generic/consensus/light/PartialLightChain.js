@@ -204,7 +204,7 @@ class PartialLightChain extends LightChain {
         // Retrieve the immediate predecessor.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(block.prevHash);
-        if (!prevData || prevData.totalDifficulty <= 0) {
+        if (!prevData || prevData.totalDifficulty.lte(0)) {
             return NanoChain.ERR_ORPHAN;
         }
 

@@ -88,10 +88,14 @@ class HeaderChain {
     }
 
     /**
-     * @returns {number}
+     * @returns {BigNumber}
      */
     totalDifficulty() {
-        return this._headers.reduce((sum, header) => sum + BlockUtils.targetToDifficulty(header.target), 0);
+        let totalDifficulty = new BigNumber(0);
+        for (const header of this._headers) {
+            totalDifficulty = totalDifficulty.plus(header.difficulty);
+        }
+        return totalDifficulty;
     }
 }
 Class.register(HeaderChain);
