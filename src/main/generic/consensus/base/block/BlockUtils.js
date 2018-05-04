@@ -172,7 +172,6 @@ class BlockUtils {
 
         // XXX Reduce target precision to nBits precision.
         const nBits = BlockUtils.targetToCompact(nextTarget);
-        if (headBlock.height > 36455 && headBlock.height < 36460) console.log(headBlock.height + 1, actualTime, averageDifficulty, averageTarget, nextTarget);
         return BlockUtils.compactToTarget(nBits);
     }
 }
