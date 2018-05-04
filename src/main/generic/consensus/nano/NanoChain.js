@@ -147,7 +147,7 @@ class NanoChain extends BaseChain {
         const head = proof.prefix.head;
         const headHash = head.hash();
         const headData = await this._store.getChainData(headHash);
-        if (!headData || headData.totalDifficulty <= 0) {
+        if (!headData || headData.totalDifficulty.lte(0)) {
             // Delete our current chain.
             await this._store.truncate();
 
@@ -204,7 +204,7 @@ class NanoChain extends BaseChain {
         // Retrieve the immediate predecessor.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(block.prevHash);
-        if (!prevData || prevData.totalDifficulty <= 0) {
+        if (!prevData || prevData.totalDifficulty.lte(0)) {
             return NanoChain.ERR_ORPHAN;
         }
 
@@ -243,7 +243,7 @@ class NanoChain extends BaseChain {
         // Retrieve the immediate predecessor.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(header.prevHash);
-        if (!prevData || prevData.totalDifficulty <= 0) {
+        if (!prevData || prevData.totalDifficulty.lte(0)) {
             Log.w(NanoChain, 'Rejecting header - unknown predecessor');
             return NanoChain.ERR_ORPHAN;
         }
@@ -320,7 +320,7 @@ class NanoChain extends BaseChain {
         }
 
         // Otherwise, check if the new chain is harder than our current main chain.
-        if (chainData.totalDifficulty > this._mainChain.totalDifficulty) {
+        if (chainData.totalDifficulty.gt(this._mainChain.totalDifficulty)) {
             // A fork has become the hardest chain, rebranch to it.
             await this._rebranch(blockHash, chainData);
 
