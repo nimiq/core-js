@@ -133,6 +133,11 @@ class UpgradeHelper {
         const hash = block.hash();
         /** @type {ChainData} */
         const chainData = await transaction.getChainData(hash);
+        // In the empty database, the Genesis block is not present.
+        if (!chainData) {
+            return Promise.resolve();
+        }
+
         const newTotalDifficulty = totalDifficulty.plus(block.difficulty);
         const newTotalWork = totalWork.plus(BlockUtils.realDifficulty(await block.pow()));
 
