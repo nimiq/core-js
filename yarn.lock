@@ -19,9 +19,9 @@
     normalize-path "^2.0.1"
     through2 "^2.0.3"
 
-"@nimiq/jungle-db@^0.9.11":
-  version "0.9.11"
-  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.11.tgz#bb8fef96bf542e346e6faf8160d6b330ee3ad9c7"
+"@nimiq/jungle-db@^0.9.12":
+  version "0.9.12"
+  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.12.tgz#96bbe3e7036cbb0d5245f9322aaf33d2936acad3"
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"

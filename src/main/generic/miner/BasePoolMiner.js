@@ -127,7 +127,7 @@ class BasePoolMiner extends Miner {
                         this._turnPoolOff();
                         this._ws.close();
                     } else {
-                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.targetCompact || BlockUtils.targetToCompact(msg.target), msg.nonce);
+                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.targetCompact || BlockUtils.targetToCompact(new BigNumber(msg.target)), msg.nonce);
                         Log.d(BasePoolMiner, `Received settings from pool: address ${msg.address}, target ${msg.target}, extraData ${msg.extraData}`);
                     }
                     break;
