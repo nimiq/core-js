@@ -72,6 +72,11 @@ class ConsensusDB extends JDB.JungleDB {
      * @private
      */
     static async _onUpgradeNeeded(light, oldVersion, newVersion, jdb) {
+        // No upgrade needed for empty database.
+        if (oldVersion === 0) {
+            return;
+        }
+
         Log.i(ConsensusDB, `Upgrade needed: version ${oldVersion} -> ${newVersion}`);
 
         if (oldVersion < 7) {
@@ -82,16 +87,21 @@ class ConsensusDB extends JDB.JungleDB {
             } else {
                 // Truncate chain / accounts for light nodes.
                 /** @type {ObjectStore} */
-                const accounts = jdb.getObjectStore('Accounts');
-                const accountsTx = accounts.transaction(false);
-                await accountsTx.truncate();
+                const accountStore = jdb.getObjectStore('Accounts');
+                const accountTx = accountStore.transaction(false);
+                await accountTx.truncate();
 
                 /** @type {ObjectStore} */
-                const chainData = jdb.getObjectStore('ChainData');
-                const chainDataTx = chainData.transaction(false);
+                const chainDataStore = jdb.getObjectStore('ChainData');
+                const chainDataTx = chainDataStore.transaction(false);
                 await chainDataTx.truncate();
 
-                await JDB.JungleDB.commitCombined(accountsTx, chainDataTx);
+                /** @type {ObjectStore} */
+                const blockStore = jdb.getObjectStore('Block');
+                const blockTx = blockStore.transaction(false);
+                await blockTx.truncate();
+
+                await JDB.JungleDB.commitCombined(accountTx, chainDataTx, blockTx);
             }
         }
     }
