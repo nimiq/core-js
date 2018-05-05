@@ -36,6 +36,8 @@
     "src/native"
   ],
   "node_deb": {
+    "package_name": "nimiq",
+    "version": "1.1.1-1",
     "init": "systemd",
     "architecture": "none",
     "install_strategy": "copy",
