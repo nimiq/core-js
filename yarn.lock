@@ -19,9 +19,9 @@
     normalize-path "^2.0.1"
     through2 "^2.0.3"
 
-"@nimiq/jungle-db@^0.9.13":
-  version "0.9.13"
-  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.13.tgz#46e5b5f485fd058d3e2f5087a45740d0274a81ca"
+"@nimiq/jungle-db@^0.9.14-alpha":
+  version "0.9.14-alpha"
+  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.14-alpha.tgz#65fe49bf345edb82cc6ec1666e18078ad6e0a32b"
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"
@@ -29,7 +29,7 @@
     level-sublevel "^6.6.1"
     leveldown "^3.0.0"
     levelup "^2.0.2"
-    node-lmdb "0.5.1"
+    node-lmdb paberr/node-lmdb#af876c67055cc7cf0b3c1949e472484aa34410de
 
 "@types/node@*":
   version "10.0.4"
@@ -5504,9 +5504,9 @@ node-gyp@^3.6.2:
     tar "^2.0.0"
     which "1"
 
-node-lmdb@0.5.1:
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/node-lmdb/-/node-lmdb-0.5.1.tgz#a1ac3a8641ccd22512d0d8da17569547ef4b1a25"
+"node-lmdb@github:paberr/node-lmdb#af876c67055cc7cf0b3c1949e472484aa34410de":
+  version "0.5.4"
+  resolved "https://codeload.github.com/paberr/node-lmdb/tar.gz/af876c67055cc7cf0b3c1949e472484aa34410de"
   dependencies:
     bindings "^1.2.1"
     nan "^2.6.2"
