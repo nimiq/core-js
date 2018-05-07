@@ -239,11 +239,19 @@ const $ = {};
             hashrates.push(hashrate);
 
             if (hashrates.length >= outputInterval) {
-                const account = !isNano ? await $.accounts.get($.wallet.address) : await $.consensus.getAccount($.wallet.address);
+                let account;
+                try {
+                    account = !isNano ? await $.accounts.get($.wallet.address) : await $.consensus.getAccount($.wallet.address);
+                } catch (e) {
+                    Nimiq.Log.d(TAG, e.message || e);
+                    account = { balance: 'N/A' };
+                }
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
-                Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(2).padStart(7)} H/s`
+                Nimiq.Log.i('Statistics', `Hashrate: ${(sum / hashrates.length).toFixed(2).padStart(7)} H/s`
                     + ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM`
-                    + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
+                    + (config.poolMining.enabled ? ` - Pool balance: ${Nimiq.Policy.satoshisToCoins($.miner.balance)} NIM (confirmed ${Nimiq.Policy.satoshisToCoins($.miner.confirmedBalance)} NIM)` : '')
+                    + (!isNano ? ` - Mempool: ${$.mempool.getTransactions().length} tx` : '')
+                );
                 hashrates.length = 0;
             }
         });
