@@ -56,7 +56,7 @@ class BasePoolMiner extends Miner {
         const ws = this._ws = new WebSocket(`wss://${host}:${port}`);
         this._ws.onopen = () => this._onOpen(ws);
         this._ws.onerror = (e) => this._onError(ws, e);
-        this._ws.onmessage = (msg) => this._onMessage(JSON.parse(msg.data));
+        this._ws.onmessage = (msg) => this._onMessage(ws, JSON.parse(msg.data));
         this._ws.onclose = (e) => this._onClose(ws, e);
 
         this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTING);
@@ -90,9 +90,9 @@ class BasePoolMiner extends Miner {
 
     _onClose(ws, e) {
         Log.d(BasePoolMiner, `WebSocket connection closed ${JSON.stringify(e)}`);
-        this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
-        Log.w(BasePoolMiner, 'Disconnected from pool');
         if (ws === this._ws) {
+            this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
+            Log.w(BasePoolMiner, 'Disconnected from pool');
             this._timeoutReconnect();
         }
     }
@@ -108,6 +108,9 @@ class BasePoolMiner extends Miner {
     disconnect() {
         this._turnPoolOff();
         if (this._ws) {
+            this._changeConnectionState(BasePoolMiner.ConnectionState.CLOSED);
+            Log.w(BasePoolMiner, 'Disconnected from pool');
+
             const ws = this._ws;
             this._ws = null;
             try {
@@ -119,7 +122,8 @@ class BasePoolMiner extends Miner {
         clearTimeout(this._reconnectTimeout);
     }
 
-    _onMessage(msg) {
+    _onMessage(ws, msg) {
+        if (ws !== this._ws) return;
         if (msg && msg.message) {
             switch (msg.message) {
                 case 'settings':
@@ -242,6 +246,7 @@ class BasePoolMiner extends Miner {
         ].reduce(BufferUtils.concatTypedArrays)).serialize().readUint32();
     }
 }
+
 BasePoolMiner.PAYOUT_NONCE_PREFIX = 'POOL_PAYOUT';
 BasePoolMiner.RECONNECT_TIMEOUT = 3000; // 3 seconds
 BasePoolMiner.RECONNECT_TIMEOUT_MAX = 30000; // 30 seconds

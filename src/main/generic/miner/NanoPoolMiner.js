@@ -22,11 +22,12 @@ class NanoPoolMiner extends BasePoolMiner {
         });
     }
 
-    _onMessage(msg) {
+    _onMessage(ws, msg) {
+        if (this._ws !== ws) return;
         if (msg && msg.message === 'new-block') {
             this._handleNewBlock(msg);
         } else {
-            super._onMessage(msg);
+            super._onMessage(ws, msg);
         }
     }
 
