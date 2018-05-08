@@ -10,8 +10,9 @@ class BasePoolMiner extends Miner {
      * @param {Address} address
      * @param {number} deviceId
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
+     * @param {string} [deviceLabel]
      */
-    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0)) {
+    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0), deviceLabel) {
         super(blockchain, accounts, mempool, time, address, extraData);
 
         /** @type {Address} */
@@ -19,6 +20,9 @@ class BasePoolMiner extends Miner {
 
         /** @type {Uint8Array} */
         this._ourExtraData = extraData;
+
+        /** @type {string} */
+        this._deviceLabel = deviceLabel;
 
         /** @type {WebSocket} */
         this._ws = null;
