@@ -202,7 +202,7 @@ Policy.K = 120;
  * @type {number}
  * @constant
  */
-Policy.DELTA = 0.1;
+Policy.DELTA = 0.15;
 
 /**
  * Number of blocks the light client downloads to verify the AccountsTree construction.
