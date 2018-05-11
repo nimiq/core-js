@@ -274,7 +274,7 @@ class JsonRpcServer {
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         if (block && block.transactions.length > txIndex) {
-            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
+            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex, this._blockchain);
         }
         return null;
     }
@@ -282,7 +282,7 @@ class JsonRpcServer {
     async getTransactionByBlockNumberAndIndex(number, txIndex) {
         const block = await this._getBlockByNumber(number);
         if (block && block.transactions.length > txIndex) {
-            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
+            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex, this._blockchain);
         }
         return null;
     }
@@ -295,7 +295,7 @@ class JsonRpcServer {
         const entry = await this._blockchain.getTransactionInfoByHash(hash);
         if (entry) {
             const block = await this._blockchain.getBlock(entry.blockHash, /*includeForks*/ false, /*includeBody*/ true);
-            return this._transactionToObj(block.transactions[entry.index], block, entry.index);
+            return this._transactionToObj(block.transactions[entry.index], block, entry.index, this._blockchain);
         }
         const mempoolTx = this._mempool.getTransaction(hash);
         if (mempoolTx) {
@@ -538,15 +538,16 @@ class JsonRpcServer {
      * @param {Transaction} tx
      * @param {Block} [block]
      * @param {number} [i]
+     * @param {BaseChain} [blockchain]
      * @private
      */
-    _transactionToObj(tx, block, i) {
+    static _transactionToObj(tx, block, i, blockchain) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
             timestamp: block ? block.timestamp : undefined,
-            confirmations: block ? this._blockchain.height - block.height + 1 : undefined,
+            confirmations: block && blockchain ? blockchain.height - block.height + 1 : undefined,
             transactionIndex: i,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),
