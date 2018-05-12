@@ -7,9 +7,10 @@ class SmartPoolMiner extends BasePoolMiner {
      * @param {Address} address
      * @param {number} deviceId
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
+     * @param {string} [deviceLabel]
      */
-    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0)) {
-        super(blockchain, accounts, mempool, time, address, deviceId, extraData);
+    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0), deviceLabel) {
+        super(blockchain, accounts, mempool, time, address, deviceId, extraData, deviceLabel);
 
         this.on('share', (block, fullValid) => this._onBlockMined(block, fullValid));
     }
@@ -35,6 +36,7 @@ class SmartPoolMiner extends BasePoolMiner {
             mode: 'smart',
             address: this._ourAddress.toUserFriendlyAddress(),
             deviceId: this._deviceId,
+            deviceLabel: this._deviceLabel,
             genesisHash: BufferUtils.toBase64(GenesisConfig.GENESIS_HASH.serialize())
         });
     }
