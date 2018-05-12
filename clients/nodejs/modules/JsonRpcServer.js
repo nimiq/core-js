@@ -274,7 +274,7 @@ class JsonRpcServer {
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         if (block && block.transactions.length > txIndex) {
-            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex, this._blockchain);
+            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
         return null;
     }
@@ -282,7 +282,7 @@ class JsonRpcServer {
     async getTransactionByBlockNumberAndIndex(number, txIndex) {
         const block = await this._getBlockByNumber(number);
         if (block && block.transactions.length > txIndex) {
-            return JsonRpcServer._transactionToObj(block.transactions[txIndex], block, txIndex, this._blockchain);
+            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
         return null;
     }
@@ -295,7 +295,7 @@ class JsonRpcServer {
         const entry = await this._blockchain.getTransactionInfoByHash(hash);
         if (entry) {
             const block = await this._blockchain.getBlock(entry.blockHash, /*includeForks*/ false, /*includeBody*/ true);
-            return this._transactionToObj(block.transactions[entry.index], block, entry.index, this._blockchain);
+            return this._transactionToObj(block.transactions[entry.index], block, entry.index);
         }
         const mempoolTx = this._mempool.getTransaction(hash);
         if (mempoolTx) {
@@ -330,7 +330,7 @@ class JsonRpcServer {
     }
 
     mempoolContent(includeTransactions) {
-        return this._mempool.getTransactions().map((tx) => includeTransactions ? JsonRpcServer._transactionToObj(tx) : tx.hash().toHex());
+        return this._mempool.getTransactions().map((tx) => includeTransactions ? this._transactionToObj(tx) : tx.hash().toHex());
     }
 
     mempool() {
@@ -387,13 +387,13 @@ class JsonRpcServer {
      */
 
     async accounts() {
-        return (await this._walletStore.list()).map(JsonRpcServer._addressToObj);
+        return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._accounts.get(address), address)));
     }
 
     async createAccount() {
         const wallet = await Nimiq.Wallet.generate();
         await this._walletStore.put(wallet);
-        return JsonRpcServer._walletToObj(wallet);
+        return this._walletToObj(wallet);
     }
 
     async getBalance(addrString, atBlock) {
@@ -427,12 +427,12 @@ class JsonRpcServer {
 
     async getBlockByHash(blockHash, includeTransactions) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
-        return block ? JsonRpcServer._blockToObj(block, includeTransactions) : null;
+        return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
     async getBlockByNumber(number, includeTransactions) {
         const block = await this._getBlockByNumber(number);
-        return block ? JsonRpcServer._blockToObj(block, includeTransactions) : null;
+        return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
     _getBlockByNumber(number) {
@@ -513,7 +513,7 @@ class JsonRpcServer {
      * @param {boolean} [includeTransactions]
      * @private
      */
-    static async _blockToObj(block, includeTransactions = false) {
+    async _blockToObj(block, includeTransactions = false) {
         return {
             number: block.height,
             hash: block.hash().toHex(),
@@ -529,7 +529,7 @@ class JsonRpcServer {
             size: block.serializedSize,
             timestamp: block.timestamp,
             transactions: includeTransactions
-                ? block.transactions.map((tx, i) => JsonRpcServer._transactionToObj(tx, block, i))
+                ? block.transactions.map((tx, i) => this._transactionToObj(tx, block, i))
                 : block.transactions.map((tx) => tx.hash().toHex())
         };
     }
@@ -538,16 +538,15 @@ class JsonRpcServer {
      * @param {Transaction} tx
      * @param {Block} [block]
      * @param {number} [i]
-     * @param {BaseChain} [blockchain]
      * @private
      */
-    static _transactionToObj(tx, block, i, blockchain) {
+    _transactionToObj(tx, block, i) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
             timestamp: block ? block.timestamp : undefined,
-            confirmations: block && blockchain ? blockchain.height - block.height + 1 : undefined,
+            confirmations: block ? this._blockchain.height - block.height + 1 : 0,
             transactionIndex: i,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),
@@ -564,7 +563,7 @@ class JsonRpcServer {
      * @param {boolean} [withPrivateKey]
      * @private
      */
-    static _walletToObj(wallet, withPrivateKey) {
+    _walletToObj(wallet, withPrivateKey) {
         const a = {
             id: wallet.address.toHex(),
             address: wallet.address.toUserFriendlyAddress(),
@@ -578,7 +577,7 @@ class JsonRpcServer {
      * @param {Address} address
      * @private
      */
-    static _addressToObj(address) {
+    _addressToObj(address) {
         return {
             id: address.toHex(),
             address: address.toUserFriendlyAddress()
