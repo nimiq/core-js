@@ -73,6 +73,13 @@ class NetworkConfig {
     }
 
     /**
+     * @type {number}
+     */
+    get protocol() {
+        throw 'Unimplemented';
+    }
+
+    /**
      * Used for filtering peer addresses by protocols.
      * @type {number}
      */
@@ -155,6 +162,14 @@ class WsNetworkConfig extends NetworkConfig {
 
     /**
      * @type {number}
+     * @override
+     */
+    get protocol() {
+        return Protocol.WS;
+    }
+
+    /**
+     * @type {number}
      */
     get port() {
         return this._port;
@@ -228,6 +243,14 @@ class WssNetworkConfig extends WsNetworkConfig {
     }
 
     /**
+     * @type {number}
+     * @override
+     */
+    get protocol() {
+        return Protocol.WSS;
+    }
+
+    /**
      * @type {?{key: string, cert: string}}
      */
     get sslConfig() {
@@ -281,6 +304,14 @@ class RtcNetworkConfig extends NetworkConfig {
     }
 
     /**
+     * @type {number}
+     * @override
+     */
+    get protocol() {
+        return Protocol.RTC;
+    }
+
+    /**
      * @returns {?RTCConfiguration}
      */
     get rtcConfig() {
@@ -312,6 +343,14 @@ class DumbNetworkConfig extends NetworkConfig {
     constructor() {
         // Browsers served through https only speak WSS. Everything else should also support WS.
         super(PlatformUtils.supportsWS() ? (Protocol.WS | Protocol.WSS) : Protocol.WSS);
+    }
+
+    /**
+     * @type {number}
+     * @override
+     */
+    get protocol() {
+        return Protocol.DUMB;
     }
 
     /**

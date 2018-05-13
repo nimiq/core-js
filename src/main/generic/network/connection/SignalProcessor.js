@@ -43,12 +43,6 @@ class SignalProcessor {
             return;
         }
 
-        // Discard signals that have a payload, which is not properly signed.
-        if (msg.hasPayload() && !msg.verifySignature()) {
-            channel.close(CloseType.INVALID_SIGNATURE, 'invalid signature');
-            return;
-        }
-
         // Can be undefined for non-rtc nodes.
         const myPeerId = this._networkConfig.peerId;
 
@@ -67,12 +61,24 @@ class SignalProcessor {
 
         // If the signal is intended for us, pass it on to our WebRTC connector.
         if (msg.recipientId.equals(myPeerId)) {
+            // Ignore signals if we are not a WebRTC node.
+            if (this._networkConfig.protocol !== Protocol.RTC) {
+                return;
+            }
+
+            // Discard signals that have a payload which is not properly signed.
+            if (msg.hasPayload() && !msg.verifySignature()) {
+                Log.d(SignalProcessor, () => `Discarding signal from ${msg.senderId} received via ${channel.peerAddress} - invalid signature`);
+                return;
+            }
+
             // If we sent out a signal that did not reach the recipient because of TTL
             // or it was unroutable, delete this route.
             if (this._rtcConnector.isValidSignal(msg) && (msg.isUnroutable() || msg.isTtlExceeded())) {
                 const senderAddr = this._addresses.getByPeerId(msg.senderId);
                 this._addresses.unroutable(channel, senderAddr);
             }
+
             this._rtcConnector.onSignal(channel, msg);
             return;
         }
