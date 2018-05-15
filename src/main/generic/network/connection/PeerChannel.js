@@ -335,10 +335,11 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} [offset]
      * @returns {boolean}
      */
-    getTransactionReceipts(address) {
-        return this._send(new GetTransactionReceiptsMessage(address));
+    getTransactionReceipts(address, offset) {
+        return this._send(new GetTransactionReceiptsMessage(address, offset));
     }
 
     /**

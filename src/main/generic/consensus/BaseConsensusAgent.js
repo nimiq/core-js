@@ -1002,10 +1002,11 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} [offset]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @private
      */
-    _getTransactionReceipts(address) {
+    _getTransactionReceipts(address, offset) {
         Assert.that(this._transactionReceiptsRequest === null);
 
         return new Promise((resolve, reject) => {
@@ -1015,7 +1016,7 @@ class BaseConsensusAgent extends Observable {
                 reject
             };
 
-            this._peer.channel.getTransactionReceipts(address);
+            this._peer.channel.getTransactionReceipts(address, offset);
 
             this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');

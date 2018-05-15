@@ -504,7 +504,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
             return;
         }
 
-        const receipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address, TransactionReceiptsMessage.RECEIPTS_MAX_COUNT);
+        const receipts = await this._blockchain.getTransactionReceiptsByAddress(msg.address, TransactionReceiptsMessage.RECEIPTS_MAX_COUNT, msg.offset);
         this._peer.channel.transactionReceipts(receipts);
     }
 

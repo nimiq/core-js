@@ -32,16 +32,16 @@ describe('TransactionStore', () => {
     it('can store and remove transactions', (done) => {
         (async () => {
             await transactionStore.put(block);
-            expect((await transactionStore.getBySender(senderAddress)).length).toBe(3);
+            expect((await transactionStore.getBySender(senderAddress)).entries.length).toBe(3);
             await transactionStore.remove(block);
-            expect((await transactionStore.getBySender(senderAddress)).length).toBe(0);
+            expect((await transactionStore.getBySender(senderAddress)).entries.length).toBe(0);
         })().then(done, done.fail);
     });
 
     it('can retrieve transactions by senderAddress', (done) => {
         (async () => {
             await transactionStore.put(block);
-            const results = await transactionStore.getBySender(senderAddress);
+            const results = (await transactionStore.getBySender(senderAddress)).entries;
             expect(results.length).toBe(3);
 
             for (const entry of results) {
@@ -55,14 +55,14 @@ describe('TransactionStore', () => {
     it('can retrieve transactions by recipientAddress', (done) => {
         (async () => {
             await transactionStore.put(block);
-            let results = await transactionStore.getByRecipient(recipientAddress1);
+            let results = (await transactionStore.getByRecipient(recipientAddress1)).entries;
             expect(results.length).toBe(2);
 
             for (const entry of results) {
                 expect(entry.recipient.equals(recipientAddress1)).toBeTruthy();
             }
 
-            results = await transactionStore.getByRecipient(recipientAddress2);
+            results = (await transactionStore.getByRecipient(recipientAddress2)).entries;
             expect(results.length).toBe(1);
 
             for (const entry of results) {
