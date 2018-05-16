@@ -67,6 +67,12 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         seed: null,
         address: null
     },
+    reverseProxy: {
+        enabled: false,
+        port: 8444,
+        address: '::ffff:127.0.0.1',
+        header: 'x-forwarded-for'
+    },
     log: {
         level: 'info',
         tags: {}
@@ -127,6 +133,14 @@ const CONFIG_TYPES = {
         type: 'object', sub: {
             seed: 'string',
             address: 'string'
+        }
+    },
+    reverseProxy: {
+        type: 'object', sub: {
+            enabled: 'boolean',
+            port: 'number',
+            address: 'string',
+            header: 'string'
         }
     },
     log: {
@@ -318,6 +332,15 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     }
     if (typeof argv['wallet-seed'] === 'string') config.wallet.seed = argv['wallet-seed'];
     if (typeof argv['wallet-address'] === 'string') config.wallet.address = argv['wallet-address'];
+    if (argv['reverse-proxy']) {
+        config.reverseProxy.enabled = true;
+        if (typeof argv['reverse-proxy'] === 'number') config.reverseProxy.port = argv['reverse-proxy'];
+        if (typeof argv['reverse-proxy'] === 'string') {
+            const split = argv['reverse-proxy'].split(',', 2);
+            config.reverseProxy.port = parseInt(split[0]);
+            if (split.length === 2) config.reverseProxy.address = split[1];
+        }
+    }
     if (argv.log || argv.verbose) {
         config.log.level = 'verbose';
         if (typeof argv.log === 'number') config.log.level = argv.log;

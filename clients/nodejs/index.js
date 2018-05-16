@@ -45,6 +45,8 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
         '                             full (default), light, or nano.\n' +
+        '  --reverse-proxy[=PORT]     This client is behind a reverse proxy running on PORT,IP\n' +
+        '                 [,IP]       (default: 8444,::ffff:127.0.0.1).\n' +
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
         '  --wallet-address=ADDRESS   Initialize wallet using ADDRESS as a wallet address\n' +
         '                             The wallet cannot be used to sign transactions when\n' +
@@ -59,15 +61,15 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
 const isNano = config.type === 'nano';
 
 if (isNano && config.miner.enabled) {
-    console.error('Cannot mine when running as a nano client.');
+    console.error('Cannot mine when running as a nano client');
     process.exit(1);
 }
 if (config.metricsServer.enabled && config.dumb) {
-    console.error('Cannot provide metrics when running as a dumb client.');
+    console.error('Cannot provide metrics when running as a dumb client');
     process.exit(1);
 }
 if (config.metricsServer.enabled && isNano) {
-    console.error('Cannot provide metrics when running as a nano client.');
+    console.error('Cannot provide metrics when running as a nano client');
     process.exit(1);
 }
 if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
@@ -82,8 +84,12 @@ if (config.host && config.dumb) {
     console.error('Cannot use both --host and --dumb');
     process.exit(1);
 }
+if (config.reverseProxy.enabled && config.dumb) {
+    console.error('Cannot run a dumb client behind a reverse proxy');
+    process.exit(1);
+}
 if (config.type === 'light') {
-    console.error('Light node type is temporarily disabled.');
+    console.error('Light node type is temporarily disabled');
     process.exit(1);
 }
 
@@ -120,7 +126,7 @@ const $ = {};
 
     const networkConfig = config.dumb
         ? new Nimiq.DumbNetworkConfig()
-        : new Nimiq.WsNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert);
+        : new Nimiq.WsNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert, config.reverseProxy);
 
     switch (config.type) {
         case 'full':

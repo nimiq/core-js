@@ -111,7 +111,7 @@ Dummy.partialSignatureTestVectors = [
 const offlineTarget = typeof WsNetworkConfig === 'undefined';
 
 if (!offlineTarget) {
-    Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1');
+    Dummy.NETCONFIG = new WsNetworkConfig('node1.test', 9000, 'key1', 'cert1', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
     Dummy.NETCONFIG._keyPair = KeyPair.fromHex('ab05e735f870ff4482a997eab757ea78f8a83356ea443ac68969824184b82903a5ea83e7ee0c8c7ad863c3ceffd31a63679e1ea34a5f89e3ae0f90c5d281d4a900');
 }
 
