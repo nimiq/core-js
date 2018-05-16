@@ -993,11 +993,12 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} [offset]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    getTransactionReceipts(address) {
+    getTransactionReceipts(address, offset) {
         return this._synchronizer.push('getTransactionReceipts',
-            this._getTransactionReceipts.bind(this, address));
+            this._getTransactionReceipts.bind(this, address, offset));
     }
 
     /**
