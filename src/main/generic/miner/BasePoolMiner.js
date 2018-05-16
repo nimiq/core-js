@@ -3,15 +3,17 @@
  */
 class BasePoolMiner extends Miner {
     /**
+     * @param {BasePoolMiner.Mode} mode
      * @param {BaseChain} blockchain
      * @param {Accounts} accounts
      * @param {Mempool} mempool
      * @param {Time} time
      * @param {Address} address
      * @param {number} deviceId
+     * @param {object|null} deviceData
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
      */
-    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0)) {
+    constructor(mode, blockchain, accounts, mempool, time, address, deviceId, deviceData, extraData = new Uint8Array(0)) {
         super(blockchain, accounts, mempool, time, address, extraData);
 
         /** @type {Address} */
@@ -25,6 +27,12 @@ class BasePoolMiner extends Miner {
 
         /** @type {number} */
         this._deviceId = deviceId;
+
+        /** @type {object} */
+        this._deviceData = deviceData;
+
+        /** @type {BasePoolMiner.Mode} */
+        this.mode = mode;
 
         /** @type {BasePoolMiner.ConnectionState} */
         this.connectionState = BasePoolMiner.ConnectionState.CLOSED;
@@ -70,10 +78,15 @@ class BasePoolMiner extends Miner {
         }
     }
 
-    /**
-     * @abstract
-     */
     _register() {
+        this._send({
+            message: 'register',
+            mode: this.mode,
+            address: this._ourAddress.toUserFriendlyAddress(),
+            deviceId: this._deviceId,
+            deviceData: this._deviceData,
+            genesisHash: BufferUtils.toBase64(GenesisConfig.GENESIS_HASH.serialize())
+        });
     }
 
     _onError(ws, e) {
@@ -256,6 +269,12 @@ BasePoolMiner.ConnectionState = {
     CONNECTED: 0,
     CONNECTING: 1,
     CLOSED: 2
+};
+
+/** @enum {string} */
+BasePoolMiner.Mode = {
+    NANO: 'nano',
+    SMART: 'smart'
 };
 
 Class.register(BasePoolMiner);

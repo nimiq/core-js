@@ -6,10 +6,11 @@ class SmartPoolMiner extends BasePoolMiner {
      * @param {Time} time
      * @param {Address} address
      * @param {number} deviceId
+     * @param {object|null} deviceData
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
      */
-    constructor(blockchain, accounts, mempool, time, address, deviceId, extraData = new Uint8Array(0)) {
-        super(blockchain, accounts, mempool, time, address, deviceId, extraData);
+    constructor(blockchain, accounts, mempool, time, address, deviceId, deviceData, extraData = new Uint8Array(0)) {
+        super(BasePoolMiner.Mode.SMART, blockchain, accounts, mempool, time, address, deviceId, extraData);
 
         this.on('share', (block, fullValid) => this._onBlockMined(block, fullValid));
     }
@@ -26,16 +27,6 @@ class SmartPoolMiner extends BasePoolMiner {
             minerAddrProof: BufferUtils.toBase64((await MerklePath.compute(block.body.getMerkleLeafs(), block.minerAddr)).serialize()),
             extraDataProof: BufferUtils.toBase64((await MerklePath.compute(block.body.getMerkleLeafs(), block.body.extraData)).serialize()),
             block: fullValid ? BufferUtils.toBase64(block.serialize()) : undefined
-        });
-    }
-
-    _register() {
-        this._send({
-            message: 'register',
-            mode: 'smart',
-            address: this._ourAddress.toUserFriendlyAddress(),
-            deviceId: this._deviceId,
-            genesisHash: BufferUtils.toBase64(GenesisConfig.GENESIS_HASH.serialize())
         });
     }
 }
