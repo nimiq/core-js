@@ -5,7 +5,7 @@ class WebSocketFactory {
      * @return {WebSocketServer}
      */
     static newWebSocketServer(networkConfig) {
-        const port = networkConfig.peerAddress.port;
+        const port = networkConfig.port;
         const sslConfig = networkConfig.sslConfig;
 
         const options = {

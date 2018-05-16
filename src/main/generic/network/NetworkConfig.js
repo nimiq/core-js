@@ -140,19 +140,42 @@ class WsNetworkConfig extends NetworkConfig {
      * @param {number} port
      * @param {string} key
      * @param {string} cert
+     * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
      */
-    constructor(host, port, key, cert) {
+    constructor(host, port, key, cert, reverseProxy) {
         super(Protocol.WS);
         this._host = host;
         this._port = port;
         this._key = key;
         this._cert = cert;
+        this._usingReverseProxy = reverseProxy.enabled;
 
         /* @type {{key: string, cert: string}} */
         this._sslConfig = {
             key: this._key,
             cert: this._cert
         };
+
+        /* @type {{port: number, address: string, header: string}} */
+        this._reverseProxyConfig = {
+            port: reverseProxy.port,
+            address: reverseProxy.address,
+            header: reverseProxy.header
+        };
+    }
+
+    /**
+     * @type {number}
+     */
+    get port() {
+        return this._port;
+    }
+
+    /**
+     * @type {boolean}
+     */
+    get usingReverseProxy() {
+        return this._usingReverseProxy;
     }
 
     /**
@@ -160,6 +183,13 @@ class WsNetworkConfig extends NetworkConfig {
      */
     get sslConfig() {
         return this._sslConfig;
+    }
+
+    /**
+     * @type {{port: number, address: string, header: string}}
+     */
+    get reverseProxyConfig() {
+        return this._reverseProxyConfig;
     }
 
     /**
@@ -171,10 +201,13 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
+        // If we're behind a reverse proxy, advertise that port instead of our own in the peerAddress
+        const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
+
         const peerAddress = new WsPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
-            this._host, this._port);
+            this._host, port);
 
         if (!peerAddress.globallyReachable()) {
             throw 'PeerAddress not globally reachable.';

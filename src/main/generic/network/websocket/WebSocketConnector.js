@@ -10,7 +10,7 @@ class WebSocketConnector extends Observable {
 
         if (networkConfig.peerAddress.protocol === Protocol.WS) {
             this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
-            this._wss.on('connection', ws => this._onConnection(ws));
+            this._wss.on('connection', (ws, req) => this._onConnection(ws, req));
 
             Log.d(WebSocketConnector, `WebSocketConnector listening on port ${networkConfig.peerAddress.port}`);
         }
@@ -122,10 +122,31 @@ class WebSocketConnector extends Observable {
     /**
      * @fires WebSocketConnector#connection
      * @param {WebSocket} ws
+     * @param {http.IncomingMessage} req
      * @returns {void}
      */
-    _onConnection(ws) {
-        const netAddress = NetAddress.fromIP(ws._socket.remoteAddress, true);
+    _onConnection(ws, req) {
+        let remoteAddress = ws._socket.remoteAddress;
+
+        Log.v(WebSocketConnector, () => `These are all the headers I see: ${JSON.stringify(req.headers)}`);
+
+        // If we're behind a reverse proxy, the peer's IP will be in the header set by the reverse proxy, not in the ws._socket object
+        if (this._networkConfig.usingReverseProxy) {
+            const rpAddress = this._networkConfig.reverseProxyConfig.address;
+            if (remoteAddress === rpAddress) {
+                const rpHeader = this._networkConfig.reverseProxyConfig.header;
+                if (req.headers[rpHeader]) {
+                    remoteAddress = req.headers[rpHeader].split(/\s*,\s*/)[0];
+                } else {
+                    Log.e(WebSocketConnector, () => `Expected header '${rpHeader}' to contain the real IP from the connecting client`);
+                }
+            } else {
+                // XXX Should we preemptively close this connection?
+                Log.e(WebSocketConnector, () => `Received connection from ${remoteAddress} when all connections where expected from the reverse proxy in ${rpAddress}`);
+            }
+        }
+
+        const netAddress = NetAddress.fromIP(remoteAddress, true);
         const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
 
         /**

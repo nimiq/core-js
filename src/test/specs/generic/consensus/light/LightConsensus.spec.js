@@ -43,7 +43,7 @@ describe('LightConsensus', () => {
                 });
                 await blockchain2.pushBlock(block);
             }
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.allowInboundConnections = true;
             await copyChain(blockchain2, consensus2.blockchain);

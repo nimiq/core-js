@@ -222,7 +222,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -230,7 +230,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
-            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus3 = await Consensus.volatileFull(netConfig3);
             // Allow inbound connections early
             consensus3.network.allowInboundConnections = true;
@@ -262,7 +262,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -270,7 +270,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
-            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus3 = await Consensus.volatileFull(netConfig3);
             consensus3.network.connect();
 
@@ -301,7 +301,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -309,7 +309,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
-            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus3 = await Consensus.volatileFull(netConfig3);
             // Allow inbound connections early
             consensus3.network.allowInboundConnections = true;
@@ -350,7 +350,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             // Allow inbound connections early
             consensus2.network.allowInboundConnections = true;
@@ -360,7 +360,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
-            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus3 = await Consensus.volatileLight(netConfig3);
             // Allow inbound connections early
             consensus3.network.allowInboundConnections = true;
@@ -401,7 +401,7 @@ describe('ConnectionPool', () => {
             const consensus1 = await Consensus.volatileFull(netConfig1);
             consensus1.network.connect();
 
-            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.connect();
 
@@ -409,7 +409,7 @@ describe('ConnectionPool', () => {
             expect(consensus1.network.peerCount).toBe(1);
             expect(consensus2.network.peerCount).toBe(1);
 
-            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3');
+            const netConfig3 = new WsNetworkConfig('node3.test', 8080, 'key3', 'cert3', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             const consensus3 = await Consensus.volatileLight(netConfig3);
             // Allow inbound connections early
             consensus3.network.allowInboundConnections = true;
@@ -439,7 +439,7 @@ describe('ConnectionPool', () => {
             const consensus = await Consensus.volatileFull(netConfig);
             consensus.network.connect();
 
-            const netConfig1 = new WsNetworkConfig('attacker.test', 9000, 'key1', 'cert1');
+            const netConfig1 = new WsNetworkConfig('attacker.test', 9000, 'key1', 'cert1', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             netConfig1._keyPair = KeyPair.generate();
 
             const sameIP1 = await Consensus.volatileFull(netConfig1);
@@ -451,7 +451,7 @@ describe('ConnectionPool', () => {
                 resolve();
             }));
 
-            const netConfig2 = new WsNetworkConfig('attacker.test', 9000, 'key2', 'cert2');
+            const netConfig2 = new WsNetworkConfig('attacker.test', 9000, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
             netConfig2._keyPair = KeyPair.generate();
 
             const sameIP2 = await Consensus.volatileFull(netConfig2);
