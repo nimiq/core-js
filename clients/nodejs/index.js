@@ -31,6 +31,8 @@ if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !co
         '  --miner[=THREADS]          Activate mining on this node. The miner will be set\n' +
         '                             up to use THREADS parallel threads.\n' +
         '  --pool=SERVER:PORT         Mine shares for mining pool with address SERVER:PORT\n' +
+        '  --device-data=DATA_JSON    Pass information about this device to the pool. Takes a\n' +
+        '                             valid JSON string. Only used when registering for a pool.\n' +
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
         '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
@@ -173,14 +175,15 @@ const $ = {};
     const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : new Uint8Array(0);
     if (config.poolMining.enabled) {
         const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
+        const deviceData = config.poolMining.deviceData;
         const poolMode = isNano ? 'nano' : config.poolMining.mode;
         switch (poolMode) {
             case 'nano':
-                $.miner = new Nimiq.NanoPoolMiner($.blockchain, $.network.time, $.wallet.address, deviceId);
+                $.miner = new Nimiq.NanoPoolMiner($.blockchain, $.network.time, $.wallet.address, deviceId, deviceData);
                 break;
             case 'smart':
             default:
-                $.miner = new Nimiq.SmartPoolMiner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, deviceId, extraData);
+                $.miner = new Nimiq.SmartPoolMiner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, deviceId, deviceData, extraData);
                 break;
         }
         $.consensus.on('established', () => {

@@ -48,7 +48,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         enabled: false,
         host: null,
         port: -1,
-        mode: 'smart'
+        mode: 'smart',
+        deviceData: null
     },
     rpcServer: {
         enabled: false,
@@ -102,7 +103,8 @@ const CONFIG_TYPES = {
             enabled: 'boolean',
             host: 'string',
             port: 'number',
-            mode: {type: 'string', values: ['smart', 'nano']}
+            mode: {type: 'string', values: ['smart', 'nano']},
+            deviceData: 'object'
         }
     },
     rpcServer: {
@@ -292,6 +294,13 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
             config.poolMining.host = split[0];
             config.poolMining.port = parseInt(split[1]);
         }
+    }
+    if (argv['device-data'] && config.poolMining.enabled) {
+      try {
+        config.poolMining.deviceData = JSON.parse(argv['device-data']);
+      } catch (e) {
+        return false;
+      }
     }
     if (argv.rpc) {
         config.rpcServer.enabled = true;

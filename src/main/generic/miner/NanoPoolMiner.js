@@ -4,9 +4,10 @@ class NanoPoolMiner extends BasePoolMiner {
      * @param {Time} time
      * @param {Address} address
      * @param {number} deviceId
+     * @param {object|null} deviceData
      */
-    constructor(blockchain, time, address, deviceId) {
-        super(blockchain, null, null, time, address, deviceId);
+    constructor(blockchain, time, address, deviceId, deviceData) {
+        super(BasePoolMiner.Mode.NANO, blockchain, null, null, time, address, deviceId, deviceData);
 
         this.on('share', (block) => this._onBlockMined(block));
     }
@@ -100,16 +101,6 @@ class NanoPoolMiner extends BasePoolMiner {
                 this._getNextTimestamp(),
                 0),
             this._poolNextInterlink);
-    }
-
-    _register() {
-        this._send({
-            message: 'register',
-            mode: 'nano',
-            address: this._ourAddress.toUserFriendlyAddress(),
-            deviceId: this._deviceId,
-            genesisHash: BufferUtils.toBase64(GenesisConfig.GENESIS_HASH.serialize())
-        });
     }
 
     _turnPoolOff() {
