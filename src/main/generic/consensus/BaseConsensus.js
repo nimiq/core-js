@@ -261,7 +261,7 @@ class BaseConsensus extends Observable {
             }
         }
 
-        // No peer supplied the requested account, fail.
+        // No peer supplied the requested block, fail.
         throw new Error(`Failed to retrieve block proof for ${blockHashToProve}`);
     }
 
@@ -306,10 +306,11 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} [offset]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @protected
      */
-    async _requestTransactionReceipts(address) {
+    async _requestTransactionReceipts(address, offset) {
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
             if (agent.synced
@@ -321,7 +322,7 @@ class BaseConsensus extends Observable {
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
-                return await agent.getTransactionReceipts(address); // eslint-disable-line no-await-in-loop
+                return await agent.getTransactionReceipts(address, offset); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e.message || e}`);
                 // Try the next peer.

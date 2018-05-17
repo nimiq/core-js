@@ -89,33 +89,41 @@ class TransactionStore {
     /**
      * @param {Address} sender
      * @param {number} [limit]
-     * @returns {Promise.<Array.<TransactionStoreEntry>>}
+     * @param {number} [offset]
+     * @returns {Promise.<Object.<entries: Array.<TransactionStoreEntry, counter: number>>}
      */
-    async getBySender(sender, limit = null) {
+    async getBySender(sender, limit = null, offset = null) {
         const index = this._store.index('sender');
         const entries = [];
+        let counter = 0;
         await index.valueStream((value, key) => {
+            counter++;
+            if (offset !== null && counter <= offset) return true;
             if (limit !== null && entries.length >= limit) return false;
             entries.push(value);
             return true;
         }, /*ascending*/ false, JDB.KeyRange.only(sender.serialize()));
-        return entries;
+        return { entries, counter };
     }
 
     /**
      * @param {Address} recipient
      * @param {?number} [limit]
-     * @returns {Promise.<Array.<TransactionStoreEntry>>}
+     * @param {number} [offset]
+     * @returns {Promise.<Object.<entries: Array.<TransactionStoreEntry, counter: number>>}
      */
-    async getByRecipient(recipient, limit = null) {
+    async getByRecipient(recipient, limit = null, offset = null) {
         const index = this._store.index('recipient');
         const entries = [];
+        let counter = 0;
         await index.valueStream((value, key) => {
+            counter++;
+            if (offset !== null && counter <= offset) return true;
             if (limit !== null && entries.length >= limit) return false;
             entries.push(value);
             return true;
         }, /*ascending*/ false, JDB.KeyRange.only(recipient.serialize()));
-        return entries;
+        return { entries, counter };
     }
 
     /**
