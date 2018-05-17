@@ -227,6 +227,27 @@ class BasePoolMiner extends Miner {
     }
 
     /**
+     * @returns {boolean}
+     */
+    isDisconnected() {
+        return this.connectionState === BasePoolMiner.ConnectionState.CLOSED;
+    }
+
+    /**
+     * @type {string}
+     */
+    get host() {
+        return this._host;
+    }
+
+    /**
+     * @type {number}
+     */
+    get port() {
+        return this._port;
+    }
+
+    /**
      * @type {Address}
      * @override
      */

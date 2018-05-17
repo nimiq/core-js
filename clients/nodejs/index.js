@@ -232,6 +232,11 @@ const $ = {};
                 break;
         }
         $.consensus.on('established', () => {
+            if (!config.poolMining.enabled || !$.miner.isDisconnected()) return;
+            if (!config.poolMining.host || config.poolMining.port === -1) {
+                Nimiq.Log.i(TAG, 'Not connecting to pool as mining pool host or port were not specified.');
+                return;
+            }
             Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
             $.miner.connect(config.poolMining.host, config.poolMining.port);
         });
@@ -256,13 +261,14 @@ const $ = {};
         $.network.connect();
     }
 
-    if (config.miner.enabled) {
-        $.consensus.on('established', () => $.miner.startWork());
-        $.consensus.on('lost', () => $.miner.stopWork());
-        if (config.passive) {
-            $.miner.startWork();
-        }
+    if (config.miner.enabled && config.passive) {
+        $.miner.startWork();
     }
+    $.consensus.on('established', () => {
+        if (config.miner.enabled) $.miner.startWork();
+    });
+    $.consensus.on('lost', () => $.miner.stopWork());
+
     if (typeof config.miner.threads === 'number') {
         $.miner.threads = config.miner.threads;
     }
@@ -299,7 +305,7 @@ const $ = {};
     }
 
     if (config.rpcServer.enabled) {
-        $.rpcServer = new JsonRpcServer(config.rpcServer);
+        $.rpcServer = new JsonRpcServer(config.rpcServer, config.miner, config.poolMining);
         $.rpcServer.init($.consensus, $.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
 

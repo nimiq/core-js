@@ -107,6 +107,16 @@ function isTrue(val) {
     return false;
 }
 
+function isFalse(val) {
+    if (typeof val === 'boolean') return !val;
+    if (typeof val === 'number') return val === 0;
+    if (typeof val === 'string') {
+        val = val.toLowerCase();
+        return val === 'false' || val === 'no';
+    }
+    return false;
+}
+
 function genesisInfo(hash) {
     let chain = 'private';
     let color = 'tomato';
@@ -136,7 +146,7 @@ function peerAddressStateName(peerState) {
     return 'Unknown';
 }
 
-function connectionStateName(connectionState) {
+function peerConnectionStateName(connectionState) {
     switch (connectionState) {
         case Nimiq.PeerConnectionState.NEW:
             return chalk.yellow('New');
@@ -150,6 +160,18 @@ function connectionStateName(connectionState) {
             return chalk.yellow('Negotiating');
     }
     return 'Unknown';
+}
+
+function poolConnectionStateName(connectionState) {
+    switch (connectionState) {
+        case Nimiq.BasePoolMiner.ConnectionState.CONNECTED:
+            return 'Connected';
+        case Nimiq.BasePoolMiner.ConnectionState.CONNECTING:
+            return 'Connecting';
+        case Nimiq.BasePoolMiner.ConnectionState.CLOSED:
+        default:
+            return 'Disconnected';
+    }
 }
 
 function accountTypeName(type) {
@@ -323,7 +345,7 @@ function displayPeerState(peerState, desc) {
     console.log(`Failed attempts | ${peerState.failedAttempts}`);
     console.log(`A-State         | ${peerAddressStateName(peerState.addressState)}`);
     if (peerState.connectionState) {
-        console.log(`C-State         | ${connectionStateName(peerState.connectionState)}`);
+        console.log(`C-State         | ${peerConnectionStateName(peerState.connectionState)}`);
         console.log(`Head hash       | ${peerState.headHash}`);
         console.log(`Time offset     | ${peerState.timeOffset}`);
         console.log(`Latency         | ${peerState.latency}`);
@@ -374,17 +396,36 @@ async function action(args, rl) {
             if (!enabled) {
                 console.log('Mining is disabled.');
             } else {
-                const hashrate = await jsonRpcFetch('hashrate');
-                const threads = await jsonRpcFetch('minerThreads');
-                console.log(chalk`Mining with {bold ${hashrate} H/s} on {bold ${threads}} threads.`);
+                const [hashrate, threads, address, pool, poolConnection, poolBalance] = await Promise.all([
+                    jsonRpcFetch('hashrate'),
+                    jsonRpcFetch('minerThreads'),
+                    jsonRpcFetch('minerAddress'),
+                    jsonRpcFetch('pool'),
+                    jsonRpcFetch('poolConnectionState'),
+                    jsonRpcFetch('poolConfirmedBalance')
+                ]);
+                console.log(chalk`Mining with {bold ${hashrate} H/s} on {bold ${threads}} threads to {bold ${address}}.`);
+                if (!pool) {
+                    console.log('Pool mining is disabled.');
+                } else {
+                    console.log(chalk`{bold ${poolConnectionStateName(poolConnection)}} ${poolConnection!==Nimiq.BasePoolMiner.ConnectionState.CLOSED? 'to' : 'from'} pool {bold ${pool}}. Confirmed Pool Balance: {bold ${nimValueFormat(poolBalance)}}`);
+                }
             }
             return;
         }
         case 'mining.json': {
+            const [enabled, hashrate, threads, address, pool, poolConnection, poolBalance] = await Promise.all([
+                jsonRpcFetch('mining'),
+                jsonRpcFetch('hashrate'),
+                jsonRpcFetch('minerThreads'),
+                jsonRpcFetch('minerAddress'),
+                jsonRpcFetch('pool'),
+                jsonRpcFetch('poolConnectionState'),
+                jsonRpcFetch('poolConfirmedBalance')
+            ]);
             console.log(JSON.stringify({
-                enabled: await jsonRpcFetch('mining'),
-                hashrate: await jsonRpcFetch('hashrate'),
-                threads: await jsonRpcFetch('minerThreads')
+                enabled, hashrate, threads, address, pool, poolBalance,
+                poolConnection: poolConnectionStateName(poolConnection)
             }));
             return;
         }
@@ -398,6 +439,23 @@ async function action(args, rl) {
         }
         case 'mining.threads': {
             console.log(await jsonRpcFetch('minerThreads', args.length > 1 ? parseInt(args[1]) : undefined));
+            return;
+        }
+        case 'mining.address': {
+            console.log(await jsonRpcFetch('minerAddress'));
+            return;
+        }
+        case 'mining.pool': {
+            const arg = isTrue(args[1]) || (isFalse(args[1])? false : args[1]);
+            console.log(await jsonRpcFetch('pool', arg) || 'Pool mining is disabled.');
+            return;
+        }
+        case 'mining.poolConnection': {
+            console.log(poolConnectionStateName(await jsonRpcFetch('poolConnectionState')));
+            return;
+        }
+        case 'mining.poolBalance': {
+            console.log(nimValueFormat(await jsonRpcFetch('poolConfirmedBalance')));
             return;
         }
         // Accounts
@@ -666,7 +724,7 @@ async function action(args, rl) {
             }
             for (const peer of peerList) {
                 const space = Array(maxAddrLength - peer.address.length + 1).join(' ');
-                console.log(chalk`${peer.address}${space} | ${peer.connectionState ? connectionStateName(peer.connectionState) : peerAddressStateName(peer.addressState)}`);
+                console.log(chalk`${peer.address}${space} | ${peer.connectionState ? peerConnectionStateName(peer.connectionState) : peerAddressStateName(peer.addressState)}`);
             }
             return;
         }
@@ -757,18 +815,40 @@ Options:
             console.log(`Actions:
     account ADDR            Display details for account with address ADDR.
     accounts                List local accounts.
+    accounts.create         Create a new Nimiq Account and store it in the
+                            WalletStore of the Nimiq node.
     block BLOCK             Display details of block BLOCK.
     constant CONST [VAL]    Display value of constant CONST. If VAL is given,
                             overrides constant const with value VAL.
+    consensus.min_fee_per_byte [FEE]
+                            Read or change the current min fee per byte setting.
+    help                    Display this help.
+    log [LEVEL] [TAG]       Set the log level for TAG to LEVEL. If LEVEL is
+                            omitted, 'verbose' is assumed. If TAG is omitted,
+                            '*' is assumed.
     mining                  Display information on current mining settings.
     mining.enabled [VAL]    Read or change enabled state of miner.
     mining.threads [VAL]    Read or change number of threads of miner.
+    mining.hashrate         Read the current hashrate of miner.
+    mining.address          Read the address the miner is mining to.
+    mining.poolConnection   Read the current connection state of the pool.
+    mining.poolBalance      Read the current balance that was confirmed and
+                            not yet payed out by the pool.
+    mining.pool [VAL]       Read or change the mining pool. Specify host:port
+                            to connect to a specific pool, true to connect to a
+                            previously specified pool and false to disconnect.
+    mempool                 Display mempool stats.
+    mempool.content [INCLUDE_TX]
+                            Display mempool content. If INCLUDE_TX is given,
+                            full transactions instead of transaction hashes
+                            are requested.
     peer PEER [ACTION]      Display details about peer PEER. If ACTION is
                             specified, invokes the named action on the peer.
                             Currently supported actions include:
                             connect, disconnect, ban, unban, fail
     peers                   List all known peer addresses and their current
                             connection state.
+    status                  Display the current status of the Nimiq node.
     transaction TX          Display details about transaction TX.
     transaction BLOCK IDX   Display details about transaction at index IDX in
                             block BLOCK.
@@ -779,13 +859,7 @@ Options:
                             account.
     transactions ADDR [LIMIT]
                             Display at most LIMIT transactions involving address ADDR.
-    mempool                 Display mempool stats.
-    mempool.content [INCLUDE_TX]
-                            Display mempool content. If INCLUDE_TX is given,
-                            full transactions instead of transaction hashes
-                            are requested.
-    consensus.min_fee_per_byte [FEE]
-                            Read or change the current min fee per byte setting.
+    
 
 Most actions support output either in human-readable text form (default) or as
 JSON by appending '.json' to the action name. Addresses may be given in user-
@@ -804,10 +878,13 @@ function main(args) {
             removeHistoryDuplicates: true,
             completer: function (line, callback) {
                 if (line.indexOf(' ') < 0) {
-                    const completions = ['account', 'accounts', 'accounts.create', 'block', 'constant',
-                        'mining', 'mining.enabled', 'mining.threads', 'peer', 'peers',
-                        'transaction', 'transaction.receipt', 'transaction.send', 'transactions',
-                        'mempool', 'consensus.min_fee_per_byte'];
+                    const completions = ['status', 'account', 'account.json', 'accounts', 'accounts.json', 'accounts.create',
+                        'block', 'block.json', 'constant', 'mining', 'mining.json', 'mining.enabled', 'mining.threads',
+                        'mining.hashrate', 'mining.address', 'mining.poolConnection', 'mining.poolBalance',
+                        'mining.pool', 'peer', 'peer.json', 'peers', 'peers.json', 'transaction', 'transaction.json',
+                        'transaction.receipt', 'transaction.receipt.json', 'transaction.send', 'transactions',
+                        'transactions.json', 'mempool', 'mempool.content', 'mempool.content.json',
+                        'consensus.min_fee_per_byte', 'log', 'help'];
                     const hits = completions.filter((c) => c.startsWith(line));
                     callback(null, [hits.length ? hits : completions, line]);
                 } else {

@@ -5,8 +5,12 @@ const Nimiq = require('../../../dist/node.js');
 class JsonRpcServer {
     /**
      * @param {{port: number, corsdomain: string|Array.<string>, username: ?string, password: ?string}} config
+     * @param {{enabled: boolean, threads: number, throttleAfter: number, throttleWait: number, extraData: string}} minerConfig
+     * @param {{enabled: boolean, host: string, port: number, mode: string}} poolConfig
      */
-    constructor(config) {
+    constructor(config, minerConfig, poolConfig) {
+        this._minerConfig = minerConfig;
+        this._poolConfig = poolConfig;
         if (typeof config.corsdomain === 'string') config.corsdomain = [config.corsdomain];
         if (!config.corsdomain) config.corsdomain = [];
         if (typeof config.allowip === 'string') config.allowip = [config.allowip];
@@ -15,7 +19,7 @@ class JsonRpcServer {
             if (config.corsdomain.includes(req.headers.origin)) {
                 res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
                 res.setHeader('Access-Control-Allow-Methods', 'POST');
-                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
             }
 
             // Deny IP addresses other than local if not explicitly allowed.
@@ -58,7 +62,7 @@ class JsonRpcServer {
      * @param {Accounts} accounts
      * @param {Mempool} mempool
      * @param {Network} network
-     * @param {Miner} miner
+     * @param {Miner|SmartPoolMiner|NanoPoolMiner} miner
      * @param {WalletStore} walletStore
      */
     init(consensus, blockchain, accounts, mempool, network, miner, walletStore) {
@@ -99,6 +103,10 @@ class JsonRpcServer {
         this._methods.set('mining', this.mining.bind(this));
         this._methods.set('hashrate', this.hashrate.bind(this));
         this._methods.set('minerThreads', this.minerThreads.bind(this));
+        this._methods.set('minerAddress', this.minerAddress.bind(this));
+        this._methods.set('pool', this.pool.bind(this));
+        this._methods.set('poolConnectionState', this.poolConnectionState.bind(this));
+        this._methods.set('poolConfirmedBalance', this.poolConfirmedBalance.bind(this));
 
         // Accounts
         this._methods.set('accounts', this.accounts.bind(this));
@@ -379,22 +387,86 @@ class JsonRpcServer {
      */
 
     mining(enabled) {
-        if (!this._miner) throw new Error('This node does not include a miner');
-        if (!this._miner.working && enabled === true) this._miner.startWork();
-        if (this._miner.working && enabled === false) this._miner.stopWork();
+        if (enabled === true) {
+            this._minerConfig.enabled = true;
+            if (this._poolConfig.enabled && this._isPoolValid() && this._miner.isDisconnected()) {
+                this._miner.connect(this._poolConfig.host, this._poolConfig.port);
+            }
+            if (!this._miner.working) this._miner.startWork();
+        } else if (enabled === false) {
+            this._minerConfig.enabled = false;
+            if (this._miner.working) this._miner.stopWork();
+            if (this._miner instanceof Nimiq.BasePoolMiner && !this._miner.isDisconnected()) {
+                this._miner.disconnect();
+            }
+        }
         return this._miner.working;
     }
 
     hashrate() {
-        if (!this._miner) throw new Error('This node does not include a miner');
         return this._miner.hashrate;
     }
 
     minerThreads(threads) {
         if (typeof threads === 'number') {
             this._miner.threads = threads;
+            this._minerConfig.threads = threads;
         }
         return this._miner.threads;
+    }
+
+    minerAddress() {
+        return this._miner.address.toUserFriendlyAddress();
+    }
+
+    pool(pool) {
+        if (pool && !(this._miner instanceof Nimiq.BasePoolMiner)) {
+            throw new Error('Node was not started with the pool miner option.');
+        }
+        if (typeof pool === 'string') {
+            let [host, port] = pool.split(':');
+            port = parseInt(port);
+            if (!this._isPoolValid(host, port)) {
+                throw new Error('Pool must be specified as `host:port`');
+            }
+            this._poolConfig.host = host;
+            this._poolConfig.port = port;
+            if (!this._miner.isDisconnected()) {
+                // disconnect from old pool
+                this._miner.disconnect();
+            }
+            pool = true;
+        }
+
+        if (pool === true) {
+            if (!this._isPoolValid()) {
+                throw new Error('No valid pool specified.');
+            }
+            this._poolConfig.enabled = true;
+            if (this._miner.isDisconnected()) {
+                this._miner.connect(this._poolConfig.host, this._poolConfig.port);
+            }
+        } else if (pool === false) {
+            this._poolConfig.enabled = false;
+            if (this._miner instanceof Nimiq.BasePoolMiner
+                && !this._miner.isDisconnected()) {
+                this._miner.disconnect();
+            }
+        }
+
+        return this._poolConfig.enabled && this._isPoolValid(this._miner.host, this._miner.port)
+            ? `${this._miner.host}:${this._miner.port}`
+            : null;
+    }
+
+    poolConnectionState() {
+        return typeof this._miner.connectionState !== 'undefined'
+            ? this._miner.connectionState
+            : Nimiq.BasePoolMiner.ConnectionState.CLOSED;
+    }
+
+    poolConfirmedBalance() {
+        return this._miner.confirmedBalance || 0;
     }
 
     /*
@@ -463,6 +535,12 @@ class JsonRpcServer {
         if (number === 0) number = 1;
         if (number === 1) return Nimiq.GenesisConfig.GENESIS_BLOCK;
         return this._blockchain.getBlockAt(number, /*includeBody*/ true);
+    }
+
+    _isPoolValid(host, port) {
+        host = typeof host !== 'undefined'? host : this._poolConfig.host;
+        port = typeof port !== 'undefined'? port : this._poolConfig.port;
+        return typeof host === 'string' && host && typeof port === 'number' && !Number.isNaN(port) && port >= 0;
     }
 
     /**
