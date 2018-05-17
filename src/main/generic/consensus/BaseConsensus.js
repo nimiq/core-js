@@ -261,7 +261,7 @@ class BaseConsensus extends Observable {
             }
         }
 
-        // No peer supplied the requested account, fail.
+        // No peer supplied the requested block, fail.
         throw new Error(`Failed to retrieve block proof for ${blockHashToProve}`);
     }
 
