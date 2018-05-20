@@ -2,6 +2,7 @@ const START = Date.now();
 const argv = require('minimist')(process.argv.slice(2));
 const Nimiq = require('../../dist/node.js');
 const JsonRpcServer = require('./modules/JsonRpcServer.js');
+const UiServer = require('./modules/UiServer.js');
 const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
 
@@ -51,6 +52,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '           [:PASSWORD]       PORT (default: 8649). If PASSWORD is specified, it\n' +
         '                             is required to be used for username "metrics" via\n' +
         '                             Basic Authentication.\n' +
+        '  --ui[=PORT]                Serve a miner UI on port PORT (default: 8650).\n' +
         '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
@@ -81,6 +83,14 @@ if (config.metricsServer.enabled && config.protocol !== 'wss') {
 }
 if (config.metricsServer.enabled && isNano) {
     console.error('Cannot provide metrics when running as a nano client');
+    process.exit(1);
+}
+if ((isNano || config.poolMining.mode === 'nano') && config.uiServer.enabled) {
+    console.error('The UI is currently not supported for nano clients');
+    process.exit(1);
+}
+if (config.uiServer.enabled && !config.rpcServer.enabled) {
+    console.error('The UI requires the RPC Server to be enabled');
     process.exit(1);
 }
 if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
@@ -136,6 +146,7 @@ const $ = {};
     Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${config.network}`
         + `, ${config.host ? `host=${config.host}, port=${config.port}` : 'dumb'}`
         + `, miner=${config.miner.enabled}, rpc=${config.rpcServer.enabled}${config.rpcServer.enabled ? `@${config.rpcServer.port}` : ''}`
+        + `, ui=${config.uiServer.enabled}${config.uiServer.enabled? `@${config.uiServer.port}` : ''}`
         + `, metrics=${config.metricsServer.enabled}${config.metricsServer.enabled ? `@${config.metricsServer.port}` : ''})`);
 
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
@@ -218,7 +229,8 @@ const $ = {};
     Nimiq.Log.i(TAG, `Blockchain state: height=${$.blockchain.height}, headHash=${$.blockchain.headHash}`);
 
     const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : new Uint8Array(0);
-    if (config.poolMining.enabled) {
+    if (config.poolMining.enabled || config.uiServer.enabled) { // ui requires SmartPoolMiner to be able to switch
+        // between solo mining and pool mining
         const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
         const deviceData = config.poolMining.deviceData;
         const poolMode = isNano ? 'nano' : config.poolMining.mode;
@@ -305,6 +317,12 @@ const $ = {};
     }
 
     if (config.rpcServer.enabled) {
+        if (config.uiServer.enabled) {
+            config.rpcServer.corsdomain = typeof config.rpcServer.corsdomain === 'string'
+                ? [config.rpcServer.corsdomain]
+                : (config.rpcServer.corsdomain || []);
+            config.rpcServer.corsdomain.push(`http://localhost:${config.uiServer.port}`);
+        }
         $.rpcServer = new JsonRpcServer(config.rpcServer, config.miner, config.poolMining);
         $.rpcServer.init($.consensus, $.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
@@ -312,6 +330,10 @@ const $ = {};
     if (config.metricsServer.enabled) {
         $.metricsServer = new MetricsServer(networkConfig.sslConfig, config.metricsServer.port, config.metricsServer.password);
         $.metricsServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner);
+    }
+
+    if (config.uiServer.enabled) {
+        $.uiServer = new UiServer(config.uiServer);
     }
 })().catch(e => {
     console.error(e);

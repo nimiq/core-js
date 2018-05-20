@@ -1,0 +1,87 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    color: rgba(0, 0, 0, 0.88);
+    font-family: sans-serif;
+    font-size: 15px;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    z-index: 1;
+    font-weight: 600;
+}
+
+header .logo {
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 17px;
+}
+
+
+header .logo svg {
+    margin-right: 16px;
+    min-width: 34px;
+}
+
+header .logo .uppercase {
+    font-weight: 700;
+    line-height: 1;
+}
+
+header .logo a {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 0;
+}
+
+p {
+    font-size: 13px;
+    line-height: 18px;
+}
+
+a {
+    text-decoration: none;
+    font-size: 17px;
+    color: #e2a62f;
+    transition: color .3s, text-decoration .3s;
+}
+
+.button {
+    border-radius: 3px;
+    margin: 16px 0;
+    padding: 8px 16px !important;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: 1pt;
+}
+
+.uppercase {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 800px) {
+    header {
+        padding: 12px;
+    }
+
+    header .logo svg {
+        margin-right: 12px;
+    }
+}

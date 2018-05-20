@@ -1,0 +1,818 @@
+html,
+body {
+    background-color: #042146;
+    background: linear-gradient(30deg, #3023AE, #9C58CB);
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.88);
+    text-align: center;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+b {
+    font-weight: 600;
+}
+
+p, a, h1, h2, h3 {
+    margin: 0;
+    padding: 0;
+}
+
+.flex-spacer {
+    flex-grow: 1;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    from {
+        transform: none
+    }
+
+    15% {
+        transform: translate3d(-21%,0,0) rotate(-5deg)
+    }
+
+    30% {
+        transform: translate3d(13%,0,0) rotate(3deg)
+    }
+
+    45% {
+        transform: translate3d(-8%,0,0) rotate(-3deg)
+    }
+
+    60% {
+        transform: translate3d(5%,0,0) rotate(2deg)
+    }
+
+    75% {
+        transform: translate3d(-3%,0,0) rotate(-1deg)
+    }
+
+    to {
+        transform: none
+    }
+}
+
+header .logo {
+    text-align: left;
+}
+
+body.browser-outdated > :not(.miner-container),
+body.browser-outdated > .miner-container > :not(header) {
+    display: none !important;
+}
+
+body.browser-outdated > .miner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body.browser-outdated > .miner-container::after {
+    content: "Please update your browser.";
+}
+
+.miner-container::after {
+    color: #ffc107;
+    font-size: 32px;
+}
+
+.button {
+    /*background-image: linear-gradient(110deg, #e2a62f, #d7941a);*/
+    color: white;
+    background: #e2a62f;
+    box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+    display: inline-block;
+    font-size: 18px;
+    text-shadow: none;
+    /* transition: color .3s, background-color .3s, border .3s; */
+    vertical-align: middle;
+    line-height: 28px;
+    margin: 8px;
+    letter-spacing: 0;
+    font-weight: 600;
+    transition: background .2s ease;
+}
+
+.button:hover {
+    background: #E69E1D;
+}
+
+#disclaimer {
+    justify-content: center;
+    align-items: center;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+    animation: 1s fade-in both;
+    padding: 16px 8px;
+    overflow: auto;
+}
+
+#disclaimer-modal {
+    max-width: 800px;
+    padding: 32px;
+    margin: auto;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    overflow: auto;
+}
+
+#disclaimer-modal p {
+    margin: 8px 0;
+}
+
+#disclaimer:target {
+    display: flex;
+}
+
+#copyright-container {
+    position: absolute;
+    bottom: 12px;
+    width: 100%;
+    font-size: 20px;
+}
+
+#copyright-container a {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: inherit;
+    display: inline-block;
+    padding-bottom: 8px;
+}
+
+#copyright {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+#miningSection {
+    transition: opacity 1s;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+#miningSectionCenter {
+    position: relative;
+}
+
+#topInfo {
+    position: absolute;
+    bottom: 100%;
+    width: 100%;
+}
+
+.miner-warning {
+    transition: opacity 1s;
+    opacity: 0;
+    font-size: 26px;
+    padding: 1vh 0;
+    display: none;
+}
+
+.miner-warning a {
+    font-size: inherit;
+    pointer-events: all;
+}
+
+#miningSection:not(.synced) #warning-miner-stopped,
+.disconnected #progressContainer,
+.update-available .miner-warning:not(#warning-update) {
+    display: none !important;
+}
+
+.facts {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+    pointer-events: none; /* to click through to exit area */
+    user-select: none;
+}
+
+.fact {
+    padding: 8px 0;
+    margin-right: 64px;
+    transition: opacity .2s .5s ease;
+}
+
+.fact:last-child {
+    margin-right: 0;
+}
+
+.facts .label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, .6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 0px;
+    line-height: 15px;
+}
+
+.facts .number {
+    font-size: 33px;
+    font-weight: 600;
+}
+
+.facts .unit {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+}
+
+#bottomInfo {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    font-size: 13px;
+    opacity: 0;
+    color: rgba(255, 255, 255, .6);
+    z-index: 2;
+    box-sizing: border-box;
+    padding: 0 12px;
+    pointer-events: all;
+}
+
+#rewardInfoPoolMiner {
+    display: none;
+}
+
+@media (max-width: 359px) {
+    #rewardInfoAmount {
+        display: none;
+    }
+}
+
+#bottomInfo a {
+    color: inherit;
+    font-size: 12px;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+#bottomInfo a:hover {
+    color: white;
+}
+
+[trigger-fact] {
+    position: relative;
+    padding: 8px;
+    border-radius: 3px;
+    transition: background .2s ease, opacity .2s .5s ease;
+    pointer-events: all;
+}
+
+[trigger-fact] .info-icon {
+    opacity: .6;
+    position: relative;
+    top: 2px;
+    height: 13px;
+    width: 13px;
+    display: none;
+}
+
+#my-hashrate[trigger-fact] .info-icon,
+#pool-miner[trigger-fact] .info-icon {
+    display: inline-block;
+}
+
+#my-hashrate[trigger-fact],
+#pool-miner[trigger-fact] {
+    cursor: pointer;
+}
+
+#my-hashrate[trigger-fact]:hover,
+#pool-miner[trigger-fact]:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+#factBalanceContainer {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    pointer-events: all;
+    outline: none !important;
+    transition: background .2s ease;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+}
+
+#factBalanceContainer:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+#factBalance {
+    color: white;
+}
+
+#factBalanceContainerInner {
+    padding: 8px;
+    min-width: 131px;
+    cursor: pointer;
+}
+
+#factBalanceContainerInner .label {
+    display: flex;
+    justify-content: space-between;
+    color: #F6AE2D;
+}
+
+.ellipsis>*:first-child {
+    animation: 1.5s ellipsis-first 0s infinite;
+}
+.ellipsis>*:nth-child(2) {
+    animation: 1.5s ellipsis-second 0s infinite;
+}
+.ellipsis>*:nth-child(3) {
+    animation: 1.5s ellipsis-third 0s infinite;
+}
+
+@keyframes ellipsis-first {
+    0% {
+        opacity: 0;
+    }
+    25% {
+        opacity: 1;
+    }
+    75% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes ellipsis-second {
+    0% {
+        opacity: 0;
+    }
+    25% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    75% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes ellipsis-third {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0;
+    }
+    75% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+#progressContainer {
+    padding-bottom: 16px;
+}
+
+#progress {
+    color: #ffc107;
+    font-size: 26px;
+    line-height: 32px;
+}
+
+#progress[state="connecting"]:before {
+    content: "Connecting";
+}
+#progress[state="syncing"]:before {
+    content: "Synchronizing";
+}
+#progress[state="synced"]:before {
+    content: "Consensus established";
+}
+#progress[state="synced"]>.ellipsis {
+    display: none;
+}
+
+.synced #progress {
+    animation: 1s fade-in 0.5s reverse forwards, 1s fade-in 1.5s normal forwards, 1s fade-in 4s reverse forwards;
+}
+
+.synced #bottomInfo {
+    /* wait 5 seconds until fading in because this is when we get the first hashrate value */
+    animation: 1s fade-in 5s normal forwards;
+}
+
+#miningSection:not(.synced) #bottomInfo {
+    pointer-events: none !important;
+}
+
+#block-loader {
+    height: 22px;
+    width: auto;
+}
+
+
+/* Buttons & Inputs */
+
+
+input, button {
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    background: none;
+}
+
+input {
+    padding: 0;
+    line-height: 100%;
+    width: 100%;
+}
+
+input:required {
+    box-shadow:none;
+}
+
+button {
+    margin: 0;
+    line-height: 1;
+}
+
+input:focus, button:focus {
+    outline: none;
+}
+
+input::-webkit-input-placeholder {
+    color: rgba(3,32,71,0.4);
+    line-height: 100%;
+}
+input::-moz-placeholder {
+    color: rgba(3,32,71,0.4);
+    line-height: 100%;
+}
+input:-ms-input-placeholder {
+    color: rgba(3,32,71,0.4);
+    line-height: 100%;
+}
+input:-moz-placeholder {
+    color: rgba(3,32,71,0.4);
+    line-height: 100%;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+    border-bottom: 1px solid rgba(3,32,71,0.1);
+    margin-bottom: 8px;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus {
+    border-bottom: 1px solid rgba(3,32,71,1);
+}
+
+.miner-container {
+    transition: filter .3s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Overlay Context State */
+
+.overlay-root {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+}
+
+.overlay {
+    background: white;
+    color: rgba(3,32,71,1);
+    border-radius: 3px;
+    box-shadow: 0 2px 44px 0 rgba(0,0,0,0.3);
+    font-size: 22px;
+    position: relative;
+    z-index: 2;
+    pointer-events: all;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay-close {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    padding: 24px;
+    opacity: .6;
+    transition: opacity .2s ease;
+}
+
+.overlay-close:hover {
+    opacity: 1;
+}
+
+.overlay-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 24px;
+    position: relative;
+    pointer-events: none;
+    margin: auto;
+    margin-top: 64px;
+    height: calc(100% - 64px);
+}
+
+.overlay-container,
+.overlay {
+    max-width: 600px;
+    width: 100%;
+}
+
+.overlay-container > * {
+    pointer-events: all;
+}
+
+.overlay p, h1, h2, h3, ul {
+    margin: 0;
+    padding: 0;
+}
+
+.overlay p {
+    line-height: 1.3;
+    font-size: 19px;
+}
+
+.overlay .overlay-title {
+    font-size: 50px;
+    line-height: 1;
+    font-weight: 600;
+    color: rgba(3,32,71, 0.6);
+}
+
+.overlay .overlay-title + p {
+    margin-top: 12px;
+}
+
+.overlay .small {
+    font-size: 16px;
+}
+
+.left {
+    text-align: left;
+}
+
+.right {
+    text-align: right;
+}
+
+.overlay .uppercase {
+    text-transform: uppercase;
+    letter-spacing: initial;
+}
+
+.label {
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(3,32,71,.4);
+}
+
+.overlay-head {
+    padding: 32px;
+    display: flex;
+    background: rgba(3,32,71,.03);
+    flex: 1;
+    border-bottom: 1px solid rgba(3,32,71,0.15);
+    justify-content: flex-start;
+    flex-shrink: 0;
+}
+
+.overlay-head-col .label {
+    margin-bottom: 8px;
+    color: rgba(3,32,71, 0.4);
+}
+
+.overlay-head-col p {
+    color: rgba(3,32,71, 0.6);
+}
+
+.overlay-column-container {
+    display: flex;
+    border-bottom: 1px solid rgba(3,32,71,0.15);
+}
+
+.overlay-column-container > * {
+    flex-grow: 1;
+}
+
+.overlay-column-container > :first-child {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
+.overlay-column-container > :not(:last-child) {
+    border-right: 1px solid rgba(3,32,71,0.15);
+}
+
+.overlay .overlay-detail-container {
+    padding: 32px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.overlay-detail-row {
+    display: flex;
+    margin-top: 16px;
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.overlay-detail-row:first-child {
+    margin-top: 0;
+}
+
+.overlay-detail-label {
+    color: rgba(3,32,71,0.4);
+    width: 96px;
+    flex-shrink: 0;
+    margin-right: 40px !important;
+}
+
+.overlay-detail-row .button {
+    margin: 0;
+}
+
+/* Overlay State */
+
+body[overlay="rpc-settings"] .fact,
+body[overlay="mining-pools"] .fact,
+body[overlay="miner-settings"] .fact,
+body[overlay="error-message"] .fact {
+    opacity: .7;
+}
+
+body[overlay="rpc-settings"] .miner-container,
+body[overlay="mining-pools"] .miner-container,
+body[overlay="miner-settings"] .miner-container,
+body[overlay="error-message"] .miner-container {
+    filter: blur(10px);
+}
+
+body[overlay="rpc-settings"] #rpc-settings,
+body[overlay="mining-pools"] #mining-pools,
+body[overlay="miner-settings"] #miner-settings,
+body[overlay="error-message"] #error-message {
+    display: flex;
+}
+
+.is-currency:before {
+    content: "";
+    background: url('images/logo_blue.svg') no-repeat;
+    display: inline-block;
+    background-size: contain;
+    vertical-align: baseline;
+    position: relative;
+    width: 14px;
+    height: 14px;
+    margin-right: 3px;
+    margin-bottom: 1px;
+    top: 2px;
+}
+
+/* Tablet / Phone */
+
+@media screen and (max-width: 1150px) {
+    .facts {
+        /*flex-direction: column;*/
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 0;
+    }
+    .fact {
+        /*width: 64%;*/
+        margin: 0 12px 16px;
+    }
+    .facts .label {
+        margin-bottom: 0px;
+        min-height: 15px;
+        line-height: 15px;
+    }
+    #bottomInfo a {
+        padding: 1px;
+    }
+    header {
+        padding: 16px;
+    }
+
+    #progressContainer{
+        padding-bottom: 8px;
+    }
+}
+
+@media (max-width: 700px) {
+    .overlay .overlay-title {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 470px) {
+    .overlay-container {
+        padding: 8px;
+    }
+
+    .overlay-close {
+        top: 4px;
+        right: 4px;
+    }
+
+    .overlay-head {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 420px) {
+    .miner-warning,
+    #progress {
+        font-size: 22px;
+    }
+
+    .overlay-detail-label {
+        margin-right: 24px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    .overlay-head {
+        display: block;
+    }
+
+    .overlay-head-col {
+        text-align: left;
+    }
+}
+
+/* small mobile screens */
+@media (max-width: 420px) and (max-height: 600px) {
+    .facts .label {
+        font-size: 10px;
+    }
+
+    .facts .number {
+        font-size: 24px;
+    }
+
+    .facts .unit {
+        font-size: 13px;
+    }
+
+    [trigger-fact] .info-icon {
+        height: 10px;
+        width: 10px;
+    }
+
+    #block-loader {
+        height: 18px;
+    }
+
+    #factBalanceContainerInner {
+        min-width: initial;
+    }
+
+    #factBalanceContainerInner img {
+        width: 16px;
+        margin-left: 4px;
+    }
+}

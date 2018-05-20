@@ -1,0 +1,158 @@
+#mining-pools .overlay-container,
+#mining-pools .overlay {
+    max-width: 1000px;
+    width: 100%;
+}
+
+#mining-pools #mining-pools-list {
+    width: 250px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(3,32,71,.03);
+    border-right: none;
+    position: relative;
+}
+
+#mining-pools #mining-pools-list::before {
+    /* render the border as before element such that list entries can overlap it */
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 1px;
+    background: rgba(3,32,71,0.15);
+}
+
+#mining-pools #mining-pools-list > input {
+    /* not making it display:none such that switching between list entries with arrow key is possible */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: 0;
+    overflow: hidden;
+    margin: 0;
+    display: block;
+}
+
+#mining-pools #mining-pools-list > label {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 32px;
+    transition: background .1s;
+    cursor: pointer;
+    text-align: left;
+    font-size: 19px;
+}
+
+#mining-pools #mining-pools-list > input:checked + label {
+    background: white;
+    border-bottom: 1px solid rgba(3,32,71,0.15);
+    position: relative;
+}
+
+#mining-pools #mining-pools-list > input:checked + label:not(:first-of-type) {
+    border-top: 1px solid rgba(3,32,71,0.15);
+}
+
+#mining-pools #mining-pools-list > input:not(:checked) + label:hover {
+    background: rgba(255,255,255,.7);
+    width: calc(100% - 1px); /* to not render background over right border */
+}
+
+#mining-pool-detail {
+    padding: 32px 40px;
+}
+
+#mining-pool-detail .overlay-detail-row:first-child {
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+#mining-pool-detail #mining-pool-info-name {
+    display: inline-block;
+    color: inherit;
+}
+
+#mining-pool-detail #mining-pool-connection-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 4px 8px 0 8px;
+}
+
+#mining-pool-detail #mining-pool-info-balance {
+    margin: 0 16px;
+}
+
+#mining-pool-detail #mining-pool-connection-indicator[status="disconnected"] {
+    background: #F44336;
+}
+
+#mining-pool-detail #mining-pool-connection-indicator[status="connecting"] {
+    background: #FFC107;
+}
+
+#mining-pool-detail #mining-pool-connection-indicator[status="connected"] {
+    background: #4CAF50;
+}
+
+#mining-pool-detail:not([connected]) .show-when-connected {
+    display: none !important;
+}
+
+#mining-pool-detail .show-when-connected {
+    animation: fade-in .3s;
+}
+
+@media (max-width: 700px) {
+    #mining-pools .overlay-column-container {
+        flex-direction: column;
+    }
+
+    #mining-pools #mining-pools-list {
+        width: 100%;
+        max-height: 170px;
+        flex-shrink: 1;
+        border-bottom: 1px solid rgba(3,32,71,0.15);
+        background: white;
+    }
+
+    #mining-pools #mining-pools-list::before {
+        display: none;
+    }
+
+    #mining-pools #mining-pools-list > input:checked + label {
+        background: rgba(3,32,71,.03);
+        border: none !important;
+    }
+
+    #mining-pools #mining-pools-list > label:hover {
+        background: #eee;
+    }
+
+    #mining-pools #mining-pools-list label,
+    #mining-pools p,
+    #mining-pools .button {
+        font-size: 14px;
+    }
+
+    #mining-pool-detail {
+        padding: 32px;
+    }
+
+    #mining-pool-detail #mining-pool-connection-indicator {
+        margin-top: 2px;
+    }
+
+    #mining-pool-detail .is-currency:before {
+        width: 10px;
+        height: 10px;
+        margin-right: 2px;
+        margin-bottom: 1px;
+    }
+
+}

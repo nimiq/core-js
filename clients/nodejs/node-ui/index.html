@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Nimiq Node Miner">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="twitter:image" content="https://nimiq.com/static/sharing/twitter.jpg" />
+    <meta name="twitter:author" content="@nimiqnetwork" />
+    <meta property="og:image" content="https://nimiq.com/static/sharing/facebook.jpg" />
+    <meta property="og:url" content="https://nimiq.com/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Nimiq Node Miner" />
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" rel="stylesheet">
+    <link href="nimiq.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <title>Nimiq Node Miner</title>
+</head>
+
+<body>
+<div class="miner-container">
+    <header id="header">
+        <div class="logo">
+            <a id="header-link" href="https://nimiq.com">
+                <svg width="34" height="30" viewBox="0 0 499 440" xmlns="http://www.w3.org/2000/svg"><path d="M389.33 20.73C382.65 9.28 366.48 0 353.24 0h-208c-13.26 0-29.4 9.28-36.09 20.73L5.33 198.87c-6.68 11.45-6.68 30.02 0 41.47l103.82 178.14c6.68 11.45 22.85 20.74 36.09 20.74h208c13.26 0 29.4-9.28 36.09-20.74l103.82-178.14c6.68-11.45 6.68-30.01 0-41.47L389.33 20.73zM272.6 347.45v41.1h-38.74v-39.53c-23.53-2.82-51.45-13.02-70.28-30.12l25.57-39.06c20.4 15.06 37.96 22.9 57.1 22.9 22.43 0 32.31-9.1 32.31-27.29 0-40.63-105.4-39.84-105.4-111.06 0-38.74 23.2-65.57 60.7-73.1V50.51h38.74v40c25.57 3.6 43.92 16.16 59.45 32.47l-29.49 33.26c-14.43-13.02-26.66-19.77-43.45-19.77-19.13 0-29.49 7.53-29.49 25.26 0 37.49 105.41 34.35 105.41 109.96-.15 37.8-21.33 67.13-62.43 75.76z" fill="#FFC107" fill-rule="evenodd"/></svg>
+            </a>
+            <span class="uppercase">Nimiq Node Miner</span>
+        </div>
+    </header>
+
+    <noscript>
+        <style>
+            body > :not(.miner-container),
+            body > .miner-container > :not(header) {
+                display: none !important;
+            }
+
+            body > .miner-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            body > .miner-container::after {
+                content: "Please enable JavaScript.";
+            }
+        </style>
+    </noscript>
+
+    <!-- Mining -->
+    <div id="miningSection">
+
+        <div id="miningSectionCenter">
+            <div id="topInfo">
+                <div id="progressContainer">
+                    <div id="progress" state="connecting"><span class="ellipsis"><span>.</span><span>.</span><span>.</span></span></div>
+                </div>
+                <div id="warning-miner-stopped" class="miner-warning">
+                    Mining is paused. <a href="#" id="resumeMinerBtn">Resume</a>
+                </div>
+                <div id="warning-disconnected" class="miner-warning">
+                    You are disconnected<span class="hide-mobile"> from the network</span>
+                </div>
+                <div id="warning-update" class="miner-warning">
+                    A new version is available.<!-- TODO -->
+                </div>
+                <div id="warning-pool-connection" class="miner-warning">
+                    Connecting to the mining pool failed, currently solo mining. <a href="#" id="warning-pool-connection-switch-solo">Disable pool.</a>
+                </div>
+            </div>
+
+            <div class="facts">
+                <div class="fact">
+                    <div class="label">Connected to</div>
+                    <div>
+                        <span class="number" id="factPeers">0</span>
+                        <span class="unit">Peers</span>
+                    </div>
+                </div>
+                <div class="fact" id="mining-on-block">
+                    <div class="label"><span id="factBlockProcessingState">Current</span> Block</div>
+                    <div>
+                        <span class="number">
+                            <img id="block-loader" src="images/hexagon-side-animation.gif" />
+                            <span id="factBlockHeight">0</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="fact">
+                    <div class="label">Global Hashrate</div>
+                    <div>
+                        <span class="number" id="factGlobalHashrate">0.00</span>
+                        <span class="unit" id="factGlobalHashrateUnit">kH/s</span>
+                    </div>
+                </div>
+                <div class="fact" id="my-hashrate" trigger-fact>
+                    <div class="label">
+                        My Hashrate
+                        <img class="info-icon" src="images/info-icon.svg" />
+                    </div>
+                    <div>
+                        <span class="number" id="factMyHashrate">0.00</span>
+                        <span class="unit" id="factMyHashrateUnit">kH/s</span>
+                    </div>
+                </div>
+                <div class="fact" id="pool-miner" trigger-fact>
+                    <div class="label">
+                        Mining Pool
+                        <img class="info-icon" src="images/info-icon.svg" />
+                    </div>
+                    <div>
+                        <span class="number" id="factPoolMinerBalance">Off</span>
+                    </div>
+                </div>
+                <a href="#" target="nimiq-safe" id="factBalanceContainer" class="fact">
+                    <div id="factBalanceContainerInner">
+                        <div class="label">
+                            <span>Open Account</span>
+                            <img src="images/arrow_right.svg" />
+                        </div>
+                        <div>
+                            <span class="number" id="factBalance">0.00</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div id="bottomInfo">
+                    <span id="rewardInfoAmount">
+                        The block <span class="hide-mobile">mining</span> reward is
+                        <b><span id="factBlockReward">x</span> NIM</b>.
+                    </span>
+                <span id="rewardInfoSoloMiner">
+                        At your current hashrate you can expect to mine a block every
+                        <b id="factExpectedHashTime">x hours</b>.
+                    </span>
+                <span id="rewardInfoPoolMiner">
+                        At your current hashrate you get
+                        <b id="factAverageBlockReward">x NIM</b> on average per block.
+                    </span>
+                <a href="#" id="toggleMinerBtn">Pause Mining</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyright-container">
+        <a href="#disclaimer">Disclaimer</a>
+        <div id="copyright">&copy; 2017-2018 Nimiq Foundation</div>
+    </div>
+</div>
+
+<!-- Miner Settings -->
+<div id="miner-settings" class="overlay-root">
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-head left">
+                <p class="overlay-title">Miner</p>
+                <div class="flex-spacer"></div>
+                <div id="miner-settings-toggle-mining" class="button">Start</div>
+            </div>
+            <div class="overlay-detail-container">
+                <div class="overlay-detail-row">
+                    <p class="overlay-detail-label">Status</p>
+                    <p id="miner-settings-status"></p>
+                </div>
+                <div class="overlay-detail-row">
+                    <p class="overlay-detail-label">Threads: <span id="miner-settings-thread-count">1</span></p>
+                    <input id="miner-settings-thread-slider" type="range" min="1" step="1">
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="overlay-close">
+        <img src="images/close.svg" />
+    </button>
+</div>
+
+<!-- Mining Pool -->
+<div id="mining-pools" class="overlay-root">
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-head">
+                <div class="overlay-head-col left">
+                    <p class="overlay-title">Mining Pool</p>
+                    <p>Join a mining pool to get more consistent payouts.</p>
+                </div>
+            </div>
+            <div class="overlay-column-container">
+                <div id="mining-pools-list"></div>
+                <div id="mining-pool-detail" class="overlay-detail-container">
+                    <div class="overlay-detail-row">
+                        <p id="mining-pool-info-name"></p>
+                        <div id="mining-pool-connection-indicator"></div>
+                        <div class="flex-spacer"></div>
+                        <p id="mining-pool-info-balance" class="show-when-connected is-currency"></p>
+                        <div id="mining-pool-join" class="button">Join</div>
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Description</p>
+                        <p id="mining-pool-info-description"></p>
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Fees</p>
+                        <p id="mining-pool-info-fees"></p>
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Payouts</p>
+                        <p id="mining-pool-info-payouts"></p>
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Host</p>
+                        <p id="mining-pool-info-host"></p>
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Port</p>
+                        <p id="mining-pool-info-port"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="overlay-close">
+        <img src="images/close.svg" />
+    </button>
+</div>
+
+<!-- RPC Settings -->
+<div id="rpc-settings" class="overlay-root">
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-head left">
+                <p class="overlay-title">Connection</p>
+            </div>
+            <div class="overlay-detail-container">
+                <form id="rpc-settings-form">
+                    <p id="rpc-settings-warning" class="overlay-detail-row"></p>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">User</p>
+                        <input id="rpc-settings-user" type="text" placeholder="User Name" />
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Password</p>
+                        <input id="rpc-settings-password" type="password" placeholder="Password" />
+                    </div>
+                    <div class="overlay-detail-row">
+                        <p class="overlay-detail-label">Port</p>
+                        <input id="rpc-settings-port" type="number" placeholder="Port" />
+                    </div>
+                    <div class="overlay-detail-row">
+                        <button id="rpc-settings-connect" class="button" style="margin-top:16px">Connect</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Message -->
+<div id="error-message" class="overlay-root">
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-detail-container">
+                <p id="error-message-text" class="overlay-detail-row"></p>
+                <button id="error-message-ok" class="button" style="margin-top:32px">Ok</button>
+            </div>
+        </div>
+    </div>
+    <button class="overlay-close">
+        <img src="images/close.svg" />
+    </button>
+</div>
+
+<!-- Disclaimer -->
+<a id="disclaimer" href="#" class="overlay-root">
+    <div id="disclaimer-modal" class="overlay">
+        <p>If using the Nimiq Testnet mind that Testnet Mining does not create permanent Nimiq.<br>The Testnet and your Testnet Nimiq balance may be reset at any time.<br></p>
+
+        <p>Always backup your recovery words, passphrase, pin and keys. Please note that safe.nimiq.com, keyguard.nimiq.com, miner.nimiq.com and the node miner do not transfer any account access to any server. You hold your keys. We only make it easy for you, through a browser, to create, save, and access your information and interact with the blockchain.</p>
+
+        <p>We are not responsible for any loss. Nimiq, safe.nimiq.com, keyguard.nimiq.com, miner.nimiq.com &amp; the node miner, and some of the underlying libraries are under active development. While we thoroughly test, there is always the possibility something unexpected happens that causes your funds to be lost. Please do not place more than you are willing to lose, and please be careful.</p>
+
+        <p>We are not responsible for any and all risks associated with joining a mining pool. Mining pools are independently operated and we highly recommend you research the specific terms and conditions as well as trustworthiness and integrity of each pool and it's operators.</p>
+
+        <p>Expected mining rewards constitute an estimate, no guarantee for a mining reward.</p>
+
+        <br>
+        <p><strong>MIT License &mdash; Copyright &copy; 2018 Nimiq Foundation</strong></p>
+
+        <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+        <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+        <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+    </div>
+</a>
+
+<script src="browser-warning.js"></script>
+<script src="web.js"></script>
+<script src="ui-components.js"></script>
+<script src="rpc-client.js"></script>
+<script src="rpc-settings.js"></script>
+<script src="miner-settings.js"></script>
+<script src="mining-pools.js"></script>
+<script src="error-message.js"></script>
+<script src="miner-main.js"></script>
+<script src="script.js"></script>
+<link href="miner-settings.css" rel="stylesheet">
+<link href="mining-pools.css" rel="stylesheet">
+</body>
+
+</html>
