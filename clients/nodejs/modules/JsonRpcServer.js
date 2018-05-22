@@ -9,11 +9,27 @@ class JsonRpcServer {
     constructor(config) {
         if (typeof config.corsdomain === 'string') config.corsdomain = [config.corsdomain];
         if (!config.corsdomain) config.corsdomain = [];
+        if (typeof config.allowip === 'string') config.allowip = [config.allowip];
+        if (!config.allowip) config.allowip = [];
         http.createServer((req, res) => {
             if (config.corsdomain.includes(req.headers.origin)) {
                 res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
                 res.setHeader('Access-Control-Allow-Methods', 'POST');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+            }
+
+            // Deny IP addresses other than local if not explicitly allowed.
+            const remoteIp = req.connection.remoteAddress;
+            if (!Nimiq.NetUtils.isLocalIP(remoteIp)) { // Not local host
+                let found = false;
+                for (const subnet of config.allowip) {
+                    found |= Nimiq.NetUtils.isIPv4inSubnet(remoteIp, subnet);
+                }
+                if (!found) {
+                    res.writeHead(403);
+                    res.end();
+                    return;
+                }
             }
 
             if (req.method === 'GET') {
@@ -27,7 +43,7 @@ class JsonRpcServer {
                 res.writeHead(200);
                 res.end();
             }
-        }).listen(config.port, '127.0.0.1');
+        }).listen(config.port, config.allowip.length ? '0.0.0.0' : '127.0.0.1');
 
 
         /** @type {Map.<string, function(*)>} */
@@ -446,6 +462,7 @@ class JsonRpcServer {
             }
         }
         if (number === 0) number = 1;
+        if (number === 1) return Nimiq.GenesisConfig.GENESIS_BLOCK;
         return this._blockchain.getBlockAt(number, /*includeBody*/ true);
     }
 

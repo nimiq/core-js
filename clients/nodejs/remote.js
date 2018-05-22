@@ -35,6 +35,7 @@ if (argv.user) {
     rl.question(`Password for ${user}: `, (pw) => {
         password = pw;
         rl.close();
+        console.log(""); // Add newline
         main(argv._);
     });
     mutableStdout.muted = true;

@@ -17,7 +17,7 @@ const TAG = 'Config';
  * @property {number} statistics
  * @property {{enabled: boolean, threads: string|number, throttleAfter: number, throttleWait: number, extraData: string}} miner
  * @property {{enabled: boolean, host: string, port: number}} poolMining
- * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>}} rpcServer
+ * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>, allowip: string|Array.<string>, username: string, password: string}} rpcServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
  * @property {{level: string, tags: object}} log
@@ -55,6 +55,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         enabled: false,
         port: 8648,
         corsdomain: null,
+        allowip: null,
         username: null,
         password: null
     },
@@ -118,6 +119,7 @@ const CONFIG_TYPES = {
             enabled: 'boolean',
             port: 'number',
             corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
+            allowip: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
             username: 'string',
             password: 'string'
         }
