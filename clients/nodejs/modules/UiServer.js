@@ -61,6 +61,8 @@ class UiServer {
         if (uri === '/web.js') {
             // special file that gets served from dist folder outside from ROOT folder
             filePath = path.join(UiServer.ROOT, '../../../dist/web.js');
+        } else if (uri === '/mining-pools-mainnet.json') {
+            filePath = path.join(UiServer.ROOT, '../modules/mining-pools-mainnet.json');
         } else {
             filePath = path.join(UiServer.ROOT, uri); // creates a normalized path where stuff like /.. gets resolved
             if (!filePath.startsWith(UiServer.ROOT)) {

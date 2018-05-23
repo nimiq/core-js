@@ -12,7 +12,7 @@ class App {
         const port = parseInt(urlParams.port) || 8648;
         let user, password;
         if (urlParams.token) {
-            user = 'authorization-token';
+            user = 'access-token';
             password = urlParams.token;
         }
         this._rpcClient = new RpcClient('localhost', port, user, password);
@@ -48,6 +48,13 @@ class App {
             new RpcAccounts(this._rpcClient),
             new RpcMiner(this._rpcClient)
         ]);
+        // schedule some additional updates during startup
+        [consensus, blockchain, network, accounts, miner].forEach(component => {
+            setTimeout(() => component._update(), 1000);
+            setTimeout(() => component._update(), 3000);
+            setTimeout(() => component._update(), 6000);
+            setTimeout(() => component._update(), 10000);
+        });
         this.$ = { consensus, blockchain, network, accounts, miner };
     }
 }

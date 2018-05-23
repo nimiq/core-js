@@ -1,4 +1,7 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const JSON5 = require('json5');
 const btoa = require('btoa');
 const Nimiq = require('../../../dist/node.js');
 
@@ -20,6 +23,12 @@ class JsonRpcServer {
                 res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
                 res.setHeader('Access-Control-Allow-Methods', 'POST');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                res.setHeader('Access-Control-Max-Age', '900');
+            } else if (req.headers.origin) {
+                // Block cors requests that might originate from a website in the users browser.
+                res.writeHead(403, `Access not allowed from ${req.headers.origin}`);
+                res.end();
+                return;
             }
 
             // Deny IP addresses other than local if not explicitly allowed.
@@ -40,9 +49,9 @@ class JsonRpcServer {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
-                if (JsonRpcServer._authenticate(req, res, config.username, config.password)) {
-                    this._onRequest(req, res);
-                }
+                const access = JsonRpcServer._authenticate(req, res, this._accessToken, config.username, config.password);
+                if (access === JsonRpcServer.AccessType.DENIED) return;
+                this._onRequest(req, res, access === JsonRpcServer.AccessType.RESTRICTED);
             } else {
                 res.writeHead(200);
                 res.end();
@@ -54,6 +63,8 @@ class JsonRpcServer {
         this._methods = new Map();
 
         this._consensus_state = 'syncing';
+
+        this._accessToken = Nimiq.BufferUtils.toBase64(Nimiq.CryptoLib.instance.getRandomValues(new Uint8Array(32)));
     }
 
     /**
@@ -125,7 +136,12 @@ class JsonRpcServer {
         this._methods.set('log', this.log.bind(this));
     }
 
-    constant(constant, value) {
+    get accessToken() {
+        return this._accessToken;
+    }
+
+    constant(accessRestricted, constant, value) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         if (typeof value !== 'undefined') {
             if (value === 'reset') {
                 Nimiq.ConstantHelper.instance.reset(constant);
@@ -137,7 +153,8 @@ class JsonRpcServer {
         return Nimiq.ConstantHelper.instance.get(constant);
     }
 
-    log(tag, level) {
+    log(accessRestricted, tag, level) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         if (tag && level) {
             if (tag === '*') {
                 Nimiq.Log.instance.level = level;
@@ -153,19 +170,28 @@ class JsonRpcServer {
     /**
      * @param req
      * @param res
+     * @param {string} accessToken
      * @param {?string} username
      * @param {?string} password
-     * @returns {boolean}
+     * @returns {JsonRpcServer.AccessType}
      * @private
      */
-    static _authenticate(req, res, username, password) {
-        if (username && password && req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
+    static _authenticate(req, res, accessToken, username, password) {
+        if (req.headers.authorization === `Basic ${btoa(`access-token:${accessToken}`)}`) {
+            return JsonRpcServer.AccessType.RESTRICTED;
+        }
+        if (!username || !password) {
+            res.writeHead(403, 'Login by user name and password not enabled.');
+            res.end();
+            return JsonRpcServer.AccessType.DENIED;
+        }
+        if (req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
             res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
             res.end();
-            return false;
+            return JsonRpcServer.AccessType.DENIED;
         }
 
-        return true;
+        return JsonRpcServer.AccessType.GRANTED;
     }
 
 
@@ -192,7 +218,8 @@ class JsonRpcServer {
         };
     }
 
-    peerList() {
+    peerList(accessRestricted) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         const peers = [];
         for (const peerAddressState of this._network.addresses.iterator()) {
             peers.push(this._peerAddressStateToPeerObj(peerAddressState));
@@ -203,7 +230,8 @@ class JsonRpcServer {
     /**
      * @param {string} peer
      */
-    peerState(peer, set) {
+    peerState(accessRestricted, peer, set) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         const split = peer.split('/');
         let peerAddress;
         if (split.length === 1 || (split.length === 4 && split[3].length > 0)) {
@@ -254,7 +282,8 @@ class JsonRpcServer {
      * Transactions
      */
 
-    async sendRawTransaction(txhex) {
+    async sendRawTransaction(accessRestricted, txhex) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txhex));
         const ret = await this._mempool.pushTransaction(tx);
         if (ret < 0) {
@@ -294,7 +323,7 @@ class JsonRpcServer {
         return this.sendRawTransaction(await this.createRawTransaction(tx));
     }
 
-    async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
+    async getTransactionByBlockHashAndIndex(accessRestricted, blockHash, txIndex) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         if (block && block.transactions.length > txIndex) {
             return this._transactionToObj(block.transactions[txIndex], block, txIndex);
@@ -302,7 +331,7 @@ class JsonRpcServer {
         return null;
     }
 
-    async getTransactionByBlockNumberAndIndex(number, txIndex) {
+    async getTransactionByBlockNumberAndIndex(accessRestricted, number, txIndex) {
         const block = await this._getBlockByNumber(number);
         if (block && block.transactions.length > txIndex) {
             return this._transactionToObj(block.transactions[txIndex], block, txIndex);
@@ -310,7 +339,7 @@ class JsonRpcServer {
         return null;
     }
 
-    async getTransactionByHash(hash) {
+    async getTransactionByHash(accessRestricted, hash) {
         return this._getTransactionByHash(Nimiq.Hash.fromString(hash));
     }
 
@@ -327,7 +356,7 @@ class JsonRpcServer {
         return null;
     }
 
-    async getTransactionReceipt(hash) {
+    async getTransactionReceipt(accessRestricted, hash) {
         const entry = await this._blockchain.getTransactionInfoByHash(Nimiq.Hash.fromString(hash));
         if (!entry) return null;
         const block = await this._blockchain.getBlock(entry.blockHash);
@@ -341,7 +370,7 @@ class JsonRpcServer {
         };
     }
 
-    async getTransactionsByAddress(addr, limit = 1000) {
+    async getTransactionsByAddress(accessRestricted, addr, limit = 1000) {
         const address = Nimiq.Address.fromString(addr);
         const receipts = await this._blockchain.getTransactionReceiptsByAddress(address, limit);
         const result = [];
@@ -352,7 +381,7 @@ class JsonRpcServer {
         return result;
     }
 
-    mempoolContent(includeTransactions) {
+    mempoolContent(accessRestricted, includeTransactions) {
         return this._mempool.getTransactions().map((tx) => includeTransactions ? this._transactionToObj(tx) : tx.hash().toHex());
     }
 
@@ -375,8 +404,9 @@ class JsonRpcServer {
         return transactionsPerBucket;
     }
 
-    minFeePerByte(minFeePerByte) {
+    minFeePerByte(accessRestricted, minFeePerByte) {
         if (typeof minFeePerByte === 'number') {
+            if (accessRestricted) throw new Error('Need higher privileges to perform this action');
             this._consensus.subscribeMinFeePerByte(minFeePerByte);
         }
         return this._consensus.minFeePerByte;
@@ -386,13 +416,13 @@ class JsonRpcServer {
      * Miner
      */
 
-    mining(enabled) {
+    mining(accessRestricted, enabled) {
         if (enabled === true) {
             this._minerConfig.enabled = true;
             if (this._poolConfig.enabled && this._isPoolValid() && this._miner.isDisconnected()) {
                 this._miner.connect(this._poolConfig.host, this._poolConfig.port);
             }
-            if (!this._miner.working) this._miner.startWork();
+            if (!this._miner.working && this._consensus.established) this._miner.startWork();
         } else if (enabled === false) {
             this._minerConfig.enabled = false;
             if (this._miner.working) this._miner.stopWork();
@@ -407,7 +437,7 @@ class JsonRpcServer {
         return this._miner.hashrate;
     }
 
-    minerThreads(threads) {
+    minerThreads(accessRestricted, threads) {
         if (typeof threads === 'number') {
             this._miner.threads = threads;
             this._minerConfig.threads = threads;
@@ -419,13 +449,16 @@ class JsonRpcServer {
         return this._miner.address.toUserFriendlyAddress();
     }
 
-    pool(pool) {
+    async pool(accessRestricted, pool) {
         if (pool && !(this._miner instanceof Nimiq.BasePoolMiner)) {
             throw new Error('Node was not started with the pool miner option.');
         }
         if (typeof pool === 'string') {
             let [host, port] = pool.split(':');
             port = parseInt(port);
+            if (accessRestricted && !(await this._isPoolKnown(host, port))) {
+                throw new Error('Need higher privileges to perform this action');
+            }
             if (!this._isPoolValid(host, port)) {
                 throw new Error('Pool must be specified as `host:port`');
             }
@@ -477,18 +510,19 @@ class JsonRpcServer {
         return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._accounts.get(address), address)));
     }
 
-    async createAccount() {
+    async createAccount(accessRestricted) {
+        if (accessRestricted) throw new Error('Need higher privileges to perform this action');
         const wallet = await Nimiq.Wallet.generate();
         await this._walletStore.put(wallet);
         return this._walletToObj(wallet);
     }
 
-    async getBalance(addrString, atBlock) {
+    async getBalance(accessRestricted, addrString, atBlock) {
         if (atBlock && atBlock !== 'latest') throw new Error(`Cannot calculate balance at block ${atBlock}`);
         return (await this._accounts.get(Nimiq.Address.fromString(addrString))).balance;
     }
 
-    async getAccount(addr) {
+    async getAccount(accessRestricted, addr) {
         const address = Nimiq.Address.fromString(addr);
         const account = await this._accounts.get(address);
         return this._accountToObj(account, address);
@@ -502,22 +536,22 @@ class JsonRpcServer {
         return this._blockchain.height;
     }
 
-    async getBlockTransactionCountByHash(blockHash) {
+    async getBlockTransactionCountByHash(accessRestricted, blockHash) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         return block ? block.transactionCount : null;
     }
 
-    async getBlockTransactionCountByNumber(number) {
+    async getBlockTransactionCountByNumber(accessRestricted, number) {
         const block = await this._getBlockByNumber(number);
         return block ? block.transactionCount : null;
     }
 
-    async getBlockByHash(blockHash, includeTransactions) {
+    async getBlockByHash(accessRestricted, blockHash, includeTransactions) {
         const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
         return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
-    async getBlockByNumber(number, includeTransactions) {
+    async getBlockByNumber(accessRestricted, number, includeTransactions) {
         const block = await this._getBlockByNumber(number);
         return block ? this._blockToObj(block, includeTransactions) : null;
     }
@@ -541,6 +575,23 @@ class JsonRpcServer {
         host = typeof host !== 'undefined'? host : this._poolConfig.host;
         port = typeof port !== 'undefined'? port : this._poolConfig.port;
         return typeof host === 'string' && host && typeof port === 'number' && !Number.isNaN(port) && port >= 0;
+    }
+
+    async _isPoolKnown(host, port) {
+        this._poolListPromise = this._poolListPromise || new Promise((resolve, reject) => {
+            fs.readFile(path.join(__dirname, 'mining-pools-mainnet.json'), (err, data) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(data);
+            });
+        }).then(data => JSON5.parse(data));
+        const poolList = await this._poolListPromise;
+        for (const pool of poolList) {
+            if (pool.host === host && pool.port === port) return true;
+        }
+        return false;
     }
 
     /**
@@ -678,7 +729,7 @@ class JsonRpcServer {
         };
     }
 
-    _onRequest(req, res) {
+    _onRequest(req, res, accessRestricted = true) {
         let body = [];
         req.on('data', (chunk) => {
             body.push(chunk);
@@ -723,7 +774,11 @@ class JsonRpcServer {
                     continue;
                 }
                 try {
-                    const methodRes = await this._methods.get(msg.method).apply(null, msg.params instanceof Array ? msg.params : [msg.params]);
+                    let params = [accessRestricted];
+                    if (typeof msg.params !== 'undefined') {
+                        params = params.concat(msg.params instanceof Array? msg.params : [msg.params]);
+                    }
+                    const methodRes = await this._methods.get(msg.method).apply(null, params);
                     if (msg.id) {
                         result.push({'jsonrpc': '2.0', 'result': methodRes, 'id': msg.id});
                     }
@@ -744,5 +799,14 @@ class JsonRpcServer {
         });
     }
 }
+
+/**
+ * @enum
+ */
+JsonRpcServer.AccessType = {
+    DENIED: 0,
+    GRANTED: 1,
+    RESTRICTED: 2
+};
 
 module.exports = exports = JsonRpcServer;

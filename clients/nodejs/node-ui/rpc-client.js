@@ -52,11 +52,12 @@ class RpcClient extends Nimiq.Observable {
             body: jsonrpc
         }).then(response => {
             if (response.status === 401) {
-                throw new Error(`Connection Failed: Authentication Required.`);
+                throw new Error('Connection Failed: Authentication Required.');
             }
             this._canAuthenticate();
             if (response.status !== 200) {
-                throw new Error(`Connection Failed. Status Code: ${response.status}`);
+                throw new Error(`Connection Failed. ${response.statusText? response.statusText
+                    : `Error Code: ${response.status}`}`);
             }
             return response.json();
         }).then(data => {
@@ -65,11 +66,14 @@ class RpcClient extends Nimiq.Observable {
             }
             return data.result;
         }).catch(e => {
-            const message = e.message || e;
+            let message = e.message || e;
             if (message.indexOf('Authentication Required') !== -1) {
                 this._cantAuthenticate();
             } else if (message.indexOf('Connection Failed') !== -1 || message.indexOf('Error Occurred') !== -1) {
                 // One of our error messages
+                if (message.indexOf('Login by user name and password not enabled.') !== -1) {
+                    message += ' Restart the node client to automatically log in.';
+                }
                 this.fire('error', message);
             } else {
                 // An error message thrown by the browser (e.g. "Failed to fetch")

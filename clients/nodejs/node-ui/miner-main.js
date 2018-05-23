@@ -393,7 +393,7 @@ class Miner {
         } else if (state === Nimiq.BasePoolMiner.ConnectionState.CLOSED
             && this.poolEnabled
             && this._previousPoolConnectionState === Nimiq.BasePoolMiner.ConnectionState.CONNECTING) {
-            // connecting failed // TODO change this implementation as it won't work this way for the rpc miner
+            // connecting failed
             this.ui.poolMinerCantConnect();
         }
         this._previousPoolConnectionState = state;
