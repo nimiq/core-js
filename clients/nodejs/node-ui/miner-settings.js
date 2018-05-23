@@ -15,6 +15,7 @@ class MinerSettingsUi extends Overlay {
         this._miner.$.miner.on('disabled', () => this._onMinerEnabledOrDisabled());
         this._miner.$.miner.on('hashrate-changed', () => this._updateStatus());
         this._miner.$.miner.on('threads-changed', () => this._onThreadsChanged());
+        this._miner.$.consensus.on('*', () => this._updateStatus());
         this._onThreadsChanged();
         this._onMinerEnabledOrDisabled();
 
@@ -39,6 +40,8 @@ class MinerSettingsUi extends Overlay {
     _updateStatus() {
         if (this._miner.paused) {
             this._status.textContent = 'Mining is paused.';
+        } else if (!this._miner.$.consensus.established) {
+            this._status.textContent = 'Mining will start as soon as the consensus is established.';
         } else {
             let hashrate = this._miner.hashrate;
             let steps = ['k', 'M', 'G', 'T', 'P', 'E']; // kilo, mega, giga, tera, peta, exa
