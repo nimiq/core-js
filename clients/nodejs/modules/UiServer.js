@@ -2,6 +2,7 @@ const http = require('http');
 const url = require('url');
 const path = require('path');
 const fs = require('fs');
+const updatePoolList = require('./NodeUtils.js').updatePoolList;
 
 class UiServer {
     /**
@@ -49,6 +50,7 @@ class UiServer {
             }
             res.end();
         });
+        fileStream.on('finish', () => fileStream.close());
     }
 
     /**
@@ -62,6 +64,7 @@ class UiServer {
             // special file that gets served from dist folder outside from ROOT folder
             filePath = path.join(UiServer.ROOT, '../../../dist/web.js');
         } else if (uri === '/mining-pools-mainnet.json') {
+            await updatePoolList();
             filePath = path.join(UiServer.ROOT, '../modules/mining-pools-mainnet.json');
         } else {
             filePath = path.join(UiServer.ROOT, uri); // creates a normalized path where stuff like /.. gets resolved

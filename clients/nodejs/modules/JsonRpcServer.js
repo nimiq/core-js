@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const JSON5 = require('json5');
 const btoa = require('btoa');
+const updatePoolList = require('./NodeUtils.js').updatePoolList;
 const Nimiq = require('../../../dist/node.js');
 
 class JsonRpcServer {
@@ -578,7 +579,8 @@ class JsonRpcServer {
     }
 
     async _isPoolKnown(host, port) {
-        this._poolListPromise = this._poolListPromise || new Promise((resolve, reject) => {
+        this._poolListPromise = this._poolListPromise || new Promise(async (resolve, reject) => {
+            await updatePoolList();
             fs.readFile(path.join(__dirname, 'mining-pools-mainnet.json'), (err, data) => {
                 if (err) {
                     reject(err);
@@ -589,7 +591,7 @@ class JsonRpcServer {
         }).then(data => JSON5.parse(data));
         const poolList = await this._poolListPromise;
         for (const pool of poolList) {
-            if (pool.host === host && pool.port === port) return true;
+            if (pool.host === host && parseInt(pool.port) === port) return true;
         }
         return false;
     }

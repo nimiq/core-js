@@ -20,8 +20,8 @@
     "host": "pool.porkypool.com",
     "port": "8444",
     "description": "Porky Pool is built for scale, stability and free bacon.",
-    "fees": "0.8%",
-    "payouts": "Automatic payouts every hour"
+    "fees": "1%",
+    "payouts": "Automatic payouts every 3 hours"
   },
   {
     "name": "Beeppool",

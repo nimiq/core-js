@@ -5,7 +5,7 @@ const JsonRpcServer = require('./modules/JsonRpcServer.js');
 const UiServer = require('./modules/UiServer.js');
 const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
-const openBrowserTab = require('./modules/OpenBrowserTab.js');
+const openBrowserTab = require('./modules/NodeUtils.js').openBrowserTab;
 
 // Deprecated dumb config flag.
 if (config.dumb) {
