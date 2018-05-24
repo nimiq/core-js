@@ -1,6 +1,6 @@
 # Nimiq Blockchain [![Build Status](https://travis-ci.org/nimiq-network/core.svg)](https://travis-ci.org/nimiq-network/core)
 
-**[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
+**[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web. It is able to run in browsers.
 
 ## Resources
 
