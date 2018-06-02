@@ -9,6 +9,23 @@ class NanoPoolMiner extends BasePoolMiner {
         super(blockchain, null, null, time, address, deviceId);
 
         this.on('share', (block) => this._onBlockMined(block));
+        this._shouldWork = false;
+    }
+
+    /**
+     * @override
+     */
+    startWork() {
+        this._shouldWork = true;
+        super.startWork();
+    }
+
+    /**
+     * @override
+     */
+    stopWork() {
+        this._shouldWork = false;
+        super.stopWork();
     }
 
     /**
@@ -43,29 +60,29 @@ class NanoPoolMiner extends BasePoolMiner {
             // We don't know the new block yet, make sure it's kinda valid.
             if (!(await previousBlock.isImmediateSuccessorOf(this._blockchain.head))) {
                 Log.w(NanoPoolMiner, `${previousBlock.hash()} (from pool) is not an immediate successor of ${this._blockchain.headHash}, but is announced as such.`);
-                this.stopWork();
+                super.stopWork();
                 return;
             }
             this._poolNextTarget = await this._blockchain.getNextTarget(this._blockchain.head, previousBlock);
         } else if (this._blockchain.head.prevHash.equals(previousBlock.hash())) {
             // Pool does not know the new block yet, waiting for it.
-            this.stopWork();
+            super.stopWork();
             return;
         } else if (this._blockchain.height === previousBlock.height && (knownBlock = await this._blockchain.getBlock(previousBlock.prevHash))) {
             // Pool is on a different fork of length 1 and we want to please our pool
             if (!(await previousBlock.isImmediateSuccessorOf(knownBlock))) {
                 Log.w(NanoPoolMiner, `${previousBlock.hash()} (from pool) is not an immediate successor of ${knownBlock}, but is announced as such.`);
-                this.stopWork();
+                super.stopWork();
                 return;
             }
         } else if ((knownBlock = await this._blockchain.getBlock(previousBlock.prevHash, true))) {
             // Pool mines a fork
             Log.w(NanoPoolMiner, `${previousBlock.hash()} (from pool) is a known fork, we don't mine on forks.`);
-            this.stopWork();
+            super.stopWork();
             return;
         } else {
             Log.w(NanoPoolMiner, `${previousBlock.hash()} (from pool) is unknown and not a successor of the head`);
-            this.stopWork();
+            super.stopWork();
             return;
         }
         /** @type {BlockInterlink} */
@@ -80,8 +97,8 @@ class NanoPoolMiner extends BasePoolMiner {
         // Start with a new block
         if (this.working) {
             this._startWork().catch(Log.w.tag(Miner));
-        } else {
-            this.startWork();
+        } else if (this._shouldWork) {
+            super.startWork();
         }
     }
 
