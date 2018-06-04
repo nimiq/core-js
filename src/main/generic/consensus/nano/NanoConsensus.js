@@ -27,6 +27,28 @@ class NanoConsensus extends BaseConsensus {
     }
 
     /**
+     * @param {Array.<Address>|Address} newAddresses
+     */
+    addSubscriptions(newAddresses) {
+        newAddresses = Array.isArray(newAddresses)? newAddresses : [newAddresses];
+        const addresses = new HashSet();
+        addresses.addAll(this._subscription.addresses);
+        addresses.addAll(newAddresses);
+        this.subscribeAccounts(addresses.values());
+    }
+
+    /**
+     * @param {Array.<Address>|Address} addressesToRemove
+     */
+    removeSubscriptions(addressesToRemove) {
+        addressesToRemove = Array.isArray(addressesToRemove)? addressesToRemove : [addressesToRemove];
+        const addresses = new HashSet();
+        addresses.addAll(this._subscription.addresses);
+        addresses.removeAll(addressesToRemove);
+        this.subscribeAccounts(addresses.values());
+    }
+
+    /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
      * @override
