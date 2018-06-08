@@ -143,7 +143,7 @@ class WsNetworkConfig extends NetworkConfig {
      * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
      */
     constructor(host, port, key, cert, reverseProxy) {
-        super(Protocol.WS);
+        super(Protocol.WS | Protocol.WSS);
         this._host = host;
         this._port = port;
         this._key = key;
@@ -193,7 +193,7 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {WsPeerAddress}
+     * @type {WssPeerAddress}
      * @override
      */
     get peerAddress() {
@@ -204,7 +204,7 @@ class WsNetworkConfig extends NetworkConfig {
         // If we're behind a reverse proxy, advertise that port instead of our own in the peerAddress
         const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
 
-        const peerAddress = new WsPeerAddress(
+        const peerAddress = new WssPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
             this._host, port);
@@ -224,7 +224,8 @@ class RtcNetworkConfig extends NetworkConfig {
      * @constructor
      */
     constructor() {
-        super(Protocol.WS | Protocol.RTC);
+        // TODO: Also allow WS when possible in browser.
+        super(Protocol.WSS | Protocol.RTC);
         this._rtcConfig = {
             iceServers: [
                 {urls: 'stun:stun.l.google.com:19302'},
@@ -264,7 +265,7 @@ class DumbNetworkConfig extends NetworkConfig {
      * @constructor
      */
     constructor() {
-        super(Protocol.WS);
+        super(Protocol.WS | Protocol.WSS);
     }
 
     /**

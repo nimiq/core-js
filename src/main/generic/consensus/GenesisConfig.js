@@ -87,14 +87,14 @@ GenesisConfig.CONFIGS = {
         NETWORK_ID: 42,
         NETWORK_NAME: 'main',
         SEED_PEERS: [
-            WsPeerAddress.seed('seed-1.nimiq.com', 8443, 'b70d0c3e6cdf95485cac0688b086597a5139bc4237173023c83411331ef90507'),
-            WsPeerAddress.seed('seed-2.nimiq.com', 8443, '8580275aef426981a04ee5ea948ca3c95944ef1597ad78db9839f810d6c5b461'),
-            WsPeerAddress.seed('seed-3.nimiq.com', 8443, '136bdec59f4d37f25ac8393bef193ff2e31c9c0a024b3edbf77fc1cb84e67a15'),
-            WsPeerAddress.seed('seed-4.nimiq-network.com', 8443, 'aacf606335cdd92d0dd06f27faa3b66d9bac0b247cd57ade413121196b72cd73'),
-            WsPeerAddress.seed('seed-5.nimiq-network.com', 8443, '110a81a033c75976643d4b8f34419f4913b306a6fc9d530b8207ddbd5527eff6'),
-            WsPeerAddress.seed('seed-6.nimiq-network.com', 8443, '26c1a4727cda6579639bdcbaecb1f6b97be3ac0e282b43bdd1a2df2858b3c23b'),
-            WsPeerAddress.seed('seed-7.nimiq.network', 8443, '82fcebdb4e2a7212186d1976d7f685cc86cdf58beffe1723d5c3ea5be00c73e1'),
-            WsPeerAddress.seed('seed-8.nimiq.network', 8443, 'b7ac8cc1a820761df4e8a42f4e30c870e81065c4e29f994ebb5bdceb48904e7b')
+            WssPeerAddress.seed('seed-1.nimiq.com', 8443, 'b70d0c3e6cdf95485cac0688b086597a5139bc4237173023c83411331ef90507'),
+            WssPeerAddress.seed('seed-2.nimiq.com', 8443, '8580275aef426981a04ee5ea948ca3c95944ef1597ad78db9839f810d6c5b461'),
+            WssPeerAddress.seed('seed-3.nimiq.com', 8443, '136bdec59f4d37f25ac8393bef193ff2e31c9c0a024b3edbf77fc1cb84e67a15'),
+            WssPeerAddress.seed('seed-4.nimiq-network.com', 8443, 'aacf606335cdd92d0dd06f27faa3b66d9bac0b247cd57ade413121196b72cd73'),
+            WssPeerAddress.seed('seed-5.nimiq-network.com', 8443, '110a81a033c75976643d4b8f34419f4913b306a6fc9d530b8207ddbd5527eff6'),
+            WssPeerAddress.seed('seed-6.nimiq-network.com', 8443, '26c1a4727cda6579639bdcbaecb1f6b97be3ac0e282b43bdd1a2df2858b3c23b'),
+            WssPeerAddress.seed('seed-7.nimiq.network', 8443, '82fcebdb4e2a7212186d1976d7f685cc86cdf58beffe1723d5c3ea5be00c73e1'),
+            WssPeerAddress.seed('seed-8.nimiq.network', 8443, 'b7ac8cc1a820761df4e8a42f4e30c870e81065c4e29f994ebb5bdceb48904e7b')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
@@ -854,10 +854,10 @@ GenesisConfig.CONFIGS = {
         NETWORK_ID: 1,
         NETWORK_NAME: 'test',
         SEED_PEERS: [
-            WsPeerAddress.seed('seed1.nimiqtest.net', 8080, '175d5f01af8a5911c240a78df689a76eef782d793ca15d073bdc913edd07c74b'),
-            WsPeerAddress.seed('seed2.nimiqtest.net', 8080, '2c950d2afad1aa7ad12f01a56527f709b7687b1b00c94da6e0bd8ae4d263d47c'),
-            WsPeerAddress.seed('seed3.nimiqtest.net', 8080, '03feec9d5316a7b5ebb69c4e709547a28afe8e9ef91ee568df489d29e9845bb8'),
-            WsPeerAddress.seed('seed4.nimiqtest.net', 8080, '943d5669226d3716a830371d99143af98bbaf84c630db24bdd67e55ccb7a9011')
+            WssPeerAddress.seed('seed1.nimiqtest.net', 8080, '175d5f01af8a5911c240a78df689a76eef782d793ca15d073bdc913edd07c74b'),
+            WssPeerAddress.seed('seed2.nimiqtest.net', 8080, '2c950d2afad1aa7ad12f01a56527f709b7687b1b00c94da6e0bd8ae4d263d47c'),
+            WssPeerAddress.seed('seed3.nimiqtest.net', 8080, '03feec9d5316a7b5ebb69c4e709547a28afe8e9ef91ee568df489d29e9845bb8'),
+            WssPeerAddress.seed('seed4.nimiqtest.net', 8080, '943d5669226d3716a830371d99143af98bbaf84c630db24bdd67e55ccb7a9011')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
@@ -977,7 +977,7 @@ GenesisConfig.CONFIGS = {
         NETWORK_ID: 2,
         NETWORK_NAME: 'dev',
         SEED_PEERS: [
-            WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
+            WssPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
@@ -1099,9 +1099,9 @@ GenesisConfig.CONFIGS = {
         NETWORK_ID: 3,
         NETWORK_NAME: 'bounty',
         SEED_PEERS: [
-            WsPeerAddress.seed('bug-bounty1.nimiq-network.com', 8080, '7e825872ee12a71bda50cba9f230c760c84ee50eef0a3e435467e8d5307c0b4e'),
-            WsPeerAddress.seed('bug-bounty2.nimiq-network.com', 8080, 'ea876175c8b693c0db38b7c17d66e9c510020fceb4634f04e281af30438f8787'),
-            WsPeerAddress.seed('bug-bounty3.nimiq-network.com', 8080, '5c0d5d801e85ebd42f25a45b2cb7f3b39b9ce14002d4662f5ed0cd79ce25165a')
+            WssPeerAddress.seed('bug-bounty1.nimiq-network.com', 8080, '7e825872ee12a71bda50cba9f230c760c84ee50eef0a3e435467e8d5307c0b4e'),
+            WssPeerAddress.seed('bug-bounty2.nimiq-network.com', 8080, 'ea876175c8b693c0db38b7c17d66e9c510020fceb4634f04e281af30438f8787'),
+            WssPeerAddress.seed('bug-bounty3.nimiq-network.com', 8080, '5c0d5d801e85ebd42f25a45b2cb7f3b39b9ce14002d4662f5ed0cd79ce25165a')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(

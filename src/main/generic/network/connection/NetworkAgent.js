@@ -398,7 +398,7 @@ class NetworkAgent extends Observable {
                 return;
             }
 
-            if (addr.protocol === Protocol.WS && !addr.globallyReachable()) {
+            if ((addr.protocol === Protocol.WS || addr.protocol === Protocol.WSS) && !addr.globallyReachable()) {
                 this._channel.close(CloseType.ADDR_NOT_GLOBALLY_REACHABLE, 'addr not globally reachable');
                 return;
             }

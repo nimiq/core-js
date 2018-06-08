@@ -121,7 +121,7 @@ const $ = {};
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
 
     for(const seedPeer of config.seedPeers) {
-        Nimiq.GenesisConfig.SEED_PEERS.push(Nimiq.WsPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey));
+        Nimiq.GenesisConfig.SEED_PEERS.push(Nimiq.WssPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey));
     }
 
     const networkConfig = config.dumb

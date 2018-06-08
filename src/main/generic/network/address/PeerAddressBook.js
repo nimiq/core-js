@@ -78,7 +78,7 @@ class PeerAddressBook extends Observable {
      * @private
      */
     _get(peerAddress) {
-        if (peerAddress instanceof WsPeerAddress) {
+        if (peerAddress instanceof WssPeerAddress || peerAddress instanceof WsPeerAddress) {
             const localPeerAddress = this._store.get(peerAddress.withoutId());
             if (localPeerAddress) return localPeerAddress;
         }
@@ -135,6 +135,8 @@ class PeerAddressBook extends Observable {
         let store;
         switch (protocolMask) {
             case Protocol.WS:
+            case Protocol.WSS:
+            case Protocol.WS | Protocol.WSS:
                 store = this._wsStates;
                 break;
             case Protocol.RTC:
@@ -305,6 +307,7 @@ class PeerAddressBook extends Observable {
             // Check max size per protocol.
             switch (peerAddress.protocol) {
                 case Protocol.WS:
+                case Protocol.WSS:
                     if (this._wsStates.length >= PeerAddressBook.MAX_SIZE_WS) {
                         return false;
                     }
@@ -366,6 +369,7 @@ class PeerAddressBook extends Observable {
         // Index by protocol.
         switch (peerAddressState.peerAddress.protocol) {
             case Protocol.WS:
+            case Protocol.WSS:
                 this._wsStates.add(peerAddressState);
                 break;
             case Protocol.RTC:
@@ -575,6 +579,7 @@ class PeerAddressBook extends Observable {
         // Remove from protocol index.
         switch (peerAddressState.peerAddress.protocol) {
             case Protocol.WS:
+            case Protocol.WSS:
                 this._wsStates.remove(peerAddressState);
                 break;
             case Protocol.RTC:

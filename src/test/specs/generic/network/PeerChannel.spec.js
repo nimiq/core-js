@@ -3,7 +3,7 @@ describe('PeerChannel', () => {
     const hash = Hash.unserialize(BufferUtils.fromBase64(Dummy.hash1));
     const vec1 = new InvVector(type, hash);
     const count = 1;
-    const addr = new WsPeerAddress(Services.DEFAULT, Date.now(), NetAddress.UNSPECIFIED, PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), 1, 'node1.nimiq.com', 8443, Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1)));
+    const addr = new WssPeerAddress(Services.DEFAULT, Date.now(), NetAddress.UNSPECIFIED, PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1)), 1, 'node1.nimiq.com', 8443, Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1)));
 
     it('can send a VersionMessage', (done) => {
         const challenge = new Uint8Array(VersionMessage.CHALLENGE_SIZE);

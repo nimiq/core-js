@@ -38,6 +38,8 @@ class PeerScorer {
         let it, numAddresses;
         switch (this._networkConfig.protocolMask) {
             case Protocol.WS:
+            case Protocol.WSS:
+            case Protocol.WS | Protocol.WSS:
                 it = this._addresses.wsIterator();
                 numAddresses = this._addresses.knownWsAddressesCount;
                 break;
@@ -84,6 +86,8 @@ class PeerScorer {
         if (candidates.length === 0 && this.needsGoodPeers()) {
             switch (this._networkConfig.protocolMask) {
                 case Protocol.WS:
+                case Protocol.WSS:
+                case Protocol.WS | Protocol.WSS:
                     it = this._addresses.wsIterator();
                     break;
                 case Protocol.RTC:
@@ -186,7 +190,7 @@ class PeerScorer {
      * @returns {boolean}
      */
     isGoodPeer(peerAddress) {
-        return Services.isFullNode(peerAddress.services) && peerAddress.protocol === Protocol.WS;
+        return Services.isFullNode(peerAddress.services) && (peerAddress.protocol === Protocol.WS || peerAddress.protocol === Protocol.WSS);
     }
 
     /**
@@ -251,7 +255,7 @@ class PeerScorer {
 
         // Protocol: Prefer WebSocket when low on WebSocket connections.
         let scoreProtocol = 0;
-        if (peerAddress.protocol === Protocol.WS) {
+        if (peerAddress.protocol === Protocol.WS || peerAddress.protocol === Protocol.WSS) {
             const distribution = this._connections.peerCountWs / this._connections.peerCount;
             if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION || this._connections.peerCountFullWsOutbound <= PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND) {
                 scoreProtocol = 1;

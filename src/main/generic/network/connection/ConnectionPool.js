@@ -5,8 +5,8 @@ class ConnectionPool extends Observable {
      * @param {NetworkConfig} networkConfig
      * @param {IBlockchain} blockchain
      * @param {Time} time
-     * @listens WebSocketConnector#connection
-     * @listens WebSocketConnector#error
+     * @listens WssConnector#connection
+     * @listens WssConnector#error
      * @listens WebRtcConnector#connection
      * @listens WebRtcConnector#error
      */
@@ -65,7 +65,12 @@ class ConnectionPool extends Observable {
         this._bytesReceived = 0;
 
         /** @type {WebSocketConnector} */
-        this._wsConnector = new WebSocketConnector(this._networkConfig);
+        this._wssConnector = new WebSocketConnector(Protocol.WSS, 'wss', this._networkConfig);
+        this._wssConnector.on('connection', conn => this._onConnection(conn));
+        this._wssConnector.on('error', (peerAddr, e) => this._onConnectError(peerAddr, e));
+
+        /** @type {WebSocketConnector} */
+        this._wsConnector = new WebSocketConnector(Protocol.WS, 'ws', this._networkConfig);
         this._wsConnector.on('connection', conn => this._onConnection(conn));
         this._wsConnector.on('error', (peerAddr, e) => this._onConnectError(peerAddr, e));
 
@@ -281,7 +286,7 @@ class ConnectionPool extends Observable {
             return false;
         }
 
-        if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.RTC) {
+        if (peerAddress.protocol !== Protocol.WS && peerAddress.protocol !== Protocol.WSS && peerAddress.protocol !== Protocol.RTC) {
             Log.e(ConnectionPool, `Cannot connect to ${peerAddress} - unsupported protocol`);
             return false;
         }
@@ -331,7 +336,9 @@ class ConnectionPool extends Observable {
 
         // choose connector type and call
         let connecting = false;
-        if (peerAddress.protocol === Protocol.WS) {
+        if (peerAddress.protocol === Protocol.WSS) {
+            connecting = this._wssConnector.connect(peerAddress);
+        } else if (peerAddress.protocol === Protocol.WS) {
             connecting = this._wsConnector.connect(peerAddress);
         } else {
             const signalChannel = this._addresses.getChannelByPeerId(peerAddress.peerId);
@@ -517,9 +524,13 @@ class ConnectionPool extends Observable {
                 switch (storedConnection.state) {
                     case PeerConnectionState.CONNECTING:
                         // Abort the stored connection attempt and accept this connection.
-                        Assert.that(peer.peerAddress.protocol === Protocol.WS, 'Duplicate connection to non-WS node');
+                        Assert.that(peer.peerAddress.protocol === Protocol.WSS || peer.peerAddress.protocol === Protocol.WS, 'Duplicate connection to non-WS node');
                         Log.d(ConnectionPool, () => `Aborting connection attempt to ${peer.peerAddress}, simultaneous inbound connection succeeded`);
-                        this._wsConnector.abort(peer.peerAddress);
+                        if (peer.peerAddress.protocol === Protocol.WSS) {
+                            this._wssConnector.abort(peer.peerAddress);
+                        } else {
+                            this._wsConnector.abort(peer.peerAddress);
+                        }
                         Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), 'PeerConnection not removed');
                         break;
 
@@ -735,6 +746,7 @@ class ConnectionPool extends Observable {
         const peerAddress = peerConnection.peerAddress;
         switch (peerAddress.protocol) {
             case Protocol.WS:
+            case Protocol.WSS:
                 this._peerCountWs += delta;
                 Assert.that(this._peerCountWs >= 0, 'peerCountWs < 0');
                 break;
@@ -763,7 +775,7 @@ class ConnectionPool extends Observable {
 
         if (peerConnection.networkConnection.outbound) {
             this._peerCountOutbound += delta;
-            if (Services.isFullNode(peerAddress.services) && peerAddress.protocol === Protocol.WS) {
+            if (Services.isFullNode(peerAddress.services) && (peerAddress.protocol === Protocol.WSS || peerAddress.protocol === Protocol.WS)) {
                 this._peerCountFullWsOutbound += delta;
             }
         }
@@ -787,7 +799,7 @@ class ConnectionPool extends Observable {
     disconnectWebSocket() {
         // Close all websocket connections.
         for (const connection of this.valueIterator()) {
-            if (connection.peerChannel && connection.peerAddress && connection.peerAddress.protocol === Protocol.WS) {
+            if (connection.peerChannel && connection.peerAddress && (connection.peerAddress.protocol === Protocol.WSS || connection.peerAddress.protocol === Protocol.WS)) {
                 connection.peerChannel.close(CloseType.MANUAL_WEBSOCKET_DISCONNECT, 'manual websocket disconnect');
             }
         }

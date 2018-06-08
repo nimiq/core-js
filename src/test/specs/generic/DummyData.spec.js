@@ -145,7 +145,7 @@ if (!offlineTarget) {
             new BlockBody(Address.fromBase64('G+RAkZY0pv47pfinGB/ku4ISwTw='), [])
         ),
         GENESIS_ACCOUNTS: 'AAIP7R94Gl77Xrk4xvszHLBXdCzC9AAAAHKYqT3gAAh2jadJcsL852C50iDDRIdlFjsNAAAAcpipPeAA',
-        SEED_PEERS: [WsPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
+        SEED_PEERS: [WssPeerAddress.seed('node1.test', 9000, Dummy.NETCONFIG.publicKey.toHex())]
     };
 } else {
     GenesisConfig.CONFIGS['tests'] = {

@@ -425,7 +425,7 @@ class MockNetwork {
 
         spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url, options, netconfig) => {
             const peerAddress = netconfig.peerAddress;
-            const seed = peerAddress.protocol === Protocol.WS ?
+            const seed = peerAddress.protocol === Protocol.WSS ?
                 `wss://${peerAddress.host}:${peerAddress.port}` :
                 `reserved${MockNetwork._clientSerial++}.test`;
             const address = MockNetwork._hostToIp(seed);

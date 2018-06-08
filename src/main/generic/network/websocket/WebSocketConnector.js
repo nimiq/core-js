@@ -1,18 +1,22 @@
 class WebSocketConnector extends Observable {
     /**
      * @constructor
+     * @param {number} protocol
+     * @param {string} protocolPrefix
      * @param {NetworkConfig} networkConfig
      * @listens WebSocketServer#connection
      */
-    constructor(networkConfig) {
+    constructor(protocol, protocolPrefix, networkConfig) {
         super();
+        this._protocol = protocol;
+        this._protocolPrefix = protocolPrefix;
         this._networkConfig = networkConfig;
 
-        if (networkConfig.peerAddress.protocol === Protocol.WS) {
+        if (networkConfig.peerAddress.protocol === this._protocol) {
             this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
             this._wss.on('connection', (ws, req) => this._onConnection(ws, req));
 
-            Log.d(WebSocketConnector, `WebSocketConnector listening on port ${networkConfig.peerAddress.port}`);
+            Log.d(WebSocketConnector, `Connector listening on port ${networkConfig.peerAddress.port}`);
         }
 
         /** @type {HashMap.<PeerAddress, WebSocket>} */
@@ -29,7 +33,7 @@ class WebSocketConnector extends Observable {
      * @returns {boolean}
      */
     connect(peerAddress) {
-        if (peerAddress.protocol !== Protocol.WS) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== this._protocol) throw 'Malformed peerAddress';
 
         const timeoutKey = `connect_${peerAddress}`;
         if (this._timers.timeoutExists(timeoutKey)) {
@@ -37,7 +41,7 @@ class WebSocketConnector extends Observable {
             return false;
         }
 
-        const ws = WebSocketFactory.newWebSocket(`wss://${peerAddress.host}:${peerAddress.port}`, {
+        const ws = WebSocketFactory.newWebSocket(`${this._protocolPrefix}://${peerAddress.host}:${peerAddress.port}`, {
             handshakeTimeout: WebSocketConnector.CONNECT_TIMEOUT
         }, this._networkConfig);
         ws.binaryType = 'arraybuffer';
@@ -50,7 +54,7 @@ class WebSocketConnector extends Observable {
 
             // There is no way to determine the remote IP in the browser ... thanks for nothing, WebSocket API.
             const netAddress = (ws._socket && ws._socket.remoteAddress) ? NetAddress.fromIP(ws._socket.remoteAddress, true) : null;
-            const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, peerAddress);
+            const conn = new NetworkConnection(new WebSocketDataChannel(ws), this._protocol, netAddress, peerAddress);
             this.fire('connection', conn);
         };
         ws.onerror = e => {
@@ -153,7 +157,7 @@ class WebSocketConnector extends Observable {
         }
 
         const netAddress = NetAddress.fromIP(remoteAddress, true);
-        const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
+        const conn = new NetworkConnection(new WebSocketDataChannel(ws), this._protocol, netAddress, /*peerAddress*/ null);
 
         /**
         * Tell listeners that an initial connection to a peer has been established.

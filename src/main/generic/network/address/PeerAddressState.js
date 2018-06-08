@@ -46,6 +46,7 @@ class PeerAddressState {
             case Protocol.RTC:
                 return PeerAddressBook.MAX_FAILED_ATTEMPTS_RTC;
             case Protocol.WS:
+            case Protocol.WSS:
                 return PeerAddressBook.MAX_FAILED_ATTEMPTS_WS;
             default:
                 return 0;
