@@ -12,5 +12,5 @@ else
     exit
 fi
 
-UV_THREADPOOL_SIZE=$NUM_CORES NODE_OPTIONS="--max_old_space_size=$MB_MEMORY" exec node "$SCRIPT_PATH/index.js" "$@"
+NIMIQ_WS_ENGINE="uws" UV_THREADPOOL_SIZE=$NUM_CORES NODE_OPTIONS="--max_old_space_size=$MB_MEMORY" exec node "$SCRIPT_PATH/index.js" "$@"
 
