@@ -402,7 +402,7 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Hash} hash
-     * @returns {Promise.<?Transaction>}
+     * @returns {?Transaction}
      * @protected
      * @abstract
      */
@@ -497,9 +497,9 @@ class BaseConsensusAgent extends Observable {
 
         // Reuse already known (verified) transactions
         const transactions = msg.block.isFull() ? msg.block.body.transactions : [];
-        const transactionPromises = transactions.map(t => this._getTransaction(t.hash()));
+        const transactionsFromMempool = transactions.map(t => this._getTransaction(t.hash()));
         for (let i = 0; i < transactions.length; i++) {
-            const transaction = await transactionPromises[i]; // eslint-disable-line no-await-in-loop
+            const transaction = transactionsFromMempool[i]; // eslint-disable-line no-await-in-loop
             if (transaction) {
                 transactions[i] = transaction;
             }

@@ -184,12 +184,12 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
     /**
      * @param {Hash} hash
-     * @returns {Promise.<?Transaction>}
+     * @returns {?Transaction}
      * @protected
      * @override
      */
     _getTransaction(hash) {
-        return Promise.resolve(this._mempool.getTransaction(hash));
+        return this._mempool.getTransaction(hash);
     }
 
     /**
