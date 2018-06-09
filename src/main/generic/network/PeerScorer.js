@@ -36,9 +36,13 @@ class PeerScorer {
      */
     pickAddress() {
         let it, numAddresses;
+        // Important: this switches over a *mask*.
         switch (this._networkConfig.protocolMask) {
-            case Protocol.WS:
             case Protocol.WSS:
+                it = this._addresses.wssIterator();
+                numAddresses = this._addresses.knownWssAddressesCount;
+                break;
+            case Protocol.WS:
             case Protocol.WS | Protocol.WSS:
                 it = this._addresses.wsIterator();
                 numAddresses = this._addresses.knownWsAddressesCount;
@@ -85,8 +89,10 @@ class PeerScorer {
         let candidates = findCandidates(it, numAddresses, 1000);
         if (candidates.length === 0 && this.needsGoodPeers()) {
             switch (this._networkConfig.protocolMask) {
-                case Protocol.WS:
                 case Protocol.WSS:
+                    it = this._addresses.wssIterator();
+                    break;
+                case Protocol.WS:
                 case Protocol.WS | Protocol.WSS:
                     it = this._addresses.wsIterator();
                     break;

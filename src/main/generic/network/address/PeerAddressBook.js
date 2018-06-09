@@ -20,10 +20,18 @@ class PeerAddressBook extends Observable {
         this._store = new HashSet();
 
         /**
+         * Set of WS and WSS states.
          * @type {HashSet}
          * @private
          */
         this._wsStates = new HashSet();
+
+        /**
+         * Set of only WSS states.
+         * @type {HashSet}
+         * @private
+         */
+        this._wssStates = new HashSet();
 
         /**
          * @type {HashSet}
@@ -63,6 +71,13 @@ class PeerAddressBook extends Observable {
      */
     wsIterator() {
         return this._wsStates.valueIterator();
+    }
+
+    /**
+     * @returns {Iterator.<PeerAddressState>}
+     */
+    wssIterator() {
+        return this._wssStates.valueIterator();
     }
 
     /**
@@ -134,8 +149,10 @@ class PeerAddressBook extends Observable {
     query(protocolMask, serviceMask, maxAddresses = NetworkAgent.MAX_ADDR_PER_MESSAGE) {
         let store;
         switch (protocolMask) {
-            case Protocol.WS:
             case Protocol.WSS:
+                store = this._wssStates;
+                break;
+            case Protocol.WS:
             case Protocol.WS | Protocol.WSS:
                 store = this._wsStates;
                 break;
@@ -306,8 +323,12 @@ class PeerAddressBook extends Observable {
             }
             // Check max size per protocol.
             switch (peerAddress.protocol) {
-                case Protocol.WS:
                 case Protocol.WSS:
+                    if (this._wssStates.length >= PeerAddressBook.MAX_SIZE_WSS) {
+                        return false;
+                    }
+                    // Falls through, since _wsStates is WS + WSS.
+                case Protocol.WS:
                     if (this._wsStates.length >= PeerAddressBook.MAX_SIZE_WS) {
                         return false;
                     }
@@ -368,8 +389,10 @@ class PeerAddressBook extends Observable {
 
         // Index by protocol.
         switch (peerAddressState.peerAddress.protocol) {
-            case Protocol.WS:
             case Protocol.WSS:
+                this._wssStates.add(peerAddressState);
+                // Falls through, since _wsStates is WS + WSS.
+            case Protocol.WS:
                 this._wsStates.add(peerAddressState);
                 break;
             case Protocol.RTC:
@@ -578,8 +601,10 @@ class PeerAddressBook extends Observable {
 
         // Remove from protocol index.
         switch (peerAddressState.peerAddress.protocol) {
-            case Protocol.WS:
             case Protocol.WSS:
+                this._wssStates.remove(peerAddressState);
+                // Falls through, since _wsStates is WS + WSS.
+            case Protocol.WS:
                 this._wsStates.remove(peerAddressState);
                 break;
             case Protocol.RTC:
@@ -694,6 +719,11 @@ class PeerAddressBook extends Observable {
     }
 
     /** @type {number} */
+    get knownWssAddressesCount() {
+        return this._wssStates.length;
+    }
+
+    /** @type {number} */
     get knownRtcAddressesCount() {
         return this._rtcStates.length;
     }
@@ -710,6 +740,7 @@ PeerAddressBook.DEFAULT_BAN_TIME = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.INITIAL_FAILED_BACKOFF = 1000 * 30; // 30 seconds
 PeerAddressBook.MAX_FAILED_BACKOFF = 1000 * 60 * 10; // 10 minutes
 PeerAddressBook.MAX_SIZE_WS = PlatformUtils.isBrowser() ? 1000 : 10000;
+PeerAddressBook.MAX_SIZE_WSS = PlatformUtils.isBrowser() ? 1000 : 10000;
 PeerAddressBook.MAX_SIZE_RTC = PlatformUtils.isBrowser() ? 1000 : 10000;
 PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 2500 : 20500; // Includes dumb peers
 PeerAddressBook.MAX_SIZE_PER_IP = 250;

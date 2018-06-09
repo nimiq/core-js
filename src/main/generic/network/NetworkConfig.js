@@ -138,8 +138,8 @@ class WsNetworkConfig extends NetworkConfig {
      * @constructor
      * @param {string} host
      * @param {number} port
-     * @param {string} key
-     * @param {string} cert
+     * @param {string} [key]
+     * @param {string} [cert]
      * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
      */
     constructor(host, port, key, cert, reverseProxy) {
@@ -150,8 +150,8 @@ class WsNetworkConfig extends NetworkConfig {
         this._cert = cert;
         this._usingReverseProxy = reverseProxy.enabled;
 
-        /* @type {{key: string, cert: string}} */
-        this._sslConfig = {
+        /** @type {{key: string, cert: string}} */
+        this._sslConfig = !key || !cert ? null : {
             key: this._key,
             cert: this._cert
         };
@@ -179,7 +179,7 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {{key: string, cert: string}}
+     * @type {?{key: string, cert: string}}
      */
     get sslConfig() {
         return this._sslConfig;
@@ -201,13 +201,19 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        // If we're behind a reverse proxy, advertise that port instead of our own in the peerAddress
+        let peerAddress;
         const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
-
-        const peerAddress = new WssPeerAddress(
-            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-            this.publicKey, /*distance*/ 0,
-            this._host, port);
+        if (this.sslConfig) {
+            peerAddress = new WssPeerAddress(
+                this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+                this.publicKey, /*distance*/ 0,
+                this._host, port);
+        } else {
+            peerAddress = new WsPeerAddress(
+                this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+                this.publicKey, /*distance*/ 0,
+                this._host, port);
+        }
 
         if (!peerAddress.globallyReachable()) {
             throw 'PeerAddress not globally reachable.';
@@ -224,8 +230,7 @@ class RtcNetworkConfig extends NetworkConfig {
      * @constructor
      */
     constructor() {
-        // TODO: Also allow WS when possible in browser.
-        super(Protocol.WSS | Protocol.RTC);
+        super((PlatformUtils.supportsWS() ? (Protocol.WS | Protocol.WSS) : Protocol.WSS) | Protocol.RTC);
         this._rtcConfig = {
             iceServers: [
                 {urls: 'stun:stun.l.google.com:19302'},
@@ -265,7 +270,8 @@ class DumbNetworkConfig extends NetworkConfig {
      * @constructor
      */
     constructor() {
-        super(Protocol.WS | Protocol.WSS);
+        // Browsers served through https only speak WSS. Everything else should also support WS.
+        super(PlatformUtils.supportsWS() ?  (Protocol.WS | Protocol.WSS) : Protocol.WSS);
     }
 
     /**

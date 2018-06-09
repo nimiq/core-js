@@ -27,5 +27,12 @@ class PlatformUtils {
     static isOnline() {
         return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
     }
+
+    /**
+     * @returns {boolean}
+     */
+    static supportsWS() {
+        return !PlatformUtils.isBrowser() || (location && location.protocol === 'http:');
+    }
 }
 Class.register(PlatformUtils);
