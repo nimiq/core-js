@@ -19,9 +19,9 @@
     normalize-path "^2.0.1"
     through2 "^2.0.3"
 
-"@nimiq/jungle-db@^0.9.14-alpha":
-  version "0.9.14-alpha"
-  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.14-alpha.tgz#65fe49bf345edb82cc6ec1666e18078ad6e0a32b"
+"@nimiq/jungle-db@^0.9.14":
+  version "0.9.14"
+  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.9.14.tgz#24c4a0a5dcb608aeeff9e5bdc86ef9192d284d35"
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"
@@ -29,7 +29,7 @@
     level-sublevel "^6.6.1"
     leveldown "^3.0.0"
     levelup "^2.0.2"
-    node-lmdb paberr/node-lmdb#af876c67055cc7cf0b3c1949e472484aa34410de
+    node-lmdb "0.6.0"
 
 "@types/node@*":
   version "10.0.4"
@@ -1526,15 +1526,7 @@ chalk@^1.0.0, chalk@^1.1.1, chalk@^1.1.3:
     strip-ansi "^3.0.0"
     supports-color "^2.0.0"
 
-chalk@^2.0.0, chalk@^2.1.0, chalk@^2.3.0, chalk@^2.3.2:
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.4.1.tgz#18c49ab16a037b6eb0152cc83e3471338215b66e"
-  dependencies:
-    ansi-styles "^3.2.1"
-    escape-string-regexp "^1.0.5"
-    supports-color "^5.3.0"
-
-chalk@^2.0.1, chalk@^2.3.1:
+chalk@^2.0.0, chalk@^2.0.1, chalk@^2.1.0, chalk@^2.3.0, chalk@^2.3.1, chalk@^2.3.2:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.4.1.tgz#18c49ab16a037b6eb0152cc83e3471338215b66e"
   dependencies:
@@ -5463,7 +5455,7 @@ mute-stream@0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
 
-nan@^2.10.0, nan@^2.6.2, nan@^2.9.2, nan@~2.10.0:
+nan@^2.10.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
@@ -5546,12 +5538,12 @@ node-gyp@^3.6.2:
     tar "^2.0.0"
     which "1"
 
-"node-lmdb@github:paberr/node-lmdb#af876c67055cc7cf0b3c1949e472484aa34410de":
-  version "0.5.4"
-  resolved "https://codeload.github.com/paberr/node-lmdb/tar.gz/af876c67055cc7cf0b3c1949e472484aa34410de"
+node-lmdb@0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/node-lmdb/-/node-lmdb-0.6.0.tgz#14be5f650e1a560aeb86174e0cc85d95945d870a"
   dependencies:
     bindings "^1.2.1"
-    nan "^2.6.2"
+    nan "^2.10.0"
 
 node-pre-gyp@^0.9.0:
   version "0.9.1"
