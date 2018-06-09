@@ -266,22 +266,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     async _processBlock(hash, block) {
         // TODO send reject message if we don't like the block
-        if (this._syncing && this._blockchain.height < block.height - 1) {
-            // Wait for predecessor first
-            await new Promise((resolve, fail) => {
-                let listenId = -1, timeoutId = -1;
-                const finish = (err = false) => {
-                    if (listenId >= 0) this._blockchain.off('head-changed', listenId);
-                    if (timeoutId >= 0) clearTimeout(timeoutId);
-                    if (err) fail(err);
-                    else resolve();
-                };
-                listenId = this._blockchain.on('head-changed', head => {
-                    if (head.height == block.height - 1) finish();
-                });
-                timeoutId = setTimeout(() => finish(new Error('Timeout while waiting for predecessors to arrive')), FullConsensusAgent.SYNC_PREDECESSOR_TIMEOUT);
-            });
-        }
         const status = await this._blockchain.pushBlock(block);
         switch (status) {
             case FullChain.ERR_INVALID:
@@ -612,5 +596,4 @@ FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 60; // per minute
 FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 30; // per minute
 FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT = 60; // per minute
 FullConsensusAgent.GET_BLOCKS_RATE_LIMIT = 30; // per minute
-FullConsensusAgent.SYNC_PREDECESSOR_TIMEOUT = 10000;
 Class.register(FullConsensusAgent);
