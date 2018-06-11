@@ -411,7 +411,7 @@ class WsPeerAddress extends PeerAddress {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {WssPeerAddress}
+     * @returns {WsPeerAddress}
      */
     static unserialize(buf) {
         const services = buf.readUint32();
@@ -422,7 +422,7 @@ class WsPeerAddress extends PeerAddress {
         const signature = Signature.unserialize(buf);
         const host = buf.readVarLengthString();
         const port = buf.readUint16();
-        return new WssPeerAddress(services, timestamp, netAddress, publicKey, distance, host, port, signature);
+        return new WsPeerAddress(services, timestamp, netAddress, publicKey, distance, host, port, signature);
     }
 
     /**
@@ -477,7 +477,7 @@ class WsPeerAddress extends PeerAddress {
      */
     equals(o) {
         return super.equals(o)
-            && o instanceof WssPeerAddress
+            && o instanceof WsPeerAddress
             && ((!!this.peerId && !!o.peerId) || (this._host === o.host && this._port === o.port));
     }
 
