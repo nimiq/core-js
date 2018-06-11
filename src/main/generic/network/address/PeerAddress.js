@@ -453,7 +453,7 @@ class WsPeerAddress extends PeerAddress {
      * @returns {boolean}
      */
     globallyReachable() {
-        return !((NetUtils.isIPv4Address(host) || NetUtils.isIPv6Address(host)) && NetUtils.isPrivateIP(this.host) || this.host === "localhost");
+        return !((NetUtils.isIPv4Address(this.host) || NetUtils.isIPv6Address(this.host)) && NetUtils.isPrivateIP(this.host) || this.host === "localhost");
     }
 
     /** @type {number} */

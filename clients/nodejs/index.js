@@ -5,13 +5,13 @@ const JsonRpcServer = require('./modules/JsonRpcServer.js');
 const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
 
-if ((!config.host || !config.port || !config.tls.key || !config.tls.cert) && !config.dumb || argv.help) {
+if ((!config.host || !config.port) && !config.dumb || argv.help) {
     console.log(
         'Nimiq NodeJS client\n' +
         '\n' +
         'Usage:\n' +
         '    node index.js --config=CONFIG [options]\n' +
-        '    node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]\n' +
+        '    node index.js --host=HOSTNAME --port=PORT [--cert=SSL_CERT_FILE] [--key=SSL_KEY_FILE] [options]\n' +
         '    node index.js --dumb [options]\n' +
         '\n' +
         'Configuration:\n' +
