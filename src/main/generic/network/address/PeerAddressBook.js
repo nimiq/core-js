@@ -20,7 +20,6 @@ class PeerAddressBook extends Observable {
         this._store = new HashSet();
 
         /**
-         * Set of WS and WSS states.
          * @type {HashSet}
          * @private
          */
@@ -147,23 +146,33 @@ class PeerAddressBook extends Observable {
      * @returns {Array.<PeerAddress>}
      */
     query(protocolMask, serviceMask, maxAddresses = NetworkAgent.MAX_ADDR_PER_MESSAGE) {
-        let store;
+        let it, numAddresses;
+        // Important: this switches over a *mask*.
         switch (protocolMask) {
             case Protocol.WSS:
-                store = this._wssStates;
+                it = this.wssIterator();
+                numAddresses = this._addresses.knownWssAddressesCount;
                 break;
             case Protocol.WS:
+                it = this.wsIterator();
+                numAddresses = this.knownWsAddressesCount;
+                break;
             case Protocol.WS | Protocol.WSS:
-                store = this._wsStates;
+                it = IteratorUtils.alternate(this.wsIterator(), this.wssIterator());
+                numAddresses = this.knownWsAddressesCount + this.knownWssAddressesCount;
                 break;
             case Protocol.RTC:
-                store = this._rtcStates;
+                it = this.rtcIterator();
+                numAddresses = this.knownRtcAddressesCount;
+                break;
+            case Protocol.RTC | Protocol.WSS:
+                it = IteratorUtils.alternate(this.rtcIterator(), this.wsIterator());
+                numAddresses = this.knownRtcAddressesCount + this.knownWsAddressesCount;
                 break;
             default:
-                store = this._store;
+                it = this.iterator();
+                numAddresses = this.knownAddressesCount;
         }
-
-        const numAddresses = store.length;
 
         // Pick a random start index if we have a lot of addresses.
         let startIndex = 0, endIndex = numAddresses;
@@ -176,7 +185,7 @@ class PeerAddressBook extends Observable {
         // XXX inefficient linear scan
         const addresses = [];
         let index = -1;
-        for (const peerAddressState of store.valueIterator()) {
+        for (const peerAddressState of it) {
             index++;
             if (!overflow && index < startIndex) continue;
             if (!overflow && index >= endIndex) break;
@@ -327,7 +336,7 @@ class PeerAddressBook extends Observable {
                     if (this._wssStates.length >= PeerAddressBook.MAX_SIZE_WSS) {
                         return false;
                     }
-                    // Falls through, since _wsStates is WS + WSS.
+                    break;
                 case Protocol.WS:
                     if (this._wsStates.length >= PeerAddressBook.MAX_SIZE_WS) {
                         return false;
@@ -391,7 +400,7 @@ class PeerAddressBook extends Observable {
         switch (peerAddressState.peerAddress.protocol) {
             case Protocol.WSS:
                 this._wssStates.add(peerAddressState);
-                // Falls through, since _wsStates is WS + WSS.
+                break;
             case Protocol.WS:
                 this._wsStates.add(peerAddressState);
                 break;
@@ -603,7 +612,7 @@ class PeerAddressBook extends Observable {
         switch (peerAddressState.peerAddress.protocol) {
             case Protocol.WSS:
                 this._wssStates.remove(peerAddressState);
-                // Falls through, since _wsStates is WS + WSS.
+                break;
             case Protocol.WS:
                 this._wsStates.remove(peerAddressState);
                 break;

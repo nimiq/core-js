@@ -50,6 +50,7 @@ const sources = {
         './src/main/generic/utils/Timers.js',
         './src/main/generic/utils/Version.js',
         './src/main/generic/utils/Time.js',
+        './src/main/generic/utils/IteratorUtils.js',
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/array/HashMap.js',
         './src/main/generic/utils/array/HashSet.js',
@@ -418,7 +419,7 @@ gulp.task('build-web', ['build-worker'], function () {
     return gulp.src(BROWSER_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
-        .pipe(uglify(uglify_config))
+        // .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'))
         .pipe(connect.reload());

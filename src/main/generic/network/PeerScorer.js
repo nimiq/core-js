@@ -43,13 +43,20 @@ class PeerScorer {
                 numAddresses = this._addresses.knownWssAddressesCount;
                 break;
             case Protocol.WS:
-            case Protocol.WS | Protocol.WSS:
                 it = this._addresses.wsIterator();
                 numAddresses = this._addresses.knownWsAddressesCount;
+                break;
+            case Protocol.WS | Protocol.WSS:
+                it = IteratorUtils.alternate(this._addresses.wsIterator(), this._addresses.wssIterator());
+                numAddresses = this._addresses.knownWsAddressesCount + this._addresses.knownWssAddressesCount;
                 break;
             case Protocol.RTC:
                 it = this._addresses.rtcIterator();
                 numAddresses = this._addresses.knownRtcAddressesCount;
+                break;
+            case Protocol.RTC | Protocol.WSS:
+                it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wsIterator());
+                numAddresses = this._addresses.knownRtcAddressesCount + this._addresses.knownWsAddressesCount;
                 break;
             default:
                 it = this._addresses.iterator();
@@ -93,11 +100,16 @@ class PeerScorer {
                     it = this._addresses.wssIterator();
                     break;
                 case Protocol.WS:
-                case Protocol.WS | Protocol.WSS:
                     it = this._addresses.wsIterator();
+                    break;
+                case Protocol.WS | Protocol.WSS:
+                    it = IteratorUtils.alternate(this._addresses.wsIterator(), this._addresses.wssIterator());
                     break;
                 case Protocol.RTC:
                     it = this._addresses.rtcIterator();
+                    break;
+                case Protocol.RTC | Protocol.WSS:
+                    it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wsIterator());
                     break;
                 default:
                     it = this._addresses.iterator();
