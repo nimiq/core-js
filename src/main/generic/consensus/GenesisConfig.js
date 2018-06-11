@@ -977,7 +977,7 @@ GenesisConfig.CONFIGS = {
         NETWORK_ID: 2,
         NETWORK_NAME: 'dev',
         SEED_PEERS: [
-            WssPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
+            WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
