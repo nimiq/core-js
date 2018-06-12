@@ -8,9 +8,9 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     MB_MEMORY=$(sysctl hw.memsize | awk '{mb =int($2/1024/1024); print mb}')
 else
-    node "$SCRIPT_PATH/index.js" "$@"
+    exec node "$SCRIPT_PATH/index.js" "$@"
     exit
 fi
 
-UV_THREADPOOL_SIZE=$NUM_CORES NODE_OPTIONS="--max_old_space_size=$MB_MEMORY" node "$SCRIPT_PATH/index.js" "$@"
+UV_THREADPOOL_SIZE=$NUM_CORES NODE_OPTIONS="--max_old_space_size=$MB_MEMORY" exec node "$SCRIPT_PATH/index.js" "$@"
 
