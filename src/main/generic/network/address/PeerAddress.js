@@ -241,19 +241,9 @@ class PeerAddress {
 
 Class.register(PeerAddress);
 
-class WssPeerAddress extends PeerAddress {
+class WsCommonPeerAddress extends PeerAddress {
     /**
-     * @param {string} host
-     * @param {number} port
-     * @param {string} [publicKeyHex]
-     * @returns {WssPeerAddress}
-     */
-    static seed(host, port, publicKeyHex) {
-        const publicKey = publicKeyHex ? new PublicKey(BufferUtils.fromHex(publicKeyHex)) : null;
-        return new WssPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
-    }
-
-    /**
+     * @param {number} protocol
      * @param {number} services
      * @param {number} timestamp
      * @param {NetAddress} netAddress
@@ -263,28 +253,13 @@ class WssPeerAddress extends PeerAddress {
      * @param {number} port
      * @param {Signature} [signature]
      */
-    constructor(services, timestamp, netAddress, publicKey, distance, host, port, signature) {
-        super(Protocol.WSS, services, timestamp, netAddress, publicKey, distance, signature);
+    constructor(protocol, services, timestamp, netAddress, publicKey, distance, host, port, signature) {
+        if (protocol !== Protocol.WS && protocol !== Protocol.WSS) throw new Error('Malformed protocol');
+        super(protocol, services, timestamp, netAddress, publicKey, distance, signature);
         if (!host) throw new Error('Malformed host');
         if (!NumberUtils.isUint16(port)) throw new Error('Malformed port');
         this._host = host;
         this._port = port;
-    }
-
-    /**
-     * @param {SerialBuffer} buf
-     * @returns {WssPeerAddress}
-     */
-    static unserialize(buf) {
-        const services = buf.readUint32();
-        const timestamp = buf.readUint64();
-        const netAddress = NetAddress.unserialize(buf);
-        const publicKey = PublicKey.unserialize(buf);
-        const distance = buf.readUint8();
-        const signature = Signature.unserialize(buf);
-        const host = buf.readVarLengthString();
-        const port = buf.readUint16();
-        return new WssPeerAddress(services, timestamp, netAddress, publicKey, distance, host, port, signature);
     }
 
     /**
@@ -339,7 +314,6 @@ class WssPeerAddress extends PeerAddress {
      */
     equals(o) {
         return super.equals(o)
-            && o instanceof WssPeerAddress
             && ((!!this.peerId && !!o.peerId) || (this._host === o.host && this._port === o.port));
     }
 
@@ -348,22 +322,15 @@ class WssPeerAddress extends PeerAddress {
      */
     hashCode() {
         return this.peerId
-            ? `wss:///${this.peerId}`
-            : `wss://${this._host}:${this._port}/`;
+            ? `${this.protocolPrefix}:///${this.peerId}`
+            : `${this.protocolPrefix}://${this._host}:${this._port}/`;
     }
 
     /**
      * @returns {string}
      */
     toString() {
-        return `wss://${this._host}:${this._port}/${this.peerId ? this.peerId : ''}`;
-    }
-
-    /**
-     * @returns {WssPeerAddress}
-     */
-    withoutId() {
-        return new WssPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
+        return `${this.protocolPrefix}://${this._host}:${this._port}/${this.peerId ? this.peerId : ''}`;
     }
 
     /** @type {string} */
@@ -375,11 +342,76 @@ class WssPeerAddress extends PeerAddress {
     get port() {
         return this._port;
     }
+
+    /** @type {string} */
+    get protocolPrefix() {
+        return this.protocol === Protocol.WS ? 'ws' : 'wss';
+    }
+}
+
+class WssPeerAddress extends WsCommonPeerAddress {
+    /**
+     * @param {string} host
+     * @param {number} port
+     * @param {string} [publicKeyHex]
+     * @returns {WssPeerAddress}
+     */
+    static seed(host, port, publicKeyHex) {
+        const publicKey = publicKeyHex ? new PublicKey(BufferUtils.fromHex(publicKeyHex)) : null;
+        return new WssPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
+    }
+
+    /**
+     * @param {number} services
+     * @param {number} timestamp
+     * @param {NetAddress} netAddress
+     * @param {PublicKey} publicKey
+     * @param {number} distance
+     * @param {string} host
+     * @param {number} port
+     * @param {Signature} [signature]
+     */
+    constructor(services, timestamp, netAddress, publicKey, distance, host, port, signature) {
+        super(Protocol.WSS, services, timestamp, netAddress, publicKey, distance, host, port, signature);
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @returns {WssPeerAddress}
+     */
+    static unserialize(buf) {
+        const services = buf.readUint32();
+        const timestamp = buf.readUint64();
+        const netAddress = NetAddress.unserialize(buf);
+        const publicKey = PublicKey.unserialize(buf);
+        const distance = buf.readUint8();
+        const signature = Signature.unserialize(buf);
+        const host = buf.readVarLengthString();
+        const port = buf.readUint16();
+        return new WssPeerAddress(services, timestamp, netAddress, publicKey, distance, host, port, signature);
+    }
+
+    /**
+     * @override
+     * @param {PeerAddress|*} o
+     * @returns {boolean}
+     */
+    equals(o) {
+        return super.equals(o)
+            && o instanceof WssPeerAddress;
+    }
+
+    /**
+     * @returns {WssPeerAddress}
+     */
+    withoutId() {
+        return new WssPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
+    }
 }
 
 Class.register(WssPeerAddress);
 
-class WsPeerAddress extends PeerAddress {
+class WsPeerAddress extends WsCommonPeerAddress {
     /**
      * @param {string} host
      * @param {number} port
@@ -402,11 +434,7 @@ class WsPeerAddress extends PeerAddress {
      * @param {Signature} [signature]
      */
     constructor(services, timestamp, netAddress, publicKey, distance, host, port, signature) {
-        super(Protocol.WS, services, timestamp, netAddress, publicKey, distance, signature);
-        if (!host) throw new Error('Malformed host');
-        if (!NumberUtils.isUint16(port)) throw new Error('Malformed port');
-        this._host = host;
-        this._port = port;
+        super(Protocol.WS, services, timestamp, netAddress, publicKey, distance, host, port, signature);
     }
 
     /**
@@ -426,75 +454,13 @@ class WsPeerAddress extends PeerAddress {
     }
 
     /**
-     * @param {SerialBuffer} [buf]
-     * @returns {SerialBuffer}
-     */
-    serialize(buf) {
-        buf = buf || new SerialBuffer(this.serializedSize);
-        super.serialize(buf);
-        buf.writeVarLengthString(this._host);
-        buf.writeUint16(this._port);
-        return buf;
-    }
-
-    /**
-     * @param {SerialBuffer} [buf]
-     * @returns {SerialBuffer}
-     */
-    serializeContent(buf) {
-        buf = buf || new SerialBuffer(this.serializedContentSize);
-        super.serializeContent(buf);
-        buf.writeVarLengthString(this._host);
-        buf.writeUint16(this._port);
-        return buf;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    globallyReachable() {
-        return !((NetUtils.isIPv4Address(this.host) || NetUtils.isIPv6Address(this.host)) && NetUtils.isPrivateIP(this.host) || this.host === "localhost");
-    }
-
-    /** @type {number} */
-    get serializedSize() {
-        return super.serializedSize
-            + SerialBuffer.varLengthStringSize(this._host)
-            + /*port*/ 2;
-    }
-
-    /** @type {number} */
-    get serializedContentSize() {
-        return super.serializedContentSize
-            + SerialBuffer.varLengthStringSize(this._host)
-            + /*port*/ 2;
-    }
-
-    /**
      * @override
      * @param {PeerAddress|*} o
      * @returns {boolean}
      */
     equals(o) {
         return super.equals(o)
-            && o instanceof WsPeerAddress
-            && ((!!this.peerId && !!o.peerId) || (this._host === o.host && this._port === o.port));
-    }
-
-    /**
-     * @returns {string}
-     */
-    hashCode() {
-        return this.peerId
-            ? `ws:///${this.peerId}`
-            : `ws://${this._host}:${this._port}/`;
-    }
-
-    /**
-     * @returns {string}
-     */
-    toString() {
-        return `ws://${this._host}:${this._port}/${this.peerId ? this.peerId : ''}`;
+            && o instanceof WsPeerAddress;
     }
 
     /**
@@ -502,16 +468,6 @@ class WsPeerAddress extends PeerAddress {
      */
     withoutId() {
         return new WsPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
-    }
-
-    /** @type {string} */
-    get host() {
-        return this._host;
-    }
-
-    /** @type {number} */
-    get port() {
-        return this._port;
     }
 }
 

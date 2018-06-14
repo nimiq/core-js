@@ -193,7 +193,7 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {WssPeerAddress}
+     * @type {WsPeerAddress|WssPeerAddress}
      * @override
      */
     get peerAddress() {
