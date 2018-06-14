@@ -454,6 +454,13 @@ class WsPeerAddress extends WsCommonPeerAddress {
     }
 
     /**
+     * @returns {boolean}
+     */
+    globallyReachable() {
+        return ((NetUtils.isIPv4Address(this.host) || NetUtils.isIPv6Address(this.host)) && !NetUtils.isPrivateIP(this.host)) || NetUtils.hostGloballyReachable(this.host);
+    }
+
+    /**
      * @override
      * @param {PeerAddress|*} o
      * @returns {boolean}
