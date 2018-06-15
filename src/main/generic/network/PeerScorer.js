@@ -274,7 +274,7 @@ class PeerScorer {
         // Protocol: Prefer WebSocket when low on WebSocket connections.
         let scoreProtocol = 0;
         if (peerAddress.protocol === Protocol.WS || peerAddress.protocol === Protocol.WSS) {
-            const distribution = this._connections.peerCountWs / this._connections.peerCount;
+            const distribution = (this._connections.peerCountWs + this._connections.peerCountWss) / this._connections.peerCount;
             if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION || this._connections.peerCountFullWsOutbound <= PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND) {
                 scoreProtocol = 1;
             }

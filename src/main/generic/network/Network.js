@@ -287,7 +287,7 @@ class Network extends Observable {
 
     _refreshAddresses() {
         if (this._scorer.connectionScores && this._scorer.connectionScores.length > 0) {
-            const cutoff = Math.min(this._connections.peerCountWs * 2, Network.ADDRESS_REQUEST_CUTOFF);
+            const cutoff = Math.min((this._connections.peerCountWs + this._connections.peerCountWss) * 2, Network.ADDRESS_REQUEST_CUTOFF);
             const length = Math.min(this._scorer.connectionScores.length, cutoff);
             for (let i = 0; i < Math.min(Network.ADDRESS_REQUEST_PEERS, this._scorer.connectionScores.length); i++) {
                 const index = Math.floor(Math.random() * length);
@@ -331,6 +331,11 @@ class Network extends Observable {
     /** @type {number} */
     get peerCountWebSocket() {
         return this._connections.peerCountWs;
+    }
+
+    /** @type {number} */
+    get peerCountWebSocketSecure() {
+        return this._connections.peerCountWss;
     }
 
     /** @type {number} */
@@ -408,6 +413,11 @@ Network.OUTBOUND_PEER_COUNT_PER_SUBNET_MAX = 2;
  * @constant
  */
 Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 20;
+/**
+ * @type {number}
+ * @constant
+ */
+Network.PEER_COUNT_DUMB_MAX = 500;
 /**
  * @type {number}
  * @constant

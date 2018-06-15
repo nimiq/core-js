@@ -141,6 +141,7 @@ class MetricsServer {
         MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'dumb'}), this._network.peerCountDumb);
         MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'webrtc'}), this._network.peerCountWebRtc);
         MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'websocket'}), this._network.peerCountWebSocket);
+        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'websocket-secure'}), this._network.peerCountWebSocketSecure);
         MetricsServer._metric(res, 'network_peers', this._with({'state': 'connecting'}), this._network.peerCountConnecting);
         MetricsServer._metric(res, 'network_known_addresses', this._desc, this._network.knownAddressesCount);
         MetricsServer._metric(res, 'network_time_now', this._desc, this._network.time.now());

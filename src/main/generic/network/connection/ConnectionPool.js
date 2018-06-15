@@ -83,6 +83,8 @@ class ConnectionPool extends Observable {
         /** @type {number} */
         this._peerCountWs = 0;
         /** @type {number} */
+        this._peerCountWss = 0;
+        /** @type {number} */
         this._peerCountRtc = 0;
         /** @type {number} */
         this._peerCountDumb = 0;
@@ -493,6 +495,13 @@ class ConnectionPool extends Observable {
             }
         }
 
+        // Close connection if we have too many dumb connections.
+        if (peer.peerAddress.protocol === Protocol.DUMB && this.peerCountDumb >= Network.PEER_COUNT_DUMB_MAX) {
+            peerConnection.close(CloseType.CONNECTION_LIMIT_DUMB,
+                `connection limit for dumb peers (${Network.PEER_COUNT_DUMB_MAX}) reached`);
+            return false;
+        }
+
         // Set peerConnection to NEGOTIATING state.
         peerConnection.negotiating();
 
@@ -746,9 +755,12 @@ class ConnectionPool extends Observable {
         const peerAddress = peerConnection.peerAddress;
         switch (peerAddress.protocol) {
             case Protocol.WS:
-            case Protocol.WSS:
                 this._peerCountWs += delta;
                 Assert.that(this._peerCountWs >= 0, 'peerCountWs < 0');
+                break;
+            case Protocol.WSS:
+                this._peerCountWss += delta;
+                Assert.that(this._peerCountWss >= 0, 'peerCountWs < 0');
                 break;
             case Protocol.RTC:
                 this._peerCountRtc += delta;
@@ -811,6 +823,11 @@ class ConnectionPool extends Observable {
     }
 
     /** @type {number} */
+    get peerCountWss() {
+        return this._peerCountWss;
+    }
+
+    /** @type {number} */
     get peerCountRtc() {
         return this._peerCountRtc;
     }
@@ -822,7 +839,7 @@ class ConnectionPool extends Observable {
 
     /** @type {number} */
     get peerCount() {
-        return this._peerCountWs + this._peerCountRtc + this._peerCountDumb;
+        return this._peerCountWs + this._peerCountWss + this._peerCountRtc + this._peerCountDumb;
     }
 
     /** @type {number} */
