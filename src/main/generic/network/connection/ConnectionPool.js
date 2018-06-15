@@ -497,7 +497,7 @@ class ConnectionPool extends Observable {
 
         // Close connection if we have too many dumb connections.
         if (peer.peerAddress.protocol === Protocol.DUMB && this.peerCountDumb >= Network.PEER_COUNT_DUMB_MAX) {
-            peerConnection.close(CloseType.CONNECTION_LIMIT_DUMB,
+            peerConnection.peerChannel.close(CloseType.CONNECTION_LIMIT_DUMB,
                 `connection limit for dumb peers (${Network.PEER_COUNT_DUMB_MAX}) reached`);
             return false;
         }
