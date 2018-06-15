@@ -151,7 +151,7 @@ class PeerAddressBook extends Observable {
         switch (protocolMask) {
             case Protocol.WSS:
                 it = this.wssIterator();
-                numAddresses = this._addresses.knownWssAddressesCount;
+                numAddresses = this.knownWssAddressesCount;
                 break;
             case Protocol.WS:
                 it = this.wsIterator();
