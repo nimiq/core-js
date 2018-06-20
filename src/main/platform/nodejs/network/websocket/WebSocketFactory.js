@@ -1,16 +1,16 @@
 class WebSocketFactory {
     /**
      * @static
-     * @param {NetworkConfig} networkConfig
+     * @param {WsNetworkConfig|WssNetworkConfig} networkConfig
      * @return {WebSocketServer}
      */
     static newWebSocketServer(networkConfig) {
         const port = networkConfig.port;
-        const sslConfig = networkConfig.sslConfig;
 
         let server;
 
-        if (sslConfig) {
+        if (networkConfig.secure) {
+            const sslConfig = networkConfig.sslConfig;
             const options = {
                 key: fs.readFileSync(sslConfig.key),
                 cert: fs.readFileSync(sslConfig.cert)

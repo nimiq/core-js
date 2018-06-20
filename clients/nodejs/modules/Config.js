@@ -10,7 +10,7 @@ const TAG = 'Config';
  * @property {string} host
  * @property {{cert: string, key: string}} tls
  * @property {number} port
- * @property {boolean} dumb
+ * @property {string} protocol
  * @property {string} type
  * @property {string} network
  * @property {boolean} passive
@@ -20,8 +20,9 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>, allowip: string|Array.<string>, username: string, password: string}} rpcServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
+ * @property {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
  * @property {{level: string, tags: object}} log
- * @property {Array.<{host: string, port: number, publicKey: string}>} seedPeers
+ * @property {Array.<{host: string, port: number, publicKey: string, protocol: string}>} seedPeers
  * @property {object} constantOverrides
  */
 
@@ -32,7 +33,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         key: null
     },
     port: 8443,
-    dumb: false,
+    protocol: 'wss',
     type: 'full',
     network: 'main',
     passive: false,
@@ -91,7 +92,7 @@ const CONFIG_TYPES = {
         }
     },
     port: 'number',
-    dumb: 'boolean',
+    protocol: {type: 'string', values: ['wss', 'ws', 'dumb']},
     type: {type: 'string', values: ['full', 'light', 'nano']},
     network: 'string',
     passive: 'boolean',
@@ -156,7 +157,8 @@ const CONFIG_TYPES = {
             type: 'object', sub: {
                 host: 'string',
                 port: 'number',
-                publicKey: 'string'
+                publicKey: 'string',
+                protocol: {type: 'string', values: ['wss', 'ws']}
             }
         }
     },
@@ -288,7 +290,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     if (typeof argv.port === 'string') config.port = parseInt(argv.port);
     if (typeof argv.cert === 'string') config.tls.cert = argv.cert;
     if (typeof argv.key === 'string') config.tls.key = argv.key;
-    if (argv.dumb) config.dumb = true;
+    if (typeof argv.protocol === 'string') config.protocol = argv.protocol;
     if (typeof argv.type === 'string') config.type = argv.type;
     if (typeof argv.network === 'string') config.network = argv.network;
     if (argv.passive) config.passive = true;
@@ -312,11 +314,11 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         }
     }
     if (argv['device-data'] && config.poolMining.enabled) {
-      try {
-        config.poolMining.deviceData = JSON.parse(argv['device-data']);
-      } catch (e) {
-        return false;
-      }
+        try {
+            config.poolMining.deviceData = JSON.parse(argv['device-data']);
+        } catch (e) {
+            return false;
+        }
     }
     if (argv.rpc) {
         config.rpcServer.enabled = true;

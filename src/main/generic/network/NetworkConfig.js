@@ -138,23 +138,13 @@ class WsNetworkConfig extends NetworkConfig {
      * @constructor
      * @param {string} host
      * @param {number} port
-     * @param {string} [key]
-     * @param {string} [cert]
      * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
      */
-    constructor(host, port, key, cert, reverseProxy) {
+    constructor(host, port, reverseProxy) {
         super(Protocol.WS | Protocol.WSS);
         this._host = host;
         this._port = port;
-        this._key = key;
-        this._cert = cert;
         this._usingReverseProxy = reverseProxy.enabled;
-
-        /** @type {{key: string, cert: string}} */
-        this._sslConfig = !key || !cert ? null : {
-            key: this._key,
-            cert: this._cert
-        };
 
         /* @type {{port: number, address: string, header: string}} */
         this._reverseProxyConfig = {
@@ -179,13 +169,6 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {?{key: string, cert: string}}
-     */
-    get sslConfig() {
-        return this._sslConfig;
-    }
-
-    /**
      * @type {{port: number, address: string, header: string}}
      */
     get reverseProxyConfig() {
@@ -201,19 +184,11 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        let peerAddress;
         const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
-        if (this.sslConfig) {
-            peerAddress = new WssPeerAddress(
-                this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-                this.publicKey, /*distance*/ 0,
-                this._host, port);
-        } else {
-            peerAddress = new WsPeerAddress(
-                this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
-                this.publicKey, /*distance*/ 0,
-                this._host, port);
-        }
+        const peerAddress = new WsPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this.publicKey, /*distance*/ 0,
+            this._host, port);
 
         if (!peerAddress.globallyReachable()) {
             throw 'PeerAddress not globally reachable.';
@@ -221,9 +196,76 @@ class WsNetworkConfig extends NetworkConfig {
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
     }
+
+    /**
+     * @type {boolean}
+     */
+    get secure() {
+        return false;
+    }
 }
 
 Class.register(WsNetworkConfig);
+
+class WssNetworkConfig extends WsNetworkConfig {
+    /**
+     * @constructor
+     * @param {string} host
+     * @param {number} port
+     * @param {string} [key]
+     * @param {string} [cert]
+     * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
+     */
+    constructor(host, port, key, cert, reverseProxy) {
+        super(host, port, reverseProxy);
+        this._key = key;
+        this._cert = cert;
+
+        /** @type {{key: string, cert: string}} */
+        this._sslConfig = {
+            key: this._key,
+            cert: this._cert
+        };
+    }
+
+    /**
+     * @type {?{key: string, cert: string}}
+     */
+    get sslConfig() {
+        return this._sslConfig;
+    }
+
+    /**
+     * @type {WsPeerAddress|WssPeerAddress}
+     * @override
+     */
+    get peerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw 'PeerAddress is not configured.';
+        }
+
+        const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
+        const peerAddress = new WssPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this.publicKey, /*distance*/ 0,
+            this._host, port);
+
+        if (!peerAddress.globallyReachable()) {
+            throw 'PeerAddress not globally reachable.';
+        }
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
+    }
+
+    /**
+     * @type {boolean}
+     */
+    get secure() {
+        return true;
+    }
+}
+
+Class.register(WssNetworkConfig);
 
 class RtcNetworkConfig extends NetworkConfig {
     /**

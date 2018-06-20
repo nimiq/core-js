@@ -5,23 +5,28 @@ const JsonRpcServer = require('./modules/JsonRpcServer.js');
 const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
 
-if ((!config.host || !config.port) && !config.dumb || argv.help) {
+if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && config.tls.cert && config.tls.key)) ||
+    (config.protocol === 'ws' && !(config.host && config.port)) ||
+    argv.help) {
     console.log(
         'Nimiq NodeJS client\n' +
         '\n' +
         'Usage:\n' +
         '    node index.js --config=CONFIG [options]\n' +
         '    node index.js --host=HOSTNAME --port=PORT [--cert=SSL_CERT_FILE] [--key=SSL_KEY_FILE] [options]\n' +
-        '    node index.js --dumb [options]\n' +
+        '    node index.js --host=HOSTNAME --port=PORT --protocol=ws [options]\n' +
         '\n' +
         'Configuration:\n' +
         '  --cert=SSL_CERT_FILE       Certificate file to use. CN should match HOSTNAME.\n' +
-        '  --dumb                     Set up a dumb node. Other nodes will not be able\n' +
-        '                             to connect to this node, but you may connect to\n' +
-        '                             others.\n' +
         '  --host=HOSTNAME            Configure hostname.\n' +
         '  --key=SSL_KEY_FILE         Private key file to use.\n' +
         '  --port=PORT                Specifies which port to listen on for connections.\n' +
+        '  --protocol=TYPE            Set up the protocol to be used. Available protocols are\n' +
+        '                              - wss: WebSocket Secure, requires a FQDN, port,\n' +
+        '                                     and SSL certificate\n' +
+        '                              - ws: WebSocket, only requires public IP/FQDN and port\n' +
+        '                              - dumb: discouraged as the number of dumb nodes might\n' +
+        '                                      be limited\n' +
         '\n' +
         'Options:\n' +
         '  --help                     Show this usage instructions.\n' +
@@ -64,8 +69,8 @@ if (isNano && config.miner.enabled) {
     console.error('Cannot mine when running as a nano client');
     process.exit(1);
 }
-if (config.metricsServer.enabled && config.dumb) {
-    console.error('Cannot provide metrics when running as a dumb client');
+if (config.metricsServer.enabled && config.protocol !== 'wss') {
+    console.error('Cannot provide metrics when running as without a certificate');
     process.exit(1);
 }
 if (config.metricsServer.enabled && isNano) {
@@ -80,11 +85,11 @@ if (config.wallet.seed && config.wallet.address) {
     console.error('Cannot use both --wallet-seed and --wallet-address');
     process.exit(1);
 }
-if (config.host && config.dumb) {
-    console.error('Cannot use both --host and --dumb');
+if (config.host && config.protocol === 'dumb') {
+    console.error('Cannot use both --host and --protocol=dumb');
     process.exit(1);
 }
-if (config.reverseProxy.enabled && config.dumb) {
+if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
     process.exit(1);
 }
@@ -121,12 +126,31 @@ const $ = {};
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
 
     for(const seedPeer of config.seedPeers) {
-        Nimiq.GenesisConfig.SEED_PEERS.push(Nimiq.WssPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey));
+        let address;
+        switch (seedPeer.protocol) {
+            case 'ws':
+                address = Nimiq.WsPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey);
+                break;
+            case 'wss':
+            default:
+                address = Nimiq.WssPeerAddress.seed(seedPeer.host, seedPeer.port, seedPeer.publicKey);
+                break;
+        }
+        Nimiq.GenesisConfig.SEED_PEERS.push(address);
     }
 
-    const networkConfig = config.dumb
-        ? new Nimiq.DumbNetworkConfig()
-        : new Nimiq.WsNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert, config.reverseProxy);
+    let networkConfig;
+    switch (config.protocol) {
+        case 'wss':
+            networkConfig = new Nimiq.WssNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert, config.reverseProxy);
+            break;
+        case 'ws':
+            networkConfig = new Nimiq.WsNetworkConfig(config.host, config.port, config.reverseProxy);
+            break;
+        case 'dumb':
+            networkConfig = new Nimiq.DumbNetworkConfig();
+            break;
+    }
 
     switch (config.type) {
         case 'full':
