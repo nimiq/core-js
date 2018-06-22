@@ -1,29 +1,30 @@
-FROM node:8.1
+FROM node:9-stretch
 
-# Arguments which are to be defined at build time
-ARG DOMAIN
-ARG BRANCH
-ARG WALLET_SEED
-ARG KEY
-ARG CRT
-ARG PORT="8080"
+# Get repo key and install it
+RUN wget -qO - https://www.nimiq.com/nimiq-signing-key.pub | apt-key add -
 
-# Environment Variables which can be overriden at runtime
-ENV BRANCH="${BRANCH}"
-ENV RELEASE="https://github.com/nimiq-network/core/archive/${BRANCH}.tar.gz"
-ENV DOMAIN="${DOMAIN}"
-ENV WALLET_SEED="${WALLET_SEED}"
-ENV KEY="${KEY}"
-ENV CRT="${CRT}"
-ENV PORT="${PORT}"
+# Install the repo
+RUN echo "deb [arch=amd64] http://repo.nimiq.com/deb stable main" > /etc/apt/sources.list.d/nimiq.list
 
+# Install dependencies
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y python build-essential
+RUN apt-get install -y nimiq
 
-RUN wget ${RELEASE} && tar -xvzf ./${BRANCH}.tar.gz
-RUN cd /core-${BRANCH} && npm install && npm run build
-RUN cd /core-${BRANCH}/clients/nodejs && npm install
-RUN cd /core-${BRANCH} && npm run prepare
+# We're going to execute nimiq in the context of its own user, what else?
+ENV USER=nimiq
 
-EXPOSE ${PORT}
-ENTRYPOINT node /core-${BRANCH}/clients/nodejs/index.js --host ${DOMAIN} --port ${PORT} --key ${KEY} --cert ${CRT} --wallet-seed=${WALLET_SEED} --miner
+# Create a working directory for the nimiq process
+ENV DATA_PATH=/nimiq
+RUN mkdir ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
+WORKDIR ${DATA_PATH}
+
+# Just execute the nimiq process. One can customize the created container easily
+# to one's needs by (at least) the following options:
+# - supply your own arguments to the entrypoint while creating the container, e.g.
+#    docker run nimiq/nodejs-client --miner
+# - just bind mount your own nimiq.conf to the container at /etc/nimiq/nimiq.conf
+#   then you can just create the container like (assuming the config is in the
+#   current working directory)
+#     docker run nimiq/nodejs-client -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf --config=/etc/nimiq.conf
+# (- of course, you can combine and modify these options suitable to your needs)
+ENTRYPOINT [ "/usr/bin/nimiq" ]

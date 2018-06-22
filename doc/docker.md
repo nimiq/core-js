@@ -1,33 +1,54 @@
 # Docker
 
-A Dockerfile is provided which allows for creating your own backbone image using the following arguments.
+A Dockerfile is provided which allows for creating a simple nodejs client image.
 
-| Argument | Description |
-| --- | --- |
-| BRANCH  | Defaults to *master* but can be any available git branch  |
-| PORT  | Defaults to TCP port *8080* |
-| DOMAIN  | Domain to be used for hosting the backbone node  |
-| KEY  | Path to an existing certificate key for the DOMAIN  |
-| CRT  | Path to an existing signed certificate for the DOMAIN  |
-| WALLET_SEED  | Pre-existing wallet private key  |
-
-## Building the Docker image using the above arguments
+## Building the Docker image
 ```
-docker build \
-  --build-arg DOMAIN=<DOMAIN> \
-  --build-arg BRANCH=<BRANCH> \
-  --build-arg WALLET_SEED=<WALLET_SEED> \
-  --build-arg KEY=<KEY> \
-  --build-arg CRT=<CRT> \
-  --build-arg PORT=<PORT> \
-  -t nimiq .
+docker build
+  -t nimiq/nodejs-client .
 ```
 
 ## Running an instance of the image
 
-`docker run -d -p 8080:8080 -v /etc/letsencrypt/:/etc/letsencrypt/ --name "nimiq" nimiq`
+One can customize the created container easily to one's needs by (at least) the following options:
+ - supply your own arguments to the entrypoint while creating the container, e.g.
+    ```
+      docker run
+        nimiq/nodejs-client
+        $ARG
+        ...
+    ```
+ - just bind mount your own nimiq.conf to the container at /etc/nimiq/nimiq.conf
+   then you can just create the container like (assuming the config is in the
+   current working directory)
+    ```
+     docker run
+       -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf
+       nimiq/nodejs-client
+       --config=/etc/nimiq/nimiq.conf
+    ```
+ - (of course, you can combine and modify these options suitable to your needs)
 
-Note that you can override any of the arguments which were baked into the image at runtime with exception to the *BRANCH*. The -v flag here allows for mapping a local system path into the container for the purpose of using the existing *DOMAIN* certificates.
+The -v flag allows for mapping a local system path into the container, i.e.
+the nimiq.conf file in above example. You can also use this for the purpose
+of using your existing domain certificates.
+
+```
+docker run
+  -v /etc/letsencrypt:/etc/letsencrypt
+  -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf
+  nimiq/nodejs-client
+  --cert=$CERT
+  --key=$KEY
+  --config=/etc/nimiq/nimiq.conf
+```
+
+If in doubt regarding the command line options to the container, one can just
+run the image directly without any options, e.g.
+ ```docker run --rm nimiq/nodejs-client```.
+The options are identical to the nodejs client command line options, since
+the docker container basically invokes the client directly.
 
 ### Check status
 `docker logs -f <instance_id_or_name>`
+
