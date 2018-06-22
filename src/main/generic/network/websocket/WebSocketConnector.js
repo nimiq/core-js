@@ -146,7 +146,7 @@ class WebSocketConnector extends Observable {
             }
         }
 
-        const netAddress = NetAddress.fromIP(remoteAddress, true);
+        const netAddress = remoteAddress ? NetAddress.fromIP(remoteAddress, true) : null;
         const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
 
         /**
