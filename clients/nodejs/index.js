@@ -85,10 +85,6 @@ if (config.wallet.seed && config.wallet.address) {
     console.error('Cannot use both --wallet-seed and --wallet-address');
     process.exit(1);
 }
-if (config.host && config.protocol === 'dumb') {
-    console.error('Cannot use both --host and --protocol=dumb');
-    process.exit(1);
-}
 if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
     process.exit(1);
