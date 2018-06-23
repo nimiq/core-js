@@ -132,17 +132,20 @@ class WebSocketConnector extends Observable {
 
         // If we're behind a reverse proxy, the peer's IP will be in the header set by the reverse proxy, not in the ws._socket object
         if (this._networkConfig.usingReverseProxy) {
-            const rpAddress = this._networkConfig.reverseProxyConfig.address;
-            if (remoteAddress === rpAddress) {
-                const rpHeader = this._networkConfig.reverseProxyConfig.header;
-                if (req.headers[rpHeader]) {
-                    remoteAddress = req.headers[rpHeader].split(/\s*,\s*/)[0];
+            const reverseProxyAddress = this._networkConfig.reverseProxyConfig.address;
+            if (remoteAddress === reverseProxyAddress) {
+                const reverseProxyHeader = this._networkConfig.reverseProxyConfig.header;
+                if (req.headers[reverseProxyHeader]) {
+                    remoteAddress = req.headers[reverseProxyHeader].split(/\s*,\s*/)[0];
                 } else {
-                    Log.e(WebSocketConnector, () => `Expected header '${rpHeader}' to contain the real IP from the connecting client`);
+                    Log.e(WebSocketConnector, () => `Expected header '${reverseProxyHeader}' to contain the real IP from the connecting client: closing the connection`);
+                    ws.close();
+                    return;
                 }
             } else {
-                // XXX Should we preemptively close this connection?
-                Log.e(WebSocketConnector, () => `Received connection from ${remoteAddress} when all connections where expected from the reverse proxy in ${rpAddress}`);
+                Log.e(WebSocketConnector, () => `Received connection from ${remoteAddress} when all connections where expected from the reverse proxy in ${reverseProxyAddress}: closing the connection`);
+                ws.close();
+                return;
             }
         }
 
