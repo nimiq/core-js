@@ -126,7 +126,7 @@ class WebSocketConnector extends Observable {
      * @returns {void}
      */
     _onConnection(ws, req) {
-        let remoteAddress = ws._socket.remoteAddress;
+        let remoteAddress = req.connection.remoteAddress;
 
         Log.v(WebSocketConnector, () => `These are all the headers I see: ${JSON.stringify(req.headers)}`);
 
@@ -146,7 +146,7 @@ class WebSocketConnector extends Observable {
             }
         }
 
-        const netAddress = remoteAddress ? NetAddress.fromIP(remoteAddress, true) : null;
+        const netAddress = remoteAddress ? NetAddress.fromIP(remoteAddress, true) : NetAddress.UNKNOWN;
         const conn = new NetworkConnection(new WebSocketDataChannel(ws), Protocol.WS, netAddress, /*peerAddress*/ null);
 
         /**
