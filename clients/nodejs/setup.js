@@ -216,7 +216,7 @@ async function work() {
 
     data.isBehindNat = !data.localIps.includes(data.publicIp);
     try {
-        if (data.oldHost) data.oldHostResolvesCorrectly = (await dnsresolve(data.oldHost)).includes(data.publicIp);
+        if (data.oldHost) data.oldHostResolvesCorrectly = Nimiq.NetUtils.isIPv4Address(data.oldHost) || Nimiq.NetUtils.isIPv6Address(data.oldHost) || (await dnsresolve(data.oldHost)).includes(data.publicIp);
     } catch (e) {
         Log.w(TAG, `Hostname ${data.oldHost} from previous configuration seemed invalid, ignoring`);
     }
