@@ -18,6 +18,9 @@ class WebSocketFactory {
             res.end('Nimiq NodeJS Client\n');
         }).listen(port);
 
+        // We have to access socket.remoteAddress here because otherwise req.connection.remoteAddress won't be set in the WebSocket's 'connection' event (yay)
+        httpsServer.on('secureConnection', socket => socket.remoteAddress);
+
         return new WebSocket.Server({ server: httpsServer });
     }
 
