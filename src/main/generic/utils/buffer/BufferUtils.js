@@ -86,7 +86,7 @@ class BufferUtils {
      */
     static toBase64(buffer) {
         if (PlatformUtils.isNodeJs()) {
-            return new Buffer(buffer).toString('base64');
+            return Buffer.from(buffer).toString('base64');
         } else if (typeof TextDecoder !== 'undefined' && BufferUtils._ISO_8859_15_DECODER !== null) {
             try {
                 return btoa(BufferUtils._codePointTextDecoder(new Uint8Array(buffer)));
