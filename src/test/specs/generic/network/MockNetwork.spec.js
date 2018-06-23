@@ -344,7 +344,12 @@ class MockNetwork {
 
             setTimeout(() => {
                 if (serverMockWebSocket.closed || client.closed) return;
-                server.fire('connection', serverMockWebSocket);
+                const request = {
+                    connection: {
+                        remoteAddress: client.localAddress
+                    }
+                };
+                server.fire('connection', serverMockWebSocket, request);
                 client.onopen();
             }, 0);
         } else {
