@@ -127,14 +127,11 @@ class WebSocketConnector extends Observable {
      */
     _onConnection(ws, req) {
         let remoteAddress = req.connection.remoteAddress;
-
         if (!remoteAddress) {
-            Log.e(WebSocketConnector, () => `Expected req.connection.remoteAddress to be set and it is not: closing the connection`);
+            Log.e(WebSocketConnector, 'Expected req.connection.remoteAddress to be set and it is not: closing the connection');
             ws.close();
             return;
         }
-
-        Log.v(WebSocketConnector, () => `These are all the headers I see: ${JSON.stringify(req.headers)}`);
 
         // If we're behind a reverse proxy, the peer's IP will be in the header set by the reverse proxy, not in the req.connection object
         if (this._networkConfig.usingReverseProxy) {
@@ -144,12 +141,12 @@ class WebSocketConnector extends Observable {
                 if (req.headers[reverseProxyHeader]) {
                     remoteAddress = req.headers[reverseProxyHeader].split(/\s*,\s*/)[0];
                 } else {
-                    Log.e(WebSocketConnector, () => `Expected header '${reverseProxyHeader}' to contain the real IP from the connecting client: closing the connection`);
+                    Log.e(WebSocketConnector, `Expected header '${reverseProxyHeader}' to contain the real IP from the connecting client: closing the connection`);
                     ws.close();
                     return;
                 }
             } else {
-                Log.e(WebSocketConnector, () => `Received connection from ${remoteAddress} when all connections where expected from the reverse proxy in ${reverseProxyAddress}: closing the connection`);
+                Log.e(WebSocketConnector, `Received connection from ${remoteAddress} when all connections were expected from the reverse proxy at ${reverseProxyAddress}: closing the connection`);
                 ws.close();
                 return;
             }
