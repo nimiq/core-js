@@ -252,6 +252,7 @@ const $ = {};
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
                 Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(2).padStart(7)} H/s`
                     + (!isNano ? ` - Balance: ${Nimiq.Policy.satoshisToCoins(account.balance)} NIM` : '')
+                    + (config.poolMining.enabled ? ` - Pool balance: ${Nimiq.Policy.satoshisToCoins($.miner.balance)} NIM (confirmed ${Nimiq.Policy.satoshisToCoins($.miner.confirmedBalance)} NIM)` : '')
                     + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
                 hashrates.length = 0;
             }
