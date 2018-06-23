@@ -29,54 +29,54 @@ function printHelp() {
 }
 
 function normalizeIp(ip) {
-	return Nimiq.NetUtils.bytesToIp(Nimiq.NetUtils.ipToBytes(ip));
+    return Nimiq.NetUtils.bytesToIp(Nimiq.NetUtils.ipToBytes(ip));
 }
 
-async function stunSelfResolve(attempt = 0) {
-	const { STUN_BINDING_REQUEST, STUN_BINDING_RESPONSE, STUN_ATTR_XOR_MAPPED_ADDRESS } = stun.constants
-	return new Promise((resolve, fail) => {
-		const server = stun.createServer();
-		let timeout;
-		if (attempt >= 3) {
-			timeout = setTimeout(fail, 2000);
-		} else {
-			timeout = setTimeout(() => {
-				stunSelfResolve(attempt + 1).then(resolve, fail);
-			}, 2000);
-		}
-		server.once("bindingResponse", stunMsg => {
-			resolve(stunMsg.getAttribute(STUN_ATTR_XOR_MAPPED_ADDRESS).value.address);
-			clearTimeout(timeout);
-			server.close();
-		});
-		server.send(stun.createMessage(STUN_BINDING_REQUEST), 19302, "stun.nimiq-network.com");
-	});
+function stunSelfResolve(attempt = 0) {
+    const { STUN_BINDING_REQUEST, STUN_BINDING_RESPONSE, STUN_ATTR_XOR_MAPPED_ADDRESS } = stun.constants;
+    return new Promise((resolve, fail) => {
+        const server = stun.createServer();
+        let timeout;
+        if (attempt >= 3) {
+            timeout = setTimeout(fail, 2000);
+        } else {
+            timeout = setTimeout(() => {
+                stunSelfResolve(attempt + 1).then(resolve, fail);
+            }, 2000);
+        }
+        server.once('bindingResponse', stunMsg => {
+            resolve(stunMsg.getAttribute(STUN_ATTR_XOR_MAPPED_ADDRESS).value.address);
+            clearTimeout(timeout);
+            server.close();
+        });
+        server.send(stun.createMessage(STUN_BINDING_REQUEST), 19302, 'stun.nimiq-network.com');
+    });
 }
 
-async function dnsreverse(ip) {
-	return new Promise((resolve, fail) => {
-		dns.reverse(ip, (err, hostnames) => {
-			if (err) fail(err);
-			else resolve(hostnames);
-		});
-	});
+function dnsreverse(ip) {
+    return new Promise((resolve, fail) => {
+        dns.reverse(ip, (err, hostnames) => {
+            if (err) fail(err);
+            else resolve(hostnames);
+        });
+    });
 }
 
-async function dnsresolve(name) {
-	return new Promise((resolve, fail) => {
-		dns.resolve(name, (err, ips) => {
-			if (err) fail(err);
-			else resolve(ips.map(normalize));
-		});
-	});
+function dnsresolve(name) {
+    return new Promise((resolve, fail) => {
+        dns.resolve(name, (err, ips) => {
+            if (err) fail(err);
+            else resolve(ips.map(normalize));
+        });
+    });
 }
 
 function isAmazon(rdns) {
-	return rdns && !!rdns.match(/amazonaws\.com$/);
+    return rdns && !!rdns.match(/amazonaws\.com$/);
 }
 
 function isGoogle(rdns) {
-	return rdns && !!rdns.match(/googleusercontent\.com$/);
+    return rdns && !!rdns.match(/googleusercontent\.com$/);
 }
 
 if (argv.help || !argv._ || argv._.length != 1) {
@@ -115,7 +115,7 @@ if (!argv.config) {
 
 function mini204(port) {
     try {
-        return http.createServer((req, res) => {res.statusCode = 204; res.end()}).listen(port).on('error', () => {});
+        return http.createServer((req, res) => {res.statusCode = 204; res.end();}).listen(port).on('error', () => {});
     } catch (e) {
         return {close: function(){}};
     }
@@ -137,6 +137,7 @@ async function work() {
     if (reconfigure) {
         if (!fs.existsSync(argv.config)) {
             Log.e(TAG, `Config file does not exist: ${argv.config}`);
+            return;
         }
         Log.i(TAG, `Will reconfigure file ${argv.config}`);
 
@@ -159,7 +160,7 @@ async function work() {
     try {
         data.stunIp = normalizeIp(await stunSelfResolve());
     } catch (e) {
-        Log.w(TAG, `Failed to connect to stun.nimiq-network.com, are you connected to the internet?`);
+        Log.w(TAG, 'Failed to connect to stun.nimiq-network.com, are you connected to the internet?');
     }
 
     // Gather open ports and public IP via service
@@ -169,7 +170,7 @@ async function work() {
         8442: mini204(8442),
         8443: mini204(8443)
     };
-    let askForOldPort = data.oldPort && !Object.keys(servers).includes(data.oldPort);
+    const askForOldPort = data.oldPort && !Object.keys(servers).includes(data.oldPort);
     if (askForOldPort) servers[data.oldPort] = mini204(data.oldPort);
     try {
         data.serviceInfo = JSON.parse(await fetch(`http://${SERVICE_HOST}/${askForOldPort ? data.oldPort : ''}`));
@@ -188,7 +189,7 @@ async function work() {
         return;
     }
 
-    if (data.serviceInfo && data.serviceInfo.ip && data.stunIp && data.serviceInfo.ip != data.stunIp) {
+    if (data.serviceInfo && data.serviceInfo.ip && data.stunIp && data.serviceInfo.ip !== data.stunIp) {
         Log.v(TAG, `Service and STUN discovered IP addresses mismatch, will continue with ${data.stunIp}`);
         data.publicIp = data.stunIp;
     } else if (data.serviceInfo && data.serviceInfo.ip) {
@@ -204,14 +205,14 @@ async function work() {
 
     // Gather local ips
     const ifaces = os.networkInterfaces();
-	data.localIps = [];
-	for(const name of Object.keys(ifaces)) {
-		for(const addr of ifaces[name]) {
-			if (addr.family == 'IPv4' && !Nimiq.NetUtils.isPrivateIP(addr.address)) {
-				data.localIps.push(normalizeIp(addr.address));
-			}
-		}
-	}
+    data.localIps = [];
+    for(const name of Object.keys(ifaces)) {
+        for(const addr of ifaces[name]) {
+            if (addr.family == 'IPv4' && !Nimiq.NetUtils.isPrivateIP(addr.address)) {
+                data.localIps.push(normalizeIp(addr.address));
+            }
+        }
+    }
 
     data.isBehindNat = !data.localIps.includes(data.publicIp);
     try {
@@ -224,7 +225,7 @@ async function work() {
     data.workingPorts = [];
     if (data.serviceInfo && data.serviceInfo.ports) {
         for(const port of Object.keys(data.serviceInfo.ports)) {
-            if (data.serviceInfo.ports[port].httpStatusCode == 204) {
+            if (data.serviceInfo.ports[port].httpStatusCode === 204) {
                 // Port very likely reached our server that responded with 204
                 data.workingPorts.push(parseInt(port));
             } else if (!data.serviceInfo.ports[port].wasListening && data.serviceInfo.ports[port].socketReady) {
@@ -233,8 +234,6 @@ async function work() {
             }
         }
     }
-
-    //console.log(JSON.stringify(data, null, 1));
 
     if (data.workingPorts.includes(data.oldPort)) {
         // Old port is still working, so we can just continue using it
@@ -248,7 +247,7 @@ async function work() {
         Log.v(TAG, `Will use port ${data.port} for network interaction`);
     } else {
         // Ports closed, ask to fix
-        console.log("");
+        console.log('');
         if (data.isBehindNat) {
             if (isAmazon(data.publicIpReverseDns)) {
                 console.log('It appears you are running in an improperly configured Amazon EC2 instance. You need to update your EC2 security group settings to use all features of Nimiq. Check our instructions at https://nimiq.com/setup/#aws');
@@ -263,12 +262,12 @@ async function work() {
         const res = await new Promise((resolve) => {
             rl.question('Press enter once you updated your configuration or type \'dumb\' to run a limited node: ', resolve);
         });
-        console.log("");
-        if (res != "dumb") {
-            Log.i(TAG, "Restarting setup utility...");
+        console.log('');
+        if (res !== 'dumb') {
+            Log.i(TAG, 'Restarting setup utility...');
             return work();
         }
-        Log.i(TAG, `Will configure the system to run in limited \'dumb\' mode. Please use \'${NIMIQ_SETUP_COMMAND} reconfigure --config=${argv.config}\' once you changed your network configuration.`);
+        Log.i(TAG, `Will configure the system to run in limited 'dumb' mode. Please use '${NIMIQ_SETUP_COMMAND} reconfigure --config=${argv.config}' once you changed your network configuration.`);
         data.useDumb = true;
     }
 
@@ -312,7 +311,7 @@ async function work() {
         config.tls = {
             cert: data.tlsCert,
             key: data.tlsKey
-        }
+        };
         config.protocol = 'wss';
         config.port = data.port;
         config.host = data.host;
