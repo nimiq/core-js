@@ -107,7 +107,7 @@ class Mempool extends Observable {
                 Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${error}`);
                 return Mempool.ReturnCode.INVALID;
             } else {
-                // Remove transaction
+                // Remove transaction.
                 this._removeTransaction(tx);
             }
         }

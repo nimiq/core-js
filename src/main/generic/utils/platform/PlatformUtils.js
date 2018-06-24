@@ -17,15 +17,8 @@ class PlatformUtils {
      * @returns {boolean}
      */
     static supportsWebRTC() {
-        let RTCPeerConnection = PlatformUtils.isBrowser() ? (window.RTCPeerConnection || window.webkitRTCPeerConnection) : null;
+        const RTCPeerConnection = PlatformUtils.isBrowser() ? (window.RTCPeerConnection || window.webkitRTCPeerConnection) : null;
         return !!RTCPeerConnection;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    static isOnline() {
-        return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
     }
 
     /**
@@ -33,6 +26,13 @@ class PlatformUtils {
      */
     static supportsWS() {
         return !PlatformUtils.isBrowser() || (location && location.protocol === 'http:');
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    static isOnline() {
+        return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
     }
 }
 Class.register(PlatformUtils);

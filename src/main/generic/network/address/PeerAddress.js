@@ -79,6 +79,10 @@ class PeerAddress {
         return buf;
     }
 
+    /**
+     * @param {SerialBuffer} [buf]
+     * @returns {SerialBuffer}
+     */
     serializeContent(buf) {
         buf = buf || new SerialBuffer(this.serializedContentSize);
 
@@ -236,12 +240,10 @@ class PeerAddress {
         }
         return false;
     }
-
 }
-
 Class.register(PeerAddress);
 
-class WsCommonPeerAddress extends PeerAddress {
+class WsBasePeerAddress extends PeerAddress {
     /**
      * @param {number} protocol
      * @param {number} services
@@ -349,7 +351,7 @@ class WsCommonPeerAddress extends PeerAddress {
     }
 }
 
-class WssPeerAddress extends WsCommonPeerAddress {
+class WssPeerAddress extends WsBasePeerAddress {
     /**
      * @param {string} host
      * @param {number} port
@@ -408,10 +410,9 @@ class WssPeerAddress extends WsCommonPeerAddress {
         return new WssPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
     }
 }
-
 Class.register(WssPeerAddress);
 
-class WsPeerAddress extends WsCommonPeerAddress {
+class WsPeerAddress extends WsBasePeerAddress {
     /**
      * @param {string} host
      * @param {number} port
@@ -477,7 +478,6 @@ class WsPeerAddress extends WsCommonPeerAddress {
         return new WsPeerAddress(this.services, this.timestamp, this.netAddress, null, this.distance, this.host, this.port);
     }
 }
-
 Class.register(WsPeerAddress);
 
 class RtcPeerAddress extends PeerAddress {
@@ -546,7 +546,6 @@ class RtcPeerAddress extends PeerAddress {
         return `rtc:///${this.peerId}`;
     }
 }
-
 Class.register(RtcPeerAddress);
 
 class DumbPeerAddress extends PeerAddress {
@@ -615,5 +614,4 @@ class DumbPeerAddress extends PeerAddress {
         return `dumb:///${this.peerId}`;
     }
 }
-
 Class.register(DumbPeerAddress);

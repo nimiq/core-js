@@ -130,7 +130,6 @@ class NetworkConfig {
         return (protocol & this._protocolMask) !== 0;
     }
 }
-
 Class.register(NetworkConfig);
 
 class WsNetworkConfig extends NetworkConfig {
@@ -184,7 +183,7 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
+        const port = this._usingReverseProxy ? this._reverseProxyConfig.port : this._port;
         const peerAddress = new WsPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
@@ -193,6 +192,7 @@ class WsNetworkConfig extends NetworkConfig {
         if (!peerAddress.globallyReachable()) {
             throw 'PeerAddress not globally reachable.';
         }
+
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
     }
@@ -204,7 +204,6 @@ class WsNetworkConfig extends NetworkConfig {
         return false;
     }
 }
-
 Class.register(WsNetworkConfig);
 
 class WssNetworkConfig extends WsNetworkConfig {
@@ -244,7 +243,7 @@ class WssNetworkConfig extends WsNetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        const port = (this._usingReverseProxy) ? this._reverseProxyConfig.port : this._port;
+        const port = this._usingReverseProxy ? this._reverseProxyConfig.port : this._port;
         const peerAddress = new WssPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
@@ -253,6 +252,7 @@ class WssNetworkConfig extends WsNetworkConfig {
         if (!peerAddress.globallyReachable()) {
             throw 'PeerAddress not globally reachable.';
         }
+
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
     }
@@ -264,7 +264,6 @@ class WssNetworkConfig extends WsNetworkConfig {
         return true;
     }
 }
-
 Class.register(WssNetworkConfig);
 
 class RtcNetworkConfig extends NetworkConfig {
@@ -304,7 +303,6 @@ class RtcNetworkConfig extends NetworkConfig {
         return peerAddress;
     }
 }
-
 Class.register(RtcNetworkConfig);
 
 class DumbNetworkConfig extends NetworkConfig {
@@ -313,7 +311,7 @@ class DumbNetworkConfig extends NetworkConfig {
      */
     constructor() {
         // Browsers served through https only speak WSS. Everything else should also support WS.
-        super(PlatformUtils.supportsWS() ?  (Protocol.WS | Protocol.WSS) : Protocol.WSS);
+        super(PlatformUtils.supportsWS() ? (Protocol.WS | Protocol.WSS) : Protocol.WSS);
     }
 
     /**
@@ -332,5 +330,4 @@ class DumbNetworkConfig extends NetworkConfig {
         return peerAddress;
     }
 }
-
 Class.register(DumbNetworkConfig);

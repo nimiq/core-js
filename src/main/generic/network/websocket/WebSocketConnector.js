@@ -16,7 +16,7 @@ class WebSocketConnector extends Observable {
             this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
             this._wss.on('connection', (ws, req) => this._onConnection(ws, req));
 
-            Log.d(WebSocketConnector, `Connector listening on port ${networkConfig.peerAddress.port}`);
+            Log.d(WebSocketConnector, `${this._protocolPrefix.toUpperCase()}-Connector listening on port ${networkConfig.peerAddress.port}`);
         }
 
         /** @type {HashMap.<PeerAddress, WebSocket>} */
