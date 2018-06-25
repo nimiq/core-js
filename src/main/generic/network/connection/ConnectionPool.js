@@ -455,8 +455,6 @@ class ConnectionPool extends Observable {
 
         // Create peer channel.
         const channel = new PeerChannel(conn);
-        channel.on('signal', msg => this._signalProcessor.onSignal(channel, msg));
- 
         peerConnection.peerChannel = channel;
 
         // Create network agent.
@@ -596,6 +594,12 @@ class ConnectionPool extends Observable {
  
         this._updateConnectedPeerCount(peerConnection, 1);
 
+        // Setup signal forwarding.
+        if (Network.SIGNALING_ENABLED) {
+            peerConnection.peerChannel.on('signal', msg => this._signalProcessor.onSignal(peerConnection.peerChannel, msg));
+        }
+
+        // Mark address as established.
         this._addresses.established(peer.channel, peer.peerAddress);
 
         // Let listeners know about this peer.
