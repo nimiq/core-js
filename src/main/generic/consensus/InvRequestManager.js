@@ -49,18 +49,21 @@ class InvRequestManager {
      * @param {InvVector} vector
      */
     noteVectorNotReceived(agent, vector) {
-        this._timers.clearTimeout(vector.hash);
         if (this._vectorsToRequest.contains(vector)) {
             const o = this._vectorsToRequest.get(vector);
-            if (o.current !== agent) return;
-            o.current = null;
-            if (o.waiting.size !== 0) {
-                o.current = o.waiting.values().next().value;
-                o.waiting.delete(o.current);
-                this._request(vector);
-            }
-            if (o.current === null) {
-                this._vectorsToRequest.remove(vector);
+            if (o.current !== agent) {
+                o.waiting.delete(agent);
+            } else {
+                this._timers.clearTimeout(vector.hash);
+                o.current = null;
+                if (o.waiting.size !== 0) {
+                    o.current = o.waiting.values().next().value;
+                    o.waiting.delete(o.current);
+                    this._request(vector);
+                }
+                if (o.current === null) {
+                    this._vectorsToRequest.remove(vector);
+                }
             }
         }
     }
