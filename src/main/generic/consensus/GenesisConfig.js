@@ -94,7 +94,9 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('seed-5.nimiq-network.com', 8443, '110a81a033c75976643d4b8f34419f4913b306a6fc9d530b8207ddbd5527eff6'),
             WssPeerAddress.seed('seed-6.nimiq-network.com', 8443, '26c1a4727cda6579639bdcbaecb1f6b97be3ac0e282b43bdd1a2df2858b3c23b'),
             WssPeerAddress.seed('seed-7.nimiq.network', 8443, '82fcebdb4e2a7212186d1976d7f685cc86cdf58beffe1723d5c3ea5be00c73e1'),
-            WssPeerAddress.seed('seed-8.nimiq.network', 8443, 'b7ac8cc1a820761df4e8a42f4e30c870e81065c4e29f994ebb5bdceb48904e7b')
+            WssPeerAddress.seed('seed-8.nimiq.network', 8443, 'b7ac8cc1a820761df4e8a42f4e30c870e81065c4e29f994ebb5bdceb48904e7b'),
+            WssPeerAddress.seed('seed-9.nimiq.network', 8443, '4429bf25c8d296c0f1786647d8f7d4bac40a37c67caf028818a65a9cc7865a48'),
+            WssPeerAddress.seed('seed-10.nimiq.network', 8443, 'e8e99fb8633d660d4f2d48edb6cc294681b57648b6ec6b28af8f85b2d5ec4e68')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
