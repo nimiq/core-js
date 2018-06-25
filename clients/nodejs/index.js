@@ -125,7 +125,7 @@ const $ = {};
 
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[config.network]);
 
-    for(const seedPeer of config.seedPeers) {
+    for (const seedPeer of config.seedPeers) {
         let address;
         switch (seedPeer.protocol) {
             case 'ws':

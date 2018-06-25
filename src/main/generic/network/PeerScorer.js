@@ -271,8 +271,21 @@ class PeerScorer {
             ? 1
             : Services.isLightNode(peerAddress.services) ? 0.5 : 0;
 
-        // Protocol: Prefer WebSocket when low on WebSocket connections.
-        let scoreProtocol = 0;
+        // Protocol: Prefer WebSocket over WebRTC over Dumb.
+        let scoreProtocol;
+        switch (peerAddress.protocol) {
+            case Protocol.WS:
+            case Protocol.WSS:
+                scoreProtocol = 0.6;
+                break;
+            case Protocol.RTC:
+                scoreProtocol = 0.3;
+                break;
+            case Protocol.DUMB:
+            default:
+                scoreProtocol = 0;
+        }
+        // Boost WebSocket score when low on WebSocket connections.
         if (peerAddress.protocol === Protocol.WS || peerAddress.protocol === Protocol.WSS) {
             const distribution = (this._connections.peerCountWs + this._connections.peerCountWss) / this._connections.peerCount;
             if (distribution < PeerScorer.BEST_PROTOCOL_WS_DISTRIBUTION || this._connections.peerCountFullWsOutbound <= PeerScorer.PEER_COUNT_MIN_FULL_WS_OUTBOUND) {
