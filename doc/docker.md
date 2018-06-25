@@ -1,12 +1,29 @@
 # Docker
 
-A Dockerfile is provided which allows for creating a simple nodejs client image.
+The following Dockerfile(s) allow for creating simple nodejs client images. Depending on the desired build method and source origin, one can choose between the following Dockerfile(s):
+
+* **Dockerfile_deb**
+The Dockerfile will create a container which uses nodejs client from the latest stable Nimiq DEB package. 
+This is mostly recommended for any stable deployment of the nodejs client.
+
+* **Dockerfile_git**
+The Dockerfile will checkout the latest revision of a given branch from the *core* repository. By default, the *master* branch will be used. One can select a different branch by specifying the *BRANCH* build argument when building the container, i.e. ```--build-arg BRANCH=foobar``` with *foobar* being replaced by the branch that should be used.
+You can use this container to explore the latest cutting-edge updates or a specific feature branch from the *core* repository. The *master* branch should be usually be stable, but nonetheless it is not specificially recommended to use this version for production deployments.
+
+* **Dockerfile_repo**
+The Dockerfile tries to copy the entire *core* repository from the current build context. If the Dockerfile is located at its usual location within the *core* repository, one can just the repository, i.e. most likely the current working directory, as build context.
+This container is specifically suited for development, since it will be created from the current repository state including any local changes.
 
 ## Building the Docker image
 ```
 docker build
-  -t nimiq/nodejs-client .
+  -t nimiq/nodejs-client
+  -f ${DOCKERFILE}
+  (--build-arg BRANCH=foobar)
+  .
 ```
+
+You should replace ```${DOCKERFILE}``` with one of the Dockerfiles explained above.
 
 ## Running an instance of the image
 
