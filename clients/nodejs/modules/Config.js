@@ -4,13 +4,13 @@ const merge = require('lodash.merge');
 const Log = require('../../../dist/node.js').Log;
 const TAG = 'Config';
 
-
 /**
  * @typedef {object} Config
  * @property {string} host
  * @property {{cert: string, key: string}} tls
  * @property {number} port
  * @property {string} protocol
+ * @property {boolean} dumb
  * @property {string} type
  * @property {string} network
  * @property {boolean} passive
@@ -34,6 +34,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     },
     port: 8443,
     protocol: 'wss',
+    dumb: false, // deprecated
     type: 'full',
     network: 'main',
     passive: false,
@@ -93,6 +94,7 @@ const CONFIG_TYPES = {
     },
     port: 'number',
     protocol: {type: 'string', values: ['wss', 'ws', 'dumb']},
+    dumb: 'boolean', // deprecated
     type: {type: 'string', values: ['full', 'light', 'nano']},
     network: 'string',
     passive: 'boolean',
@@ -291,6 +293,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     if (typeof argv.cert === 'string') config.tls.cert = argv.cert;
     if (typeof argv.key === 'string') config.tls.key = argv.key;
     if (typeof argv.protocol === 'string') config.protocol = argv.protocol;
+    if (argv.dumb) config.dumb = argv.dumb; // deprecated
     if (typeof argv.type === 'string') config.type = argv.type;
     if (typeof argv.network === 'string') config.network = argv.network;
     if (argv.passive) config.passive = true;

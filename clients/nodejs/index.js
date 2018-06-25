@@ -5,6 +5,12 @@ const JsonRpcServer = require('./modules/JsonRpcServer.js');
 const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
 
+// Deprecated dumb config flag.
+if (config.dumb) {
+    console.error(`The '--dumb' flag is deprecated, use '--protocol=dumb' instead.`);
+    config.protocol = 'dumb';
+}
+
 if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && config.tls.cert && config.tls.key)) ||
     (config.protocol === 'ws' && !(config.host && config.port)) ||
     argv.help) {
@@ -118,6 +124,15 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
+    if (config.protocol === 'dumb') {
+        Nimiq.Log.e(TAG, `******************************************************************************`);
+        Nimiq.Log.e(TAG, `*                                                                            *`);
+        Nimiq.Log.e(TAG, `*  You are running in 'dumb' configuration, so others can't connect to you.  *`);
+        Nimiq.Log.e(TAG, `*  Consider switching to a proper WebSocket/WebSocketSecure configuration.   *`);
+        Nimiq.Log.e(TAG, `*                                                                            *`);
+        Nimiq.Log.e(TAG, `******************************************************************************`);
+    }
+
     Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${config.network}`
         + `, ${config.host ? `host=${config.host}, port=${config.port}` : 'dumb'}`
         + `, miner=${config.miner.enabled}, rpc=${config.rpcServer.enabled}${config.rpcServer.enabled ? `@${config.rpcServer.port}` : ''}`
