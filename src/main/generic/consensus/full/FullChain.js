@@ -443,17 +443,24 @@ class FullChain extends BaseChain {
         // TODO modify chain proof directly, don't recompute.
         this._proof = null;
 
-        // Fire block-reverted event for each block reverted during rebranch
+        // Fire block-reverted event for each block reverted during rebranch.
+        const revertBlocks = [];
         for (const revertedData of revertChain) {
             this.fire('block-reverted', revertedData.head);
+            revertBlocks.push(revertedData.head);
         }
 
         // Fire head-changed event for each fork block.
+        const forkBlocks = [];
         for (let i = forkChain.length - 1; i >= 0; i--) {
             this._mainChain = forkChain[i];
             this._headHash = forkHashes[i];
             this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+            forkBlocks.push(this.head);
         }
+
+        // Tell listeners that we have rebranched.
+        await this.fire('rebranched', revertBlocks, forkBlocks);
 
         return true;
     }

@@ -156,16 +156,6 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {InvMessage} msg
-     * @returns {Promise}
-     * @protected
-     * @override
-     */
-    _onInv(msg) {
-        return super._onInv(msg);
-    }
-
-    /**
      * @param {InvVector} vector
      * @returns {boolean}
      * @protected

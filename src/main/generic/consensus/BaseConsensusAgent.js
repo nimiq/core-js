@@ -282,7 +282,17 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<void>}
      * @protected
      */
-    async _onInv(msg) {
+    _onInv(msg) {
+        return this._synchronizer.push('onInv',
+            this.__onInv.bind(this, msg));
+    }
+
+    /**
+     * @param {InvMessage} msg
+     * @returns {Promise.<void>}
+     * @protected
+     */
+    async __onInv(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
             this._knownObjects.add(vector);
@@ -317,7 +327,7 @@ class BaseConsensusAgent extends Observable {
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    const transaction = await this._getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
+                    const transaction = this._getTransaction(vector.hash);
                     if (!transaction) {
                         unknownTxs.push(vector);
                         this._onNewTransactionAnnounced(vector.hash);
@@ -499,7 +509,7 @@ class BaseConsensusAgent extends Observable {
         const transactions = msg.block.isFull() ? msg.block.body.transactions : [];
         const transactionsFromMempool = transactions.map(t => this._getTransaction(t.hash()));
         for (let i = 0; i < transactions.length; i++) {
-            const transaction = transactionsFromMempool[i]; // eslint-disable-line no-await-in-loop
+            const transaction = transactionsFromMempool[i];
             if (transaction) {
                 transactions[i] = transaction;
             }
@@ -716,7 +726,7 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {GetDataMessage} msg
-     * @returns {Promise}
+     * @returns {Promise.<void>}
      * @protected
      */
     async _onGetData(msg) {
@@ -743,7 +753,7 @@ class BaseConsensusAgent extends Observable {
                     break;
                 }
                 case InvVector.Type.TRANSACTION: {
-                    const tx = await this._getTransaction(vector.hash); // eslint-disable-line no-await-in-loop
+                    const tx = this._getTransaction(vector.hash);
                     if (tx) {
                         // We have found a requested transaction, send it back to the sender.
                         this._peer.channel.tx(tx);

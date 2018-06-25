@@ -23,8 +23,12 @@ class Mempool extends Observable {
         this._synchronizer = new Synchronizer();
 
         // Listen for changes in the blockchain head to evict transactions that have become invalid.
-        blockchain.on('head-changed', () => this._evictTransactions());
-        blockchain.on('block-reverted', (block) => this._restoreTransactions(block));
+        blockchain.on('head-changed', (block, rebranching) => {
+            if (!rebranching) {
+                this._evictTransactions().catch(Log.e.tag(Mempool));
+            }
+        });
+        blockchain.on('rebranched', (revertBlocks) => this._restoreTransactions(revertBlocks));
     }
 
     /**
@@ -85,6 +89,7 @@ class Mempool extends Observable {
         // in fee/byte order against the sender account state. Adding high fee transactions may thus invalidate
         // low fee transactions in the set.
         const transactions = [];
+        const txsToRemove = [];
         let tmpAccount = senderAccount;
         for (const tx of set.copyAndAdd(transaction).transactions) {
             let error = 'transactions per sender exceeded';
@@ -107,13 +112,13 @@ class Mempool extends Observable {
                 Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${error}`);
                 return Mempool.ReturnCode.INVALID;
             } else {
-                // Remove transaction.
-                this._removeTransaction(tx);
+                txsToRemove.push(tx);
             }
         }
 
-        if (this._transactionsByFeePerByte.length >= Mempool.SIZE_MAX) {
-            this._popLowFeeTransaction();
+        // Remove invalidated transactions.
+        for (const tx of txsToRemove) {
+            this._removeTransaction(tx);
         }
 
         // Transaction is valid, add it to the mempool.
@@ -127,6 +132,10 @@ class Mempool extends Observable {
 
         // Tell listeners about the new valid transaction we received.
         this.fire('transaction-added', transaction);
+
+        if (this._transactionsByFeePerByte.length > Mempool.SIZE_MAX) {
+            this._popLowFeeTransaction();
+        }
 
         return Mempool.ReturnCode.ACCEPTED;
     }
@@ -332,14 +341,16 @@ class Mempool extends Observable {
     }
 
     /**
-     * @param {Block} block
+     * @param {Array.<Block>} blocks
      * @returns {Promise}
      * @private
      */
-    _restoreTransactions(block) {
+    _restoreTransactions(blocks) {
         return this._synchronizer.push(async () => {
-            for (const tx of block.transactions) {
-                await this._pushTransaction(tx);
+            for (let i = blocks.length - 1; i >= 0; i--) {
+                for (const tx of blocks[i].transactions) {
+                    await this._pushTransaction(tx); // eslint-disable-line no-await-in-loop
+                }
             }
         });
     }
