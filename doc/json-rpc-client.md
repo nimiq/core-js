@@ -14,7 +14,7 @@
 
 ### Actions
 
-Most actions support output either in human-readable text form (default) or as JSON by appending '.json' to the action name. Addresses may be given in user- friendly address format, hex or base64 encoded. Blocks can be specified by hash in hex or base64 format or by the height on the main chain. Transactions are understood in hex or base64 format of their hash. Peers may be given as their peer id in hex or peer address.
+Most actions support output either in human-readable text form (default) or as JSON by appending '.json' to the action name. Addresses may be given in user- friendly address format, hex or base64 encoded. Blocks can be specified by hash in hex or base64 format or by the height on the main chain. Transactions are understood in hex or base64 format of their hash. Peers may be given as their peer id in hex or peer address. Values and fees are understood to be given in NIM.
 
 | Action | Description |
 | --- | --- |
@@ -30,7 +30,7 @@ Most actions support output either in human-readable text form (default) or as J
 | `transaction TX` | Display details about transaction TX. |
 | `transaction BLOCK IDX` | Display details about transaction at index IDX inblock `BLOCK`. |
 | `transaction.receipt TX` | Display the transaction receipt for transaction TX. |
-| `transaction.send SENDER RECIPIENT VALUE FEE [DATA]` | Create, sign and send a transaction with the given properties. The sending account must be a local account. |
+| `transaction.send SENDER RECIPIENT VALUE FEE [DATA]` | Create, sign and send a transaction with the given properties (value/fee given in NIM). The sending account must be a local account. |
 | `transactions ADDR [LIMIT]` | Display at most LIMIT transactions involving address ADDR. |
 | `mempool` | Display mempool stats. |
 | `mempool.content [INCLUDE_TX]` | Display mempool content. If INCLUDE_TX is given, full transactions instead of transaction hashes are requested. |
