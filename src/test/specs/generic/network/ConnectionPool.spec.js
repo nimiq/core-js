@@ -23,6 +23,7 @@ describe('ConnectionPool', () => {
             const netConfig1 = Dummy.NETCONFIG;
             const consensus1 = await Consensus.volatileFull(netConfig1);
             expect(consensus1.network.allowInboundConnections).toBe(false);
+            consensus1.network.addresses._seeded = true;
             consensus1.network.connect();
             expect(consensus1.network.allowInboundConnections).toBe(true);
 

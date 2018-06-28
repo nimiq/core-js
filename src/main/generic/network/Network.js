@@ -33,7 +33,7 @@ class Network extends Observable {
         this._time = time;
 
         /**
-         * Flag indicating whether we should actively connect to other peers
+         * Flag indicating whether we should actively connect to other peers.
          * if our peer count is below PEER_COUNT_DESIRED.
          * @type {boolean}
          * @private
@@ -60,10 +60,8 @@ class Network extends Observable {
          * @private
          */
         this._addresses = new PeerAddressBook(this._networkConfig);
-
-        this._addresses.on('added', () => {
-            setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE);
-        });
+        this._addresses.on('seeded', () => this._checkPeerCount());
+        this._addresses.on('added', () => setTimeout(this._checkPeerCount.bind(this), Network.CONNECT_THROTTLE));
 
         /**
          * Peer connections database & operator
@@ -71,7 +69,6 @@ class Network extends Observable {
          * @private
          */
         this._connections = new ConnectionPool(this._addresses, networkConfig, blockchain, time);
-
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peers-changed', () => this._onPeersChanged());
@@ -187,6 +184,7 @@ class Network extends Observable {
      */
     _checkPeerCount() {
         if (this._autoConnect
+            && this._addresses.seeded
             && !this._scorer.isGoodPeerSet()
             && this._connections.connectingCount < Network.CONNECTING_COUNT_MAX) {
 

@@ -51,8 +51,27 @@ class PeerAddressBook extends Observable {
          */
         this._statesByNetAddress = new HashMap();
 
-        // Init seed peers.
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._seeded = false;
+
+        // Init hardcoded seed peers.
         this.add(/*channel*/ null, GenesisConfig.SEED_PEERS);
+
+        // Collect more seed peers from seed lists.
+        const seededCallback = () => {
+            this._seeded = true;
+            this.fire('seeded');
+        };
+        const seeder = new PeerAddressSeeder();
+        seeder.on('seeds', seeds => this.add(/*channel*/ null, seeds));
+        seeder.on('end', seededCallback);
+        seeder.collect().catch(Log.e.tag(PeerAddressBook));
+
+        // Wait at most PeerAddressBook.SEEDING_TIMEOUT for seeding.
+        setTimeout(seededCallback, PeerAddressBook.SEEDING_TIMEOUT);
 
         // Setup housekeeping interval.
         setInterval(() => this._housekeeping(), PeerAddressBook.HOUSEKEEPING_INTERVAL);
@@ -740,6 +759,11 @@ class PeerAddressBook extends Observable {
     get knownRtcAddressesCount() {
         return this._rtcStates.length;
     }
+
+    /** @type {boolean} */
+    get seeded() {
+        return this._seeded;
+    }
 }
 PeerAddressBook.MAX_AGE_WEBSOCKET = 1000 * 60 * 30; // 30 minutes
 PeerAddressBook.MAX_AGE_WEBRTC = 1000 * 60 * 15; // 10 minutes
@@ -757,4 +781,5 @@ PeerAddressBook.MAX_SIZE_WSS = PlatformUtils.isBrowser() ? 1000 : 10000;
 PeerAddressBook.MAX_SIZE_RTC = PlatformUtils.isBrowser() ? 1000 : 10000;
 PeerAddressBook.MAX_SIZE = PlatformUtils.isBrowser() ? 2500 : 20500; // Includes dumb peers
 PeerAddressBook.MAX_SIZE_PER_IP = 250;
+PeerAddressBook.SEEDING_TIMEOUT = 1000 * 3; // 3 seconds
 Class.register(PeerAddressBook);

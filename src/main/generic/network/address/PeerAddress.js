@@ -265,6 +265,30 @@ class WsBasePeerAddress extends PeerAddress {
     }
 
     /**
+     * @param {string} str
+     * @returns {WsPeerAddress|WssPeerAddress}
+     */
+    static fromSeedString(str) {
+        const matches = /^(wss?:)\/\/([^:/?#]+):([0-9]{1,5})\/?([a-f0-9]*)$/i.exec(str);
+        if (!matches) throw new Error(`Malformed PeerAddress ${str}`);
+
+        try {
+            const [_, protocol, host, port, publicKeyHex] = matches;
+            const addressType = protocol === 'ws:' ? WsPeerAddress : WssPeerAddress;
+            return addressType.seed(host, parseInt(port), publicKeyHex);
+        } catch (e) {
+            throw new Error(`Malformed PeerAddress ${str}`);
+        }
+    }
+
+    /**
+     * @returns {string}
+     */
+    toSeedString() {
+        return `${this.protocolPrefix}://${this._host}:${this._port}/${this.publicKey ? this.publicKey.toHex() : ''}`;
+    }
+
+    /**
      * @param {SerialBuffer} [buf]
      * @returns {SerialBuffer}
      */
@@ -350,6 +374,7 @@ class WsBasePeerAddress extends PeerAddress {
         return this.protocol === Protocol.WS ? 'ws' : 'wss';
     }
 }
+Class.register(WsBasePeerAddress);
 
 class WssPeerAddress extends WsBasePeerAddress {
     /**

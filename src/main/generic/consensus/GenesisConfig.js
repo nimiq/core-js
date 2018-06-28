@@ -79,6 +79,14 @@ class GenesisConfig {
         if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
         return GenesisConfig._config.SEED_PEERS;
     }
+
+    /**
+     * @type {Array.<SeedList>}
+     */
+    static get SEED_LISTS() {
+        if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
+        return GenesisConfig._config.SEED_LISTS;
+    }
 }
 Class.register(GenesisConfig);
 
@@ -107,6 +115,10 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('seed-18.nimiq.com', 8443, 'c15a2d824a52837fa7165dc232592be35116661e7f28605187ab273dd7233711'),
             WssPeerAddress.seed('seed-19.nimiq.com', 8443, '98a24d4b05158314b36e0bd6ce3b42ac5ac061f4bb9664d783eb930caa9315b6'),
             WssPeerAddress.seed('seed-20.nimiq.com', 8443, '1fc33f93273d94dd2cf7470274c27ecb1261ec983e43bdbb281803c0a09e68d5')
+        ],
+        SEED_LISTS: [
+            // new SeedListUrl('http://example.com/seeds.txt'),
+            // new SeedListUrl('http://example.com/seeds-signed.txt', '184084e13c595816aa3cd5b479dc15255aad3778dadd58abb0503b3e4af61525')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
@@ -871,6 +883,7 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('seed3.nimiqtest.net', 8080, '03feec9d5316a7b5ebb69c4e709547a28afe8e9ef91ee568df489d29e9845bb8'),
             WssPeerAddress.seed('seed4.nimiqtest.net', 8080, '943d5669226d3716a830371d99143af98bbaf84c630db24bdd67e55ccb7a9011')
         ],
+        SEED_LISTS: [],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),
@@ -991,6 +1004,7 @@ GenesisConfig.CONFIGS = {
         SEED_PEERS: [
             WsPeerAddress.seed('dev.nimiq-network.com', 8080, 'e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837')
         ],
+        SEED_LISTS: [],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),
@@ -1115,6 +1129,7 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('bug-bounty2.nimiq-network.com', 8080, 'ea876175c8b693c0db38b7c17d66e9c510020fceb4634f04e281af30438f8787'),
             WssPeerAddress.seed('bug-bounty3.nimiq-network.com', 8080, '5c0d5d801e85ebd42f25a45b2cb7f3b39b9ce14002d4662f5ed0cd79ce25165a')
         ],
+        SEED_LISTS: [],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
                 new Hash(null),

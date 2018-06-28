@@ -24,7 +24,8 @@ const sources = {
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
-            './src/main/platform/browser/network/DnsUtils.js'
+            './src/main/platform/browser/network/DnsUtils.js',
+            './src/main/platform/browser/network/HttpRequest.js'
         ],
         offline: [
             './src/main/platform/browser/Class.js',
@@ -41,7 +42,8 @@ const sources = {
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcFactory.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
-            './src/main/platform/nodejs/network/DnsUtils.js'
+            './src/main/platform/nodejs/network/DnsUtils.js',
+            './src/main/platform/nodejs/network/HttpRequest.js'
         ]
     },
     generic: [
@@ -192,6 +194,8 @@ const sources = {
         './src/main/generic/network/address/PeerId.js',
         './src/main/generic/network/address/PeerAddress.js',
         './src/main/generic/network/address/PeerAddressState.js',
+        './src/main/generic/network/address/SeedList.js',
+        './src/main/generic/network/address/PeerAddressSeeder.js',
         './src/main/generic/network/address/PeerAddressBook.js',
         './src/main/generic/consensus/GenesisConfig.js',
         './src/main/generic/network/connection/CloseType.js',
