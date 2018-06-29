@@ -113,7 +113,9 @@ class BasePoolMiner extends Miner {
     _timeoutReconnect() {
         this.disconnect();
         this._reconnectTimeout = setTimeout(() => {
-            this.connect(this._host, this._port);
+            if (!this._ws) {
+                this.connect(this._host, this._port);
+            }
         }, this._exponentialBackoffReconnect);
         this._exponentialBackoffReconnect = Math.min(this._exponentialBackoffReconnect * 2, BasePoolMiner.RECONNECT_TIMEOUT_MAX);
     }

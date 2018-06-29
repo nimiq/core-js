@@ -6,16 +6,8 @@ class App {
 
     async _launch() {
         const urlParams = this._getUrlParams();
-        if (window.location.href.indexOf('#') !== -1) {
-            window.history.replaceState(null, '', window.location.href.substr(0, window.location.href.indexOf('#')));
-        }
         const port = parseInt(urlParams.port) || 8648;
-        let user, password;
-        if (urlParams.token) {
-            user = 'access-token';
-            password = urlParams.token;
-        }
-        this._rpcClient = new RpcClient('localhost', port, user, password);
+        this._rpcClient = new RpcClient('localhost', port);
         this._rpcSettingsUi = new RpcSettingsUi(document.querySelector('#rpc-settings'), this._rpcClient);
         this._rpcClient.on('error', message => ErrorMessage.show(message));
         this._rpcClient.on('cant-authenticate', () => this._rpcSettingsUi.show());

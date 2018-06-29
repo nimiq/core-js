@@ -2,7 +2,7 @@ const http = require('http');
 const url = require('url');
 const path = require('path');
 const fs = require('fs');
-const updatePoolList = require('./NodeUtils.js').updatePoolList;
+const NodeUtils = require('./NodeUtils.js');
 
 class UiServer {
     /**
@@ -22,17 +22,17 @@ class UiServer {
     }
 
     async _serveFile(req, res) {
-        const [filePath, fileSize, mimeType] = await this._determineFile(req);
-        if (!filePath) {
+        const { path, size, mimeType } = await UiServer._resolveFile(req);
+        if (!path) {
             res.writeHead(404);
             res.end();
             return;
         }
 
-        const fileStream = fs.createReadStream(filePath);
+        const fileStream = fs.createReadStream(path);
         fileStream.on('open', () => {
-            if (fileSize) {
-                res.setHeader('Content-Length', fileSize);
+            if (size) {
+                res.setHeader('Content-Length', size);
             }
             if (mimeType) {
                 res.setHeader('Content-Type', mimeType);
@@ -55,38 +55,47 @@ class UiServer {
 
     /**
      * @param req
-     * @return {Promise.<Array.<string|number>>}
+     * @return {Promise.<{path: ?string, size: ?number, mimeType: ?string}>}
      */
-    async _determineFile(req) {
+    static async _resolveFile(req) {
         const uri = url.parse(req.url).pathname;
+
+        // Take care of special files served from outside the ROOT folder.
         let filePath;
-        if (uri === '/web.js') {
-            // special file that gets served from dist folder outside from ROOT folder
-            filePath = path.join(UiServer.ROOT, '../../../dist/web.js');
-        } else if (uri === '/mining-pools-mainnet.json') {
-            await updatePoolList();
-            filePath = path.join(UiServer.ROOT, '../modules/mining-pools-mainnet.json');
-        } else {
-            filePath = path.join(UiServer.ROOT, uri); // creates a normalized path where stuff like /.. gets resolved
-            if (!filePath.startsWith(UiServer.ROOT)) {
-                // trying to access a file outside of ROOT
-                return [null, null, null];
-            }
+        switch (uri) {
+            case '/web.js':
+                filePath = path.join(UiServer.ROOT, '../../../dist/web.js');
+                break;
+            case '/mining-pools-mainnet.json':
+                await NodeUtils.updatePoolList();
+                filePath = path.join(UiServer.ROOT, '../modules/mining-pools-mainnet.json');
+                break;
+            default:
+                filePath = path.join(UiServer.ROOT, uri); // creates a normalized path where stuff like /.. gets resolved
+                if (!filePath.startsWith(UiServer.ROOT)) {
+                    // trying to access a file outside of ROOT
+                    return { path: null, size: null, mimeType: null };
+                }
         }
 
-        let fileInfo = await this._getFileInfo(filePath);
+        let fileInfo = await UiServer._getFileInfo(filePath);
         if (fileInfo && fileInfo.isDirectory()) {
             filePath = path.join(filePath, 'index.html');
-            fileInfo = await this._getFileInfo(filePath);
+            fileInfo = await UiServer._getFileInfo(filePath);
         }
-        return [filePath, fileInfo? fileInfo.size : null, this._getMimeType(filePath)];
+
+        return {
+            path: filePath,
+            size: fileInfo ? fileInfo.size : null,
+            mimeType: UiServer._getMimeType(filePath)
+        };
     }
 
     /**
      * @param {string} path
      * @returns {Promise.<fs.Stats>}
      */
-    _getFileInfo(path) {
+    static _getFileInfo(path) {
         return new Promise((resolve) => {
             fs.stat(path, (err, stats) => {
                 if (err) {
@@ -102,7 +111,7 @@ class UiServer {
      * @param {string} filePath
      * @returns {string}
      */
-    _getMimeType(filePath) {
+    static _getMimeType(filePath) {
         const mimeTypes = {
             '.html': 'text/html',
             '.js': 'text/javascript',

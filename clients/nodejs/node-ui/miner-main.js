@@ -126,7 +126,7 @@ class FactsUI {
     }
 
     _setHashrate(hashrate, type) {
-        let steps = ['k', 'M', 'G', 'T', 'P', 'E']; // kilo, mega, giga, tera, peta, exa
+        const steps = ['k', 'M', 'G', 'T', 'P', 'E']; // kilo, mega, giga, tera, peta, exa
         let prefix = '';
         for (let i = 0, step; (step = steps[i]); ++i) {
             if (hashrate / 1000 < 1) {
@@ -136,7 +136,7 @@ class FactsUI {
                 prefix = step;
             }
         }
-        let unit = prefix + 'H/s';
+        const unit = `${prefix}H/s`;
         let hashrateEl, unitEl;
         if (type === 'global') {
             hashrateEl = this._globalHashrate;
@@ -275,16 +275,20 @@ class Miner {
         this.$.miner.on('pool-disabled', () => this._onPoolDisabled());
         this.$.miner.on('address-changed', () => this._onAddressChanged());
 
-        if (this.$.miner.enabled) this._onMinerEnabled();
-        else this._onMinerDisabled();
+        if (this.$.miner.enabled) {
+            this._onMinerEnabled();
+        } else {
+            this._onMinerDisabled();
+        }
 
-        if (this.$.miner.poolEnabled) {
+        if (this.poolEnabled) {
             this.connectPool(); // reconnect to the pool if not connected to update the balance
             this._onPoolEnabled();
             this.ui.facts.poolBalance = this.$.miner.confirmedBalance;
             this._onPoolMinerConnectionChange();
+        } else {
+            this._onPoolDisabled();
         }
-        else this._onPoolDisabled();
 
         this._onHashrateChanged();
         this._onAddressChanged();
@@ -327,7 +331,7 @@ class Miner {
     }
 
     connectPool(host, port) {
-        this.$.miner.pool = host&&port? `${host}:${port}` : true;
+        this.$.miner.pool = host && port ? `${host}:${port}` : true;
     }
 
     toggleMining() {

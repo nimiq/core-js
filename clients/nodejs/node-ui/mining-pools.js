@@ -61,6 +61,7 @@ class MiningPoolsUi extends Overlay {
     _selectPool(poolId) {
         const selectedRadio = this._poolsList.querySelector(`input[value="${poolId}"]`)
             || this._poolsList.querySelector('input:first-of-type'); // arbitrarily select first entry
+        if (!selectedRadio) return;
         selectedRadio.checked = true;
         this._onPoolSelected(selectedRadio.value);
     }

@@ -56,9 +56,10 @@ class RpcClient extends Nimiq.Observable {
             }
             this._canAuthenticate();
             if (response.status !== 200) {
-                throw new Error(`Connection Failed. ${response.statusText? response.statusText
+                throw new Error(`Connection Failed. ${response.statusText ? response.statusText
                     : `Error Code: ${response.status}`}`);
             }
+
             return response.json();
         }).then(data => {
             if (data.error) {
@@ -66,14 +67,10 @@ class RpcClient extends Nimiq.Observable {
             }
             return data.result;
         }).catch(e => {
-            let message = e.message || e;
+            const message = e.message || e;
             if (message.indexOf('Authentication Required') !== -1) {
                 this._cantAuthenticate();
             } else if (message.indexOf('Connection Failed') !== -1 || message.indexOf('Error Occurred') !== -1) {
-                // One of our error messages
-                if (message.indexOf('Login by user name and password not enabled.') !== -1) {
-                    message += ' Restart the node client to automatically log in.';
-                }
                 this.fire('error', message);
             } else {
                 // An error message thrown by the browser (e.g. "Failed to fetch")
@@ -151,10 +148,15 @@ class RpcNetwork extends RpcComponent {
     async _update() {
         const peerCount = await this._rpcClient.fetch('peerCount');
         if (peerCount === this._peerCount) return;
-        if (peerCount > this._peerCount) this.fire('peer-joined');
-        else this.fire('peer-left');
-        this.fire('peers-changed');
+
         this._peerCount = peerCount;
+
+        if (peerCount > this._peerCount) {
+            this.fire('peer-joined');
+        } else {
+            this.fire('peer-left');
+        }
+        this.fire('peers-changed');
     }
 }
 
@@ -173,7 +175,7 @@ class RpcMiner extends RpcComponent {
         this._rpcClient.fetch('mining', enabled).then(enabled => {
             if (enabled === this._enabled) return;
             this._enabled = enabled;
-            this.fire(enabled? 'enabled' : 'disabled');
+            this.fire(enabled ? 'enabled' : 'disabled');
             this._updateProperties('hashrate');
             setTimeout(() => this._updateProperties('hashrate'), 1500);
         });
@@ -235,9 +237,10 @@ class RpcMiner extends RpcComponent {
             this._updateProperties('hashrate', 'minerThreads', 'minerAddress',
                 'poolConnectionState', 'poolConfirmedBalance')
         ]);
+
         if (enabled !== this._enabled) {
             this._enabled = enabled;
-            this.fire(enabled? 'enabled' : 'disabled');
+            this.fire(enabled ? 'enabled' : 'disabled');
         }
         this._poolUpdated(pool);
     }
@@ -272,7 +275,7 @@ class RpcMiner extends RpcComponent {
     async _updateProperties(...propertyNames) {
         const rpcCalls = propertyNames.map(property => this._rpcClient.fetch(property));
         const propertyValues = await Promise.all(rpcCalls);
-        for (let i=0; i<propertyNames.length; ++i) {
+        for (let i = 0; i < propertyNames.length; ++i) {
             const propertyName = propertyNames[i], propertyValue = propertyValues[i];
             this._propertyUpdated(propertyName, propertyValue);
         }

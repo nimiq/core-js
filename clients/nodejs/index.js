@@ -90,10 +90,6 @@ if ((isNano || config.poolMining.mode === 'nano') && config.uiServer.enabled) {
     console.error('The UI is currently not supported for nano clients');
     process.exit(1);
 }
-if (config.uiServer.enabled && !config.rpcServer.enabled) {
-    console.error('The UI requires the RPC Server to be enabled');
-    process.exit(1);
-}
 if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
     console.error(`Invalid network name: ${config.network}`);
     process.exit(1);
@@ -317,13 +313,33 @@ const $ = {};
         });
     }
 
-    if (config.rpcServer.enabled) {
+    if (config.rpcServer.enabled || config.uiServer.enabled) {
+        // Add CORS domain for UI.
         if (config.uiServer.enabled) {
             config.rpcServer.corsdomain = typeof config.rpcServer.corsdomain === 'string'
                 ? [config.rpcServer.corsdomain]
                 : (config.rpcServer.corsdomain || []);
             config.rpcServer.corsdomain.push(`http://localhost:${config.uiServer.port}`);
         }
+
+        // Use restricted set of RPC functions for UI.
+        if (!config.rpcServer.enabled) {
+            config.rpcServer.methods = [
+                'consensus',
+                'blockNumber',
+                'getBlockByNumber',
+                'peerCount',
+                'mining',
+                'minerThreads',
+                'minerAddress',
+                'hashrate',
+                'pool',
+                'poolConnectionState',
+                'poolConfirmedBalance',
+                'getAccount'
+            ];
+        }
+
         $.rpcServer = new JsonRpcServer(config.rpcServer, config.miner, config.poolMining);
         $.rpcServer.init($.consensus, $.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
     }
@@ -335,9 +351,9 @@ const $ = {};
 
     if (config.uiServer.enabled) {
         $.uiServer = new UiServer(config.uiServer);
-        openBrowserTab(`http://localhost:${config.uiServer.port}#port=${config.rpcServer.port}&token=${encodeURIComponent($.rpcServer.accessToken)}`, () => {
+        openBrowserTab(`http://localhost:${config.uiServer.port}#port=${config.rpcServer.port}`, () => {
             Nimiq.Log.w(TAG, 'Failed to automatically open the UI in your web browser.');
-            Nimiq.Log.w(TAG, `The UI can be reached at http://localhost:${config.uiServer.port}#port=${config.rpcServer.port}`);
+            Nimiq.Log.w(TAG, `Go to http://localhost:${config.uiServer.port}#port=${config.rpcServer.port} to access it.`);
         });
     }
 })().catch(e => {

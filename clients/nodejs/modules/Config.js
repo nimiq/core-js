@@ -59,6 +59,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         port: 8648,
         corsdomain: null,
         allowip: null,
+        methods: null,
         username: null,
         password: null
     },
@@ -128,6 +129,7 @@ const CONFIG_TYPES = {
             port: 'number',
             corsdomain: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
             allowip: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
+            methods: {type: 'array', inner: 'string'},
             username: 'string',
             password: 'string'
         }
