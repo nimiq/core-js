@@ -96,7 +96,17 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('seed-7.nimiq.network', 8443, '82fcebdb4e2a7212186d1976d7f685cc86cdf58beffe1723d5c3ea5be00c73e1'),
             WssPeerAddress.seed('seed-8.nimiq.network', 8443, 'b7ac8cc1a820761df4e8a42f4e30c870e81065c4e29f994ebb5bdceb48904e7b'),
             WssPeerAddress.seed('seed-9.nimiq.network', 8443, '4429bf25c8d296c0f1786647d8f7d4bac40a37c67caf028818a65a9cc7865a48'),
-            WssPeerAddress.seed('seed-10.nimiq.network', 8443, 'e8e99fb8633d660d4f2d48edb6cc294681b57648b6ec6b28af8f85b2d5ec4e68')
+            WssPeerAddress.seed('seed-10.nimiq.network', 8443, 'e8e99fb8633d660d4f2d48edb6cc294681b57648b6ec6b28af8f85b2d5ec4e68'),
+            WssPeerAddress.seed('seed-11.nimiq.network', 8443, 'a76f0edabacfe701750036bad473ff92fa0e68ef655ab93135f0572af6e5baf8'),
+            WssPeerAddress.seed('seed-12.nimiq.network', 8443, 'dca57704191306ac1315e051b6dfef6c174fb2af011a52a3d922fbfaec2be41a'),
+            WssPeerAddress.seed('seed-13.nimiq-network.com', 8443, '30993f92f148da125a6f8bc191b3e746fab39e109220daa0966bf6432e909f3f'),
+            WssPeerAddress.seed('seed-14.nimiq-network.com', 8443, '6e7f904fabfadb194d6c74b16534bacb69892d80909cf959e47d3c8f5f330ad2'),
+            WssPeerAddress.seed('seed-15.nimiq-network.com', 8443, '7cb662a686144c17ae4153fbf7ce359f7e9da39dc072eb11092531f9104fbdf6'),
+            WssPeerAddress.seed('seed-16.nimiq.com', 8443, '0dfd11939947101197e3c3768a086e65ef1e893e71bfcf4bd5ed222957825212'),
+            WssPeerAddress.seed('seed-17.nimiq.com', 8443, 'c7120f4f88b70a38daa9783e30e89c1c55c3d80d0babed44b4e2ddd09052664a'),
+            WssPeerAddress.seed('seed-18.nimiq.com', 8443, 'c15a2d824a52837fa7165dc232592be35116661e7f28605187ab273dd7233711'),
+            WssPeerAddress.seed('seed-19.nimiq.com', 8443, '98a24d4b05158314b36e0bd6ce3b42ac5ac061f4bb9664d783eb930caa9315b6'),
+            WssPeerAddress.seed('seed-20.nimiq.com', 8443, '1fc33f93273d94dd2cf7470274c27ecb1261ec983e43bdbb281803c0a09e68d5')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
