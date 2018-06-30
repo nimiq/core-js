@@ -2,6 +2,7 @@ const http = require('http');
 const Nimiq = require('../../dist/node.js');
 const chalk = require('chalk');
 const btoa = require('btoa');
+const readline = require('readline');
 const argv = require('minimist')(process.argv.slice(2));
 
 let host = '127.0.0.1';
@@ -12,7 +13,6 @@ if (argv.host) host = argv.host;
 if (argv.port) port = parseInt(argv.port);
 if (argv.user) {
     user = argv.user;
-    const readline = require('readline');
     const Writable = require('stream').Writable;
     // Hide password in command line.
     const mutableStdout = new Writable({
@@ -23,7 +23,6 @@ if (argv.user) {
             callback();
         }
     });
-    mutableStdout.muted = false;
 
     const rl = readline.createInterface({
         input: process.stdin,
@@ -31,11 +30,13 @@ if (argv.user) {
         terminal: true
     });
 
+    mutableStdout.muted = false;
     // Request password.
     rl.question(`Password for ${user}: `, (pw) => {
         password = pw;
         rl.close();
         console.log(""); // Add newline
+        rl.close();
         main(argv._);
     });
     mutableStdout.muted = true;
@@ -278,7 +279,7 @@ async function displayAccount(account, name, head) {
 
 }
 
-async function displayTransaction(transaction, hashOrNumber, index) {
+async function displayTransaction(transaction, hashOrNumber, index, beforeSend) {
     if (!transaction) {
         if (typeof index !== 'undefined') {
             console.log(chalk`Block {bold ${hashOrNumber}} not found or has less than {bold ${index - 1}} transactions.`);
@@ -289,12 +290,16 @@ async function displayTransaction(transaction, hashOrNumber, index) {
     }
     let block = null;
     if (transaction.blockHash) block = await jsonRpcFetch('getBlockByHash', transaction.blockHash);
-    console.log(chalk`Transaction {bold ${transaction.hash}}:`);
+    if (!beforeSend) {
+        console.log(chalk`Transaction {bold ${transaction.hash}}:`);
+    } else {
+        console.log(chalk`Transaction to send:`);
+    }
     console.log(`From          | ${transaction.fromAddress}`);
     console.log(`To            | ${transaction.toAddress}`);
     if (block) {
         console.log(`Timestamp     | ${new Date(block.timestamp * 1000).toString()}`);
-    } else {
+    } else if (!beforeSend) {
         console.log(chalk`Timestamp     | {italic Pending...}`);
     }
     console.log(`Amount        | ${nimValueFormat(transaction.value)}`);
@@ -303,7 +308,7 @@ async function displayTransaction(transaction, hashOrNumber, index) {
     if (block) {
         console.log(`In block      | ${block.number} (index ${transaction.transactionIndex})`);
         console.log(`Confirmations | ${transaction.confirmations}`);
-    } else {
+    } else if (!beforeSend) {
         console.log(chalk`In block      | {italic Pending...}`);
         console.log('Confirmations | 0');
     }
@@ -359,11 +364,11 @@ function formatMonth(month) {
     return '???';
 }
 
-async function action(args, repl) {
+async function action(args, rl) {
     switch (args[0]) {
         // Miner
         case 'mining': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader();
             }
             const enabled = await jsonRpcFetch('mining');
@@ -398,7 +403,7 @@ async function action(args, repl) {
         }
         // Accounts
         case 'accounts': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(68);
             }
             const accounts = await jsonRpcFetch('accounts');
@@ -423,7 +428,7 @@ async function action(args, repl) {
             return;
         }
         case 'account': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(81);
             }
             if (args.length === 2) {
@@ -443,7 +448,7 @@ async function action(args, repl) {
         }
         // Blocks
         case 'block': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -473,7 +478,7 @@ async function action(args, repl) {
         }
         // Transactions
         case 'transaction': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -508,24 +513,41 @@ async function action(args, repl) {
             return;
         }
         case 'transaction.send': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(74);
             }
             if (args.length < 5 || args.length > 6) {
                 console.error('Arguments for \'transaction.send\': from, to, value, fee, [data]');
                 return;
             }
-            const from = args[1];
-            const to = args[2];
+            const from = Nimiq.Address.fromString(args[1]).toUserFriendlyAddress();
+            const to = Nimiq.Address.fromString(args[2]).toUserFriendlyAddress();
             const value = Math.floor(parseFloat(args[3]) * 100000);
             const fee = Math.floor(parseFloat(args[4]) * 100000);
             const data = args.length === 6 ? args[5] : undefined;
-            const hash = await jsonRpcFetch('sendTransaction', {from, to, value, fee, data});
-            console.log(chalk`Sent as {bold ${hash}}.`);
+            displayTransaction({fromAddress: from, toAddress: to, value: value, fee: fee, data: data || null}, undefined, undefined, true);
+            let answer;
+            if (rl) {
+                answer = await new Promise((resolve) => {
+                    rl.question('Are you sure you want to send this transaction? (y/N) ', resolve);
+                });
+            } else {
+                const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+                answer = await new Promise((resolve) => {
+                    rl.question('Are you sure you want to send this transaction? (y/N) ', resolve);
+                });
+                rl.close();
+            }
+            if (answer.toLowerCase() == "y") {
+                const hash = await jsonRpcFetch('sendTransaction', {from, to, value, fee, data});
+                console.log(chalk`Sent as {bold ${hash}}.`);
+            } else {
+                console.log(chalk`Transaction was {bold not} send.`);
+            }
             return;
         }
         case 'transaction.receipt': {
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(74);
             }
             if (args.length !== 2) {
@@ -535,11 +557,12 @@ async function action(args, repl) {
             const receipt = await jsonRpcFetch('getTransactionReceipt', args[1]);
             if (!receipt) {
                 console.log('Transaction not yet confirmed');
+            } else {
+                console.log(chalk`Receipt {bold ${receipt.transactionHash}}:`);
+                console.log(`In block      | ${receipt.blockNumber} (at index ${receipt.transactionIndex})`);
+                if (receipt.timestamp) console.log(`Timestamp     | ${new Date(receipt.timestamp * 1000).toString()}`);
+                console.log(`Confirmations | ${receipt.confirmations}`);
             }
-            console.log(chalk`Receipt {bold ${receipt.transactionHash}}:`);
-            console.log(`In block      | ${receipt.blockNumber} (at index ${receipt.transactionIndex})`);
-            if (receipt.timestamp) console.log(`Timestamp     | ${new Date(receipt.timestamp * 1000).toString()}`);
-            console.log(`Confirmations | ${receipt.confirmations}`);
             return;
         }
         case 'transaction.receipt.json': {
@@ -555,7 +578,7 @@ async function action(args, repl) {
                 console.error('Specify account address');
                 return;
             }
-            if (!repl && !argv.silent) {
+            if (!rl && !argv.silent) {
                 await displayInfoHeader(75);
             }
             const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1], args[2])).sort((a, b) => a.timestamp > b.timestamp);
@@ -642,7 +665,7 @@ async function action(args, repl) {
         case 'peers': {
             const peerList = (await jsonRpcFetch('peerList')).sort((a, b) => a.addressState === 2 ? -1 : b.addressState === 2 ? 1 : a.addressState < b.addressState ? 1 : a.addressState > b.addressState ? -1 : a.address > b.address);
             const maxAddrLength = peerList.map(p => p.address.length).reduce((a, b) => Math.max(a, b), 0);
-            if (!repl) {
+            if (!rl) {
                 await displayInfoHeader(maxAddrLength + 15);
             }
             for (const peer of peerList) {
@@ -661,7 +684,7 @@ async function action(args, repl) {
                 return;
             }
             const peerState = await jsonRpcFetch('peerState', args[1], args.length > 2 ? args[2] : undefined);
-            if (!repl) {
+            if (!rl) {
                 await displayInfoHeader((peerState ? peerState.address.length : 0) + 20);
             }
             displayPeerState(peerState, args[1]);
@@ -714,12 +737,12 @@ async function action(args, repl) {
         }
         case 'help':
         default:
-            if (repl && args[0] !== 'help') {
+            if (rl && args[0] !== 'help') {
                 console.log('Unknown command. Use `help` command for usage instructions.');
                 return;
             }
 
-            if (!repl) {
+            if (!rl) {
                 console.log(`Nimiq NodeJS JSON-RPC-Client
 
 Usage:
@@ -779,7 +802,6 @@ peer id in hex or peer address.`);
 
 function main(args) {
     if (!args || args.length === 0) {
-        const readline = require('readline');
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
@@ -824,7 +846,7 @@ function main(args) {
             }
             if (args !== null && args.length > 0) {
                 try {
-                    await action(args, true);
+                    await action(args, rl);
                 } catch (e) {
                     console.error(e);
                 }
