@@ -84,6 +84,7 @@ class JsonRpcServer {
 
         // Transactions
         this._methods.set('sendRawTransaction', this.sendRawTransaction.bind(this));
+        this._methods.set('createRawTransaction', this.createRawTransaction.bind(this));
         this._methods.set('sendTransaction', this.sendTransaction.bind(this));
         this._methods.set('getTransactionByBlockHashAndIndex', this.getTransactionByBlockHashAndIndex.bind(this));
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
@@ -256,7 +257,7 @@ class JsonRpcServer {
         return tx.hash().toHex();
     }
 
-    async sendTransaction(tx) {
+    async createRawTransaction(tx) {
         const from = Nimiq.Address.fromString(tx.from);
         const fromType = tx.fromType ? Number.parseInt(tx.fromType) : Nimiq.Account.Type.BASIC;
         const to = Nimiq.Address.fromString(tx.to);
@@ -278,13 +279,11 @@ class JsonRpcServer {
         } else {
             transaction = wallet.createTransaction(to, value, fee, this._blockchain.height);
         }
-        const ret = await this._mempool.pushTransaction(transaction);
-        if (ret < 0) {
-            const e = new Error(`Transaction not accepted: ${ret}`);
-            e.code = ret;
-            throw e;
-        }
-        return transaction.hash().toHex();
+        return Nimiq.BufferUtils.toHex(transaction.serialize());
+    }
+
+    async sendTransaction(tx) {
+        return this.sendRawTransaction(await this.createRawTransaction(tx));
     }
 
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
