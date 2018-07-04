@@ -54,6 +54,10 @@ class PeerScorer {
                 it = this._addresses.rtcIterator();
                 numAddresses = this._addresses.knownRtcAddressesCount;
                 break;
+            case Protocol.RTC | Protocol.WS:
+                it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wsIterator());
+                numAddresses = this._addresses.knownRtcAddressesCount + this._addresses.knownWsAddressesCount;
+                break;
             case Protocol.RTC | Protocol.WSS:
                 it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wssIterator());
                 numAddresses = this._addresses.knownRtcAddressesCount + this._addresses.knownWssAddressesCount;

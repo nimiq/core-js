@@ -165,9 +165,13 @@ class PeerAddressBook extends Observable {
                 it = this.rtcIterator();
                 numAddresses = this.knownRtcAddressesCount;
                 break;
-            case Protocol.RTC | Protocol.WSS:
+            case Protocol.RTC | Protocol.WS:
                 it = IteratorUtils.alternate(this.rtcIterator(), this.wsIterator());
                 numAddresses = this.knownRtcAddressesCount + this.knownWsAddressesCount;
+                break;
+            case Protocol.RTC | Protocol.WSS:
+                it = IteratorUtils.alternate(this.rtcIterator(), this.wssIterator());
+                numAddresses = this.knownRtcAddressesCount + this.knownWssAddressesCount;
                 break;
             default:
                 it = this.iterator();
