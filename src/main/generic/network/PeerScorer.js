@@ -112,8 +112,11 @@ class PeerScorer {
                 case Protocol.RTC:
                     it = this._addresses.rtcIterator();
                     break;
-                case Protocol.RTC | Protocol.WSS:
+                case Protocol.RTC | Protocol.WS:
                     it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wsIterator());
+                    break;
+                case Protocol.RTC | Protocol.WSS:
+                    it = IteratorUtils.alternate(this._addresses.rtcIterator(), this._addresses.wssIterator());
                     break;
                 default:
                     it = this._addresses.iterator();
