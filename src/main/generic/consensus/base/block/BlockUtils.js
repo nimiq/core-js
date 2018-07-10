@@ -124,11 +124,11 @@ class BlockUtils {
     }
 
     /**
-     * @param {BigNumber} target
+     * @param {?BigNumber} target
      * @returns {boolean}
      */
     static isValidTarget(target) {
-        return target.gte(1) && target.lte(Policy.BLOCK_TARGET_MAX);
+        return target !== null && target.gte(1) && target.lte(Policy.BLOCK_TARGET_MAX);
     }
 
     /**
