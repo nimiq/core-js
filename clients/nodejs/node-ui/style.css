@@ -269,6 +269,7 @@ body.browser-outdated > .miner-container::after {
     border-radius: 3px;
     transition: background .2s ease, opacity .2s .5s ease;
     pointer-events: all;
+    cursor: pointer;
 }
 
 [trigger-fact] .info-icon {
@@ -277,53 +278,15 @@ body.browser-outdated > .miner-container::after {
     top: 2px;
     height: 13px;
     width: 13px;
-    display: none;
 }
 
-#my-hashrate[trigger-fact] .info-icon,
-#pool-miner[trigger-fact] .info-icon {
-    display: inline-block;
-}
-
-#my-hashrate[trigger-fact],
-#pool-miner[trigger-fact] {
-    cursor: pointer;
-}
-
-#my-hashrate[trigger-fact]:hover,
-#pool-miner[trigger-fact]:hover {
+[trigger-fact]:hover {
     background: rgba(255,255,255,0.08);
 }
 
-#factBalanceContainer {
-    display: flex;
-    justify-content: center;
-    padding: 0;
-    pointer-events: all;
+#balance {
     outline: none !important;
-    transition: background .2s ease;
-    border-radius: 3px;
-    background: rgba(255,255,255,0.05);
-}
-
-#factBalanceContainer:hover {
-    background: rgba(255,255,255,0.1);
-}
-
-#factBalance {
-    color: white;
-}
-
-#factBalanceContainerInner {
-    padding: 8px;
-    min-width: 131px;
-    cursor: pointer;
-}
-
-#factBalanceContainerInner .label {
-    display: flex;
-    justify-content: space-between;
-    color: #F6AE2D;
+    color: rgba(255, 255, 255, 0.88);
 }
 
 .ellipsis>*:first-child {
@@ -805,14 +768,5 @@ body[overlay="error-message"] #error-message {
 
     #block-loader {
         height: 18px;
-    }
-
-    #factBalanceContainerInner {
-        min-width: initial;
-    }
-
-    #factBalanceContainerInner img {
-        width: 16px;
-        margin-left: 4px;
     }
 }

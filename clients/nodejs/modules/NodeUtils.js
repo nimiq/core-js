@@ -1,7 +1,4 @@
-const fs = require('fs');
-const path = require('path');
 const url = require('url');
-const https = require('https');
 const childProcess = require('child_process');
 
 class NodeUtils {
@@ -50,19 +47,6 @@ class NodeUtils {
 
         cp.unref();
         return cp;
-    }
-
-    static updatePoolList() {
-        NodeUtils._poolListUpdatePromise = NodeUtils._poolListUpdatePromise || new Promise(resolve => {
-            const file = fs.createWriteStream(path.join(__dirname, 'mining-pools-mainnet.json'));
-            https.get('https://miner.nimiq.com/mining-pools-mainnet.json', response => {
-                response.pipe(file);
-                file.on('finish', () => {
-                    file.close(resolve);
-                });
-            }).on('error', resolve); // couldn't update but resolve anyways
-        });
-        return NodeUtils._poolListUpdatePromise;
     }
 }
 

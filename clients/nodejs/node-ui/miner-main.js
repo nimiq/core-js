@@ -7,7 +7,7 @@ class FactsUI {
         this._globalHashrate = document.getElementById('factGlobalHashrate');
         this._globalHashrateUnit = document.getElementById('factGlobalHashrateUnit');
         this._myBalance = document.getElementById('factBalance');
-        this._myBalanceContainer = document.getElementById('factBalanceContainer');
+        this._myBalanceContainer = document.getElementById('balance');
         this._poolBalance = document.getElementById('factPoolMinerBalance');
         this._expectedHashTime = document.getElementById('factExpectedHashTime');
         this._averageBlockReward = document.getElementById('factAverageBlockReward');
@@ -92,8 +92,8 @@ class FactsUI {
     }
 
     set address(address) {
-        const safeUrl = 'https://safe.nimiq.com/';
-        this._myBalanceContainer.href = `${safeUrl}#/_account/${address.replace(/ /g, '-')}_`;
+        const blockExplorerUrl = 'https://nimiq.watch/';
+        this._myBalanceContainer.href = `${blockExplorerUrl}#${address.replace(/ /g, '+')}`;
     }
 
     set synced(isSynced) {
