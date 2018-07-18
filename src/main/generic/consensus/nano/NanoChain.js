@@ -163,7 +163,7 @@ class NanoChain extends BaseChain {
                 const depth = BlockUtils.getHashDepth(await block.pow());
                 superBlockCounts = superBlockCounts.copyAndAdd(depth);
 
-                const data = new ChainData(block, /*totalDifficulty*/ -1, /*totalWork*/ -1, superBlockCounts, true);
+                const data = new ChainData(block, /*totalDifficulty*/ new BigNumber(-1), /*totalWork*/ new BigNumber(-1), superBlockCounts, true);
                 await this._store.putChainData(hash, data);
             }
 
