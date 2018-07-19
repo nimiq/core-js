@@ -19,7 +19,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '\n' +
         'Usage:\n' +
         '    node index.js --config=CONFIG [options]\n' +
-        '    node index.js --host=HOSTNAME --port=PORT [--cert=SSL_CERT_FILE] [--key=SSL_KEY_FILE] [options]\n' +
+        '    node index.js --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_KEY_FILE [options]\n' +
         '    node index.js --host=HOSTNAME --port=PORT --protocol=ws [options]\n' +
         '\n' +
         'Configuration:\n' +
