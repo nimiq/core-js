@@ -531,13 +531,10 @@ async function action(args, rl) {
                     rl.question('Are you sure you want to send this transaction? (y/N) ', resolve);
                 });
             } else {
-                const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-                answer = await new Promise((resolve) => {
-                    rl.question('Are you sure you want to send this transaction? (y/N) ', resolve);
-                });
-                rl.close();
+                // For backwards compatible use in scripts, assume yes here.
+                answer = 'y';
             }
-            if (answer.toLowerCase() == "y") {
+            if (answer.toLowerCase() === 'y') {
                 const hash = await jsonRpcFetch('sendTransaction', {from, to, value, fee, data});
                 console.log(chalk`Sent as {bold ${hash}}.`);
             } else {
