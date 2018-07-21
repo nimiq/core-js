@@ -34,7 +34,6 @@ if (argv.user) {
     // Request password.
     rl.question(`Password for ${user}: `, (pw) => {
         password = pw;
-        rl.close();
         console.log(""); // Add newline
         rl.close();
         main(argv._);
