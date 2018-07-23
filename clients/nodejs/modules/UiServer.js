@@ -12,7 +12,7 @@ class UiServer {
     constructor(config) {
         http.createServer((req, res) => {
             if (req.method === 'GET') {
-                this._serveFile(req, res);
+                UiServer._serveFile(req, res);
             } else {
                 res.writeHead(405, 'Only GET requests allowed', {
                     Allow: 'GET'
@@ -27,7 +27,7 @@ class UiServer {
      * @param {http.ServerResponse} res
      * @returns {Promise.<void>}
      */
-    async _serveFile(req, res) {
+    static async _serveFile(req, res) {
         const filePath = await UiServer._resolveFile(req);
         if (!filePath) {
             res.writeHead(404);
@@ -145,7 +145,7 @@ class UiServer {
      * @param {string} filePath
      * @returns {Promise.<fs.Stats>}
      */
-    static async _getFileInfo(filePath) {
+    static _getFileInfo(filePath) {
         return new Promise((resolve) => {
             fs.stat(filePath, (err, stats) => {
                 if (err) {

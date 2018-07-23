@@ -149,9 +149,10 @@ class RpcNetwork extends RpcComponent {
         const peerCount = await this._rpcClient.fetch('peerCount');
         if (peerCount === this._peerCount) return;
 
+        const oldPeerCount = this._peerCount;
         this._peerCount = peerCount;
 
-        if (peerCount > this._peerCount) {
+        if (peerCount > oldPeerCount) {
             this.fire('peer-joined');
         } else {
             this.fire('peer-left');
@@ -161,7 +162,7 @@ class RpcNetwork extends RpcComponent {
 }
 
 class RpcAccounts extends RpcComponent {
-    async get(address) {
+    get(address) {
         return this._rpcClient.fetch('getAccount', address);
     }
 }
