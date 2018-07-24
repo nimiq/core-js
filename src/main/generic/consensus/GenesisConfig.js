@@ -117,8 +117,7 @@ GenesisConfig.CONFIGS = {
             WssPeerAddress.seed('seed-20.nimiq.com', 8443, '1fc33f93273d94dd2cf7470274c27ecb1261ec983e43bdbb281803c0a09e68d5')
         ],
         SEED_LISTS: [
-            // new SeedListUrl('http://example.com/seeds.txt'),
-            // new SeedListUrl('http://example.com/seeds-signed.txt', '184084e13c595816aa3cd5b479dc15255aad3778dadd58abb0503b3e4af61525')
+            new SeedListUrl('https://nimiq.community/seeds.txt', '8b4ae04557f490102036ce3e570b39058c92fc5669083fb9bbb6effc91dc3c71')
         ],
         GENESIS_BLOCK: new Block(
             new BlockHeader(
