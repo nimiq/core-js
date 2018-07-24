@@ -61,6 +61,14 @@ class Hash extends Serializable {
 
     /**
      * @param {Uint8Array} arr
+     * @returns {Hash}
+     */
+    static sha512(arr) {
+        return new Hash(Hash.computeSha512(arr), Hash.Algorithm.SHA512);
+    }
+
+    /**
+     * @param {Uint8Array} arr
      * @param {Hash.Algorithm} algorithm
      * @returns {Hash}
      */
@@ -69,6 +77,7 @@ class Hash extends Serializable {
         switch (algorithm) {
             case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
             case Hash.Algorithm.SHA256: return Hash.sha256(arr);
+            case Hash.Algorithm.SHA512: return Hash.sha512(arr);
             // Hash.Algorithm.ARGON2 intentionally omitted
             default: throw new Error('Invalid hash algorithm');
         }
@@ -230,6 +239,36 @@ class Hash extends Serializable {
                 const wasmIn = Module.stackAlloc(input.length);
                 new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
                 Module._nimiq_sha256(wasmOut, wasmIn, input.length);
+                const hash = new Uint8Array(hashSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
+                return hash;
+            } catch (e) {
+                Log.w(Hash, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
+        }
+    }
+
+    /**
+     * @param {Uint8Array} input
+     * @returns {Uint8Array}
+     */
+    static computeSha512(input) {
+        if (PlatformUtils.isNodeJs()) {
+            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.SHA512));
+            NodeNative.node_sha512(out, new Uint8Array(input));
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const hashSize = Hash.getSize(Hash.Algorithm.SHA512);
+                const wasmOut = Module.stackAlloc(hashSize);
+                const wasmIn = Module.stackAlloc(input.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, input.length).set(input);
+                Module._nimiq_sha512(wasmOut, wasmIn, input.length);
                 const hash = new Uint8Array(hashSize);
                 hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, hashSize));
                 return hash;
