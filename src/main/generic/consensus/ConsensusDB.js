@@ -104,10 +104,17 @@ class ConsensusDB extends JDB.JungleDB {
                 await JDB.JungleDB.commitCombined(accountTx, chainDataTx, blockTx);
             }
         }
+
+        if (oldVersion < 8) {
+            if (!light) {
+                Log.i(ConsensusDB, 'Upgrading transaction store, this may take a while...');
+                await UpgradeHelper.restoreTransactions(jdb);
+            }
+        }
     }
 }
 ConsensusDB._instance = null;
-ConsensusDB.VERSION = 7;
+ConsensusDB.VERSION = 8;
 ConsensusDB.INITIAL_DB_SIZE = 1024*1024*500; // 500 MB initially
 ConsensusDB.MIN_RESIZE = 1 << 30; // 1 GB
 Class.register(ConsensusDB);
@@ -160,5 +167,49 @@ class UpgradeHelper {
         /** @type {Array.<Promise>} */
         const promises = successors.map(successor => UpgradeHelper._recomputeTotals(transaction, successor, newTotalDifficulty, newTotalWork));
         return Promise.all(promises);
+    }
+
+    /**
+     * @param {ConsensusDB} jdb
+     * @returns {Promise.<void>}
+     */
+    static async restoreTransactions(jdb) {
+        const chainDataStore = ChainDataStore.getPersistent(jdb);
+        const transactionStore = TransactionStore.getPersistent(jdb);
+        const txSize = 1000;
+        let tx = transactionStore.transaction(false);
+
+        // Determine head for progress.
+        const headHash = await chainDataStore.getHead();
+        const headBlock = await chainDataStore.getBlock(headHash);
+        const headHeight = headBlock.height;
+
+        try {
+            let nextHash = GenesisConfig.GENESIS_HASH;
+            let currentHeight = 0;
+
+            // Put whole main chain into transaction store again.
+            while (nextHash) {
+                const currentChainData = await chainDataStore.getChainData(nextHash, /*includeBody*/ true);
+                nextHash = currentChainData.mainChainSuccessor;
+                currentHeight = currentChainData.head.height;
+                await tx.put(currentChainData.head);
+
+                if (currentHeight % txSize === 0) {
+                    await tx.commit();
+                    tx = transactionStore.transaction(false);
+                    Log.i(UpgradeHelper, `Upgrade at ${Math.round(currentHeight / headHeight * 100)}% (block ${currentHeight}/${headHeight})`);
+                }
+            }
+
+            if (currentHeight % txSize !== 0) {
+                await tx.commit();
+                Log.i(UpgradeHelper, `Upgrade at ${Math.round(currentHeight / headHeight * 100)}% (block ${currentHeight}/${headHeight})`);
+            }
+            Log.i(UpgradeHelper, 'Upgrade finished');
+        } catch (e) {
+            await tx.abort();
+            throw e;
+        }
     }
 }

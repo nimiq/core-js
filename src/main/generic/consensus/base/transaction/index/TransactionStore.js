@@ -5,7 +5,7 @@ class TransactionStore {
     static initPersistent(jdb) {
         // TODO: NUMBER_ENCODING in LMDB stores 32bit integers. This will only be safe for the next ~11 years assuming only full blocks.
         jdb.deleteObjectStore('Transactions', {upgradeCondition: oldVersion => oldVersion < 4, indexNames: ['sender', 'recipient']}); // New transaction store layout starting in ConsensusDB 4
-        jdb.deleteObjectStore('Transactions', {upgradeCondition: oldVersion => oldVersion === 4 || oldVersion === 5, indexNames: ['sender', 'recipient', 'transactionHash']});
+        jdb.deleteObjectStore('Transactions', {upgradeCondition: oldVersion => oldVersion >= 4 && oldVersion < 8, indexNames: ['sender', 'recipient', 'transactionHash']});
         const store = jdb.createObjectStore('Transactions', { codec: new TransactionStoreCodec(), keyEncoding: JDB.JungleDB.NUMBER_ENCODING });
         store.createIndex('sender', ['senderBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
         store.createIndex('recipient', ['recipientBuffer'], { keyEncoding: JDB.JungleDB.BINARY_ENCODING });
