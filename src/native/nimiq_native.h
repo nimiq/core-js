@@ -4,6 +4,7 @@
 #include "argon2.h"
 #include "blake2/blake2.h"
 #include "sha256.h"
+#include "ed25519/sha512.h"
 
 #define NIMIQ_ARGON2_SALT "nimiqrocks!"
 #define NIMIQ_ARGON2_SALT_LEN 11
@@ -15,5 +16,6 @@ int nimiq_kdf(void *out, const void *in, const size_t inlen, const void* seed, c
 uint32_t nimiq_argon2_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost);
 int nimiq_argon2_verify(const void *hash, const void *in, const size_t inlen, const uint32_t m_cost);
 void nimiq_sha256(void *out, const void *in, const size_t inlen);
+void nimiq_sha512(void *out, const void *in, const size_t inlen);
 
 #endif

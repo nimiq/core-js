@@ -85,6 +85,13 @@ void nimiq_sha256(void *out, const void *in, const size_t inlen) {
     sha256_final(&ctx, out);
 }
 
+void nimiq_sha512(void *out, const void *in, const size_t inlen) {
+    sha512_context ctx;
+    sha512_init(&ctx);
+    sha512_update(&ctx, in, inlen);
+    sha512_final(&ctx, out);
+}
+
 inline int nimiq_argon2_flags(void *out, const void *in, const size_t inlen, const uint32_t m_cost, const uint32_t flags) {
     return argon2d_hash_raw_flags(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, NIMIQ_ARGON2_SALT, NIMIQ_ARGON2_SALT_LEN, out, 32, flags);
 }

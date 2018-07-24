@@ -98,6 +98,15 @@ NAN_METHOD(node_sha256) {
     nimiq_sha256(out, in, inlen);
 }
 
+NAN_METHOD(node_sha512) {
+    Local<Uint8Array> out_array = info[0].As<Uint8Array>();
+    Local<Uint8Array> in_array = info[1].As<Uint8Array>();
+    uint32_t inlen = in_array->Length();
+    void* out = out_array->Buffer()->GetContents().Data();
+    void* in = in_array->Buffer()->GetContents().Data();
+    nimiq_sha512(out, in, inlen);
+}
+
 NAN_METHOD(node_blake2) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
@@ -285,6 +294,8 @@ NAN_MODULE_INIT(Init) {
         GetFunction(New<FunctionTemplate>(node_argon2_target_async)).ToLocalChecked());
     Set(target, New<String>("node_sha256").ToLocalChecked(),
         GetFunction(New<FunctionTemplate>(node_sha256)).ToLocalChecked());
+    Set(target, New<String>("node_sha512").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_sha512)).ToLocalChecked());
     Set(target, New<String>("node_blake2").ToLocalChecked(),
         GetFunction(New<FunctionTemplate>(node_blake2)).ToLocalChecked());
     Set(target, New<String>("node_argon2").ToLocalChecked(),
