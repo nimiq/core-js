@@ -77,7 +77,7 @@ class Hash extends Serializable {
         switch (algorithm) {
             case Hash.Algorithm.BLAKE2B: return Hash.blake2b(arr);
             case Hash.Algorithm.SHA256: return Hash.sha256(arr);
-            case Hash.Algorithm.SHA512: return Hash.sha512(arr);
+            // Hash.Algorithm.SHA512 postponed until hard-fork
             // Hash.Algorithm.ARGON2 intentionally omitted
             default: throw new Error('Invalid hash algorithm');
         }
