@@ -7,6 +7,13 @@ Dummy.hash1 = 'Mk3PAn3UowqTLEQfNlol6GsXPe+kuOWJSCU0cbgbcs8='; // 'hello'
 Dummy.hash2 = 'uLN8HQNONxx6O4NPlHanRutiJZ/5VYq3FbS/956/WOE='; // 'hello2'
 Dummy.hash3 = '+CP2a6ECbn9xHqWqRxmDe7N4/GFbUFFrjava/3joFo4='; // 'hello3'
 
+// SHA test vector from https://www.di-mgt.com.au/sha_testvectors.html
+Dummy.shaHash = {
+    input: 'abc',
+    sha256Hex: 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    sha512Hex: 'ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f'
+};
+
 Dummy.publicKey1 = 'jzCk2TjUEw0aM5be3hUFxyt/dayfm4DRrX42iznzsQUXN0opCANPARUmEQ9iqKE4D/rTkY3EfT1ffEYisrA/rw==';
 Dummy.publicKey2 = 'cz/rSo+0DVR8U76kmDLUBORFQQ5PuHRt0BT6Zliiq0MkYUALY9mWCDPGSbuli4vORAdz7ALjTl8dXVbmMNfpAA==';
 Dummy.publicKey3 = 'cpuVovyj7DCI7a8R7wyc/swZyl+S5IYhdZBcnZJVoRKCropHrWo/4dES7ieso2jlZteOzAds4dddWpC/H+ElIQ==';

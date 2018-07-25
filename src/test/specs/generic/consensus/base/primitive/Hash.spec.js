@@ -45,4 +45,22 @@ describe('Hash', () => {
             expect(BufferUtils.toBase64(hash.serialize())).toBe(expectedHash);
         })().then(done, done.fail);
     });
+
+    it('can hash data with sha256', (done) => {
+        (async function () {
+            const dataToHash = BufferUtils.fromAscii(Dummy.shaHash.input);
+            const expectedHash = Dummy.shaHash.sha256Hex;
+            const hash = Hash.sha256(dataToHash);
+            expect(BufferUtils.toHex(hash.serialize())).toBe(expectedHash);
+        })().then(done, done.fail);
+    });
+
+    it('can hash data with sha512', (done) => {
+        (async function () {
+            const dataToHash = BufferUtils.fromAscii(Dummy.shaHash.input);
+            const expectedHash = Dummy.shaHash.sha512Hex;
+            const hash = Hash.sha512(dataToHash);
+            expect(BufferUtils.toHex(hash.serialize())).toBe(expectedHash);
+        })().then(done, done.fail);
+    });
 });
