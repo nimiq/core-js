@@ -19,7 +19,7 @@ class SeedList {
 
         // Filter empty and comment lines.
         const lines = listStr
-            .split('\n')
+            .split(/\r\n|\n|\r/)
             .filter(line => line.length > 0 && !line.startsWith('#'));
 
         // Read seed addresses. Ignore the last line here.
