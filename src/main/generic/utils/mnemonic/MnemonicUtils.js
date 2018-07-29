@@ -64,7 +64,7 @@ class MnemonicUtils {
      * @param {Array.<string>} [wordlist]
      * @return {Array.<string>}
      */
-    static keyToMnemonic(entropy, wordlist) {
+    static entropyToMnemonic(entropy, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
         const entropyBits = MnemonicUtils._entropyToBits(entropy);
@@ -80,7 +80,7 @@ class MnemonicUtils {
      * @return {Array.<string>}
      * @deprecated
      */
-    static keyToLegacyMnemonic(entropy, wordlist) {
+    static entropyToLegacyMnemonic(entropy, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
         const entropyBits = MnemonicUtils._entropyToBits(entropy);
