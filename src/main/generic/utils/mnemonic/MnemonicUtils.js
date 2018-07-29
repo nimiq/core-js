@@ -60,6 +60,53 @@ class MnemonicUtils {
     }
 
     /**
+     * @param {Array.<string>} mnemonic
+     * @param {Array.<string>} wordlist
+     * @return {string}
+     */
+    static _mnemonicToBits(mnemonic, wordlist) {
+        const words = (mnemonic.normalize('NFKD')).trim().split(/\s+/g);
+        if (words.length < 12) throw new Error('Invalid mnemonic, less than 12 words');
+        if (words.length > 24) throw new Error('Invalid mnemonic, more than 24 words');
+        if (words.length % 3 !== 0) throw new Error('Invalid mnemonic, words % 3 != 0');
+
+        // Convert word indices to 11 bit binary strings
+        const bits = words.map(function (word) {
+            const index = wordlist.indexOf(word.toLowerCase());
+            if (index === -1) throw new Error('Invalid mnemonic, word >' + word + '< is not in wordlist');
+
+            return StringUtils.lpad(index.toString(2), '0', 11);
+        }).join('');
+
+        return bits;
+    }
+
+    /**
+     * @param {string} bits
+     * @param {boolean} legacy
+     * @return {Uint8Array}
+     */
+    static _bitsToEntropy(bits, legacy = false) {
+        // Split the binary string into ENT/CS
+        const dividerIndex = bits.length - (bits.length % 8 || 8);
+        const entropyBits = bits.slice(0, dividerIndex);
+        const checksumBits = bits.slice(dividerIndex);
+
+        // Calculate the checksum and compare
+        const entropyBytes = entropyBits.match(/(.{8})/g).map(NumberUtils.fromBinary);
+
+        if (entropyBytes.length < 16) throw new Error('Invalid generated key, length < 16');
+        if (entropyBytes.length > 32) throw new Error('Invalid generated key, length > 32');
+        if (entropyBytes.length % 4 !== 0) throw new Error('Invalid generated key, length % 4 != 0');
+
+        const entropy = new Uint8Array(entropyBytes);
+        const checksum = legacy ? MnemonicPhrase._crcChecksum(entropy) : MnemonicPhrase._sha256Checksum(entropy);
+        if (checksum !== checksumBits) throw new Error('Invalid checksum');
+
+        return entropy;
+    }
+
+    /**
      * @param {string|ArrayBuffer|Uint8Array} entropy
      * @param {Array.<string>} [wordlist]
      * @return {Array.<string>}
@@ -90,39 +137,29 @@ class MnemonicUtils {
         return MnemonicUtils._bitsToMnemonic(bits, wordlist);
     }
 
-    static mnemonicToKey(mnemonic, wordlist) {
+    /**
+     * @param {Array.<string>} mnemonic
+     * @param {Array.<string>} wordlist
+     * @return {Uint8Array}
+     */
+    static mnemonicToEntropy(mnemonic, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
-        var words = (mnemonic.normalize('NFKD')).trim().split(/\s+/g);
-        if (words.length < 12) throw new Error('Invalid mnemonic, less than 12 words');
-        if (words.length > 24) throw new Error('Invalid mnemonic, more than 24 words');
-        if (words.length % 3 !== 0) throw new Error('Invalid mnemonic, words % 3 != 0');
+        const bits = MnemonicUtils._mnemonicToBits(mnemonic, wordlist);
+        return MnemonicUtils._bitsToEntropy(bits, false);
+    }
 
-        // Convert word indices to 11 bit binary strings
-        var bits = words.map(function (word) {
-            var index = wordlist.indexOf(word.toLowerCase());
-            if (index === -1) throw new Error('Invalid mnemonic, word >' + word + '< is not in wordlist');
+    /**
+     * @param {Array.<string>} mnemonic
+     * @param {Array.<string>} wordlist
+     * @return {Uint8Array}
+     * @deprecated
+     */
+    static legacyMnemonicToEntropy(mnemonic, wordlist) {
+        wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
-            return MnemonicUtils._lpad(index.toString(2), '0', 11);
-        }).join('');
-
-        // Split the binary string into ENT/CS
-        var dividerIndex = bits.length - (bits.length % 8 || 8);
-        var entropyBits = bits.slice(0, dividerIndex);
-        var checksumBits = bits.slice(dividerIndex);
-
-        // Calculate the checksum and compare
-        var entropyBytes = entropyBits.match(/(.{8})/g).map(MnemonicUtils._binaryToBytes);
-
-        if (entropyBytes.length < 16) throw new Error('Invalid generated key, length < 16');
-        if (entropyBytes.length > 32) throw new Error('Invalid generated key, length > 32');
-        if (entropyBytes.length % 4 !== 0) throw new Error('Invalid generated key, length % 4 != 0');
-
-        var entropy = new Uint8Array(entropyBytes);
-        var newChecksum = MnemonicUtils._crcChecksum(entropy).slice(0, checksumBits.length);
-        if (newChecksum !== checksumBits) throw new Error('Invalid checksum');
-
-        return MnemonicUtils._arrayToHex(entropy);
+        const bits = MnemonicUtils._mnemonicToBits(mnemonic, wordlist);
+        return MnemonicUtils._bitsToEntropy(bits, true);
     }
 }
 
