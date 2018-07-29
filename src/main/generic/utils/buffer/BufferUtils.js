@@ -221,6 +221,19 @@ class BufferUtils {
     }
 
     /**
+     * @param {*} bytes
+     * @return {string}
+     */
+    static toBinary(buffer) {
+        let bin = '';
+        for (let i = 0; i < buffer.length; i++) {
+            const code = buffer[i];
+            bin += StringUtils.lpad(code.toString(2), '0', 8);
+        }
+        return bin;
+    }
+
+    /**
      * @template T
      * @param {T} a
      * @param {*} b

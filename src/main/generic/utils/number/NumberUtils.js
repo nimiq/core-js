@@ -48,6 +48,14 @@ class NumberUtils {
     static randomUint64() {
         return Math.floor(Math.random() * (NumberUtils.UINT64_MAX + 1));
     }
+
+    /**
+     * @param {string} bin
+     * @return {number}
+     */
+    static fromBinary(bin) {
+        return parseInt(bin, 2);
+    }
 }
 
 NumberUtils.UINT8_MAX = 255;

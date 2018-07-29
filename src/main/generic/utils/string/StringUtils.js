@@ -40,5 +40,16 @@ class StringUtils {
         return str1.substr(0, i);
     }
 
+    /**
+     * @param {string} str
+     * @param {string} padString
+     * @param {number} length
+     * @return {string}
+     */
+    static lpad(str, padString, length) {
+        while (str.length < length) str = padString + str;
+        return str;
+    }
+
 }
 Class.register(StringUtils);
