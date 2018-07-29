@@ -100,7 +100,7 @@ class MnemonicUtils {
         if (entropyBytes.length % 4 !== 0) throw new Error('Invalid generated key, length % 4 != 0');
 
         const entropy = new Uint8Array(entropyBytes);
-        const checksum = legacy ? MnemonicPhrase._crcChecksum(entropy) : MnemonicPhrase._sha256Checksum(entropy);
+        const checksum = legacy ? MnemonicUtils._crcChecksum(entropy) : MnemonicUtils._sha256Checksum(entropy);
         if (checksum !== checksumBits) throw new Error('Invalid checksum');
 
         return entropy;
@@ -139,7 +139,7 @@ class MnemonicUtils {
 
     /**
      * @param {Array.<string>} mnemonic
-     * @param {Array.<string>} wordlist
+     * @param {Array.<string>} [wordlist]
      * @return {Uint8Array}
      */
     static mnemonicToEntropy(mnemonic, wordlist) {
@@ -151,7 +151,7 @@ class MnemonicUtils {
 
     /**
      * @param {Array.<string>} mnemonic
-     * @param {Array.<string>} wordlist
+     * @param {Array.<string>} [wordlist]
      * @return {Uint8Array}
      * @deprecated
      */
@@ -160,6 +160,48 @@ class MnemonicUtils {
 
         const bits = MnemonicUtils._mnemonicToBits(mnemonic, wordlist);
         return MnemonicUtils._bitsToEntropy(bits, true);
+    }
+
+    /**
+     * @param {string} password
+     * @return {string}
+     * @private
+     */
+    static _salt(password) {
+        return `mnemonic${password || ''}`;
+    }
+
+    /**
+     * @param {string|Array.<string>} mnemonic
+     * @param {string} [password]
+     * @return {Uint8Array}
+     */
+    static mnemonicToSeed(mnemonic, password) {
+        if (Array.isArray(mnemonic)) mnemonic = mnemonic.join(' ');
+
+        const mnemonicBuffer = BufferUtils.fromAscii(mnemonic);
+        const saltBuffer = BufferUtils.fromAscii(MnemonicUtils._salt(password));
+
+        return Hash.computePBKDF2sha512(mnemonicBuffer, saltBuffer, 2048, 64);
+    }
+
+    /**
+     * @param {string|Array.<string>} mnemonic
+     * @param {string} [password]
+     * @return {Uint8Array}
+     */
+    static mnemonicToExtendedPrivateKey(mnemonic, password) {
+        const seed = MnemonicUtils.mnemonicToSeed(mnemonic, password);
+        return ExtendedPrivateKey.generateMasterKey(seed);
+    }
+
+    /**
+     * @param {string|Array.<string>} mnemonic
+     * @param {string} [password]
+     * @return {Uint8Array}
+     */
+    static entropyToExtendedPrivateKey(entropy, password) {
+        return MnemonicUtils.mnemonicToExtendedPrivateKey(MnemonicUtils.entropyToMnemonic(entropy));
     }
 }
 

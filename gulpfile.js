@@ -83,6 +83,7 @@ const sources = {
         './src/main/generic/utils/merkle/MerkleTree.js',
         './src/main/generic/utils/merkle/MerklePath.js',
         './src/main/generic/utils/merkle/MerkleProof.js',
+        './src/main/generic/utils/mnemonic/MnemonicUtils.js',
         './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/generic/utils/string/StringUtils.js',
         './src/main/generic/consensus/Policy.js',
