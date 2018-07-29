@@ -15,7 +15,7 @@ class CRC32 {
 
     /**
      * @param {Uint8Array} buf
-     * @returns {number}
+     * @return {number}
      */
     static compute(buf) {
         if (!CRC32._table) CRC32._table = CRC32._createTable();
