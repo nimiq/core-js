@@ -153,4 +153,39 @@ describe('MnemonicUtils', () => {
         expect(MnemonicUtils.isCollidingChecksum(entropy)).toBe(true);
     });
 
+    it('correctly computes legacy mnemonics', () => {
+        // Test vectors from https://github.com/nimiq/keyguard-next/blob/master/tests/lib/MnemonicPhrase.spec.js
+        const vectors = [
+            {
+                entropy: new Uint8Array([ 104, 142, 17, 70, 140, 183, 251, 150, 83, 141, 245, 127, 181, 228, 86, 205 ]),
+                mnemonic: 'hammer identify faculty bonus leisure sleep evolve salt leisure quality between option'
+            },
+            {
+                entropy: new Uint8Array([ 247, 34, 33, 91, 36, 86, 30, 10, 34, 121, 46, 151, 62, 43, 229, 69, 157, 47, 145, 225 ]),
+                mnemonic: 'warm baby fine emerge giggle agree measure chair now vanish welcome menu spray similar lumber'
+            },
+            {
+                entropy: new Uint8Array([ 161, 10, 14, 35, 220, 165, 52, 255, 54, 91, 98, 29, 14, 117, 220, 160, 45, 219, 85, 110, 194, 251, 92, 228 ]),
+                mnemonic: 'patient expire material rich fashion legend sunny hobby brown inhale jaguar doctor tank primary roast garage friend celery'
+            },
+            {
+                entropy: new Uint8Array([ 40, 222, 71, 149, 226, 232, 97, 51, 82, 254, 105, 160, 108, 229, 165, 5, 250, 29, 229, 117, 218, 62, 116, 43, 144, 90, 17, 82 ]),
+                mnemonic: 'churn vendor tornado shift maid often episode snake parrot grunt harsh armor peace verify student elephant injury frame bird cargo canyon'
+            },
+            {
+                entropy: new Uint8Array([ 169, 203, 76, 129, 160, 230, 129, 141, 117, 240, 195, 239, 197, 18, 196, 30, 26, 52, 253, 1, 21, 81, 249, 22, 234, 115, 246, 14, 62, 197, 228, 223 ]),
+                mnemonic: 'prefer foil call dove gym shop style blur used chuckle rain destroy person leader affair pretty weekend resemble ostrich ugly token glass nature visa'
+            }
+        ];
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+
+            const mnemonic = MnemonicUtils.entropyToLegacyMnemonic(vector.entropy);
+            expect(mnemonic.join(' ')).toBe(vector.mnemonic);
+
+            const entropy = MnemonicUtils.legacyMnemonicToEntropy(vector.mnemonic);
+            expect(entropy).toEqual(vector.entropy);
+        }
+    });
 });
