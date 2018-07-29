@@ -14,7 +14,7 @@ class MnemonicUtils {
     }
 
     static _deriveChecksumBits(entropy) {
-        var hash = MnemonicUtils._crc8(entropy);
+        var hash = CRC8.compute(entropy);
         return MnemonicUtils._bytesToBinary([hash]);
     }
 
