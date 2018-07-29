@@ -1,13 +1,17 @@
 class MnemonicUtils {
     // Adapted from https://github.com/bitcoinjs/bip39, see license below.
+
     /**
      * @param {Uint8Array} entropy
      * @return {string}
      * @private
      */
     static _crcChecksum(entropy) {
+        const ENT = entropy.length * 8;
+        const CS = ENT / 32;
         const hash = CRC8.compute(entropy);
-        return BufferUtils.toBinary([hash]);
+
+        return BufferUtils.toBinary([hash]).slice(0, CS);
     }
 
     /**
