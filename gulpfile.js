@@ -91,6 +91,7 @@ const sources = {
         './src/main/generic/consensus/base/primitive/PrivateKey.js',
         './src/main/generic/consensus/base/primitive/PublicKey.js',
         './src/main/generic/consensus/base/primitive/KeyPair.js',
+        './src/main/generic/consensus/base/primitive/ExtendedPrivateKey.js',
         './src/main/generic/consensus/base/primitive/RandomSecret.js',
         './src/main/generic/consensus/base/primitive/Signature.js',
         './src/main/generic/consensus/base/primitive/Commitment.js',
