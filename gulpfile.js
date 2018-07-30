@@ -77,6 +77,7 @@ const sources = {
         './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
         './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
+        './src/main/generic/utils/crypto/CryptoUtils.js',
         './src/main/generic/utils/crc/CRC8.js',
         './src/main/generic/utils/crc/CRC32.js',
         './src/main/generic/utils/number/BigNumber.js',
@@ -259,6 +260,7 @@ const sources = {
         './src/main/generic/utils/IWorker.js',
         './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
+        './src/main/generic/utils/crypto/CryptoUtils.js',
         './src/main/generic/consensus/GenesisConfigOffline.js'
     ],
     test: [

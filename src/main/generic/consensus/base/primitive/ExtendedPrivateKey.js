@@ -19,7 +19,7 @@ class ExtendedPrivateKey extends Serializable {
      */
     static generateMasterKey(seed) {
         const bCurve = BufferUtils.fromAscii('ed25519 seed');
-        const hash = Hash.computeHmacSha512(bCurve, seed);
+        const hash = CryptoUtils.computeHmacSha512(bCurve, seed);
         return new ExtendedPrivateKey(new PrivateKey(hash.slice(0, 32)), hash.slice(32));
     }
 
@@ -36,7 +36,7 @@ class ExtendedPrivateKey extends Serializable {
         this._key.serialize(data);
         data.writeUint32(index);
 
-        const hash = Hash.computeHmacSha512(this._chainCode, data);
+        const hash = CryptoUtils.computeHmacSha512(this._chainCode, data);
         return new ExtendedPrivateKey(new PrivateKey(hash.slice(0, 32)), hash.slice(32));
     }
 

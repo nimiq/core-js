@@ -184,7 +184,7 @@ class MnemonicUtils {
         const mnemonicBuffer = BufferUtils.fromAscii(mnemonic);
         const saltBuffer = BufferUtils.fromAscii(MnemonicUtils._salt(password));
 
-        return Hash.computePBKDF2sha512(mnemonicBuffer, saltBuffer, 2048, 64);
+        return CryptoUtils.computePBKDF2sha512(mnemonicBuffer, saltBuffer, 2048, 64);
     }
 
     /**

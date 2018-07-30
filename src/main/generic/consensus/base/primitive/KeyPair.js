@@ -54,22 +54,8 @@ class KeyPair extends Serializable {
      * @return {Promise<KeyPair>}
      */
     static async fromEncrypted(buf, key) {
-        const type = buf.readUint8();
-        if (type !== 1) throw new Error('Unsupported type');
-        const roundsLog = buf.readUint8();
-        if (roundsLog > 32) throw new Error('Rounds out-of-bounds');
-        const rounds = Math.pow(2, roundsLog);
-        const encryptedKey = PrivateKey.unserialize(buf);
-        const salt = buf.read(KeyPair.EXPORT_SALT_LENGTH);
-        const check = buf.read(KeyPair.EXPORT_CHECKSUM_LENGTH);
-
-        const privateKey = new PrivateKey(await KeyPair._otpKdf(encryptedKey.serialize(), key, salt, rounds));
-        const keyPair = KeyPair.derive(privateKey);
-        const pubHash = keyPair.publicKey.hash();
-        if (!BufferUtils.equals(pubHash.subarray(0, 4), check)) {
-            throw new Error('Invalid key');
-        }
-        return keyPair;
+        const decryptedData = await CryptoUtils.decryptOtpKdf(buf, key);
+        return KeyPair.derive(new PrivateKey(decryptedData));
     }
 
     /**
@@ -153,15 +139,7 @@ class KeyPair extends Serializable {
             }
         }
 
-        const salt = new Uint8Array(KeyPair.EXPORT_SALT_LENGTH);
-        CryptoWorker.lib.getRandomValues(salt);
-
-        const buf = new SerialBuffer(this.encryptedSize);
-        buf.writeUint8(1); // Argon2 KDF
-        buf.writeUint8(Math.log2(KeyPair.EXPORT_KDF_ROUNDS));
-        buf.write(await KeyPair._otpKdf(this.privateKey.serialize(), key, salt, KeyPair.EXPORT_KDF_ROUNDS));
-        buf.write(salt);
-        buf.write(this.publicKey.hash().subarray(0, KeyPair.EXPORT_CHECKSUM_LENGTH));
+        const buf = CryptoUtils.encryptOtpKdf(this._privateKey.serialize(), key);
 
         if (wasLocked) this.relock();
 
@@ -170,7 +148,7 @@ class KeyPair extends Serializable {
 
     /** @type {number} */
     get encryptedSize() {
-        return 2 + this.privateKey.serializedSize + KeyPair.EXPORT_SALT_LENGTH + KeyPair.EXPORT_CHECKSUM_LENGTH;
+        return CryptoUtils.ENCRYPTION_SIZE;
     }
 
     /**
@@ -235,19 +213,7 @@ class KeyPair extends Serializable {
      * @private
      */
     async _otpPrivateKey(key) {
-        return new PrivateKey(await KeyPair._otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_KDF_ROUNDS));
-    }
-
-    /**
-     * @param {Uint8Array} message
-     * @param {Uint8Array} key
-     * @param {Uint8Array} salt
-     * @param {number} iterations
-     * @return {Promise<Uint8Array>}
-     * @private
-     */
-    static async _otpKdf(message, key, salt, iterations) {
-        return BufferUtils.xor(message, await (await CryptoWorker.getInstanceAsync()).kdf(key, salt, iterations));
+        return new PrivateKey(await CryptoUtils.otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_KDF_ROUNDS));
     }
 
     get isLocked() {
@@ -263,8 +229,5 @@ class KeyPair extends Serializable {
     }
 }
 KeyPair.LOCK_KDF_ROUNDS = 256;
-KeyPair.EXPORT_KDF_ROUNDS = 256;
-KeyPair.EXPORT_CHECKSUM_LENGTH = 4;
-KeyPair.EXPORT_SALT_LENGTH = 16;
 
 Class.register(KeyPair);
