@@ -1,4 +1,15 @@
 describe('MnemonicUtils', () => {
+    let originalEntropySize;
+
+    // Save original value once.
+    beforeAll(() => {
+        originalEntropySize = Entropy.SIZE;
+    });
+
+    // Reset after every test.
+    afterEach(() => {
+        Entropy.SIZE = originalEntropySize;
+    });
 
     it('correctly computes mnemonics', () => {
         // Test vectors from https://github.com/trezor/python-mnemonic/blob/master/vectors.json
@@ -131,8 +142,11 @@ describe('MnemonicUtils', () => {
             const mnemonic = MnemonicUtils.entropyToMnemonic(BufferUtils.fromHex(vector.entropy));
             expect(mnemonic.join(' ')).toBe(vector.mnemonic);
 
+            // This is only needed for testing with smaller entropies (that we do not want to support in practice).
+            Entropy.SIZE = vector.entropy.length / 2;
+
             const entropy = MnemonicUtils.mnemonicToEntropy(vector.mnemonic);
-            expect(BufferUtils.toHex(entropy)).toBe(vector.entropy);
+            expect(entropy.toHex()).toBe(vector.entropy);
 
             const seed = MnemonicUtils.mnemonicToSeed(vector.mnemonic, 'TREZOR');
             expect(BufferUtils.toHex(seed)).toBe(vector.seed);
@@ -184,8 +198,9 @@ describe('MnemonicUtils', () => {
             const mnemonic = MnemonicUtils.entropyToLegacyMnemonic(vector.entropy);
             expect(mnemonic.join(' ')).toBe(vector.mnemonic);
 
+            Entropy.SIZE = vector.entropy.length;
             const entropy = MnemonicUtils.legacyMnemonicToEntropy(vector.mnemonic);
-            expect(entropy).toEqual(vector.entropy);
+            expect(entropy.toHex()).toBe(BufferUtils.toHex(vector.entropy));
         }
     });
 });

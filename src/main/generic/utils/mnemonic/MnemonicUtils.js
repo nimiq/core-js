@@ -28,20 +28,29 @@ class MnemonicUtils {
     }
 
     /**
-     * @param {string|ArrayBuffer|Uint8Array} entropy
+     * @param {Uint8Array} entropy
      * @return {string}
      * @private
      */
     static _entropyToBits(entropy) {
-        if (typeof entropy === 'string') entropy = BufferUtils.fromHex(entropy);
-        if (entropy instanceof ArrayBuffer) entropy = new Uint8Array(entropy);
-
         // 128 <= ENT <= 256
         if (entropy.length < 16) throw new Error('Invalid key, length < 16');
         if (entropy.length > 32) throw new Error('Invalid key, length > 32');
         if (entropy.length % 4 !== 0) throw new Error('Invalid key, length % 4 != 0');
 
         return BufferUtils.toBinary(entropy);
+    }
+
+    /**
+     * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
+     * @return {Uint8Array}
+     * @private
+     */
+    static _normalizeEntropy(entropy) {
+        if (typeof entropy === 'string') entropy = BufferUtils.fromHex(entropy);
+        if (entropy instanceof Entropy) entropy = entropy.serialize();
+        if (entropy instanceof ArrayBuffer) entropy = new Uint8Array(entropy);
+        return entropy;
     }
 
     /**
@@ -107,12 +116,13 @@ class MnemonicUtils {
     }
 
     /**
-     * @param {string|ArrayBuffer|Uint8Array} entropy
+     * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
      * @param {Array.<string>} [wordlist]
      * @return {Array.<string>}
      */
     static entropyToMnemonic(entropy, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
+        entropy = MnemonicUtils._normalizeEntropy(entropy);
 
         const entropyBits = MnemonicUtils._entropyToBits(entropy);
         const checksumBits = MnemonicUtils._sha256Checksum(entropy);
@@ -122,13 +132,14 @@ class MnemonicUtils {
     }
 
     /**
-     * @param {string|ArrayBuffer|Uint8Array} entropy
+     * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
      * @param {Array.<string>} [wordlist]
      * @return {Array.<string>}
      * @deprecated
      */
     static entropyToLegacyMnemonic(entropy, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
+        entropy = MnemonicUtils._normalizeEntropy(entropy);
 
         const entropyBits = MnemonicUtils._entropyToBits(entropy);
         const checksumBits = MnemonicUtils._crcChecksum(entropy);
@@ -140,20 +151,20 @@ class MnemonicUtils {
     /**
      * @param {Array.<string>|string} mnemonic
      * @param {Array.<string>} [wordlist]
-     * @return {Uint8Array}
+     * @return {Entropy}
      */
     static mnemonicToEntropy(mnemonic, wordlist) {
         if (!Array.isArray(mnemonic)) mnemonic = mnemonic.trim().split(/\s+/g);
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
         const bits = MnemonicUtils._mnemonicToBits(mnemonic, wordlist);
-        return MnemonicUtils._bitsToEntropy(bits, false);
+        return new Entropy(MnemonicUtils._bitsToEntropy(bits, false));
     }
 
     /**
      * @param {Array.<string>|string} mnemonic
      * @param {Array.<string>} [wordlist]
-     * @return {Uint8Array}
+     * @return {Entropy}
      * @deprecated
      */
     static legacyMnemonicToEntropy(mnemonic, wordlist) {
@@ -161,7 +172,7 @@ class MnemonicUtils {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
 
         const bits = MnemonicUtils._mnemonicToBits(mnemonic, wordlist);
-        return MnemonicUtils._bitsToEntropy(bits, true);
+        return new Entropy(MnemonicUtils._bitsToEntropy(bits, true));
     }
 
     /**
@@ -190,7 +201,7 @@ class MnemonicUtils {
     /**
      * @param {string|Array.<string>} mnemonic
      * @param {string} [password]
-     * @return {Uint8Array}
+     * @return {ExtendedPrivateKey}
      */
     static mnemonicToExtendedPrivateKey(mnemonic, password) {
         const seed = MnemonicUtils.mnemonicToSeed(mnemonic, password);
@@ -198,20 +209,12 @@ class MnemonicUtils {
     }
 
     /**
-     * @param {string|Array.<string>} mnemonic
-     * @param {string} [password]
-     * @return {Uint8Array}
-     */
-    static entropyToExtendedPrivateKey(entropy, password) {
-        return MnemonicUtils.mnemonicToExtendedPrivateKey(MnemonicUtils.entropyToMnemonic(entropy));
-    }
-
-    /**
-     * @param {Uint8Array} entropy
+     * @param {Entropy} entropy
      * @return {boolean}
      */
     static isCollidingChecksum(entropy) {
-        return MnemonicUtils._crcChecksum(entropy) === MnemonicUtils._sha256Checksum(entropy);
+        const normalizedEntropy = MnemonicUtils._normalizeEntropy(entropy);
+        return MnemonicUtils._crcChecksum(normalizedEntropy) === MnemonicUtils._sha256Checksum(normalizedEntropy);
     }
 
     /**
