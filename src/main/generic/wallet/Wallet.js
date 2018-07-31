@@ -1,9 +1,9 @@
 class Wallet {
     /**
      * Create a new Wallet.
-     * @returns {Promise.<Wallet>} Newly created Wallet.
+     * @returns {Wallet} Newly created Wallet.
      */
-    static async generate() {
+    static generate() {
         return new Wallet(KeyPair.generate());
     }
 

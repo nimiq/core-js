@@ -476,7 +476,7 @@ class JsonRpcServer {
     }
 
     async createAccount() {
-        const wallet = await Nimiq.Wallet.generate();
+        const wallet = Nimiq.Wallet.generate();
         await this._walletStore.put(wallet);
         return this._walletToObj(wallet);
     }
