@@ -14,24 +14,20 @@ describe('Wallet', () => {
         KeyPair.EXPORT_KDF_ROUNDS = deepLockRounds;
     });
 
-    it('can create a signed transaction', (done) => {
-        (async () => {
-            const wallet = await Wallet.generate();
-            const transaction = await wallet.createTransaction(recipient, value, fee, validityStartHeight);
-            const isValid = transaction.verify();
-            expect(isValid).toBe(true);
-        })().then(done, done.fail);
+    it('can create a signed transaction', () => {
+        const wallet = Wallet.generate();
+        const transaction = wallet.createTransaction(recipient, value, fee, validityStartHeight);
+        const isValid = transaction.verify();
+        expect(isValid).toBe(true);
     });
 
-    it('can create a valid SignatureProof', (done) => {
-        (async () => {
-            const wallet = await Wallet.generate();
-            const transaction = new ExtendedTransaction(wallet.address, Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0));
-            const proof = wallet.signTransaction(transaction);
-            transaction.proof = proof.serialize();
-            const isValid = transaction.verify();
-            expect(isValid).toBe(true);
-        })().then(done, done.fail);
+    it('can create a valid SignatureProof', () => {
+        const wallet = Wallet.generate();
+        const transaction = new ExtendedTransaction(wallet.address, Account.Type.BASIC, recipient, Account.Type.BASIC, value, fee, validityStartHeight, Transaction.Flag.NONE, new Uint8Array(0));
+        const proof = wallet.signTransaction(transaction);
+        transaction.proof = proof.serialize();
+        const isValid = transaction.verify();
+        expect(isValid).toBe(true);
     });
 
     it('can reject invalid wallet seed', (done) => {
@@ -50,18 +46,16 @@ describe('Wallet', () => {
         })().then(done, done.fail);
     });
 
-    it('can export & import a plaintext wallet', (done) => {
-        (async () => {
-            const wallet = await Wallet.generate();
-            const wallet2 = await Wallet.loadPlain(wallet.exportPlain());
+    it('can export & import a plaintext wallet', () => {
+        const wallet = Wallet.generate();
+        const wallet2 = Wallet.loadPlain(wallet.exportPlain());
 
-            expect(wallet.equals(wallet2)).toBeTruthy();
-        })().then(done, done.fail);
+        expect(wallet.equals(wallet2)).toBeTruthy();
     });
 
     it('can lock, unlock and relock itself', (done) => {
         (async () => {
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
             const key = 'password';
 
             expect(wallet.isLocked).toBeFalsy();
@@ -76,7 +70,7 @@ describe('Wallet', () => {
 
     it('can export an encrypted wallet and import it', (done) => {
         (async () => {
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
             const key = 'password';
 
             const encryptedWallet = await wallet.exportEncrypted(key);
@@ -88,7 +82,7 @@ describe('Wallet', () => {
 
     it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
             const key = 'password';
             const key2 = '123456';
 
@@ -105,7 +99,7 @@ describe('Wallet', () => {
 
     it('can detect wrong key on an encrypted wallet', (done) => {
         (async () => {
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
             const key = 'password';
             const key2 = '123456';
 

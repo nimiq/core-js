@@ -46,7 +46,7 @@ class WalletStore {
     async getDefault(key) {
         const defaultAddress = await this._walletStore.get('default');
         if (!defaultAddress) {
-            const defaultWallet = await Wallet.generate();
+            const defaultWallet = Wallet.generate();
             await this.put(defaultWallet);
             await this.setDefault(defaultWallet.address);
             return defaultWallet;

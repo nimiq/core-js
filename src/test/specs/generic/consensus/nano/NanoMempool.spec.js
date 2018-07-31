@@ -2,10 +2,10 @@ describe('NanoMempool', () => {
     it('will not push the same transaction twice', (done) => {
         (async function () {
             const mempool = new NanoMempool({height: 1});
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create a transaction
-            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543, 42, 1);
+            const transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543, 42, 1);
 
             // Push the transaction for the first time
             let result = await mempool.pushTransaction(transaction);
@@ -21,10 +21,10 @@ describe('NanoMempool', () => {
         (async function () {
             const blockchain = {height: 1};
             const mempool = new NanoMempool(blockchain);
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create a transaction
-            let transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
+            let transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
 
             // Save the valid transaction signature and replace it with an invalid one
             const validSignature = transaction.signature;
@@ -40,7 +40,7 @@ describe('NanoMempool', () => {
 
             // Make sure the transaction fails due to being outside the window
             blockchain.height = 10000;
-            transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
+            transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(false);
 
@@ -50,10 +50,10 @@ describe('NanoMempool', () => {
     it('can push and get a valid transaction', (done) => {
         (async function () {
             const mempool = new NanoMempool({height: 1});
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create a transaction
-            const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,1);
+            const referenceTransaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,1);
 
             // The transaction should be successfully pushed
             const result = await mempool.pushTransaction(referenceTransaction);
@@ -69,11 +69,11 @@ describe('NanoMempool', () => {
     it('can push 2 transactions from same user', (done) => {
         (async () => {
             const mempool = new NanoMempool({height: 1});
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create transactions
-            const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 1);
-            const t2 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 1);
+            const t1 = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 1);
+            const t2 = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 1);
 
             // The transaction should be successfully pushed
             let result = await mempool.pushTransaction(t1);
@@ -101,14 +101,14 @@ describe('NanoMempool', () => {
             // several different transactions to push
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 wallets.push(wallet);
             }
 
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const transaction = await wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);
@@ -135,14 +135,14 @@ describe('NanoMempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 wallets.push(wallet);
             }
 
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 1; i < 6; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);
@@ -173,14 +173,14 @@ describe('NanoMempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 wallets.push(wallet);
             }
 
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 1; i < 6; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1, i === 2 ? 1 : 10000); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1, i === 2 ? 1 : 10000);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(true);
                 referenceTransactions.push(transaction);
@@ -214,7 +214,7 @@ describe('NanoMempool', () => {
             /** @type {Array.<Address>} */
             const addresses = [];
             for (let i = 0; i < 20; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 wallets.push(wallet);
                 addresses.push(wallet.address);
             }

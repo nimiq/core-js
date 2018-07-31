@@ -15,8 +15,8 @@ describe('WalletStore', () => {
 
     it('can store, retrieve and remove regular wallets', (done) => {
         (async () => {
-            const wallet1 = await Wallet.generate();
-            const wallet2 = await Wallet.generate();
+            const wallet1 = Wallet.generate();
+            const wallet2 = Wallet.generate();
 
             expect(await walletStore.list()).toEqual([]);
 
@@ -38,8 +38,8 @@ describe('WalletStore', () => {
 
     it('can store, retrieve and remove encrypted wallets', (done) => {
         (async () => {
-            const wallet1 = await Wallet.generate();
-            const wallet2 = await Wallet.generate();
+            const wallet1 = Wallet.generate();
+            const wallet2 = Wallet.generate();
 
             expect(await walletStore.list()).toEqual([]);
 
@@ -117,7 +117,7 @@ describe('WalletStore', () => {
 
     it('can store, retrieve and remove a default wallet', (done) => {
         (async () => {
-            const wallet1 = await Wallet.generate();
+            const wallet1 = Wallet.generate();
 
             expect(await walletStore.list()).toEqual([]);
 

@@ -154,12 +154,8 @@ class AccountsUi extends Nimiq.Observable {
     }
 
     _addWallet() {
-        let wallet;
-        Nimiq.Wallet.generate()
-            .then(wlt => {
-                wallet = wlt;
-                return this.$.walletStore.put(wallet);
-            })
+        const wallet = Nimiq.Wallet.generate();
+        this.$.walletStore.put(wallet)
             .then(() => this.$.walletStore.list())
             .then(walletAddresses => {
                 if (walletAddresses.length === 1) {

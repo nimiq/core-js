@@ -4,10 +4,10 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create a transaction
-            const transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543, 42, 1);
+            const transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 543, 42, 1);
 
             // Make sure we have some good values in our account
             await accounts._tree.put(wallet.address, new BasicAccount(745));
@@ -27,14 +27,14 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // This is needed to check which reason caused pushTransaction() to fail
             spyOn(Log, 'w');
             spyOn(Log, 'd');
 
             // Create a transaction
-            let transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
+            let transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
             await accounts._tree.put(wallet.address, new BasicAccount(7745));
 
             // Save the valid transaction signature and replace it with an invalid one
@@ -66,7 +66,7 @@ describe('Mempool', () => {
             await accounts._tree.put(wallet.address, new BasicAccount(7745));
 
             // Make sure the transaction fails due to being outside the window
-            transaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 3);
+            transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 3);
             result = await mempool.pushTransaction(transaction);
             expect(result).toBe(Mempool.ReturnCode.INVALID);
 
@@ -78,10 +78,10 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             // Create a transaction
-            const referenceTransaction = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,1);
+            const referenceTransaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 523,23,1);
 
             // Add the correct values we need to our wallet's balance
             await accounts._tree.put(wallet.address, new BasicAccount(745));
@@ -102,13 +102,13 @@ describe('Mempool', () => {
             const accounts = await Accounts.createVolatile();
             const blockchain = await FullChain.createVolatile(accounts, new Time());
             const mempool = new Mempool(blockchain, accounts);
-            const wallet = await Wallet.generate();
+            const wallet = Wallet.generate();
 
             await accounts._tree.put(wallet.address, new BasicAccount(152));
 
             // Create transactions
-            const t1 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 1);
-            const t2 = await wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 1);
+            const t1 = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 50, 1, 1);
+            const t2 = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 100, 1, 1);
 
             // The transaction should be successfully pushed
             let result = await mempool.pushTransaction(t1);
@@ -138,7 +138,7 @@ describe('Mempool', () => {
             // several different transactions to push
             const wallets = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(23478));
                 wallets.push(wallet);
             }
@@ -146,7 +146,7 @@ describe('Mempool', () => {
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 0; i < numberOfTransactions; i++) {
-                const transaction = await wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
@@ -181,7 +181,7 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(5));
                 wallets.push(wallet);
             }
@@ -189,7 +189,7 @@ describe('Mempool', () => {
             // Push a bunch of transactions into the mempool
             const referenceTransactions = [];
             for (let i = 1; i < 6; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
@@ -227,19 +227,19 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(5));
                 wallets.push(wallet);
             }
 
             // Push a bunch of transactions into the mempool
             for (let i = 1; i < 6; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
             }
 
-            const largeTransaction = await wallets[0].createTransaction(wallets[2].address, 4, 0, 1); // eslint-disable-line no-await-in-loop
+            const largeTransaction = wallets[0].createTransaction(wallets[2].address, 4, 0, 1);
 
             // Pretend to have one of the transactions mined
             blockchain.transactionCache.transactions.add(largeTransaction.hash());
@@ -264,25 +264,25 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < 6; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(10));
                 wallets.push(wallet);
             }
 
             // Push a bunch of transactions into the mempool
             for (let i = 1; i < 6; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 1, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 1, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
             }
 
             // Try to push a low fee transaction
-            const lowFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 1, 0, 1);
+            const lowFeeTransaction = wallets[0].createTransaction(wallets[2].address, 1, 0, 1);
             let result = await mempool.pushTransaction(lowFeeTransaction);
             expect(result).toBe(Mempool.ReturnCode.INVALID);
 
             // Push a higher fee transaction
-            const highFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 1, 9, 1);
+            const highFeeTransaction = wallets[0].createTransaction(wallets[2].address, 1, 9, 1);
             result = await mempool.pushTransaction(highFeeTransaction);
             expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
@@ -300,14 +300,14 @@ describe('Mempool', () => {
 
             const wallets = [];
             for (let i = 0; i < Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 1; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount(Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 2));
                 wallets.push(wallet);
             }
 
             // Push a bunch of free transactions into the mempool
             for (let i = 1; i < Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX + 1; i++) {
-                const transaction = await wallets[0].createTransaction(wallets[i].address, 1, 0, 1); // eslint-disable-line no-await-in-loop
+                const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
                 expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
             }
@@ -315,7 +315,7 @@ describe('Mempool', () => {
             expect(mempool.getTransactions().length).toBe(Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX);
 
             // Try to push another free transaction
-            const lowFeeTransaction = await wallets[0].createTransaction(wallets[2].address, 2, 0, 1);
+            const lowFeeTransaction = wallets[0].createTransaction(wallets[2].address, 2, 0, 1);
             const result = await mempool.pushTransaction(lowFeeTransaction);
             expect(result).toBe(Mempool.ReturnCode.FEE_TOO_LOW);
         })().then(done, done.fail);
@@ -332,7 +332,7 @@ describe('Mempool', () => {
             /** @type {Array.<Wallet>} */
             const wallets = [];
             for (let i = 0; i < Mempool.SIZE_MAX + 1; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount((i + 1) * 200 + 1));
                 wallets.push(wallet);
             }
@@ -361,7 +361,7 @@ describe('Mempool', () => {
             /** @type {Array.<Wallet>} */
             const wallets = [];
             for (let i = 0; i < 20; i++) {
-                const wallet = await Wallet.generate();
+                const wallet = Wallet.generate();
                 await accounts._tree.put(wallet.address, new BasicAccount((i + 1) * 200 + 1));
                 wallets.push(wallet);
             }
