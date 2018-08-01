@@ -154,12 +154,12 @@ describe('MnemonicUtils', () => {
     });
 
     it('correctly computes mnemonic type', () => {
-        expect(MnemonicUtils.getMnemonicType('void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold')).toBe(MnemonicUtils.MNEMONIC_TYPE.BIP39);
-        expect(MnemonicUtils.getMnemonicType('refuse walk suggest raven cheese gate eye divert base slot fossil lock oven fuel thank need unit oak image spike vehicle grace citizen expose')).toBe(MnemonicUtils.MNEMONIC_TYPE.LEGACY);
+        expect(MnemonicUtils.getMnemonicType('void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold')).toBe(MnemonicUtils.MnemonicType.BIP39);
+        expect(MnemonicUtils.getMnemonicType('refuse walk suggest raven cheese gate eye divert base slot fossil lock oven fuel thank need unit oak image spike vehicle grace citizen expose')).toBe(MnemonicUtils.MnemonicType.LEGACY);
         // May be both:
-        expect(MnemonicUtils.getMnemonicType('enforce valid stock pool lonely label awesome olive torch pledge enhance deny you rude inspire ill letter pulse pact light timber enable elbow guide')).toBe(MnemonicUtils.MNEMONIC_TYPE.UNKNOWN);
+        expect(MnemonicUtils.getMnemonicType('enforce valid stock pool lonely label awesome olive torch pledge enhance deny you rude inspire ill letter pulse pact light timber enable elbow guide')).toBe(MnemonicUtils.MnemonicType.UNKNOWN);
         // Invalid checksum:
-        expect(MnemonicUtils.getMnemonicType('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art abandon abandon abandon abandon abandon abandon art')).toBe(MnemonicUtils.MNEMONIC_TYPE.UNKNOWN);
+        expect(() => MnemonicUtils.getMnemonicType('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art abandon abandon abandon abandon abandon abandon art')).toThrowError('Invalid checksum');
     });
 
     it('correctly detects collisions', () => {

@@ -3,7 +3,7 @@ class MnemonicUtils {
 
     /**
      * @param {Uint8Array} entropy
-     * @return {string}
+     * @returns {string}
      * @private
      */
     static _crcChecksum(entropy) {
@@ -16,7 +16,7 @@ class MnemonicUtils {
 
     /**
      * @param {Uint8Array} entropy
-     * @return {string}
+     * @returns {string}
      * @private
      */
     static _sha256Checksum(entropy) {
@@ -29,7 +29,7 @@ class MnemonicUtils {
 
     /**
      * @param {Uint8Array} entropy
-     * @return {string}
+     * @returns {string}
      * @private
      */
     static _entropyToBits(entropy) {
@@ -43,7 +43,7 @@ class MnemonicUtils {
 
     /**
      * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
-     * @return {Uint8Array}
+     * @returns {Uint8Array}
      * @private
      */
     static _normalizeEntropy(entropy) {
@@ -56,7 +56,7 @@ class MnemonicUtils {
     /**
      * @param {string} bits
      * @param {Array.<string>} wordlist
-     * @return {Array.<string>}
+     * @returns {Array.<string>}
      */
     static _bitsToMnemonic(bits, wordlist) {
         const chunks = bits.match(/(.{11})/g);
@@ -71,7 +71,7 @@ class MnemonicUtils {
     /**
      * @param {Array.<string>} mnemonic
      * @param {Array.<string>} wordlist
-     * @return {string}
+     * @returns {string}
      */
     static _mnemonicToBits(mnemonic, wordlist) {
         const words = mnemonic;
@@ -82,7 +82,7 @@ class MnemonicUtils {
         // Convert word indices to 11 bit binary strings
         const bits = words.map(function (word) {
             const index = wordlist.indexOf(word.toLowerCase());
-            if (index === -1) throw new Error('Invalid mnemonic, word >' + word + '< is not in wordlist');
+            if (index === -1) throw new Error(`Invalid mnemonic, word >${word}< is not in wordlist`);
 
             return StringUtils.lpad(index.toString(2), '0', 11);
         }).join('');
@@ -93,7 +93,7 @@ class MnemonicUtils {
     /**
      * @param {string} bits
      * @param {boolean} legacy
-     * @return {Uint8Array}
+     * @returns {Uint8Array}
      */
     static _bitsToEntropy(bits, legacy = false) {
         // Split the binary string into ENT/CS
@@ -118,7 +118,7 @@ class MnemonicUtils {
     /**
      * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
      * @param {Array.<string>} [wordlist]
-     * @return {Array.<string>}
+     * @returns {Array.<string>}
      */
     static entropyToMnemonic(entropy, wordlist) {
         wordlist = wordlist || MnemonicUtils.DEFAULT_WORDLIST;
@@ -134,7 +134,7 @@ class MnemonicUtils {
     /**
      * @param {string|ArrayBuffer|Uint8Array|Entropy} entropy
      * @param {Array.<string>} [wordlist]
-     * @return {Array.<string>}
+     * @returns {Array.<string>}
      * @deprecated
      */
     static entropyToLegacyMnemonic(entropy, wordlist) {
@@ -151,7 +151,7 @@ class MnemonicUtils {
     /**
      * @param {Array.<string>|string} mnemonic
      * @param {Array.<string>} [wordlist]
-     * @return {Entropy}
+     * @returns {Entropy}
      */
     static mnemonicToEntropy(mnemonic, wordlist) {
         if (!Array.isArray(mnemonic)) mnemonic = mnemonic.trim().split(/\s+/g);
@@ -164,7 +164,7 @@ class MnemonicUtils {
     /**
      * @param {Array.<string>|string} mnemonic
      * @param {Array.<string>} [wordlist]
-     * @return {Entropy}
+     * @returns {Entropy}
      * @deprecated
      */
     static legacyMnemonicToEntropy(mnemonic, wordlist) {
@@ -177,7 +177,7 @@ class MnemonicUtils {
 
     /**
      * @param {string} password
-     * @return {string}
+     * @returns {string}
      * @private
      */
     static _salt(password) {
@@ -187,7 +187,7 @@ class MnemonicUtils {
     /**
      * @param {string|Array.<string>} mnemonic
      * @param {string} [password]
-     * @return {Uint8Array}
+     * @returns {Uint8Array}
      */
     static mnemonicToSeed(mnemonic, password) {
         if (Array.isArray(mnemonic)) mnemonic = mnemonic.join(' ');
@@ -201,7 +201,7 @@ class MnemonicUtils {
     /**
      * @param {string|Array.<string>} mnemonic
      * @param {string} [password]
-     * @return {ExtendedPrivateKey}
+     * @returns {ExtendedPrivateKey}
      */
     static mnemonicToExtendedPrivateKey(mnemonic, password) {
         const seed = MnemonicUtils.mnemonicToSeed(mnemonic, password);
@@ -210,7 +210,7 @@ class MnemonicUtils {
 
     /**
      * @param {Entropy} entropy
-     * @return {boolean}
+     * @returns {boolean}
      */
     static isCollidingChecksum(entropy) {
         const normalizedEntropy = MnemonicUtils._normalizeEntropy(entropy);
@@ -220,7 +220,7 @@ class MnemonicUtils {
     /**
      * @param {string|Array.<string>} mnemonic
      * @param {Array.<string>} [wordlist]
-     * @return {MnemonicUtils.MNEMONIC_TYPE}
+     * @returns {MnemonicUtils.MnemonicType}
      */
     static getMnemonicType(mnemonic, wordlist) {
         if (!Array.isArray(mnemonic)) mnemonic = mnemonic.trim().split(/\s+/g);
@@ -234,8 +234,9 @@ class MnemonicUtils {
         let isLegacy = true;
         try { MnemonicUtils._bitsToEntropy(bits, true); } catch (e) { isLegacy = false; }
 
-        if (isBIP39 === isLegacy) return MnemonicUtils.MNEMONIC_TYPE.UNKNOWN;
-        return isBIP39 ? MnemonicUtils.MNEMONIC_TYPE.BIP39 : MnemonicUtils.MNEMONIC_TYPE.LEGACY;
+        if (isBIP39 && isLegacy) return MnemonicUtils.MnemonicType.UNKNOWN;
+        if (!isBIP39 && !isLegacy) throw new Error('Invalid checksum');
+        return isBIP39 ? MnemonicUtils.MnemonicType.BIP39 : MnemonicUtils.MnemonicType.LEGACY;
     }
 }
 
@@ -245,10 +246,10 @@ MnemonicUtils.DEFAULT_WORDLIST = MnemonicUtils.ENGLISH_WORDLIST;
 /**
  * @enum {number}
  */
-MnemonicUtils.MNEMONIC_TYPE = {
+MnemonicUtils.MnemonicType = {
+    UNKNOWN: -1,
     LEGACY: 0,
     BIP39: 1,
-    UNKNOWN: 2,
 };
 
 Object.freeze(MnemonicUtils);
