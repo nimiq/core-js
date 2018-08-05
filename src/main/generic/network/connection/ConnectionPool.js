@@ -418,14 +418,18 @@ class ConnectionPool extends Observable {
         /** @type {PeerConnection} */
         let peerConnection;
         if (conn.outbound) {
-            this._connectingCount--;
-            Assert.that(this._connectingCount >= 0, 'connectingCount < 0');
-
             peerConnection = this.getConnectionByPeerAddress(conn.peerAddress);
 
-            Assert.that(!!peerConnection, `PeerAddress not stored ${conn.peerAddress}`);
-            Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
-                `PeerConnection state not CONNECTING, but ${peerConnection.state} (${conn.peerAddress})`);
+            if (!peerConnection) {
+                conn.close(CloseType.INVALID_CONNECTION_STATE, `No PeerConnection present for outgoing connection (${conn.peerAddress})`);
+                return;
+            } else if (peerConnection.state !== PeerConnectionState.CONNECTING) {
+                conn.close(CloseType.INVALID_CONNECTION_STATE, `PeerConnection state not CONNECTING, but ${peerConnection.state} (${conn.peerAddress})`);
+                return;
+            }
+
+            this._connectingCount--;
+            Assert.that(this._connectingCount >= 0, 'connectingCount < 0');
         } else {
             peerConnection = PeerConnection.getInbound(conn);
             this._inboundCount++;
