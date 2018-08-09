@@ -278,9 +278,9 @@ class JsonRpcServer {
         }
         let transaction;
         if (fromType !== Nimiq.Account.Type.BASIC) {
-            throw new Error('Only basic transactions may be sent using "sendTransaction".');
+            throw new Error('Only transactions from basic accounts may be created using this function.');
         } else if (toType !== Nimiq.Account.Type.BASIC || data !== null) {
-            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, blockchain.height, Nimiq.Transaction.Flag.NONE, data);
+            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, this._blockchain.height, Nimiq.Transaction.Flag.NONE, data);
             transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
         } else {
             transaction = wallet.createTransaction(to, value, fee, this._blockchain.height);
