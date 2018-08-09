@@ -56,14 +56,14 @@ jobs:
         jwt:
           secure: hoZJuHfZCCqD9umU2EbOlfcgLOhNjUJpkTHVVHny/CEjsonRcMO3+2dyASq1MspkhP+0au1KLXpKjvprkli8SMgNrrx35hyVVMw7p8Le0Flwmj+8oJkSqeUnJhfTRhcun0HB9lSILRpaQqW8eEgLQSlFf6uVQdk+rXcFPy/ZkM+PBZRwzlmdr1jtMQR0F+Iv/wz0ORy9GWA6hdpOqw8A0G3nnQqe9zZ8OdIXiVm/8ch8+hL4bGz6BoBC1kkhi1ia2Ne5KFSOEhz8P92S9K6IPSS+VqiZCZnOo/2alDQ4DniElskEliN1edhqOT4GCq29MfLZzV+xDqfRkcXwSbP0+t7QtHRG7ZW2cOHAPuyNlrdyWycVhB9Tp0khyHNxu3bK8HluCu0q2ZEpdZqQQvKPYJtaS/OmVszYFlj0RqDE1ZsrCCtpyawtqsvPrNPWcES3mro5P97884FFXX5Lou8QJkjm+rsHOxdHcONwz+b6TDRa4JQuubkglF9aeTHXgk0a6mpPcNDDEDNKQsaI99kAGxUbDSEDJ+Kc/t0ndZZ2L+OyrchgOajsRNopoUfopf3eOvGwGA6uQxGgQqLUueW2WNYI1Fh96RCYaZUCexh1hy24+LQLFzRYqxMQyMma11nSBsUudJoYk+ExI9GZgI8co7SxTxq0wh1wTFPv4Odcv50=
       script: ./travis-script.sh
-    - stage: test
-      env: TO_TEST=Karma/SauceLabs/Safari_11 EXCLUDE_MINER=true
-      addons:
-        sauce_connect:
-          username: nimiq
-        jwt:
-          secure: hoZJuHfZCCqD9umU2EbOlfcgLOhNjUJpkTHVVHny/CEjsonRcMO3+2dyASq1MspkhP+0au1KLXpKjvprkli8SMgNrrx35hyVVMw7p8Le0Flwmj+8oJkSqeUnJhfTRhcun0HB9lSILRpaQqW8eEgLQSlFf6uVQdk+rXcFPy/ZkM+PBZRwzlmdr1jtMQR0F+Iv/wz0ORy9GWA6hdpOqw8A0G3nnQqe9zZ8OdIXiVm/8ch8+hL4bGz6BoBC1kkhi1ia2Ne5KFSOEhz8P92S9K6IPSS+VqiZCZnOo/2alDQ4DniElskEliN1edhqOT4GCq29MfLZzV+xDqfRkcXwSbP0+t7QtHRG7ZW2cOHAPuyNlrdyWycVhB9Tp0khyHNxu3bK8HluCu0q2ZEpdZqQQvKPYJtaS/OmVszYFlj0RqDE1ZsrCCtpyawtqsvPrNPWcES3mro5P97884FFXX5Lou8QJkjm+rsHOxdHcONwz+b6TDRa4JQuubkglF9aeTHXgk0a6mpPcNDDEDNKQsaI99kAGxUbDSEDJ+Kc/t0ndZZ2L+OyrchgOajsRNopoUfopf3eOvGwGA6uQxGgQqLUueW2WNYI1Fh96RCYaZUCexh1hy24+LQLFzRYqxMQyMma11nSBsUudJoYk+ExI9GZgI8co7SxTxq0wh1wTFPv4Odcv50=
-      script: ./travis-script.sh
+#    - stage: test
+#      env: TO_TEST=Karma/SauceLabs/Safari_11 EXCLUDE_MINER=true
+#      addons:
+#        sauce_connect:
+#          username: nimiq
+#        jwt:
+#          secure: hoZJuHfZCCqD9umU2EbOlfcgLOhNjUJpkTHVVHny/CEjsonRcMO3+2dyASq1MspkhP+0au1KLXpKjvprkli8SMgNrrx35hyVVMw7p8Le0Flwmj+8oJkSqeUnJhfTRhcun0HB9lSILRpaQqW8eEgLQSlFf6uVQdk+rXcFPy/ZkM+PBZRwzlmdr1jtMQR0F+Iv/wz0ORy9GWA6hdpOqw8A0G3nnQqe9zZ8OdIXiVm/8ch8+hL4bGz6BoBC1kkhi1ia2Ne5KFSOEhz8P92S9K6IPSS+VqiZCZnOo/2alDQ4DniElskEliN1edhqOT4GCq29MfLZzV+xDqfRkcXwSbP0+t7QtHRG7ZW2cOHAPuyNlrdyWycVhB9Tp0khyHNxu3bK8HluCu0q2ZEpdZqQQvKPYJtaS/OmVszYFlj0RqDE1ZsrCCtpyawtqsvPrNPWcES3mro5P97884FFXX5Lou8QJkjm+rsHOxdHcONwz+b6TDRa4JQuubkglF9aeTHXgk0a6mpPcNDDEDNKQsaI99kAGxUbDSEDJ+Kc/t0ndZZ2L+OyrchgOajsRNopoUfopf3eOvGwGA6uQxGgQqLUueW2WNYI1Fh96RCYaZUCexh1hy24+LQLFzRYqxMQyMma11nSBsUudJoYk+ExI9GZgI8co7SxTxq0wh1wTFPv4Odcv50=
+#      script: ./travis-script.sh
 #    - stage: test
 #      env: TO_TEST=Karma/SauceLabs/Safari_10.1 USE_BABEL=1
 #      addons:
