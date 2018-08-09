@@ -95,7 +95,7 @@ class TransactionCache {
         return Policy.TRANSACTION_VALIDITY_WINDOW - this._blockOrder.length;
     }
 
-    /** @type {InclusionHashSet.<Transaction>} */
+    /** @type {InclusionHashSet.<Hash>} */
     get transactions() {
         return this._transactionHashes;
     }

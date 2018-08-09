@@ -246,7 +246,7 @@ class HashedTimeLockedContract extends Contract {
 
     /**
      * @param {number} balance
-     * @return {Account|*}
+     * @return {HashedTimeLockedContract|*}
      */
     withBalance(balance) {
         return new HashedTimeLockedContract(balance, this._sender, this._recipient, this._hashRoot, this._hashCount, this._timeout, this._totalAmount);

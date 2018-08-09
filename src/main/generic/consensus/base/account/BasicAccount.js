@@ -65,7 +65,7 @@ class BasicAccount extends Account {
 
     /**
      * @param {number} balance
-     * @return {Account|*}
+     * @return {BasicAccount|*}
      */
     withBalance(balance) {
         return new BasicAccount(balance);

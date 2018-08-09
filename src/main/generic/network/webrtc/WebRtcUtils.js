@@ -1,4 +1,7 @@
 class WebRtcUtils {
+    /**
+     * @param {RTCIceCandidate} candidate
+     */
     static candidateToNetAddress(candidate) {
         // TODO XXX Ad-hoc parsing of candidates - Improve!
         const parts = candidate.candidate.split(' ');

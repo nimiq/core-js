@@ -188,7 +188,7 @@ class VestingContract extends Contract {
 
     /**
      * @param {number} balance
-     * @return {Account|*}
+     * @return {VestingContract|*}
      */
     withBalance(balance) {
         return new VestingContract(balance, this._owner, this._vestingStart, this._vestingStepBlocks, this._vestingStepAmount, this._vestingTotalAmount);

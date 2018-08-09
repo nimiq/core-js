@@ -4,7 +4,7 @@ class SignalMessage extends Message {
      * @param {PeerId} recipientId
      * @param {number} nonce
      * @param {number} ttl
-     * @param {SignalMessage.Flags|number} flags
+     * @param {SignalMessage.Flag|number} flags
      * @param {Uint8Array} [payload]
      * @param {PublicKey} [senderPubKey]
      * @param {Signature} [signature]
@@ -32,7 +32,7 @@ class SignalMessage extends Message {
         this._nonce = nonce;
         /** @type {number} */
         this._ttl = ttl;
-        /** @type {SignalMessage.Flags|number} */
+        /** @type {SignalMessage.Flag|number} */
         this._flags = flags;
         /** @type {Uint8Array} */
         this._payload = payload;
@@ -128,7 +128,7 @@ class SignalMessage extends Message {
         return this._ttl;
     }
 
-    /** @type {SignalMessage.Flags|number} */
+    /** @type {SignalMessage.Flag|number} */
     get flags() {
         return this._flags;
     }
