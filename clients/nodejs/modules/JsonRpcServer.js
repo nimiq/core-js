@@ -104,6 +104,7 @@ class JsonRpcServer {
         this._methods.set('sendRawTransaction', this.sendRawTransaction.bind(this));
         this._methods.set('createRawTransaction', this.createRawTransaction.bind(this));
         this._methods.set('sendTransaction', this.sendTransaction.bind(this));
+        this._methods.set('getRawTransactionInfo', this.getRawTransactionInfo.bind(this));
         this._methods.set('getTransactionByBlockHashAndIndex', this.getTransactionByBlockHashAndIndex.bind(this));
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
@@ -290,6 +291,20 @@ class JsonRpcServer {
 
     async sendTransaction(tx) {
         return this.sendRawTransaction(await this.createRawTransaction(tx));
+    }
+
+    async getRawTransactionInfo(txHex) {
+        const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txHex));
+        const liveTx = await this._getTransactionByHash(tx.hash());
+        if (liveTx) {
+            liveTx.valid = true;
+            liveTx.inMempool = (liveTx.confirmations === 0);
+            return liveTx;
+        }
+        const txObj = this._transactionToObj(tx);
+        txObj.valid = await tx.verify();
+        txObj.inMempool = false;
+        return txObj;
     }
 
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
