@@ -66,7 +66,7 @@ async function _import(type, format) {
             break;
         }
         case 'hex': {
-            if (type === 'auto') throw new Error('Cannot private key auto-discovery with hex encoding. Specify through --type option.');
+            if (type === 'auto') throw new Error('Unable to auto-discover private key type with hex encoding. Specify through --type option.');
             const hex = await new Promise((resolve) => {
                 rl.question('Enter private key as hex: ', resolve);
             });
@@ -74,7 +74,7 @@ async function _import(type, format) {
             break;
         }
         case 'base64': {
-            if (type === 'auto') throw new Error('Cannot private key auto-discovery with base64 encoding. Specify through --type option.');
+            if (type === 'auto') throw new Error('Unable to auto-discover private key type with base64 encoding. Specify through --type option.');
             const hex = await new Promise((resolve) => {
                 rl.question('Enter private key as base64: ', resolve);
             });
@@ -90,7 +90,7 @@ async function _import(type, format) {
             const walletStore = await new Nimiq.WalletStore();
             await walletStore.put(wallet);
             await walletStore.close();
-            console.log('Imported Wallet for Address:', wallet.address.toUserFriendlyAddress());
+            console.log('Imported wallet for address:', wallet.address.toUserFriendlyAddress());
             break;
         }
         case 'bip39': {
@@ -131,11 +131,11 @@ async function remove(address) {
     const nimAddress = Nimiq.Address.fromString(address);
     const def = await walletStore.getDefault();
     await walletStore.remove(nimAddress);
-    console.log('Removed Address:', Nimiq.Address.fromString(address).toUserFriendlyAddress());
+    console.log('Removed address:', Nimiq.Address.fromString(address).toUserFriendlyAddress());
     if (nimAddress.equals(def.address)) {
         const list = await walletStore.list();
         await walletStore.setDefault(list[0]);
-        console.log('Set default to Address:', list[0].toUserFriendlyAddress());
+        console.log('Set default to address:', list[0].toUserFriendlyAddress());
     }
     await walletStore.close();
 }
@@ -145,7 +145,7 @@ async function setDefault(address) {
     const walletStore = await new Nimiq.WalletStore();
     await walletStore.setDefault(Nimiq.Address.fromString(address));
     await walletStore.close();
-    console.log('Set default to Address:', Nimiq.Address.fromString(address).toUserFriendlyAddress());
+    console.log('Set default to address:', Nimiq.Address.fromString(address).toUserFriendlyAddress());
 }
 
 function help() {
@@ -171,22 +171,22 @@ Options:
     rl.close();
 }
 
-if (argv.help) {
-    return help();
-}
-
-argv.type = argv.type || 'auto';
-if (!['auto', 'legacy'].includes(argv.type)) {
-    console.error('Invalid type:', argv.type);
-    return help();
-}
-argv.format = argv.format || 'words';
-if (!['words', 'hex', 'base64', 'legacy'].includes(argv.format)) {
-    console.error('Invalid format:', argv.format);
-    return help();
-}
-
 (async () => {
+    if (argv.help) {
+        return help();
+    }
+
+    argv.type = argv.type || 'auto';
+    if (!['auto', 'legacy'].includes(argv.type)) {
+        console.error('Invalid type:', argv.type);
+        return help();
+    }
+    argv.format = argv.format || 'words';
+    if (!['words', 'hex', 'base64', 'legacy'].includes(argv.format)) {
+        console.error('Invalid format:', argv.format);
+        return help();
+    }
+
     try {
         switch (argv._[0]) {
             case 'list':
