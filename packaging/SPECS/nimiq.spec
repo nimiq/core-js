@@ -45,8 +45,8 @@ install -m 0600 fakeroot/etc/nimiq/%{name}.conf %{buildroot}%{_sysconfdir}/%{nam
 install -m 0666 nimiq.repo %{buildroot}%{_sysconfdir}/yum.repos.d/
 install -m 0666 RPM-GPG-KEY-nimiq %{buildroot}%{_sysconfdir}/pki/rpm-gpg/
 install -m 0755 node %{buildroot}%{_datarootdir}/%{name}/
-install -m 0644 index.js package.json VERSION %{buildroot}%{_datarootdir}/%{name}/
-cp -r build/ lib/ modules/ node_modules/ %{buildroot}%{_datarootdir}/%{name}/
+install -m 0644 index.js remote.js keytool.js package.json VERSION %{buildroot}%{_datarootdir}/%{name}/
+cp -r build/ lib/ modules/ node-ui/ node_modules/ %{buildroot}%{_datarootdir}/%{name}/
 install -m 0644 systemd.service %{buildroot}%{_unitdir}/%{name}.service
 
 
@@ -56,11 +56,14 @@ install -m 0644 systemd.service %{buildroot}%{_unitdir}/%{name}.service
 %{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-nimiq
 %{_datarootdir}/%{name}/node
 %{_datarootdir}/%{name}/index.js
+%{_datarootdir}/%{name}/remote.js
+%{_datarootdir}/%{name}/keytool.js
 %{_datarootdir}/%{name}/package.json
 %{_datarootdir}/%{name}/VERSION
 %{_datarootdir}/%{name}/lib
 %{_datarootdir}/%{name}/build
 %{_datarootdir}/%{name}/modules
+%{_datarootdir}/%{name}/node-ui
 %{_datarootdir}/%{name}/node_modules
 %{_unitdir}/%{name}.service
 
