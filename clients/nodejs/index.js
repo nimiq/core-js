@@ -266,6 +266,13 @@ const $ = {};
         Nimiq.Log.i(TAG, `Disconnected from ${peer.peerAddress.toString()}`);
     });
 
+    $.network.on('peer-joined', (peer) => {
+        const isSeed = Nimiq.GenesisConfig.SEED_PEERS.some((seed) => seed.toString() === peer.peerAddress.toString());
+        if(isSeed && peer.timeOffset > Nimiq.Network.TIME_OFFSET_MAX) {
+            Nimiq.Log.e(TAG, 'Your local system time seems to be wrong');
+        }
+    });
+
     if (!config.passive) {
         $.network.connect();
     }
