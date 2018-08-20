@@ -271,6 +271,7 @@ class JsonRpcServer {
         const toType = tx.toType ? Number.parseInt(tx.toType) : Nimiq.Account.Type.BASIC;
         const value = parseInt(tx.value);
         const fee = parseInt(tx.fee);
+        const flags = tx.flags ? Number.parseInt(tx.flags) : Nimiq.Transaction.Flag.NONE;
         const data = tx.data ? Nimiq.BufferUtils.fromHex(tx.data) : null;
         /** @type {Wallet} */
         const wallet = await this._walletStore.get(from);
@@ -281,7 +282,7 @@ class JsonRpcServer {
         if (fromType !== Nimiq.Account.Type.BASIC) {
             throw new Error('Only transactions from basic accounts may be created using this function.');
         } else if (toType !== Nimiq.Account.Type.BASIC || data !== null) {
-            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, this._blockchain.height, Nimiq.Transaction.Flag.NONE, data);
+            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, this._blockchain.height, flags, data);
             transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
         } else {
             transaction = wallet.createTransaction(to, value, fee, this._blockchain.height);
@@ -702,7 +703,8 @@ class JsonRpcServer {
             toAddress: tx.recipient.toUserFriendlyAddress(),
             value: tx.value,
             fee: tx.fee,
-            data: Nimiq.BufferUtils.toHex(tx.data) || null
+            data: Nimiq.BufferUtils.toHex(tx.data) || null,
+            flags: tx.flags
         };
     }
 
