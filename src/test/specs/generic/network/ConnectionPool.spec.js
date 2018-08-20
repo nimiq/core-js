@@ -330,7 +330,7 @@ describe('ConnectionPool', () => {
                 expect(consensus3.network._connections.count).toBe(2);
 
                 done();
-            }, 15000);
+            }, 30000);
         })().catch(done.fail);
     });
 
@@ -381,7 +381,7 @@ describe('ConnectionPool', () => {
                 expect(consensus3.network._connections.count).toBe(2);
 
                 done();
-            }, 15000);
+            }, 30000);
         })().catch(done.fail);
     });
 
@@ -430,7 +430,7 @@ describe('ConnectionPool', () => {
                 expect(consensus3.network._connections.count).toBe(2);
 
                 done();
-            }, 15000);
+            }, 30000);
         })().catch(done.fail);
     });
 

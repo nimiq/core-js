@@ -75,7 +75,7 @@ describe('LightConsensus', () => {
 
                 Policy.DIFFICULTY_BLOCK_WINDOW = orgDifficultyBlockWindow;
                 done();
-            }, 10000);
+            }, 30000);
         })().catch(done.fail);
     });
 });
