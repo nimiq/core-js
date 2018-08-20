@@ -208,7 +208,7 @@ class JsonRpcServer {
         if (split.length === 1 || (split.length === 4 && split[3].length > 0)) {
             const peerId = Nimiq.PeerId.fromHex(split[split.length - 1]);
             peerAddress = this._network.addresses.getByPeerId(peerId);
-        } else if (split[0] === 'wss:' && split.length >= 3) {
+        } else if ((split[0] === 'wss:' || split[0] === 'ws:') && split.length >= 3) {
             const colons = split[2].split(':', 2);
             if (colons.length === 2) {
                 peerAddress = this._network.addresses.get(Nimiq.WsPeerAddress.seed(colons[0], parseInt(colons[1])));
