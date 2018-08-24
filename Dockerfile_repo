@@ -6,7 +6,7 @@ RUN apt-get install -y build-essential git-core
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
-RUN useradd ${USER}
+RUN useradd -m ${USER}
 
 # Create a working directory for the nimiq process
 ENV DATA_PATH=/nimiq
@@ -19,6 +19,9 @@ WORKDIR ${DATA_PATH}
 # working directory (".").
 COPY --chown=nimiq:root . core
 
+# Build environment as non-root user
+USER ${USER}
+
 # Build
 RUN cd core && yarn
 
@@ -26,7 +29,7 @@ RUN cd core && yarn
 USER root
 RUN apt-get remove -y build-essential
 
-# Switch back to nimiq user
+# Execute client as non-root user
 USER ${USER}
 
 # Just execute the nimiq process. One can customize the created container easily
