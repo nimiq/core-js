@@ -144,7 +144,7 @@ class Accounts extends Observable {
             const toBePruned = [];
             for (const tx of transactions) {
                 const senderAccount = this._getSync(tx.sender, undefined, tree);
-                if (senderAccount.isToBePruned()) {
+                if (senderAccount.isToBePruned() && toBePruned.findIndex((acc) => acc.address.equals(tx.sender)) == -1) {
                     toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
                 }
             }
