@@ -274,4 +274,145 @@ describe('Accounts', () => {
             }
         })().then(done, done.fail);
     });
+
+    it('correctly identifies accounts that should be pruned (no pruning)', (done) => {
+        (async () => {
+            const signerWallet = Wallet.generate();
+            const signerAddress = signerWallet.address;
+            const contractAddress = Address.fromBase64(Dummy.address1);
+            const recipientAddress = Address.fromBase64(Dummy.address2);
+
+            const accounts = await Accounts.createVolatile();
+            const contract = new VestingContract(10, signerAddress, 0, 0, 0, 0);
+            expect(contract.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress, contract);
+
+            const tx1 = new ExtendedTransaction(contractAddress, Account.Type.VESTING,
+                recipientAddress, Account.Type.BASIC,
+                5, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx1.proof = signerWallet.signTransaction(tx1).serialize();
+
+            const transactions = [tx1];
+            const toBePruned = await accounts.gatherToBePrunedAccounts(transactions, 2, new TransactionCache());
+            expect(toBePruned.length).toBe(0);
+        })().then(done, done.fail);
+    });
+
+    it('correctly identifies accounts that should be pruned (single transaction)', (done) => {
+        (async () => {
+            const signerWallet = Wallet.generate();
+            const signerAddress = signerWallet.address;
+            const contractAddress = Address.fromBase64(Dummy.address1);
+            const recipientAddress = Address.fromBase64(Dummy.address2);
+
+            const accounts = await Accounts.createVolatile();
+            const contract = new VestingContract(10, signerAddress, 0, 0, 0, 0);
+            expect(contract.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress, contract);
+
+            const tx1 = new ExtendedTransaction(contractAddress, Account.Type.VESTING,
+                recipientAddress, Account.Type.BASIC,
+                10, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx1.proof = signerWallet.signTransaction(tx1).serialize();
+
+            const transactions = [tx1];
+            const toBePruned = await accounts.gatherToBePrunedAccounts(transactions, 2, new TransactionCache());
+            expect(toBePruned.length).toBe(1);
+            expect(toBePruned[0].address.equals(contractAddress)).toBe(true);
+            expect(toBePruned[0].account.equals(contract));
+        })().then(done, done.fail);
+    });
+
+    it('correctly identifies accounts that should be pruned (multiple transactions)', (done) => {
+        (async () => {
+            const signerWallet = Wallet.generate();
+            const signerAddress = signerWallet.address;
+            const contractAddress = Address.fromBase64(Dummy.address1);
+            const recipientAddress = Address.fromBase64(Dummy.address2);
+
+            const accounts = await Accounts.createVolatile();
+            const contract = new VestingContract(10, signerAddress, 0, 0, 0, 0);
+            expect(contract.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress, contract);
+
+            const tx1 = new ExtendedTransaction(contractAddress, Account.Type.VESTING,
+                recipientAddress, Account.Type.BASIC,
+                5, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx1.proof = signerWallet.signTransaction(tx1).serialize();
+
+            const tx2 = new ExtendedTransaction(contractAddress, Account.Type.VESTING,
+                recipientAddress, Account.Type.BASIC,
+                5, 0, 1, Transaction.Flag.NONE, new Uint8Array(1));
+            tx2.proof = signerWallet.signTransaction(tx2).serialize();
+
+            const transactions = [tx1, tx2];
+            const toBePruned = await accounts.gatherToBePrunedAccounts(transactions, 2, new TransactionCache());
+            expect(toBePruned.length).toBe(1);
+            expect(toBePruned[0].address.equals(contractAddress)).toBe(true);
+            expect(toBePruned[0].account.equals(contract));
+        })().then(done, done.fail);
+    });
+
+    it('correctly identifies accounts that should be pruned (multiple transactions/accounts)', (done) => {
+        (async () => {
+            const signerWallet = Wallet.generate();
+            const signerAddress = signerWallet.address;
+            const contractAddress1 = Address.fromBase64(Dummy.address1);
+            const contractAddress2 = Address.fromBase64(Dummy.address2);
+            const contractAddress3 = Address.fromBase64(Dummy.address3);
+            const recipientAddress1 = Address.fromBase64(Dummy.address4);
+            const recipientAddress2 = Address.fromBase64(Dummy.address5);
+
+            const accounts = await Accounts.createVolatile();
+            const contract1 = new VestingContract(10, signerAddress, 0, 0, 0, 0);
+            expect(contract1.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress1, contract1);
+
+            const contract2 = new VestingContract(20, signerAddress, 0, 0, 0, 0);
+            expect(contract2.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress2, contract2);
+
+            const contract3 = new VestingContract(30, signerAddress, 0, 0, 0, 0);
+            expect(contract3.getMinCap(2)).toBe(0);
+            await accounts._tree.put(contractAddress3, contract3);
+
+            const tx1 = new ExtendedTransaction(contractAddress1, Account.Type.VESTING,
+                recipientAddress1, Account.Type.BASIC,
+                5, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx1.proof = signerWallet.signTransaction(tx1).serialize();
+
+            const tx2 = new ExtendedTransaction(contractAddress1, Account.Type.VESTING,
+                recipientAddress2, Account.Type.BASIC,
+                4, 1, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx2.proof = signerWallet.signTransaction(tx2).serialize();
+
+            const tx3 = new ExtendedTransaction(contractAddress2, Account.Type.VESTING,
+                recipientAddress2, Account.Type.BASIC,
+                18, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
+            tx3.proof = signerWallet.signTransaction(tx3).serialize();
+
+            const tx4 = new ExtendedTransaction(contractAddress2, Account.Type.VESTING,
+                recipientAddress2, Account.Type.BASIC,
+                1, 0, 1, Transaction.Flag.NONE, new Uint8Array(1));
+            tx4.proof = signerWallet.signTransaction(tx4).serialize();
+
+            const tx5 = new ExtendedTransaction(contractAddress2, Account.Type.VESTING,
+                recipientAddress1, Account.Type.BASIC,
+                1, 0, 1, Transaction.Flag.NONE, new Uint8Array(2));
+            tx5.proof = signerWallet.signTransaction(tx5).serialize();
+
+            const tx6 = new ExtendedTransaction(contractAddress3, Account.Type.VESTING,
+                recipientAddress1, Account.Type.BASIC,
+                29, 0, 1, Transaction.Flag.NONE, new Uint8Array(2));
+            tx6.proof = signerWallet.signTransaction(tx6).serialize();
+
+            const transactions = [tx1, tx2, tx3, tx4, tx5, tx6];
+            const toBePruned = await accounts.gatherToBePrunedAccounts(transactions, 2, new TransactionCache());
+            expect(toBePruned.length).toBe(2);
+            expect(toBePruned[0].address.equals(contractAddress2)).toBe(true);
+            expect(toBePruned[0].account.equals(contract2));
+            expect(toBePruned[1].address.equals(contractAddress1)).toBe(true);
+            expect(toBePruned[1].account.equals(contract1));
+        })().then(done, done.fail);
+    });
 });

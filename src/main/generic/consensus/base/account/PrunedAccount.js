@@ -52,8 +52,18 @@ class PrunedAccount {
         return this;
     }
 
+    /**
+     * @returns {number}
+     */
     get serializedSize() {
         return this._address.serializedSize + this._account.serializedSize;
+    }
+
+    /**
+     * @returns {string}
+     */
+    hashCode() {
+        return this._address.hashCode();
     }
 }
 

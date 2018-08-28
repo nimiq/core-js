@@ -23,6 +23,7 @@ Dummy.publicKey5 = 'nfiNBLRtgH6ImIEthsxUsayGnvYGCXAGutocYeTWRYcCnt4db0ermqIPA3ql
 Dummy.address1 = 'kekkD0FSI5gu3DRVMmMHEOlKf1I='; // 'hello1'
 Dummy.address2 = 'hymMwvMfunMYHqKp5u8Q3OIe2V4='; // 'hello2'
 Dummy.address3 = 'R+pwzwiHK9tK+tNDKwHZY6x9Fl8='; // 'hello3'
+Dummy.address4 = 'XRwxIq2oUTimffwVJny+sh3TYEE=';
 Dummy.address5 = 'xhjzRboKle+Qj5h5fG/WUF81DHQ=';
 
 Dummy.signature1 = 'yn57dWMc9EQVuvuzmoi+36ftTKXLBvpPkLkSUvi33gtUbq6iY5LtiaQzr5Z9DXBxoyBlFllubqpWMzdcLTyesA==';
