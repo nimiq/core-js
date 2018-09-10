@@ -584,7 +584,7 @@ class BaseChain extends IBlockchain {
      * @param {ChainProof} proof1
      * @param {ChainProof} proof2
      * @param {number} m
-     * @returns {boolean}
+     * @returns {Promise.<boolean>}
      */
     static async isBetterProof(proof1, proof2, m) {
         const lca = BlockChain.lowestCommonAncestor(proof1.prefix, proof2.prefix);

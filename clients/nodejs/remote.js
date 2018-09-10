@@ -680,20 +680,12 @@ async function action(args, rl) {
             return;
         }
         case 'mempool.content': {
-            let includeTransactions = args.length === 2 && isTrue(args[1]);
+            const includeTransactions = args.length === 2 && isTrue(args[1]);
             const transactions = await jsonRpcFetch('mempoolContent', includeTransactions);
             console.log(chalk`Mempool content ({bold ${transactions.length}} transactions):`);
             for (const tx of transactions) {
                 if (includeTransactions) {
-                    const date = new Date(tx.timestamp * 1000);
-                    let dateStr = date.getDate().toString();
-                    if (dateStr.length === 1) {
-                        dateStr = ` ${dateStr} `;
-                    } else {
-                        dateStr = `${dateStr[0]}${dateStr[1]} `;
-                    }
-                    console.log(chalk`${dateStr} | ${tx.fromString} -> ${tx.toString} | ${nimValueFormat(tx.value, 10)} | ${nimValueFormat(tx.fee, 10)}`);
-                    console.log(`ID: ${tx.hash}`);
+                    console.log(chalk`ID: ${tx.hash} | ${tx.fromAddress} -> ${tx.toAddress} | ${nimValueFormat(tx.value, 10)} | ${nimValueFormat(tx.fee, 10)}`);
                 } else {
                     console.log(tx);
                 }
@@ -701,7 +693,7 @@ async function action(args, rl) {
             return;
         }
         case 'mempool.content.json': {
-            let includeTransactions = args.length === 2 && isTrue(args[1]);
+            const includeTransactions = args.length === 2 && isTrue(args[1]);
             console.log(JSON.stringify(await jsonRpcFetch('mempoolContent', includeTransactions)));
             return;
         }

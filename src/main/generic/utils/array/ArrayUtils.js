@@ -34,7 +34,7 @@ class ArrayUtils {
     /**
      * @param {Array} list
      * @param {number} k
-     * @return {Generator}
+     * @yields {Array}
      */
     static *k_combinations(list, k) {
         const n = list.length;

@@ -179,7 +179,7 @@ Account.Type = {
     HTLC: 2
 };
 /**
- * @type {Map.<Account.Type, {copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, create: function(balance: number, blockHeight: number, transaction: Transaction):Account, verifyOutgoingTransaction: function(transaction: Transaction):Promise.<boolean>, verifyIncomingTransaction: function(transaction: Transaction):Promise.<boolean>}>}
+ * @type {Map.<Account.Type, {copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, create: function(balance: number, blockHeight: number, transaction: Transaction):Account, verifyOutgoingTransaction: function(transaction: Transaction):boolean, verifyIncomingTransaction: function(transaction: Transaction):boolean}>}
  */
 Account.TYPE_MAP = new Map();
 

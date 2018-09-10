@@ -141,14 +141,14 @@ class Accounts extends Observable {
             this._processRecipientAccounts(tree, transactions, blockHeight);
             this._processContracts(tree, transactions, blockHeight);
 
-            const toBePruned = [];
+            const toBePruned = new HashSet();
             for (const tx of transactions) {
                 const senderAccount = this._getSync(tx.sender, undefined, tree);
-                if (senderAccount.isToBePruned() && toBePruned.findIndex((acc) => acc.address.equals(tx.sender)) == -1) {
-                    toBePruned.push(new PrunedAccount(tx.sender, senderAccount));
+                if (senderAccount.isToBePruned()) {
+                    toBePruned.add(new PrunedAccount(tx.sender, senderAccount));
                 }
             }
-            return toBePruned.sort((a, b) => a.compare(b));
+            return toBePruned.values().sort((a, b) => a.compare(b));
         } finally {
             await tree.abort();
         }

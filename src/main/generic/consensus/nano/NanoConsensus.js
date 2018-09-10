@@ -101,7 +101,7 @@ class NanoConsensus extends BaseConsensus {
     /**
      * @param {Address} address
      * @param {Hash} [blockHash]
-     * @returns {Promise.<Account>}
+     * @returns {Promise.<?Account>}
      */
     async getAccount(address, blockHash = null) {
         return (await this.getAccounts([address], blockHash))[0];

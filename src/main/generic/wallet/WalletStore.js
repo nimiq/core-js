@@ -34,14 +34,14 @@ class WalletStore {
     /**
      * @returns {Promise.<boolean>}
      */
-    async hasDefault(key) {
+    async hasDefault() {
         const defaultAddress = await this._walletStore.get('default');
         return !!defaultAddress;
     }
 
     /**
      * @param {Uint8Array|string} [key]
-     * @returns {Promise.<?Wallet>}
+     * @returns {Promise.<Wallet>}
      */
     async getDefault(key) {
         const defaultAddress = await this._walletStore.get('default');

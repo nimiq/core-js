@@ -49,6 +49,10 @@ class WebRtcConnector extends Observable {
         return this._connectors.contains(msg.senderId) && this._connectors.get(msg.senderId).nonce === msg.nonce;
     }
 
+    /**
+     * @param {PeerChannel} channel
+     * @param {SignalMessage} msg
+     */
     onSignal(channel, msg) {
         // Check if we received an unroutable/ttl exceeded response from one of the signaling peers.
         if (msg.isUnroutable() || msg.isTtlExceeded()) {
@@ -188,6 +192,9 @@ class PeerConnector extends Observable {
         this._localIceCandidates = [];
     }
 
+    /**
+     * @param {*} signal
+     */
     onSignal(signal) {
         if (!this._rtcConnection) throw new Error('RTC connection closed');
         if (signal.sdp) {
