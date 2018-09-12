@@ -35,8 +35,8 @@ class MinerWorker : public AsyncWorker {
 
         void HandleOKCallback() {
             HandleScope scope;
-            Local<Value> argv[] = {New<Number>(result_nonce)}; 
-            callback->Call(1, argv);
+            Local<Value> argv[] = {New<Number>(result_nonce)};
+            Nan::Call(*callback, 1, argv);
         }
 
     private:
@@ -63,7 +63,7 @@ class Argon2Worker : public AsyncWorker {
         void HandleOKCallback() {
             HandleScope scope;
             Local<Value> argv[] = {New<Number>(res)};
-            callback->Call(1, argv);
+            Nan::Call(*callback, 1, argv);
         }
 
     private:

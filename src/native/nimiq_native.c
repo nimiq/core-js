@@ -105,7 +105,8 @@ int nimiq_argon2_no_wipe(void *out, const void *in, const size_t inlen, const ui
 }
 
 int nimiq_kdf(void *out, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
-    int ret, i;
+    int ret;
+    uint32_t i;
     ret = argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, seed, seedlen, out, 32);
     if (ret != ARGON2_OK) return ret;
     for(i = 0; i < iter; ++i) {
