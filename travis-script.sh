@@ -16,7 +16,6 @@ if [[ "$TO_TEST" == Karma/SauceLabs/* ]]; then export KARMA_BROWSERS="SL_$(basen
 if [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]] && [ "$KARMA_BROWSERS" = "" ]; then export KARMA_BROWSERS=Travis_Chrome TO_TEST=Karma USE_ISTANBUL=1; fi
 if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] && [ "$KARMA_BROWSERS" = "" ]; then export KARMA_BROWSERS=Firefox TO_TEST=Karma USE_ISTANBUL=1; fi
 if [[ "$TO_TEST" == Karma/Travis_CI/* ]] && [ "$KARMA_BROWSERS" = "" ]; then export KARMA_BROWSERS=Safari TO_TEST=Karma; fi
-cp build/Release/nimiq_node_generic.node build/Release/nimiq_node.node
 if [ "$TO_TEST" = "Karma" ]; then node_modules/.bin/karma start; fi
 if [ "$TO_TEST" = "NodeJS" ]; then export USE_ISTANBUL=1; node_modules/.bin/jasmine; fi
 if [ "$USE_ISTANBUL" = "1" ]; then node_modules/.bin/codecov; fi
