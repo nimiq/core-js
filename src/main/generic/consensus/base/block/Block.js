@@ -242,7 +242,7 @@ class Block {
         }
         // Otherwise, if the prevHash doesn't match but the blocks should be adjacent according to their height fields,
         // this cannot be a valid successor of predecessor.
-        else if (this._header.height === predecessor.height.height + 1) {
+        else if (this._header.height === predecessor.header.height + 1) {
             Log.v(Block, 'No interlink successor - immediate height (2)');
             return false;
         }
