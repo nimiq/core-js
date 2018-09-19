@@ -122,6 +122,9 @@ class JsonRpcServer {
         this._methods.set('pool', this.pool.bind(this));
         this._methods.set('poolConnectionState', this.poolConnectionState.bind(this));
         this._methods.set('poolConfirmedBalance', this.poolConfirmedBalance.bind(this));
+        this._methods.set('getWork', this.getWork.bind(this));
+        this._methods.set('getBlockTemplate', this.getBlockTemplate.bind(this));
+        this._methods.set('submitBlock', this.submitBlock.bind(this));
 
         // Accounts
         this._methods.set('accounts', this.accounts.bind(this));
@@ -481,6 +484,76 @@ class JsonRpcServer {
 
     poolConfirmedBalance() {
         return this._miner.confirmedBalance || 0;
+    }
+
+    async getWork(addressStr, extraDataHex) {
+        let address, extraData;
+        try {
+            address = Nimiq.Address.fromString(addressStr);
+            extraData = Nimiq.BufferUtils.fromHex(extraDataHex);
+        } catch (e) {}
+        const block = await this._miner.getNextBlock(address, extraData);
+        if (!block) {
+            const e = new Error('Cannot create work template, check state before requesting work.');
+            e.code = 501;
+            throw e;
+        }
+        const shareCompact = this._miner.shareCompact || Nimiq.BlockUtils.targetToCompact(block.target);
+        const blockSerialized = block.serialize();
+        return {
+            data: Nimiq.BufferUtils.toHex(blockSerialized.subarray(0, block.header.serializedSize)),
+            suffix: Nimiq.BufferUtils.toHex(blockSerialized.subarray(block.header.serializedSize, blockSerialized.length)),
+            target: shareCompact,
+            algorithm: "nimiq-argon2"
+        }
+    }
+
+    async getBlockTemplate(addressStr, extraDataHex) {
+        let address, extraData;
+        try {
+            address = Nimiq.Address.fromString(addressStr);
+            extraData = Nimiq.BufferUtils.fromHex(extraDataHex);
+        } catch (e) {}
+        const block = await this._miner.getNextBlock(address, extraData);
+        if (!block) {
+            const e = new Error('Cannot create work template, check state before requesting work.');
+            e.code = 501;
+            throw e;
+        }
+        const shareCompact = this._miner.shareCompact || Nimiq.BlockUtils.targetToCompact(block.target);
+        const merklePath = await Nimiq.MerklePath.compute(block.body.getMerkleLeafs(), block.minerAddr);
+        const merkleHashes = merklePath.nodes.map(mpn => mpn.hash.toHex()).slice(1);
+        return {
+            header: {
+                version: block.header.version,
+                prevHash: block.header.prevHash.toHex(),
+                interlinkHash: block.header.interlinkHash.toHex(),
+                accountsHash: block.header.accountsHash.toHex(),
+                nBits: block.header.nBits,
+                height: block.header.height,
+            },
+            interlink: Nimiq.BufferUtils.toHex(block.interlink.serialize()),
+            target: shareCompact,
+            body: {
+                hash: block.body.hash().toHex(),
+                minerAddr: block.body.minerAddr.toHex(),
+                extraData: Nimiq.BufferUtils.toHex(block.body.extraData),
+                transactions: block.body.transactions.map(tx => Nimiq.BufferUtils.toHex(tx.serialize())),
+                merkleHashes: merkleHashes,
+                prunedAccounts: block.body.prunedAccounts.map(acc => Nimiq.BufferUtils.toHex(acc.serialize()))
+            }
+        }
+    }
+
+    /**
+     * @param {string} blockHex
+     * @returns {Promise}
+     */
+    async submitBlock(blockHex) {
+        /** @type {Block} */
+        const block = Nimiq.Block.unserialize(Nimiq.BufferUtils.fromHex(blockHex));
+        if (!block.header.bodyHash.equals(block.body.hash())) throw new Error('Submitted invalid block: bodyHash and body.hash() mismatch');
+        return this._miner.onWorkerShare({hash: await block.header.pow(), nonce: block.header.nonce, block});
     }
 
     /*

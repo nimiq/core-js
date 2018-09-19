@@ -283,7 +283,9 @@ const $ = {};
     $.consensus.on('established', () => {
         if (config.miner.enabled) $.miner.startWork();
     });
-    $.consensus.on('lost', () => $.miner.stopWork());
+    $.consensus.on('lost', () => {
+        if (!config.poolMining.enabled || config.poolMining.mode !== 'nano') $.miner.stopWork()
+    });
 
     if (typeof config.miner.threads === 'number') {
         $.miner.threads = config.miner.threads;

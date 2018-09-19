@@ -92,8 +92,8 @@ class Miner extends Observable {
         } else {
             this.threads = 1;
         }
-        this._workerPool.on('share', (obj) => this._onWorkerShare(obj));
-        this._workerPool.on('no-share', (obj) => this._onWorkerShare(obj));
+        this._workerPool.on('share', (obj) => this.onWorkerShare(obj));
+        this._workerPool.on('no-share', (obj) => this.onWorkerShare(obj));
 
         /**
          * Flag indicating that the mempool has changed since we started mining the current block.
@@ -187,9 +187,8 @@ class Miner extends Observable {
 
     /**
      * @param {{hash: Hash, nonce: number, block: Block}} obj
-     * @private
      */
-    async _onWorkerShare(obj) {
+    async onWorkerShare(obj) {
         this._hashCount += this._workerPool.noncesPerRun;
         if (obj.block && obj.block.prevHash.equals(this._blockchain.headHash)) {
             Log.d(Miner, () => `Received share: ${obj.nonce} / ${obj.hash.toHex()}`);
@@ -228,14 +227,16 @@ class Miner extends Observable {
     }
 
     /**
+     * @param {Address} address
+     * @param {Uint8Array} extraData
      * @return {Promise.<Block>}
      */
-    async getNextBlock() {
+    async getNextBlock(address, extraData) {
         this._retry++;
         try {
             const nextTarget = await this._blockchain.getNextTarget();
             const interlink = await this._getNextInterlink(nextTarget);
-            const body = await this._getNextBody(interlink.serializedSize);
+            const body = await this._getNextBody(interlink.serializedSize, address, extraData);
             const header = await this._getNextHeader(nextTarget, interlink, body);
             if (!(await this._blockchain.getNextTarget()).equals(nextTarget)) return this.getNextBlock();
             return new Block(header, interlink, body);
@@ -288,17 +289,19 @@ class Miner extends Observable {
 
     /**
      * @param {number} interlinkSize
+     * @param {Address} address
+     * @param {Uint8Array} extraData
      * @return {BlockBody}
      * @protected
      */
-    async _getNextBody(interlinkSize) {
+    async _getNextBody(interlinkSize, address = this._address, extraData = this._extraData) {
         const maxSize = Policy.BLOCK_SIZE_MAX
             - BlockHeader.SERIALIZED_SIZE
             - interlinkSize
-            - BlockBody.getMetadataSize(this._extraData);
+            - BlockBody.getMetadataSize(extraData);
         const transactions = await this._mempool.getTransactionsForBlock(maxSize);
         const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionCache);
-        return new BlockBody(this._address, transactions, this._extraData, prunedAccounts);
+        return new BlockBody(address, transactions, extraData, prunedAccounts);
     }
 
     /**
@@ -433,6 +436,14 @@ class Miner extends Observable {
         if (!BufferUtils.equals(extra, this._extraData)) {
             this._extraData = extra;
             this._startWork().catch(Log.w.tag(Miner));
+        }
+    }
+
+    get shareCompact() {
+        if (!this._shareCompactSet) {
+            return undefined;
+        } else {
+            return this._shareCompact;
         }
     }
 
