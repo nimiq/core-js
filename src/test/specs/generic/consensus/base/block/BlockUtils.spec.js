@@ -53,30 +53,46 @@ describe('BlockUtils', () => {
         expect(BlockUtils.isValidCompact(target)).toBe(true);
     });
 
-    it('computes correct compacts', () => {
+    it('computes correct compacts from difficulty', () => {
         let difficulty = 1;
         let target = BlockUtils.difficultyToCompact(difficulty);
 
-        expect(target).toEqual(520159232); // TODO
+        expect(target).toEqual(0x1f010000);
 
         difficulty = 250;
         target = BlockUtils.difficultyToCompact(difficulty);
 
-        expect(target).toEqual(503383588); // TODO
+        expect(target).toEqual(0x1e010624);
 
         difficulty = NumberUtils.UINT32_MAX;
         target = BlockUtils.difficultyToCompact(difficulty);
 
-        expect(target).toEqual(453050368); // TODO
+        expect(target).toEqual(0x1b010000);
 
         difficulty = NumberUtils.UINT64_MAX;
         target = BlockUtils.difficultyToCompact(difficulty);
 
-        expect(target).toEqual(403177472); // TODO
+        expect(target).toEqual(0x18080000);
 
         difficulty = Policy.BLOCK_TARGET_MAX;
         target = BlockUtils.difficultyToCompact(difficulty);
 
-        expect(target).toEqual(16842752);
+        expect(target).toEqual(0x01000001);
+    });
+
+    it('correctly computes targets from compact', () => {
+        expect(BlockUtils.compactToTarget(0x01000001).toNumber()).toEqual(1);
+        expect(BlockUtils.compactToTarget(0x0200ffff).toNumber()).toEqual(0xffff);
+        expect(BlockUtils.compactToTarget(0x037fffff).toNumber()).toEqual(0x7fffff);
+        expect(BlockUtils.compactToTarget(0x0380ffff).toNumber()).toEqual(0x80ffff);
+        expect(BlockUtils.compactToTarget(0x040080ff).toNumber()).toEqual(0x80ff00);
+    });
+
+    it('computes correct targets from difficulty', () => {
+        let target = BlockUtils.difficultyToTarget(new BigNumber(1));
+        expect(target.eq(Policy.BLOCK_TARGET_MAX)).toBe(true);
+
+        target = BlockUtils.difficultyToTarget(Policy.BLOCK_TARGET_MAX);
+        expect(target.eq(new BigNumber(1))).toBe(true);
     });
 });

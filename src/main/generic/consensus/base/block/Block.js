@@ -211,7 +211,8 @@ class Block {
             for (; depth < this._interlink.length; depth++) {
                 if (prevHash.equals(this._interlink.hashes[depth])) {
                     blockFound = true;
-                    if (!BlockUtils.isProofOfWork(prevPow, Math.pow(2, targetHeight - depth))) {
+                    const target = new BigNumber(2).pow(targetHeight - depth);
+                    if (!BlockUtils.isProofOfWork(prevPow, target)) {
                         Log.v(Block, 'No interlink successor - invalid position in interlink');
                         return false;
                     }

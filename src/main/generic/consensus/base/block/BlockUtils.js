@@ -4,7 +4,7 @@ class BlockUtils {
      * @returns {BigNumber}
      */
     static compactToTarget(compact) {
-        return new BigNumber(compact & 0xffffff).times(new BigNumber(2).pow(8 * ((compact >> 24) - 3)));
+        return new BigNumber(compact & 0xffffff).times(new BigNumber(2).pow(8 * Math.max((compact >> 24) - 3, 0)));
     }
 
     /**
@@ -20,7 +20,7 @@ class BlockUtils {
 
         // If the first (most significant) byte is greater than 127 (0x7f),
         // prepend a zero byte.
-        if (firstByte >= 0x80) {
+        if (firstByte >= 0x80 && size >= 3) {
             size++;
         }
 
@@ -29,7 +29,7 @@ class BlockUtils {
         // The following three bytes are the first three bytes of the above
         // representation. If less than three bytes are present, then one or
         // more of the last bytes of the compact representation will be zero.
-        return (size << 24) + ((target / Math.pow(2, (size - 3) * 8)) & 0xffffff);
+        return (size << 24) + ((target / Math.pow(2, Math.max(size - 3, 0) * 8)) & 0xffffff);
     }
 
     /**
@@ -107,11 +107,11 @@ class BlockUtils {
 
     /**
      * @param {Hash} hash
-     * @param {number} target
+     * @param {BigNumber} target
      * @returns {boolean}
      */
     static isProofOfWork(hash, target) {
-        return parseInt(hash.toHex(), 16) <= target;
+        return new BigNumber(hash.toHex(), 16).lte(target);
     }
 
     /**
