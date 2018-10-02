@@ -34,5 +34,12 @@ class PlatformUtils {
     static isOnline() {
         return (!PlatformUtils.isBrowser() || !('onLine' in window.navigator)) || window.navigator.onLine;
     }
+
+    /**
+     * @returns {boolean}
+     */
+    static isWindows() {
+        return PlatformUtils.isNodeJs() && /^win/.test(process.platform);
+    }
 }
 Class.register(PlatformUtils);
