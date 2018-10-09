@@ -95,4 +95,14 @@ describe('BlockUtils', () => {
         target = BlockUtils.difficultyToTarget(Policy.BLOCK_TARGET_MAX);
         expect(target.eq(new BigNumber(1))).toBe(true);
     });
+
+    it('computes correct target depth', () => {
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x1f010000))).toEqual(0);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x1f008f00))).toEqual(0);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x1f008000))).toEqual(1);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x1e600000))).toEqual(1);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x1e400000))).toEqual(2);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x01000002))).toEqual(239);
+        expect(BlockUtils.getTargetDepth(BlockUtils.compactToTarget(0x01000001))).toEqual(240);
+    });
 });
