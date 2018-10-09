@@ -68,7 +68,7 @@ class Network extends Observable {
          * @type {ConnectionPool}
          * @private
          */
-        this._connections = new ConnectionPool(this._addresses, networkConfig, blockchain, time);
+        this._connections = new ConnectionPool(this._addresses, networkConfig, blockchain);
         this._connections.on('peer-joined', peer => this._onPeerJoined(peer));
         this._connections.on('peer-left', peer => this._onPeerLeft(peer));
         this._connections.on('peers-changed', () => this._onPeersChanged());

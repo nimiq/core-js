@@ -150,14 +150,7 @@ class WsNetworkConfig extends NetworkConfig {
         super(Protocol.WS | Protocol.WSS);
         this._host = host;
         this._port = port;
-        this._usingReverseProxy = reverseProxy.enabled;
-
-        /* @type {{port: number, address: string, header: string}} */
-        this._reverseProxyConfig = {
-            port: reverseProxy.port,
-            address: reverseProxy.address,
-            header: reverseProxy.header
-        };
+        this._reverseProxy = reverseProxy;
     }
 
     /**
@@ -176,17 +169,10 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {boolean}
+     * @type {{enabled: boolean, port: number, address: string, header: string}}
      */
-    get usingReverseProxy() {
-        return this._usingReverseProxy;
-    }
-
-    /**
-     * @type {{port: number, address: string, header: string}}
-     */
-    get reverseProxyConfig() {
-        return this._reverseProxyConfig;
+    get reverseProxy() {
+        return this._reverseProxy;
     }
 
     /**
@@ -198,7 +184,7 @@ class WsNetworkConfig extends NetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        const port = this._usingReverseProxy ? this._reverseProxyConfig.port : this._port;
+        const port = this._reverseProxy.enabled ? this._reverseProxy.port : this._port;
         const peerAddress = new WsPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
@@ -236,7 +222,7 @@ class WssNetworkConfig extends WsNetworkConfig {
         this._cert = cert;
 
         /** @type {{key: string, cert: string}} */
-        this._sslConfig = {
+        this._ssl = {
             key: this._key,
             cert: this._cert
         };
@@ -253,8 +239,8 @@ class WssNetworkConfig extends WsNetworkConfig {
     /**
      * @type {?{key: string, cert: string}}
      */
-    get sslConfig() {
-        return this._sslConfig;
+    get ssl() {
+        return this._ssl;
     }
 
     /**
@@ -266,7 +252,7 @@ class WssNetworkConfig extends WsNetworkConfig {
             throw 'PeerAddress is not configured.';
         }
 
-        const port = this._usingReverseProxy ? this._reverseProxyConfig.port : this._port;
+        const port = this._reverseProxy.enabled ? this._reverseProxy.port : this._port;
         const peerAddress = new WssPeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
@@ -297,8 +283,8 @@ class RtcNetworkConfig extends NetworkConfig {
         super((PlatformUtils.supportsWS() ? (Protocol.WS | Protocol.WSS) : Protocol.WSS) | Protocol.RTC);
         this._rtcConfig = {
             iceServers: [
-                {urls: 'stun:stun.l.google.com:19302'},
-                {urls: 'stun:stun.nimiq-network.com:19302'}
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.nimiq-network.com:19302' }
             ]
         };
     }

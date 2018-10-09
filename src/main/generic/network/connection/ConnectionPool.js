@@ -4,13 +4,12 @@ class ConnectionPool extends Observable {
      * @param {PeerAddressBook} peerAddresses
      * @param {NetworkConfig} networkConfig
      * @param {IBlockchain} blockchain
-     * @param {Time} time
-     * @listens WssConnector#connection
-     * @listens WssConnector#error
+     * @listens WebSocketConnector#connection
+     * @listens WebSocketConnector#error
      * @listens WebRtcConnector#connection
      * @listens WebRtcConnector#error
      */
-    constructor(peerAddresses, networkConfig, blockchain, time) {
+    constructor(peerAddresses, networkConfig, blockchain) {
         super();
 
         /**
@@ -30,12 +29,6 @@ class ConnectionPool extends Observable {
          * @private
          */
         this._blockchain = blockchain;
-
-        /**
-         * @type {Time}
-         * @private
-         */
-        this._time = time;
 
         /**
          * HashMap from peerAddresses to connections.

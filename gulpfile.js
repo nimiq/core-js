@@ -39,6 +39,7 @@ const sources = {
             './src/main/generic/network/DataChannel.js',
             './src/main/platform/nodejs/crypto/CryptoLib.js',
             './src/main/platform/nodejs/network/webrtc/WebRtcFactory.js',
+            './src/main/platform/nodejs/network/websocket/WebSocketServer.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
             './src/main/platform/nodejs/network/DnsUtils.js',
             './src/main/platform/nodejs/network/HttpRequest.js'

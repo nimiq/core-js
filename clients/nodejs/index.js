@@ -79,7 +79,7 @@ if (isNano && config.miner.enabled) {
     process.exit(1);
 }
 if (config.metricsServer.enabled && config.protocol !== 'wss') {
-    console.error('Cannot provide metrics when running as without a certificate');
+    console.error('Cannot provide metrics when running without a certificate');
     process.exit(1);
 }
 if (config.metricsServer.enabled && isNano) {
@@ -356,7 +356,7 @@ const $ = {};
     }
 
     if (config.metricsServer.enabled) {
-        $.metricsServer = new MetricsServer(networkConfig.sslConfig, config.metricsServer.port, config.metricsServer.password);
+        $.metricsServer = new MetricsServer(networkConfig.ssl, config.metricsServer.port, config.metricsServer.password);
         $.metricsServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner);
     }
 

@@ -387,7 +387,7 @@ class PartialLightChain extends LightChain {
                 return FullChain.ERR_INVALID;
             }
         } else {
-            Log.w(NanoChain, 'Skipping difficulty verification - not enough blocks available');
+            Log.w(PartialLightChain, 'Skipping difficulty verification - not enough blocks available');
         }
 
         // Block looks good, create ChainData.
