@@ -68,7 +68,6 @@
     "lodash.merge": "^4.6.1",
     "minimist": "^1.2.0",
     "nan": "^2.10.0",
-    "uws": "^10.148.0",
     "ws": "^5.2.0"
   },
   "devDependencies": {
