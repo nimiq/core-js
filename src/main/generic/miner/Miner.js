@@ -227,22 +227,22 @@ class Miner extends Observable {
     }
 
     /**
-     * @param {Address} address
-     * @param {Uint8Array} extraData
+     * @param {Address} [address]
+     * @param {Uint8Array} [extraData]
      * @return {Promise.<Block>}
      */
-    async getNextBlock(address, extraData) {
+    async getNextBlock(address = this._address, extraData = this._extraData) {
         this._retry++;
         try {
             const nextTarget = await this._blockchain.getNextTarget();
             const interlink = await this._getNextInterlink(nextTarget);
             const body = await this._getNextBody(interlink.serializedSize, address, extraData);
             const header = await this._getNextHeader(nextTarget, interlink, body);
-            if (!(await this._blockchain.getNextTarget()).equals(nextTarget)) return this.getNextBlock();
+            if (!(await this._blockchain.getNextTarget()).equals(nextTarget)) return this.getNextBlock(address, extraData);
             return new Block(header, interlink, body);
         } catch (e) {
             // Retry up to three times.
-            if (this._retry <= 3) return this.getNextBlock();
+            if (this._retry <= 3) return this.getNextBlock(address, extraData);
             throw e;
         }
     }
@@ -289,8 +289,8 @@ class Miner extends Observable {
 
     /**
      * @param {number} interlinkSize
-     * @param {Address} address
-     * @param {Uint8Array} extraData
+     * @param {Address} [address]
+     * @param {Uint8Array} [extraData]
      * @return {BlockBody}
      * @protected
      */
