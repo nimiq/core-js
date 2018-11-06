@@ -568,7 +568,7 @@ gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/', '../lib/')).pipe(gulp.dest('packaging/BUILD/modules'));
     gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
-    gulp.src('build/Release/nimiq_node_generic.node').pipe(gulp.dest('packaging/BUILD/build'));
+    gulp.src('build/Release/*.node').pipe(gulp.dest('packaging/BUILD/build'));
 });
 
 gulp.task('test', ['watch'], function () {

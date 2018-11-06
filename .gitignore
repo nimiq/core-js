@@ -21,6 +21,8 @@ settings.json
 packaging/BUILD/VERSION
 packaging/BUILD/fakeroot/
 packaging/BUILD/index.js
+packaging/BUILD/keytool.js
+packaging/BUILD/remote.js
 packaging/BUILD/build/
 packaging/BUILD/lib/
 packaging/BUILD/modules/
@@ -28,3 +30,4 @@ packaging/BUILD/nimiq
 packaging/BUILD/node
 packaging/BUILD/node_modules/
 packaging/BUILD/package.json
+packaging/BUILD/node-ui/
