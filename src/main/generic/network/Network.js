@@ -465,7 +465,7 @@ Network.CONNECT_BACKOFF_MAX = 10 * 60 * 1000; // 10 minutes
  * @type {number}
  * @constant
  */
-Network.TIME_OFFSET_MAX = 15 * 60 * 1000; // 15 minutes
+Network.TIME_OFFSET_MAX = 10 * 60 * 1000; // 10 minutes
 /**
  * @type {number}
  * @constant
