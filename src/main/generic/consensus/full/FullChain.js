@@ -397,12 +397,19 @@ class FullChain extends BaseChain {
                 }
             } catch (e) {
                 // A fork block is invalid.
-                // TODO delete invalid block and its successors from store.
                 Log.e(FullChain, 'Failed to apply fork block while rebranching', e);
                 accountsTx.abort().catch(Log.w.tag(FullChain));
                 if (this._transactionStore) {
                     transactionStoreTx.abort().catch(Log.w.tag(FullChain));
                 }
+
+                // Delete invalid block and its successors from store.
+                const chainTx = this._store.synchronousTransaction(false);
+                for (; i >= 0; i--) {
+                    chainTx.removeChainDataSync(forkHashes[i]);
+                }
+                await chainTx.commit();
+
                 return false;
             }
         }

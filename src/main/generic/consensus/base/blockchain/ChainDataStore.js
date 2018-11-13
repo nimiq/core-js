@@ -133,6 +133,16 @@ class ChainDataStore {
 
     /**
      * @param {Hash} key
+     * @returns {void}
+     */
+    removeChainDataSync(key) {
+        Assert.that(this._chainStore instanceof JDB.Transaction);
+        this._chainStore.removeSync(key.toBase64());
+        this._blockStore.removeSync(key.toBase64());
+    }
+
+    /**
+     * @param {Hash} key
      * @param {boolean} [includeBody]
      * @returns {?Block}
      */
@@ -263,29 +273,6 @@ class ChainDataStore {
         return null;
     }
 
-    // /**
-    //  * @param {number} startHeight
-    //  * @param {number} [count]
-    //  * @param {boolean} [forward]
-    //  * @returns {Promise.<Array.<Block>>}
-    //  */
-    // async getBlocks(startHeight, count = 500, forward = true) {
-    //     if (count <= 0) {
-    //         return [];
-    //     }
-    //     if (!forward) {
-    //         startHeight = startHeight - count;
-    //     }
-    //     /** @type {Array.<ChainData>} */
-    //     let candidates = await this._chainStore.values(JDB.Query.within('height', startHeight, startHeight + count - 1));
-    //     candidates = candidates
-    //         .filter(chainData => chainData.onMainChain)
-    //         .map(chainData => chainData.head);
-    //     const sortNumber = forward ? ((a, b) => a.height - b.height) : ((a, b) => b.height - a.height);
-    //     candidates.sort(sortNumber);
-    //     return candidates;
-    // }
-
     /**
      * @param {Hash} startBlockHash
      * @param {number} [count]
@@ -357,7 +344,6 @@ class ChainDataStore {
         return blocks;
     }
 
-    /**
     /**
      * @returns {Promise.<Hash|undefined>}
      */
