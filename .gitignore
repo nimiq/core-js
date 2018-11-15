@@ -31,3 +31,5 @@ packaging/BUILD/node
 packaging/BUILD/node_modules/
 packaging/BUILD/package.json
 packaging/BUILD/node-ui/
+packaging/npm/*
+!packaging/npm/README.md
