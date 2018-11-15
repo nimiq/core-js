@@ -14,8 +14,16 @@
 ## Demo
 Check out our [Testnet](https://nimiq-testnet.com).
 
-## Prebuilt binaries
-See our [Downloads page](https://nimiq.com/#downloads) for Linux and Windows binaries.
+## Packages
+### Prebuilt binary packages
+For users looking to run a standalone Nimiq node (which is also capable of mining), see our [Downloads page](https://nimiq.com/#downloads) for installable Linux and Windows binary packages.
+
+### NPM Packages
+For developers looking to include Nimiq support on their applications, there are several npm packages available:
+
+- [`@nimiq/core`](https://www.npmjs.com/package/@nimiq/core): Module for use in node.js applications.
+- [`@nimiq/core-web`](https://www.npmjs.com/package/@nimiq/core-web): Module for use in client-side (browser) applications (includes the same files that are available from [our CDN](#getting-started)).
+- [`@nimiq/core-types`](https://www.npmjs.com/package/@nimiq/core-types): Provides Typescript types for the core library.
 
 ## Quickstart
 
