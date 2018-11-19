@@ -25,7 +25,7 @@ class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
         this._superUpdateToSize = super._updateToSize;
 
         if (PlatformUtils.isNodeJs()) {
-            Log.i(MinerWorkerPool, `Using native module: ${cpuSupport}`);
+            Log.i(MinerWorkerPool, `Using node.js add-on optimized for set of instructions: ${cpuSupport}`);
 
             /**
              * @param {SerialBuffer} blockHeader
