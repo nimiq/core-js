@@ -550,6 +550,13 @@ const RELEASE_LIB = [
     'dist/web.*'
 ];
 
+const RELEASE_ADDONS = [
+    'build/Release/nimiq_node_compat.node',
+    'build/Release/nimiq_node_avx.node',
+    'build/Release/nimiq_node_avx2.node',
+    'build/Release/nimiq_node_avx512f.node'
+];
+
 gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(['clients/nodejs/node-ui/**/*']).pipe(gulp.dest('packaging/BUILD/node-ui'));
@@ -560,7 +567,7 @@ gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/', '../lib/')).pipe(gulp.dest('packaging/BUILD/modules'));
     gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
-    gulp.src('build/Release/*.node').pipe(gulp.dest('packaging/BUILD/build'));
+    gulp.src(RELEASE_ADDONS).pipe(gulp.dest('packaging/BUILD/build'));
 });
 
 gulp.task('eslint', function () {

@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "gulp build-node",
     "build": "gulp build",
-    "build-deb": "gulp --architecture=`dpkg --print-architecture` prepare-packages && cd packaging/BUILD && mv fakeroot/etc/nimiq/sample.conf fakeroot/etc/nimiq/nimiq.conf && node-deb --no-default-package-dependencies x -- node *.js cron-deb.sh VERSION build/ lib/ modules/ node-ui/ && mv *.deb ../../dist/",
+    "build-deb": "gulp --architecture=`dpkg --print-architecture` prepare-packages && cd packaging/BUILD && mv fakeroot/etc/nimiq/sample.conf fakeroot/etc/nimiq/nimiq.conf && node-deb --no-default-package-dependencies -- node *.js cron-deb.sh VERSION build/ lib/ modules/ node-ui/ && mv *.deb ../../dist/",
     "build-rpm": "gulp --architecture=`arch` prepare-packages && cd packaging && mv BUILD/fakeroot/etc/nimiq/sample.conf BUILD/fakeroot/etc/nimiq/nimiq.conf && rpmbuild -bb SPECS/nimiq.spec && mv RPMS/x86_64/*.rpm ../dist",
     "esdoc": "esdoc",
     "test": "jasmine && gulp test",
