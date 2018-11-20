@@ -29,21 +29,22 @@ class WebSocketServer extends WebSocket.Server {
         const server = WebSocketServer._newHttpServer(networkConfig);
         super({ server });
 
+        /** @type {Map.<string,{listener:function(),timeout:*}>} */
         this._clients = new Map();
+        /** @type {HashMap.<NetAddress,number>} */
         this._clientsByIp = new HashMap();
+        /** @type {HashMap.<NetAddress,number>} */
         this._clientsBySubnet = new HashMap();
+        /** @type {number} */
         this._pendingUpgrades = 0;
 
         if (!networkConfig.reverseProxy.enabled) {
-            const event = networkConfig.secure ? 'secureConnection' : 'connection';
-            server.on(event, this._onHttpConnection.bind(this));
+            server.on('connection', this._onNetSocketConnection.bind(this));
             this.on('connection', this._onWebSocketConnection.bind(this));
-
-            setInterval(() => console.log(`numClients: ${this._clients.size}, pendingUpgrades: ${this._pendingUpgrades}`), 1000);
         }
     }
 
-    _onHttpConnection(socket) {
+    _onNetSocketConnection(socket) {
         if (this._pendingUpgrades >= WebSocketServer.MAX_PENDING_UPGRADES) {
             Log.v(WebSocketServer, () => `Closing socket to ${socket.remoteAddress} - max pending upgrades exceeded`);
             socket.destroy();
@@ -73,7 +74,7 @@ class WebSocketServer extends WebSocket.Server {
         const subnet = netAddress.subnet(netAddress.isIPv4() ? Network.IPV4_SUBNET_MASK : Network.IPV6_SUBNET_MASK);
         const clientsByIp = this._clientsByIp.get(netAddress) || 0;
         const clientsBySubnet = this._clientsBySubnet.get(subnet) || 0;
-        if (clientsByIp >= Network.PEER_COUNT_PER_IP_MAX || clientsBySubnet >= Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX) {
+        if (!netAddress.isPrivate() && (clientsByIp >= Network.PEER_COUNT_PER_IP_MAX || clientsBySubnet >= Network.INBOUND_PEER_COUNT_PER_SUBNET_MAX)) {
             Log.v(WebSocketServer, `Closing socket to ${socket.remoteAddress} - max peer count per ip/subnet exceeded`);
             socket.destroy();
             return;
@@ -90,21 +91,25 @@ class WebSocketServer extends WebSocket.Server {
             socket.destroy();
         }, WebSocketServer.UPGRADE_TIMEOUT);
 
-        this._clients.set(socket, { listener, timeout });
+        const clientConnectionId = `${netAddress}|${socket.remotePort}`;
+        this._clients.set(clientConnectionId, { listener, timeout });
         this._clientsByIp.put(netAddress, clientsByIp + 1);
         this._clientsBySubnet.put(subnet, clientsBySubnet + 1);
         this._pendingUpgrades++;
     }
 
     _removeClient(socket) {
-        const client = this._clients.get(socket);
-        Assert.that(client, 'Client not found');
-        this._clients.delete(socket);
+        let netAddress = NetAddress.fromIP(socket.remoteAddress, true);
+        const clientConnectionId = `${netAddress}|${socket.remotePort}`;
+
+        const client = this._clients.get(clientConnectionId);
+        // timeout and close event might be on the event-queue at the same time
+        if (!client) return;
+        this._clients.delete(clientConnectionId);
 
         clearTimeout(client.timeout);
         socket.off('close', client.listener);
 
-        const netAddress = NetAddress.fromIP(socket.remoteAddress, true);
         const subnet = netAddress.subnet(netAddress.isIPv4() ? Network.IPV4_SUBNET_MASK : Network.IPV6_SUBNET_MASK);
         const clientsByIp = this._clientsByIp.get(netAddress);
         const clientsBySubnet = this._clientsBySubnet.get(subnet);
@@ -128,5 +133,5 @@ class WebSocketServer extends WebSocket.Server {
 }
 WebSocketServer.UPGRADE_TIMEOUT = 1000 * 10; // 10 seconds
 WebSocketServer.TLS_HANDSHAKE_TIMEOUT = 1000 * 10; // 10 seconds
-WebSocketServer.MAX_PENDING_UPGRADES = 5000;
+WebSocketServer.MAX_PENDING_UPGRADES = 100;
 Class.register(WebSocketServer);

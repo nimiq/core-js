@@ -410,7 +410,7 @@ Network.OUTBOUND_PEER_COUNT_PER_SUBNET_MAX = 2;
  * @type {number}
  * @constant
  */
-Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 20;
+Network.PEER_COUNT_PER_IP_MAX = PlatformUtils.isBrowser() ? 1 : 10;
 /**
  * @type {number}
  * @constant
