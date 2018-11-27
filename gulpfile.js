@@ -1,3 +1,4 @@
+const fs = require('fs');
 const gulp = require('gulp');
 const babel = require('gulp-babel');
 const browserify = require('browserify');
@@ -23,7 +24,8 @@ const sources = {
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
             './src/main/platform/browser/network/DnsUtils.js',
-            './src/main/platform/browser/network/HttpRequest.js'
+            './src/main/platform/browser/network/HttpRequest.js',
+            './src/main/platform/browser/utils/PlatformInfo.js',
         ],
         offline: [
             './src/main/platform/browser/Class.js',
@@ -42,7 +44,8 @@ const sources = {
             './src/main/platform/nodejs/network/websocket/WebSocketServer.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
             './src/main/platform/nodejs/network/DnsUtils.js',
-            './src/main/platform/nodejs/network/HttpRequest.js'
+            './src/main/platform/nodejs/network/HttpRequest.js',
+            './src/main/platform/nodejs/utils/PlatformInfo.js',
         ]
     },
     generic: [
@@ -50,6 +53,7 @@ const sources = {
         './src/main/generic/utils/Services.js',
         './src/main/generic/utils/Timers.js',
         './src/main/generic/utils/Version.js',
+        './build/VersionNumber.js',
         './src/main/generic/utils/Time.js',
         './src/main/generic/utils/IteratorUtils.js',
         './src/main/generic/utils/array/ArrayUtils.js',
@@ -367,6 +371,11 @@ const uglify_babel = {
     }
 };
 
+gulp.task('create-version-file', function (cb) {
+    const version = require('./package.json').version;
+    fs.writeFile('./build/VersionNumber.js', `Version.CORE_JS_VERSION = '${version}';`, cb);
+});
+
 gulp.task('build-worker', function () {
     return gulp.src(sources.worker)
         .pipe(sourcemaps.init())
@@ -390,7 +399,7 @@ const BROWSER_SOURCES = [
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-web-babel', ['build-worker'], function () {
+gulp.task('build-web-babel', ['build-worker', 'create-version-file'], function () {
     return merge(
         browserify([], {
             require: [
@@ -424,7 +433,7 @@ gulp.task('build-web-babel', ['build-worker'], function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-web', ['build-worker'], function () {
+gulp.task('build-web', ['build-worker', 'create-version-file'], function () {
     return gulp.src(BROWSER_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
@@ -440,7 +449,7 @@ const OFFLINE_SOURCES = [
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-offline-babel', function () {
+gulp.task('build-offline-babel', ['create-version-file'], function () {
     return merge(
         browserify([], {
             require: [
@@ -474,7 +483,7 @@ gulp.task('build-offline-babel', function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-offline', function () {
+gulp.task('build-offline', ['create-version-file'], function () {
     return gulp.src(OFFLINE_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-offline.js'))
@@ -483,7 +492,7 @@ gulp.task('build-offline', function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () {
+gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul', 'create-version-file'], function () {
     return gulp.src(BROWSER_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-istanbul.js'))
@@ -521,7 +530,7 @@ const NODE_SOURCES = [
     './src/main/platform/nodejs/index.suffix.js'
 ];
 
-gulp.task('build-node', function () {
+gulp.task('build-node', ['create-version-file'], function () {
     return gulp.src(NODE_SOURCES)
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
@@ -530,7 +539,7 @@ gulp.task('build-node', function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-node-istanbul', ['build-istanbul'], function () {
+gulp.task('build-node-istanbul', ['build-istanbul', 'create-version-file'], function () {
     return gulp.src(NODE_SOURCES.map(f => `./.istanbul/${f}`))
         .pipe(sourcemaps.init())
         .pipe(concat('node-istanbul.js'))

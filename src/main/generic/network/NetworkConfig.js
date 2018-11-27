@@ -33,6 +33,9 @@ class NetworkConfig {
          * @protected
          */
         this._services = null;
+
+        /** @type {string} */
+        this._appAgent = null;
     }
 
     /**
@@ -135,6 +138,16 @@ class NetworkConfig {
      */
     canConnect(protocol) {
         return (protocol & this._protocolMask) !== 0;
+    }
+
+    /** @type {string} */
+    get appAgent() {
+        return this._appAgent;
+    }
+
+    /** @type {string} */
+    set appAgent(value) {
+        this._appAgent = value;
     }
 }
 Class.register(NetworkConfig);

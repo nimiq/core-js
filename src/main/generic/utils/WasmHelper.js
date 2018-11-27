@@ -1,3 +1,8 @@
+// TODO: Split platform specific code into subdirs
+// i.e. no `require()` or `window.*` in generic
+// Using `require()`s in browser specific code are likely to cause problems
+// with tools like webpack that try to resolve those for the browser.
+
 class WasmHelper {
 
     static async doImportBrowser() {

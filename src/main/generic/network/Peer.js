@@ -4,8 +4,9 @@ class Peer {
      * @param {number} version
      * @param {Hash} headHash
      * @param {number} timeOffset
+     * @param {string} [userAgent]
      */
-    constructor(channel, version, headHash, timeOffset) {
+    constructor(channel, version, headHash, timeOffset, userAgent) {
         /** @type {PeerChannel} */
         this._channel = channel;
         /** @type {number} */
@@ -19,6 +20,8 @@ class Peer {
          * @type {number}
          */
         this._timeOffset = timeOffset;
+        /** @type {string} */
+        this._userAgent = userAgent;
 
         this._setNetAddress();
     }
@@ -104,6 +107,11 @@ class Peer {
     /** @type {NetAddress} */
     get netAddress() {
         return this._channel.netAddress;
+    }
+
+    /** @type {string} */
+    get userAgent() {
+        return this._userAgent;
     }
 
     /**

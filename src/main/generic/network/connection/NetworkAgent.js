@@ -130,7 +130,7 @@ class NetworkAgent extends Observable {
         // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Firefox sends the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce)) {
+        if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce, this._networkConfig.appAgent)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX || this._channel.closed) {
                 this._channel.close(CloseType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
@@ -236,7 +236,8 @@ class NetworkAgent extends Observable {
             this._channel,
             msg.version,
             msg.headHash,
-            peerAddress.timestamp - now
+            peerAddress.timestamp - now,
+            msg.userAgent
         );
 
         this._peerChallengeNonce = msg.challengeNonce;

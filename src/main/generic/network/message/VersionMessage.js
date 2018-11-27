@@ -5,14 +5,16 @@ class VersionMessage extends Message {
      * @param {Hash} genesisHash
      * @param {Hash} headHash
      * @param {Uint8Array} challengeNonce
+     * @param {string} [userAgent]
      */
-    constructor(version, peerAddress, genesisHash, headHash, challengeNonce) {
+    constructor(version, peerAddress, genesisHash, headHash, challengeNonce, userAgent) {
         super(Message.Type.VERSION);
         if (!NumberUtils.isUint32(version)) throw new Error('Malformed version');
         if (!(peerAddress instanceof PeerAddress)) throw new Error('Malformed peerAddress');
         if (!Hash.isHash(genesisHash)) throw new Error('Malformed genesisHash');
         if (!Hash.isHash(headHash)) throw new Error('Malformed headHash');
         if (!(challengeNonce instanceof Uint8Array) || challengeNonce.byteLength !== 32) throw new Error('Malformed challenge nonce');
+        if (userAgent && (typeof userAgent !== 'string' || StringUtils.isMultibyte(userAgent) || !NumberUtils.isUint8(userAgent.length))) throw new Error('Malformed user agent');
 
         /** @type {number} */
         this._version = version;
@@ -24,6 +26,8 @@ class VersionMessage extends Message {
         this._headHash = headHash;
         /** @type {Uint8Array} */
         this._challengeNonce = challengeNonce;
+        /** @type {?string} */
+        this._userAgent = userAgent;
     }
 
     /**
@@ -37,7 +41,8 @@ class VersionMessage extends Message {
         const genesisHash = Hash.unserialize(buf);
         const headHash = Hash.unserialize(buf);
         const challengeNonce = buf.read(VersionMessage.CHALLENGE_SIZE);
-        return new VersionMessage(version, peerAddress, genesisHash, headHash, challengeNonce);
+        const userAgent = (buf.readPos !== buf.byteLength) ? buf.readVarLengthString() : undefined;
+        return new VersionMessage(version, peerAddress, genesisHash, headHash, challengeNonce, userAgent);
     }
 
     /**
@@ -52,6 +57,7 @@ class VersionMessage extends Message {
         this._genesisHash.serialize(buf);
         this._headHash.serialize(buf);
         buf.write(this._challengeNonce);
+        if (this._userAgent) buf.writeVarLengthString(this._userAgent);
         super._setChecksum(buf);
         return buf;
     }
@@ -63,7 +69,8 @@ class VersionMessage extends Message {
             + this._peerAddress.serializedSize
             + this._genesisHash.serializedSize
             + this._headHash.serializedSize
-            + VersionMessage.CHALLENGE_SIZE;
+            + VersionMessage.CHALLENGE_SIZE
+            + (this._userAgent ? SerialBuffer.varLengthStringSize(this._userAgent) : 0);
     }
 
     /** @type {number} */
@@ -91,8 +98,13 @@ class VersionMessage extends Message {
         return this._challengeNonce;
     }
 
+    /** @type {?string} */
+    get userAgent() {
+        return this._userAgent;
+    }
+
     toString() {
-        return `VersionMessage{version=${this._version}, peer=${this._peerAddress}, genesis=${this._genesisHash}, head=${this._headHash}}`;
+        return `VersionMessage{version=${this._version}, peer=${this._peerAddress}, genesis=${this._genesisHash}, head=${this._headHash}, userAgent=${this._userAgent}}`;
     }
 }
 

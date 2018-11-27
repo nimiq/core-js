@@ -138,12 +138,86 @@ class MetricsServer {
     }
 
     _networkMetrics(res) {
-        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'dumb'}), this._network.peerCountDumb);
-        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'webrtc'}), this._network.peerCountWebRtc);
-        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'websocket'}), this._network.peerCountWebSocket);
-        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connected', 'type': 'websocket-secure'}), this._network.peerCountWebSocketSecure);
-        MetricsServer._metric(res, 'network_peers', this._with({'state': 'connecting'}), this._network.peerCountConnecting);
-        MetricsServer._metric(res, 'network_known_addresses', this._desc, this._network.knownAddressesCount);
+        /** @type {Map.<string, number>} */
+        const peers = new Map();
+        for (let connection of this._network.connections.values()) {
+            let o = {};
+            switch (connection.peerAddress ? connection.peerAddress.protocol : -1) {
+                case Nimiq.Protocol.DUMB:
+                    o.type = 'dumb';
+                    break;
+                case Nimiq.Protocol.WSS:
+                    o.type = 'websocket-secure';
+                    break;
+                case Nimiq.Protocol.RTC:
+                    o.type = 'webrtc';
+                    break;
+                case Nimiq.Protocol.WS:
+                    o.type = 'websocket';
+                    break;
+                default:
+                    o.type = 'unknown';
+            }
+            switch (connection.state) {
+                case Nimiq.PeerConnectionState.NEW:
+                    o.state = 'new';
+                    break;
+                case Nimiq.PeerConnectionState.CONNECTING:
+                    o.state = 'connecting';
+                    break;
+                case Nimiq.PeerConnectionState.CONNECTED:
+                    o.state = 'connected';
+                    break;
+                case Nimiq.PeerConnectionState.NEGOTIATING:
+                    o.state = 'negotiating';
+                    break;
+                case Nimiq.PeerConnectionState.ESTABLISHED:
+                    o.state = 'established';
+                    break;
+                case Nimiq.PeerConnectionState.CLOSED:
+                    o.state = 'closed';
+            }
+            if (connection.peer) {
+                o.version = connection.peer.version;
+                o.agent = connection.peer.userAgent ? connection.peer.userAgent : undefined;
+            }
+            const os = JSON.stringify(o);
+            if (peers.has(os)) {
+                peers.set(os, peers.get(os) + 1);
+            } else {
+                peers.set(os, 1);
+            }
+        }
+        /** @type {Map.<string, number>} */
+        const addresses = new Map();
+        for (let address of this._network.addresses.iterator()) {
+            let type = 'unknown';
+            switch (address.peerAddress.protocol) {
+                case Nimiq.Protocol.DUMB:
+                    type = 'dumb';
+                    break;
+                case Nimiq.Protocol.WSS:
+                    type = 'websocket-secure';
+                    break;
+                case Nimiq.Protocol.RTC:
+                    type = 'webrtc';
+                    break;
+                case Nimiq.Protocol.WS:
+                    type = 'websocket';
+            }
+            if (addresses.has(type)) {
+                addresses.set(type, addresses.get(type) + 1);
+            } else {
+                addresses.set(type, 1);
+            }
+        }
+
+        for (let os of peers.keys()) {
+            MetricsServer._metric(res, 'network_peers', this._with(JSON.parse(os)), peers.get(os));
+        }
+        for (let type of addresses.keys()) {
+            MetricsServer._metric(res, 'network_known_addresses', this._with({type: type}), addresses.get(type));
+        }
         MetricsServer._metric(res, 'network_time_now', this._desc, this._network.time.now());
         MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'sent'}), this._network.bytesSent);
         MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'received'}), this._network.bytesReceived);
