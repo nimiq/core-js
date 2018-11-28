@@ -258,11 +258,15 @@ class JsonRpcServer {
 
     async sendRawTransaction(txHex) {
         const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txHex));
-        const ret = await this._mempool.pushTransaction(tx);
-        if (ret < 0) {
-            const e = new Error(`Transaction not accepted: ${ret}`);
-            e.code = ret;
-            throw e;
+        if (this._mempool.constructor === Nimiq.NanoMempool) {
+            this._consensus.relayTransaction(tx);
+        } else {
+            const ret = await this._mempool.pushTransaction(tx);
+            if (ret < 0) {
+                const e = new Error(`Transaction not accepted: ${ret}`);
+                e.code = ret;
+                throw e;
+            }
         }
         return tx.hash().toHex();
     }
