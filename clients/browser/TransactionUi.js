@@ -91,8 +91,8 @@ class TransactionUi extends Nimiq.Observable {
             this.$plainSenderType.value = tx.senderType;
             this.$recipient.value = tx.recipient.toUserFriendlyAddress();
             this.$recipientType.value = tx.recipientType;
-            this.$value.value = Nimiq.Policy.satoshisToCoins(tx.value);
-            this.$fee.value = Nimiq.Policy.satoshisToCoins(tx.fee);
+            this.$value.value = Nimiq.Policy.lunasToCoins(tx.value);
+            this.$fee.value = Nimiq.Policy.lunasToCoins(tx.fee);
             this.$validityStart.value = tx.validityStartHeight;
             this.$plainFlags.value = tx.flags;
             this.$plainData.value = Nimiq.BufferUtils.toBase64(tx.data);
@@ -145,8 +145,8 @@ class TransactionUi extends Nimiq.Observable {
             validityStart = Utils.readNumber(this.$validityStart);
         }
         if (value === null || fee === null || validityStart === null) return null;
-        value = Nimiq.Policy.coinsToSatoshis(value);
-        fee = Nimiq.Policy.coinsToSatoshis(fee);
+        value = Nimiq.Policy.coinsToLunas(value);
+        fee = Nimiq.Policy.coinsToLunas(fee);
         return {
             value: value,
             fee: fee,
@@ -251,12 +251,12 @@ class TransactionUi extends Nimiq.Observable {
             vestingStart = Utils.readNumber(this.$vestingStart);
             vestingStepAmount = Utils.readNumber(this.$vestingStepAmount);
             if (vestingStart === null || vestingStepAmount === null) return null;
-            vestingStepAmount = Nimiq.Policy.coinsToSatoshis(vestingStepAmount);
+            vestingStepAmount = Nimiq.Policy.coinsToLunas(vestingStepAmount);
         }
         if (requiresVestingTotalAmount) {
             vestingTotalAmount = Utils.readNumber(this.$vestingTotalAmount);
             if (vestingTotalAmount === null) return null;
-            vestingTotalAmount = Nimiq.Policy.coinsToSatoshis(vestingTotalAmount);
+            vestingTotalAmount = Nimiq.Policy.coinsToLunas(vestingTotalAmount);
         }
 
         const buffer = new Nimiq.SerialBuffer(bufferSize);
