@@ -12,7 +12,7 @@
     "esdoc": "esdoc",
     "test": "jasmine && gulp test",
     "test-node": "jasmine",
-    "test-browser": "gulp test",
+    "test-browser": "karma start",
     "lint": "gulp eslint"
   },
   "author": {
@@ -87,9 +87,7 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.1",
     "gulp-concat": "^2.6.1",
-    "gulp-connect": "^5.0.0",
     "gulp-eslint": "^4.0.2",
-    "gulp-jasmine-livereload-task": "^0.11.0",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-streamify": "^1.0.2",
@@ -114,9 +112,5 @@
     "node-gyp": "^3.6.2",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
-  },
-  "optionalDependencies": {
-    "bufferutil": "^3.0.4",
-    "utf-8-validate": "^4.0.1"
   }
 }

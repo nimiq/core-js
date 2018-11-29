@@ -3,9 +3,7 @@ const babel = require('gulp-babel');
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
 const concat = require('gulp-concat');
-const connect = require('gulp-connect');
 const istanbul = require('istanbul-api');
-const jasmine = require('gulp-jasmine-livereload-task');
 const merge = require('merge2');
 const replace = require('gulp-string-replace');
 const source = require('vinyl-source-stream');
@@ -308,9 +306,6 @@ const sources = {
         './src/main/generic/consensus/base/transaction/BasicTransaction.js',
         './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
     ],
-    sectest: [
-        'sectests/**/*.sectest.js'
-    ],
     all: [
         './src/main/**/*.js',
         '!./src/main/platform/browser/index.prefix.js',
@@ -377,8 +372,7 @@ gulp.task('build-worker', function () {
         .pipe(concat('worker.js'))
         .pipe(uglify())
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'))
-        .pipe(connect.reload());
+        .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build-istanbul', function () {
@@ -435,8 +429,7 @@ gulp.task('build-web', ['build-worker'], function () {
         .pipe(concat('web.js'))
         .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'))
-        .pipe(connect.reload());
+        .pipe(gulp.dest('dist'));
 });
 
 const OFFLINE_SOURCES = [
@@ -486,8 +479,7 @@ gulp.task('build-offline', function () {
         .pipe(concat('web-offline.js'))
         .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'))
-        .pipe(connect.reload());
+        .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () {
@@ -496,8 +488,7 @@ gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul'], function () 
         .pipe(concat('web-istanbul.js'))
         .pipe(uglify(uglify_config))
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'))
-        .pipe(connect.reload());
+        .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build-loader', function () {
@@ -571,30 +562,6 @@ gulp.task('prepare-packages', ['build-node'], function () {
     gulp.src('build/Release/*.node').pipe(gulp.dest('packaging/BUILD/build'));
 });
 
-gulp.task('test', ['watch'], function () {
-    gulp.run(jasmine({
-        files: ['dist/web.js'].concat(sources.test)
-    }));
-});
-
-gulp.task('test-babel', ['watch'], function () {
-    gulp.run(jasmine({
-        files: ['dist/web-babel.js'].concat(sources.test)
-    }));
-});
-
-gulp.task('sectest', ['watch'], function () {
-    gulp.run(jasmine({
-        files: ['dist/web.js'].concat(sources.sectest)
-    }));
-});
-
-gulp.task('sectest-babel', ['watch'], function () {
-    gulp.run(jasmine({
-        files: ['dist/web-babel.js'].concat(sources.sectest)
-    }));
-});
-
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)
@@ -603,19 +570,6 @@ gulp.task('eslint', function () {
         .pipe(eslint.failAfterError());
 });
 
-gulp.task('watch', ['build-web'], function () {
-    return gulp.watch(sources.all, ['build-web']);
-});
-
-gulp.task('serve', ['watch'], function () {
-    connect.server({
-        livereload: true,
-        serverInit: function () {
-            util.log(util.colors.blue('Nimiq Blockchain Cockpit will be at http://localhost:8080/clients/browser/'));
-        }
-    });
-});
-
 gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-offline', 'build-offline-babel', 'build-loader', 'build-node', 'build-node-istanbul']);
 
-gulp.task('default', ['build', 'serve']);
+gulp.task('default', ['build']);
