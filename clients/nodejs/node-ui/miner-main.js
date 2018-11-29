@@ -46,14 +46,14 @@ class FactsUI {
         }
     }
 
-    set averageBlockReward(satoshis) {
-        if (!satoshis) {
+    set averageBlockReward(lunas) {
+        if (!lunas) {
             this._averageBlockReward.textContent = '0 NIM';
             return;
         }
-        const nims = Nimiq.Policy.satoshisToCoins(satoshis);
+        const nims = Nimiq.Policy.lunasToCoins(lunas);
         if (nims < 0.01) {
-            this._averageBlockReward.textContent = satoshis.toFixed(2) + ' Satoshi';
+            this._averageBlockReward.textContent = lunas.toFixed(2) + ' Luna';
         } else {
             this._averageBlockReward.textContent = nims.toFixed(2) + ' NIM';
         }
@@ -84,11 +84,11 @@ class FactsUI {
     }
 
     set myBalance(balance) {
-        this._myBalance.textContent = Nimiq.Policy.satoshisToCoins(balance).toFixed(2);
+        this._myBalance.textContent = Nimiq.Policy.lunasToCoins(balance).toFixed(2);
     }
 
     set poolBalance(balance) {
-        this._poolBalance.textContent = Nimiq.Policy.satoshisToCoins(balance).toFixed(2);
+        this._poolBalance.textContent = Nimiq.Policy.lunasToCoins(balance).toFixed(2);
     }
 
     set address(address) {
@@ -113,8 +113,8 @@ class FactsUI {
         }
     }
 
-    set blockReward(satoshis) {
-        this._blockReward.textContent = Math.floor(Nimiq.Policy.satoshisToCoins(satoshis));
+    set blockReward(lunas) {
+        this._blockReward.textContent = Math.floor(Nimiq.Policy.lunasToCoins(lunas));
     }
 
     set disconnected(disconnected) {

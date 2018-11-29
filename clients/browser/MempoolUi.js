@@ -37,8 +37,8 @@ class MempoolUi {
 
     _renderTransaction(tx) {
         const el = document.createElement('div');
-        const value = Utils.satoshisToCoins(tx.value);
-        const fee = Utils.satoshisToCoins(tx.fee);
+        const value = Utils.lunasToCoins(tx.value);
+        const fee = Utils.lunasToCoins(tx.fee);
         el.innerHTML = `from=<hash>${tx.sender.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipient.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, validityStartHeight=${tx.validityStartHeight}`;
         this.$transactions.appendChild(el);
     }

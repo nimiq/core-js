@@ -49,8 +49,8 @@ class Utils {
         return (Number.isInteger(bytes) ? bytes : bytes.toFixed(2)) + ' ' + units[i];
     }
 
-    static satoshisToCoins(value) {
-        return Nimiq.Policy.satoshisToCoins(value).toFixed(Math.log10(Nimiq.Policy.SATOSHIS_PER_COIN));
+    static lunasToCoins(value) {
+        return Nimiq.Policy.lunasToCoins(value).toFixed(Math.log10(Nimiq.Policy.LUNAS_PER_COIN));
     }
 
     static hash(data, algorithm) {

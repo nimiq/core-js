@@ -186,7 +186,7 @@ class BasePoolMiner extends Miner {
         this.confirmedBalance = confirmedBalance;
         this.payoutRequestActive = payoutRequestActive;
         if (balance !== oldBalance || confirmedBalance !== oldConfirmedBalance) {
-            Log.i(BasePoolMiner, `Pool balance: ${Policy.satoshisToCoins(balance)} NIM (confirmed ${Policy.satoshisToCoins(confirmedBalance)} NIM)`);
+            Log.i(BasePoolMiner, `Pool balance: ${Policy.lunasToCoins(balance)} NIM (confirmed ${Policy.lunasToCoins(confirmedBalance)} NIM)`);
         }
         if (balance !== oldBalance) {
             this.fire('balance', balance);

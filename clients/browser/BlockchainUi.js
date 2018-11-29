@@ -127,8 +127,8 @@ class BlockchainUi {
         }
 
         const transactions = block.transactions.map(tx => {
-            const value = Utils.satoshisToCoins(tx.value);
-            const fee = Utils.satoshisToCoins(tx.fee);
+            const value = Utils.lunasToCoins(tx.value);
+            const fee = Utils.lunasToCoins(tx.fee);
             return `<div>&nbsp;-&gt; from=${tx.sender.toUserFriendlyAddress()}, to=${tx.recipient.toUserFriendlyAddress()}, value=${value}, fee=${fee}, validityStart=${tx.validityStartHeight}</div>`;
         });
 

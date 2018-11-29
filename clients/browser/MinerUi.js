@@ -122,7 +122,7 @@ class MinerUi {
             case Nimiq.BasePoolMiner.ConnectionState.CONNECTED:
                 connectionState = 'connected';
                 if (this.$.miner.balance !== undefined) {
-                    connectionState += ` (${Nimiq.Policy.satoshisToCoins(this.$.miner.balance)} NIM, confirmed ${Nimiq.Policy.satoshisToCoins(this.$.miner.confirmedBalance)} NIM)`;
+                    connectionState += ` (${Nimiq.Policy.lunasToCoins(this.$.miner.balance)} NIM, confirmed ${Nimiq.Policy.lunasToCoins(this.$.miner.confirmedBalance)} NIM)`;
                 }
                 break;
             case Nimiq.BasePoolMiner.ConnectionState.CONNECTING:

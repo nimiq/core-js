@@ -79,7 +79,7 @@ class AccountInfoUi {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {
-            this.$balance.textContent = Utils.satoshisToCoins(account.balance);
+            this.$balance.textContent = Utils.lunasToCoins(account.balance);
             switch (account.type) {
                 case Nimiq.Account.Type.BASIC:
                     this.$el.setAttribute(AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE, AccountInfoUi.AccountType.BASIC);
@@ -102,11 +102,11 @@ class AccountInfoUi {
         this.$vestingOwner.textContent = contract.owner.toUserFriendlyAddress();
         this.$vestingStart.textContent = contract.vestingStart;
         this.$vestingStepBlocks.textContent = contract.vestingStepBlocks;
-        this.$vestingStepAmount.textContent = Utils.satoshisToCoins(contract.vestingStepAmount);
-        this.$vestingTotalAmount.textContent = Utils.satoshisToCoins(contract.vestingTotalAmount);
+        this.$vestingStepAmount.textContent = Utils.lunasToCoins(contract.vestingStepAmount);
+        this.$vestingTotalAmount.textContent = Utils.lunasToCoins(contract.vestingTotalAmount);
         const currentMinCap = contract.getMinCap(this.$.blockchain.height);
-        this.$vestingCurrentCap.textContent = Utils.satoshisToCoins(currentMinCap);
-        this.$vestingCurrentlyTransferable.textContent = Utils.satoshisToCoins(Math.max(0, contract.balance - currentMinCap));
+        this.$vestingCurrentCap.textContent = Utils.lunasToCoins(currentMinCap);
+        this.$vestingCurrentlyTransferable.textContent = Utils.lunasToCoins(Math.max(0, contract.balance - currentMinCap));
     }
 
     _updateHtlcDetails(contract) {
@@ -115,7 +115,7 @@ class AccountInfoUi {
         this.$htlcHashRoot.textContent = contract.hashRoot.toBase64();
         this.$htlcHashCount.textContent = contract.hashCount;
         this.$htlcTimeout.textContent = contract.timeout;
-        this.$htlcTotalAmount.textContent = Utils.satoshisToCoins(contract.totalAmount);
+        this.$htlcTotalAmount.textContent = Utils.lunasToCoins(contract.totalAmount);
     }
 }
 AccountInfoUi.ATTRIBUTE_ACCOUNT_TYPE = 'account-type';

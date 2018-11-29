@@ -2,19 +2,19 @@ class Policy {
     /**
      * Convert Nimiq decimal to Number of Satoshis.
      * @param {number} coins Nimiq count in decimal
-     * @return {number} Number of Satoshis
+     * @return {number} Number of Lunas
      */
-    static coinsToSatoshis(coins) {
-        return Math.round(coins * Policy.SATOSHIS_PER_COIN);
+    static coinsToLunas(coins) {
+        return Math.round(coins * Policy.LUNAS_PER_COIN);
     }
 
     /**
      * Convert Number of Satoshis to Nimiq decimal.
-     * @param {number} satoshis Number of Satoshis.
+     * @param {number} lunas Number of Lunas.
      * @return {number} Nimiq count in decimal.
      */
-    static satoshisToCoins(satoshis) {
-        return satoshis / Policy.SATOSHIS_PER_COIN;
+    static lunasToCoins(lunas) {
+        return lunas / Policy.LUNAS_PER_COIN;
     }
 
     /**
@@ -140,17 +140,17 @@ Policy.TRANSACTION_VALIDITY_WINDOW = 120;
  * @type {number}
  * @constant
  */
-Policy.SATOSHIS_PER_COIN = 1e5;
+Policy.LUNAS_PER_COIN = 1e5;
 
 /**
- * Targeted total supply in satoshis.
+ * Targeted total supply in lunas.
  * @type {number}
  * @constant
  */
 Policy.TOTAL_SUPPLY = 21e14;
 
 /**
- * Initial supply before genesis block in satoshis.
+ * Initial supply before genesis block in lunas.
  * FIXME: Change for main net.
  * @type {number}
  * @constant
@@ -172,7 +172,7 @@ Policy.EMISSION_SPEED = Math.pow(2, 22);
 Policy.EMISSION_TAIL_START = 48692960;
 
 /**
- * Constant tail emission in satoshis until total supply is reached.
+ * Constant tail emission in lunas until total supply is reached.
  * @type {number}
  * @constant
  */
