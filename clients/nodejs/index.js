@@ -275,6 +275,8 @@ const $ = {};
 
     if (!config.passive) {
         $.network.connect();
+    } else {
+        $.network.allowInboundConnections = true;
     }
 
     if (config.miner.enabled && config.passive) {
