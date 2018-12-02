@@ -108,7 +108,7 @@ class WebSocketServer extends WebSocket.Server {
         this._clients.delete(clientConnectionId);
 
         clearTimeout(client.timeout);
-        socket.off('close', client.listener);
+        socket.removeListener('close', client.listener);
 
         const subnet = netAddress.subnet(netAddress.isIPv4() ? Network.IPV4_SUBNET_MASK : Network.IPV6_SUBNET_MASK);
         const clientsByIp = this._clientsByIp.get(netAddress);
