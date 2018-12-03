@@ -605,7 +605,7 @@ class ConnectionPool extends Observable {
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
 
-        Log.d(ConnectionPool, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, headHash=${peer.headHash.toBase64()})`);
+        Log.d(ConnectionPool, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, userAgent=${peer.userAgent || '<unknown>'}, headHash=${peer.headHash.toBase64()})`);
     }
 
     /**
@@ -652,7 +652,7 @@ class ConnectionPool extends Observable {
             const kbTransferred = ((peerConnection.networkConnection.bytesSent
                 + peerConnection.networkConnection.bytesReceived) / 1000).toFixed(2);
             Log.d(ConnectionPool, () => `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
-                + `(version=${peerConnection.peer.version}, transferred=${kbTransferred} kB, closeType=${type} ${reason})`);
+                + `(transferred=${kbTransferred} kB, closeType=${type} ${reason})`);
         } else {
             if (peerConnection.networkConnection.inbound) {
                 this._inboundCount--;
