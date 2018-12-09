@@ -53,6 +53,12 @@ class Utils {
         return Nimiq.Policy.lunasToCoins(value).toFixed(Math.log10(Nimiq.Policy.LUNAS_PER_COIN));
     }
 
+    static satoshisToCoins(value) {
+        Nimiq.Log.w(Utils, 'Utils.satoshisToCoins is deprecated and will be removed '
+                         + 'in an upcoming release. Use Utils.lunasToCoins instead.');
+        return Utils.lunasToCoins(value);
+    }
+
     static hash(data, algorithm) {
         switch (algorithm) {
             case Nimiq.Hash.Algorithm.BLAKE2B: return Nimiq.Hash.computeBlake2b(data);
