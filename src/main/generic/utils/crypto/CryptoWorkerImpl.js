@@ -96,11 +96,12 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {Uint8Array} key
      * @param {Uint8Array} salt
      * @param {number} iterations
+     * @param {Hash.Algorithm}
      * @returns {Uint8Array}
      */
-    kdf(key, salt, iterations) {
+    kdf(key, salt, iterations, algorithm = Hash.Algorithm.ARGON2D) {
         if (PlatformUtils.isNodeJs()) {
-            const out = new Uint8Array(Hash.getSize(Hash.Algorithm.ARGON2D));
+            const out = new Uint8Array(Hash.getSize(algorithm));
             const res = NodeNative.node_kdf(out, new Uint8Array(key), new Uint8Array(salt), 512, iterations);
             if (res !== 0) {
                 throw res;
@@ -110,13 +111,13 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
             let stackPtr;
             try {
                 stackPtr = Module.stackSave();
-                const hashSize = Hash.getSize(Hash.Algorithm.ARGON2D);
+                const hashSize = Hash.getSize(algorithm);
                 const wasmOut = Module.stackAlloc(hashSize);
                 const wasmIn = Module.stackAlloc(key.length);
                 new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
                 const wasmSalt = Module.stackAlloc(salt.length);
                 new Uint8Array(Module.HEAPU8.buffer, wasmSalt, salt.length).set(salt);
-                const res = Module._nimiq_kdf(wasmOut, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
+                const res = Module._nimiq_kdf(wasmOut, hashSize, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
                 if (res !== 0) {
                     throw res;
                 }

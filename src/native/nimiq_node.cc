@@ -80,7 +80,7 @@ NAN_METHOD(node_argon2_target_async) {
     Local<Uint8Array> in_array = info[1].As<Uint8Array>();
     uint32_t inlen = in_array->Length();
     void* in = in_array->Buffer()->GetContents().Data();
- 
+
     uint32_t compact = To<uint32_t>(info[2]).FromJust();
     uint32_t min_nonce = To<uint32_t>(info[3]).FromJust();
     uint32_t max_nonce = To<uint32_t>(info[4]).FromJust();
@@ -224,13 +224,14 @@ NAN_METHOD(node_kdf) {
     Local<Uint8Array> salt_array = info[2].As<Uint8Array>();
     uint32_t m_cost = To<uint32_t>(info[3]).FromJust();
     uint32_t iterations = To<uint32_t>(info[4]).FromJust();
+    uint32_t outlen = out_array->Length();
     uint32_t keylen = key_array->Length();
     uint32_t saltlen = salt_array->Length();
     void* out = out_array->Buffer()->GetContents().Data();
     void* key = key_array->Buffer()->GetContents().Data();
     void* salt = salt_array->Buffer()->GetContents().Data();
 
-    info.GetReturnValue().Set(New<Number>(nimiq_kdf(out, key, keylen, salt, saltlen, m_cost, iterations)));
+    info.GetReturnValue().Set(New<Number>(nimiq_kdf(out, outlen, key, keylen, salt, saltlen, m_cost, iterations)));
 }
 
 NAN_METHOD(node_ed25519_aggregate_commitments) {
