@@ -18,6 +18,39 @@ class Policy {
     }
 
     /**
+     * @deprecated Use coinsToLunas instead
+     * @param {number} coins Nimiq count in decimal
+     * @return {number} Number of Satoshis (Lunas)
+     */
+    static coinsToSatoshis(coins) {
+        Log.w(Policy, 'Policy.coinsToSatoshis is deprecated and will be removed '
+                    + 'in an upcoming release. Use Policy.coinsToLunas instead.');
+        return Policy.coinsToLunas(coins);
+    }
+
+    /**
+     * @deprecated Use lunasToCoins instead
+     * @param {number} lunas Number of Lunas.
+     * @return {number} Nimiq count in decimal.
+     */
+    static satoshisToCoins(satoshis) {
+        Log.w(Policy, 'Policy.satoshisToCoins is deprecated and will be removed '
+                    + 'in an upcoming release. Use Policy.lunasToCoins instead.');
+        return Policy.lunasToCoins(satoshis);
+    }
+
+    /**
+     * @deprecated Use LUNAS_PER_COIN instead
+     * @type {number}
+     * @constant
+     */
+    static get SATOSHIS_PER_COIN() {
+        Log.w(Policy, 'Policy.SATOSHIS_PER_COIN is deprecated and will be removed '
+                    + 'in an upcoming release. Use Policy.LUNAS_PER_COIN instead.');
+        return Policy.LUNAS_PER_COIN;
+    }
+
+    /**
      * Circulating supply after block.
      * @param {number} blockHeight
      * @return {number}
