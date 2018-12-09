@@ -71,7 +71,10 @@ class CryptoUtils {
      * @return {Promise<Uint8Array>}
      */
     static async otpKdf(message, key, salt, iterations) {
-        return BufferUtils.xor(message, await (await CryptoWorker.getInstanceAsync()).kdf(key, salt, iterations));
+        const algorithm = message.length === Hash.getSize(Hash.Algorithm.ARGON2D_IW)
+            ? Hash.Algorithm.ARGON2D_IW
+            : Hash.Algorithm.ARGON2D;
+        return BufferUtils.xor(message, await (await CryptoWorker.getInstanceAsync()).kdf(key, salt, iterations, algorithm));
     }
 
     /**
@@ -80,17 +83,44 @@ class CryptoUtils {
      * @return {Promise.<Uint8Array>}
      */
     static async encryptOtpKdf(data, key) {
-        if (data.length !== CryptoUtils.ENCRYPTION_INPUT_SIZE) throw new Error('Invalid data size for encryption');
+        if (data.length !== CryptoUtils.ENCRYPTION_INPUT_SIZE && data.length !== CryptoUtils.IMAGEWALLET_INPUT_SIZE) {
+            throw new Error('Invalid data size for encryption');
+        }
 
-        const salt = new Uint8Array(CryptoUtils.ENCRYPTION_SALT_LENGTH);
-        CryptoWorker.lib.getRandomValues(salt);
+        const type = data.length === CryptoUtils.IMAGEWALLET_INPUT_SIZE ? 3 : 2;
 
-        const buf = new SerialBuffer(CryptoUtils.ENCRYPTION_SIZE);
-        buf.writeUint8(2); // Argon2 KDF, Hash checksum
-        buf.writeUint8(Math.log2(CryptoUtils.ENCRYPTION_KDF_ROUNDS));
-        buf.write(await CryptoUtils.otpKdf(data, key, salt, CryptoUtils.ENCRYPTION_KDF_ROUNDS));
-        buf.write(salt);
-        buf.write(Hash.computeBlake2b(data).subarray(0, CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH));
+        let buf;
+        switch (type) {
+            case 2: { // Argon2 KDF, Hash checksum
+                const salt = new Uint8Array(CryptoUtils.ENCRYPTION_SALT_LENGTH);
+                CryptoWorker.lib.getRandomValues(salt);
+
+                buf = new SerialBuffer(CryptoUtils.ENCRYPTION_SIZE);
+                buf.writeUint8(2); // type
+                buf.writeUint8(Math.log2(CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+                buf.write(await CryptoUtils.otpKdf(data, key, salt, CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+                buf.write(salt);
+                buf.write(Hash.computeBlake2b(data).subarray(0, CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH));
+                break;
+            }
+            case 3: { // 3 = Imagewallet standard
+                const salt = new Uint8Array(CryptoUtils.IMAGEWALLET_SALT_LENGTH);
+                CryptoWorker.lib.getRandomValues(salt);
+
+                const ciphertext = new SerialBuffer(CryptoUtils.IMAGEWALLET_CIPHERTEXT_LENGTH);
+                ciphertext.write(data);
+                ciphertext.write(Hash.computeBlake2b(data).subarray(0, CryptoUtils.IMAGEWALLET_CHECKSUM_LENGTH));
+                data = new Uint8Array(ciphertext);
+
+                buf = new SerialBuffer(CryptoUtils.IMAGEWALLET_SIZE);
+                buf.writeUint8(3); // type
+                buf.writeUint8(Math.log2(CryptoUtils.IMAGEWALLET_KDF_ROUNDS));
+                buf.write(salt);
+                buf.write(await CryptoUtils.otpKdf(data, key, salt, CryptoUtils.IMAGEWALLET_KDF_ROUNDS));
+                break;
+            }
+        }
+
         return buf;
     }
 
@@ -101,35 +131,70 @@ class CryptoUtils {
      */
     static async decryptOtpKdf(data, key) {
         const type = data.readUint8();
-        if (type !== 1 && type !== 2) throw new Error('Unsupported type');
+        if (type !== 1 && type !== 2 && type !== 3) throw new Error('Unsupported type');
+
         const roundsLog = data.readUint8();
         if (roundsLog > 32) throw new Error('Rounds out-of-bounds');
         const rounds = Math.pow(2, roundsLog);
-        const encryptedData = data.read(CryptoUtils.ENCRYPTION_INPUT_SIZE);
-        const salt = data.read(CryptoUtils.ENCRYPTION_SALT_LENGTH);
-        const check = data.read(CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH);
+
+        /** @type {Uint8Array} */ let encryptedData;
+        /** @type {Uint8Array} */ let salt;
+        switch (type) {
+            case 1:
+            case 2: {
+                encryptedData = data.read(CryptoUtils.ENCRYPTION_INPUT_SIZE);
+                salt = data.read(CryptoUtils.ENCRYPTION_SALT_LENGTH);
+                break;
+            }
+            case 3: {
+                salt = data.read(CryptoUtils.IMAGEWALLET_SALT_LENGTH);
+                encryptedData = data.read(CryptoUtils.IMAGEWALLET_CIPHERTEXT_LENGTH);
+                break;
+            }
+        }
 
         const decryptedData = await CryptoUtils.otpKdf(encryptedData, key, salt, rounds);
 
         // Validate checksum.
-        let checksum;
+        /** @type {Uint8Array} */ let check;
+        /** @type {Uint8Array} */ let checksum;
         switch (type) {
-            case 1: {
-                const privateKey = new PrivateKey(decryptedData);
-                const publicKey = PublicKey.derive(privateKey);
-                checksum = publicKey.hash();
+            case 1:
+            case 2: {
+                check = data.read(CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH);
+
+                switch (type) {
+                    case 1: {
+                        const privateKey = new PrivateKey(decryptedData);
+                        const publicKey = PublicKey.derive(privateKey);
+                        checksum = publicKey.hash();
+                        break;
+                    }
+                    case 2: {
+                        checksum = Hash.computeBlake2b(decryptedData);
+                        break;
+                    }
+                }
+
+                checksum = checksum.subarray(0, CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH);
                 break;
             }
-            case 2: {
-                checksum = Hash.computeBlake2b(decryptedData);
+            case 3: {
+                check = decryptedData.subarray(
+                    CryptoUtils.IMAGEWALLET_INPUT_SIZE,
+                    CryptoUtils.IMAGEWALLET_INPUT_SIZE + CryptoUtils.IMAGEWALLET_CHECKSUM_LENGTH
+                );
+                checksum = Hash.computeBlake2b(decryptedData.subarray(0, CryptoUtils.IMAGEWALLET_INPUT_SIZE));
+                checksum = checksum.subarray(0, CryptoUtils.IMAGEWALLET_CHECKSUM_LENGTH);
                 break;
             }
         }
 
-        if (!BufferUtils.equals(checksum.subarray(0, CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH), check)) {
+        if (!BufferUtils.equals(checksum, check)) {
             throw new Error('Invalid key');
         }
 
+        if (type === 3) return decryptedData.subarray(0, CryptoUtils.IMAGEWALLET_INPUT_SIZE);
         return decryptedData;
     }
 }
@@ -139,5 +204,12 @@ CryptoUtils.ENCRYPTION_KDF_ROUNDS = 256;
 CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH = 4;
 CryptoUtils.ENCRYPTION_SALT_LENGTH = 16;
 CryptoUtils.ENCRYPTION_SIZE = /*version + rounds*/ 2 + CryptoUtils.ENCRYPTION_INPUT_SIZE + CryptoUtils.ENCRYPTION_SALT_LENGTH + CryptoUtils.ENCRYPTION_CHECKSUM_LENGTH;
+
+CryptoUtils.IMAGEWALLET_INPUT_SIZE = 36;
+CryptoUtils.IMAGEWALLET_KDF_ROUNDS = 256;
+CryptoUtils.IMAGEWALLET_CHECKSUM_LENGTH = 2;
+CryptoUtils.IMAGEWALLET_SALT_LENGTH = 16;
+CryptoUtils.IMAGEWALLET_CIPHERTEXT_LENGTH = CryptoUtils.IMAGEWALLET_INPUT_SIZE + CryptoUtils.IMAGEWALLET_CHECKSUM_LENGTH;
+CryptoUtils.IMAGEWALLET_SIZE = /*version + rounds*/ 2 + CryptoUtils.IMAGEWALLET_SALT_LENGTH + CryptoUtils.IMAGEWALLET_CIPHERTEXT_LENGTH;
 
 Class.register(CryptoUtils);

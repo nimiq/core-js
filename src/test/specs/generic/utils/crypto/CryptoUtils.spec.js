@@ -1,5 +1,5 @@
 describe('CryptoUtils', () => {
-    it('can correctly computes hmacSha512', () => {
+    it('can correctly compute hmacSha512', () => {
         // Test vectors from https://tools.ietf.org/html/rfc4231
         const vectors = [
             {
@@ -47,7 +47,7 @@ describe('CryptoUtils', () => {
         }
     });
 
-    it('can correctly computes computePBKDF2sha512', () => {
+    it('can correctly compute computePBKDF2sha512', () => {
         const vectors = [
             {
                 password: 'password',
@@ -88,8 +88,149 @@ describe('CryptoUtils', () => {
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            let key = BufferUtils.toHex(CryptoUtils.computePBKDF2sha512(BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), vector.iterations, vector.derivedKeyLength));
+            const key = BufferUtils.toHex(CryptoUtils.computePBKDF2sha512(BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), vector.iterations, vector.derivedKeyLength));
             expect(key).toBe(vector.derivedKey);
+        }
+    });
+
+    it('can correctly compute standard otpKdf', async () => {
+        const vectors = [
+            {
+                data: '5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430',
+                password: 'password',
+                salt: 'sixteen chars 01',
+                encryptedData: 'e0fbcfa3d8c7d0d692476982c14fe53f669384d038d9ba37fa8baffeba41f8ed',
+            },
+            {
+                data: '588d9f4b46b82520c6dd7af5a776268d1baeb6d3e21b91c6cd53888db0dff9fb',
+                password: '12345678',
+                salt: 'sixteen chars 02',
+                encryptedData: '5863c454e8223c5e7ce4ee8af5f8a8f2b50093d3739fb5cc28377559b26d44c8',
+            },
+            {
+                data: 'e055789cc8b5bd1c6eca0fac181744c3b26e1b095f2971abdc37c3f1faf82a5a',
+                password: 'password',
+                salt: 'sixteen chars 03',
+                encryptedData: '7f6a666beeb8d72683637b9d3fde2477b358eae55067f4e3cc15ca26ec921bd8',
+            },
+            {
+                data: 'c464700afaf363e8fa3d16c285bc5801b62e17a9a6d33b5a147a80700a2fa8ea',
+                password: '12345678',
+                salt: 'sixteen chars 04',
+                encryptedData: 'f48bcc6049a5533d56efc406876db049a2cd9d4a8021612e438d513071182eb5',
+            },
+            {
+                data: '13da41526eab8aa8b618f889b6f80b328c895a0e334b55f935d041206e99b69c',
+                password: 'passwordPASSWORDpassword',
+                salt: 'sixteen chars 05',
+                encryptedData: '1654ff8f4bf52616c82a5af6a99c5b26a466d7c9099a4206895a9334ad44fe79',
+            },
+        ];
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+            const encrypted = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            expect(encrypted).toBe(vector.encryptedData);
+        }
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+            const data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            expect(data).toBe(vector.data);
+        }
+    });
+
+    it('can correctly compute Imagewallet otpKdf', async () => {
+        const vectors = [
+            {
+                data: '0000002a5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac4300000',
+                password: 'password',
+                salt: 'sixteen chars 01',
+                encryptedData: '2fd0e8fdb15cd36be046809a6b4c5043441de4f71020252b9156cc933cef0aca96a299be8363',
+            },
+            {
+                data: '0000002a588d9f4b46b82520c6dd7af5a776268d1baeb6d3e21b91c6cd53888db0dff9fb0000',
+                password: '12345678',
+                salt: 'sixteen chars 02',
+                encryptedData: '0d00cbea82f0e324e1b193f2229c5a997803e84c6aab6920dd958d344b6f91d50c640877ede1',
+            },
+            {
+                data: '0000002ae055789cc8b5bd1c6eca0fac181744c3b26e1b095f2971abdc37c3f1faf82a5a0000',
+                password: 'password',
+                salt: 'sixteen chars 03',
+                encryptedData: '23ed5705d54cd99469bbedf3d7694d0d7da910bba49150c002e0ac1001b5e72f77cb517775dc',
+            },
+            {
+                data: '0000002ac464700afaf363e8fa3d16c285bc5801b62e17a9a6d33b5a147a80700a2fa8ea0000',
+                password: '12345678',
+                salt: 'sixteen chars 04',
+                encryptedData: 'b2a693eb5adab4b23ba54aff39bc979c83418b89aac138051cf52a156219ec96cf67a76f09c1',
+            },
+            {
+                data: '0000002a13da41526eab8aa8b618f889b6f80b328c895a0e334b55f935d041206e99b69c0000',
+                password: 'passwordPASSWORDpassword',
+                salt: 'sixteen chars 05',
+                encryptedData: '2cea1161f2d9986e31558088991ea2c15f33f7a4dd3a6fdabeb56a744d613b1d382bda49e2a9',
+            },
+        ];
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+            const encryptedBytes = await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS);
+            expect(encryptedBytes.length).toBe(38);
+            expect(BufferUtils.toHex(encryptedBytes)).toBe(vector.encryptedData);
+        }
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+            let data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            expect(data).toBe(vector.data);
+        }
+    });
+
+    it('can correctly encrypt and decrypt standard data', async () => {
+        const vectors = [
+            {
+                data: '5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430', // 32 byte secret
+                password: 'password',
+            },
+        ];
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+
+            // Encryption
+            const encodedBytes = await CryptoUtils.encryptOtpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password));
+            expect(encodedBytes.length).toBe(54);
+            expect(encodedBytes[0]).toBe(2); // type
+
+            // Decryption
+            const data = await CryptoUtils.decryptOtpKdf(encodedBytes, BufferUtils.fromAscii(vector.password));
+            expect(data.length).toBe(32);
+            expect(BufferUtils.toHex(data)).toBe(vector.data);
+        }
+    });
+
+    it('can correctly encrypt and decrypt Imagewallet data', async () => {
+        const vectors = [
+            {
+                data: '0000002a5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430', // 4 byte purposeId + 32 byte secret
+                password: 'password',
+            },
+        ];
+
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
+
+            // Encryption
+            const encodedBytes = await CryptoUtils.encryptOtpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password));
+            expect(encodedBytes.length).toBe(56);
+            expect(encodedBytes[0]).toBe(3); // type
+
+            // Decryption
+            const data = await CryptoUtils.decryptOtpKdf(encodedBytes, BufferUtils.fromAscii(vector.password));
+            expect(data.length).toBe(36);
+            expect(BufferUtils.toHex(data)).toBe(vector.data);
         }
     });
 });
