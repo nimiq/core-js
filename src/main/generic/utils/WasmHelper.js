@@ -7,17 +7,19 @@ class WasmHelper {
 
     static async doImportBrowser() {
         if (PlatformUtils.isNodeJs()) return;
-        if (WasmHelper._importStarted) {
-            Log.e(WasmHelper, 'doImportBrowser invoked twice');
-            return;
+        WasmHelper._importBrowserPromise = WasmHelper._importBrowserPromise || (async () => {
+            if (await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
+                await WasmHelper.importScriptBrowser('worker-wasm.js');
+            } else {
+                await WasmHelper.importScriptBrowser('worker-js.js');
+            }
+        })();
+        try {
+            await WasmHelper._importBrowserPromise;
+        } catch(e) {
+            WasmHelper._importBrowserPromise = null;
+            throw e;
         }
-        WasmHelper._importStarted = true;
-        if (await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
-            await WasmHelper.importScriptBrowser('worker-wasm.js');
-        } else {
-            await WasmHelper.importScriptBrowser('worker-js.js');
-        }
-        WasmHelper._importFinished = true;
     }
 
     static doImportNodeJs() {
