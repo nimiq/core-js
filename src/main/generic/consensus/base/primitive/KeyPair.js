@@ -48,17 +48,6 @@ class KeyPair extends Serializable {
     }
 
     /**
-     *
-     * @param {SerialBuffer} buf
-     * @param {Uint8Array} key
-     * @return {Promise<KeyPair>}
-     */
-    static async fromEncrypted(buf, key) {
-        const decryptedData = await CryptoUtils.decryptOtpKdf(buf, key);
-        return KeyPair.derive(new PrivateKey(decryptedData));
-    }
-
-    /**
      * @param {SerialBuffer} buf
      * @return {KeyPair}
      */
@@ -99,7 +88,7 @@ class KeyPair extends Serializable {
      * @type {PrivateKey}
      */
     get privateKey() {
-        if (this.isLocked) throw new Error('Wallet is locked');
+        if (this.isLocked) throw new Error('KeyPair is locked');
         return this._privateKey;
     }
 
@@ -122,33 +111,6 @@ class KeyPair extends Serializable {
     /** @type {number} */
     get serializedSize() {
         return this._privateKey.serializedSize + this.publicKey.serializedSize + (this._locked ? this._lockSalt.byteLength + 1 : 1);
-    }
-
-    /**
-     * @param {Uint8Array} key
-     * @param {Uint8Array} [unlockKey]
-     * @return {Promise.<Uint8Array>}
-     */
-    async exportEncrypted(key, unlockKey) {
-        const wasLocked = this._locked;
-        if (this._locked) {
-            try {
-                await this.unlock(unlockKey || key);
-            } catch (e) {
-                throw new Error('KeyPair is locked and lock key mismatches');
-            }
-        }
-
-        const buf = CryptoUtils.encryptOtpKdf(this._privateKey.serialize(), key);
-
-        if (wasLocked) this.relock();
-
-        return buf;
-    }
-
-    /** @type {number} */
-    get encryptedSize() {
-        return CryptoUtils.ENCRYPTION_SIZE;
     }
 
     /**
@@ -221,6 +183,142 @@ class KeyPair extends Serializable {
     }
 
     /**
+     * @param {SerialBuffer} buf
+     * @param {Uint8Array} key
+     * @return {Promise.<KeyPair>}
+     */
+    static async fromEncrypted(buf, key) {
+        const version = buf.readUint8();
+
+        const roundsLog = buf.readUint8();
+        if (roundsLog > 32) throw new Error('Rounds out-of-bounds');
+        const rounds = Math.pow(2, roundsLog);
+
+        let plaintext;
+        switch (version) {
+            case 1:
+                plaintext = await KeyPair._decryptV1(buf, key, rounds);
+                break;
+            case 2:
+                plaintext = await KeyPair._decryptV2(buf, key, rounds);
+                break;
+            case 3:
+                plaintext = await KeyPair._decryptV3(buf, key, rounds);
+                break;
+            default:
+                throw new Error('Unsupported version');
+        }
+
+        return KeyPair.derive(new PrivateKey(plaintext));
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @param {Uint8Array} key
+     * @param {number} rounds
+     * @returns {Promise.<Uint8Array>}
+     * @private
+     */
+    static async _decryptV1(buf, key, rounds) {
+        const ciphertext = buf.read(PrivateKey.SIZE);
+        const salt = buf.read(KeyPair.ENCRYPTION_SALT_SIZE);
+        const check = buf.read(KeyPair.ENCRYPTION_CHECKSUM_SIZE);
+        const plaintext = await CryptoUtils.otpKdf(ciphertext, key, salt, rounds);
+
+        const privateKey = new PrivateKey(plaintext);
+        const publicKey = PublicKey.derive(privateKey);
+        const checksum = publicKey.hash().subarray(0, KeyPair.ENCRYPTION_CHECKSUM_SIZE);
+        if (!BufferUtils.equals(check, checksum)) {
+            throw new Error('Invalid key');
+        }
+
+        return plaintext;
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @param {Uint8Array} key
+     * @param {number} rounds
+     * @returns {Promise.<Uint8Array>}
+     * @private
+     */
+    static async _decryptV2(buf, key, rounds) {
+        const ciphertext = buf.read(PrivateKey.SIZE);
+        const salt = buf.read(KeyPair.ENCRYPTION_SALT_SIZE);
+        const check = buf.read(KeyPair.ENCRYPTION_CHECKSUM_SIZE);
+        const plaintext = await CryptoUtils.otpKdf(ciphertext, key, salt, rounds);
+
+        const checksum = Hash.computeBlake2b(plaintext).subarray(0, KeyPair.ENCRYPTION_CHECKSUM_SIZE);
+        if (!BufferUtils.equals(check, checksum)) {
+            throw new Error('Invalid key');
+        }
+
+        return plaintext;
+    }
+
+    /**
+     * @param {SerialBuffer} buf
+     * @param {Uint8Array} key
+     * @param {number} rounds
+     * @returns {Promise.<Uint8Array>}
+     * @private
+     */
+    static async _decryptV3(buf, key, rounds) {
+        const salt = buf.read(KeyPair.ENCRYPTION_SALT_SIZE);
+        const ciphertext = buf.read(KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3 + /*purposeId*/ 4 + PrivateKey.SIZE);
+        const plaintext = await CryptoUtils.otpKdf(ciphertext, key, salt, rounds);
+
+        const check = plaintext.subarray(0, KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3);
+        const payload = plaintext.subarray(KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3);
+        const checksum = Hash.computeBlake2b(payload).subarray(0, KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3);
+        if (!BufferUtils.equals(check, checksum)) {
+            throw new Error('Invalid key');
+        }
+
+        // XXX Ignore purposeId for now.
+        return payload.subarray(4);
+    }
+
+    /**
+     * @param {Uint8Array} key
+     * @return {Promise.<Uint8Array>}
+     */
+    async exportEncrypted(key) {
+        if (this._locked) throw new Error('KeyPair is locked');
+
+        const salt = new Uint8Array(KeyPair.ENCRYPTION_SALT_SIZE);
+        CryptoWorker.lib.getRandomValues(salt);
+
+        const data = new SerialBuffer(/*purposeId*/ 4 + PrivateKey.SIZE);
+        data.writeUint32(KeyPair.PURPOSE_ID);
+        data.write(this._privateKey.serialize());
+
+        const checksum = Hash.computeBlake2b(data).subarray(0, KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3);
+        const plaintext = new SerialBuffer(checksum.byteLength + data.byteLength);
+        plaintext.write(checksum);
+        plaintext.write(data);
+        const ciphertext = await CryptoUtils.otpKdf(plaintext, key, salt, KeyPair.ENCRYPTION_KDF_ROUNDS);
+
+        const buf = new SerialBuffer(/*version*/ 1 + /*kdf rounds*/ 1 + salt.byteLength + ciphertext.byteLength);
+        buf.writeUint8(3); // version
+        buf.writeUint8(Math.log2(KeyPair.ENCRYPTION_KDF_ROUNDS));
+        buf.write(salt);
+        buf.write(ciphertext);
+
+        return buf;
+    }
+
+    /** @type {number} */
+    get encryptedSize() {
+        return /*version*/ 1
+            + /*kdf rounds*/ 1
+            + KeyPair.ENCRYPTION_SALT_SIZE
+            + KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3
+            + /*purposeId*/ 4
+            + PrivateKey.SIZE;
+    }
+
+    /**
      * @param {Serializable} o
      * @return {boolean}
      */
@@ -229,5 +327,11 @@ class KeyPair extends Serializable {
     }
 }
 KeyPair.LOCK_KDF_ROUNDS = 256;
+
+KeyPair.PURPOSE_ID = 242;
+KeyPair.ENCRYPTION_SALT_SIZE = 16;
+KeyPair.ENCRYPTION_KDF_ROUNDS = 256;
+KeyPair.ENCRYPTION_CHECKSUM_SIZE = 4;
+KeyPair.ENCRYPTION_CHECKSUM_SIZE_V3 = 2;
 
 Class.register(KeyPair);

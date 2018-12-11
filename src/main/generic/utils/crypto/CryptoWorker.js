@@ -29,9 +29,10 @@ class CryptoWorker {
      * @param {Uint8Array} key
      * @param {Uint8Array} salt
      * @param {number} iterations
+     * @param {number} outputSize
      * @returns {Promise.<Uint8Array>}
      */
-    async kdf(key, salt, iterations) {}
+    async kdf(key, salt, iterations, outputSize) {}
 
     /**
      * @param {Uint8Array} block

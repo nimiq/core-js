@@ -129,13 +129,13 @@ describe('CryptoUtils', () => {
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            const encrypted = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            const encrypted = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(encrypted).toBe(vector.encryptedData);
         }
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            const data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            const data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(data).toBe(vector.data);
         }
     });
@@ -176,61 +176,15 @@ describe('CryptoUtils', () => {
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            const encryptedBytes = await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS);
+            const encryptedBytes = await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256);
             expect(encryptedBytes.length).toBe(38);
             expect(BufferUtils.toHex(encryptedBytes)).toBe(vector.encryptedData);
         }
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            let data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), CryptoUtils.ENCRYPTION_KDF_ROUNDS));
+            let data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(data).toBe(vector.data);
-        }
-    });
-
-    it('can correctly encrypt and decrypt standard data', async () => {
-        const vectors = [
-            {
-                data: '5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430', // 32 byte secret
-                password: 'password',
-            },
-        ];
-
-        for (let i = 0; i < vectors.length; i++) {
-            const vector = vectors[i];
-
-            // Encryption
-            const encodedBytes = await CryptoUtils.encryptOtpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password));
-            expect(encodedBytes.length).toBe(54);
-            expect(encodedBytes[0]).toBe(2); // type
-
-            // Decryption
-            const data = await CryptoUtils.decryptOtpKdf(encodedBytes, BufferUtils.fromAscii(vector.password));
-            expect(data.length).toBe(32);
-            expect(BufferUtils.toHex(data)).toBe(vector.data);
-        }
-    });
-
-    it('can correctly encrypt and decrypt Imagewallet data', async () => {
-        const vectors = [
-            {
-                data: '0000002a5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430', // 4 byte purposeId + 32 byte secret
-                password: 'password',
-            },
-        ];
-
-        for (let i = 0; i < vectors.length; i++) {
-            const vector = vectors[i];
-
-            // Encryption
-            const encodedBytes = await CryptoUtils.encryptOtpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password));
-            expect(encodedBytes.length).toBe(56);
-            expect(encodedBytes[0]).toBe(3); // type
-
-            // Decryption
-            const data = await CryptoUtils.decryptOtpKdf(encodedBytes, BufferUtils.fromAscii(vector.password));
-            expect(data.length).toBe(36);
-            expect(BufferUtils.toHex(data)).toBe(vector.data);
         }
     });
 });

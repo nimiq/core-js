@@ -124,6 +124,25 @@ describe('MultiSigWallet', () => {
         })().then(done, done.fail);
     });
 
+    it('can export an encrypted wallet and import it from hex', (done) => {
+        (async () => {
+            const keyPair1 = KeyPair.generate();
+            const keyPair2 = KeyPair.generate();
+            const wallet = MultiSigWallet.fromPublicKeys(keyPair1, 1, [keyPair1.publicKey, keyPair2.publicKey]);
+            const key = 'password';
+
+            const encryptedWallet = await wallet.exportEncrypted(key);
+            const unlockedWallet = await MultiSigWallet.loadEncrypted(BufferUtils.toHex(encryptedWallet), key);
+            expect(wallet.keyPair.equals(unlockedWallet.keyPair)).toBeTruthy();
+            expect(wallet.address.equals(unlockedWallet.address)).toBeTruthy();
+            expect(wallet.minSignatures).toBe(unlockedWallet.minSignatures);
+            expect(unlockedWallet.publicKeys.length).toBe(wallet.publicKeys.length);
+            for (let i = 0; i < unlockedWallet.publicKeys.length; ++i) {
+                expect(unlockedWallet.publicKeys[i].equals(wallet.publicKeys[i])).toBeTruthy();
+            }
+        })().then(done, done.fail);
+    });
+
     it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
             const keyPair1 = KeyPair.generate();

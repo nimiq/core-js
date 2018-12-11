@@ -99,36 +99,36 @@ class MultiSigWallet extends Wallet {
         return buf;
     }
 
-    /**
-     * @override
-     * @param {Uint8Array|string} key
-     * @param {Uint8Array|string} [unlockKey]
-     * @return {Promise.<Uint8Array>}
-     */
-    async exportEncrypted(key, unlockKey) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
-        if (typeof unlockKey === 'string') unlockKey = BufferUtils.fromAscii(unlockKey);
-        const buf = new SerialBuffer(this.encryptedExportedSize);
-        buf.write(await this._keyPair.exportEncrypted(key, unlockKey));
-        buf.writeUint8(this._minSignatures);
-        buf.writeUint8(this._publicKeys.length);
-        for (const pubKey of this._publicKeys) {
-            pubKey.serialize(buf);
-        }
-        return buf;
-    }
-
     /** @type {number} */
-    get encryptedExportedSize() {
-        return this._keyPair.encryptedSize
+    get exportedSize() {
+        return this._keyPair.serializedSize
             + /*minSignatures*/ 1
             + /*count*/ 1
             + this._publicKeys.reduce((sum, pubKey) => sum + pubKey.serializedSize, 0);
     }
 
+    /**
+     * @override
+     * @param {Uint8Array|string} key
+     * @return {Promise.<Uint8Array>}
+     */
+    async exportEncrypted(key) {
+        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+
+        const buf = new SerialBuffer(this.encryptedSize);
+        buf.write(await this._keyPair.exportEncrypted(key));
+        buf.writeUint8(this._minSignatures);
+        buf.writeUint8(this._publicKeys.length);
+        for (const pubKey of this._publicKeys) {
+            pubKey.serialize(buf);
+        }
+
+        return buf;
+    }
+
     /** @type {number} */
-    get exportedSize() {
-        return this._keyPair.serializedSize
+    get encryptedSize() {
+        return this._keyPair.encryptedSize
             + /*minSignatures*/ 1
             + /*count*/ 1
             + this._publicKeys.reduce((sum, pubKey) => sum + pubKey.serializedSize, 0);
