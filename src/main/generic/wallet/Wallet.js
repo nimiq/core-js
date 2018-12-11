@@ -75,13 +75,11 @@ class Wallet {
 
     /**
      * @param {Uint8Array|string} key
-     * @param {Uint8Array|string} [unlockKey]
      * @return {Promise.<Uint8Array>}
      */
-    exportEncrypted(key, unlockKey) {
+    exportEncrypted(key) {
         if (typeof key === 'string') key = BufferUtils.fromAscii(key);
-        if (typeof unlockKey === 'string') unlockKey = BufferUtils.fromAscii(unlockKey);
-        return this._keyPair.exportEncrypted(key, unlockKey);
+        return this._keyPair.exportEncrypted(key);
     }
 
     /** @type {boolean} */

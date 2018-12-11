@@ -289,8 +289,7 @@ Hash.Algorithm = {
     BLAKE2B: 1,
     ARGON2D: 2,
     SHA256: 3,
-    SHA512: 4,
-    ARGON2D_IW: 5, // Imagewallet encryption
+    SHA512: 4
 };
 /**
  * @type {Map<Hash.Algorithm, number>}
@@ -300,7 +299,6 @@ Hash.SIZE.set(Hash.Algorithm.BLAKE2B, 32);
 Hash.SIZE.set(Hash.Algorithm.ARGON2D, 32);
 Hash.SIZE.set(Hash.Algorithm.SHA256, 32);
 Hash.SIZE.set(Hash.Algorithm.SHA512, 64);
-Hash.SIZE.set(Hash.Algorithm.ARGON2D_IW, 38);
 
 Hash.NULL = new Hash(new Uint8Array(32));
 Class.register(Hash);

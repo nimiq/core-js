@@ -80,6 +80,18 @@ describe('Wallet', () => {
         })().then(done, done.fail);
     });
 
+    it('can export an encrypted wallet and import it from hex', (done) => {
+        (async () => {
+            const wallet = Wallet.generate();
+            const key = 'password';
+
+            const encryptedWallet = await wallet.exportEncrypted(key);
+            const unlockedWallet = await Wallet.loadEncrypted(BufferUtils.toHex(encryptedWallet), key);
+            expect(unlockedWallet.keyPair.privateKey).toEqual(wallet.keyPair.privateKey);
+            expect(unlockedWallet.address).toEqual(wallet.address);
+        })().then(done, done.fail);
+    });
+
     it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
         (async () => {
             const wallet = Wallet.generate();
