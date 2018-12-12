@@ -9,7 +9,8 @@
 - [Core API Documentation](https://doc.esdoc.org/github.com/nimiq-network/core/): Documentation of the Nimiq Core library API.
 - [Node.js Client Documentation](doc/nodejs-client.md): Usage and configuration documentation for the Nimiq Node.js Client.
 - [JSON-RPC Client Documentation](doc/json-rpc-client.md): Usage instructions for the Nimiq JSON-RPC Client.
-- [Docker Documentation](doc/docker.md): Instuctions on setting up a Nimiq Node using Docker.
+- [Docker Documentation](doc/docker.md): Instructions on setting up a Nimiq Node using Docker.
+- [Packaging Documentation](doc/linux-packaging.md): Instructions on how to build binary packages for Linux (.deb and/or RPM) from this source code.
 
 ## Demo
 Check out our [Testnet](https://nimiq-testnet.com).
@@ -68,30 +69,6 @@ To run a Node.js client you will need a **publicly routable IP**, **Domain**, an
 
 ### Build
 Executing `yarn build` concatenates all sources into `dist/{web,web-babel,web-crypto,node}.js`
-
-### Build binary packages for Linux distributions
-
-After completing the [Quickstart](#quickstart), follow the steps below to build a Linux package. After the build process:
-- the package will be located in the `dist/` directory, 
-- once the package has been installed,
-    - a [configuration file](#run-node-js-client) will be located in `/etc/nimiq/nimiq.conf` and
-    - a `systemd` service will be avialable which you can manage with `systemctl start|stop|restart nimiq`. 
-
-#### Debian/Ubuntu (deb package format)
-
-1. Make sure you have `dpkg`, `jq` and `fakeroot` installed (otherwise, install with `apt`).
-2. Run `yarn run build-deb`.
-3. The deb package will be located in the `dist/` directory.
-
-Note: creating deb packages only works on Debian-based distributions and has been tested extensively on Ubuntu and Debian.
-
-#### Fedora/CentOS/RHEL (rpm package format)
-
-1. Make sure you have `rpm-build` installed (otherwise, install with `yum` or `dnf`).
-2. Run `yarn run build-rpm`.
-3. The rpm package will be located in the `dist/` directory.
-
-Note: creating rpm packages only works on rpm-based distributions and has been tested extensively on Fedora only.
 
 ## Contribute
 
