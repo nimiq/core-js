@@ -1,10 +1,10 @@
-class Entropy extends Serializable {
+class Entropy extends Secret {
     /**
      * @param {Uint8Array} arg
      * @private
      */
     constructor(arg) {
-        super();
+        super(Secret.Type.ENTROPY, Entropy.PURPOSE_ID);
         if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
         if (arg.length !== Entropy.SIZE) throw new Error('Primitive: Invalid length');
         this._obj = arg;
@@ -76,6 +76,7 @@ class Entropy extends Serializable {
     }
 }
 
-Entropy.SIZE = 32;
+Entropy.SIZE = Secret.SIZE;
+Entropy.PURPOSE_ID = 0x42000002;
 
 Class.register(Entropy);

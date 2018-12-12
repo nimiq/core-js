@@ -94,6 +94,7 @@ const sources = {
         './src/main/generic/consensus/Policy.js',
         './src/main/generic/consensus/base/primitive/Serializable.js',
         './src/main/generic/consensus/base/primitive/Hash.js',
+        './src/main/generic/consensus/base/primitive/Secret.js',
         './src/main/generic/consensus/base/primitive/PrivateKey.js',
         './src/main/generic/consensus/base/primitive/PublicKey.js',
         './src/main/generic/consensus/base/primitive/KeyPair.js',
