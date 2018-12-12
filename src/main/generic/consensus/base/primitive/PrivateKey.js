@@ -1,10 +1,10 @@
-class PrivateKey extends Serializable {
+class PrivateKey extends Secret {
     /**
      * @param {Uint8Array} arg
      * @private
      */
     constructor(arg) {
-        super();
+        super(Secret.Type.PRIVATE_KEY, PrivateKey.PURPOSE_ID);
         if (!(arg instanceof Uint8Array)) throw new Error('Primitive: Invalid type');
         if (arg.length !== PrivateKey.SIZE) throw new Error('Primitive: Invalid length');
         this._obj = arg;
@@ -99,6 +99,7 @@ class PrivateKey extends Serializable {
     }
 }
 
-PrivateKey.SIZE = 32;
+PrivateKey.SIZE = Secret.SIZE;
+PrivateKey.PURPOSE_ID = 0x42000001;
 
 Class.register(PrivateKey);

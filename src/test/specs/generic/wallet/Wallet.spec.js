@@ -92,23 +92,6 @@ describe('Wallet', () => {
         })().then(done, done.fail);
     });
 
-    it('can detect wrong key when exporting an encrypted wallet from locked wallet', (done) => {
-        (async () => {
-            const wallet = Wallet.generate();
-            const key = 'password';
-            const key2 = '123456';
-
-            await wallet.lock(key);
-            let err = false;
-            await wallet.exportEncrypted(key2).catch(() => err = true);
-            expect(err).toBeTruthy();
-
-            err = false;
-            await wallet.exportEncrypted(key, key2).catch(() => err = true);
-            expect(err).toBeTruthy();
-        })().then(done, done.fail);
-    });
-
     it('can detect wrong key on an encrypted wallet', (done) => {
         (async () => {
             const wallet = Wallet.generate();
