@@ -870,10 +870,11 @@ class JsonRpcServer {
                 }
             }
             if (single && result.length === 1) {
-                res.end(JSON.stringify(result[0]));
+                res.write(JSON.stringify(result[0]));
             } else if (!single) {
-                res.end(JSON.stringify(result));
+                res.write(JSON.stringify(result));
             }
+            res.end("\r\n");
         });
     }
 }
