@@ -88,6 +88,11 @@ class NetworkConnection extends Observable {
             reason = this._lastError;
         }
 
+        // Convert ErrorEvents to strings.
+        if (reason && typeof reason !== 'string') {
+            reason = typeof reason.message === 'string' ? reason.message : '';
+        }
+
         // Tell listeners that this connection has closed.
         this.fire('close', type, reason, this);
 
