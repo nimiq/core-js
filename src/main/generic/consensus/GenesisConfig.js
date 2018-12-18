@@ -87,6 +87,22 @@ class GenesisConfig {
         if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
         return GenesisConfig._config.SEED_LISTS;
     }
+
+    /**
+     * @param {number} NETWORK_ID
+     * @return {string}
+     */
+    static fromNetworkIdToNetworkName(NETWORK_ID) {
+        for (const key in Nimiq.GenesisConfig.CONFIGS) {
+            if (Nimiq.GenesisConfig.CONFIGS.hasOwnProperty(key)) {
+                const config = Nimiq.GenesisConfig.CONFIGS[key]
+                if(NETWORK_ID === config.NETWORK_ID)
+                    return config.NETWORK_NAME
+            }
+        }
+        throw new Error("Unable to find NETWORK_NAME based on given NETWORK_ID.")
+    }
+
 }
 Class.register(GenesisConfig);
 
