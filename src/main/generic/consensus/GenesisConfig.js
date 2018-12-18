@@ -93,16 +93,15 @@ class GenesisConfig {
      * @return {string}
      */
     static fromNetworkIdToNetworkName(NETWORK_ID) {
-        for (const key in Nimiq.GenesisConfig.CONFIGS) {
-            if (Nimiq.GenesisConfig.CONFIGS.hasOwnProperty(key)) {
-                const config = Nimiq.GenesisConfig.CONFIGS[key]
+        for (const key in GenesisConfig.CONFIGS) {
+            if (GenesisConfig.CONFIGS.hasOwnProperty(key)) {
+                const config = GenesisConfig.CONFIGS[key]
                 if(NETWORK_ID === config.NETWORK_ID)
                     return config.NETWORK_NAME
             }
         }
         throw new Error("Unable to find NETWORK_NAME based on given NETWORK_ID.")
     }
-
 }
 Class.register(GenesisConfig);
 
