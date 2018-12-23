@@ -716,8 +716,8 @@ class PeerAddressBook extends Observable {
                             peerAddressState.bannedUntil = -1;
                             unbannedAddresses.push(addr);
                         } else {
-                            // Delete expires bans.
-                            this._store.remove(addr);
+                            // Delete expired bans.
+                            this._removeFromStore(addr);
                         }
                     }
                     break;
