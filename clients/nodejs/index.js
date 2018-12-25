@@ -90,6 +90,10 @@ if ((isNano || config.poolMining.mode === 'nano') && config.uiServer.enabled) {
     console.error('The UI is currently not supported for nano clients');
     process.exit(1);
 }
+if (config.poolMining.enabled && config.poolMining.protocol !== 'ws' && config.poolMining.protocol !== 'wss') {
+    console.error(`Invalid pool protocol: ${config.poolMining.protocol}`);
+    process.exit(1);
+}
 if (!Nimiq.GenesisConfig.CONFIGS[config.network]) {
     console.error(`Invalid network name: ${config.network}`);
     process.exit(1);
@@ -242,12 +246,12 @@ const $ = {};
         }
         $.consensus.on('established', () => {
             if (!config.poolMining.enabled || !$.miner.isDisconnected()) return;
-            if (!config.poolMining.host || config.poolMining.port === -1) {
-                Nimiq.Log.i(TAG, 'Not connecting to pool as mining pool host or port were not specified.');
+            if (!config.poolMining.protocol || !config.poolMining.host || config.poolMining.port === -1) {
+                Nimiq.Log.i(TAG, 'Not connecting to pool as mining pool protocol, host or port were not specified.');
                 return;
             }
-            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
-            $.miner.connect(config.poolMining.host, config.poolMining.port);
+            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.protocol}://${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
+            $.miner.connect(config.poolMining.protocol, config.poolMining.host, config.poolMining.port);
         });
     } else {
         $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, extraData);

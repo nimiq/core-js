@@ -49,6 +49,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     },
     poolMining: {
         enabled: false,
+        protocol: 'wss',
         host: null,
         port: -1,
         mode: 'smart',
@@ -117,6 +118,7 @@ const CONFIG_TYPES = {
     poolMining: {
         type: 'object', sub: {
             enabled: 'boolean',
+            protocol: 'string',
             host: 'string',
             port: 'number',
             mode: {type: 'string', values: ['smart', 'nano']},

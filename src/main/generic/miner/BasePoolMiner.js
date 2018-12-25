@@ -57,11 +57,12 @@ class BasePoolMiner extends Miner {
         }
     }
 
-    connect(host, port) {
+    connect(protocol, host, port) {
         if (this._ws) throw new Error('Call disconnect() first');
+        this._protocol = protocol;
         this._host = host;
         this._port = port;
-        const ws = this._ws = new WebSocket(`wss://${host}:${port}`);
+        const ws = this._ws = new WebSocket(`${protocol}://${host}:${port}`);
         this._ws.onopen = () => this._onOpen(ws);
         this._ws.onerror = (e) => this._onError(ws, e);
         this._ws.onmessage = (msg) => this._onMessage(ws, JSON.parse(msg.data));
@@ -114,7 +115,7 @@ class BasePoolMiner extends Miner {
         this.disconnect();
         this._reconnectTimeout = setTimeout(() => {
             if (!this._ws) {
-                this.connect(this._host, this._port);
+                this.connect(this._protocol, this._host, this._port);
             }
         }, this._exponentialBackoffReconnect);
         this._exponentialBackoffReconnect = Math.min(this._exponentialBackoffReconnect * 2, BasePoolMiner.RECONNECT_TIMEOUT_MAX);
@@ -233,6 +234,13 @@ class BasePoolMiner extends Miner {
      */
     isDisconnected() {
         return this.connectionState === BasePoolMiner.ConnectionState.CLOSED;
+    }
+
+    /**
+     * @type {string}
+     */
+    get protocol() {
+        return this._protocol;
     }
 
     /**

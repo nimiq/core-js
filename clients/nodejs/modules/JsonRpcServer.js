@@ -10,7 +10,7 @@ class JsonRpcServer {
     /**
      * @param {{port: number, corsdomain: string|Array.<string>, username: ?string, password: ?string, allowip: string|Array.<string>, methods: ?Array.<string>}} config
      * @param {{enabled: boolean, threads: number, throttleAfter: number, throttleWait: number, extraData: string}} minerConfig
-     * @param {{enabled: boolean, host: string, port: number, mode: string}} poolConfig
+     * @param {{enabled: boolean, protocol: string, host: string, port: number, mode: string}} poolConfig
      */
     constructor(config, minerConfig, poolConfig) {
         this._config = config;
@@ -411,7 +411,7 @@ class JsonRpcServer {
         if (enabled === true) {
             this._minerConfig.enabled = true;
             if (this._poolConfig.enabled && this._isPoolValid() && this._miner.isDisconnected()) {
-                this._miner.connect(this._poolConfig.host, this._poolConfig.port);
+                this._miner.connect(this._poolConfig.protocol, this._poolConfig.host, this._poolConfig.port);
             }
             if (!this._miner.working && this._consensus.established) this._miner.startWork();
         } else if (enabled === false) {
@@ -441,15 +441,19 @@ class JsonRpcServer {
     }
 
     pool(pool) {
+        // TODO Support for protocol switching
+        const protocol = 'wss';
+
         if (pool && !(this._miner instanceof Nimiq.BasePoolMiner)) {
             throw new Error('Client was not started with the pool miner option.');
         }
         if (typeof pool === 'string') {
             let [host, port] = pool.split(':');
             port = parseInt(port);
-            if (!this._isPoolValid(host, port)) {
+            if (!this._isPoolValid(protocol, host, port)) {
                 throw new Error('Pool must be specified as `host:port`');
             }
+            this._poolConfig.protocol = protocol;
             this._poolConfig.host = host;
             this._poolConfig.port = port;
             if (!this._miner.isDisconnected()) {
@@ -465,7 +469,7 @@ class JsonRpcServer {
             }
             this._poolConfig.enabled = true;
             if (this._miner.isDisconnected()) {
-                this._miner.connect(this._poolConfig.host, this._poolConfig.port);
+                this._miner.connect(this._poolConfig.protocol, this._poolConfig.host, this._poolConfig.port);
             }
         } else if (pool === false) {
             this._poolConfig.enabled = false;
@@ -475,7 +479,7 @@ class JsonRpcServer {
             }
         }
 
-        return this._poolConfig.enabled && this._isPoolValid(this._miner.host, this._miner.port)
+        return this._poolConfig.enabled && this._isPoolValid(this._miner.protocol, this._miner.host, this._miner.port)
             ? `${this._miner.host}:${this._miner.port}`
             : null;
     }
@@ -664,15 +668,18 @@ class JsonRpcServer {
     }
 
     /**
+     * @param {string} [protocol]
      * @param {string} [host]
      * @param {number} [port]
      * @returns {boolean}
      * @private
      */
-    _isPoolValid(host, port) {
+    _isPoolValid(protocol, host, port) {
+        protocol = typeof protocol !== 'undefined' ? host : this._poolConfig.protocol;
         host = typeof host !== 'undefined' ? host : this._poolConfig.host;
         port = typeof port !== 'undefined' ? port : this._poolConfig.port;
-        return typeof host === 'string' && host && typeof port === 'number' && !Number.isNaN(port) && port >= 0;
+        const validProtocol = protocol === 'ws' || protocol === 'wss';
+        return validProtocol && typeof host === 'string' && host && typeof port === 'number' && !Number.isNaN(port) && port >= 0;
     }
 
     /**
