@@ -36,6 +36,12 @@ Just include the `nimiq.js` file from this package into your project:
 <script src="node_modules/@nimiq/core-web/nimiq.js"></script>
 ```
 
+or import it as an ES6 module:
+
+```
+import Nimiq from '@nimiq/core-web';
+```
+
 ## Contribute
 
 If you'd like to contribute to the development of Nimiq please follow our [Code of Conduct](/.github/CODE_OF_CONDUCT.md) and [Contributing Guidelines](/.github/CONTRIBUTING.md).

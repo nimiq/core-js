@@ -442,6 +442,23 @@ gulp.task('build-web', ['build-worker', 'create-version-file'], function () {
         .pipe(gulp.dest('dist'));
 });
 
+const BROWSER_MODULE_SOURCES = [
+    ...dependencies, // external dependencies
+    './src/main/platform/browser/module.prefix.js',
+    ...sources.platform.browser,
+    ...sources.generic,
+    './src/main/platform/browser/module.suffix.js'
+];
+
+gulp.task('build-web-module', ['build-worker', 'create-version-file'], function () {
+    return gulp.src(BROWSER_MODULE_SOURCES, {base: '.'})
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(concat('web.esm.js'))
+        .pipe(uglify(uglify_config))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('dist'));
+});
+
 const OFFLINE_SOURCES = [
     './src/main/platform/browser/index.prefix.js',
     ...sources.platform.offline,
@@ -449,7 +466,7 @@ const OFFLINE_SOURCES = [
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-offline-babel', ['create-version-file'], function () {
+gulp.task('build-offline-babel', ['build-worker', 'create-version-file'], function () {
     return merge(
         browserify([], {
             require: [
@@ -483,7 +500,7 @@ gulp.task('build-offline-babel', ['create-version-file'], function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-offline', ['create-version-file'], function () {
+gulp.task('build-offline', ['build-worker', 'create-version-file'], function () {
     return gulp.src(OFFLINE_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-offline.js'))
@@ -587,6 +604,16 @@ gulp.task('eslint', function () {
         .pipe(eslint.failAfterError());
 });
 
-gulp.task('build', ['build-web', 'build-web-babel', 'build-web-istanbul', 'build-offline', 'build-offline-babel', 'build-loader', 'build-node', 'build-node-istanbul']);
+gulp.task('build', [
+    'build-web',
+    'build-web-babel',
+    'build-web-module',
+    'build-web-istanbul',
+    'build-offline',
+    'build-offline-babel',
+    'build-loader',
+    'build-node',
+    'build-node-istanbul'
+]);
 
 gulp.task('default', ['build']);
