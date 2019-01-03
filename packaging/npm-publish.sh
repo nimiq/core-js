@@ -21,6 +21,7 @@ $NIMIQ_VERSION
     "type": "git",
     "url": "https://github.com/nimiq-network/core.git"
   },
+  "main": "web.esm.js",
   "files": [
     "nimiq.js",
     "nimiq.js.map",
@@ -30,6 +31,8 @@ $NIMIQ_VERSION
     "web-babel.js.map",
     "web.js",
     "web.js.map",
+    "web.esm.js",
+    "web.esm.js.map",
     "web-offline.js",
     "web-offline.js.map",
     "worker.js",
@@ -41,7 +44,7 @@ $NIMIQ_VERSION
 }
 _EOF_
 
-cp ../dist/{nimiq.js,nimiq.js.map,VERSION,web-babel.js,web-babel.js.map,web.js,web.js.map,web-offline.js,web-offline.js.map,worker.js,worker-js.js,worker.js.map,worker-wasm.js,worker-wasm.wasm} npm/
+cp ../dist/{nimiq.js,nimiq.js.map,VERSION,web-babel.js,web-babel.js.map,web.js,web.js.map,web.esm.js,web.esm.js.map,web-offline.js,web-offline.js.map,worker.js,worker-js.js,worker.js.map,worker-wasm.js,worker-wasm.wasm} npm/
 cd npm
 
 echo "
