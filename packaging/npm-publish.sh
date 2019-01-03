@@ -39,7 +39,9 @@ $NIMIQ_VERSION
     "worker-js.js",
     "worker.js.map",
     "worker-wasm.js",
-    "worker-wasm.wasm"
+    "worker-wasm.wasm",
+    "types.d.ts",
+    "namespace.d.ts"
   ]
 }
 _EOF_
