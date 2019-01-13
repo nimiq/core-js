@@ -23,7 +23,7 @@ For developers looking to include Nimiq support on their applications, there are
 
 - [`@nimiq/core`](https://www.npmjs.com/package/@nimiq/core): Module for use in node.js applications.
 - [`@nimiq/core-web`](https://www.npmjs.com/package/@nimiq/core-web): Module for use in client-side (browser) applications.
-- [`@nimiq/core-types`](https://www.npmjs.com/package/@nimiq/core-types): Provides Typescript types for the core library.
+- [`@nimiq/core-types`](https://www.npmjs.com/package/@nimiq/core-types): Provides Typescript types for core-web.
 
 ## Web Developers
 ### Simple Web Application on top of Nimiq
