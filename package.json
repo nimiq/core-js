@@ -2,6 +2,7 @@
   "name": "@nimiq/core",
   "version": "1.4.1",
   "main": "dist/node.js",
+  "types": "dist/types.d.ts",
   "homepage": "https://nimiq.com/",
   "description": "",
   "scripts": {
@@ -32,6 +33,7 @@
   },
   "files": [
     "dist/node.js",
+    "dist/types.d.ts",
     "binding.gyp",
     "src/native"
   ],
