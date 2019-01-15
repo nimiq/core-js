@@ -6,7 +6,6 @@ cat > npm/package.json <<_EOF_
 {
   "name": "@nimiq/core-web",
 $NIMIQ_VERSION
-  "browser": "nimiq.js",
   "homepage": "https://nimiq.com/",
   "description": "",
   "author": {
@@ -22,6 +21,8 @@ $NIMIQ_VERSION
     "url": "https://github.com/nimiq-network/core.git"
   },
   "main": "web.esm.js",
+  "browser": "nimiq.js",
+  "types": "dist/types.d.ts",
   "files": [
     "nimiq.js",
     "nimiq.js.map",
