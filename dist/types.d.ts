@@ -123,6 +123,15 @@ export class WebSocketFactory {
     public static newWebSocket(url: string, [options]: any): WebSocket;
 }
 
+export class WebSocketServer {
+    public static UPGRADE_TIMEOUT: 10000;
+    public static TLS_HANDSHAKE_TIMEOUT: 10000;
+    public static MAX_PENDING_UPGRADES: 100;
+    constructor(
+        networkConfig: WsNetworkConfig | WssNetworkConfig,
+    );
+}
+
 export class DnsUtils {
     public static lookup(host: string): Promise<NetAddress>;
 }
@@ -164,7 +173,9 @@ export class Timers {
 
 export class Version {
     public static CODE: 1;
+    public static CORE_JS_VERSION: string;
     public static isCompatible(code: number): boolean;
+    public static createUserAgent(appAgent?: string): string;
 }
 
 export class Time {
@@ -500,6 +511,10 @@ export class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     public blockVerify(block: Uint8Array, transactionValid: boolean[], timeNow: number, genesisHash: Uint8Array, networkId: number): Promise<{ valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer }>;
 }
 
+export class CRC8 {
+    public static compute(buf: Uint8Array): number;
+}
+
 export class CRC32 {
     public static compute(buf: Uint8Array): number;
 }
@@ -585,6 +600,11 @@ export class PlatformUtils {
     public static supportsWebRTC(): boolean;
     public static supportsWS(): boolean;
     public static isOnline(): boolean;
+    public static isWindows(): boolean;
+}
+
+export class PlatformInfo {
+    public static readonly USER_AGENT_STRING: string;
 }
 
 export class StringUtils {
@@ -640,7 +660,7 @@ export class Hash extends Serializable {
     public static argon2d(arr: Uint8Array): Promise<Hash>;
     public static sha256(arr: Uint8Array): Hash;
     public static sha512(arr: Uint8Array): Hash;
-    public static compute(arr: Uint8Array, algorithm: Hash.Algorithm): Hash;
+    public static compute(arr: Uint8Array, algorithm: Hash.Algorithm.BLAKE2B | Hash.Algorithm.SHA256): Hash;
     public static unserialize(buf: SerialBuffer, algorithm?: Hash.Algorithm): Hash;
     public static fromBase64(base64: string): Hash;
     public static fromHex(hex: string): Hash;
@@ -667,35 +687,6 @@ export namespace Hash {
         type SHA256 = 3;
         type SHA512 = 4;
     }
-}
-
-export class Entropy extends Serializable {
-    public static SIZE: 32;
-    public static generate(): Entropy;
-    public static unserialize(buf: SerialBuffer): Entropy;
-    public serializedSize: number;
-    constructor(arg: Uint8Array);
-    public toExtendedPrivateKey(password?: string, wordlist?: string[]): ExtendedPrivateKey;
-    public toMnemonic(wordlist?: string[]): string[];
-    public serialize(buf?: SerialBuffer): SerialBuffer;
-    public overwrite(entropy: Entropy): void;
-    public equals(o: any): boolean;
-}
-
-export class ExtendedPrivateKey extends Serializable {
-    public static CHAIN_CODE_SIZE: 32;
-    public static generateMasterKey(seed: Uint8Array): ExtendedPrivateKey;
-    public static isValidPath(path: string): boolean;
-    public static derivePathFromSeed(path: string, seed: Uint8Array): ExtendedPrivateKey;
-    public static unserialize(buf: SerialBuffer): ExtendedPrivateKey;
-    public serializedSize: number;
-    public privateKey: PrivateKey;
-    constructor(key: PrivateKey, chainCode: Uint8Array);
-    public derive(index: number): ExtendedPrivateKey;
-    public derivePath(path: string): ExtendedPrivateKey;
-    public serialize(buf?: SerialBuffer): SerialBuffer;
-    public equals(o: any): boolean;
-    public toAddress(): Address;
 }
 
 export class PrivateKey extends Serializable {
@@ -726,6 +717,7 @@ export class PublicKey extends Serializable {
 }
 
 export class KeyPair extends Serializable {
+    public static LOCK_KDF_ROUNDS: 256;
     public static generate(): KeyPair;
     public static derive(privateKey: PrivateKey): KeyPair;
     public static fromHex(hexBuf: string): KeyPair;
@@ -748,6 +740,35 @@ export class KeyPair extends Serializable {
     public unlock(key: string | Uint8Array): Promise<void>;
     public relock(): void;
     public equals(o: any): boolean;
+}
+
+export class Entropy extends Serializable {
+    public static SIZE: 32;
+    public static generate(): Entropy;
+    public static unserialize(buf: SerialBuffer): Entropy;
+    public serializedSize: number;
+    constructor(arg: Uint8Array);
+    public toExtendedPrivateKey(password?: string, wordlist?: string[]): ExtendedPrivateKey;
+    public toMnemonic(wordlist?: string[]): string[];
+    public serialize(buf?: SerialBuffer): SerialBuffer;
+    public overwrite(entropy: Entropy): void;
+    public equals(o: any): boolean;
+}
+
+export class ExtendedPrivateKey extends Serializable {
+    public static CHAIN_CODE_SIZE: 32;
+    public static generateMasterKey(seed: Uint8Array): ExtendedPrivateKey;
+    public static isValidPath(path: string): boolean;
+    public static derivePathFromSeed(path: string, seed: Uint8Array): ExtendedPrivateKey;
+    public static unserialize(buf: SerialBuffer): ExtendedPrivateKey;
+    public serializedSize: number;
+    public privateKey: PrivateKey;
+    constructor(key: PrivateKey, chainCode: Uint8Array);
+    public derive(index: number): ExtendedPrivateKey;
+    public derivePath(path: string): ExtendedPrivateKey;
+    public serialize(buf?: SerialBuffer): SerialBuffer;
+    public equals(o: any): boolean;
+    public toAddress(): Address;
 }
 
 export class RandomSecret extends Serializable {
@@ -811,9 +832,9 @@ export class MnemonicUtils {
     public static ENGLISH_WORDLIST: string[];
     public static DEFAULT_WORDLIST: string[];
     public static MnemonicType: {
+        UNKNOWN: -1;
         LEGACY: 0;
         BIP39: 1;
-        UNKNOWN: 2;
     };
     public static entropyToMnemonic(entropy: string | ArrayBuffer | Uint8Array | Entropy, wordlist?: string[]): string[];
     public static entropyToLegacyMnemonic(entropy: string | ArrayBuffer | Uint8Array | Entropy, wordlist?: string[]): string[];
@@ -828,9 +849,9 @@ export class MnemonicUtils {
 export namespace MnemonicUtils {
     type MnemonicType = MnemonicType.LEGACY | MnemonicType.BIP39 | MnemonicType.UNKNOWN;
     namespace MnemonicType {
+        type UNKNOWN = -1;
         type LEGACY = 0;
         type BIP39 = 1;
-        type UNKNOWN = 2;
     }
 }
 
@@ -894,6 +915,7 @@ export class PrunedAccount {
     constructor(address: Address, account: Account);
     public compare(o: PrunedAccount): number;
     public serialize(buf?: SerialBuffer): SerialBuffer;
+    public hashCode(): string;
 }
 
 export class BasicAccount extends Account {
@@ -905,7 +927,7 @@ export class BasicAccount extends Account {
     constructor(balance?: number);
     public equals(o: any): boolean;
     public toString(): string;
-    public withBalance(balance: number): BasicAccount;
+    public withBalance(balance: number): Account;
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public withContractCommand(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public isInitial(): boolean;
@@ -1267,7 +1289,7 @@ export class BlockUtils {
     public static hashToTarget(hash: Hash): BigNumber;
     public static realDifficulty(hash: Hash): BigNumber;
     public static getHashDepth(hash: Hash): number;
-    public static isProofOfWork(hash: Hash, target: number): boolean;
+    public static isProofOfWork(hash: Hash, target: BigNumber): boolean;
     public static isValidCompact(compact: number): boolean;
     public static isValidTarget(target: BigNumber): boolean;
     public static getNextTarget(headBlock: BlockHeader, tailBlock: BlockHeader, deltaTotalDifficulty: BigNumber): BigNumber;
@@ -1684,6 +1706,7 @@ export class ChainDataStore {
     public getChainData(key: Hash, includeBody?: boolean): Promise<null | ChainData>;
     public putChainData(key: Hash, chainData: ChainData, includeBody?: boolean): Promise<void>;
     public putChainDataSync(key: Hash, chainData: ChainData, includeBody?: boolean): void;
+    public removeChainDataSync(key: Hash): void;
     public getBlock(key: Hash, includeBody?: boolean): null | Block;
     public getRawBlock(key: Hash, includeForks?: boolean): Promise<null | Uint8Array>;
     public getChainDataCandidatesAt(height: number): Promise<ChainData[]>;
@@ -1817,7 +1840,7 @@ export class BaseConsensusAgent extends Observable {
 }
 
 // Not registered globally
-// class FreeTransactionVector {
+// export class FreeTransactionVector {
 //     constructor(inv: InvVector, serializedSize: number);
 //     public hashCode(): string;
 //     public toString(): string;
@@ -2076,11 +2099,12 @@ export class ConsensusDB /* extends JDB.JungleDB */ {
     public static MIN_RESIZE: number;
     public static getFull(dbPrefix?: string): Promise<ConsensusDB>;
     public static getLight(dbPrefix?: string): Promise<ConsensusDB>;
+    public static restoreTransactions(jdb: ConsensusDB): Promise<void>;
     constructor(dbPrefix: string, light?: boolean);
 }
 
 // Not registered globally
-// class UpgradeHelper {
+// export class UpgradeHelper {
 //     public static recomputeTotals(jdb: ConsensusDB): Promise<void>;
 // }
 
@@ -2422,12 +2446,14 @@ export class VersionMessage extends Message {
     public genesisHash: Hash;
     public headHadh: Hash;
     public challengeNonce: Uint8Array;
+    public userAgent?: string;
     constructor(
         version: number,
         peerAddress: PeerAddress,
         genesisHash: Hash,
         headHash: Hash,
         challengeNonce: Uint8Array,
+        userAgent?: string,
     );
 }
 
@@ -2900,7 +2926,6 @@ export class CloseType {
     public static GET_HEADER_TIMEOUT: 4;
     public static INVALID_ACCOUNTS_TREE_CHUNK: 5;
     public static ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH: 6;
-    public static INVALID_CHAIN_PROOF: 7;
     public static RECEIVED_WRONG_HEADER: 8;
     public static DID_NOT_GET_REQUESTED_HEADER: 9;
 
@@ -2911,7 +2936,6 @@ export class CloseType {
     public static ACCOUNTS_PROOF_ROOT_HASH_MISMATCH: 15;
     public static INCOMPLETE_ACCOUNTS_PROOF: 16;
     public static INVALID_BLOCK: 17;
-    // @ts-ignore
     public static INVALID_CHAIN_PROOF: 18;
     public static INVALID_TRANSACTION_PROOF: 19;
     public static INVALID_BLOCK_PROOF: 20;
@@ -2929,6 +2953,8 @@ export class CloseType {
     public static PEER_CONNECTION_RECYCLED: 36;
     public static PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE: 37;
     public static INBOUND_CONNECTIONS_BLOCKED: 38;
+
+    public static INVALID_CONNECTION_STATE: 40;
 
     public static MANUAL_PEER_DISCONNECT: 90;
 
@@ -3014,7 +3040,7 @@ export class PeerChannel extends Observable {
     public expectMessage(types: Message.Type | Message.Type[], timeoutCallback: () => any, msgTimeout?: number, chunkTimeout?: number): void;
     public isExpectingMessage(type: Message.Type): boolean;
     public close(type?: number, reason?: string): void;
-    public version(peerAddress: PeerAddress, headHash: Hash, challengeNonce: Uint8Array): boolean;
+    public version(peerAddress: PeerAddress, headHash: Hash, challengeNonce: Uint8Array, appAgent?: string): boolean;
     public verack(publicKey: PublicKey, signature: Signature): boolean;
     public inv(vectors: InvVector[]): boolean;
     public notFound(vectors: InvVector[]): boolean;
@@ -3164,7 +3190,6 @@ export class ConnectionPool {
         peerAddresses: PeerAddressBook,
         networkConfig: NetworkConfig,
         blockchain: IBlockchain,
-        time: Time,
     );
     public values(): PeerConnection[];
     public valueIterator(): Iterator<PeerConnection>;
@@ -3214,6 +3239,7 @@ export class NetworkConfig {
     public peerId: PeerId;
     public services: Services;
     public peerAddress: PeerAddress;
+    public appAgent: string;
     constructor(protocolMask: number);
     public initPersistent(): Promise<void>;
     public initVolatile(): Promise<void>;
@@ -3221,9 +3247,9 @@ export class NetworkConfig {
 }
 
 export class WsNetworkConfig extends NetworkConfig {
+    public protocol: number;
     public port: number;
-    public usingReverseProxy: boolean;
-    public reverseProxyConfig: { port: number, address: string, header: string };
+    public reverseProxy: { enabled: boolean, port: number, address: string, header: string };
     public peerAddress: WsPeerAddress | WssPeerAddress;
     public secure: boolean;
     constructor(
@@ -3234,7 +3260,7 @@ export class WsNetworkConfig extends NetworkConfig {
 }
 
 export class WssNetworkConfig extends WsNetworkConfig {
-    public sslConfig: { [key: string]: string };
+    public ssl: { key: string, cert: string };
     constructor(
         host: string,
         port: number,
@@ -3270,7 +3296,7 @@ export class Network extends Observable {
     public static SIGNAL_TTL_INITIAL: 3;
     public static CONNECT_BACKOFF_INITIAL: 2000; // 2 seconds
     public static CONNECT_BACKOFF_MAX: 600000; // 10 minutes
-    public static TIME_OFFSET_MAX: number; // 15 minutes
+    public static TIME_OFFSET_MAX: number; // 10 minutes
     public static HOUSEKEEPING_INTERVAL: number; // 5 minutes
     public static SCORE_INBOUND_EXCHANGE: 0.5;
     public static CONNECT_THROTTLE: 1000; // 1 second
@@ -3342,11 +3368,13 @@ export class Peer {
     public id: number;
     public peerAddress: PeerAddress;
     public netAddress: NetAddress;
+    public userAgent?: string;
     constructor(
         channel: PeerChannel,
         version: number,
         headHash: Hash,
         timeOffset: number,
+        userAgent?: string,
     );
     public equals(o: any): boolean;
     public hashCode(): string;
@@ -3374,7 +3402,8 @@ export class Miner extends Observable {
         extraData?: Uint8Array,
     );
     public startWork(): void;
-    public getNextBlock(): Promise<Block>;
+    public onWorkerShare(obj: {hash: Hash, nonce: number, block: Block}): void;
+    public getNextBlock(address?: Address, extraData?: Uint8Array): Promise<Block>;
     public stopWork(): void;
 }
 
