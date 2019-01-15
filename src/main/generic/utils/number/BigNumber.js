@@ -2786,5 +2786,5 @@
     BigNumber['default'] = BigNumber.BigNumber = BigNumber;
     globalObject.BigNumber = BigNumber;
 })(Class.scope);
-BigNumber = Class.scope.BigNumber;
+const BigNumber = Class.scope.BigNumber;
 BigNumber.config({ DECIMAL_PLACES: 10 });
