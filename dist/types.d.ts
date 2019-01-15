@@ -622,6 +622,7 @@ export class Policy {
     public static DIFFICULTY_BLOCK_WINDOW: 120;
     public static DIFFICULTY_MAX_ADJUSTMENT_FACTOR: 2;
     public static TRANSACTION_VALIDITY_WINDOW: 120;
+    public static LUNAS_PER_COIN: 1e5;
     public static SATOSHIS_PER_COIN: 1e5;
     public static TOTAL_SUPPLY: 21e14;
     public static INITIAL_SUPPLY: 252000000000000;
@@ -629,7 +630,9 @@ export class Policy {
     public static EMISSION_TAIL_START: 48692960;
     public static EMISSION_TAIL_REWARD: 4000;
     public static NUM_BLOCKS_VERIFICATION: 250;
+    public static coinsToLunas(coins: number): number;
     public static coinsToSatoshis(coins: number): number;
+    public static lunasToCoins(lunas: number): number;
     public static satoshisToCoins(satoshis: number): number;
     public static supplyAfter(blockHeight: number): number;
     public static blockRewardAt(blockHeight: number): number;
