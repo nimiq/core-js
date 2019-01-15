@@ -22,7 +22,7 @@ $NIMIQ_VERSION
   },
   "main": "web.esm.js",
   "browser": "nimiq.js",
-  "types": "dist/types.d.ts",
+  "types": "types.d.ts",
   "files": [
     "nimiq.js",
     "nimiq.js.map",
