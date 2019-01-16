@@ -162,7 +162,7 @@ class Miner extends Observable {
             this._retry = 0;
             const block = await this.getNextBlock();
             if (block === null) {
-                this.stopWork();
+                this._stopWork();
                 return;
             }
 
@@ -172,7 +172,7 @@ class Miner extends Observable {
         } catch (e) {
             Log.e(Miner, e);
             Log.w(Miner, 'Failed to start work, retrying in 100ms');
-            this.stopWork();
+            this._stopWork();
             setTimeout(() => this.startWork(), 100);
         } finally {
             this._restarting = false;
@@ -307,10 +307,19 @@ class Miner extends Observable {
         return Math.max(now, this._blockchain.head.timestamp + 1);
     }
 
+
     /**
      * @fires Miner#stop
      */
     stopWork() {
+        this._stopWork();
+    }
+
+    /**
+     * @fires Miner#stop
+     * @private
+     */
+    _stopWork() {
         // TODO unregister from blockchain head-changed events.
         if (!this.working) {
             return;
