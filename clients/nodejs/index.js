@@ -229,8 +229,9 @@ const $ = {};
     if (config.poolMining.enabled || config.uiServer.enabled) { // ui requires SmartPoolMiner to be able to switch
         // between solo mining and pool mining
         const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
-        const deviceData = config.poolMining.deviceData;
+        const deviceData = config.poolMining.deviceData || {};
         const poolMode = isNano ? 'nano' : config.poolMining.mode;
+        deviceData.userAgent = Nimiq.Version.createUserAgent();
         switch (poolMode) {
             case 'nano':
                 $.miner = new Nimiq.NanoPoolMiner($.blockchain, $.network.time, $.wallet.address, deviceId, deviceData);
