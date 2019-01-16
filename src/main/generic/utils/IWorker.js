@@ -14,7 +14,7 @@ class IWorker {
             if (!workerScript) {
                 workerScript = `${Nimiq._path}worker.js`;
             }
-            return IWorker.createProxy(clazz, name, new Worker(window.URL.createObjectURL(new Blob([`Nimiq = {_path: '${Nimiq._path}'}; importScripts('${workerScript.replace(/'/g, '')}');`]))));
+            return IWorker.createProxy(clazz, name, new Worker(URL.createObjectURL(new Blob([`Nimiq = {_path: '${Nimiq._path}'}; importScripts('${workerScript.replace(/'/g, '')}');`]))));
         }
     }
 
@@ -74,7 +74,7 @@ class IWorker {
         // Then bind the event to the callback function.
         // There are several events for cross browser compatibility.
         // These events might occur before processing, so delay them a bit.
-        const ret = () => window.setTimeout(resolve, 100);
+        const ret = () => setTimeout(resolve, 100);
         script.onreadystatechange = ret;
         script.onload = ret;
 

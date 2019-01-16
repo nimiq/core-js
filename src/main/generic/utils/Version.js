@@ -16,7 +16,7 @@ class Version {
         appAgent = appAgent ? appAgent.trim() : '';
         if (appAgent.length > 0) appAgent = ` ${appAgent}`;
         const platformPrefix = PlatformUtils.isBrowser() ? 'browser; ' : PlatformUtils.isNodeJs() ? 'nodejs; ' : '';
-        return `core-js/${Version.CORE_JS_VERSION} (${platformPrefix}${PlatformInfo.USER_AGENT_STRING})${appAgent}`;
+        return `core-js/${Version.CORE_JS_VERSION} (${platformPrefix}${PlatformUtils.userAgentString})${appAgent}`;
     }
 }
 Version.CODE = 1;

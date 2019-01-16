@@ -83,15 +83,9 @@ class Miner extends Observable {
         /** @type {MinerWorkerPool} */
         this._workerPool = new MinerWorkerPool();
 
-        if (typeof navigator === 'object' && navigator.hardwareConcurrency) {
-            this.threads = Math.ceil(navigator.hardwareConcurrency / 2);
-        } else if (PlatformUtils.isNodeJs()) {
-            const cores = require('os').cpus().length;
-            this.threads = Math.ceil(cores / 2);
-            if (cores === 1) this.throttleAfter = 2;
-        } else {
-            this.threads = 1;
-        }
+        const cores = PlatformUtils.hardwareConcurrency;
+        this.threads = Math.ceil(cores / 2);
+        if (cores === 1) this.throttleAfter = 2;
         this._workerPool.on('share', (obj) => this.onWorkerShare(obj));
         this._workerPool.on('no-share', (obj) => this.onWorkerShare(obj));
 

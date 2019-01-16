@@ -1,12 +1,10 @@
-// TODO: Split platform specific code into subdirs
-// i.e. no `require()` or `window.*` in generic
-// Using `require()`s in browser specific code are likely to cause problems
-// with tools like webpack that try to resolve those for the browser.
-
 class WasmHelper {
 
+    static async doImport() {
+        return WasmHelper.doImportBrowser();
+    }
+
     static async doImportBrowser() {
-        if (PlatformUtils.isNodeJs()) return;
         WasmHelper._importBrowserPromise = WasmHelper._importBrowserPromise || (async () => {
             if (await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
                 await WasmHelper.importScriptBrowser('worker-wasm.js');
@@ -16,19 +14,19 @@ class WasmHelper {
         })();
         try {
             await WasmHelper._importBrowserPromise;
-        } catch(e) {
+        } catch (e) {
             WasmHelper._importBrowserPromise = null;
             throw e;
         }
     }
 
-    static doImportNodeJs() {
-        if (!PlatformUtils.isNodeJs()) return;
-        if (WasmHelper.importWasmNodeJs('worker-wasm.wasm')) {
-            WasmHelper.importScriptNodeJs('worker-wasm.js');
-        } else {
-            WasmHelper.importScriptNodeJs('worker-js.js');
-        }
+    /**
+     * @param {string} wasm
+     * @param {string} module
+     * @returns {Promise.<boolean>}
+     */
+    static async importWasm(wasm, module = 'Module') {
+        return WasmHelper.importWasmBrowser(wasm, module);
     }
 
     /**
@@ -65,30 +63,8 @@ class WasmHelper {
         });
     }
 
-    static importWasmNodeJs(wasm, module = 'Module') {
-        wasm = WasmHelper._adjustWasmPath(wasm);
-        if (!WasmHelper._global.WebAssembly) {
-            Log.w(WasmHelper, 'No support for WebAssembly available.');
-            return false;
-        }
-
-        const toUint8Array = function (buf) {
-            const u = new Uint8Array(buf.length);
-            for (let i = 0; i < buf.length; ++i) {
-                u[i] = buf[i];
-            }
-            return u;
-        };
-        const fs = require('fs');
-        try {
-            const data = fs.readFileSync(wasm);
-            WasmHelper._global[module] = WasmHelper._global[module] || {};
-            WasmHelper._global[module].wasmBinary = toUint8Array(data);
-            return true;
-        } catch (e) {
-            Log.w(WasmHelper, `Failed to access WebAssembly module ${wasm}: ${e}`);
-            return false;
-        }
+    static importScript(script, module = 'Module') {
+        return WasmHelper.importScriptBrowser(script, module);
     }
 
     static importScriptBrowser(script, module = 'Module') {
@@ -123,19 +99,6 @@ class WasmHelper {
         });
     }
 
-    static importScriptNodeJs(script, module = 'Module') {
-        if (module && WasmHelper._global[module] && WasmHelper._global[module].asm) return false;
-        script = WasmHelper._adjustScriptPath(script);
-
-        const moduleSettings = WasmHelper._global[module] || {};
-
-        if (typeof require === 'function') {
-            WasmHelper._global[module] = require(script)(moduleSettings);
-            if (!module) return true;
-        }
-        return false;
-    }
-
     static fireModuleLoaded(module = 'Module') {
         if (typeof WasmHelper._moduleLoadedCallbacks[module] === 'function') {
             WasmHelper._moduleLoadedCallbacks[module]();
@@ -167,7 +130,7 @@ class WasmHelper {
         return typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : typeof self !== 'undefined' ? self : null;
     }
 }
+
 WasmHelper._moduleLoadedCallbacks = {};
 
 Class.register(WasmHelper);
-

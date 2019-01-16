@@ -125,7 +125,7 @@ if (!offlineTarget) {
 
 beforeAll((done) => {
     // This has no effect on Node.js.
-    WasmHelper.doImportBrowser().then(done, done.fail);
+    PlatformUtils.isBrowser() ? WasmHelper.doImportBrowser().then(done, done.fail) : done();
 });
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000;

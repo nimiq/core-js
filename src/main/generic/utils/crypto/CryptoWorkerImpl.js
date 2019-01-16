@@ -7,7 +7,7 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
 
     async init(name) {
         await this._superInit.call(this, name);
-        await WasmHelper.doImportBrowser();
+        if (PlatformUtils.isBrowser()) await WasmHelper.doImportBrowser();
         CryptoWorker._workerAsync = this;
     }
 

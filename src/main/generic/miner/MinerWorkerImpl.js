@@ -7,7 +7,7 @@ class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
 
     async init(name) {
         await this._superInit.call(this, name);
-        await WasmHelper.doImportBrowser();
+        if (PlatformUtils.isBrowser()) await WasmHelper.doImportBrowser();
     }
 
     async multiMine(input, compact, minNonce, maxNonce) {

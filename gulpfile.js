@@ -25,7 +25,8 @@ const sources = {
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
             './src/main/platform/browser/network/DnsUtils.js',
             './src/main/platform/browser/network/HttpRequest.js',
-            './src/main/platform/browser/utils/PlatformInfo.js',
+            './src/main/platform/browser/utils/PlatformUtils.js',
+            './src/main/platform/browser/WasmHelper.js',
         ],
         offline: [
             './src/main/platform/browser/Class.js',
@@ -33,6 +34,8 @@ const sources = {
             './src/main/generic/utils/Log.js',
             './src/main/generic/utils/Observable.js',
             './src/main/platform/browser/crypto/CryptoLib.js',
+            './src/main/platform/browser/utils/PlatformUtils.js',
+            './src/main/platform/browser/WasmHelper.js',
         ],
         node: [
             './src/main/platform/nodejs/utils/LogNative.js',
@@ -45,7 +48,7 @@ const sources = {
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
             './src/main/platform/nodejs/network/DnsUtils.js',
             './src/main/platform/nodejs/network/HttpRequest.js',
-            './src/main/platform/nodejs/utils/PlatformInfo.js',
+            './src/main/platform/nodejs/utils/PlatformUtils.js',
         ]
     },
     generic: [
@@ -77,7 +80,6 @@ const sources = {
         './src/main/generic/utils/synchronizer/PrioritySynchronizer.js',
         './src/main/generic/utils/RateLimit.js',
         './src/main/generic/utils/IWorker.js',
-        './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
         './src/main/generic/utils/crypto/CryptoWorkerImpl.js',
         './src/main/generic/utils/crypto/CryptoUtils.js',
@@ -89,7 +91,6 @@ const sources = {
         './src/main/generic/utils/merkle/MerklePath.js',
         './src/main/generic/utils/merkle/MerkleProof.js',
         './src/main/generic/utils/mnemonic/MnemonicUtils.js',
-        './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/generic/utils/string/StringUtils.js',
         './src/main/generic/consensus/Policy.js',
         './src/main/generic/consensus/base/primitive/Serializable.js',
@@ -241,7 +242,6 @@ const sources = {
         './src/main/generic/utils/number/NumberUtils.js',
         './src/main/generic/utils/merkle/MerklePath.js',
         './src/main/generic/utils/mnemonic/MnemonicUtils.js',
-        './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/generic/utils/string/StringUtils.js',
         './src/main/generic/consensus/Policy.js',
         './src/main/generic/consensus/base/primitive/Serializable.js',
@@ -263,7 +263,6 @@ const sources = {
         './src/main/generic/consensus/base/transaction/BasicTransaction.js',
         './src/main/generic/consensus/base/transaction/ExtendedTransaction.js',
         './src/main/generic/utils/IWorker.js',
-        './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/CryptoWorker.js',
         './src/main/generic/utils/crypto/CryptoUtils.js',
         './src/main/generic/consensus/GenesisConfigOffline.js'
@@ -273,16 +272,16 @@ const sources = {
     ],
     worker: [
         './src/main/platform/browser/Class.js',
-        './src/main/generic/utils/platform/PlatformUtils.js',
         './src/main/platform/browser/utils/LogNative.js',
         './src/main/generic/utils/Log.js',
         './src/main/generic/utils/IWorker.js',
-        './src/main/generic/utils/WasmHelper.js',
         './src/main/generic/utils/crypto/*.js',
         './src/main/generic/utils/number/*.js',
         './src/main/generic/utils/buffer/*.js',
         './src/main/generic/miner/MinerWorker*.js',
 
+        './src/main/platform/browser/utils/PlatformUtils.js',
+        './src/main/platform/browser/WasmHelper.js',
         './src/main/platform/browser/worker/GenesisConfig.js',
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/assert/Assert.js',
