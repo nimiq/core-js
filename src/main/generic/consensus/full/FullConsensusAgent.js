@@ -346,6 +346,10 @@ class FullConsensusAgent extends BaseConsensusAgent {
                 this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
                     transaction.hash().serialize());
                 return false;
+            case Mempool.ReturnCode.REJECTED:
+                this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_DUST, 'Rejected transaction',
+                    transaction.hash().serialize());
+                return false;
             default:
                 return false;
         }

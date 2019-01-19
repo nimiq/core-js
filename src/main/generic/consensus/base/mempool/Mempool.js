@@ -64,6 +64,11 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.INVALID;
         }
 
+        // Reject spam transactions
+        if (transaction.value <= Mempool.TRANSACTION_MIN_VALUE) {
+            return Mempool.ReturnCode.REJECTED;
+        }
+
         // Retrieve recipient account and test incoming transaction.
         /** @type {Account} */
         let recipientAccount;
@@ -432,6 +437,11 @@ class Mempool extends Observable {
 }
 
 /**
+ * Minimum value of transaction in Luna.
+ * @type {number}
+ */
+Mempool.TRANSACTION_MIN_VALUE = 1e5;
+/**
  * Fee threshold in sat/byte below which transactions are considered "free".
  * @type {number}
  */
@@ -454,6 +464,7 @@ Mempool.SIZE_MAX = 100000;
 
 /** @enum {number} */
 Mempool.ReturnCode = {
+    REJECTED: -3,
     FEE_TOO_LOW: -2,
     INVALID: -1,
 
