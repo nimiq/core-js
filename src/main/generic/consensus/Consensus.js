@@ -71,6 +71,25 @@ class Consensus {
 
     /**
      * @param {NetworkConfig} [netconfig]
+     * @return {Promise.<PicoConsensus>}
+     */
+    static async pico(netconfig = NetworkConfig.getDefault()) {
+        netconfig.services = new Services(Services.NONE, Services.NANO | Services.LIGHT | Services.FULL);
+        await netconfig.initPersistent();
+
+        /** @type {Time} */
+        const time = new Time();
+        /** @type {PicoChain} */
+        const blockchain = await new PicoChain(time);
+        /** @type {NanoMempool} */
+        const mempool = new NanoMempool(blockchain);
+        /** @type {Network} */
+        const network = new Network(blockchain, netconfig, time);
+
+        return new PicoConsensus(blockchain, mempool, network);
+    }
+    /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<FullConsensus>}
      */
     static async volatileFull(netconfig = NetworkConfig.getDefault()) {

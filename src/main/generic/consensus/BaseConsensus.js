@@ -130,7 +130,7 @@ class BaseConsensus extends Observable {
             // We are synced with all connected peers.
 
             // Report consensus-established if we are connected to the minimum number of full nodes.
-            if (numSyncedFullNodes >= BaseConsensus.MIN_FULL_NODES) {
+            if (this._hasEnoughPeers(numSyncedFullNodes, this._agents.length)) {
                 if (!this._established) {
                     Log.i(BaseConsensus, `Synced with all connected peers (${this._agents.length}), consensus established.`);
                     Log.d(BaseConsensus, `Blockchain: height=${this._blockchain.height}, headHash=${this._blockchain.headHash}`);
@@ -160,6 +160,16 @@ class BaseConsensus extends Observable {
 
         Log.v(BaseConsensus, `Syncing blockchain with peer ${agent.peer.peerAddress}`);
         agent.syncBlockchain().catch(Log.w.tag(BaseConsensusAgent));
+    }
+
+    /**
+     * @param {number} numSyncedFullNodes
+     * @param {number} numSyncedNodes
+     * @return {boolean}
+     * @protected
+     */
+    _hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) {
+        return numSyncedFullNodes >= BaseConsensus.MIN_FULL_NODES;
     }
 
     /**

@@ -505,6 +505,8 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
+        msg = this._preProcessBlockMessage(msg);
+
         // Reuse already known (verified) transactions
         const transactions = msg.block.isFull() ? msg.block.body.transactions : [];
         const transactionsFromMempool = transactions.map(t => this._getTransaction(t.hash()));
@@ -531,6 +533,14 @@ class BaseConsensusAgent extends Observable {
         this._onObjectProcessed(vector);
 
         this._invRequestManager.noteVectorReceived(InvVector.fromBlock(msg.block));
+    }
+
+    /**
+     * @param {BlockMessage} msg
+     * @protected
+     */
+    _preProcessBlockMessage(msg) {
+        return msg;
     }
 
     /**

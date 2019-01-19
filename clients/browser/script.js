@@ -11,6 +11,7 @@ class DevUi {
         this._startInstance(this.clientType).then($ => {
             this.$ = $;
             window.$ = $;
+            $.timeStart = Date.now();
             return this._loadUiComponents(); // load ui components after core as some extend Nimiq.Observable
         }).then(() => this._initUi());
     }
@@ -61,7 +62,7 @@ class DevUi {
                     $.mempool = $.consensus.mempool;
                     $.network = $.consensus.network;
 
-                    if (this.clientType !== DevUi.ClientType.NANO) {
+                    if (this.clientType !== DevUi.ClientType.NANO && this.clientType !== DevUi.ClientType.PICO) {
                         $.accounts = $.blockchain.accounts;
                     }
 
@@ -87,6 +88,7 @@ class DevUi {
     }
 }
 DevUi.ClientType = {
+    PICO: 'pico',
     NANO: 'nano',
     LIGHT: 'light',
     FULL: 'full'
