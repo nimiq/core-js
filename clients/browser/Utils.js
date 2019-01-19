@@ -11,7 +11,7 @@ class Utils {
     }
 
     static getAccount($, address) {
-        if ($.clientType !== DevUi.ClientType.NANO) {
+        if ($.clientType !== DevUi.ClientType.NANO && $.clientType !== DevUi.ClientType.PICO) {
             return $.accounts.get(address);
         } else {
             return Utils.awaitConsensus($)
@@ -21,7 +21,7 @@ class Utils {
     }
 
     static broadcastTransaction($, tx) {
-        if ($.clientType !== DevUi.ClientType.NANO) {
+        if ($.clientType !== DevUi.ClientType.NANO && $.clientType !== DevUi.ClientType.PICO) {
             return $.mempool.pushTransaction(tx);
         } else {
             return Utils.awaitConsensus($).then(() => $.consensus.relayTransaction(tx));

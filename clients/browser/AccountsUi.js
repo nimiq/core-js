@@ -234,7 +234,7 @@ class AccountsUi extends Nimiq.Observable {
     }
 
     _updateNanoSubscriptions() {
-        if (this.$.clientType !== DevUi.ClientType.NANO) return;
+        if (this.$.clientType !== DevUi.ClientType.NANO && this.$.clientType !== DevUi.ClientType.PICO) return;
         // avoid frequent subsequent changes to nano subscriptions as these are costly
         clearTimeout(this._updateNanoSubscriptionsTimer);
         this._updateNanoSubscriptionsTimer = setTimeout(

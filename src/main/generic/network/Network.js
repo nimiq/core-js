@@ -480,7 +480,7 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @type {number}
  * @constant
  */
-Network.CONNECT_THROTTLE = 1000; // 1 second
+Network.CONNECT_THROTTLE = 500; // 1 second
 /**
  * @type {number}
  * @constant
