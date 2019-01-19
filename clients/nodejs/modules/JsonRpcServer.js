@@ -564,8 +564,13 @@ class JsonRpcServer {
      * Accounts
      */
 
+    async _getAccount(address) {
+        const account = this._accounts ? await this._accounts.get(address) : await this._consensus.getAccount(address);
+        return account ? account : Nimiq.Account.INITIAL;
+    }
+
     async accounts() {
-        return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._accounts.get(address), address)));
+        return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._getAccount(address), address)));
     }
 
     async createAccount() {
@@ -576,12 +581,12 @@ class JsonRpcServer {
 
     async getBalance(addrString, atBlock) {
         if (atBlock && atBlock !== 'latest') throw new Error(`Cannot calculate balance at block ${atBlock}`);
-        return (await this._accounts.get(Nimiq.Address.fromString(addrString))).balance;
+        return (await this._getAccount(Nimiq.Address.fromString(addrString))).balance;
     }
 
     async getAccount(addr) {
         const address = Nimiq.Address.fromString(addr);
-        const account = await this._accounts.get(address);
+        const account = await this._getAccount(address);
         return this._accountToObj(account, address);
     }
 
