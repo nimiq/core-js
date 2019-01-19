@@ -1,4 +1,4 @@
-class NanoConsensus extends BaseConsensus {
+class NanoConsensus extends BaseMiniConsensus {
     /**
      * @param {NanoChain} blockchain
      * @param {NanoMempool} mempool
@@ -10,42 +10,6 @@ class NanoConsensus extends BaseConsensus {
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
         this._mempool = mempool;
-
-        /** @type {Subscription} */
-        this._subscription = Subscription.BLOCKS_ONLY;
-    }
-
-    /**
-     * @param {Array.<Address>} addresses
-     */
-    subscribeAccounts(addresses) {
-        this.subscribe(Subscription.fromAddresses(addresses));
-        this._mempool.evictExceptAddresses(addresses);
-        for (const /** @type {NanoConsensusAgent} */ agent of this._agents.valueIterator()) {
-            agent.requestMempool();
-        }
-    }
-
-    /**
-     * @param {Array.<Address>|Address} newAddresses
-     */
-    addSubscriptions(newAddresses) {
-        newAddresses = Array.isArray(newAddresses) ? newAddresses : [newAddresses];
-        const addresses = new HashSet();
-        addresses.addAll(this._subscription.addresses);
-        addresses.addAll(newAddresses);
-        this.subscribeAccounts(addresses.values());
-    }
-
-    /**
-     * @param {Array.<Address>|Address} addressesToRemove
-     */
-    removeSubscriptions(addressesToRemove) {
-        addressesToRemove = Array.isArray(addressesToRemove) ? addressesToRemove : [addressesToRemove];
-        const addresses = new HashSet();
-        addresses.addAll(this._subscription.addresses);
-        addresses.removeAll(addressesToRemove);
-        this.subscribeAccounts(addresses.values());
     }
 
     /**

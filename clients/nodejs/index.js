@@ -74,7 +74,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
     process.exit();
 }
 
-const isNano = config.type === 'nano';
+const isNano = config.type === 'nano' || config.type === 'pico';
 
 if (isNano && config.miner.enabled) {
     console.error('Cannot mine when running as a nano client');
@@ -191,6 +191,8 @@ const $ = {};
                 ? Nimiq.Consensus.nano(networkConfig)
                 : Nimiq.Consensus.volatileNano(networkConfig));
             break;
+        case 'pico':
+            $.consensus = await Nimiq.Consensus.pico(networkConfig);
     }
 
     $.blockchain = $.consensus.blockchain;

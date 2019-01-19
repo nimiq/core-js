@@ -12,6 +12,7 @@ class BlockchainUi {
         this.$totalWork = this.$el.querySelector('[total-work]');
         this.$averageBlockTime = this.$el.querySelector('[average-block-time]');
         this.$lastBlockTime = this.$el.querySelector('[last-block-time]');
+        this.$timeToFirstConsensus = this.$el.querySelector('[time-to-first-consensus]');
 
         this.$blockInfo = this.$el.querySelector('[block-info]');
         this.$blockNotFound = this.$el.querySelector('[block-not-found]');
@@ -33,7 +34,7 @@ class BlockchainUi {
         $.consensus.on('established', () => this._headChanged($.blockchain.head));
 
         this._headChanged($.blockchain.head);
-        const inputEventName = $.clientType === DevUi.ClientType.NANO? 'change' : 'input';
+        const inputEventName = ($.clientType === DevUi.ClientType.NANO || $.clientType === DevUi.ClientType.PICO) ? 'change' : 'input';
         this.$blockHeightInput.addEventListener(inputEventName, () => this._updateUserRequestedBlock());
         this.$blockInterlinkTitle.addEventListener('click', () => this._toggleBlockInterlink());
         this.$blockTransactionsTitle.addEventListener('click', () => this._toggleTransactions());
@@ -43,7 +44,13 @@ class BlockchainUi {
         $.consensus.on('verify-chain-proof', () => this.$title.classList.add('verify-chain-proof'));
         $.consensus.on('sync-accounts-tree', () => this.$title.classList.add('sync-accounts-tree'));
         $.consensus.on('verify-accounts-tree', () => this.$title.classList.add('verify-accounts-tree'));
-        $.consensus.on('established', () => this.$title.classList.add('consensus-established'));
+        $.consensus.on('established', () => {
+            this.$title.classList.add('consensus-established');
+            if (!this._timeToFirstConsensusSet) {
+                this.$timeToFirstConsensus.textContent = ((Date.now() - this.$.timeStart) / 1000.0) + 's';
+                this._timeToFirstConsensusSet = true;
+            }
+        });
         $.consensus.on('lost', () => this.$title.classList.remove('initializing', 'connecting', 'syncing',
             'sync-chain-proof', 'verify-chain-proof', 'sync-accounts-tree', 'verify-accounts-tree',
             'consensus-established'));
@@ -56,7 +63,7 @@ class BlockchainUi {
         this.$blockHeightInput.placeholder = this.$.blockchain.height;
         this._updateAverageBlockTime();
 
-        if (this.$.clientType !== DevUi.ClientType.NANO) {
+        if (this.$.clientType !== DevUi.ClientType.NANO && this.$.clientType !== DevUi.ClientType.PICO) {
             this.$totalDifficulty.textContent = this.$.blockchain.totalDifficulty;
             this.$totalWork.textContent = this.$.blockchain.totalWork;
         }

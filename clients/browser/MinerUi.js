@@ -14,7 +14,7 @@ class MinerUi {
         this.$startButton = this.$el.querySelector('[start-button]');
 
         // Nano clients can only use nano mining mode.
-        if ($.clientType === DevUi.ClientType.NANO) {
+        if ($.clientType === DevUi.ClientType.NANO || $.clientType === DevUi.ClientType.PICO) {
             this.$el.querySelector('[miner-mode-solo]').disabled = true;
             this.$el.querySelector('[miner-mode-smart]').disabled = true;
             this.$el.querySelector('[miner-mode-nano]').selected = true;

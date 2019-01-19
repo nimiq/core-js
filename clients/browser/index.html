@@ -21,6 +21,7 @@
             <div id="full" class="client-link-container"><a href="#full">Full</a></div>
             <div id="light" class="client-link-container"><a href="#light">Light</a></div>
             <div id="nano" class="client-link-container"><a href="#nano">Nano</a></div>
+            <div id="pico" class="client-link-container"><a href="#pico">Pico</a></div>
         </div>
     </div>
 </header>
@@ -336,7 +337,7 @@
                         <strong>Height</strong>
                         <span chain-height></span>
                     </div>
-                    <div class="info-block" hide-nano>
+                    <div class="info-block" hide-nano hide-pico>
                         <strong>Work</strong>
                         <span total-difficulty></span> / <span total-work></span>
                     </div>
@@ -344,6 +345,10 @@
                         <strong>Block Time</strong>
                         <span average-block-time></span> <small>average</small> /
                         <span last-block-time></span> <small>last</small>
+                    </div>
+                    <div class="info-block">
+                        <strong>Time to first consensus</strong>
+                        <span time-to-first-consensus></span>
                     </div>
                     <hr/>
                 </div>

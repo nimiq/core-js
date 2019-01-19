@@ -15,6 +15,7 @@ body {
     min-height: 100%;
 }
 
+[client="pico"] [hide-pico],
 [client="nano"] [hide-nano],
 [client="light"] [hide-light],
 [client="full"] [hide-full] {
