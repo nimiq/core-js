@@ -68,13 +68,28 @@ class CryptoUtils {
      * @param {Uint8Array} key
      * @param {Uint8Array} salt
      * @param {number} iterations
-     * @return {Promise<Uint8Array>}
+     * @return {Promise.<Uint8Array>}
+     * @deprecated
+     */
+    static async otpKdfLegacy(message, key, salt, iterations) {
+        const worker = await CryptoWorker.getInstanceAsync();
+        const derivedKey = await worker.kdfLegacy(key, salt, iterations, message.byteLength);
+        return BufferUtils.xor(message, derivedKey);
+    }
+
+    /**
+     * @param {Uint8Array} message
+     * @param {Uint8Array} key
+     * @param {Uint8Array} salt
+     * @param {number} iterations
+     * @return {Promise.<Uint8Array>}
      */
     static async otpKdf(message, key, salt, iterations) {
         const worker = await CryptoWorker.getInstanceAsync();
         const derivedKey = await worker.kdf(key, salt, iterations, message.byteLength);
         return BufferUtils.xor(message, derivedKey);
     }
+
 }
 CryptoUtils.SHA512_BLOCK_SIZE = 128;
 

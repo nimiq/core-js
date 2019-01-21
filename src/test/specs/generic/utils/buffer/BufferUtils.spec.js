@@ -1,7 +1,7 @@
 describe('BufferUtils', () => {
     if (PlatformUtils.isNodeJs()) btoa = require('btoa'); //eslint-disable-line no-global-assign
 
-    it('has fromUnicode and toUnicode methods', () => {
+    it('has fromAscii and toAscii methods', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromAscii('{x:"test"}'))).toEqual('{x:"test"}');
     });
 
@@ -113,6 +113,29 @@ describe('BufferUtils', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f62'))).toEqual('foob');
         expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f6261'))).toEqual('fooba');
         expect(BufferUtils.toAscii(BufferUtils.fromHex('666f6f626172'))).toEqual('foobar');
+    });
+
+    it('correctly implements fromUtf8', () => {
+        const vectors = [
+            { str: '田中さんにあげて下さい', bytes: 'e794b0e4b8ade38195e38293e381abe38182e38192e381a6e4b88be38195e38184' },
+            { str: '和製漢語', bytes: 'e5928ce8a3bde6bca2e8aa9e' },
+            { str: 'ÅÍÎÏ˝ÓÔÒÚÆ☃', bytes: 'c385c38dc38ec38fcb9dc393c394efa3bfc392c39ac386e29883' },
+            { str: 'ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็ ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็ ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็', bytes: 'e0b894e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b98720e0b894e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b98720e0b894e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987e0b987e0b989e0b989e0b989e0b989e0b989e0b987e0b987e0b987e0b987' },
+            { str: '❤️', bytes: 'e29da4efb88f' },
+            { str: '﷽', bytes: 'efb7bd' },
+            { str: ', معاملة بولندا، الإطلاق عل إيو', bytes: '2c20d985d8b9d8a7d985d984d8a920d8a8d988d984d986d8afd8a7d88c20d8a7d984d8a5d8b7d984d8a7d98220d8b9d98420d8a5d98ad988' },
+            { str: 'Ṱ̺̺̕o͞ ̷i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤ ̖t̝͕̳̣̻̪͞h̼͓̲̦̳̘̲e͇̣̰̦̬͎ ̢̼̻̱̘h͚͎͙̜̣̲ͅi̦̲̣̰̤v̻͍e̺̭̳̪̰-m̢iͅn̖̺̞̲̯̰d̵̼̟͙̩̼̘̳ ̞̥̱̳̭r̛̗̘e͙p͠r̼̞̻̭̗e̺̠̣͟s̘͇̳͍̝͉e͉̥̯̞̲͚̬͜ǹ̬͎͎̟̖͇̤t͍̬̤͓̼̭͘ͅi̪̱n͠g̴͉ ͏͉ͅc̬̟h͡a̫̻̯͘o̫̟̖͍̙̝͉s̗̦̲.̨̹͈̣', bytes: 'e1b9b0ccbaccbacc956fcd9e20ccb769ccb2ccaccd87ccaacd996ecc9dcc97cd9576cc9fcc9ccc98cca6cd9f6fccb6cc99ccb0cca06bc3a8cd9accaeccbaccaaccb9ccb1cca420cc9674cc9dcd95ccb3cca3ccbbccaacd9e68ccbccd93ccb2cca6ccb3cc98ccb265cd87cca3ccb0cca6ccaccd8e20cca2ccbcccbbccb1cc9868cd9acd8ecd99cc9ccca3ccb2cd8569cca6ccb2cca3ccb0cca476ccbbcd8d65ccbaccadccb3ccaaccb02d6dcca269cd856ecc96ccbacc9eccb2ccafccb064ccb5ccbccc9fcd99cca9ccbccc98ccb320cc9ecca5ccb1ccb3ccad72cc9bcc97cc9865cd9970cda072ccbccc9eccbbccadcc9765ccbacca0cca3cd9f73cc98cd87ccb3cd8dcc9dcd8965cd89cca5ccafcc9eccb2cd9accaccd9cc7b9ccaccd8ecd8ecc9fcc96cd87cca474cd8dccaccca4cd93ccbcccadcd98cd8569ccaaccb16ecda067ccb4cd8920cd8fcd89cd8563ccaccc9f68cda161ccabccbbccafcd986fccabcc9fcc96cd8dcc99cc9dcd8973cc97cca6ccb22ecca8ccb9cd88cca3' },
+            { str: '表ポあA鷗ŒéＢ逍Üßªąñ丂㐀', bytes: 'e8a1a8e3839de3818241e9b797c592c3a9efbca2e9808dc39cc39fc2aac485c3b1e4b882e39080' },
+            { str: '¯\\_(ツ)_/¯', bytes: 'c2af5c5f28e38384295f2fc2af' },
+        ];
+
+        for (const vector of vectors) {
+            expect(BufferUtils.toHex(BufferUtils.fromUtf8(vector.str))).toBe(vector.bytes);
+            expect(BufferUtils.toHex(BufferUtils._strToUint8Array(vector.str))).toBe(vector.bytes);
+            if (PlatformUtils.isBrowser()) {
+                expect(BufferUtils.toHex(BufferUtils._utf8TextEncoder(vector.str))).toBe(vector.bytes);
+            }
+        }
     });
 
     it('has an equals method', () => {

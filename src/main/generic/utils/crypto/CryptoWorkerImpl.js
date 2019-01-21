@@ -98,6 +98,47 @@ class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
      * @param {number} iterations
      * @param {number} outputSize
      * @returns {Uint8Array}
+     * @deprecated
+     */
+    kdfLegacy(key, salt, iterations, outputSize = Hash.getSize(Hash.Algorithm.ARGON2D)) {
+        if (PlatformUtils.isNodeJs()) {
+            const out = new Uint8Array(outputSize);
+            const res = NodeNative.node_kdf_legacy(out, new Uint8Array(key), new Uint8Array(salt), 512, iterations);
+            if (res !== 0) {
+                throw res;
+            }
+            return out;
+        } else {
+            let stackPtr;
+            try {
+                stackPtr = Module.stackSave();
+                const wasmOut = Module.stackAlloc(outputSize);
+                const wasmIn = Module.stackAlloc(key.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmIn, key.length).set(key);
+                const wasmSalt = Module.stackAlloc(salt.length);
+                new Uint8Array(Module.HEAPU8.buffer, wasmSalt, salt.length).set(salt);
+                const res = Module._nimiq_kdf_legacy(wasmOut, outputSize, wasmIn, key.length, wasmSalt, salt.length, 512, iterations);
+                if (res !== 0) {
+                    throw res;
+                }
+                const hash = new Uint8Array(outputSize);
+                hash.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, outputSize));
+                return hash;
+            } catch (e) {
+                Log.w(CryptoWorkerImpl, e);
+                throw e;
+            } finally {
+                if (stackPtr !== undefined) Module.stackRestore(stackPtr);
+            }
+        }
+    }
+
+    /**
+     * @param {Uint8Array} key
+     * @param {Uint8Array} salt
+     * @param {number} iterations
+     * @param {number} outputSize
+     * @returns {Uint8Array}
      */
     kdf(key, salt, iterations, outputSize = Hash.getSize(Hash.Algorithm.ARGON2D)) {
         if (PlatformUtils.isNodeJs()) {

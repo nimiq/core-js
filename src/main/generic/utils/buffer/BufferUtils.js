@@ -236,6 +236,78 @@ class BufferUtils {
     }
 
     /**
+     * Taken from https://github.com/google/closure-library/blob/master/closure/goog/crypt/crypt.js.
+     *
+     * @param {string} str
+     * @returns {Uint8Array}
+     * @private
+     */
+    static _strToUint8Array(str) {
+        const out = [];
+        let p = 0;
+        for (let i = 0; i < str.length; i++) {
+            let c = str.charCodeAt(i);
+            if (c < 128) {
+                out[p++] = c;
+            } else if (c < 2048) {
+                out[p++] = (c >> 6) | 192;
+                out[p++] = (c & 63) | 128;
+            } else if (
+                ((c & 0xFC00) === 0xD800) && (i + 1) < str.length &&
+                ((str.charCodeAt(i + 1) & 0xFC00) === 0xDC00)) {
+                // Surrogate Pair
+                c = 0x10000 + ((c & 0x03FF) << 10) + (str.charCodeAt(++i) & 0x03FF);
+                out[p++] = (c >> 18) | 240;
+                out[p++] = ((c >> 12) & 63) | 128;
+                out[p++] = ((c >> 6) & 63) | 128;
+                out[p++] = (c & 63) | 128;
+            } else {
+                out[p++] = (c >> 12) | 224;
+                out[p++] = ((c >> 6) & 63) | 128;
+                out[p++] = (c & 63) | 128;
+            }
+        }
+        return new Uint8Array(out);
+    }
+
+    /**
+     * @param {string} str
+     * @returns {Uint8Array}
+     * @private
+     */
+    static _utf8TextEncoder(str) {
+        if (typeof TextEncoder === 'undefined') throw new Error('TextEncoder not supported');
+        if (BufferUtils._UTF8_ENCODER === null) throw new Error('TextEncoder does not support utf8');
+        if (BufferUtils._UTF8_ENCODER === undefined) {
+            try {
+                BufferUtils._UTF8_ENCODER = new TextEncoder();
+            } catch (e) {
+                BufferUtils._UTF8_ENCODER = null;
+                throw new Error('TextEncoder does not support utf8');
+            }
+        }
+        return BufferUtils._UTF8_ENCODER.encode(str);
+    }
+
+    /**
+     * @param {string} str
+     * @returns {Uint8Array}
+     */
+    static fromUtf8(str) {
+        if (PlatformUtils.isNodeJs()) {
+            return Buffer.from(str);
+        } else if (typeof TextEncoder !== 'undefined' && BufferUtils._UTF8_ENCODER !== null) {
+            try {
+                return BufferUtils._utf8TextEncoder(str);
+            } catch (e) {
+                // Disabled itself
+            }
+        }
+        return BufferUtils._strToUint8Array(str);
+    }
+
+
+    /**
      * @template T
      * @param {T} a
      * @param {*} b

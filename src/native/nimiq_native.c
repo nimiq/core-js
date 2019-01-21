@@ -104,7 +104,7 @@ int nimiq_argon2_no_wipe(void *out, const void *in, const size_t inlen, const ui
     return nimiq_argon2_flags(out, in, inlen, m_cost, ARGON2_DEFAULT_FLAGS | ARGON2_FLAG_NO_WIPE);
 }
 
-int nimiq_kdf(void *out, const size_t outlen, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
+int nimiq_kdf_legacy(void *out, const size_t outlen, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
     int ret;
     uint32_t i;
     ret = argon2d_hash_raw(1, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, seed, seedlen, out, outlen);
@@ -114,6 +114,10 @@ int nimiq_kdf(void *out, const size_t outlen, const void *in, const size_t inlen
         if (ret != ARGON2_OK) return ret;
     }
     return ARGON2_OK;
+}
+
+int nimiq_kdf(void *out, const size_t outlen, const void *in, const size_t inlen, const void* seed, const size_t seedlen, const uint32_t m_cost, const uint32_t iter) {
+    return argon2d_hash_raw(iter, m_cost == 0 ? NIMIQ_DEFAULT_ARGON2_COST : m_cost, 1, in, inlen, seed, seedlen, out, outlen);
 }
 
 uint32_t nimiq_argon2_target(void *out, void *in, const size_t inlen, const uint32_t compact, const uint32_t min_nonce, const uint32_t max_nonce, const uint32_t m_cost) {

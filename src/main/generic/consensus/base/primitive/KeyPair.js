@@ -175,7 +175,7 @@ class KeyPair extends Serializable {
      * @private
      */
     async _otpPrivateKey(key) {
-        return new PrivateKey(await CryptoUtils.otpKdf(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_KDF_ROUNDS));
+        return new PrivateKey(await CryptoUtils.otpKdfLegacy(this._privateKey.serialize(), key, this._lockSalt, KeyPair.LOCK_KDF_ROUNDS));
     }
 
     get isLocked() {

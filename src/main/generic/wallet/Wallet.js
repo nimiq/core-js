@@ -26,7 +26,7 @@ class Wallet {
      */
     static async loadEncrypted(buf, key) {
         if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
         return new Wallet(await KeyPair.fromEncrypted(new SerialBuffer(buf), key));
     }
 
@@ -78,7 +78,7 @@ class Wallet {
      * @return {Promise.<Uint8Array>}
      */
     exportEncrypted(key) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
         return this._keyPair.exportEncrypted(key);
     }
 
@@ -92,7 +92,7 @@ class Wallet {
      * @returns {Promise.<void>}
      */
     lock(key) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
         return this.keyPair.lock(key);
     }
 
@@ -105,7 +105,7 @@ class Wallet {
      * @returns {Promise.<void>}
      */
     unlock(key) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
         return this.keyPair.unlock(key);
     }
 

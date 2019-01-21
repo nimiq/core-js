@@ -93,7 +93,7 @@ describe('CryptoUtils', () => {
         }
     });
 
-    it('can correctly compute standard otpKdf', async () => {
+    it('can correctly compute legacy otpKdf', async () => {
         const vectors = [
             {
                 data: '5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac430',
@@ -129,13 +129,13 @@ describe('CryptoUtils', () => {
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            const encrypted = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
+            const encrypted = BufferUtils.toHex(await CryptoUtils.otpKdfLegacy(BufferUtils.fromHex(vector.data), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(encrypted).toBe(vector.encryptedData);
         }
 
         for (let i = 0; i < vectors.length; i++) {
             const vector = vectors[i];
-            const data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
+            const data = BufferUtils.toHex(await CryptoUtils.otpKdfLegacy(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(data).toBe(vector.data);
         }
     });
@@ -146,31 +146,31 @@ describe('CryptoUtils', () => {
                 data: '0000002a5643fb247fcd029881fad7f5e0c9434882b58b0a295344663326f67bd1aac4300000',
                 password: 'password',
                 salt: 'sixteen chars 01',
-                encryptedData: '2fd0e8fdb15cd36be046809a6b4c5043441de4f71020252b9156cc933cef0aca96a299be8363',
+                encryptedData: 'e6ebda4816d10369be5e30a1f148f4aee93ae28d014a1ba6450c1871e0aad1f068bcc9c7305a',
             },
             {
                 data: '0000002a588d9f4b46b82520c6dd7af5a776268d1baeb6d3e21b91c6cd53888db0dff9fb0000',
                 password: '12345678',
                 salt: 'sixteen chars 02',
-                encryptedData: '0d00cbea82f0e324e1b193f2229c5a997803e84c6aab6920dd958d344b6f91d50c640877ede1',
+                encryptedData: '3759ac3c615aa477de37a14d03fb0c7d2ff15f26af60334d14e9226ceb0e60bd2876b14774c8',
             },
             {
                 data: '0000002ae055789cc8b5bd1c6eca0fac181744c3b26e1b095f2971abdc37c3f1faf82a5a0000',
                 password: 'password',
                 salt: 'sixteen chars 03',
-                encryptedData: '23ed5705d54cd99469bbedf3d7694d0d7da910bba49150c002e0ac1001b5e72f77cb517775dc',
+                encryptedData: 'd2e978f2048f9392e726a415999d6b08705d722850fd350bf9f6fc94720ef422c9e97881b02e',
             },
             {
                 data: '0000002ac464700afaf363e8fa3d16c285bc5801b62e17a9a6d33b5a147a80700a2fa8ea0000',
                 password: '12345678',
                 salt: 'sixteen chars 04',
-                encryptedData: 'b2a693eb5adab4b23ba54aff39bc979c83418b89aac138051cf52a156219ec96cf67a76f09c1',
+                encryptedData: 'f213094b3408978d87afcb9a93b5c0cd8cda926157bff3ea962a564b2971ba5225cfca162d34',
             },
             {
                 data: '0000002a13da41526eab8aa8b618f889b6f80b328c895a0e334b55f935d041206e99b69c0000',
                 password: 'passwordPASSWORDpassword',
                 salt: 'sixteen chars 05',
-                encryptedData: '2cea1161f2d9986e31558088991ea2c15f33f7a4dd3a6fdabeb56a744d613b1d382bda49e2a9',
+                encryptedData: '2ef5fd08f14777c0192e582772688fe84a63847b9cf74fcd0df47870b9d732b52fe69805f142',
             },
         ];
 
@@ -186,5 +186,19 @@ describe('CryptoUtils', () => {
             let data = BufferUtils.toHex(await CryptoUtils.otpKdf(BufferUtils.fromHex(vector.encryptedData), BufferUtils.fromAscii(vector.password), BufferUtils.fromAscii(vector.salt), 256));
             expect(data).toBe(vector.data);
         }
+    });
+
+    it('can correctly compute Imagewallet otpKdf (2)', async () => {
+        const data = BufferUtils.fromHex('fc597b22416c2d4b696e6469223a22d8a3d8a8d98820d98ad988d8b3d98120d98ad8b9d982d988d8a820d8a8d98620d8a5d8b3d8add8a7d98220d8a7d984d8b5d8a8d991d8a7d8ad20d8a7d984d983d986d8afd98a227d');
+        const password = BufferUtils.fromUtf8('a322c28cdfa2ef5691adfe2f1c63349b39c9f72518bf99e4179ef17123772bfe يعقوب بن إسحاق الصبّ');
+        const salt = BufferUtils.fromHex('39c9f72518bf99e4179ef17123772bfe');
+        const encryptedData = BufferUtils.fromHex('44cf43d90ef7c8c9ab0b30c9258340b83c4af3ca587c3ddd12796bbe989b401bb497925a29ece2d0a57e418c0c3af4f9d5d190001de782c06f7667382871f5efd61ae73bd41c4bc67fcd450e9bf45f95279cd4d26539ee');
+
+        const encryptedBytes = await CryptoUtils.otpKdf(data, password, salt, 256);
+        expect(encryptedBytes.length).toBe(87);
+        expect(BufferUtils.equals(encryptedBytes, encryptedData)).toBe(true);
+
+        const decryptedBytes = await CryptoUtils.otpKdf(encryptedData, password, salt, 256);
+        expect(BufferUtils.equals(decryptedBytes, data)).toBe(true);
     });
 });
