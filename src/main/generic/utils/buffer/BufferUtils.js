@@ -4,7 +4,7 @@ class BufferUtils {
      * @return {string}
      */
     static toAscii(buffer) {
-        return String.fromCharCode.apply(null, new Uint8Array(buffer));
+        return String.fromCharCode.apply(null, BufferUtils._toUint8View(buffer));
     }
 
     /**
@@ -19,7 +19,7 @@ class BufferUtils {
         return buf;
     }
 
-    static _codePointTextDecoder(u8) {
+    static _codePointTextDecoder(buffer) {
         if (typeof TextDecoder === 'undefined') throw new Error('TextDecoder not supported');
         if (BufferUtils._ISO_8859_15_DECODER === null) throw new Error('TextDecoder does not support iso-8859-15');
         if (BufferUtils._ISO_8859_15_DECODER === undefined) {
@@ -30,7 +30,8 @@ class BufferUtils {
                 throw new Error('TextDecoder does not support iso-8859-15');
             }
         }
-        return BufferUtils._ISO_8859_15_DECODER.decode(u8)
+        const uint8View = BufferUtils._toUint8View(buffer);
+        return BufferUtils._ISO_8859_15_DECODER.decode(uint8View)
             .replace('€', '¤').replace('Š', '¦').replace('š', '¨').replace('Ž', '´')
             .replace('ž', '¸').replace('Œ', '¼').replace('œ', '½').replace('Ÿ', '¾');
     }
@@ -90,13 +91,13 @@ class BufferUtils {
             return Buffer.from(buffer).toString('base64');
         } else if (typeof TextDecoder !== 'undefined' && BufferUtils._ISO_8859_15_DECODER !== null) {
             try {
-                return btoa(BufferUtils._codePointTextDecoder(new Uint8Array(buffer)));
+                return btoa(BufferUtils._codePointTextDecoder(buffer));
             } catch (e) {
                 // Disabled itself
             }
         }
 
-        return BufferUtils._base64fromByteArray(new Uint8Array(buffer));
+        return BufferUtils._base64fromByteArray(BufferUtils._toUint8View(buffer));
     }
 
     /**
@@ -253,10 +254,10 @@ class BufferUtils {
      * @return {boolean}
      */
     static equals(a, b) {
-        if (a.length !== b.length) return false;
-        const viewA = new Uint8Array(a);
-        const viewB = new Uint8Array(b);
-        for (let i = 0; i < a.length; i++) {
+        if ((a.byteLength || a.length) !== (b.byteLength || b.length)) return false;
+        const viewA = BufferUtils._toUint8View(a);
+        const viewB = BufferUtils._toUint8View(b);
+        for (let i = 0; i < viewA.length; i++) {
             if (viewA[i] !== viewB[i]) return false;
         }
         return true;
@@ -288,6 +289,22 @@ class BufferUtils {
             res[i] = a[i] ^ b[i];
         }
         return res;
+    }
+
+    /**
+     * @param {*} arrayLike
+     * @return {Uint8Array}
+     */
+    static _toUint8View(arrayLike) {
+        if (arrayLike instanceof Uint8Array) {
+            return arrayLike;
+        } if (arrayLike instanceof ArrayBuffer) {
+            return new Uint8Array(arrayLike);
+        } else if (arrayLike.buffer instanceof ArrayBuffer) {
+            return new Uint8Array(arrayLike.buffer);
+        } else {
+            return Uint8Array.from(arrayLike);
+        }
     }
 }
 BufferUtils.BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

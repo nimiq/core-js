@@ -119,9 +119,11 @@ describe('BufferUtils', () => {
         const buffer1 = BufferUtils.fromAscii('test');
         const buffer2 = BufferUtils.fromAscii('test');
         const buffer3 = BufferUtils.fromAscii('test false');
+        const buffer4 = new Uint16Array(buffer3.buffer);
 
         expect(BufferUtils.equals(buffer1, buffer2)).toEqual(true);
         expect(BufferUtils.equals(buffer1, buffer3)).toEqual(false);
+        expect(BufferUtils.equals(buffer3, buffer4)).toEqual(true);
     });
 
 
