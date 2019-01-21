@@ -21,12 +21,13 @@ class BufferUtils {
 
     static _codePointTextDecoder(u8) {
         if (typeof TextDecoder === 'undefined') throw new Error('TextDecoder not supported');
-        if (BufferUtils._ISO_8859_15_DECODER === null) throw new Error('TextDecoder does not supprot iso-8859-15');
+        if (BufferUtils._ISO_8859_15_DECODER === null) throw new Error('TextDecoder does not support iso-8859-15');
         if (BufferUtils._ISO_8859_15_DECODER === undefined) {
             try {
                 BufferUtils._ISO_8859_15_DECODER = new TextDecoder('iso-8859-15');
-            } finally {
+            } catch (e) {
                 BufferUtils._ISO_8859_15_DECODER = null;
+                throw new Error('TextDecoder does not support iso-8859-15');
             }
         }
         return BufferUtils._ISO_8859_15_DECODER.decode(u8)
