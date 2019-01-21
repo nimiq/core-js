@@ -44,7 +44,7 @@ class Secret extends Serializable {
         const ciphertext = buf.read(Secret.SIZE);
         const salt = buf.read(Secret.ENCRYPTION_SALT_SIZE);
         const check = buf.read(Secret.ENCRYPTION_CHECKSUM_SIZE);
-        const plaintext = await CryptoUtils.otpKdf(ciphertext, key, salt, rounds);
+        const plaintext = await CryptoUtils.otpKdfLegacy(ciphertext, key, salt, rounds);
 
         const privateKey = new PrivateKey(plaintext);
         const publicKey = PublicKey.derive(privateKey);
@@ -67,7 +67,7 @@ class Secret extends Serializable {
         const ciphertext = buf.read(Secret.SIZE);
         const salt = buf.read(Secret.ENCRYPTION_SALT_SIZE);
         const check = buf.read(Secret.ENCRYPTION_CHECKSUM_SIZE);
-        const plaintext = await CryptoUtils.otpKdf(ciphertext, key, salt, rounds);
+        const plaintext = await CryptoUtils.otpKdfLegacy(ciphertext, key, salt, rounds);
 
         const checksum = Hash.computeBlake2b(plaintext).subarray(0, Secret.ENCRYPTION_CHECKSUM_SIZE);
         if (!BufferUtils.equals(check, checksum)) {

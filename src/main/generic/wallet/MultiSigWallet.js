@@ -57,7 +57,7 @@ class MultiSigWallet extends Wallet {
      */
     static async loadEncrypted(buf, key) {
         if (typeof buf === 'string') buf = BufferUtils.fromHex(buf);
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
 
         const serialBuf = new SerialBuffer(buf);
         const keyPair = await KeyPair.fromEncrypted(serialBuf, key);
@@ -113,7 +113,7 @@ class MultiSigWallet extends Wallet {
      * @return {Promise.<Uint8Array>}
      */
     async exportEncrypted(key) {
-        if (typeof key === 'string') key = BufferUtils.fromAscii(key);
+        if (typeof key === 'string') key = BufferUtils.fromUtf8(key);
 
         const buf = new SerialBuffer(this.encryptedSize);
         buf.write(await this._keyPair.exportEncrypted(key));

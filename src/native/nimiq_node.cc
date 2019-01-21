@@ -218,6 +218,22 @@ NAN_METHOD(node_ed25519_verify) {
     info.GetReturnValue().Set(New<Number>(ed25519_verify(signature, message, message_length, pubkey)));
 }
 
+NAN_METHOD(node_kdf_legacy) {
+    Local<Uint8Array> out_array = info[0].As<Uint8Array>();
+    Local<Uint8Array> key_array = info[1].As<Uint8Array>();
+    Local<Uint8Array> salt_array = info[2].As<Uint8Array>();
+    uint32_t m_cost = To<uint32_t>(info[3]).FromJust();
+    uint32_t iterations = To<uint32_t>(info[4]).FromJust();
+    uint32_t outlen = out_array->Length();
+    uint32_t keylen = key_array->Length();
+    uint32_t saltlen = salt_array->Length();
+    void* out = out_array->Buffer()->GetContents().Data();
+    void* key = key_array->Buffer()->GetContents().Data();
+    void* salt = salt_array->Buffer()->GetContents().Data();
+
+    info.GetReturnValue().Set(New<Number>(nimiq_kdf_legacy(out, outlen, key, keylen, salt, saltlen, m_cost, iterations)));
+}
+
 NAN_METHOD(node_kdf) {
     Local<Uint8Array> out_array = info[0].As<Uint8Array>();
     Local<Uint8Array> key_array = info[1].As<Uint8Array>();
@@ -317,6 +333,8 @@ NAN_MODULE_INIT(Init) {
         GetFunction(New<FunctionTemplate>(node_ed25519_sign)).ToLocalChecked());
     Set(target, New<String>("node_ed25519_verify").ToLocalChecked(),
         GetFunction(New<FunctionTemplate>(node_ed25519_verify)).ToLocalChecked());
+    Set(target, New<String>("node_kdf_legacy").ToLocalChecked(),
+        GetFunction(New<FunctionTemplate>(node_kdf_legacy)).ToLocalChecked());
     Set(target, New<String>("node_kdf").ToLocalChecked(),
         GetFunction(New<FunctionTemplate>(node_kdf)).ToLocalChecked());
     Set(target, New<String>("node_ed25519_aggregate_commitments").ToLocalChecked(),
