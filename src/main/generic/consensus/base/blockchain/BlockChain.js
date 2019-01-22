@@ -113,6 +113,7 @@ class BlockChain {
 
         // Check that all blocks in the chain are valid successors of one another.
         for (let i = this._blocks.length - 1; i >= 1; i--) {
+            if ((i % 100) === 99) await EventLoopHelper.webYield();
             if (!(await this._blocks[i].isSuccessorOf(this._blocks[i - 1]))) { // eslint-disable-line no-await-in-loop
                 return false;
             }

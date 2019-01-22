@@ -58,6 +58,7 @@ const sources = {
         './src/main/generic/utils/Version.js',
         './build/VersionNumber.js',
         './src/main/generic/utils/Time.js',
+        './src/main/generic/utils/EventLoopHelper.js',
         './src/main/generic/utils/IteratorUtils.js',
         './src/main/generic/utils/array/ArrayUtils.js',
         './src/main/generic/utils/array/HashMap.js',

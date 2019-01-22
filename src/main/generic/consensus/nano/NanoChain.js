@@ -64,6 +64,7 @@ class NanoChain extends BaseChain {
 
         // Verify all prefix blocks that we don't know yet.
         for (let i = 0; i < proof.prefix.length; i++) {
+            if ((i % 1000) === 999) await EventLoopHelper.webYield();
             const block = proof.prefix.blocks[i];
             const hash = block.hash();
             const knownBlock = await this._store.getBlock(hash);
@@ -124,6 +125,8 @@ class NanoChain extends BaseChain {
             suffixBlocks.push(head);
         }
 
+        await EventLoopHelper.webYield();
+
         // If the given proof is better than our current proof, adopt the given proof as the new best proof.
         const currentProof = this._proof || await this._getChainProof();
         if (await BaseChain.isBetterProof(proof, currentProof, Policy.M)) {
@@ -158,6 +161,8 @@ class NanoChain extends BaseChain {
             // but don't allow blocks to be appended to them by setting totalDifficulty = -1;
             let superBlockCounts = new SuperBlockCounts();
             for (let i = 0; i < proof.prefix.length - denseSuffix.length; i++) {
+                if ((i % 100) === 99) await EventLoopHelper.webYield();
+
                 const block = proof.prefix.blocks[i];
                 const hash = block.hash();
                 const depth = BlockUtils.getHashDepth(await block.pow());
@@ -175,6 +180,8 @@ class NanoChain extends BaseChain {
 
             // Only in the dense suffix of the prefix we can calculate the difficulties.
             for (let i = 1; i < denseSuffix.length; i++) {
+                if ((i % 50) === 49) await EventLoopHelper.webYield();
+
                 const block = denseSuffix[i];
                 const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
                 Assert.that(result >= 0);
@@ -183,6 +190,8 @@ class NanoChain extends BaseChain {
 
         // Push all suffix blocks.
         for (const block of suffix) {
+            if ((block.height % 50) === 49) await EventLoopHelper.webYield();
+
             const result = await this._pushBlock(block); // eslint-disable-line no-await-in-loop
             Assert.that(result >= 0);
         }
