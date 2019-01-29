@@ -120,12 +120,27 @@ describe('BufferUtils', () => {
         const buffer2 = BufferUtils.fromAscii('test');
         const buffer3 = BufferUtils.fromAscii('test false');
         const buffer4 = new Uint16Array(buffer3.buffer);
+        const buffer5 = BufferUtils.fromAscii('tess');
+        const buffer6 = [116, 101, 115, 115];
+        const buffer7 = BufferUtils.fromAscii('uest');
+        const buffer8 = [];
+        const buffer9 = BufferUtils.fromHex('e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837');
+        const buffer10 = BufferUtils.fromHex('e65e39616662f2c16d62dc08915e5a1d104619db9c2b9cf9b389f96c8dce9837');
 
         expect(BufferUtils.equals(buffer1, buffer2)).toEqual(true);
         expect(BufferUtils.equals(buffer1, buffer3)).toEqual(false);
+        expect(BufferUtils.equals(buffer3, buffer1)).toEqual(false);
         expect(BufferUtils.equals(buffer3, buffer4)).toEqual(true);
+        expect(BufferUtils.equals(buffer2, buffer5)).toEqual(false);
+        expect(BufferUtils.equals(buffer5, buffer6)).toEqual(true);
+        expect(BufferUtils.equals(buffer1, buffer6)).toEqual(false);
+        expect(BufferUtils.equals(buffer1, buffer7)).toEqual(false);
+        expect(BufferUtils.equals(buffer8, buffer8)).toEqual(true);
+        expect(BufferUtils.equals(buffer8, buffer1)).toEqual(false);
+        expect(BufferUtils.equals(buffer1, buffer8)).toEqual(false);
+        expect(BufferUtils.equals(buffer9, buffer9)).toEqual(true);
+        expect(BufferUtils.equals(buffer9, buffer10)).toEqual(false);
     });
-
 
     it('can concat two buffers', () => {
         const buffer1 = BufferUtils.fromAscii('test1');

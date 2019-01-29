@@ -294,6 +294,7 @@ class BufferUtils {
     /**
      * @param {*} arrayLike
      * @return {Uint8Array}
+     * @private
      */
     static _toUint8View(arrayLike) {
         if (arrayLike instanceof Uint8Array) {
