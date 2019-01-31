@@ -14,7 +14,7 @@ class BaseConsensus extends Observable {
         /** @type {Network} */
         this._network = network;
 
-        /** @type {HashMap.<Peer,BaseConsensusAgent>} */
+        /** @type {HashMap.<number,BaseConsensusAgent>} */
         this._agents = new HashMap();
 
         /** @type {Timers} */
@@ -32,15 +32,50 @@ class BaseConsensus extends Observable {
         /** @type {InvRequestManager} */
         this._invRequestManager = new InvRequestManager();
 
-        network.on('peer-joined', peer => this._onPeerJoined(peer));
-        network.on('peer-left', peer => this._onPeerLeft(peer));
+        /** @type {Set.<{obj: Observable, type: string, id: number}>} */
+        this._listenersToDisconnect = new Set();
+
+        this.onToDisconnect(network, 'peer-joined', peer => this._onPeerJoined(peer));
+        this.onToDisconnect(network, 'peer-left', peer => this._onPeerLeft(peer));
 
         // Notify peers when our blockchain head changes.
-        blockchain.on('head-changed', head => this._onHeadChanged(head));
+        this.onToDisconnect(blockchain, 'head-changed', head => this._onHeadChanged(head));
 
         // Relay new (verified) transactions to peers.
-        mempool.on('transaction-added', tx => this._onTransactionAdded(tx));
-        mempool.on('transaction-removed', tx => this._onTransactionRemoved(tx));
+        this.onToDisconnect(mempool, 'transaction-added', tx => this._onTransactionAdded(tx));
+        this.onToDisconnect(mempool, 'transaction-removed', tx => this._onTransactionRemoved(tx));
+    }
+
+    /**
+     * @param {Observable} obj
+     * @param {string} type
+     * @param {function} callback
+     */
+    onToDisconnect(obj, type, callback) {
+        const id = obj.on(type, callback);
+        this._listenersToDisconnect.add({obj, type, id});
+    }
+
+    disconnectListeners() {
+        for (let listener of this._listenersToDisconnect) {
+            listener.obj.off(listener.type, listener.id);
+        }
+        this._offAll();
+    }
+
+    /**
+     * @param {BaseConsensus} consensus
+     * @returns {BaseConsensus}
+     */
+    handoverTo(consensus) {
+        this.disconnectListeners();
+        for (let peerId of this._agents.keyIterator()) {
+            const peer = this._agents.get(peerId).peer;
+            this._agents.get(peerId).disconnectListeners();
+            this._onPeerLeft(peer);
+            consensus._onPeerJoined(peer);
+        }
+        return consensus;
     }
 
     /**
@@ -379,7 +414,7 @@ class BaseConsensus extends Observable {
             if (!block) continue;
 
             const request = this._requestTransactionsProof([address], block)
-                .then(txs => txs.map(tx => ({ transaction: tx, header: block.header })))
+                .then(txs => txs.map(tx => ({transaction: tx, header: block.header})))
                 .catch(e => Log.e(BaseConsensus, `Failed to retrieve transactions for block ${block.hash()}`
                     + ` (${e}) - transaction history may be incomplete`));
             transactionRequests.push(request);
@@ -406,6 +441,7 @@ class BaseConsensus extends Observable {
         return this._invRequestManager;
     }
 }
+
 BaseConsensus.SYNC_THROTTLE = 1500; // ms
 BaseConsensus.MIN_FULL_NODES = 1;
 Class.register(BaseConsensus);

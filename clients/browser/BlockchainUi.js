@@ -13,6 +13,7 @@ class BlockchainUi {
         this.$averageBlockTime = this.$el.querySelector('[average-block-time]');
         this.$lastBlockTime = this.$el.querySelector('[last-block-time]');
         this.$timeToFirstConsensus = this.$el.querySelector('[time-to-first-consensus]');
+        this.$migrateToNano = this.$el.querySelector('[migrate-to-nano]');
 
         this.$blockInfo = this.$el.querySelector('[block-info]');
         this.$blockNotFound = this.$el.querySelector('[block-not-found]');
@@ -32,12 +33,14 @@ class BlockchainUi {
 
         $.blockchain.on('head-changed', head => this._headChanged(head));
         $.consensus.on('established', () => this._headChanged($.blockchain.head));
+        $.consensus.on('migrate-to-nano', () => this.$migrateToNano.parentNode.removeChild(this.$migrateToNano));
 
         this._headChanged($.blockchain.head);
         const inputEventName = ($.clientType === DevUi.ClientType.NANO || $.clientType === DevUi.ClientType.PICO) ? 'change' : 'input';
         this.$blockHeightInput.addEventListener(inputEventName, () => this._updateUserRequestedBlock());
         this.$blockInterlinkTitle.addEventListener('click', () => this._toggleBlockInterlink());
         this.$blockTransactionsTitle.addEventListener('click', () => this._toggleTransactions());
+        this.$migrateToNano.addEventListener('click', () => this.$.consensus.migrateToNano());
 
         $.consensus.on('syncing', () => this.$title.classList.add('syncing'));
         $.consensus.on('sync-chain-proof', () => this.$title.classList.add('sync-chain-proof'));
@@ -105,7 +108,7 @@ class BlockchainUi {
         this.$blockAccountsHash.textContent = block.accountsHash.toBase64();
         this.$blockTimestamp.textContent = new Date(block.timestamp * 1000);
         this.$blockNonce.textContent = block.nonce;
-        this.$blockTransactionsCount.textContent = !block.isLight()? block.transactionCount : '';
+        this.$blockTransactionsCount.textContent = !block.isLight() ? block.transactionCount : '';
 
         block.pow().then(pow => {
             const realDifficulty = Nimiq.BlockUtils.realDifficulty(pow);

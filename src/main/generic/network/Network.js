@@ -15,12 +15,6 @@ class Network extends Observable {
         super();
 
         /**
-         * @type {IBlockchain}
-         * @private
-         */
-        this._blockchain = blockchain;
-
-        /**
          * @type {NetworkConfig}
          * @private
          */

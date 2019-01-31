@@ -19,7 +19,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
 
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
-        peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
+        this.onToDisconnect(peer.channel, 'accounts-proof', msg => this._onAccountsProof(msg));
     }
 
     requestMempool() {
@@ -148,6 +148,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
     }
 
 }
+
 /**
  * Maximum time (ms) to wait for accounts-proof after sending out get-accounts-proof before dropping the peer.
  * @type {number}

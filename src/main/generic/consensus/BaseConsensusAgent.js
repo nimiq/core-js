@@ -92,28 +92,47 @@ class BaseConsensusAgent extends Observable {
         /** @type {InvRequestManager} */
         this._invRequestManager = invRequestManager;
 
+        /** @type {Set.<{obj: Observable, type: string, id: number}>} */
+        this._listenersToDisconnect = new Set();
+
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv', msg => this._onInv(msg));
-        peer.channel.on('block', msg => this._onBlock(msg));
-        peer.channel.on('header', msg => this._onHeader(msg));
-        peer.channel.on('tx', msg => this._onTx(msg));
-        peer.channel.on('not-found', msg => this._onNotFound(msg));
+        this.onToDisconnect(peer.channel, 'inv', msg => this._onInv(msg));
+        this.onToDisconnect(peer.channel, 'block', msg => this._onBlock(msg));
+        this.onToDisconnect(peer.channel, 'header', msg => this._onHeader(msg));
+        this.onToDisconnect(peer.channel, 'tx', msg => this._onTx(msg));
+        this.onToDisconnect(peer.channel, 'not-found', msg => this._onNotFound(msg));
 
-        peer.channel.on('subscribe', msg => this._onSubscribe(msg));
-        peer.channel.on('get-data', msg => this._onGetData(msg));
-        peer.channel.on('get-header', msg => this._onGetHeader(msg));
+        this.onToDisconnect(peer.channel, 'subscribe', msg => this._onSubscribe(msg));
+        this.onToDisconnect(peer.channel, 'get-data', msg => this._onGetData(msg));
+        this.onToDisconnect(peer.channel, 'get-header', msg => this._onGetHeader(msg));
 
-        peer.channel.on('block-proof', msg => this._onBlockProof(msg));
-        peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
-        peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
+        this.onToDisconnect(peer.channel, 'block-proof', msg => this._onBlockProof(msg));
+        this.onToDisconnect(peer.channel, 'transactions-proof', msg => this._onTransactionsProof(msg));
+        this.onToDisconnect(peer.channel, 'transaction-receipts', msg => this._onTransactionReceipts(msg));
 
-        peer.channel.on('get-head', msg => this._onGetHead(msg));
-        peer.channel.on('head', msg => this._onHead(msg));
+        this.onToDisconnect(peer.channel, 'get-head', msg => this._onGetHead(msg));
+        this.onToDisconnect(peer.channel, 'head', msg => this._onHead(msg));
 
         // Clean up when the peer disconnects.
-        peer.channel.on('close', () => this._onClose());
+        this.onToDisconnect(peer.channel, 'close', () => this._onClose());
 
         this._requestHead();
+    }
+
+    /**
+     * @param {Observable} obj
+     * @param {string} type
+     * @param {function} callback
+     */
+    onToDisconnect(obj, type, callback) {
+        const id = obj.on(type, callback);
+        this._listenersToDisconnect.add({obj, type, id});
+    }
+
+    disconnectListeners() {
+        for (let listener of this._listenersToDisconnect) {
+            listener.obj.off(listener.type, listener.id);
+        }
     }
 
     _requestHead() {
@@ -205,7 +224,7 @@ class BaseConsensusAgent extends Observable {
         const invVectors = [];
         let size = 0;
         while (invVectors.length <= BaseInventoryMessage.VECTORS_MAX_COUNT && this._waitingFreeInvVectors.length > 0
-            && size < BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL) {
+        && size < BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL) {
             const freeTransaction = this._waitingFreeInvVectors.dequeue();
             invVectors.push(freeTransaction.inv);
             size += freeTransaction.serializedSize;
@@ -428,6 +447,7 @@ class BaseConsensusAgent extends Observable {
      */
     _onNewBlockAnnounced(hash) {
     }
+
     /**
      * @param {Hash} hash
      * @param {Block} block
@@ -436,6 +456,7 @@ class BaseConsensusAgent extends Observable {
      */
     _onKnownBlockAnnounced(hash, block) {
     }
+
     /**
      * @param {Hash} hash
      * @returns {void}
@@ -443,6 +464,7 @@ class BaseConsensusAgent extends Observable {
      */
     _onNewTransactionAnnounced(hash) {
     }
+
     /**
      * @param {Hash} hash
      * @param {Transaction} transaction
@@ -683,7 +705,7 @@ class BaseConsensusAgent extends Observable {
         // Cancel the request timeout timer.
         this._timers.clearTimeout('getData');
 
-        for(const vector of this._objectsInFlight.values()) {
+        for (const vector of this._objectsInFlight.values()) {
             this._invRequestManager.noteVectorNotReceived(this, vector);
         }
 
@@ -878,7 +900,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        const { blockHashToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
+        const {blockHashToProve, /** @type {Block} */ knownBlock, resolve, reject} = this._blockProofRequest;
         this._blockProofRequest = null;
 
         if (!msg.hasProof() || msg.proof.length === 0) {
@@ -1121,6 +1143,7 @@ class BaseConsensusAgent extends Observable {
         return false;
     }
 }
+
 /**
  * Number of InvVectors in invToRequest pool to automatically trigger a get-data request.
  * @type {number}

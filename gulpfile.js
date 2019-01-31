@@ -165,6 +165,7 @@ const sources = {
         './src/main/generic/consensus/pico/PicoChain.js',
         './src/main/generic/consensus/pico/PicoConsensusAgent.js',
         './src/main/generic/consensus/pico/PicoConsensus.js',
+        './src/main/generic/consensus/pico/AutoPicoConsensus.js',
         './src/main/generic/consensus/ConsensusDB.js',
         './src/main/generic/consensus/Consensus.js',
         './src/main/generic/network/Protocol.js',
