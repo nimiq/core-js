@@ -6,7 +6,10 @@ const fs = require('fs');
 const dns = require('dns');
 const https = require('https');
 const http = require('http');
-const cpuid = require('cpuid-git');
+let cpuid;
+try {
+    cpuid = require('cpuid-git');
+} catch (e) {}
 const chalk = require('chalk');
 
 // Allow the user to specify the WebSocket engine through an environment variable. Default to ws
