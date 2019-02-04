@@ -364,16 +364,10 @@ export class Assert {
 
 export class CryptoUtils {
     public static SHA512_BLOCK_SIZE: 128;
-    public static ENCRYPTION_INPUT_SIZE: 32;
-    public static ENCRYPTION_KDF_ROUNDS: 256;
-    public static ENCRYPTION_CHECKSUM_LENGTH: 4;
-    public static ENCRYPTION_SALT_LENGTH: 16;
-    public static ENCRYPTION_SIZE: 54;
     public static computeHmacSha512(key: Uint8Array, data: Uint8Array): Uint8Array;
     public static computePBKDF2sha512(password: Uint8Array, salt: Uint8Array, iterations: number, derivedKeyLength: number): Uint8Array;
+    public static otpKdfLegacy(message: Uint8Array, key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
     public static otpKdf(message: Uint8Array, key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
-    public static encryptOtpKdf(data: Uint8Array, key: Uint8Array): Promise<Uint8Array>;
-    public static decryptOtpKdf(data: SerialBuffer, key: Uint8Array): Promise<Uint8Array>;
 }
 
 export class BufferUtils {
@@ -395,6 +389,7 @@ export class BufferUtils {
     public static toHex(buffer: Uint8Array): string;
     public static fromHex(hex: string): SerialBuffer;
     public static toBinary(buffer: Uint8Array): string;
+    public static fromUtf8(str: string): Uint8Array;
     public static concatTypedArrays(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): Uint8Array | Uint16Array | Uint32Array;
     public static equals(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): boolean;
     public static compare(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): -1 | 0 | 1;
@@ -495,16 +490,18 @@ export class CryptoWorker {
     public static getInstanceAsync(): Promise<CryptoWorkerImpl>;
     public computeArgon2d(input: Uint8Array): Promise<Uint8Array>;
     public computeArgon2dBatch(input: Uint8Array[]): Promise<Uint8Array[]>;
-    public kdf(key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
+    public kdfLegacy(key: Uint8Array, salt: Uint8Array, iterations: number, outputSize: number): Promise<Uint8Array>;
+    public kdf(key: Uint8Array, salt: Uint8Array, iterations: number, outputSize: number): Promise<Uint8Array>;
     public blockVerify(block: Uint8Array, transactionValid: boolean[], timeNow: number, genesisHash: Uint8Array, networkId: number): Promise<{ valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer }>;
 }
 
 export class CryptoWorkerImpl extends IWorker.Stub(CryptoWorker) {
     constructor();
     public init(name: string): Promise<void>;
-    public computeArgon2d(input: Uint8Array): Promise<Uint8Array>;
-    public computeArgon2dBatch(input: Uint8Array[]): Promise<Uint8Array[]>;
-    public kdf(key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
+    public computeArgon2d(input: Uint8Array): Uint8Array;
+    public computeArgon2dBatch(input: Uint8Array[]): Uint8Array[];
+    public kdfLegacy(key: Uint8Array, salt: Uint8Array, iterations: number, outputSize: number): Uint8Array;
+    public kdf(key: Uint8Array, salt: Uint8Array, iterations: number, outputSize: number): Uint8Array;
     public blockVerify(block: Uint8Array, transactionValid: boolean[], timeNow: number, genesisHash: Uint8Array, networkId: number): Promise<{ valid: boolean, pow: SerialBuffer, interlinkHash: SerialBuffer, bodyHash: SerialBuffer }>;
 }
 
@@ -688,8 +685,9 @@ export namespace Hash {
     }
 }
 
-export class PrivateKey extends Serializable {
+export class PrivateKey extends Secret {
     public static SIZE: 32;
+    public static PURPOSE_ID: number;
     public static generate(): PrivateKey;
     public static unserialize(buf: SerialBuffer): PrivateKey;
     public serializedSize: number;
@@ -734,15 +732,41 @@ export class KeyPair extends Serializable {
         lockSalt?: Uint8Array,
     );
     public serialize(buf?: SerialBuffer): SerialBuffer;
-    public exportEncrypted(key: string | Uint8Array, unlockKey?: Uint8Array): Promise<SerialBuffer>;
+    public exportEncrypted(key: Uint8Array): Promise<Uint8Array>;
     public lock(key: string | Uint8Array): Promise<void>;
     public unlock(key: string | Uint8Array): Promise<void>;
     public relock(): void;
     public equals(o: any): boolean;
 }
 
-export class Entropy extends Serializable {
+export class Secret extends Serializable {
     public static SIZE: 32;
+    public static ENCRYPTION_SALT_SIZE: 16;
+    public static ENCRYPTION_KDF_ROUNDS: 256;
+    public static ENCRYPTION_CHECKSUM_SIZE: 4;
+    public static ENCRYPTION_CHECKSUM_SIZE_V3: 2;
+    public static Type: {
+        PRIVATE_KEY: 1,
+        ENTROPY: 2,
+    };
+    public static fromEncrypted(buf: SerialBuffer, key: Uint8Array): Promise<PrivateKey|Entropy>;
+    public encryptedSize: number;
+    public type: Secret.Type;
+    constructor(type: Secret.Type, purposeId: number);
+    public exportEncrypted(key: Uint8Array): Promise<Uint8Array>;
+}
+
+export namespace Secret {
+    type Type = Type.PRIVATE_KEY|Type.ENTROPY;
+    namespace Type {
+        type PRIVATE_KEY = 1;
+        type ENTROPY = 2;
+    }
+}
+
+export class Entropy extends Secret {
+    public static SIZE: 32;
+    public static PURPOSE_ID: number;
     public static generate(): Entropy;
     public static unserialize(buf: SerialBuffer): Entropy;
     public serializedSize: number;
@@ -3492,7 +3516,7 @@ export class Wallet {
     public createTransaction(recipient: Address, value: number, fee: number, validityStartHeight: number): BasicTransaction;
     public signTransaction(transaction: Transaction): SignatureProof;
     public exportPlain(): Uint8Array;
-    public exportEncrypted(key: Uint8Array | string, unlockKey?: Uint8Array | string): Promise<Uint8Array>;
+    public exportEncrypted(key: Uint8Array|string): Promise<Uint8Array>;
     public lock(key: Uint8Array | string): Promise<void>;
     public relock(): void;
     public unlock(key: Uint8Array | string): Promise<void>;
@@ -3504,7 +3528,7 @@ export class MultiSigWallet extends Wallet {
     public static fromPublicKeys(keyPair: KeyPair, minSignatures: number, publicKeys: PublicKey[]): MultiSigWallet;
     public static loadPlain(buf: Uint8Array | string): MultiSigWallet;
     public static loadEncrypted(buf: Uint8Array | string, key: Uint8Array | string): Promise<MultiSigWallet>;
-    public encryptedExportedSize: number;
+    public encryptedSize: number;
     public exportedSize: number;
     public minSignatures: number;
     public publicKeys: PublicKey[];
@@ -3513,6 +3537,7 @@ export class MultiSigWallet extends Wallet {
         minSignatures: number,
         publicKeys: PublicKey[],
     );
+    public exportEncrypted(key: Uint8Array|string): Promise<Uint8Array>;
     public exportPlain(): Uint8Array;
     // @ts-ignore
     public createTransaction(recipientAddr: Address, value: number, fee: number, validityStartHeight: number): ExtendedTransaction;
