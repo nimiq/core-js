@@ -89,18 +89,17 @@ class GenesisConfig {
     }
 
     /**
-     * @param {number} NETWORK_ID
+     * @param {number} networkId
      * @return {string}
      */
-    static fromNetworkIdToNetworkName(NETWORK_ID) {
-        for (const key in GenesisConfig.CONFIGS) {
-            if (GenesisConfig.CONFIGS.hasOwnProperty(key)) {
-                const config = GenesisConfig.CONFIGS[key]
-                if(NETWORK_ID === config.NETWORK_ID)
-                    return config.NETWORK_NAME
+    static networkIdToNetworkName(networkId) {
+        for (const key of Object.keys(GenesisConfig.CONFIGS)) {
+            const config = GenesisConfig.CONFIGS[key];
+            if (networkId === config.NETWORK_ID) {
+                return config.NETWORK_NAME;
             }
         }
-        throw new Error("Unable to find NETWORK_NAME based on given NETWORK_ID.")
+        throw new Error(`Unable to find networkName for networkId ${networkId}`);
     }
 }
 Class.register(GenesisConfig);
