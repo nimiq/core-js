@@ -5,6 +5,14 @@ describe('BufferUtils', () => {
         expect(BufferUtils.toAscii(BufferUtils.fromAscii('{x:"test"}'))).toEqual('{x:"test"}');
     });
 
+    it('toAscii works with large buffers', () => {
+        const size = 9827592;
+        const arr = new Uint8Array(size);
+        arr.fill(97);
+        const str = 'a'.repeat(size);
+        expect(BufferUtils.toAscii(arr)).toEqual(str);
+    });
+
     it('has fromBase64 and toBase64 methods', () => {
         expect(BufferUtils.toBase64(BufferUtils.fromBase64('dGVzdA=='))).toEqual('dGVzdA==');
         // Also allow eqs to be missing in input
@@ -132,7 +140,7 @@ describe('BufferUtils', () => {
         for (const vector of vectors) {
             expect(BufferUtils.toHex(BufferUtils.fromUtf8(vector.str))).toBe(vector.bytes);
             expect(BufferUtils.toHex(BufferUtils._strToUint8Array(vector.str))).toBe(vector.bytes);
-            if (PlatformUtils.isBrowser()) {
+            if (typeof TextEncoder !== 'undefined') {
                 expect(BufferUtils.toHex(BufferUtils._utf8TextEncoder(vector.str))).toBe(vector.bytes);
             }
         }

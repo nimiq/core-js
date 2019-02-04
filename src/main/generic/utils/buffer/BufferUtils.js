@@ -4,7 +4,14 @@ class BufferUtils {
      * @return {string}
      */
     static toAscii(buffer) {
-        return String.fromCharCode.apply(null, BufferUtils._toUint8View(buffer));
+        const chunkSize = 0x2000;
+        const buf = BufferUtils._toUint8View(buffer);
+
+        let ascii = '';
+        for (let i = 0; i < buf.length; i += chunkSize) {
+            ascii += String.fromCharCode.apply(null, buf.subarray(i, i + chunkSize));
+        }
+        return ascii;
     }
 
     /**
