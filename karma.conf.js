@@ -104,6 +104,7 @@ module.exports = function (config) {
     sauceLabsConfig('Windows 10', 'MicrosoftEdge', '14.14393', 'Edge', '14');
     sauceLabsConfig('Windows 10', 'MicrosoftEdge', '15.15063', 'Edge', '15');
     sauceLabsConfig('Windows 10', 'MicrosoftEdge', '16.16299', 'Edge', '16');
+    sauceLabsConfig('Windows 10', 'MicrosoftEdge', '18.17763', 'Edge', '18');
 
     // Firefox
     for (const version of [48, 52, 55, 56]) sauceLabsConfig('Windows 10', 'firefox', `${version}.0`, 'Firefox', version);
