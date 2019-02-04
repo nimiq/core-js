@@ -823,7 +823,7 @@ class JsonRpcServer {
             } catch (e) {
                 body = null;
             }
-            if (!body) {
+            if (!body || body.length > 100) {
                 res.writeHead(400);
                 res.end(JSON.stringify({
                     'jsonrpc': '2.0',
@@ -838,7 +838,7 @@ class JsonRpcServer {
             res.writeHead(200);
             const result = [];
             for (const msg of body) {
-                if (msg.jsonrpc !== '2.0' || !msg.method) {
+                if (!msg || msg.jsonrpc !== '2.0' || !msg.method) {
                     result.push({
                         'jsonrpc': '2.0',
                         'error': {'code': -32600, 'message': 'Invalid Request'},

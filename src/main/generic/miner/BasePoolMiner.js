@@ -64,7 +64,7 @@ class BasePoolMiner extends Miner {
         const ws = this._ws = new WebSocket(`wss://${host}:${port}`);
         this._ws.onopen = () => this._onOpen(ws);
         this._ws.onerror = (e) => this._onError(ws, e);
-        this._ws.onmessage = (msg) => this._onMessage(ws, JSON.parse(msg.data));
+        this._ws.onmessage = (msg) => this._onMessage(ws, msg.data);
         this._ws.onclose = (e) => this._onClose(ws, e);
 
         this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTING);
@@ -137,40 +137,45 @@ class BasePoolMiner extends Miner {
         clearTimeout(this._reconnectTimeout);
     }
 
-    _onMessage(ws, msg) {
-        if (ws !== this._ws) return;
-        if (msg && msg.message) {
-            switch (msg.message) {
-                case 'settings':
-                    if (!msg.address || !msg.extraData) {
-                        this._turnPoolOff();
-                        this._ws.close();
-                    } else {
-                        this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.targetCompact || BlockUtils.targetToCompact(new BigNumber(msg.target)), msg.nonce);
-                        Log.d(BasePoolMiner, `Received settings from pool: address ${msg.address}, target ${msg.target}, extraData ${msg.extraData}`);
-                    }
-                    break;
-                case 'balance':
-                    if (msg.balance === undefined || msg.confirmedBalance === undefined) {
-                        this._turnPoolOff();
-                        this._ws.close();
-                    } else {
-                        this._onBalance(msg.balance, msg.confirmedBalance, msg.payoutRequestActive);
-                        Log.d(BasePoolMiner, `Received balance from pool: ${msg.balance} (${msg.confirmedBalance} confirmed), payout request active: ${msg.payoutRequestActive}`);
-                    }
-                    break;
-                case 'registered':
-                    this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTED);
-                    this._exponentialBackoffReconnect = BasePoolMiner.RECONNECT_TIMEOUT;
-                    Log.i(BasePoolMiner, 'Connected to pool');
-                    break;
-                case 'error':
-                    Log.w(BasePoolMiner, 'Error from pool:', msg.reason);
-                    break;
+    _onMessage(ws, msgJson) {
+        try {
+            const msg = JSON.parse(msgJson);
+            if (ws !== this._ws) return;
+            if (msg && msg.message) {
+                switch (msg.message) {
+                    case 'settings':
+                        if (!msg.address || !msg.extraData) {
+                            this._turnPoolOff();
+                            this._ws.close();
+                        } else {
+                            this._onNewPoolSettings(Address.fromUserFriendlyAddress(msg.address), BufferUtils.fromBase64(msg.extraData), msg.targetCompact || BlockUtils.targetToCompact(new BigNumber(msg.target)), msg.nonce);
+                            Log.d(BasePoolMiner, `Received settings from pool: address ${msg.address}, target ${msg.target}, extraData ${msg.extraData}`);
+                        }
+                        break;
+                    case 'balance':
+                        if (msg.balance === undefined || msg.confirmedBalance === undefined) {
+                            this._turnPoolOff();
+                            this._ws.close();
+                        } else {
+                            this._onBalance(msg.balance, msg.confirmedBalance, msg.payoutRequestActive);
+                            Log.d(BasePoolMiner, `Received balance from pool: ${msg.balance} (${msg.confirmedBalance} confirmed), payout request active: ${msg.payoutRequestActive}`);
+                        }
+                        break;
+                    case 'registered':
+                        this._changeConnectionState(BasePoolMiner.ConnectionState.CONNECTED);
+                        this._exponentialBackoffReconnect = BasePoolMiner.RECONNECT_TIMEOUT;
+                        Log.i(BasePoolMiner, 'Connected to pool');
+                        break;
+                    case 'error':
+                        Log.w(BasePoolMiner, 'Error from pool:', msg.reason);
+                        break;
+                }
+            } else {
+                Log.w(BasePoolMiner, 'Received unknown message from pool server:', JSON.stringify(msg));
+                this._ws.close();
             }
-        } else {
-            Log.w(BasePoolMiner, 'Received unknown message from pool server:', JSON.stringify(msg));
-            this._ws.close();
+        } catch (e) {
+            this._onError(ws, e);
         }
     }
 
