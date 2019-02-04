@@ -484,12 +484,9 @@ export namespace IWorker {
 }
 
 export class WasmHelper {
-    public static doImportBrowser(): Promise<void>;
-    public static doImportNodeJs(): Promise<void>;
-    public static importWasmBrowser(wasm: string, module?: string): Promise<boolean>;
-    public static importWasmNodeJs(wasm: string, module?: string): boolean;
-    public static importScriptBrowser(script: string, module?: string): Promise<boolean>;
-    public static importScriptNodeJs(script: string, module?: string): boolean;
+    public static doImport(): Promise<void>;
+    public static importWasm(wasm: string, module?: string): Promise<boolean>;
+    public static importScript(script: string, module?: string): Promise<boolean>;
     public static fireModuleLoaded(module?: string): void;
 }
 
@@ -596,15 +593,14 @@ export namespace MerkleProof {
 
 export class PlatformUtils {
     public static isBrowser(): boolean;
+    public static isWeb(): boolean;
     public static isNodeJs(): boolean;
     public static supportsWebRTC(): boolean;
     public static supportsWS(): boolean;
     public static isOnline(): boolean;
     public static isWindows(): boolean;
-}
-
-export class PlatformInfo {
-    public static readonly USER_AGENT_STRING: string;
+    public static readonly userAgentString: string;
+    public static readonly hardwareConcurrency: number;
 }
 
 export class StringUtils {

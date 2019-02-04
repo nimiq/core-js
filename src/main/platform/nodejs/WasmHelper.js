@@ -1,6 +1,6 @@
 class WasmHelper {
 
-    static doImport() {
+    static async doImport() {
         return WasmHelper.doImportNodeJs();
     }
 
@@ -18,14 +18,14 @@ class WasmHelper {
      * @param {string} module
      * @returns {Promise.<boolean>}
      */
-    static importWasm(wasm, module = 'Module') {
+    static async importWasm(wasm, module = 'Module') {
         return WasmHelper.importWasmNodeJs(wasm, module);
     }
 
     /**
      * @param {string} wasm
      * @param {string} module
-     * @returns {Promise.<boolean>}
+     * @returns {boolean}
      */
     static importWasmNodeJs(wasm, module = 'Module') {
         wasm = WasmHelper._adjustWasmPath(wasm);
@@ -53,7 +53,7 @@ class WasmHelper {
         }
     }
 
-    static importScript(script, module = 'Module') {
+    static async importScript(script, module = 'Module') {
         return WasmHelper.importScriptNodeJs(script, module);
     }
 

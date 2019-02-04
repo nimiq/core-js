@@ -34,7 +34,7 @@ class WasmHelper {
      * @param {string} module
      * @returns {Promise.<boolean>}
      */
-    static importWasmBrowser(wasm, module = 'Module') {
+    static async importWasmBrowser(wasm, module = 'Module') {
         wasm = WasmHelper._adjustWasmPath(wasm);
         if (!WasmHelper._global.WebAssembly) {
             Log.w(WasmHelper, 'No support for WebAssembly available.');
@@ -63,11 +63,11 @@ class WasmHelper {
         });
     }
 
-    static importScript(script, module = 'Module') {
+    static async importScript(script, module = 'Module') {
         return WasmHelper.importScriptBrowser(script, module);
     }
 
-    static importScriptBrowser(script, module = 'Module') {
+    static async importScriptBrowser(script, module = 'Module') {
         if (module && WasmHelper._global[module] && WasmHelper._global[module].asm) return false;
         script = WasmHelper._adjustScriptPath(script);
 
