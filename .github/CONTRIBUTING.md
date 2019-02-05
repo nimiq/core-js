@@ -4,7 +4,7 @@ For anyone looking to get involved to this project, we are glad to hear from you
 that we would be interested.
 
 *  Bug fixes
-    -  If you find a bug, please first report it using GitHub issues.
+    -  If you find a bug, please first report it using GitHub issues.
     -  Issues that have already been identified as a bug will be labeled `bug`.
     -  If you'd like to submit a fix for a bug, create a Pull Request from your own fork and mention the issue number.
         +  Include a test that isolates the bug and verifies that it was fixed.
