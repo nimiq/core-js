@@ -75,7 +75,7 @@ class Wallet {
 
     /**
      * @param {Uint8Array|string} key
-     * @return {Promise.<Uint8Array>}
+     * @return {Promise.<SerialBuffer>}
      */
     exportEncrypted(key) {
         if (typeof key === 'string') key = BufferUtils.fromUtf8(key);

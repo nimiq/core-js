@@ -732,7 +732,7 @@ export class KeyPair extends Serializable {
         lockSalt?: Uint8Array,
     );
     public serialize(buf?: SerialBuffer): SerialBuffer;
-    public exportEncrypted(key: Uint8Array): Promise<Uint8Array>;
+    public exportEncrypted(key: Uint8Array): Promise<SerialBuffer>;
     public lock(key: string | Uint8Array): Promise<void>;
     public unlock(key: string | Uint8Array): Promise<void>;
     public relock(): void;
@@ -753,7 +753,7 @@ export class Secret extends Serializable {
     public encryptedSize: number;
     public type: Secret.Type;
     constructor(type: Secret.Type, purposeId: number);
-    public exportEncrypted(key: Uint8Array): Promise<Uint8Array>;
+    public exportEncrypted(key: Uint8Array): Promise<SerialBuffer>;
 }
 
 export namespace Secret {
@@ -3517,7 +3517,7 @@ export class Wallet {
     public createTransaction(recipient: Address, value: number, fee: number, validityStartHeight: number): BasicTransaction;
     public signTransaction(transaction: Transaction): SignatureProof;
     public exportPlain(): Uint8Array;
-    public exportEncrypted(key: Uint8Array|string): Promise<Uint8Array>;
+    public exportEncrypted(key: Uint8Array|string): Promise<SerialBuffer>;
     public lock(key: Uint8Array | string): Promise<void>;
     public relock(): void;
     public unlock(key: Uint8Array | string): Promise<void>;
@@ -3538,7 +3538,7 @@ export class MultiSigWallet extends Wallet {
         minSignatures: number,
         publicKeys: PublicKey[],
     );
-    public exportEncrypted(key: Uint8Array|string): Promise<Uint8Array>;
+    public exportEncrypted(key: Uint8Array|string): Promise<SerialBuffer>;
     public exportPlain(): Uint8Array;
     // @ts-ignore
     public createTransaction(recipientAddr: Address, value: number, fee: number, validityStartHeight: number): ExtendedTransaction;

@@ -109,7 +109,7 @@ class Secret extends Serializable {
 
     /**
      * @param {Uint8Array} key
-     * @return {Promise.<Uint8Array>}
+     * @return {Promise.<SerialBuffer>}
      */
     async exportEncrypted(key) {
         const salt = new Uint8Array(Secret.ENCRYPTION_SALT_SIZE);

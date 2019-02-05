@@ -195,7 +195,7 @@ class KeyPair extends Serializable {
 
     /**
      * @param {Uint8Array} key
-     * @return {Promise.<Uint8Array>}
+     * @return {Promise.<SerialBuffer>}
      */
     exportEncrypted(key) {
         return this._privateKey.exportEncrypted(key);
