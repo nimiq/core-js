@@ -184,6 +184,11 @@ export class Time {
     public now(): number;
 }
 
+export class EventLoopHelper {
+    public static webYield(): Promise<void>;
+    public static yield(): Promise<void>;
+}
+
 export class IteratorUtils {
     public static alternate<T>(...iterators: Array<Iterator<T>>): Iterable<T>;
 }
