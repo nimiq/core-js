@@ -19,6 +19,8 @@ class Mempool extends Observable {
         this._transactionSetBySender = new HashMap();
         /** @type {HashMap.<Address, HashSet.<Hash>>} */
         this._transactionSetByRecipient = new HashMap();
+        /** @type {MempoolFilter} */
+        this._filter = new MempoolFilter();
         /** @type {Synchronizer} */
         this._synchronizer = new Synchronizer();
 
@@ -52,8 +54,15 @@ class Mempool extends Observable {
             return Mempool.ReturnCode.KNOWN;
         }
 
-        const set = this._transactionSetBySender.get(transaction.sender) || new MempoolTransactionSet();
+        // Check transaction against filter rules.
+        if (!this._filter.acceptsTransaction(transaction)) {
+            Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()}`);
+            this._filter.blacklist(hash);
+            return Mempool.ReturnCode.FILTERED;
+        }
+
         // Check limit for free transactions.
+        const set = this._transactionSetBySender.get(transaction.sender) || new MempoolTransactionSet();
         if (transaction.fee / transaction.serializedSize < Mempool.TRANSACTION_RELAY_FEE_MIN
             && set.numBelowFeePerByte(Mempool.TRANSACTION_RELAY_FEE_MIN) >= Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX) {
             return Mempool.ReturnCode.FEE_TOO_LOW;
@@ -66,12 +75,18 @@ class Mempool extends Observable {
 
         // Retrieve recipient account and test incoming transaction.
         /** @type {Account} */
-        let recipientAccount;
         try {
-            recipientAccount = await this._accounts.get(transaction.recipient);
-            recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
+            const recipientAccount = await this._accounts.get(transaction.recipient);
+            const newRecipientAccount = recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
+
+            // Check recipient account against filter rules.
+            if (!this._filter.acceptsRecipientAccount(transaction, recipientAccount, newRecipientAccount)) {
+                Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - rejected recipient account`);
+                this._filter.blacklist(hash);
+                return Mempool.ReturnCode.FILTERED;
+            }
         } catch (e) {
-            Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${e.message}`);
+            Log.d(Mempool, () => `Rejected transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - ${e.message}`);
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -81,7 +96,7 @@ class Mempool extends Observable {
         try {
             senderAccount = await this._accounts.get(transaction.sender, transaction.senderType);
         } catch (e) {
-            Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${e.message}`);
+            Log.d(Mempool, () => `Rejected transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - ${e.message}`);
             return Mempool.ReturnCode.INVALID;
         }
 
@@ -109,11 +124,18 @@ class Mempool extends Observable {
             // If the rejected transaction is the one we're pushing, fail.
             // Otherwise, evict the rejected transaction from the mempool.
             if (tx.equals(transaction)) {
-                Log.d(Mempool, () => `Rejected transaction from ${transaction.sender} - ${error}`);
+                Log.d(Mempool, () => `Rejected transaction from ${transaction.sender.toUserFriendlyAddress()} - ${error}`);
                 return Mempool.ReturnCode.INVALID;
             } else {
                 txsToRemove.push(tx);
             }
+        }
+
+        // Check sender account against filter rules.
+        if (!this._filter.acceptsSenderAccount(transaction, senderAccount, tmpAccount)) {
+            Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - rejected sender account`);
+            this._filter.blacklist(hash);
+            return Mempool.ReturnCode.FILTERED;
         }
 
         // Remove invalidated transactions.
@@ -341,6 +363,14 @@ class Mempool extends Observable {
     }
 
     /**
+     * @param {Hash} txHash
+     * @returns {boolean}
+     */
+    isFiltered(txHash) {
+        return this._filter.isBlacklisted(txHash);
+    }
+
+    /**
      * @param {Array.<Block>} blocks
      * @returns {Promise}
      * @private
@@ -454,6 +484,7 @@ Mempool.SIZE_MAX = 100000;
 
 /** @enum {number} */
 Mempool.ReturnCode = {
+    FILTERED: -3,
     FEE_TOO_LOW: -2,
     INVALID: -1,
 

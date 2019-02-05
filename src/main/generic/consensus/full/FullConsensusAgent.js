@@ -163,7 +163,9 @@ class FullConsensusAgent extends BaseConsensusAgent {
      */
     _shouldRequestData(vector) {
         // Ignore block announcements from nano clients as they will ignore our getData requests anyways (they only know headers).
-        return !(Services.isNanoNode(this._peer.peerAddress.services) && vector.type === InvVector.Type.BLOCK);
+        // Also don't request transactions that the mempool has filtered.
+        return !(vector.type === InvVector.Type.BLOCK && Services.isNanoNode(this._peer.peerAddress.services))
+            && !(vector.type === InvVector.Type.TRANSACTION && this._mempool.isFiltered(vector.hash));
     }
 
     /**

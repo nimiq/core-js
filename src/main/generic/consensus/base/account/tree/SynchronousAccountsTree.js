@@ -101,7 +101,6 @@ class SynchronousAccountsTree extends AccountsTree {
     /**
      * @param {Address} address
      * @param {Account} account
-     * @private
      */
     putBatch(address, account) {
         if (account.isInitial() && !this.getSync(address, false)) {
