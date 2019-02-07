@@ -108,6 +108,6 @@ class AccountsTreeChunk {
         return this._nodes.length + 1;
     }
 }
-AccountsTreeChunk.SIZE_MAX = 1000;
+AccountsTreeChunk.SIZE_MAX = 5000;
 AccountsTreeChunk.EMPTY = new AccountsTreeChunk([], new AccountsProof([]));
 Class.register(AccountsTreeChunk);
