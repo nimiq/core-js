@@ -64,7 +64,7 @@ class MempoolFilter {
         return this._blacklist.contains(hash);
     }
 }
-MempoolFilter.BLACKLIST_SIZE = 20000;
+MempoolFilter.BLACKLIST_SIZE = 25000;
 
 MempoolFilter.FEE = 0;
 MempoolFilter.VALUE = 0;

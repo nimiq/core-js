@@ -56,7 +56,6 @@ class Mempool extends Observable {
 
         // Check transaction against filter rules.
         if (!this._filter.acceptsTransaction(transaction)) {
-            Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()}`);
             this._filter.blacklist(hash);
             return Mempool.ReturnCode.FILTERED;
         }
@@ -81,7 +80,6 @@ class Mempool extends Observable {
 
             // Check recipient account against filter rules.
             if (!this._filter.acceptsRecipientAccount(transaction, recipientAccount, newRecipientAccount)) {
-                Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - rejected recipient account`);
                 this._filter.blacklist(hash);
                 return Mempool.ReturnCode.FILTERED;
             }
@@ -133,7 +131,6 @@ class Mempool extends Observable {
 
         // Check sender account against filter rules.
         if (!this._filter.acceptsSenderAccount(transaction, senderAccount, tmpAccount)) {
-            Log.v(Mempool, () => `Filtered transaction ${hash.toHex()} from ${transaction.sender.toUserFriendlyAddress()} - rejected sender account`);
             this._filter.blacklist(hash);
             return Mempool.ReturnCode.FILTERED;
         }
@@ -480,7 +477,7 @@ Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX = 10;
  * Maximum number of transactions in the mempool.
  * @type {number}
  */
-Mempool.SIZE_MAX = 100000;
+Mempool.SIZE_MAX = 50000;
 
 /** @enum {number} */
 Mempool.ReturnCode = {

@@ -341,12 +341,15 @@ class FullConsensusAgent extends BaseConsensusAgent {
             case Mempool.ReturnCode.KNOWN:
                 return false;
             case Mempool.ReturnCode.FEE_TOO_LOW:
-                this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INSUFFICIENT_FEE,
+                this._peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INSUFFICIENT_FEE,
                     'Sender has too many free transactions', transaction.hash().serialize());
                 return false;
             case Mempool.ReturnCode.INVALID:
-                this.peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
+                this._peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
                     transaction.hash().serialize());
+                return false;
+            case Mempool.ReturnCode.FILTERED:
+                Log.v(FullConsensusAgent, () => `Filtered transaction ${hash.toHex()} relayed by ${this._peer.peerAddress}`);
                 return false;
             default:
                 return false;
