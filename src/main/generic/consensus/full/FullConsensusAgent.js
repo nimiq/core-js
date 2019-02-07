@@ -349,7 +349,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
                     transaction.hash().serialize());
                 return false;
             case Mempool.ReturnCode.FILTERED:
-                Log.v(FullConsensusAgent, () => `Filtered transaction ${hash.toHex()} relayed by ${this._peer.peerAddress}`);
+                Log.v(FullConsensusAgent, () => `Filtered transaction ${hash.toHex()} relayed by ${this._peer.peerAddress} (${this._peer.netAddress})`);
                 return false;
             default:
                 return false;

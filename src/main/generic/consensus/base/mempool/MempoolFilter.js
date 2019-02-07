@@ -15,6 +15,7 @@ class MempoolFilter {
                 !tx.hasFlag(Transaction.Flag.CONTRACT_CREATION)
                 || (
                     tx.fee >= MempoolFilter.CONTRACT_FEE
+                    && tx.feePerByte >= MempoolFilter.CONTRACT_FEE_PER_BYTE
                     && tx.value >= MempoolFilter.CONTRACT_VALUE
                 )
             );
@@ -32,6 +33,7 @@ class MempoolFilter {
                 !oldAccount.isInitial()
                 || (
                     tx.fee >= MempoolFilter.CREATION_FEE
+                    && tx.feePerByte >= MempoolFilter.CREATION_FEE_PER_BYTE
                     && tx.value >= MempoolFilter.CREATION_VALUE
                 )
             );
@@ -72,8 +74,10 @@ MempoolFilter.TOTAL_VALUE = 0;
 MempoolFilter.RECIPIENT_BALANCE = 0;
 MempoolFilter.SENDER_BALANCE = 0;
 MempoolFilter.CREATION_FEE = 0;
+MempoolFilter.CREATION_FEE_PER_BYTE = 0;
 MempoolFilter.CREATION_VALUE = 0;
 MempoolFilter.CONTRACT_FEE = 0;
+MempoolFilter.CONTRACT_FEE_PER_BYTE = 0;
 MempoolFilter.CONTRACT_VALUE = 0;
 
 Class.register(MempoolFilter);
