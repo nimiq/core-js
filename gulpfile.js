@@ -23,7 +23,6 @@ const sources = {
             './src/main/platform/browser/crypto/CryptoLib.js',
             './src/main/platform/browser/network/webrtc/WebRtcFactory.js',
             './src/main/platform/browser/network/websocket/WebSocketFactory.js',
-            './src/main/platform/browser/network/DnsUtils.js',
             './src/main/platform/browser/network/HttpRequest.js',
             './src/main/platform/browser/utils/PlatformUtils.js',
             './src/main/platform/browser/WasmHelper.js',
@@ -46,7 +45,6 @@ const sources = {
             './src/main/platform/nodejs/network/webrtc/WebRtcFactory.js',
             './src/main/platform/nodejs/network/websocket/WebSocketServer.js',
             './src/main/platform/nodejs/network/websocket/WebSocketFactory.js',
-            './src/main/platform/nodejs/network/DnsUtils.js',
             './src/main/platform/nodejs/network/HttpRequest.js',
             './src/main/platform/nodejs/utils/PlatformUtils.js',
         ]
