@@ -590,6 +590,8 @@ export namespace MerkleProof {
 }
 
 export class PlatformUtils {
+    public static readonly userAgentString: string;
+    public static readonly hardwareConcurrency: number;
     public static isBrowser(): boolean;
     public static isWeb(): boolean;
     public static isNodeJs(): boolean;
@@ -597,8 +599,6 @@ export class PlatformUtils {
     public static supportsWS(): boolean;
     public static isOnline(): boolean;
     public static isWindows(): boolean;
-    public static readonly userAgentString: string;
-    public static readonly hardwareConcurrency: number;
 }
 
 export class StringUtils {
@@ -2024,13 +2024,13 @@ export class LightConsensusAgent extends FullConsensusAgent {
 export class LightConsensus extends BaseConsensus {
     public blockchain: LightChain;
     public mempool: Mempool;
+    public readonly minFeePerByte: number;
     constructor(
         blockchain: LightChain,
         mempool: Mempool,
         network: Network,
     );
     public subscribeMinFeePerByte(minFeePerByte: number): void;
-    public readonly minFeePerByte: number;
 }
 
 export class PartialLightChain extends LightChain {

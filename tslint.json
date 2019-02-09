@@ -1,0 +1,20 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "linterOptions": {
+    "exclude": [
+      "node_modules/**"
+    ]
+  },
+  "rules": {
+    "quotemark": [true, "single"],
+    "indent": [true, "spaces", 4],
+    "interface-name": false,
+    "max-classes-per-file": [false],
+    "variable-name": [false],
+    "no-namespace": [false],
+    "max-line-length": [false]
+  }
+}

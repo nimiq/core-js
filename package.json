@@ -14,7 +14,8 @@
     "test": "jasmine && gulp test",
     "test-node": "jasmine",
     "test-browser": "karma start",
-    "lint": "gulp eslint"
+    "lint": "gulp eslint",
+    "lint-types": "tslint ./dist/types.d.ts"
   },
   "author": {
     "name": "The Nimiq Core Development Team",
@@ -112,6 +113,8 @@
     "merge2": "^1.2.1",
     "node-deb": "^0.10.4",
     "node-gyp": "^3.6.2",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   }
