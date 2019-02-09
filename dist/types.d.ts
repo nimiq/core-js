@@ -132,10 +132,6 @@ export class WebSocketServer {
     );
 }
 
-export class DnsUtils {
-    public static lookup(host: string): Promise<NetAddress>;
-}
-
 export class ConstantHelper {
     public static instance: ConstantHelper;
     constructor();
@@ -1122,7 +1118,7 @@ export class AccountsProof {
 }
 
 export class AccountsTreeChunk {
-    public static SIZE_MAX: 1000;
+    public static SIZE_MAX: number;
     public static EMPTY: AccountsTreeChunk;
     public static unserialize(buf: SerialBuffer): AccountsTreeChunk;
     public serializedSize: number;
@@ -1781,11 +1777,32 @@ export class MempoolTransactionSet {
     public toString(): string;
 }
 
+export class MempoolFilter {
+    public static BLACKLIST_SIZE: number;
+    public static FEE: number;
+    public static VALUE: number;
+    public static TOTAL_VALUE: number;
+    public static RECIPIENT_BALANCE: number;
+    public static SENDER_BALANCE: number;
+    public static CREATION_FEE: number;
+    public static CREATION_FEE_PER_BYTE: number;
+    public static CREATION_VALUE: number;
+    public static CONTRACT_FEE: number;
+    public static CONTRACT_FEE_PER_BYTE: number;
+    public static CONTRACT_VALUE: number;
+    constructor();
+    public acceptsTransaction(tx: Transaction): boolean;
+    public acceptsRecipientAccount(tx: Transaction, oldAccount: Account, newAccount: Account): boolean;
+    public acceptsSenderAccount(tx: Transaction, oldAccount: Account, newAccount: Account): boolean;
+    public blacklist(hash: Hash): void;
+    public isBlacklisted(hash: Hash): boolean;
+}
+
 export class Mempool extends Observable {
     public static TRANSACTION_RELAY_FEE_MIN: 1;
     public static TRANSACTIONS_PER_SENDER_MAX: 500;
     public static FREE_TRANSACTIONS_PER_SENDER_MAX: 10;
-    public static SIZE_MAX: 100000;
+    public static SIZE_MAX: number;
     public static ReturnCode: {
         FEE_TOO_LOW: -2;
         INVALID: -1;
@@ -1805,6 +1822,7 @@ export class Mempool extends Observable {
     public getTransactionsByRecipient(address: Address): Transaction[];
     public getTransactionsByAddresses(addresses: Address[], maxTransactions?: number): Transaction[];
     public evictBelowMinFeePerByte(minFeePerByte: number): void;
+    public isFiltered(txHash: Hash): boolean;
 }
 
 export namespace Mempool {
@@ -1943,7 +1961,7 @@ export class FullConsensusAgent extends BaseConsensusAgent {
     public static MEMPOOL_ENTRIES_MAX: 10000;
     public static CHAIN_PROOF_RATE_LIMIT: 3; // per minute
     public static ACCOUNTS_PROOF_RATE_LIMIT: 60; // per minute
-    public static ACCOUNTS_TREE_CHUNK_RATE_LIMIT: 120; // per minute
+    public static ACCOUNTS_TREE_CHUNK_RATE_LIMIT: 300; // per minute
     public static TRANSACTION_PROOF_RATE_LIMIT: 60; // per minute
     public static TRANSACTION_RECEIPTS_RATE_LIMIT: 30; // per minute
     public static BLOCK_PROOF_RATE_LIMIT: 60; // per minute
@@ -2011,6 +2029,8 @@ export class LightConsensus extends BaseConsensus {
         mempool: Mempool,
         network: Network,
     );
+    public subscribeMinFeePerByte(minFeePerByte: number): void;
+    public readonly minFeePerByte: number;
 }
 
 export class PartialLightChain extends LightChain {
