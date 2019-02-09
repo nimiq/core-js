@@ -54,8 +54,6 @@ class Utils {
     }
 
     static satoshisToCoins(value) {
-        Nimiq.Log.w(Utils, 'Utils.satoshisToCoins is deprecated and will be removed '
-                         + 'in an upcoming release. Use Utils.lunasToCoins instead.');
         return Utils.lunasToCoins(value);
     }
 

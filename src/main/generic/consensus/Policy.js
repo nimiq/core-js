@@ -23,8 +23,6 @@ class Policy {
      * @return {number} Number of Satoshis (Lunas)
      */
     static coinsToSatoshis(coins) {
-        Log.w(Policy, 'Policy.coinsToSatoshis is deprecated and will be removed '
-                    + 'in an upcoming release. Use Policy.coinsToLunas instead.');
         return Policy.coinsToLunas(coins);
     }
 
@@ -34,8 +32,6 @@ class Policy {
      * @return {number} Nimiq count in decimal.
      */
     static satoshisToCoins(satoshis) {
-        Log.w(Policy, 'Policy.satoshisToCoins is deprecated and will be removed '
-                    + 'in an upcoming release. Use Policy.lunasToCoins instead.');
         return Policy.lunasToCoins(satoshis);
     }
 
@@ -45,8 +41,6 @@ class Policy {
      * @constant
      */
     static get SATOSHIS_PER_COIN() {
-        Log.w(Policy, 'Policy.SATOSHIS_PER_COIN is deprecated and will be removed '
-                    + 'in an upcoming release. Use Policy.LUNAS_PER_COIN instead.');
         return Policy.LUNAS_PER_COIN;
     }
 
