@@ -13,6 +13,21 @@ class LightConsensus extends BaseConsensus {
     }
 
     /**
+     * @param {number} minFeePerByte
+     */
+    subscribeMinFeePerByte(minFeePerByte) {
+        this.subscribe(Subscription.fromMinFeePerByte(minFeePerByte));
+        this.mempool.evictBelowMinFeePerByte(minFeePerByte);
+    }
+
+    /**
+     * @type {number} minFeePerByte
+     */
+    get minFeePerByte() {
+        return this._subscription.type === Subscription.Type.MIN_FEE ? this._subscription.minFeePerByte : 0;
+    }
+
+    /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
      * @override
