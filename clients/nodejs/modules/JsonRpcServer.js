@@ -842,7 +842,7 @@ class JsonRpcServer {
                     result.push({
                         'jsonrpc': '2.0',
                         'error': {'code': -32600, 'message': 'Invalid Request'},
-                        'id': msg.id
+                        'id': msg ? msg.id : null
                     });
                     continue;
                 }
