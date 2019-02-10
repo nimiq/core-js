@@ -256,7 +256,7 @@ class BaseConsensus extends Observable {
             try {
                 return await agent.getBlockProof(blockHashToProve, knownBlock); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(BaseConsensus, `Failed to retrieve block proof for ${blockHashToProve}@${blockHeightToProve} from ${agent.peer.peerAddress}: ${e.message || e}`);
+                Log.w(BaseConsensus, `Failed to retrieve block proof for ${blockHashToProve}@${blockHeightToProve} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
                 // Try the next peer.
             }
         }
@@ -295,7 +295,7 @@ class BaseConsensus extends Observable {
             try {
                 return await agent.getTransactionsProof(block, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(BaseConsensus, `Failed to retrieve transactions proof for ${addresses} from ${agent.peer.peerAddress}: ${e.message || e}`);
+                Log.w(BaseConsensus, `Failed to retrieve transactions proof for ${addresses} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
                 // Try the next peer.
             }
         }
@@ -323,7 +323,7 @@ class BaseConsensus extends Observable {
             try {
                 return await agent.getTransactionReceipts(address); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e.message || e}`);
+                Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
                 // Try the next peer.
             }
         }

@@ -337,7 +337,7 @@ class BaseConsensusAgent extends Observable {
                     break;
                 }
                 default:
-                    throw `Invalid inventory type: ${vector.type}`;
+                    // ignore
             }
         }
 
@@ -765,7 +765,7 @@ class BaseConsensusAgent extends Observable {
                     break;
                 }
                 default:
-                    throw `Invalid inventory type: ${vector.type}`;
+                    // ignore
             }
         }
 
@@ -805,7 +805,7 @@ class BaseConsensusAgent extends Observable {
                 }
                 case InvVector.Type.TRANSACTION:
                 default:
-                    throw `Invalid inventory type: ${vector.type}`;
+                    // ignore
             }
         }
 
@@ -861,7 +861,7 @@ class BaseConsensusAgent extends Observable {
     async _onBlockProof(msg) {
         Log.v(BaseConsensusAgent, () => `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
-        // Check if we have requested a header proof, reject unsolicited ones.
+        // Check if we have requested a BlockProof, reject unsolicited ones.
         if (!this._blockProofRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited header proof received from ${this._peer.peerAddress}`);
             // TODO close/ban?
@@ -963,14 +963,14 @@ class BaseConsensusAgent extends Observable {
         Log.v(BaseConsensusAgent, () => `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}:`
             + ` blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
-        // Check if we have requested a transactions proof, reject unsolicited ones.
+        // Check if we have requested a TransactionsProof, reject unsolicited ones.
         if (!this._transactionsProofRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited transactions proof received from ${this._peer.peerAddress}`);
             // TODO close/ban?
             return;
         }
 
-        const {/** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
+        const {/** @type {Array.<Address>} */ addresses, /** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
         this._transactionsProofRequest = null;
 
         if (!msg.hasProof()) {
@@ -988,14 +988,28 @@ class BaseConsensusAgent extends Observable {
 
         // Verify the proof.
         const proof = msg.proof;
-        if (!block.bodyHash.equals(proof.root())) {
+        let root = null;
+        try {
+            root = proof.root();
+        } catch (e) {
+            // ignore
+        }
+        if (!block.bodyHash.equals(root)) {
             Log.w(BaseConsensusAgent, `Invalid TransactionsProof received from ${this._peer.peerAddress}`);
             this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'Invalid TransactionsProof');
             reject(new Error('Invalid TransactionsProof'));
             return;
         }
 
-        // TODO Verify that the proof only contains transactions that match the given addresses.
+        // Verify that the proof only contains transactions that match the given addresses.
+        for (const tx of proof.transactions) {
+            if (addresses.find(address => tx.sender.equals(address) || tx.recipient.equals(address)) === undefined) {
+                Log.w(BaseConsensusAgent, `TransactionsProof with unwanted transactions received from ${this._peer.peer}`);
+                this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'TransactionsProof contains unwanted transactions');
+                reject(new Error('TransactionsProof contains unwanted transactions'));
+                return;
+            }
+        }
 
         // Return the retrieved transactions.
         resolve(proof.transactions);

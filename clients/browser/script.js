@@ -93,7 +93,6 @@ DevUi.ClientType = {
 };
 
 
-window.addEventListener('unhandledrejection', event => alert('Unhandled Promise Rejection: ' + event.reason));
 window.addEventListener('hashchange', () => window.location.reload());
 
 window.ui = new DevUi(document.getElementById('content'));
