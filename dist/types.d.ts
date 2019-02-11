@@ -2963,7 +2963,6 @@ export class GenesisConfig {
     public static main(): void;
     public static test(): void;
     public static dev(): void;
-    public static bounty(): void;
     public static init(config: { NETWORK_ID: number, NETWORK_NAME: string, GENESIS_BLOCK: Block, GENESIS_ACCOUNTS: string, SEED_PEERS: PeerAddress[] }): void;
     public static networkIdToNetworkName(networkId: number): string;
 }
