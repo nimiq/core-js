@@ -82,11 +82,14 @@ class Accounts extends Observable {
     /**
      * @param {Block} block
      * @param {TransactionCache} transactionCache
+     * @param {Hash} [prevHash]
      * @return {Promise}
      */
-    async commitBlock(block, transactionCache) {
+    async commitBlock(block, transactionCache, prevHash) {
         const tree = await this._tree.synchronousTransaction();
         await tree.preloadAddresses(block.body.getAddresses());
+        const oldHash = tree.rootSync();
+        const oldRoot = tree._syncStore.getSync('');
         try {
             this._commitBlockBody(tree, block.body, block.height, transactionCache);
         } catch (e) {
@@ -98,8 +101,23 @@ class Accounts extends Observable {
 
         const hash = tree.rootSync();
         if (!block.accountsHash.equals(hash)) {
+            const root = tree._syncStore.getSync('');
+            for (let child of oldRoot.getChildren()) {
+                if (child) {
+                    console.log(`@${child}: ${oldRoot.getChildHash(child)}`);
+                } else {
+                    console.log('<empty slot>');
+                }
+            }
+            for (let child of root.getChildren()) {
+                if (child) {
+                    console.log(`@${child}: ${root.getChildHash(child)}`);
+                } else {
+                    console.log('<empty slot>');
+                }
+            }
             await tree.abort();
-            throw new Error('AccountsHash mismatch');
+            throw new Error(`AccountsHash mismatch: ${oldHash}/${prevHash} -> ${hash}/${block.accountsHash}`);
         }
         return tree.commit();
     }
@@ -154,6 +172,14 @@ class Accounts extends Observable {
         }
     }
 
+    static printNode(node) {
+        console.log(`Node@${node.prefix}: ${node.hash()}`);
+        for (const prefix of node.getChildren().filter(p => p)) {
+            console.log(`Child@${prefix}: ${node.getChildHash(prefix)}`);
+        }
+    }
+
+
     /**
      * @param {Block} block
      * @param {TransactionCache} transactionCache
@@ -202,7 +228,7 @@ class Accounts extends Observable {
             if (typeof accountType === 'undefined') {
                 return Account.INITIAL;
             }
-            throw new Error('Account type was given but account not present');
+            throw new Error(`Account type was given but account not present: ${address.toHex()}`);
         } else if (typeof accountType !== 'undefined' && account.type !== accountType) {
             throw new Error('Account type does match actual account');
         }
@@ -224,7 +250,7 @@ class Accounts extends Observable {
             if (typeof accountType === 'undefined') {
                 return Account.INITIAL;
             }
-            throw new Error('Account type was given but account not present');
+            throw new Error(`Account type was given but account not present: ${address.toHex()}`);
         } else if (typeof accountType !== 'undefined' && account.type !== accountType) {
             throw new Error('Account type does match actual account');
         }
@@ -248,7 +274,7 @@ class Accounts extends Observable {
     }
 
     /**
-     * @returns {Promise.<PartialAccountsTree>}
+     * @returns {Promise.<ChunkPartialAccountsTree>}
      */
     partialAccountsTree() {
         return this._tree.partialTree();
@@ -323,7 +349,6 @@ class Accounts extends Observable {
      * @param {BlockBody} body
      * @param {number} blockHeight
      * @param {TransactionCache} transactionCache
-     * @private
      */
     _commitBlockBody(tree, body, blockHeight, transactionCache) {
         this._processSenderAccounts(tree, body.transactions, blockHeight, transactionCache);
@@ -356,7 +381,6 @@ class Accounts extends Observable {
      * @param {BlockBody} body
      * @param {number} blockHeight
      * @param {TransactionCache} transactionCache
-     * @private
      */
     _revertBlockBody(tree, body, blockHeight, transactionCache) {
         this._rewardMiner(tree, body, blockHeight, true);
@@ -408,4 +432,5 @@ class Accounts extends Observable {
         return this._tree.tx;
     }
 }
+
 Class.register(Accounts);

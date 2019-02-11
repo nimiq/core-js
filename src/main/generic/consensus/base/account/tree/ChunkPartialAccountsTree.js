@@ -1,4 +1,4 @@
-class PartialAccountsTree extends SynchronousAccountsTree {
+class ChunkPartialAccountsTree extends SynchronousAccountsTree {
     /**
      * @private
      * @param {SynchronousAccountsTreeStore} store
@@ -12,12 +12,12 @@ class PartialAccountsTree extends SynchronousAccountsTree {
 
     /**
      * @param {AccountsTreeChunk} chunk
-     * @returns {Promise.<PartialAccountsTree.Status>}
+     * @returns {Promise.<ChunkPartialAccountsTree.Status>}
      */
     async pushChunk(chunk) {
         // First verify the proof.
         if (!chunk.verify()) {
-            return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
+            return ChunkPartialAccountsTree.Status.ERR_INCORRECT_PROOF;
         }
 
         const tx = this.synchronousTransaction();
@@ -28,7 +28,7 @@ class PartialAccountsTree extends SynchronousAccountsTree {
         // Check if proof can be merged.
         if (!tx._mergeProof(chunk.proof, chunk.tail.prefix)) {
             await tx.abort();
-            return PartialAccountsTree.Status.ERR_UNMERGEABLE;
+            return ChunkPartialAccountsTree.Status.ERR_UNMERGEABLE;
         }
         this._complete = tx.complete;
 
@@ -39,7 +39,7 @@ class PartialAccountsTree extends SynchronousAccountsTree {
         this._lastPrefix = chunk.tail.prefix;
 
         // And return OK code depending on internal state.
-        return this._complete ? PartialAccountsTree.Status.OK_COMPLETE : PartialAccountsTree.Status.OK_UNFINISHED;
+        return this._complete ? ChunkPartialAccountsTree.Status.OK_COMPLETE : ChunkPartialAccountsTree.Status.OK_UNFINISHED;
     }
 
     /**
@@ -176,10 +176,10 @@ class PartialAccountsTree extends SynchronousAccountsTree {
 
     /**
      * @param {boolean} [enableWatchdog]
-     * @returns {PartialAccountsTree}
+     * @returns {ChunkPartialAccountsTree}
      */
     synchronousTransaction(enableWatchdog = true) {
-        const tree = new PartialAccountsTree(this._store.synchronousTransaction(enableWatchdog));
+        const tree = new ChunkPartialAccountsTree(this._store.synchronousTransaction(enableWatchdog));
         tree._complete = this._complete;
         tree._lastPrefix = this._lastPrefix;
         return tree;
@@ -191,7 +191,7 @@ class PartialAccountsTree extends SynchronousAccountsTree {
      */
     transaction(enableWatchdog = true) {
         if (!this.complete) {
-            throw new Error('Can only construct AccountsTree from complete PartialAccountsTree');
+            throw new Error('Can only construct AccountsTree from complete ChunkPartialAccountsTree');
         }
         // Use a synchronous transaction here to enable better caching.
         return new AccountsTree(this._store.synchronousTransaction(enableWatchdog));
@@ -215,12 +215,12 @@ class PartialAccountsTree extends SynchronousAccountsTree {
 /**
  * @enum {number}
  */
-PartialAccountsTree.Status = {
+ChunkPartialAccountsTree.Status = {
     ERR_HASH_MISMATCH: -3,
     ERR_INCORRECT_PROOF: -2,
     ERR_UNMERGEABLE: -1,
     OK_COMPLETE: 0,
     OK_UNFINISHED: 1
 };
-Class.register(PartialAccountsTree);
+Class.register(ChunkPartialAccountsTree);
 

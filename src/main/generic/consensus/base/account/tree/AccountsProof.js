@@ -10,6 +10,7 @@ class AccountsProof {
         this._nodes = nodes;
         /** @type {HashMap.<Hash,AccountsTreeNode>} */
         this._index = null;
+        this._valid = undefined;
     }
 
     /**
@@ -54,6 +55,7 @@ class AccountsProof {
      * @returns {boolean}
      */
     verify() {
+        if (this._valid !== undefined) return this._valid;
         /** @type {Array.<AccountsTreeNode>} */
         const children = [];
         this._index = new HashMap();
@@ -81,7 +83,8 @@ class AccountsProof {
         }
 
         // The last element must be the root node.
-        return children.length === 1 && children[0].prefix === '' && children[0].isBranch();
+        this._valid = children.length === 1 && children[0].prefix === '' && children[0].isBranch();
+        return this._valid;
     }
 
     /**
@@ -91,6 +94,9 @@ class AccountsProof {
     getAccount(address) {
         if (!this._index) {
             throw new Error('AccountsProof must be verified before retrieving accounts. Call verify() first.');
+        }
+        if (!this._valid) {
+            throw new Error('AccountsProof is invalid.');
         }
 
         const rootNode = this._nodes[this._nodes.length - 1];
@@ -119,8 +125,15 @@ class AccountsProof {
         if (childKey) {
             const childNode = this._index.get(childKey);
 
-            // If the child exists but is not part of the proof, fail.
             if (!childNode) {
+                // If the matching child node can not contain a proof for the requested account, this proofs absence
+                const childPrefix = node.getChild(prefix);
+                if (StringUtils.commonPrefix(childPrefix, prefix).length < childPrefix.length) {
+                    console.log(`${node.prefix} -> ${childPrefix} != ${prefix}`);
+                    return null;
+                }
+
+                // If the child exists but is not part of the proof, fail.
                 throw new Error('Requested address not part of AccountsProof');
             }
 

@@ -1,4 +1,4 @@
-describe('PartialAccountsTree', () => {
+describe('ChunkPartialAccountsTree', () => {
 
     it('can be used to recreate an existing accounts tree', (done) => {
         (async () => {
@@ -10,7 +10,7 @@ describe('PartialAccountsTree', () => {
 
             const partialTree = await accountsTree.partialTree();
             expect(partialTree.complete).toBeFalsy();
-            expect(await partialTree.pushChunk(await accountsTree.getChunk('', 100))).toEqual(PartialAccountsTree.Status.OK_COMPLETE);
+            expect(await partialTree.pushChunk(await accountsTree.getChunk('', 100))).toEqual(ChunkPartialAccountsTree.Status.OK_COMPLETE);
             expect(partialTree.complete).toBeTruthy();
             expect(await partialTree.commit()).toBeTruthy();
         })().then(done, done.fail);

@@ -321,4 +321,5 @@ class AccountsTreeNode {
 }
 AccountsTreeNode.BRANCH = 0x00;
 AccountsTreeNode.TERMINAL = 0xff;
+AccountsTreeNode.EMPTY_ROOT_HASH = Hash.fromHex('ab29e6dc16755d0071eba349ebda225d15e4f910cb474549c47e95cb85ecc4d6');
 Class.register(AccountsTreeNode);

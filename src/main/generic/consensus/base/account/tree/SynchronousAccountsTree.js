@@ -29,17 +29,21 @@ class SynchronousAccountsTree extends AccountsTree {
     }
 
     /**
+     * @param {Array.<string>} keys
+     * @returns {Promise}
+     */
+    async preloadNodes(keys) {
+        return this._syncStore.preload(keys);
+    }
+
+    /**
      * @param {AccountsTreeNode} node
      * @param {Array.<string>} prefixes
      * @private
      */
     async _preloadAddresses(node, prefixes) {
-        if (node.hasChildren()) {
-            await this._syncStore.preload(node.getChildren());
-        }
-        
         // For each prefix, descend the tree individually.
-        for (let i = 0; i < prefixes.length; ) {
+        for (let i = 0; i < prefixes.length;) {
             const prefix = prefixes[i];
 
             // Find common prefix between node and the current requested prefix.
@@ -56,7 +60,13 @@ class SynchronousAccountsTree extends AccountsTree {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
+                if (childKey !== StringUtils.commonPrefix(childKey, prefix)) {
+                    i++;
+                    continue;
+                }
+                await this._syncStore.preload([childKey]);
                 const childNode = this._syncStore.getSync(childKey);
+                if (!childNode) throw new Error(`Node ${childKey} (required for ${prefix}) not found in backend`);
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -166,9 +176,33 @@ class SynchronousAccountsTree extends AccountsTree {
         // the matching child node if one exists.
         const childPrefix = node.getChild(prefix);
         if (childPrefix) {
-            const childNode = this._syncStore.getSync(childPrefix);
-            rootPath.push(node);
-            return this._insertBatch(childNode, prefix, account, rootPath);
+            const childNode = this._syncStore.getSync(childPrefix, false);
+
+            if (!childNode) {
+                const commonPrefix = StringUtils.commonPrefix(childPrefix, prefix);
+
+                // If the node prefix does not fully match the new address, split the node.
+                if (commonPrefix.length !== childPrefix.length) {
+                    // Insert the new account node.
+                    const newChild = AccountsTreeNode.terminalNode(prefix, account);
+                    this._syncStore.putSync(newChild);
+
+                    // Insert the new parent node.
+                    const newParent = AccountsTreeNode.branchNode(commonPrefix)
+                        .withChild(childPrefix, node.getChildHash(childPrefix))
+                        .withChild(newChild.prefix, new Hash(null));
+                    this._syncStore.putSync(newParent);
+                    rootPath.push(node);
+
+                    return this._updateKeysBatch(newParent.prefix, rootPath);
+                } else {
+                    throw new Error(`Key ${childPrefix} not preloaded`);
+                }
+            } else {
+                const childNode = this._syncStore.getSync(childPrefix);
+                rootPath.push(node);
+                return this._insertBatch(childNode, prefix, account, rootPath);
+            }
         }
 
         // If no matching child exists, add a new child account node to the current node.
@@ -200,10 +234,7 @@ class SynchronousAccountsTree extends AccountsTree {
                 this._syncStore.removeSync(node);
 
                 const childPrefix = node.getFirstChild();
-                const childNode = this._syncStore.getSync(childPrefix);
-
-                this._syncStore.putSync(childNode);
-                return this._updateKeysBatch(childNode.prefix, rootPath.slice(0, i));
+                return this._updateKeysBatch(childPrefix, rootPath.slice(0, i), node.getChildHash(childPrefix));
             }
             // Otherwise, if the node has children left, update it and all keys on the
             // remaining root path. Pruning finished.
@@ -226,14 +257,15 @@ class SynchronousAccountsTree extends AccountsTree {
      * @param {Array.<AccountsTreeNode>} rootPath
      * @private
      */
-    _updateKeysBatch(prefix, rootPath) {
+    _updateKeysBatch(prefix, rootPath, hash = null) {
         // Walk along the rootPath towards the root node starting with the
         // immediate predecessor of the node specified by 'prefix'.
         let i = rootPath.length - 1;
         for (; i >= 0; --i) {
             let node = rootPath[i];
 
-            node = node.withChild(prefix, new Hash(null));
+            node = node.withChild(prefix, hash || new Hash(null));
+            hash = null;
             this._syncStore.putSync(node);
             prefix = node.prefix;
         }
@@ -256,7 +288,10 @@ class SynchronousAccountsTree extends AccountsTree {
             if (!currentHash.equals(zeroHash)) {
                 return currentHash;
             }
-            const childNode = this._syncStore.getSync(child);
+            const childNode = this._syncStore.getSync(child, false);
+            if (!childNode) {
+                throw new Error(`Child ${child} in ${node.prefix} was set to null when it should not!`);
+            }
             return this._updateHashes(childNode);
         });
 
@@ -287,5 +322,6 @@ class SynchronousAccountsTree extends AccountsTree {
         return rootNode && rootNode.hash();
     }
 }
+
 Class.register(SynchronousAccountsTree);
 

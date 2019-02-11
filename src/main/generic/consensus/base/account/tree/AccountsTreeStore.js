@@ -90,6 +90,12 @@ class AccountsTreeStore {
         return Promise.all(nodes);
     }
 
+    async getAllNodes() {
+        const nodes = [];
+        await this._store.valueStream((value) => nodes.push(value));
+        return nodes;
+    }
+
     /**
      * @param {AccountsTreeStore} [tx]
      * @returns {AccountsTreeStore}

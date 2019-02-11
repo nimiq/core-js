@@ -125,7 +125,7 @@ describe('AccountsProof', () => {
 
             const verified = accountsProof2.verify();
             expect(verified).toBe(false);
-            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
+            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'AccountsProof is invalid.');
         }
     });
 
@@ -180,7 +180,7 @@ describe('AccountsProof', () => {
 
             const verified = accountsProof2.verify();
             expect(verified).toBe(false);
-            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'Requested address not part of AccountsProof');
+            expect(function () { accountsProof2.getAccount(address); }).toThrowError(Error, 'AccountsProof is invalid.');
         }
     });
 

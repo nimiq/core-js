@@ -268,7 +268,15 @@ class AccountsTree extends Observable {
             // Descend into the matching child node if one exists.
             const childKey = node.getChild(prefix);
             if (childKey) {
+                if (StringUtils.commonPrefix(childKey, prefix).length < childKey.length) {
+                    includeNode = true;
+                    i++;
+                    continue;
+                }
                 const childNode = await this._store.get(childKey); // eslint-disable-line no-await-in-loop
+                if (!childNode) {
+                    throw new Error(`Required subnode ${childKey} not available in local accounts tree`);
+                }
 
                 // Group addresses with same prefix:
                 // Because of our ordering, they have to be located next to the current prefix.
@@ -323,6 +331,13 @@ class AccountsTree extends Observable {
     }
 
     /**
+     * @returns {Promise.<Array.<AccountsTreeNode>>}
+     */
+    getAllNodes() {
+        return this._store.getAllNodes();
+    }
+
+    /**
      * @param {boolean} [enableWatchdog]
      * @returns {Promise.<AccountsTree>}
      */
@@ -342,12 +357,12 @@ class AccountsTree extends Observable {
     }
 
     /**
-     * @returns {Promise.<PartialAccountsTree>}
+     * @returns {Promise.<ChunkPartialAccountsTree>}
      */
     async partialTree() {
         const tx = this._store.synchronousTransaction(false);
         await tx.truncate();
-        const tree = new PartialAccountsTree(tx);
+        const tree = new ChunkPartialAccountsTree(tx);
         return tree._init();
     }
 
