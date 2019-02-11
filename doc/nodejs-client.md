@@ -40,4 +40,4 @@ clients/nodejs/nimiq --host=HOSTNAME --port=PORT --cert=SSL_CERT_FILE --key=SSL_
 | `--wallet-seed=SEED` | Initialize wallet using SEED as a wallet seed. |
 | `--wallet-address=ADDRESS` | Initialize wallet using ADDRESS as a wallet address. |
 | `--extra-data=EXTRA_DATA` | Extra data to add to every mined block. |
-| `--network=NAME` | Configure the network to connect to, one of main (default), test, dev, or bounty. |
+| `--network=NAME` | Configure the network to connect to, one of main (default), test, or dev. |

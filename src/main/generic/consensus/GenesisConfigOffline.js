@@ -11,10 +11,6 @@ class GenesisConfig {
         GenesisConfig.init(GenesisConfig.CONFIGS['dev']);
     }
 
-    static bounty() {
-        GenesisConfig.init(GenesisConfig.CONFIGS['bounty']);
-    }
-
     /**
      * @param {{NETWORK_ID:number,NETWORK_NAME:string}} config
      */
@@ -58,10 +54,5 @@ GenesisConfig.CONFIGS = {
     'dev': {
         NETWORK_ID: 2,
         NETWORK_NAME: 'dev'
-    },
-
-    'bounty': {
-        NETWORK_ID: 3,
-        NETWORK_NAME: 'bounty'
     }
 };

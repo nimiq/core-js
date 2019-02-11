@@ -67,7 +67,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '                             using this option.\n' +
         '  --extra-data=EXTRA_DATA    Extra data to add to every mined block.\n' +
         '  --network=NAME             Configure the network to connect to, one of\n' +
-        '                             main (default), test, dev, or bounty.\n');
+        '                             main (default), test, or dev.\n');
 
     process.exit();
 }
