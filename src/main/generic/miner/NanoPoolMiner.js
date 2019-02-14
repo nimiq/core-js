@@ -40,12 +40,17 @@ class NanoPoolMiner extends BasePoolMiner {
         });
     }
 
-    _onMessage(ws, msg) {
+    _onMessage(ws, msgJson) {
         if (this._ws !== ws) return;
-        if (msg && msg.message === 'new-block') {
-            this._handleNewBlock(msg);
-        } else {
-            super._onMessage(ws, msg);
+        try {
+            const msg = JSON.parse(msgJson);
+            if (msg && msg.message === 'new-block') {
+                this._handleNewBlock(msg);
+            } else {
+                super._onMessage(ws, msgJson);
+            }
+        } catch (e) {
+            this._onError(ws, e);
         }
     }
 

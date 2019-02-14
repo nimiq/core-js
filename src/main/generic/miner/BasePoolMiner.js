@@ -138,9 +138,9 @@ class BasePoolMiner extends Miner {
     }
 
     _onMessage(ws, msgJson) {
+        if (ws !== this._ws) return;
         try {
             const msg = JSON.parse(msgJson);
-            if (ws !== this._ws) return;
             if (msg && msg.message) {
                 switch (msg.message) {
                     case 'settings':
