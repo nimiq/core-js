@@ -29,16 +29,52 @@ For developers looking to include Nimiq support on their applications, there are
 A good way to get started is to have a look at [the most simple web application on top of the Nimiq Blockchain](https://demo.nimiq.com/).
 
 ### Getting Started
-Just include the `nimiq.js` file from this package into your project:
 
+Import `Nimiq` as an ES6 module:
+
+```javascript
+// With a package.json-aware module loader:
+import Nimiq from '@nimiq/core-web';
+
+// Otherwise:
+import Nimiq from 'node_modules/@nimiq/core-web/web.esm.js';
 ```
+
+To use Nimiq's cryptographic functions (for hashing, signing, derivation),
+you have to make the following files from this package available to the browser
+(for e.g. Vue, this means copying them into the `public` folder, or getting them
+otherwise into the output directory):
+
+```text
+worker.js
+worker-js.js
+worker-wasm.js
+worker-wasm.wasm
+```
+
+You can then load the Nimiq worker by calling `Nimiq.load()` with the URL of the folder containing the files:
+
+```javascript
+// Important: must be a full URL, a trailing slash is required.
+const workerURL = location.origin + '/assets/nimiq/';
+
+Nimiq.load(workerURL).then(async function() {
+    // All Nimiq functionality is available here.
+});
+```
+
+### Using a regular &lt;script&gt; tag
+
+Include the `nimiq.js` file from this package into your project:
+
+```html
 <script src="node_modules/@nimiq/core-web/nimiq.js"></script>
 ```
 
-or import it as an ES6 module:
+If you do not need networking support, you can also use the smaller offline build:
 
-```
-import Nimiq from '@nimiq/core-web';
+```javascript
+Nimiq.loadOffline().then(...);
 ```
 
 ## Contribute
