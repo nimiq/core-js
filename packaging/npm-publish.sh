@@ -21,7 +21,6 @@ $NIMIQ_VERSION
     "url": "https://github.com/nimiq-network/core.git"
   },
   "main": "web.esm.js",
-  "browser": "nimiq.js",
   "types": "types.d.ts",
   "files": [
     "nimiq.js",
