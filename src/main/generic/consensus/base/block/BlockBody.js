@@ -165,11 +165,13 @@ class BlockBody {
      * @return {Array.<Address>}
      */
     getAddresses() {
-        const addresses = [this._minerAddr];
+        const addresses = new HashSet();
+        addresses.add(this._minerAddr);
         for (const tx of this._transactions) {
-            addresses.push(tx.sender, tx.recipient);
+            addresses.add(tx.sender);
+            addresses.add(tx.recipient);
         }
-        return addresses;
+        return addresses.values();
     }
 
     /** @type {Uint8Array} */

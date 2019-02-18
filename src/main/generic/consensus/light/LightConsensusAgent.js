@@ -13,6 +13,8 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._blockchain = blockchain;
         /** @type {PartialLightChain} */
         this._partialChain = null;
+        /** @type {ChunkPartialAccountsTree} */
+        this._partialTree = null;
 
         /** @type {boolean} */
         this._syncing = false;
@@ -119,48 +121,68 @@ class LightConsensusAgent extends FullConsensusAgent {
         // Case 3: We are syncing.
         if (this._syncing && !this._busy) {
             if (this._catchup) {
-                await FullConsensusAgent.prototype.syncBlockchain.call(this);
+                await this._syncCatchup();
             } else {
                 // Initialize partial chain on first call.
                 if (!this._partialChain) {
                     await this._initChainProofSync();
                 }
 
-                switch (this._partialChain.state) {
-                    case PartialLightChain.State.PROVE_CHAIN:
-                        this._requestChainProof();
-                        this.fire('sync-chain-proof', this._peer.peerAddress);
-                        break;
-                    case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
-                        this._requestAccountsTree();
-                        this.fire('sync-accounts-tree', this._peer.peerAddress);
-                        break;
-                    case PartialLightChain.State.PROVE_BLOCKS:
-                        this._requestProofBlocks();
-                        this.fire('verify-accounts-tree', this._peer.peerAddress);
-                        break;
-                    case PartialLightChain.State.COMPLETE:
-                        // Commit state on success.
-                        this.fire('sync-finalize', this._peer.peerAddress);
-                        this._busy = true;
-                        await this._partialChain.commit();
-                        await this._applyOrphanedBlocks();
-                        this._syncFinished();
-                        break;
-                    case PartialLightChain.State.ABORTED:
-                        this._peer.channel.close(CloseType.ABORTED_SYNC, 'aborted sync');
-                        break;
-                    case PartialLightChain.State.WEAK_PROOF:
-                        Log.d(LightConsensusAgent, `Not syncing with ${this._peer.peerAddress} - weaker proof`);
-                        this._numWeakProofs++;
-                        if (this._numWeakProofs >= LightConsensusAgent.WEAK_PROOFS_MAX) {
-                            this._peer.channel.close(CloseType.BLOCKCHAIN_SYNC_FAILED, 'too many weak proofs');
-                        } else {
-                            this._syncFinished();
-                        }
-                        break;
-                }
+                await this._syncPartialChain();
             }
+        }
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    async _syncCatchup() {
+        return FullConsensusAgent.prototype.syncBlockchain.call(this);
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    async _syncPartialChain() {
+        switch (this._partialChain.state) {
+            case PartialLightChain.State.PROVE_CHAIN:
+                this._requestChainProof();
+                this.fire('sync-chain-proof', this._peer.peerAddress);
+                break;
+            case PartialLightChain.State.PROVE_ACCOUNTS_TREE:
+                this._requestAccountsTree();
+                this.fire('sync-accounts-tree', this._peer.peerAddress);
+                break;
+            case PartialLightChain.State.PROVE_BLOCKS:
+                this._requestProofBlocks();
+                this.fire('verify-accounts-tree', this._peer.peerAddress);
+                break;
+            case PartialLightChain.State.COMPLETE:
+                // Commit state on success.
+                this.fire('sync-finalize', this._peer.peerAddress);
+                this._busy = true;
+                await this._partialChain.commit();
+                for (let b of this._laterBlocks.values()) {
+                    if (b.prevHash.equals(hash)) {
+                        await this._processBlock(b.hash(), b);
+                        return;
+                    }
+                }
+                await this._applyOrphanedBlocks();
+                this._syncFinished();
+                break;
+            case PartialLightChain.State.ABORTED:
+                this._peer.channel.close(CloseType.ABORTED_SYNC, 'aborted sync');
+                break;
+            case PartialLightChain.State.WEAK_PROOF:
+                Log.d(LightConsensusAgent, `Not syncing with ${this._peer.peerAddress} - weaker proof`);
+                this._numWeakProofs++;
+                if (this._numWeakProofs >= LightConsensusAgent.WEAK_PROOFS_MAX) {
+                    this._peer.channel.close(CloseType.BLOCKCHAIN_SYNC_FAILED, 'too many weak proofs');
+                } else {
+                    this._syncFinished();
+                }
+                break;
         }
     }
 
@@ -182,6 +204,46 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         this._partialChain = await this._blockchain.partialChain();
+        this._partialChain.on('proof-accepted', () => this._onPartialChainProofAccepted());
+        this._partialChain.on('aborted', () => this._onPartialChainAborted());
+        this._partialChain.on('committed', () => this._onPartialChainCommitted());
+    }
+
+    async _onPartialChainProofAccepted() {
+        this._partialTree = await this._blockchain._accounts.partialAccountsTree();
+        this._partialChain._state = PartialLightChain.State.PROVE_ACCOUNTS_TREE;
+    }
+
+    async _onPartialChainAborted() {
+        if (this._partialTree) {
+            await this._partialTree.abort();
+            this._partialTree = null;
+        }
+    }
+
+    async _onPartialChainCommitted() {
+        this._partialTree = null;
+    }
+
+    /**
+     * @param {AccountsTreeChunk} chunk
+     * @returns {Promise.<ChunkPartialAccountsTree.Status>}
+     */
+    async pushAccountsTreeChunk(chunk) {
+        if (this._partialChain._state !== PartialLightChain.State.PROVE_ACCOUNTS_TREE) {
+            return ChunkPartialAccountsTree.Status.ERR_INCORRECT_PROOF;
+        }
+
+        const result = await this._partialTree.pushChunk(chunk);
+
+        // If we're done, prepare next phase.
+        if (result === ChunkPartialAccountsTree.Status.OK_COMPLETE) {
+            this._partialChain._state = PartialLightChain.State.PROVE_BLOCKS;
+            this._partialChain.setAccountsTx(new Accounts(this._partialTree.transaction()));
+            this._partialChain.setPartialTreeTx(this._partialTree.tx);
+        }
+
+        return result;
     }
 
     /**
@@ -216,7 +278,7 @@ class LightConsensusAgent extends FullConsensusAgent {
     // Stage 1: Chain proof.
     /**
      * @returns {void}
-     * @private
+     * @protected
      */
     _requestChainProof() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_CHAIN);
@@ -270,14 +332,14 @@ class LightConsensusAgent extends FullConsensusAgent {
 
     // Stage 2: Request AccountsTree.
     /**
-     * @private
+     * @protected
      */
     _requestAccountsTree() {
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
         Assert.that(!this._accountsRequest);
         this._busy = true;
 
-        const startPrefix = this._partialChain.getMissingAccountsPrefix();
+        const startPrefix = this.getMissingAccountsPrefix();
         const headHash = this._partialChain.headHash;
         Log.d(LightConsensusAgent, `Requesting AccountsTreeChunk starting at ${startPrefix} from ${this._peer.peerAddress}`);
 
@@ -296,9 +358,19 @@ class LightConsensusAgent extends FullConsensusAgent {
     }
 
     /**
+     * @returns {string}
+     */
+    getMissingAccountsPrefix() {
+        if (this._partialTree) {
+            return this._partialTree.missingPrefix;
+        }
+        return '';
+    }
+
+    /**
      * @param {AccountsTreeChunkMessage} msg
      * @returns {Promise.<void>}
-     * @private
+     * @protected
      */
     async _onAccountsTreeChunk(msg) {
         Log.d(LightConsensusAgent, `[ACCOUNTS-TREE-CHUNK] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.chunk}`);
@@ -354,7 +426,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         // Return the retrieved accounts.
-        const result = await this._partialChain.pushAccountsTreeChunk(chunk);
+        const result = await this.pushAccountsTreeChunk(chunk);
 
         // Something went wrong!
         if (result < 0) {
@@ -369,10 +441,11 @@ class LightConsensusAgent extends FullConsensusAgent {
 
     // Stage 3: Request proof blocks.
     /**
-     * @private
+     * @protected
      */
     _requestProofBlocks() {
-        Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
+        //Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_BLOCKS);
+        Log.d(LightConsensusAgent, `Request proof blocks for block at ${this._partialChain.proofHeadHeight}`);
 
         // If nothing happend since the last request, increase failed syncs.
         if (this._lastChainHeight === this._partialChain.proofHeadHeight) {
@@ -583,6 +656,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         return this._syncing;
     }
 }
+
 /**
  * Maximum time (ms) to wait for chain-proof after sending out get-chain-proof before dropping the peer.
  * @type {number}

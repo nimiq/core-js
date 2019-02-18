@@ -8,7 +8,7 @@ class PartialLightChain extends LightChain {
      * @returns {PartialLightChain}
      */
     constructor(store, accounts, time, proof, commitSynchronizer) {
-        const tx = store.transaction(false);
+        const tx = store.transaction();
         super(tx, accounts, time);
 
         /** @type {ChainProof} */
@@ -16,8 +16,8 @@ class PartialLightChain extends LightChain {
 
         /** @type {PartialLightChain.State} */
         this._state = PartialLightChain.State.PROVE_CHAIN;
-        /** @type {PartialAccountsTree} */
-        this._partialTree = null;
+        /** @type {Transaction} */
+        this._partialTreeTx = null;
         /** @type {Accounts} */
         this._accountsTx = null;
         /** @type {ChainData} */
@@ -180,8 +180,8 @@ class PartialLightChain extends LightChain {
             Assert.that(result >= 0);
         }
 
-        this._state = PartialLightChain.State.PROVE_ACCOUNTS_TREE;
-        this._partialTree = await this._accounts.partialAccountsTree();
+        this._state = PartialLightChain.State.BEFORE_PROVE_ACCOUNTS;
+        this.fire('proof-accepted');
         this._proofHead = this._mainChain;
         await this._store.setHead(this.headHash);
 
@@ -412,9 +412,10 @@ class PartialLightChain extends LightChain {
             const transactionCache = new TransactionCache();
             await this._accountsTx.revertBlock(chainData.head, transactionCache);
         } catch (e) {
+            console.log(e);
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
-            Log.w(PartialLightChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
+            Log.w(PartialLightChain, `Rejecting block ${blockHash} - failed to commit to AccountsTree: ${e.message || e}`);
             return false;
         }
 
@@ -433,23 +434,10 @@ class PartialLightChain extends LightChain {
     }
 
     /**
-     * @param {AccountsTreeChunk} chunk
-     * @returns {Promise.<PartialAccountsTree.Status>}
+     * @param {Accounts} accounts
      */
-    async pushAccountsTreeChunk(chunk) {
-        if (this._state !== PartialLightChain.State.PROVE_ACCOUNTS_TREE) {
-            return PartialAccountsTree.Status.ERR_INCORRECT_PROOF;
-        }
-
-        const result = await this._partialTree.pushChunk(chunk);
-
-        // If we're done, prepare next phase.
-        if (result === PartialAccountsTree.Status.OK_COMPLETE) {
-            this._state = PartialLightChain.State.PROVE_BLOCKS;
-            this._accountsTx = new Accounts(this._partialTree.transaction(false));
-        }
-
-        return result;
+    setAccountsTx(accounts) {
+        this._accountsTx = accounts;
     }
 
     /**
@@ -500,8 +488,8 @@ class PartialLightChain extends LightChain {
             this._accountsTx = null;
         }
 
-        const result = await JDB.JungleDB.commitCombined(...this._store.txs, this._partialTree.tx);
-        this._partialTree = null;
+        const result = await JDB.JungleDB.commitCombined(...this._store.txs, this._partialTreeTx);
+        this._partialTreeTx = null;
 
         const currentProof = this._proof || await this._getChainProof();
         // Only set values in FullChain if commit was successful
@@ -510,6 +498,13 @@ class PartialLightChain extends LightChain {
         }
 
         return result;
+    }
+
+    /**
+     * @param {Transaction} tx
+     */
+    setPartialTreeTx(tx) {
+        this._partialTreeTx = tx;
     }
 
     /**
@@ -522,22 +517,8 @@ class PartialLightChain extends LightChain {
             await this._accountsTx.abort();
             this._accountsTx = null;
         }
-        if (this._partialTree) {
-            await this._partialTree.abort();
-            this._partialTree = null;
-        }
         await this._store.abort();
         this.fire('aborted');
-    }
-
-    /**
-     * @returns {string}
-     */
-    getMissingAccountsPrefix() {
-        if (this._partialTree) {
-            return this._partialTree.missingPrefix;
-        }
-        return '';
     }
 
     /**
@@ -586,8 +567,9 @@ PartialLightChain.State = {
     WEAK_PROOF: -2,
     ABORTED: -1,
     PROVE_CHAIN: 0,
-    PROVE_ACCOUNTS_TREE: 1,
-    PROVE_BLOCKS: 2,
-    COMPLETE: 3
+    BEFORE_PROVE_ACCOUNTS: 1,
+    PROVE_ACCOUNTS_TREE: 2,
+    PROVE_BLOCKS: 3,
+    COMPLETE: 4
 };
 Class.register(PartialLightChain);

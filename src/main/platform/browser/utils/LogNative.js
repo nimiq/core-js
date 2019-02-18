@@ -48,6 +48,8 @@ class LogNative {
             console.info.apply(console, args);
         } else if (console.debug && level >= Log.DEBUG) {
             console.debug.apply(console, args);
+        } else if (console.debug && level >= Log.VERBOSE) {
+            console.debug.apply(console, args);
         } else if (console.trace && level <= Log.TRACE) {
             console.trace.apply(console, args);
         } else {

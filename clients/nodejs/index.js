@@ -180,7 +180,10 @@ const $ = {};
             $.consensus = await Nimiq.Consensus.full(networkConfig);
             break;
         case 'light':
-            $.consensus = await Nimiq.Consensus.light(networkConfig);
+            $.consensus = await Nimiq.Consensus.volatileLight(networkConfig);
+            break;
+        case 'lighter':
+            $.consensus = await Nimiq.Consensus.lighter(networkConfig);
             break;
         case 'nano':
             $.consensus = await Nimiq.Consensus.nano(networkConfig);

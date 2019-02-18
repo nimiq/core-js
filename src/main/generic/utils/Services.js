@@ -61,8 +61,9 @@ class Services {
         return services === Services.NANO;
     }
 }
-Services.NONE   = 0;
-Services.NANO   = 1;
-Services.LIGHT  = 2;
-Services.FULL   = 4;
+Services.NONE    = 0;
+Services.NANO    = 1;
+Services.LIGHT   = 2;
+Services.FULL    = 4;
+Services.LIGHTER = 8;
 Class.register(Services);

@@ -23,12 +23,23 @@ class ConsensusDB extends JDB.JungleDB {
 
     /**
      * @param {string} dbPrefix
+     * @returns {Promise.<ConsensusDB>}
+     */
+    static async getLighter(dbPrefix = '') {
+        if (!ConsensusDB._instance) {
+            ConsensusDB._instance = await new ConsensusDB(dbPrefix, /*light*/ true, 'lighter');
+        }
+        return ConsensusDB._instance;
+    }
+
+    /**
+     * @param {string} dbPrefix
      * @param {boolean} light
      * @returns {Promise.<ConsensusDB>}
      */
-    constructor(dbPrefix, light) {
+    constructor(dbPrefix, light, dbSuffix) {
         // Start with 500MB and resize at least 1GB at a time.
-        super(ConsensusDB._getDbName(dbPrefix, light), ConsensusDB.VERSION, {
+        super(ConsensusDB._getDbName(dbPrefix, light, dbSuffix), ConsensusDB.VERSION, {
             maxDbSize: ConsensusDB.INITIAL_DB_SIZE,
             autoResize: true,
             useWritemap: PlatformUtils.isNodeJs() && PlatformUtils.isWindows(),
@@ -60,8 +71,8 @@ class ConsensusDB extends JDB.JungleDB {
      * @returns {string}
      * @private
      */
-    static _getDbName(dbPrefix, light) {
-        return dbPrefix + (light ? 'light' : 'full') + '-consensus';
+    static _getDbName(dbPrefix, light, dbSuffix) {
+        return dbPrefix + (dbSuffix ? dbSuffix : light ? 'light' : 'full') + '-consensus';
     }
 
     /**

@@ -232,11 +232,11 @@ class FullChain extends BaseChain {
     async _extend(blockHash, chainData, prevData) {
         const accountsTx = await this._accounts.transaction();
         try {
-            await accountsTx.commitBlock(chainData.head, this._transactionCache);
+            await accountsTx.commitBlock(chainData.head, this._transactionCache, prevData.head.accountsHash);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
             // TODO error handling
-            Log.w(FullChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
+            Log.w(FullChain, `Rejecting block ${blockHash} - failed to commit to AccountsTree: ${e.message || e}`);
             accountsTx.abort().catch(Log.w.tag(FullChain));
             return false;
         }

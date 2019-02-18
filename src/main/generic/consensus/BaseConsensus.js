@@ -56,7 +56,7 @@ class BaseConsensus extends Observable {
     /**
      * @param {Peer} peer
      * @returns {BaseConsensusAgent}
-     * @protected
+     * @abstract
      */
     _newConsensusAgent(peer) {
         throw new Error('not implemented');

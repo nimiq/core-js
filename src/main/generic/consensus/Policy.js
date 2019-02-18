@@ -237,7 +237,7 @@ Policy.DELTA = 0.15;
  * @type {number}
  * @constant
  */
-Policy.NUM_BLOCKS_VERIFICATION = 250;
+Policy.NUM_BLOCKS_VERIFICATION = 300;
 
 
 /* Snapshot Parameters */

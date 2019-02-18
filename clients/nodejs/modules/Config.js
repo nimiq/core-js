@@ -101,7 +101,7 @@ const CONFIG_TYPES = {
     port: 'number',
     protocol: {type: 'string', values: ['wss', 'ws', 'dumb']},
     dumb: 'boolean', // deprecated
-    type: {type: 'string', values: ['full', 'light', 'nano']},
+    type: {type: 'string', values: ['full', 'light', 'lighter', 'nano']},
     network: 'string',
     passive: 'boolean',
     statistics: 'number',

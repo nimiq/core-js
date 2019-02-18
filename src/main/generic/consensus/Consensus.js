@@ -51,6 +51,30 @@ class Consensus {
 
     /**
      * @param {NetworkConfig} [netconfig]
+     * @return {Promise.<LighterConsensus>}
+     */
+    static async lighter(netconfig = NetworkConfig.getDefault()) {
+        netconfig.services = new Services(Services.LIGHTER, Services.LIGHT | Services.FULL);
+        await netconfig.initPersistent();
+
+        /** @type {Time} */
+        const time = new Time();
+        /** @type {ConsensusDB} */
+        const db = await ConsensusDB.getLighter(`${GenesisConfig.NETWORK_NAME}-`);
+        /** @type {PartialAccounts} */
+        const accounts = await PartialAccounts.getPersistent(db);
+        /** @type {LighterChain} */
+        const blockchain = await LighterChain.getPersistent(db, accounts, time);
+        /** @type {Mempool} */
+        const mempool = new Mempool(blockchain, accounts);
+        /** @type {Network} */
+        const network = new Network(blockchain, netconfig, time);
+
+        return new LighterConsensus(blockchain, mempool, network);
+    }
+
+    /**
+     * @param {NetworkConfig} [netconfig]
      * @return {Promise.<NanoConsensus>}
      */
     static async nano(netconfig = NetworkConfig.getDefault()) {
@@ -113,6 +137,28 @@ class Consensus {
         const network = new Network(blockchain, netconfig, time);
 
         return new LightConsensus(blockchain, mempool, network);
+    }
+
+    /**
+     * @param {NetworkConfig} [netconfig]
+     * @return {Promise.<LighterConsensus>}
+     */
+    static async volatileLighter(netconfig = NetworkConfig.getDefault()) {
+        netconfig.services = new Services(Services.LIGHTER, Services.LIGHT | Services.FULL);
+        await netconfig.initVolatile();
+
+        /** @type {Time} */
+        const time = new Time();
+        /** @type {PartialAccounts} */
+        const accounts = await PartialAccounts.createVolatile();
+        /** @type {LighterChain} */
+        const blockchain = await LighterChain.createVolatile(accounts, time);
+        /** @type {Mempool} */
+        const mempool = new Mempool(blockchain, accounts);
+        /** @type {Network} */
+        const network = new Network(blockchain, netconfig, time);
+
+        return new LighterConsensus(blockchain, mempool, network);
     }
 
     /**

@@ -116,6 +116,12 @@ class BaseConsensusAgent extends Observable {
         this._requestHead();
     }
 
+    /**
+     * @returns {Promise.<void>}
+     * @abstract
+     */
+    async syncBlockchain() {}
+
     _requestHead() {
         this._peer.channel.getHead();
     }
@@ -497,6 +503,7 @@ class BaseConsensusAgent extends Observable {
      */
     async _onBlock(msg) {
         const hash = msg.block.hash();
+        Log.v(BaseConsensusAgent, `[BLOCK] height=${msg.block.height} hash=${hash}`);
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
