@@ -106,10 +106,6 @@ if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
     process.exit(1);
 }
-if (config.type === 'light') {
-    console.error('Light node type is temporarily disabled');
-    process.exit(1);
-}
 
 Nimiq.Log.instance.level = config.log.level;
 for (const tag in config.log.tags) {
