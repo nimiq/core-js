@@ -72,7 +72,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
     process.exit();
 }
 
-const isNano = config.type === 'nano';
+const isNano = config.type === 'nano' || config.type === 'volatile-nano';
 
 if (isNano && config.miner.enabled) {
     console.error('Cannot mine when running as a nano client');
@@ -106,7 +106,7 @@ if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
     process.exit(1);
 }
-if (config.type === 'light') {
+if (config.type === 'light' || config.type === 'volatile-light') {
     console.error('Light node type is temporarily disabled');
     process.exit(1);
 }
@@ -184,6 +184,15 @@ const $ = {};
             break;
         case 'nano':
             $.consensus = await Nimiq.Consensus.nano(networkConfig);
+            break;
+        case 'volatile-full':
+            $.consensus = await Nimiq.Consensus.volatileFull(networkConfig);
+            break;
+        case 'volatile-light':
+            $.consensus = await Nimiq.Consensus.volatileLight(networkConfig);
+            break;
+        case 'volatile-nano':
+            $.consensus = await Nimiq.Consensus.volatileNano(networkConfig);
             break;
     }
 
