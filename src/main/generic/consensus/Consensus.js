@@ -181,6 +181,32 @@ class Consensus {
 
         return new NanoConsensus(blockchain, mempool, network);
     }
+
+    /**
+     * @param {NetworkConfig} [netconfig]
+     * @return {Promise.<AutoPicoConsensus>}
+     */
+    static async volatilePico(netconfig = NetworkConfig.getDefault()) {
+        netconfig.services = new Services(Services.NONE, Services.NANO | Services.LIGHT | Services.FULL);
+        await netconfig.initVolatile();
+
+        /** @type {Time} */
+        const time = new Time();
+        /** @type {NanoChain} */
+        const nanoChain = await new NanoChain(time);
+        /** @type {PicoChain} */
+        const picoChain = await new PicoChain(time);
+        /** @type {BestMiniChain} */
+        const blockchain = new BestMiniChain();
+        /** @type {NanoMempool} */
+        const mempool = new NanoMempool(blockchain);
+        /** @type {Network} */
+        const network = new Network(blockchain, netconfig, time);
+
+        const consensus = await new AutoPicoConsensus(picoChain, nanoChain, blockchain, mempool, network);
+        blockchain.use(consensus);
+        return consensus;
+    }
 }
 
 Class.register(Consensus);
