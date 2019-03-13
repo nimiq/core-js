@@ -43,6 +43,21 @@ class BaseConsensus extends Observable {
         mempool.on('transaction-removed', tx => this._onTransactionRemoved(tx));
     }
 
+    /** @type {boolean} */
+    get established() {
+        return this._established;
+    }
+
+    /** @type {Network} */
+    get network() {
+        return this._network;
+    }
+
+    /** @type {InvRequestManager} */
+    get invRequestManager() {
+        return this._invRequestManager;
+    }
+
     /**
      * @param {Subscription} subscription
      */
@@ -51,6 +66,81 @@ class BaseConsensus extends Observable {
         for (const /** @type {BaseConsensusAgent} */ agent of this._agents.valueIterator()) {
             agent.subscribe(subscription);
         }
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<{transaction: Transaction, header: BlockHeader}>>}
+     */
+    async requestTransactionHistory(address) {
+        // 1. Get transaction receipts.
+        const receipts = await this.requestTransactionReceipts(address);
+
+        // 2. Request proofs for missing blocks.
+        /** @type {Array.<Promise.<Block>>} */
+        const blockRequests = [];
+        let lastBlockHash = null;
+        for (const receipt of receipts) {
+            if (!receipt.blockHash.equals(lastBlockHash)) {
+                // eslint-disable-next-line no-await-in-loop
+                const block = await this._blockchain.getBlock(receipt.blockHash);
+                if (block) {
+                    blockRequests.push(Promise.resolve(block));
+                } else {
+                    const request = this._requestBlockProof(receipt.blockHash, receipt.blockHeight)
+                        .catch(e => Log.e(BaseConsensus, `Failed to retrieve proof for block ${receipt.blockHash}`
+                            + ` (${e}) - transaction history may be incomplete`));
+                    blockRequests.push(request);
+                }
+
+                lastBlockHash = receipt.blockHash;
+            }
+        }
+        const blocks = await Promise.all(blockRequests);
+
+        // 3. Request transaction proofs.
+        const transactionRequests = [];
+        for (const block of blocks) {
+            if (!block) continue;
+
+            const request = this._requestTransactionsProof([address], block)
+                .then(txs => txs.map(tx => ({ transaction: tx, header: block.header })))
+                .catch(e => Log.e(BaseConsensus, `Failed to retrieve transactions for block ${block.hash()}`
+                    + ` (${e}) - transaction history may be incomplete`));
+            transactionRequests.push(request);
+        }
+
+        const transactions = await Promise.all(transactionRequests);
+        return transactions
+            .reduce((flat, it) => it ? flat.concat(it) : flat, [])
+            .sort((a, b) => a.header.height - b.header.height);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     */
+    async requestTransactionReceipts(address) {
+        const agents = [];
+        for (const agent of this._agents.valueIterator()) {
+            if (agent.synced
+                && Services.isFullNode(agent.peer.peerAddress.services)) {
+                agents.push(agent);
+            }
+        }
+        agents.sort(() => Math.random() - 0.5);
+
+        for (const /** @type {BaseConsensusAgent} */ agent of agents) {
+            try {
+                return await agent.getTransactionReceipts(address); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested receipts, fail.
+        throw new Error(`Failed to retrieve transaction receipts for ${address}`);
     }
 
     /**
@@ -302,96 +392,6 @@ class BaseConsensus extends Observable {
 
         // No peer supplied the requested proof, fail.
         throw new Error(`Failed to retrieve transactions proof for ${addresses}`);
-    }
-
-    /**
-     * @param {Address} address
-     * @returns {Promise.<Array.<TransactionReceipt>>}
-     */
-    async requestTransactionReceipts(address) {
-        const agents = [];
-        for (const agent of this._agents.valueIterator()) {
-            if (agent.synced
-                && Services.isFullNode(agent.peer.peerAddress.services)) {
-                agents.push(agent);
-            }
-        }
-        agents.sort(() => Math.random() - 0.5);
-
-        for (const /** @type {BaseConsensusAgent} */ agent of agents) {
-            try {
-                return await agent.getTransactionReceipts(address); // eslint-disable-line no-await-in-loop
-            } catch (e) {
-                Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
-                // Try the next peer.
-            }
-        }
-
-        // No peer supplied the requested receipts, fail.
-        throw new Error(`Failed to retrieve transaction receipts for ${address}`);
-    }
-
-    /**
-     * @param {Address} address
-     * @returns {Promise.<Array.<{transaction: Transaction, header: BlockHeader}>>}
-     */
-    async requestTransactionHistory(address) {
-        // 1. Get transaction receipts.
-        const receipts = await this.requestTransactionReceipts(address);
-
-        // 2. Request proofs for missing blocks.
-        /** @type {Array.<Promise.<Block>>} */
-        const blockRequests = [];
-        let lastBlockHash = null;
-        for (const receipt of receipts) {
-            if (!receipt.blockHash.equals(lastBlockHash)) {
-                // eslint-disable-next-line no-await-in-loop
-                const block = await this._blockchain.getBlock(receipt.blockHash);
-                if (block) {
-                    blockRequests.push(Promise.resolve(block));
-                } else {
-                    const request = this._requestBlockProof(receipt.blockHash, receipt.blockHeight)
-                        .catch(e => Log.e(BaseConsensus, `Failed to retrieve proof for block ${receipt.blockHash}`
-                            + ` (${e}) - transaction history may be incomplete`));
-                    blockRequests.push(request);
-                }
-
-                lastBlockHash = receipt.blockHash;
-            }
-        }
-        const blocks = await Promise.all(blockRequests);
-
-        // 3. Request transaction proofs.
-        const transactionRequests = [];
-        for (const block of blocks) {
-            if (!block) continue;
-
-            const request = this._requestTransactionsProof([address], block)
-                .then(txs => txs.map(tx => ({ transaction: tx, header: block.header })))
-                .catch(e => Log.e(BaseConsensus, `Failed to retrieve transactions for block ${block.hash()}`
-                    + ` (${e}) - transaction history may be incomplete`));
-            transactionRequests.push(request);
-        }
-
-        const transactions = await Promise.all(transactionRequests);
-        return transactions
-            .reduce((flat, it) => it ? flat.concat(it) : flat, [])
-            .sort((a, b) => a.header.height - b.header.height);
-    }
-
-    /** @type {boolean} */
-    get established() {
-        return this._established;
-    }
-
-    /** @type {Network} */
-    get network() {
-        return this._network;
-    }
-
-    /** @type {InvRequestManager} */
-    get invRequestManager() {
-        return this._invRequestManager;
     }
 }
 BaseConsensus.SYNC_THROTTLE = 1500; // ms
