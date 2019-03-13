@@ -307,9 +307,8 @@ class BaseConsensus extends Observable {
     /**
      * @param {Address} address
      * @returns {Promise.<Array.<TransactionReceipt>>}
-     * @protected
      */
-    async _requestTransactionReceipts(address) {
+    async requestTransactionReceipts(address) {
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
             if (agent.synced
@@ -335,11 +334,10 @@ class BaseConsensus extends Observable {
     /**
      * @param {Address} address
      * @returns {Promise.<Array.<{transaction: Transaction, header: BlockHeader}>>}
-     * @protected
      */
-    async _requestTransactionHistory(address) {
+    async requestTransactionHistory(address) {
         // 1. Get transaction receipts.
-        const receipts = await this._requestTransactionReceipts(address);
+        const receipts = await this.requestTransactionReceipts(address);
 
         // 2. Request proofs for missing blocks.
         /** @type {Array.<Promise.<Block>>} */

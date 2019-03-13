@@ -1906,6 +1906,8 @@ export class BaseConsensus extends Observable {
         network: Network,
     );
     public subscribe(subscription: Subscription): void;
+    public requestTransactionHistory(address: Address): Promise<Array<{transaction: Transaction, header: BlockHeader}>>;
+    public requestTransactionReceipts(address: Address): Promise<TransactionReceipt[]>;
 }
 
 export class FullChain extends BaseChain {
