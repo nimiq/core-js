@@ -49,7 +49,7 @@ class AutoPicoConsensus extends Observable {
             }
         }*/
         for (let name of Object.getOwnPropertyNames(type.prototype)) {
-            if (name[0] !== '_' && src[name] && src[name].bind) {
+            if (src[name] && src[name].bind) {
                 dest[name] = src[name].bind(src);
             }
         }
