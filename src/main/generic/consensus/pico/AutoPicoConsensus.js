@@ -38,14 +38,11 @@ class AutoPicoConsensus extends Observable {
     }
 
     static _mixin(dest, src, type) {
-        /*for (let name of Object.getOwnPropertyNames(type.prototype)) {
-            if (name[0] !== '_' && src[name] && src[name].bind) {
-                dest[name] = src[name].bind(src);
+        for (let prop in src) {
+            if (prop[0] !== '_') {
+                const descriptor = Object.getOwnPropertyDescriptor(src, prop);
+                Object.defineProperty(dest, prop, descriptor);
             }
-        }*/
-        for (const prop in src) {
-            const descriptor = Object.getOwnPropertyDescriptor(src, prop);
-            Object.defineProperty(dest, prop, descriptor);
         }
     }
 
