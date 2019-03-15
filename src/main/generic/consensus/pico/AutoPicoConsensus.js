@@ -26,6 +26,10 @@ class AutoPicoConsensus extends Observable {
         this.use(new PicoConsensus(this._picoChain, this._mempool, this._network));
     }
 
+    get established() {
+        return this._consensus.established;
+    }
+
     /**
      * @param {BaseMiniConsensus} consensus
      */
@@ -38,10 +42,15 @@ class AutoPicoConsensus extends Observable {
     }
 
     static _mixin(dest, src, type) {
-        for (let prop in src) {
+        /*for (let prop in src) {
             if (prop[0] !== '_') {
                 const descriptor = Object.getOwnPropertyDescriptor(src, prop);
                 Object.defineProperty(dest, prop, descriptor);
+            }
+        }*/
+        for (let name of Object.getOwnPropertyNames(type.prototype)) {
+            if (name[0] !== '_' && src[name] && src[name].bind) {
+                dest[name] = src[name].bind(src);
             }
         }
     }
