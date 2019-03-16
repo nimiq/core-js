@@ -857,7 +857,7 @@ class JsonRpcServer {
                 }
                 try {
                     const methodRes = await this._methods.get(msg.method).apply(null, msg.params instanceof Array ? msg.params : [msg.params]);
-                    if (msg.id) {
+                    if (Number.isInteger(msg.id)) {
                         result.push({'jsonrpc': '2.0', 'result': methodRes, 'id': msg.id});
                     }
                 } catch (e) {
