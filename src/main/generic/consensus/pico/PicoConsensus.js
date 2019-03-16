@@ -19,7 +19,7 @@ class PicoConsensus extends BaseMiniConsensus {
      * @override
      */
     _newConsensusAgent(peer) {
-        return new PicoConsensusAgent(this, peer, this._subscription);
+        return new PicoConsensusAgent(this, peer, this._subscription, this._mempool);
     }
 
     _onPeerJoined(peer) {

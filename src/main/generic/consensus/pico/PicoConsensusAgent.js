@@ -3,10 +3,14 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
      * @param {PicoConsensus} consensus
      * @param {Peer} peer
      * @param {Subscription} targetSubscription
+     * @param {NanoMempool} mempool
      */
-    constructor(consensus, peer, targetSubscription) {
+    constructor(consensus, peer, targetSubscription, mempool) {
         super(consensus.blockchain, consensus.network.time, peer, consensus.invRequestManager, targetSubscription);
         this._consensus = consensus;
+
+        /** @type {NanoMempool} */
+        this._mempool = mempool;
     }
 
     onHeadUpdated() {
@@ -69,8 +73,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
     }
 
     _getTransaction(hash) {
-        // TODO: mempool
-        return undefined;
+        return this._mempool.getTransaction(hash);
     }
 }
 
