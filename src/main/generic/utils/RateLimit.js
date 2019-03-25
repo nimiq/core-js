@@ -1,11 +1,11 @@
 class RateLimit {
     /**
-     * @param {number} allowedOccurences Occurences per timeRange (default 1min)
+     * @param {number} allowedOccurrences Occurences per timeRange (default 1min)
      * @param {number} [timeRange=60000]
      */
-    constructor(allowedOccurences, timeRange = 60000) {
+    constructor(allowedOccurrences, timeRange = 60000) {
         /** @type {number} */
-        this._allowedEntries = allowedOccurences;
+        this._allowedOccurrences = allowedOccurrences;
         /** @type {number} */
         this._timeRange = timeRange;
 
@@ -20,11 +20,17 @@ class RateLimit {
      * @returns {boolean}
      */
     note(number = 1) {
-        if (this._lastReset < Date.now() - this._timeRange) {
-            this._lastReset = Date.now();
+        const now = Date.now();
+        if (this._lastReset < now - this._timeRange) {
+            this._lastReset = now;
             this._counter = 0;
         }
-        return (this._counter += number) <= this._allowedEntries;
+        return (this._counter += number) <= this._allowedOccurrences;
+    }
+
+    /** @type {number} */
+    get lastReset() {
+        return this._lastReset;
     }
 }
 
