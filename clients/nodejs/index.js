@@ -59,7 +59,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
         '                             full (default), light, or nano.\n' +
-        '  --type=volatile-TYPE       Same as above, but in a non-persistent mode.\n' +
+        '  --volatile                 Run in a non-persistent mode.\n' +
         '                             The consensus state is kept in memory.\n' +
         '  --reverse-proxy[=PORT]     This client is behind a reverse proxy running on PORT,IP\n' +
         '                 [,IP]       (default: 8444,::ffff:127.0.0.1).\n' +
@@ -74,7 +74,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
     process.exit();
 }
 
-const isNano = config.type === 'nano' || config.type === 'volatile-nano';
+const isNano = config.type === 'nano';
 
 if (isNano && config.miner.enabled) {
     console.error('Cannot mine when running as a nano client');
@@ -106,6 +106,10 @@ if (config.host && config.protocol === 'dumb') {
 }
 if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
+    process.exit(1);
+}
+if (config.type === 'full' && config.volatile) {
+    console.error('Cannot run in volatile mode as a full client');
     process.exit(1);
 }
 
@@ -178,19 +182,14 @@ const $ = {};
             $.consensus = await Nimiq.Consensus.full(networkConfig);
             break;
         case 'light':
-            $.consensus = await Nimiq.Consensus.light(networkConfig);
+            $.consensus = await (!config.volatile
+                ? Nimiq.Consensus.light(networkConfig)
+                : Nimiq.Consensus.volatileLight(networkConfig));
             break;
         case 'nano':
-            $.consensus = await Nimiq.Consensus.nano(networkConfig);
-            break;
-        case 'volatile-full':
-            $.consensus = await Nimiq.Consensus.volatileFull(networkConfig);
-            break;
-        case 'volatile-light':
-            $.consensus = await Nimiq.Consensus.volatileLight(networkConfig);
-            break;
-        case 'volatile-nano':
-            $.consensus = await Nimiq.Consensus.volatileNano(networkConfig);
+            $.consensus = await (!config.volatile
+                ? Nimiq.Consensus.nano(networkConfig)
+                : Nimiq.Consensus.volatileNano(networkConfig));
             break;
     }
 
