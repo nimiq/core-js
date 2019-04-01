@@ -59,8 +59,8 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
         '                             full (default), light, or nano.\n' +
-        '  --volatile                 Run in a non-persistent mode.\n' +
-        '                             The consensus state is kept in memory.\n' +
+        '  --volatile                 Run in volatile mode. Consensus state is kept\n' +
+        '                             in memory only and not written to disk.\n' +
         '  --reverse-proxy[=PORT]     This client is behind a reverse proxy running on PORT,IP\n' +
         '                 [,IP]       (default: 8444,::ffff:127.0.0.1).\n' +
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
