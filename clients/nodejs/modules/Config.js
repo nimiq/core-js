@@ -12,6 +12,7 @@ const TAG = 'Config';
  * @property {string} protocol
  * @property {boolean} dumb
  * @property {string} type
+ * @property {boolean} volatile
  * @property {string} network
  * @property {boolean} passive
  * @property {number} statistics
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     protocol: 'wss',
     dumb: false, // deprecated
     type: 'full',
+    volatile: false,
     network: 'main',
     passive: false,
     statistics: 0,
@@ -102,6 +104,7 @@ const CONFIG_TYPES = {
     protocol: {type: 'string', values: ['wss', 'ws', 'dumb']},
     dumb: 'boolean', // deprecated
     type: {type: 'string', values: ['full', 'light', 'nano']},
+    volatile: 'boolean',
     network: 'string',
     passive: 'boolean',
     statistics: 'number',
@@ -308,6 +311,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     if (typeof argv.protocol === 'string') config.protocol = argv.protocol;
     if (argv.dumb) config.dumb = argv.dumb; // deprecated
     if (typeof argv.type === 'string') config.type = argv.type;
+    if (argv.volatile) config.volatile = argv.volatile;
     if (typeof argv.network === 'string') config.network = argv.network;
     if (argv.passive) config.passive = true;
     if (argv.statistics) {

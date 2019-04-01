@@ -59,6 +59,8 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
         '                             full (default), light, or nano.\n' +
+        '  --volatile                 Run in volatile mode. Consensus state is kept\n' +
+        '                             in memory only and not written to disk.\n' +
         '  --reverse-proxy[=PORT]     This client is behind a reverse proxy running on PORT,IP\n' +
         '                 [,IP]       (default: 8444,::ffff:127.0.0.1).\n' +
         '  --wallet-seed=SEED         Initialize wallet using SEED as a wallet seed.\n' +
@@ -104,6 +106,10 @@ if (config.host && config.protocol === 'dumb') {
 }
 if (config.reverseProxy.enabled && config.protocol === 'dumb') {
     console.error('Cannot run a dumb client behind a reverse proxy');
+    process.exit(1);
+}
+if (config.type === 'full' && config.volatile) {
+    console.error('Cannot run in volatile mode as a full client');
     process.exit(1);
 }
 
@@ -176,10 +182,14 @@ const $ = {};
             $.consensus = await Nimiq.Consensus.full(networkConfig);
             break;
         case 'light':
-            $.consensus = await Nimiq.Consensus.light(networkConfig);
+            $.consensus = await (!config.volatile
+                ? Nimiq.Consensus.light(networkConfig)
+                : Nimiq.Consensus.volatileLight(networkConfig));
             break;
         case 'nano':
-            $.consensus = await Nimiq.Consensus.nano(networkConfig);
+            $.consensus = await (!config.volatile
+                ? Nimiq.Consensus.nano(networkConfig)
+                : Nimiq.Consensus.volatileNano(networkConfig));
             break;
     }
 
