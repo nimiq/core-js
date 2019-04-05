@@ -1359,7 +1359,7 @@ export abstract class Transaction {
         EXTENDED: 1;
     };
     public static Flag: {
-        NONE: 1;
+        NONE: 0;
         CONTRACT_CREATION: 0b1;
     };
     public static unserialize(buf: SerialBuffer): Transaction;
@@ -1411,7 +1411,7 @@ export namespace Transaction {
     }
     type Flag = Flag.NONE | Flag.CONTRACT_CREATION;
     namespace Flag {
-        type NONE = 1;
+        type NONE = 0;
         type CONTRACT_CREATION = 0b1;
     }
 }
