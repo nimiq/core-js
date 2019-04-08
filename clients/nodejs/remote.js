@@ -261,11 +261,13 @@ function displayBlock(block, hashOrNumber) {
     console.log(`Number      | ${block.number}`);
     console.log(`PoW-Hash    | ${block.pow}`);
     console.log(`Parent-Hash | ${block.parentHash}`);
-    console.log(`Miner       | ${block.minerAddress}`);
     console.log(`Timestamp   | ${new Date(block.timestamp * 1000).toString()}`);
-    console.log(`Size        | ${block.size} bytes (${block.transactions.length} transactions)`);
     console.log(`Difficulty  | ${block.difficulty}`);
-    console.log(`Extra       | ${block.extraData || null}`);
+    if (block.minerAddress) {
+        console.log(`Size        | ${block.size} bytes (${block.transactions.length} transactions)`);
+        console.log(`Miner       | ${block.minerAddress}`);
+        console.log(`Extra       | ${block.extraData || null}`);
+    }
 }
 
 async function displayAccount(account, name, head) {
