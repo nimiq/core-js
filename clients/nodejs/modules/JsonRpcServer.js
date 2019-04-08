@@ -1,10 +1,7 @@
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const JSON5 = require('json5');
 const btoa = require('btoa');
-const NodeUtils = require('./NodeUtils.js');
 const Nimiq = require('../../../dist/node.js');
+const WebSocket = require('ws');
 
 class JsonRpcServer {
     /**
@@ -22,7 +19,7 @@ class JsonRpcServer {
         if (typeof config.allowip === 'string') config.allowip = [config.allowip];
         if (!config.allowip) config.allowip = [];
 
-        http.createServer((req, res) => {
+        this.http = http.createServer((req, res) => {
             // Block requests that might originate from a website in the users browser,
             // unless the origin is explicitly whitelisted.
             if (config.corsdomain.includes(req.headers.origin)) {
@@ -54,20 +51,63 @@ class JsonRpcServer {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
-                if (JsonRpcServer._authenticate(req, res, config.username, config.password)) {
-                    this._onRequest(req, res);
+                if (JsonRpcServer._authenticate(req, res, config.username, config.password, /*raw*/ false)) {
+                    req.on('data', body.push);
+                    req.on('end', async () => {
+                        let body;
+                        try {
+                            body = JSON.parse(Buffer.concat(body).toString());
+                        } catch (_) {
+                            body = null;
+                        }
+                        res.writeHead(200);
+                        res.end(JSON.stringify(this._onRequest(Buffer.concat(body).toString())));
+                        res.end("\r\n");
+                    });
                 }
             } else {
                 res.writeHead(200);
                 res.end();
             }
-        }).listen(config.port, config.allowip.length ? '0.0.0.0' : '127.0.0.1');
+        });
+        
+        this.http.on('upgrade', async (req, socket, head) => {
+            if (!JsonRpcServer._authenticate(req, null, config.username, config.password, /*raw*/ true))
+                socket.close();
+    
+            const wss = new WebSocket.Server({ noServer: true });
+            await wss.handleUpgrade(req, socket, head, ws => {
+                ws.on('message', async data => {
+                    let body;
+                    try {
+                        body = JSON.parse(data);
+                    } catch (_) {
+                        body = null;
+                    }
+
+                    // Ignore responses
+                    if (body.error || body.result)
+                        return;
+
+                    let res = await this._onRequest(body, ws);
+                    if (res)
+                        ws.send(JSON.stringify(res));
+                });
+            });
+        })
+
+        this.http.listen(config.port, config.allowip.length ? '0.0.0.0' : '127.0.0.1');
 
         /** @type {Map.<string, function(*)>} */
         this._methods = new Map();
 
+        /** @type {Map.<string, function(*)>} */
+        this._streams = new Map();
+
         /** @type {string} */
         this._consensusState = 'syncing';
+
+        this._subscriptions = new Map();
     }
 
     /**
@@ -142,6 +182,9 @@ class JsonRpcServer {
         this._methods.set('constant', this.constant.bind(this));
         this._methods.set('log', this.log.bind(this));
 
+        // WS methods
+        this._streams.set('heads', this.streamHeads.bind(this));
+
         // Apply method whitelist if configured.
         if (this._config.methods && this._config.methods.length > 0) {
             const whitelist = new Set(this._config.methods);
@@ -150,21 +193,34 @@ class JsonRpcServer {
                     this._methods.delete(method);
                 }
             }
+            for (const method of this._streams.keys()) {
+                if (!whitelist.has(method)) {
+                    this._streams.delete(method);
+                }
+            }
         }
     }
 
     /**
      * @param req
-     * @param res
+     * @param {http.ServerResponse|net.Socket} res
      * @param {?string} username
      * @param {?string} password
+     * @param {boolean} raw
      * @returns {boolean}
      * @private
      */
-    static _authenticate(req, res, username, password) {
+    static _authenticate(req, res, username, password, raw) {
         if (username && password && req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
-            res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
-            res.end();
+            if (!raw) {
+                res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
+                res.end();
+            } else {
+                res.write('HTTP/1.1 401 Unauthorized\r\n' +
+                    'WWW-Authenticate: Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"\r\n' +
+                    '\r\n');
+                res.destroy();
+            }
             return false;
         }
         return true;
@@ -613,6 +669,35 @@ class JsonRpcServer {
         return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
+    streamHeads(ws, includeTransactions) {
+        const id = uuid();
+        // Listen for new blocks and push them to the client
+        const listener = this._blockchain.on('head-changed', async () => {
+            if (this._consensusState !== 'established') return;
+            const block = this._blockchain.head;
+            if (!block) return;
+            ws.nonce = (ws.nonce || 0) + 1;
+            ws.send(JSON.stringify({
+                'jsonrpc': '2.0',
+                'id': ws.nonce,
+                'params': {
+                    'subscription': id,
+                    'head': await this._blockToObj(block, includeTransactions)
+                }
+            }));
+        });
+        const cancel = () => this._blockchain.off('head-changed', listener);
+
+        ws.on('close', () => {
+            cancel();
+            this._subscriptions.delete(id);
+        });
+
+        return {
+            id: id,
+            cancel: cancel,
+        };
+    }
 
     /*
      * Utils
@@ -814,72 +899,82 @@ class JsonRpcServer {
         };
     }
 
-    _onRequest(req, res) {
-        let body = [];
-        req.on('data', (chunk) => {
-            body.push(chunk);
-        }).on('end', async () => {
-            let single = false;
-            try {
-                body = JSON.parse(Buffer.concat(body).toString());
-                single = !(body instanceof Array);
-            } catch (e) {
-                body = null;
-            }
-            if (!body || body.length > 100) {
-                res.writeHead(400);
-                res.end(JSON.stringify({
+    async _onRequest(body, ws) {
+        let single = false;
+        single = !(body instanceof Array);
+        if (!body || body.length > 100) {
+            return {
+                'jsonrpc': '2.0',
+                'error': {'code': -32600, 'message': 'Invalid Request'},
+                'id': null
+            };
+        }
+        if (single) {
+            body = [body];
+        }
+        const result = [];
+        for (const msg of body) {
+            if (!msg || msg.jsonrpc !== '2.0' || !msg.method) {
+                result.push({
                     'jsonrpc': '2.0',
                     'error': {'code': -32600, 'message': 'Invalid Request'},
-                    'id': null
-                }));
-                return;
+                    'id': (msg && msg.id) ? msg.id : null
+                });
+                continue;
             }
-            if (single) {
-                body = [body];
-            }
-            res.writeHead(200);
-            const result = [];
-            for (const msg of body) {
-                if (!msg || msg.jsonrpc !== '2.0' || !msg.method) {
-                    result.push({
-                        'jsonrpc': '2.0',
-                        'error': {'code': -32600, 'message': 'Invalid Request'},
-                        'id': msg ? msg.id : null
-                    });
-                    continue;
-                }
-                if (!this._methods.has(msg.method)) {
-                    Nimiq.Log.w(JsonRpcServer, 'Unknown method called', msg.method);
-                    result.push({
-                        'jsonrpc': '2.0',
-                        'error': {'code': -32601, 'message': 'Method not found'},
-                        'id': msg.id
-                    });
-                    continue;
-                }
-                try {
-                    const methodRes = await this._methods.get(msg.method).apply(null, msg.params instanceof Array ? msg.params : [msg.params]);
+            
+            const params = msg.params instanceof Array ? msg.params : [msg.params];
+
+            try {
+                if (this._methods.has(msg.method)) {
+                    const methodRes = await this._methods.get(msg.method)(...params);
                     if (typeof msg.id === 'string' || Number.isInteger(msg.id)) {
                         result.push({'jsonrpc': '2.0', 'result': methodRes, 'id': msg.id});
                     }
-                } catch (e) {
-                    Nimiq.Log.d(JsonRpcServer, e.stack);
+                } else if (ws && msg.method == 'subscribe' && params.length >= 1 && this._streams.has(params[0])) {
+                    const {id, cancel} = this._streams.get(params[0])(ws, ...params.slice(1));
+                    this._subscriptions.set(id, cancel);
                     result.push({
                         'jsonrpc': '2.0',
-                        'error': {'code': e.code || 1, 'message': e.message || e.toString()},
-                        'id': msg.id
+                        'id': msg.id,
+                        'result': id
                     });
+                } else if (ws && msg.method == 'unsubscribe' && params.length === 1) {
+                    const cancel = this._subscriptions.get(params[0]);
+                    if (cancel) {
+                        cancel();
+                        this._subscriptions.delete(params[0]);
+                    }
+                    result.push({
+                        'jsonrpc': '2.0',
+                        'id': msg.id,
+                        'result': !!cancel
+                    });
+                } else {
+                    throw { code: -32601, message: 'Method with this signature not found', stack: 'Unknown method called' };
                 }
+            } catch (e) {
+                Nimiq.Log.w(JsonRpcServer, e.stack);
+                result.push({
+                    'jsonrpc': '2.0',
+                    'error': {'code': e.code || 1, 'message': e.message || e.toString()},
+                    'id': msg.id
+                });
             }
-            if (single && result.length === 1) {
-                res.write(JSON.stringify(result[0]));
-            } else if (!single) {
-                res.write(JSON.stringify(result));
-            }
-            res.end("\r\n");
-        });
+        }
+        if (single && result.length === 1) {
+            return result[0];
+        } else if (!single) {
+            return result;
+        }
     }
+}
+
+function uuid() {
+    let hex = '';
+    for (let i = 0; i < 32; i++)
+        hex += (Math.random() * 16 | 0).toString(16);
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 32)}`;
 }
 
 module.exports = exports = JsonRpcServer;
