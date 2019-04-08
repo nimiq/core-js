@@ -652,9 +652,9 @@ class JsonRpcServer {
             });
         }
 
-        // Push every new block to client
+        // Listen for new blocks and push them to the client
         const listener = this._blockchain.on('head-changed', async () => {
-            const block = await this._getBlockByNumber(this._blockchain.height);
+            const block = this._blockchain.head;
             if (!block) return;
             const obj = await this._blockToObj(block, includeTransactions);
             ws.send(JSON.stringify(obj));
