@@ -5,6 +5,8 @@ const JSON5 = require('json5');
 const btoa = require('btoa');
 const NodeUtils = require('./NodeUtils.js');
 const Nimiq = require('../../../dist/node.js');
+const url = require('url');
+const WebSocket = require('ws');
 
 class JsonRpcServer {
     /**
@@ -22,7 +24,7 @@ class JsonRpcServer {
         if (typeof config.allowip === 'string') config.allowip = [config.allowip];
         if (!config.allowip) config.allowip = [];
 
-        http.createServer((req, res) => {
+        this.http = http.createServer((req, res) => {
             // Block requests that might originate from a website in the users browser,
             // unless the origin is explicitly whitelisted.
             if (config.corsdomain.includes(req.headers.origin)) {
@@ -54,17 +56,28 @@ class JsonRpcServer {
                 res.writeHead(200);
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
-                if (JsonRpcServer._authenticate(req, res, config.username, config.password)) {
+                if (JsonRpcServer._authenticate(req, res, config.username, config.password, /*raw*/ false)) {
                     this._onRequest(req, res);
                 }
             } else {
                 res.writeHead(200);
                 res.end();
             }
-        }).listen(config.port, config.allowip.length ? '0.0.0.0' : '127.0.0.1');
+        });
+        
+        this.http.on('upgrade', (req, socket, head) => {
+            if (JsonRpcServer._authenticate(req, null, config.username, config.password, /*raw*/ true)) {
+                this._onWSRequest(req, socket, head);
+            }
+        })
+
+        this.http.listen(config.port, config.allowip.length ? '0.0.0.0' : '127.0.0.1');
 
         /** @type {Map.<string, function(*)>} */
         this._methods = new Map();
+
+        /** @type {Map.<string, function(*)>} */
+        this._wsMethods = new Map();
 
         /** @type {string} */
         this._consensusState = 'syncing';
@@ -142,6 +155,9 @@ class JsonRpcServer {
         this._methods.set('constant', this.constant.bind(this));
         this._methods.set('log', this.log.bind(this));
 
+        // WebSocket methods
+        this._wsMethods.set('streamBlocks', this.streamBlocks.bind(this));
+
         // Apply method whitelist if configured.
         if (this._config.methods && this._config.methods.length > 0) {
             const whitelist = new Set(this._config.methods);
@@ -150,21 +166,34 @@ class JsonRpcServer {
                     this._methods.delete(method);
                 }
             }
+            for (const method of this._wsMethods.keys()) {
+                if (!whitelist.has(method)) {
+                    this._wsMethods.delete(method);
+                }
+            }
         }
     }
 
     /**
      * @param req
-     * @param res
+     * @param {http.ServerResponse|net.Socket} res
      * @param {?string} username
      * @param {?string} password
+     * @param {boolean} raw
      * @returns {boolean}
      * @private
      */
-    static _authenticate(req, res, username, password) {
+    static _authenticate(req, res, username, password, raw) {
         if (username && password && req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
-            res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
-            res.end();
+            if (!raw) {
+                res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
+                res.end();
+            } else {
+                res.write('HTTP/1.1 401 Unauthorized\r\n' +
+                    'WWW-Authenticate: Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"\r\n' +
+                    '\r\n');
+                res.destroy();
+            }
             return false;
         }
         return true;
@@ -613,6 +642,25 @@ class JsonRpcServer {
         return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
+    async streamBlocks(ws, query) {
+        const includeTransactions = query && query.has('includeTransactions');
+
+        const sendBlock = async (height) => {
+            const block = await this._getBlockByNumber(height);
+            if (block)
+                ws.send(JSON.stringify(this._blockToObj(block, includeTransactions)));
+        }
+
+        // Start with current block
+        sendBlock(this._blockchain.height);
+
+        // TODO Only send if consensus established
+
+        // Send block every time the head changes
+        const listener = this._blockchain.on('head-changed', () => sendBlock(this._blockchain.height));
+        ws.on('close', () => this._blockchain.off('head-changed', listener));
+    }
+
 
     /*
      * Utils
@@ -880,6 +928,24 @@ class JsonRpcServer {
             }
             res.end("\r\n");
         });
+    }
+
+    _onWSRequest(req, socket, head) {
+        const urlObject = url.parse(req.url);
+
+        const pathname = urlObject.pathname.slice(1);
+        if (!this._wsMethods.has(pathname)) {
+            socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+
+        const methodRes = this._wsMethods.get(pathname);
+
+        const query = urlObject.searchParams;
+        const wss = new WebSocket.Server({ noServer: true });
+        wss.handleUpgrade(req, socket, head,
+            ws => methodRes(ws, query, req));
     }
 }
 
