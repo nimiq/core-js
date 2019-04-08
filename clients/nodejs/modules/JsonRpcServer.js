@@ -645,22 +645,24 @@ class JsonRpcServer {
     async streamBlocks(ws, query) {
         const includeTransactions = query && query.has('includeTransactions');
 
-        const sendBlock = async (height) => {
-            const block = await this._getBlockByNumber(height);
-            if (block)
-                ws.send(JSON.stringify(this._blockToObj(block, includeTransactions)));
+        // Wait until consensus is established
+        if (this._consensusState !== 'established') {
+            await new Promise((resolve) => {
+                this._consensus.on('established', resolve);
+            });
         }
 
-        // Start with current block
-        sendBlock(this._blockchain.height);
+        // Push every new block to client
+        const listener = this._blockchain.on('head-changed', async () => {
+            const block = await this._getBlockByNumber(this._blockchain.height);
+            if (!block) return;
+            const obj = await this._blockToObj(block, includeTransactions);
+            ws.send(JSON.stringify(obj));
+        });
 
-        // TODO Only send if consensus established
-
-        // Send block every time the head changes
-        const listener = this._blockchain.on('head-changed', () => sendBlock(this._blockchain.height));
+        // Close listener when WebSocket closes
         ws.on('close', () => this._blockchain.off('head-changed', listener));
     }
-
 
     /*
      * Utils
