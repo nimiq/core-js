@@ -944,7 +944,7 @@ class JsonRpcServer {
 
         const methodRes = this._wsMethods.get(pathname);
 
-        const query = urlObject.searchParams;
+        const query = new URLSearchParams(urlObject.search);
         const wss = new WebSocket.Server({ noServer: true });
         wss.handleUpgrade(req, socket, head,
             ws => methodRes(ws, query, req));
