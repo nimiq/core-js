@@ -740,7 +740,7 @@ class JsonRpcServer {
      * @private
      */
     async _blockToObj(block, includeTransactions = false) {
-        const out = {
+        const obj = {
             number: block.height,
             hash: block.hash().toHex(),
             pow: (await block.pow()).toHex(),
@@ -751,17 +751,16 @@ class JsonRpcServer {
             difficulty: block.difficulty,
             timestamp: block.timestamp,
         };
-
-        if (this._network._networkConfig._services.provided > Nimiq.Services.NANO) {
-            out.miner = block.minerAddr.toHex();
-            out.minerAddress = block.minerAddr.toUserFriendlyAddress();
-            out.extraData = Nimiq.BufferUtils.toHex(block.body.extraData),
-            out.size = block.serializedSize;
-            out.transactions = includeTransactions
+        if (block.isFull()) {
+            obj.miner = block.minerAddr.toHex();
+            obj.minerAddress = block.minerAddr.toUserFriendlyAddress();
+            obj.extraData = Nimiq.BufferUtils.toHex(block.body.extraData);
+            obj.size = block.serializedSize;
+            obj.transactions = includeTransactions
                 ? block.transactions.map((tx, i) => this._transactionToObj(tx, block, i))
                 : block.transactions.map((tx) => tx.hash().toHex());
         }
-        return out;
+        return obj;
     }
 
     /**
