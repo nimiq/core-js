@@ -10,7 +10,7 @@ Summary:        Nimiq node.js client
 
 License:        ASL 2.0
 URL:            https://nimiq.com/
-Source0:        https://github.com/nimiq-network/core.git
+Source0:        https://github.com/nimiq/core-js.git
 
 %{?systemd_requires}
 BuildRequires:  systemd

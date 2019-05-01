@@ -23,11 +23,11 @@
   },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/nimiq-network/core/issues"
+    "url": "https://github.com/nimiq/core-js/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nimiq-network/core.git"
+    "url": "https://github.com/nimiq/core-js.git"
   },
   "engines": {
     "node": ">=7.9.0"

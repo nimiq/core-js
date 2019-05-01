@@ -14,11 +14,11 @@ $NIMIQ_VERSION
   },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/nimiq-network/core/issues"
+    "url": "https://github.com/nimiq/core-js/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nimiq-network/core.git"
+    "url": "https://github.com/nimiq/core-js.git"
   },
   "main": "web.esm.js",
   "types": "types.d.ts",

@@ -6,7 +6,7 @@
 
 - [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084): High-level introduction of the Nimiq payment protocol.
 - [Nimiq Developer Reference](https://nimiq-network.github.io/developer-reference/): Details of the protocol architecture.
-- [Core API Documentation](https://doc.esdoc.org/github.com/nimiq-network/core/): Documentation of the Nimiq Core library API.
+- [Core API Documentation](https://doc.esdoc.org/github.com/nimiq/core-js/): Documentation of the Nimiq Core library API.
 - [Node.js Client Documentation](doc/nodejs-client.md): Usage and configuration documentation for the Nimiq Node.js Client.
 - [JSON-RPC Client Documentation](doc/json-rpc-client.md): Usage instructions for the Nimiq JSON-RPC Client.
 - [Docker Documentation](doc/docker.md): Instructions on setting up a Nimiq Node using Docker.
@@ -33,7 +33,7 @@ For developers looking to include Nimiq support on their applications, there are
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
 3. Install `yarn` globally: `sudo npm install -g yarn`.
 4. Install `gulp` globally:  `yarn global add gulp`.
-5. Clone this repository: `git clone https://github.com/nimiq-network/core`.
+5. Clone this repository: `git clone https://github.com/nimiq/core-js`.
 6. Build the project: `cd core && yarn && yarn build`.
 7. Open `clients/browser/index.html` in your browser.
 

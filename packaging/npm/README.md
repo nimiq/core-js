@@ -6,7 +6,7 @@
 
 - [Nimiq White Paper](https://medium.com/nimiq-network/nimiq-a-peer-to-peer-payment-protocol-native-to-the-web-ffd324bb084): High-level introduction of the Nimiq payment protocol.
 - [Nimiq Developer Reference](https://nimiq-network.github.io/developer-reference/): Details of the protocol architecture.
-- [Core API Documentation](https://doc.esdoc.org/github.com/nimiq-network/core/): Documentation of the Nimiq Core library API.
+- [Core API Documentation](https://doc.esdoc.org/github.com/nimiq/core-js/): Documentation of the Nimiq Core library API.
 - [Node.js Client Documentation](doc/nodejs-client.md): Usage and configuration documentation for the Nimiq Node.js Client.
 - [JSON-RPC Client Documentation](doc/json-rpc-client.md): Usage instructions for the Nimiq JSON-RPC Client.
 - [Docker Documentation](doc/docker.md): Instuctions on setting up a Nimiq Node using Docker.

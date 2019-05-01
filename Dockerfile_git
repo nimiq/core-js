@@ -22,7 +22,7 @@ WORKDIR ${DATA_PATH}
 USER ${USER}
 
 # Clone
-RUN git clone --branch ${BRANCH} https://github.com/nimiq-network/core.git core
+RUN git clone --branch ${BRANCH} https://github.com/nimiq/core-js.git core
 
 # Build
 RUN cd core && yarn
