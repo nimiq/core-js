@@ -1,10 +1,10 @@
-class GetTransactionReceiptsMessage extends Message {
+class GetTransactionReceiptsByAddressMessage extends Message {
     /**
      * @param {Address} address
      * @param {number} [offset]
      */
     constructor(address, offset = 0) {
-        super(Message.Type.GET_TRANSACTION_RECEIPTS);
+        super(Message.Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS);
         if (!(address instanceof Address)) throw new Error('Malformed address');
         if (!NumberUtils.isUint32(offset)) throw new Error('Malformed offset');
         /** @type {Address} */
@@ -15,13 +15,13 @@ class GetTransactionReceiptsMessage extends Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @return {GetTransactionReceiptsMessage}
+     * @return {GetTransactionReceiptsByAddressMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
         const address = Address.unserialize(buf);
         const offset = buf.readUint32();
-        return new GetTransactionReceiptsMessage(address, offset);
+        return new GetTransactionReceiptsByAddressMessage(address, offset);
     }
 
     /**
@@ -54,4 +54,7 @@ class GetTransactionReceiptsMessage extends Message {
         return this._offset;
     }
 }
+Class.register(GetTransactionReceiptsByAddressMessage);
+/** @deprecated */
+GetTransactionReceiptsMessage = GetTransactionReceiptsByAddressMessage;
 Class.register(GetTransactionReceiptsMessage);

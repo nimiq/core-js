@@ -320,9 +320,28 @@ class PeerChannel extends Observable {
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @return {boolean}
+     * @deprecated
      */
     getTransactionsProof(blockHash, addresses) {
-        return this._send(new GetTransactionsProofMessage(blockHash, addresses));
+        return this.getTransactionsProofByAddress(blockHash, addresses);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @return {boolean}
+     */
+    getTransactionsProofByAddress(blockHash, addresses) {
+        return this._send(new GetTransactionsProofByAddressMessage(blockHash, addresses));
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Hash>} hashes
+     * @return {boolean}
+     */
+    getTransactionsProofByHashes(blockHash, hashes) {
+        return this._send(new GetTransactionsProofByHashesMessage(blockHash, hashes));
     }
 
     /**
@@ -334,12 +353,30 @@ class PeerChannel extends Observable {
         return this._send(new TransactionsProofMessage(blockHash, proof));
     }
 
+
+    /**
+     * @param {Address} address
+     * @returns {boolean}
+     * @deprecated
+     */
+    getTransactionReceipts(address) {
+        return this.getTransactionReceiptsByAddress(address);
+    }
+
     /**
      * @param {Address} address
      * @returns {boolean}
      */
-    getTransactionReceipts(address) {
-        return this._send(new GetTransactionReceiptsMessage(address));
+    getTransactionReceiptsByAddress(address) {
+        return this._send(new GetTransactionReceiptsByAddressMessage(address));
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @returns {boolean}
+     */
+    getTransactionReceiptsByHashes(hashes) {
+        return this._send(new GetTransactionReceiptsByHashesMessage(hashes));
     }
 
     /**
@@ -476,12 +513,14 @@ PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
 PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chunk';
 PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
-PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF] = 'get-transactions-proof';
+PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS] = 'get-transactions-proof';
 PeerChannel.Event[Message.Type.TRANSACTIONS_PROOF] = 'transactions-proof';
-PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS] = 'get-transaction-receipts';
+PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS] = 'get-transaction-receipts';
 PeerChannel.Event[Message.Type.TRANSACTION_RECEIPTS] = 'transaction-receipts';
 PeerChannel.Event[Message.Type.GET_BLOCK_PROOF] = 'get-block-proof';
 PeerChannel.Event[Message.Type.BLOCK_PROOF] = 'block-proof';
+PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF_BY_HASHES] = 'get-transactions-proof-by-hashes';
+PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS_BY_HASHES] = 'get-transaction-receipts-by-hashes';
 PeerChannel.Event[Message.Type.GET_HEAD] = 'get-head';
 PeerChannel.Event[Message.Type.HEAD] = 'head';
 PeerChannel.Event[Message.Type.VERACK] = 'verack';

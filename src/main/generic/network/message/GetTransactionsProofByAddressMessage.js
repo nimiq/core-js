@@ -1,13 +1,13 @@
-class GetTransactionsProofMessage extends Message {
+class GetTransactionsProofByAddressMessage extends Message {
     /**
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      */
     constructor(blockHash, addresses) {
-        super(Message.Type.GET_TRANSACTIONS_PROOF);
+        super(Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
         if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.length > GetTransactionsProofMessage.ADDRESSES_MAX_COUNT
+            || addresses.length > GetTransactionsProofByAddressMessage.ADDRESSES_MAX_COUNT
             || addresses.some(it => !(it instanceof Address))) throw new Error('Malformed addresses');
         this._blockHash = blockHash;
         /** @type {Array.<Address>} */
@@ -16,7 +16,7 @@ class GetTransactionsProofMessage extends Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {GetTransactionsProofMessage}
+     * @returns {GetTransactionsProofByAddressMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
@@ -26,7 +26,7 @@ class GetTransactionsProofMessage extends Message {
         for (let i = 0; i < count; i++) {
             addresses.push(Address.unserialize(buf));
         }
-        return new GetTransactionsProofMessage(blockHash, addresses);
+        return new GetTransactionsProofByAddressMessage(blockHash, addresses);
     }
 
     /**
@@ -66,5 +66,8 @@ class GetTransactionsProofMessage extends Message {
 /**
  * @type {number}
  */
-GetTransactionsProofMessage.ADDRESSES_MAX_COUNT = 256;
+GetTransactionsProofByAddressMessage.ADDRESSES_MAX_COUNT = 256;
+Class.register(GetTransactionsProofByAddressMessage);
+/** @deprecated */
+GetTransactionsProofMessage = GetTransactionsProofByAddressMessage;
 Class.register(GetTransactionsProofMessage);

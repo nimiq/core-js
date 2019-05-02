@@ -1,11 +1,11 @@
-describe('GetTransactionsProofMessage', () => {
+describe('GetTransactionsProofByAddressMessage', () => {
     const blockHash = Hash.fromBase64(Dummy.hash1);
     const address1 = Address.fromBase64(Dummy.address1);
     const address2 = Address.fromBase64(Dummy.address2);
 
     it('is serializable and unserializable', () => {
-        const msg1 = new GetTransactionsProofMessage(blockHash, [address1, address2]);
-        const msg2 = GetTransactionsProofMessage.unserialize(msg1.serialize());
+        const msg1 = new GetTransactionsProofByAddressMessage(blockHash, [address1, address2]);
+        const msg2 = GetTransactionsProofByAddressMessage.unserialize(msg1.serialize());
 
         expect(msg2.blockHash.equals(msg1.blockHash)).toBe(true);
         expect(msg2.addresses.length).toBe(msg1.addresses.length);
@@ -13,8 +13,8 @@ describe('GetTransactionsProofMessage', () => {
     });
 
     it('must have well defined arguments', () => {
-        expect(() => new GetTransactionsProofMessage(address2)).toThrow();
-        expect(() => new GetTransactionsProofMessage(blockHash, null)).toThrow();
-        expect(() => new GetTransactionsProofMessage(blockHash, [blockHash])).toThrow();
+        expect(() => new GetTransactionsProofByAddressMessage(address2)).toThrow();
+        expect(() => new GetTransactionsProofByAddressMessage(blockHash, null)).toThrow();
+        expect(() => new GetTransactionsProofByAddressMessage(blockHash, [blockHash])).toThrow();
     });
 });

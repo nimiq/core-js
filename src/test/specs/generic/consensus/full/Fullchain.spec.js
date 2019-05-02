@@ -599,7 +599,7 @@ describe('Blockchain', () => {
 
             let receivedTxs = new HashSet();
             // Scenario 1
-            let proof = await testBlockchain.getTransactionsProof(blockHash, [user0.address]);
+            let proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user0.address]);
             let root = await proof.root();
             let expectedTxs = [tx4, tx2, tx1, tx3];
             receivedTxs.addAll(proof.transactions);
@@ -610,7 +610,7 @@ describe('Blockchain', () => {
             }
 
             // Scenario 2
-            proof = await testBlockchain.getTransactionsProof(blockHash, [user1.address]);
+            proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user1.address]);
             root = await proof.root();
             expectedTxs = [tx1];
             receivedTxs.addAll(proof.transactions);
@@ -621,7 +621,7 @@ describe('Blockchain', () => {
             }
 
             // Scenario 3
-            proof = await testBlockchain.getTransactionsProof(blockHash, [user2.address, user3.address]);
+            proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user2.address, user3.address]);
             root = await proof.root();
             expectedTxs = [tx2, tx3];
             receivedTxs.addAll(proof.transactions);
@@ -632,7 +632,7 @@ describe('Blockchain', () => {
             }
 
             // Scenario 4
-            proof = await testBlockchain.getTransactionsProof(blockHash, [user0.address, user4.address]);
+            proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user0.address, user4.address]);
             root = await proof.root();
             expectedTxs = [tx4, tx2, tx1, tx3];
             receivedTxs.addAll(proof.transactions);
