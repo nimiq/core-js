@@ -530,8 +530,18 @@ class FullChain extends BaseChain {
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      * @returns {Promise.<?TransactionsProof>}
+     * @deprecated
      */
     async getTransactionsProof(blockHash, addresses) {
+        return this.getTransactionsProofByAddress(blockHash, addresses);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<?TransactionsProof>}
+     */
+    async getTransactionsProofByAddress(blockHash, addresses) {
         const block = await this.getBlock(blockHash, /*includeForks*/ false, /*includeBody*/ true);
         if (!block || !block.isFull()) {
             return null;
@@ -542,6 +552,30 @@ class FullChain extends BaseChain {
         addressesSet.addAll(addresses);
         for (const transaction of block.transactions) {
             if (addressesSet.contains(transaction.sender) || addressesSet.contains(transaction.recipient)) {
+                matches.push(transaction);
+            }
+        }
+
+        const proof = MerkleProof.compute(block.body.getMerkleLeafs(), matches);
+        return new TransactionsProof(matches, proof);
+    }
+
+    /**
+     * @param {Hash} blockHash
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<?TransactionsProof>}
+     */
+    async getTransactionsProofByHashes(blockHash, hashes) {
+        const block = await this.getBlock(blockHash, /*includeForks*/ false, /*includeBody*/ true);
+        if (!block || !block.isFull()) {
+            return null;
+        }
+
+        const matches = [];
+        const hashSet = new HashSet();
+        hashSet.addAll(hashes);
+        for (const transaction of block.transactions) {
+            if (hashSet.contains(transaction.hash())) {
                 matches.push(transaction);
             }
         }
@@ -571,6 +605,28 @@ class FullChain extends BaseChain {
         entriesByRecipient.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
         });
+
+        return transactionReceipts;
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @param {?number} [limit]
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     */
+    async getTransactionReceiptsByHashes(hashes, limit = null) {
+        if (!this._transactionStore) {
+            return null;
+        }
+
+        const transactionReceipts = [];
+        /** @type {Array.<?TransactionStoreEntry>} */
+        const entries = await Promise.all(hashes.map(hash => this.getTransactionInfoByHash(hash)));
+        for (const entry of entries) {
+            if (entry) {
+                transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
+            }
+        }
 
         return transactionReceipts;
     }

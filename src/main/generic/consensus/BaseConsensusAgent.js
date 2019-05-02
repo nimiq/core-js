@@ -944,7 +944,7 @@ class BaseConsensusAgent extends Observable {
             };
 
             // Request TransactionProof from peer.
-            this._peer.channel.getTransactionsProof(block.hash(), addresses);
+            this._peer.channel.getTransactionsProofByAddress(block.hash(), addresses);
 
             // Drop the peer if it doesn't send the TransactionProof within the timeout.
             this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
@@ -1039,7 +1039,7 @@ class BaseConsensusAgent extends Observable {
                 reject
             };
 
-            this._peer.channel.getTransactionReceipts(address);
+            this._peer.channel.getTransactionReceiptsByAddress(address);
 
             this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');

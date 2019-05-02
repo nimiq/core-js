@@ -19,6 +19,6 @@ class Version {
         return `core-js/${Version.CORE_JS_VERSION} (${platformPrefix}${PlatformUtils.userAgentString})${appAgent}`;
     }
 }
-Version.CODE = 1;
+Version.CODE = 2;
 Version.CORE_JS_VERSION = '<filled-by-build-system>';
 Class.register(Version);
