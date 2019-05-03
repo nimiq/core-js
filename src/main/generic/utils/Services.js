@@ -86,7 +86,7 @@ Services.FLAG_LIGHT = 1 << 1;
 /** @deprecated */
 Services.FLAG_FULL  = 1 << 2;
 /** @deprecated */
-Services.ALL_LEGACY  = (1 << 3) - 1;
+Services.ALL_LEGACY = (1 << 3) - 1;
 
 /**
  * The node provides at least the latest {@link Policy.NUM_BLOCKS_VERIFICATION} blocks.
