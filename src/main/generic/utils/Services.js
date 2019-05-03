@@ -40,29 +40,114 @@ class Services {
     /**
      * @param {number} services Bitmap of the services to check
      * @returns {boolean}
+     * @deprecated
      */
     static isFullNode(services) {
-        return (services & Services.FULL) !== 0;
+        return (services & Services.FLAG_FULL) !== 0;
     }
 
     /**
      * @param {number} services Bitmap of the services to check
      * @returns {boolean}
+     * @deprecated
      */
     static isLightNode(services) {
-        return (services & Services.LIGHT) !== 0;
+        return (services & Services.FLAG_LIGHT) !== 0;
     }
 
     /**
      * @param {number} services Bitmap of the services to check
      * @returns {boolean}
+     * @deprecated
      */
     static isNanoNode(services) {
-        return services === Services.NANO;
+        return services === Services.FLAG_NANO;
+    }
+
+    /**
+     * @param {number} flags
+     * @param {number} services
+     */
+    static providesServices(flags, ...services) {
+        if (flags === Services.FLAG_NANO) flags = Services.PROVIDES_NANO;
+        if (flags === Services.FLAG_LIGHT) flags = Services.PROVIDES_LIGHT;
+        if (flags === Services.FLAG_FULL) flags = Services.PROVIDES_FULL;
+        const all = services.reduce((a, b) => a | b) & Services.ALL_CURRENT;
+        return (flags & all) === all;
     }
 }
-Services.NONE   = 0;
-Services.NANO   = 1;
-Services.LIGHT  = 2;
-Services.FULL   = 4;
+
+Services.NONE    = 0;
+
+/** @deprecated */
+Services.FLAG_NANO  = 1 << 0;
+/** @deprecated */
+Services.FLAG_LIGHT = 1 << 1;
+/** @deprecated */
+Services.FLAG_FULL  = 1 << 2;
+/** @deprecated */
+Services.ALL_LEGACY  = (1 << 3) - 1;
+
+/**
+ * The node provides at least the latest {@link Policy.NUM_BLOCKS_VERIFICATION} blocks.
+ */
+Services.FULL_BLOCKS       = 1 << 3;
+/**
+ * The node provides the full block history.
+ *
+ * If {@link Services.FULL_BLOCKS} is set, these blocks are provided as full blocks.
+ */
+Services.BLOCK_HISTORY     = 1 << 4;
+/**
+ * The node provides a proof that a certain block is included in the current chain.
+ *
+ * If {@link Services.FULL_BLOCKS} is set, these blocks may be requested as full blocks.
+ */
+Services.BLOCK_PROOF       = 1 << 5;
+/**
+ * The node provides a chain proof for the tip of the current main chain.
+ */
+Services.CHAIN_PROOF       = 1 << 6;
+/**
+ * The node provides inclusion and exclusion proofs for accounts that are necessary to verify active accounts as well as
+ * accounts in all transactions it provided from its mempool.
+ *
+ * However, if {@link Services.ACCOUNTS_CHUNKS} is not set, the node may occasionally not provide a proof if it
+ * decided to prune the account from local storage.
+ */
+Services.ACCOUNTS_PROOF    = 1 << 7;
+/**
+ * The node provides the full accounts tree in form of chunks.
+ * This implies that the client stores the full accounts tree.
+ */
+Services.ACCOUNTS_CHUNKS   = 1 << 8;
+/**
+ * The node tries to stay on sync with the network wide mempool and will provide access to it.
+ *
+ * Nodes that do not have this flag set may occasionally announce transactions from their mempool and/or reply to
+ * mempool requests to announce locally crafted transactions.
+ */
+Services.MEMPOOL           = 1 << 9;
+/**
+ * The node provides an index of transactions allowing it to find historic transactions by address or by hash.
+ *
+ * Nodes that have this flag set may prune any part of their transaction index at their discretion, they do not claim
+ * completeness of their results either.
+ */
+Services.TRANSACTION_INDEX = 1 << 10;
+Services.ALL_CURRENT       = (1 << 11) - 1 - Services.ALL_LEGACY;
+
+Services.PROVIDES_FULL =        Services.FLAG_FULL | Services.ALL_CURRENT;
+Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
+                                Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS | Services.MEMPOOL;
+Services.PROVIDES_NANO =        Services.FLAG_NANO | Services.CHAIN_PROOF;
+
+Services.ACCEPTS_FULL =         Services.FLAG_FULL | Services.FULL_BLOCKS | Services.BLOCK_HISTORY | Services.MEMPOOL;
+Services.ACCEPTS_LIGHT =        Services.FLAG_LIGHT | Services.FLAG_FULL | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
+                                Services.ACCOUNTS_CHUNKS | Services.MEMPOOL;
+Services.ACCEPTS_NANO =         Services.FLAG_NANO | Services.FLAG_LIGHT | Services.FLAG_FULL | Services.CHAIN_PROOF;
+
+Services.ACCEPTS_SPV =          Services.BLOCK_PROOF | Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS |
+                                Services.MEMPOOL | Services.TRANSACTION_INDEX;
+
 Class.register(Services);
