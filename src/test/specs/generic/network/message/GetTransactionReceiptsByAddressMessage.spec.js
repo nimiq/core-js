@@ -15,6 +15,6 @@ describe('GetTransactionReceiptsByAddressMessage', () => {
     });
 
     it('must have well defined arguments', () => {
-        expect(() => new GetAccountsProofMessage('aa')).toThrow();
+        expect(() => new GetTransactionReceiptsByAddressMessage('aa')).toThrow();
     });
 });

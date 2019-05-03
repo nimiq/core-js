@@ -41,4 +41,10 @@ describe('Services', () => {
         expect(Services.isNanoNode(Services.FLAG_FULL)).toBe(false);
         expect(Services.isNanoNode(Services.FLAG_LIGHT)).toBe(false);
     });
+
+    it('correctly identifies provided features', () => {
+        expect(Services.providesServices(Services.FLAG_FULL, Services.BLOCK_HISTORY, Services.TRANSACTION_INDEX, Services.BLOCK_PROOF)).toBe(true);
+        expect(Services.providesServices(Services.FLAG_LIGHT, Services.ACCOUNTS_CHUNKS, Services.CHAIN_PROOF, Services.MEMPOOL, Services.ACCOUNTS_PROOF)).toBe(true);
+        expect(Services.providesServices(Services.FLAG_NANO, Services.CHAIN_PROOF)).toBe(true);
+    });
 });

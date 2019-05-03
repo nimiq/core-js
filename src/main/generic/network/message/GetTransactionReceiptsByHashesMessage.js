@@ -34,7 +34,6 @@ class GetTransactionReceiptsByHashesMessage extends Message {
         for (const address of this._hashes) {
             address.serialize(buf);
         }
-        buf.writeUint32(this._offset);
         super._setChecksum(buf);
         return buf;
     }
@@ -49,11 +48,6 @@ class GetTransactionReceiptsByHashesMessage extends Message {
     /** @type {Array.<Hash>} */
     get hashes() {
         return this._hashes;
-    }
-
-    /** @type {number} */
-    get offset() {
-        return this._offset;
     }
 }
 Class.register(GetTransactionReceiptsByHashesMessage);
