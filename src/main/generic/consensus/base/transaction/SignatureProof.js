@@ -104,6 +104,10 @@ class SignatureProof {
             + this._merklePath.serializedSize
             + (this._signature ? this._signature.serializedSize : 0);
     }
+    
+    static get SINGLE_SIG_SIZE() {
+        return PublicKey.SIZE + new MerklePath([]).serializedSize + Signature.SIZE;
+    }
 
     /**
      * @param {SignatureProof} o

@@ -86,6 +86,10 @@ class BaseConsensusAgent extends Observable {
         // Helper object to keep track of transaction receipts we're requesting.
         this._transactionReceiptsRequest = null;
 
+        /** @type {HashMap.<Hash, Array.<{resolve: function, reject: function}>>} */
+        this._blockRequests = new HashMap();
+        this._txRequests = new HashMap();
+
         /** @type {MultiSynchronizer} */
         this._synchronizer = new MultiSynchronizer();
 
@@ -200,6 +204,53 @@ class BaseConsensusAgent extends Observable {
         return true;
     }
 
+    /**
+     * @param {Hash} hash
+     * @return {Promise.<?Block>}
+     */
+    requestBlock(hash) {
+        Log.d(BaseConsensusAgent, `requestBlock: ${hash} from ${this.peer.peerAddress}`);
+        return new Promise((resolve, reject) => {
+            const vector = new InvVector(InvVector.Type.BLOCK, hash);
+            if (this._blockRequests.contains(hash)) {
+                this._blockRequests.get(hash).push({resolve, reject});
+            } else {
+                this._blockRequests.put(hash, [{resolve, reject}]);
+                this._peer.channel.getData([vector]);
+                this._timers.setTimeout('block_request_' + hash.toHex(), () => {
+                    Log.d(BaseConsensusAgent, `block timeout ${hash} from ${this.peer.peerAddress}`);
+                    for (let {resolve, reject} of this._blockRequests.get(hash)) {
+                        reject(new Error('timeout'));
+                    }
+                }, BaseConsensusAgent.REQUEST_TIMEOUT);
+            }
+        });
+    }
+
+    /**
+     * @param {Hash} hash
+     * @return {Promise.<?Transaction>}
+     */
+    requestTransaction(hash) {
+        return new Promise((resolve, reject) => {
+            const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
+            if (this._txRequests.contains(hash)) {
+                this._txRequests.get(hash).push({resolve, reject});
+            } else {
+                this._txRequests.put(hash, [{resolve, reject}]);
+                if (!this._objectsInFlight.contains(vector)) {
+                    this._peer.channel.getData([vector]);
+                    this._objectsInFlight.add(vector);
+                }
+                this._timers.setTimeout('tx_request_' + hash.toHex(), () => {
+                    for (let {resolve, reject} of this._txRequests.get(hash)) {
+                        reject(new Error('timeout'));
+                    }
+                }, BaseConsensusAgent.REQUEST_TIMEOUT);
+            }
+        });
+    }
+
     _sendWaitingInvVectors() {
         const invVectors = this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT);
         if (invVectors.length > 0) {
@@ -273,6 +324,15 @@ class BaseConsensusAgent extends Observable {
      */
     knowsBlock(blockHash) {
         const vector = new InvVector(InvVector.Type.BLOCK, blockHash);
+        return this._knownObjects.contains(vector);
+    }
+
+    /**
+     * @param {Hash} txHash
+     * @returns {boolean}
+     */
+    knowsTransaction(txHash) {
+        const vector = new InvVector(InvVector.Type.TRANSACTION, txHash);
         return this._knownObjects.contains(vector);
     }
 
@@ -494,7 +554,29 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     _doRequestData(vectors) {
-        this._peer.channel.getData(vectors);
+        if (this._willRequestHeaders()) {
+            /** @type {Array.<InvVector>} */
+            const blocks = [];
+            /** @type {Array.<InvVector>} */
+            const transactions = [];
+            for (const vector of vectors) {
+                if (vector.type === InvVector.Type.BLOCK) {
+                    blocks.push(vector);
+                } else {
+                    transactions.push(vector);
+                }
+            }
+
+            // Request headers and transactions from peer.
+            this._peer.channel.getHeader(blocks);
+            this._peer.channel.getData(transactions);
+        } else {
+            this._peer.channel.getData(vectors);
+        }
+    }
+
+    _willRequestHeaders() {
+        return false;
     }
 
     /**
@@ -504,10 +586,11 @@ class BaseConsensusAgent extends Observable {
      */
     async _onBlock(msg) {
         const hash = msg.block.hash();
+        const blockRequest = this._blockRequests.get(hash);
 
         // Check if we have requested this block.
         const vector = new InvVector(InvVector.Type.BLOCK, hash);
-        if (!this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
+        if (!blockRequest && !this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
         }
@@ -520,6 +603,19 @@ class BaseConsensusAgent extends Observable {
             if (transaction) {
                 transactions[i] = transaction;
             }
+        }
+
+        if (blockRequest) {
+            this._blockRequests.remove(hash);
+            this._timers.clearTimeout('block_request_' + hash.toHex());
+            for (let {resolve, reject} of blockRequest) {
+                try {
+                    resolve(msg.block);
+                } catch (e) {
+                    // Ignore
+                }
+            }
+            return;
         }
 
         if ((!this._peer.head && this._peer.headHash.equals(hash)) || (this._peer.head && this._peer.head.height < msg.block.height)) {
@@ -616,7 +712,19 @@ class BaseConsensusAgent extends Observable {
         // Check whether we subscribed for this transaction.
         if (this._localSubscription.matchesTransaction(msg.transaction)) {
             await this._processTransaction(hash, msg.transaction);
-        } else if (this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
+        }
+        const txRequest = this._txRequests.get(hash);
+        if (txRequest) {
+            this._txRequests.remove(hash);
+            this._timers.clearTimeout('tx_request_' + hash.toHex());
+            for (let {resolve, reject} of txRequest) {
+                try {
+                    resolve(msg.transaction);
+                } catch (e) {
+                    // Ignore
+                }
+            }
+        } else if (!this._localSubscription.matchesTransaction(msg.transaction) && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
             this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
         }
 
@@ -643,6 +751,18 @@ class BaseConsensusAgent extends Observable {
 
         // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
+            const requests = (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).get(vector.hash);
+            if (requests) {
+                (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).remove(vector.hash);
+                this._timers.clearTimeout((vector.type === InvVector.Type.BLOCK ? 'block' : 'tx') + '_request_' + hash.toHex());
+                for (let {resolve, reject} of requests) {
+                    try {
+                        resolve(null);
+                    } catch (e) {
+                        // Ignore
+                    }
+                }
+            }
             if (!this._objectsInFlight.contains(vector)) {
                 continue;
             }

@@ -94,20 +94,20 @@ class Account {
         if (!revert) {
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < 0) {
-                throw new Error('Balance Error!');
+                throw new Account.BalanceError();
             }
             if (blockHeight < transaction.validityStartHeight
                 || blockHeight >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
-                throw new Error('Validity Error!');
+                throw new Account.ValidityError();
             }
             if (transactionsCache.containsTransaction(transaction)) {
-                throw new Error('Double Transaction Error!');
+                throw new Account.DoubleTransactionError();
             }
             return this.withBalance(newBalance);
         } else {
             if (blockHeight < transaction.validityStartHeight
                 || blockHeight >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
-                throw new Error('Validity Error!');
+                throw new Account.ValidityError();
             }
             return this.withBalance(this._balance + transaction.value + transaction.fee);
         }
@@ -125,7 +125,7 @@ class Account {
         } else {
             const newBalance = this._balance - transaction.value;
             if (newBalance < 0) {
-                throw new Error('Balance Error!');
+                throw new Account.BalanceError();
             }
             return this.withBalance(newBalance);
         }
@@ -154,6 +154,22 @@ class Account {
     isToBePruned() {
         return this._balance === 0 && !this.isInitial();
     }
+
+    /**
+     * @param {Uint8Array} data
+     * @return {object}
+     */
+    static dataToPlain(data) {
+        return {};
+    }
+
+    /**
+     * @param {Uint8Array} proof
+     * @return {object}
+     */
+    static proofToPlain(proof) {
+        return {};
+    }
 }
 
 /**
@@ -179,8 +195,18 @@ Account.Type = {
     HTLC: 2
 };
 /**
- * @type {Map.<Account.Type, {copy: function(o: *):Account, unserialize: function(buf: SerialBuffer):Account, create: function(balance: number, blockHeight: number, transaction: Transaction):Account, verifyOutgoingTransaction: function(transaction: Transaction):boolean, verifyIncomingTransaction: function(transaction: Transaction):boolean}>}
+ * @type {Map.<Account.Type, {
+ *  copy: function(o: *):Account,
+ *  unserialize: function(buf: SerialBuffer):Account,
+ *  create: function(balance: number, blockHeight: number, transaction: Transaction):Account,
+ *  verifyOutgoingTransaction: function(transaction: Transaction):boolean,
+ *  verifyIncomingTransaction: function(transaction: Transaction):boolean,
+ *  dataToPlain(data: Uint8Array):object,
+ *  proofToPlain(proof: Uint8Array):object}>}
  */
 Account.TYPE_MAP = new Map();
-
+Account.BalanceError = class extends Error { constructor() { super('Balance Error!'); }};
+Account.DoubleTransactionError = class extends Error { constructor() { super('Double Transaction Error!'); }};
+Account.ProofError = class extends Error { constructor() { super('Proof Error!'); }};
+Account.ValidityError = class extends Error { constructor() { super('Validity Error!'); }};
 Class.register(Account);

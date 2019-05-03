@@ -8,9 +8,91 @@ class LightConsensus extends BaseConsensus {
         super(blockchain, mempool, network);
         /** @type {LightChain} */
         this._blockchain = blockchain;
+        this.bubble(this._blockchain, 'block');
         /** @type {Mempool} */
         this._mempool = mempool;
     }
+
+    // 
+    // Public consensus interface
+    //
+
+    /**
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array.<Account>>}
+     */
+    async getAccounts(addresses) {
+        return Promise.all(addresses.map(addr => this._blockchain.accounts.get(addr)));
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    async getPendingTransactions(hashes) {
+        return /** @type {Array.<Transaction>} */ hashes.map(hash => this._mempool.getTransaction(hash)).filter(tx => tx != null);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    async getPendingTransactionsByAddress(address) {
+        return this._mempool.getTransactionsByAddresses([address]);
+    }
+
+    /**
+     * @param {Transaction} tx
+     * @returns {Promise.<void>} TODO
+     */
+    async sendTransaction(tx) {
+        const mempoolCode = await this._mempool.pushTransaction(tx);
+        switch (mempoolCode) {
+            case Mempool.ReturnCode.ACCEPTED: {
+                // Wait for transaction relay
+                const relayed = await new Promise((resolve) => {
+                    let id;
+                    id = this.on('transaction-relayed', relayedTx => {
+                        if (relayedTx.equals(tx)) {
+                            this.off('transaction-relayed', id);
+                            resolve(true);
+                        }
+                    });
+                    setTimeout(() => {
+                        this.off('transaction-relayed', id);
+                        resolve(false);
+                    }, BaseConsensus.TRANSACTION_RELAY_TIMEOUT);
+                });
+                if (relayed) {
+                    return BaseConsensus.SendTransactionResult.RELAYED;
+                } else {
+                    return BaseConsensus.SendTransactionResult.PENDING_LOCAL;
+                }
+            }
+            case Mempool.ReturnCode.KNOWN:
+                return BaseConsensus.SendTransactionResult.KNOWN;
+            case Mempool.ReturnCode.FEE_TOO_LOW:
+            case Mempool.ReturnCode.FILTERED:
+                return BaseConsensus.SendTransactionResult.REJECTED_LOCAL;
+            case Mempool.ReturnCode.MINED:
+                return BaseConsensus.SendTransactionResult.ALREADY_MINED;
+            case Mempool.ReturnCode.EXPIRED:
+                return BaseConsensus.SendTransactionResult.EXPIRED;
+            case Mempool.ReturnCode.INVALID:
+                return BaseConsensus.SendTransactionResult.INVALID;
+        }
+        return BaseConsensus.SendTransactionResult.NONE;
+    }
+
+    /**
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    async getMempoolContents() {
+        return this._mempool.getTransactions();
+    }
+
+    //
+    //
 
     /**
      * @param {number} minFeePerByte
@@ -59,4 +141,5 @@ class LightConsensus extends BaseConsensus {
         return this._mempool;
     }
 }
+
 Class.register(LightConsensus);

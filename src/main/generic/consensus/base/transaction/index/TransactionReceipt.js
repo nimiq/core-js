@@ -54,5 +54,37 @@ class TransactionReceipt {
     get blockHeight() {
         return this._blockHeight;
     }
+
+    /**
+     * @param {TransactionReceipt} o
+     * @return {boolean}
+     */
+    equals(o) {
+        if (!(o instanceof TransactionReceipt)) return false;
+        return this.transactionHash.equals(o.transactionHash) &&
+            this.blockHash.equals(o.blockHash) &&
+            this.blockHeight === o.blockHeight;
+    }
+
+    toPlain() {
+        return {
+            transactionHash: this.transactionHash,
+            blockHash: this.blockHash,
+            blockHeight: this.blockHeight
+        };
+    }
+
+    static fromPlain(o) {
+        if (!o) throw new Error('invalid transaction receipt');
+        return new TransactionReceipt(o.transactionHash, o.blockHash, o.blockHeight);
+    }
+
+    static fromAny(o) {
+        if (o instanceof TransactionReceipt) return o;
+        if (typeof o === 'string') return TransactionReceipt.unserialize(BufferUtils.fromHex(o));
+        if (typeof o === 'object') return TransactionReceipt.fromPlain(o);
+        throw new Error('invalid transaction receipt');
+    }
 }
+
 Class.register(TransactionReceipt);

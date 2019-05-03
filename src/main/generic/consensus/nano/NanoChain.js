@@ -323,8 +323,10 @@ class NanoChain extends BaseChain {
             }
 
             // Tell listeners that the head of the chain has changed.
-            this.fire('head-changed', this.head, /*rebranching*/ false);
+            await this.fire('head-changed', this.head, /*rebranching*/ false);
 
+            await this.fire('block', blockHash);
+            await this.fire('extended', this.head);
             return NanoChain.OK_EXTENDED;
         }
 
@@ -340,6 +342,7 @@ class NanoChain extends BaseChain {
         Log.v(NanoChain, `Creating/extending fork with block ${blockHash}, height=${block.height}, totalDifficulty=${chainData.totalDifficulty}, totalWork=${chainData.totalWork}`);
         await this._store.putChainData(blockHash, chainData);
 
+        await this.fire('block', blockHash);
         return NanoChain.OK_FORKED;
     }
 
@@ -416,16 +419,23 @@ class NanoChain extends BaseChain {
         this._proof = null;
 
         // Fire block-reverted event for each block reverted during rebranch
+        const revertBlocks = [];
         for (const revertedData of revertChain) {
-            this.fire('block-reverted', revertedData.head);
+            await this.fire('block-reverted', revertedData.head);
+            revertBlocks.push(revertedData.head);
         }
 
         // Fire head-changed event for each fork block.
+        const forkBlocks = [];
         for (let i = forkChain.length - 1; i >= 0; i--) {
             this._mainChain = forkChain[i];
             this._headHash = forkHashes[i];
-            this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+            await this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+            forkBlocks.push(this.head);
         }
+
+        await this.fire('block', blockHash);
+        await this.fire('rebranched', revertBlocks, forkBlocks, blockHash);
     }
 
     /**

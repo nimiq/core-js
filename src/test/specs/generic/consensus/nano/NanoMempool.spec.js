@@ -9,11 +9,11 @@ describe('NanoMempool', () => {
 
             // Push the transaction for the first time
             let result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Push the transaction for a second time, and expect the result to be false
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.KNOWN);
         })().then(done, done.fail);
     });
 
@@ -33,7 +33,7 @@ describe('NanoMempool', () => {
             // Push the transaction, this should fail (return false) because of the
             // invalid signature
             let result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.INVALID);
 
             // Set the valid transaction signature to test different scenarios
             transaction.signature = validSignature;
@@ -42,7 +42,7 @@ describe('NanoMempool', () => {
             blockchain.height = 10000;
             transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 1);
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(false);
+            expect(result).toBe(Mempool.ReturnCode.EXPIRED);
 
         })().then(done, done.fail);
     });
@@ -57,7 +57,7 @@ describe('NanoMempool', () => {
 
             // The transaction should be successfully pushed
             const result = await mempool.pushTransaction(referenceTransaction);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transaction and check that it is the same one we pushed before
             const hash = referenceTransaction.hash();
@@ -77,11 +77,11 @@ describe('NanoMempool', () => {
 
             // The transaction should be successfully pushed
             let result = await mempool.pushTransaction(t1);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // The transaction should be successfully pushed
             result = await mempool.pushTransaction(t2);
-            expect(result).toBe(true);
+            expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
 
             // Get back the transactions and check that they are the same one we pushed before
             expect(await mempool.getTransaction(t1.hash())).toBe(t1);
@@ -110,7 +110,7 @@ describe('NanoMempool', () => {
             for (let i = 0; i < numberOfTransactions; i++) {
                 const transaction = wallets[i].createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 234, 1, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
-                expect(result).toBe(true);
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
             }
 
@@ -144,7 +144,7 @@ describe('NanoMempool', () => {
             for (let i = 1; i < 6; i++) {
                 const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
-                expect(result).toBe(true);
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
             }
             referenceTransactions.sort((a, b) => a.compare(b));
@@ -182,7 +182,7 @@ describe('NanoMempool', () => {
             for (let i = 1; i < 6; i++) {
                 const transaction = wallets[0].createTransaction(wallets[i].address, 1, 0, 1, i === 2 ? 1 : 10000);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
-                expect(result).toBe(true);
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
                 referenceTransactions.push(transaction);
             }
             referenceTransactions.sort((a, b) => a.compare(b));
@@ -222,7 +222,7 @@ describe('NanoMempool', () => {
             for (let i = 0; i < 20; i++) {
                 const transaction = wallets[i].createTransaction(wallets[(i + 1) % 20].address, 1, (i + 1) * 200, 1);
                 const result = await mempool.pushTransaction(transaction); // eslint-disable-line no-await-in-loop
-                expect(result).toBe(true);
+                expect(result).toBe(Mempool.ReturnCode.ACCEPTED);
             }
 
             let transactions = mempool.getTransactions();

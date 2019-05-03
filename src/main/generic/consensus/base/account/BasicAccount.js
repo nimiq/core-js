@@ -108,6 +108,24 @@ class BasicAccount extends Account {
     isInitial() {
         return this._balance === 0;
     }
+
+    /**
+     * @param {Uint8Array} proof
+     * @return {object}
+     */
+    static proofToPlain(proof) {
+        try {
+            const signatureProof = SignatureProof.unserialize(new SerialBuffer(proof));
+            return {
+                signature: signatureProof.signature.toHex(),
+                publicKey: signatureProof.publicKey.toHex(),
+                signer: signatureProof.publicKey.toAddress().toPlain(),
+                pathLength: signatureProof.merklePath.nodes.length
+            };
+        } catch (e) {
+            return {};
+        }
+    }
 }
 
 Account.INITIAL = new BasicAccount(0);
