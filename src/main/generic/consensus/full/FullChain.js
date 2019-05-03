@@ -595,8 +595,8 @@ class FullChain extends BaseChain {
         }
 
         const transactionReceipts = [];
-        const entriesBySender = await this._transactionStore.getBySender(address, limit / 2);
-        const entriesByRecipient = await this._transactionStore.getByRecipient(address, limit / 2);
+        const entriesBySender = await this._transactionStore.getBySender(address, (!limit || limit < 0) ? null : (limit / 2));
+        const entriesByRecipient = await this._transactionStore.getByRecipient(address, (!limit || limit < 0) ? null : (limit / 2));
 
         entriesBySender.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
@@ -621,9 +621,9 @@ class FullChain extends BaseChain {
 
         const transactionReceipts = [];
         /** @type {Array.<?TransactionStoreEntry>} */
-        const entries = await Promise.all(hashes.map(hash => this.getTransactionInfoByHash(hash)));
+        const entries = await Promise.all(hashes.map(hash => this._transactionStore.get(hash)));
         for (const entry of entries) {
-            if (entry) {
+            if (entry && (!limit || limit < 0 || transactionReceipts.length < limit)) {
                 transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
             }
         }

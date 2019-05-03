@@ -576,7 +576,7 @@ describe('Blockchain', () => {
         })().then(done, done.fail);
     });
 
-    it('correctly creates TransactionsProofs', (done) => {
+    it('correctly creates TransactionsProofs by address', (done) => {
         (async function () {
             const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
 
@@ -613,6 +613,7 @@ describe('Blockchain', () => {
             proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user1.address]);
             root = await proof.root();
             expectedTxs = [tx1];
+            receivedTxs.clear();
             receivedTxs.addAll(proof.transactions);
             expect(root.equals(bodyHash)).toBe(true);
             expect(proof.length).toBe(expectedTxs.length);
@@ -624,6 +625,7 @@ describe('Blockchain', () => {
             proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user2.address, user3.address]);
             root = await proof.root();
             expectedTxs = [tx2, tx3];
+            receivedTxs.clear();
             receivedTxs.addAll(proof.transactions);
             expect(root.equals(bodyHash)).toBe(true);
             expect(proof.length).toBe(expectedTxs.length);
@@ -635,11 +637,163 @@ describe('Blockchain', () => {
             proof = await testBlockchain.getTransactionsProofByAddress(blockHash, [user0.address, user4.address]);
             root = await proof.root();
             expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.clear();
             receivedTxs.addAll(proof.transactions);
             expect(root.equals(bodyHash)).toBe(true);
             expect(proof.length).toBe(expectedTxs.length);
             for (const tx of expectedTxs) {
                 expect(receivedTxs.contains(tx)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly creates TransactionsReceipts by address', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const user2 = testBlockchain.users[2];
+            const user3 = testBlockchain.users[3];
+            const user4 = testBlockchain.users[4];
+
+            const tx1 = TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 1, user0.privateKey);
+            const tx2 = TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
+            const tx3 = TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 1, user0.privateKey);
+            const tx4 = TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 1, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            let receivedTxs = new HashSet();
+            // Scenario 1
+            let receipts = await testBlockchain.getTransactionReceiptsByAddress(user0.address);
+            let expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.addAll(receipts.map(r => r.transactionHash));
+            expect(receivedTxs.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx.hash())).toBe(true);
+            }
+
+            // Scenario 2
+            receipts = await testBlockchain.getTransactionReceiptsByAddress(user1.address);
+            expectedTxs = [tx1];
+            receivedTxs.clear();
+            receivedTxs.addAll(receipts.map(r => r.transactionHash));
+            expect(receivedTxs.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx.hash())).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly creates TransactionsProofs by hash', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const user2 = testBlockchain.users[2];
+            const user3 = testBlockchain.users[3];
+            const user4 = testBlockchain.users[4];
+
+            const tx1 = TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 1, user0.privateKey);
+            const tx2 = TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
+            const tx3 = TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 1, user0.privateKey);
+            const tx4 = TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 1, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            const blockHash = block.hash();
+            const bodyHash = block.bodyHash;
+
+            let receivedTxs = new HashSet();
+            // Scenario 1
+            let proof = await testBlockchain.getTransactionsProofByHashes(blockHash, [tx4.hash(), tx2.hash(), tx1.hash(), tx3.hash()]);
+            let root = await proof.root();
+            let expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 2
+            proof = await testBlockchain.getTransactionsProofByHashes(blockHash, [tx1.hash()]);
+            root = await proof.root();
+            expectedTxs = [tx1];
+            receivedTxs.clear();
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 3
+            proof = await testBlockchain.getTransactionsProofByHashes(blockHash, [tx2.hash(), tx3.hash()]);
+            root = await proof.root();
+            expectedTxs = [tx2, tx3];
+            receivedTxs.clear();
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+
+            // Scenario 4
+            proof = await testBlockchain.getTransactionsProofByHashes(blockHash, [tx4.hash(), tx2.hash(), tx1.hash(), tx1.hash()]);
+            root = await proof.root();
+            expectedTxs = [tx4, tx2, tx1];
+            receivedTxs.clear();
+            receivedTxs.addAll(proof.transactions);
+            expect(root.equals(bodyHash)).toBe(true);
+            expect(proof.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx)).toBe(true);
+            }
+        })().then(done, done.fail);
+    });
+
+    it('correctly creates TransactionsReceipts by hashes', (done) => {
+        (async function () {
+            const testBlockchain = await TestBlockchain.createVolatileTest(0, 10);
+
+            const user0 = testBlockchain.users[0];
+            const user1 = testBlockchain.users[1];
+            const user2 = testBlockchain.users[2];
+            const user3 = testBlockchain.users[3];
+            const user4 = testBlockchain.users[4];
+
+            const tx1 = TestBlockchain.createTransaction(user0.publicKey, user1.address, 1, 0, 1, user0.privateKey);
+            const tx2 = TestBlockchain.createTransaction(user0.publicKey, user2.address, 1, 0, 1, user0.privateKey);
+            const tx3 = TestBlockchain.createTransaction(user0.publicKey, user3.address, 1, 0, 1, user0.privateKey);
+            const tx4 = TestBlockchain.createTransaction(user0.publicKey, user4.address, 1, 0, 1, user0.privateKey);
+            const block = await testBlockchain.createBlock({transactions: [tx4, tx2, tx1, tx3], minerAddr: user1.address});
+            const status = await testBlockchain.pushBlock(block);
+            expect(status).toBe(FullChain.OK_EXTENDED);
+
+            let receivedTxs = new HashSet();
+            // Scenario 1
+            let receipts = await testBlockchain.getTransactionReceiptsByHashes([tx4.hash(), tx2.hash(), tx1.hash(), tx3.hash()]);
+            let expectedTxs = [tx4, tx2, tx1, tx3];
+            receivedTxs.addAll(receipts.map(r => r.transactionHash));
+            expect(receivedTxs.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx.hash())).toBe(true);
+            }
+
+            // Scenario 2
+            receipts = await testBlockchain.getTransactionReceiptsByHashes([tx1.hash()]);
+            expectedTxs = [tx1];
+            receivedTxs.clear();
+            receivedTxs.addAll(receipts.map(r => r.transactionHash));
+            expect(receivedTxs.length).toBe(expectedTxs.length);
+            for (const tx of expectedTxs) {
+                expect(receivedTxs.contains(tx.hash())).toBe(true);
             }
         })().then(done, done.fail);
     });
