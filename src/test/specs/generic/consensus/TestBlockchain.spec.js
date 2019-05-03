@@ -1,11 +1,11 @@
 class TestBlockchain extends FullChain {
-    constructor(store, accounts, users, time, ignorePoW = false) {
+    constructor(store, accounts, users, time, ignorePoW = false, transactionStore) {
         // XXX Set a large timeout when mining on demand.
         if (TestBlockchain.MINE_ON_DEMAND && jasmine && jasmine.DEFAULT_TIMEOUT_INTERVAL) {
             jasmine.DEFAULT_TIMEOUT_INTERVAL = 1200000;
         }
 
-        super(store, accounts, time);
+        super(store, accounts, time, transactionStore);
         this._users = users;
         this._invalidNonce = ignorePoW;
         return this._init();
@@ -183,8 +183,10 @@ class TestBlockchain extends FullChain {
         const accounts = await Accounts.createVolatile();
         const store = ChainDataStore.createVolatile();
         const users = TestBlockchain.getUsers(numUsers);
+        /** @type {TransactionStore} */
+        const transactionStore = await TransactionStore.createVolatile();
         const time = new Time();
-        const testBlockchain = await new TestBlockchain(store, accounts, users, time, ignorePoW);
+        const testBlockchain = await new TestBlockchain(store, accounts, users, time, ignorePoW, transactionStore);
 
         // populating the blockchain
         for (let i = 0; i < numBlocks; i++) {

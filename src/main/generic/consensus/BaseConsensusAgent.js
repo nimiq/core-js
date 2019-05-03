@@ -918,10 +918,30 @@ class BaseConsensusAgent extends Observable {
      * @param {Block} block
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Transaction>>}
+     * @deprecated
      */
     getTransactionsProof(block, addresses) {
+        return this.getTransactionsProofByAddress(block, addresses);
+    }
+
+    /**
+     * @param {Block} block
+     * @param {Array.<Address>} addresses
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    getTransactionsProofByAddress(block, addresses) {
         return this._synchronizer.push('getTransactionsProof',
-            this._getTransactionsProof.bind(this, block, addresses));
+            this._getTransactionsProofByAddress.bind(this, block, addresses));
+    }
+
+    /**
+     * @param {Block} block
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<Array.<Transaction>>}
+     */
+    getTransactionsProofByHashes(block, hashes) {
+        return this._synchronizer.push('getTransactionsProof',
+            this._getTransactionsProofByHashes.bind(this, block, hashes));
     }
 
     /**
@@ -930,7 +950,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Array.<Transaction>>}
      * @private
      */
-    _getTransactionsProof(block, addresses) {
+    _getTransactionsProofByAddress(block, addresses) {
         Assert.that(this._transactionsProofRequest === null);
 
         Log.v(BaseConsensusAgent, () => `Requesting TransactionsProof for ${addresses}@${block.height} from ${this._peer.peerAddress}`);
@@ -945,6 +965,36 @@ class BaseConsensusAgent extends Observable {
 
             // Request TransactionProof from peer.
             this._peer.channel.getTransactionsProofByAddress(block.hash(), addresses);
+
+            // Drop the peer if it doesn't send the TransactionProof within the timeout.
+            this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
+                this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.TRANSACTIONS_PROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {Block} block
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<Array.<Transaction>>}
+     * @private
+     */
+    _getTransactionsProofByHashes(block, hashes) {
+        Assert.that(this._transactionsProofRequest === null);
+
+        Log.v(BaseConsensusAgent, () => `Requesting TransactionsProof for ${hashes}@${block.height} from ${this._peer.peerAddress}`);
+
+        return new Promise((resolve, reject) => {
+            this._transactionsProofRequest = {
+                hashes,
+                block,
+                resolve,
+                reject,
+            };
+
+            // Request TransactionProof from peer.
+            this._peer.channel.getTransactionsProofByHashes(block.hash(), hashes);
 
             // Drop the peer if it doesn't send the TransactionProof within the timeout.
             this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
@@ -970,7 +1020,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        const {/** @type {Array.<Address>} */ addresses, /** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
+        const {/** @type {Array.<Address>} */ addresses, /** @type {Array.<Hash>} */ hashes, /** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
         this._transactionsProofRequest = null;
 
         if (!msg.hasProof()) {
@@ -1003,7 +1053,8 @@ class BaseConsensusAgent extends Observable {
 
         // Verify that the proof only contains transactions that match the given addresses.
         for (const tx of proof.transactions) {
-            if (addresses.find(address => tx.sender.equals(address) || tx.recipient.equals(address)) === undefined) {
+            if (addresses.find(address => tx.sender.equals(address) || tx.recipient.equals(address)) === undefined &&
+                hashes.find(hash => tx.hash().equals(hash)) === undefined) {
                 Log.w(BaseConsensusAgent, `TransactionsProof with unwanted transactions received from ${this._peer.peer}`);
                 this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'TransactionsProof contains unwanted transactions');
                 reject(new Error('TransactionsProof contains unwanted transactions'));
@@ -1018,10 +1069,28 @@ class BaseConsensusAgent extends Observable {
     /**
      * @param {Address} address
      * @returns {Promise.<Array.<TransactionReceipt>>}
+     * @deprecated
      */
     getTransactionReceipts(address) {
+        return this.getTransactionReceiptsByAddress(address);
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     */
+    getTransactionReceiptsByAddress(address) {
         return this._synchronizer.push('getTransactionReceipts',
-            this._getTransactionReceipts.bind(this, address));
+            this._getTransactionReceiptsByAddress.bind(this, address));
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     */
+    getTransactionReceiptsByHashes(hashes) {
+        return this._synchronizer.push('getTransactionReceipts',
+            this._getTransactionReceiptsByHashes.bind(this, hashes));
     }
 
     /**
@@ -1029,7 +1098,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @private
      */
-    _getTransactionReceipts(address) {
+    _getTransactionReceiptsByAddress(address) {
         Assert.that(this._transactionReceiptsRequest === null);
 
         return new Promise((resolve, reject) => {
@@ -1040,6 +1109,30 @@ class BaseConsensusAgent extends Observable {
             };
 
             this._peer.channel.getTransactionReceiptsByAddress(address);
+
+            this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
+                this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.TRANSACTION_RECEIPTS_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
+     * @param {Array.<Hash>} hashes
+     * @returns {Promise.<Array.<TransactionReceipt>>}
+     * @private
+     */
+    _getTransactionReceiptsByHashes(hashes) {
+        Assert.that(this._transactionReceiptsRequest === null);
+
+        return new Promise((resolve, reject) => {
+            this._transactionReceiptsRequest = {
+                hashes,
+                resolve,
+                reject
+            };
+
+            this._peer.channel.getTransactionReceiptsByHashes(hashes);
 
             this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
@@ -1074,7 +1167,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        // TODO Verify that the transaction receipts match the given address.
+        // TODO Verify that the transaction receipts match the given address/hashes.
 
         resolve(msg.receipts);
     }
