@@ -239,8 +239,7 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced
-                && Services.isFullNode(agent.peer.peerAddress.services)) {
+            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF)) {
                 agents.push(agent);
             }
         }
@@ -278,8 +277,7 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced
-                && !Services.isNanoNode(agent.peer.peerAddress.services)) {
+            if (agent.synced && agent.providesServices(Services.BODY_PROOF)) {
                 agents.push(agent);
             }
         }
@@ -312,8 +310,7 @@ class BaseConsensus extends Observable {
     async _requestTransactionReceipts(address) {
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced
-                && Services.isFullNode(agent.peer.peerAddress.services)) {
+            if (agent.synced && agent.providesServices(Services.TRANSACTION_INDEX)) {
                 agents.push(agent);
             }
         }

@@ -116,6 +116,13 @@ class BaseConsensusAgent extends Observable {
         this._requestHead();
     }
 
+    /**
+     * @param {number} services
+     */
+    providesServices(...services) {
+        return Services.providesServices(this._peer.peerAddress.services, services.reduce((a,b) => a | b));
+    }
+
     _requestHead() {
         this._peer.channel.getHead();
     }

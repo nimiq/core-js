@@ -68,7 +68,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._syncing = true;
 
         // We only sync with other full nodes.
-        if (!Services.isFullNode(this._peer.peerAddress.services)) {
+        if (!this.providesServices(Services.BLOCK_HISTORY, Services.FULL_BLOCKS)) {
             this._syncFinished();
             return;
         }
@@ -166,7 +166,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _shouldRequestData(vector) {
         // Ignore block announcements from nano clients as they will ignore our getData requests anyways (they only know headers).
         // Also don't request transactions that the mempool has filtered.
-        return !(vector.type === InvVector.Type.BLOCK && Services.isNanoNode(this._peer.peerAddress.services))
+        return !(vector.type === InvVector.Type.BLOCK && !this.providesServices(Services.FULL_BLOCKS))
             && !(vector.type === InvVector.Type.TRANSACTION && this._mempool.isFiltered(vector.hash));
     }
 
