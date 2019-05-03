@@ -135,11 +135,16 @@ Services.MEMPOOL           = 1 << 9;
  * completeness of their results either.
  */
 Services.TRANSACTION_INDEX = 1 << 10;
-Services.ALL_CURRENT       = (1 << 11) - 1 - Services.ALL_LEGACY;
+/**
+ * The node provides proofs for details from the block body, i.e. transaction proofs.
+ */
+Services.BODY_PROOF        = 1 << 11;
+Services.ALL_CURRENT       = (1 << 12) - 1 - Services.ALL_LEGACY;
 
 Services.PROVIDES_FULL =        Services.FLAG_FULL | Services.ALL_CURRENT;
 Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
-                                Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS | Services.MEMPOOL;
+                                Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS | Services.MEMPOOL |
+                                Services.BODY_PROOF;
 Services.PROVIDES_NANO =        Services.FLAG_NANO | Services.CHAIN_PROOF;
 
 Services.ACCEPTS_FULL =         Services.FLAG_FULL | Services.FULL_BLOCKS | Services.BLOCK_HISTORY | Services.MEMPOOL;
@@ -148,6 +153,6 @@ Services.ACCEPTS_LIGHT =        Services.FLAG_LIGHT | Services.FLAG_FULL | Servi
 Services.ACCEPTS_NANO =         Services.FLAG_NANO | Services.FLAG_LIGHT | Services.FLAG_FULL | Services.CHAIN_PROOF;
 
 Services.ACCEPTS_SPV =          Services.BLOCK_PROOF | Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS |
-                                Services.MEMPOOL | Services.TRANSACTION_INDEX;
+                                Services.MEMPOOL | Services.TRANSACTION_INDEX | Services.BODY_PROOF;
 
 Class.register(Services);

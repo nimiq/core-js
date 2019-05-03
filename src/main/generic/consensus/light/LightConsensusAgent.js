@@ -51,7 +51,7 @@ class LightConsensusAgent extends FullConsensusAgent {
      */
     async syncBlockchain() {
         // We don't sync with nano nodes.
-        if (Services.isNanoNode(this._peer.peerAddress.services)) {
+        if (!this.providesServices(Services.FULL_BLOCKS, Services.CHAIN_PROOF, Services.ACCOUNTS_CHUNKS, Services.MEMPOOL)) {
             this._syncFinished();
             return;
         }

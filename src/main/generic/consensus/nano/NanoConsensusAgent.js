@@ -41,6 +41,11 @@ class NanoConsensusAgent extends BaseConsensusAgent {
      * @returns {Promise.<void>}
      */
     async syncBlockchain() {
+        if (!this.providesServices(Services.CHAIN_PROOF)) {
+            this._syncFinished();
+            return;
+        }
+
         this._syncing = true;
 
         const headBlock = await this._blockchain.getBlock(this._peer.headHash);
