@@ -351,8 +351,14 @@ class NetworkAgent extends Observable {
             maxResults
         };
 
+        // Request only legacy services from older peers
+        let acceptedServices = this._networkConfig.services.accepted;
+        if (this._peer.version < 2) {
+            acceptedServices &= Services.ALL_LEGACY;
+        }
+
         // Request addresses from peer.
-        this._channel.getAddr(this._networkConfig.protocolMask, this._networkConfig.services.accepted, maxResults);
+        this._channel.getAddr(this._networkConfig.protocolMask, acceptedServices, maxResults);
 
         // We don't use a timeout here. The peer will not respond with an addr message if
         // it doesn't have any new addresses.
