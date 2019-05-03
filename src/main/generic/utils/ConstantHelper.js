@@ -3,6 +3,9 @@ class ConstantHelper {
         this._originalValues = new Map();
     }
 
+    /**
+     * @returns {ConstantHelper}
+     */
     static get instance() {
         if (!ConstantHelper._instance) {
             ConstantHelper._instance = new ConstantHelper();

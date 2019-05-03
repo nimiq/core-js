@@ -267,7 +267,7 @@ class HashedTimeLockedContract extends Contract {
             case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
                 // Check that the contract has not expired yet.
                 if (this._timeout < blockHeight) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 // Check that the provided hashRoot is correct.
@@ -275,7 +275,7 @@ class HashedTimeLockedContract extends Contract {
                 const hashDepth = buf.readUint8();
                 const hashRoot = Hash.unserialize(buf, hashAlgorithm);
                 if (!hashRoot.equals(this._hashRoot)) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 // Ignore the preImage.
@@ -283,7 +283,7 @@ class HashedTimeLockedContract extends Contract {
 
                 // Verify that the transaction is signed by the authorized recipient.
                 if (!SignatureProof.unserialize(buf).isSignedBy(this._recipient)) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 minCap = Math.max(0, Math.floor((1 - (hashDepth / this._hashCount)) * this._totalAmount));
@@ -292,34 +292,34 @@ class HashedTimeLockedContract extends Contract {
             }
             case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: {
                 if (!SignatureProof.unserialize(buf).isSignedBy(this._recipient)) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 if (!SignatureProof.unserialize(buf).isSignedBy(this._sender)) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 break;
             }
             case HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE: {
                 if (this._timeout >= blockHeight) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 if (!SignatureProof.unserialize(buf).isSignedBy(this._sender)) {
-                    throw new Error('Proof Error!');
+                    throw new Account.ProofError();
                 }
 
                 break;
             }
             default:
-                throw new Error('Proof Error!');
+                throw new Account.ProofError();
         }
 
         if (!revert) {
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < minCap) {
-                throw new Error('Balance Error!');
+                throw new Account.BalanceError();
             }
         }
 

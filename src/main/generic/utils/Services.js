@@ -69,11 +69,26 @@ class Services {
      * @param {...number} services
      */
     static providesServices(flags, ...services) {
+        flags = Services.legacyProvideToCurrent(flags);
+        const all = services.reduce((a, b) => a | b) & Services.ALL_CURRENT;
+        return (flags & all) === all;
+    }
+    
+    static legacyProvideToCurrent(flags) {
         if (flags === Services.FLAG_NANO) flags = Services.PROVIDES_NANO;
         if (flags === Services.FLAG_LIGHT) flags = Services.PROVIDES_LIGHT;
         if (flags === Services.FLAG_FULL) flags = Services.PROVIDES_FULL;
-        const all = services.reduce((a, b) => a | b) & Services.ALL_CURRENT;
-        return (flags & all) === all;
+        return flags;
+    }
+    
+    static toNameArray(flags) {
+        const res = [];
+        let i = 1;
+        do {
+            if ((flags % i) === i && Services.NAMES[i]) res.push(Services.NAMES[i]);
+            i <<= 1;
+        } while (i < Services.ALL_CURRENT);
+        return res;
     }
 }
 
@@ -140,6 +155,16 @@ Services.TRANSACTION_INDEX = 1 << 10;
  */
 Services.BODY_PROOF        = 1 << 11;
 Services.ALL_CURRENT       = (1 << 12) - 1 - Services.ALL_LEGACY;
+
+Services.NAMES = {};
+Services.NAMES[Services.FULL_BLOCKS] = 'FULL_BLOCKS';
+Services.NAMES[Services.BLOCK_HISTORY] = 'BLOCK_HISTORY';
+Services.NAMES[Services.BLOCK_PROOF] = 'BLOCK_PROOF';
+Services.NAMES[Services.CHAIN_PROOF] = 'CHAIN_PROOF';
+Services.NAMES[Services.ACCOUNTS_PROOF] = 'ACCOUNTS_PROOF';
+Services.NAMES[Services.ACCOUNTS_CHUNKS] = 'ACCOUNTS_CHUNKS';
+Services.NAMES[Services.MEMPOOL] = 'MEMPOOL';
+Services.NAMES[Services.TRANSACTION_INDEX] = 'TRANSACTION_INDEX';
 
 Services.PROVIDES_FULL =        Services.FLAG_FULL | Services.ALL_CURRENT;
 Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Services.CHAIN_PROOF |

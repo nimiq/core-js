@@ -64,6 +64,22 @@ class Address extends Serializable {
             && super.equals(o);
     }
 
+    /**
+     * @param {Address|string} addr
+     */
+    static fromAny(addr) {
+        if (addr instanceof Address) return addr;
+        if (typeof addr === 'string') return Address.fromString(addr);
+        throw new Error('Invalid address format');
+    }
+
+    /**
+     * @returns {string}
+     */
+    toPlain() {
+        return this.toUserFriendlyAddress();
+    }
+
     static fromString(str) {
         try {
             return Address.fromUserFriendlyAddress(str);

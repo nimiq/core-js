@@ -509,6 +509,15 @@ class Block {
         return this._header.pow(buf);
     }
 
+    /**
+     * @param {Block|string} block
+     */
+    static fromAny(block) {
+        if (block instanceof Block) return block;
+        if (typeof block === 'string') return Block.unserialize(BufferUtils.fromHex(block));
+        throw new Error('Invalid block');
+    }
+
     toString() {
         return `Block{height=${this.height},prev=${this.prevHash}}`;
     }

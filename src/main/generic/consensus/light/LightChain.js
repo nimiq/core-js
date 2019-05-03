@@ -61,6 +61,7 @@ class LightChain extends FullChain {
             this._headHash = headHash;
             this._mainChain = mainChain;
             this._transactionCache = transactionCache;
+            this.fire('block', headHash);
             this.fire('head-changed', this.head);
         });
         await partialChain._init();

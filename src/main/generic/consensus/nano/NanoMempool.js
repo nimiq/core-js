@@ -12,43 +12,48 @@ class NanoMempool extends Observable {
         /** @type {HashMap.<Hash, Transaction>} */
         this._transactionsByHash = new HashMap();
         /** @type {HashMap.<Address, MempoolTransactionSet>} */
-        this._transactionSetByAddress = new HashMap();
+        this._transactionSetBySender = new HashMap();
+        /** @type {HashMap.<Address, HashSet.<Transaction>>} */
+        this._transactionSetByRecipient = new HashMap();
     }
 
     /**
      * @param {Transaction} transaction
      * @fires Mempool#transaction-added
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<Mempool.ReturnCode>}
      */
     async pushTransaction(transaction) {
         // Check if we already know this transaction.
         const hash = transaction.hash();
         if (this._transactionsByHash.contains(hash)) {
             Log.v(Mempool, () => `Ignoring known transaction ${hash.toBase64()}`);
-            return false;
+            return Mempool.ReturnCode.KNOWN;
         }
 
         // Check validity based on startHeight.
         if (this._blockchain.height >= transaction.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
             Log.v(Mempool, () => `Ignoring expired transaction ${hash.toBase64()}`);
-            return false;
+            return Mempool.ReturnCode.EXPIRED;
         }
 
         // Verify transaction.
         if (!transaction.verify()) {
-            return false;
+            return Mempool.ReturnCode.INVALID;
         }
 
         // Transaction is valid, add it to the mempool.
         this._transactionsByHash.put(hash, transaction);
-        const set = this._transactionSetByAddress.get(transaction.sender) || new MempoolTransactionSet();
+        const set = this._transactionSetBySender.get(transaction.sender) || new MempoolTransactionSet();
         set.add(transaction);
-        this._transactionSetByAddress.put(transaction.sender, set);
+        this._transactionSetBySender.put(transaction.sender, set);
+        const recs = this._transactionSetByRecipient.get(transaction.recipient) || new HashSet();
+        recs.add(transaction);
+        this._transactionSetByRecipient.put(transaction.recipient, recs);
 
         // Tell listeners about the new transaction we received.
         this.fire('transaction-added', transaction);
 
-        return true;
+        return Mempool.ReturnCode.ACCEPTED;
     }
 
     /**
@@ -72,16 +77,66 @@ class NanoMempool extends Observable {
      * @return {Array.<Transaction>}
      */
     getPendingTransactions(address) {
-        const set = this._transactionSetByAddress.get(address);
+        return this.getTransactionsBySender(address);
+    }
+
+    /**
+     * @param {Address} address
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsBySender(address) {
+        /** @type {MempoolTransactionSet} */
+        const set = this._transactionSetBySender.get(address);
         return set ? set.transactions : [];
+    }
+
+    /**
+     * @param {Address} address
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsByRecipient(address) {
+        /** @type {HashSet.<Transaction>} */
+        const set = this._transactionSetByRecipient.get(address);
+        if (!set) {
+            return [];
+        }
+
+        return set.values();
+    }
+
+    /**
+     * @param {Array.<Address>} addresses
+     * @param {number} [maxTransactions]
+     * @return {Array.<Transaction>}
+     */
+    getTransactionsByAddresses(addresses, maxTransactions = Infinity) {
+        const transactions = [];
+        for (const address of addresses) {
+            // Fetch transactions by sender first
+            /** @type {Array.<Transaction>} */
+            const bySender = this.getTransactionsBySender(address);
+            for (const tx of bySender) {
+                if (transactions.length >= maxTransactions) return transactions;
+                transactions.push(tx);
+            }
+
+            // Fetch transactions by recipient second
+            /** @type {Array.<Transaction>} */
+            const byRecipient = this.getTransactionsByRecipient(address);
+            for (const tx of byRecipient) {
+                if (transactions.length >= maxTransactions) return transactions;
+                transactions.push(tx);
+            }
+        }
+        return transactions;
     }
 
     /**
      * @param {Block} block
      * @param {Array.<Transaction>} transactions
      */
-    changeHead(block, transactions) {
-        this._evictTransactions(block.header, transactions);
+    async changeHead(block, transactions) {
+        await this._evictTransactions(block.header, transactions);
     }
 
     /**
@@ -91,11 +146,18 @@ class NanoMempool extends Observable {
         this._transactionsByHash.remove(transaction.hash());
 
         /** @type {MempoolTransactionSet} */
-        const set = this._transactionSetByAddress.get(transaction.sender);
+        const set = this._transactionSetBySender.get(transaction.sender);
         set.remove(transaction);
 
         if (set.length === 0) {
-            this._transactionSetByAddress.remove(transaction.sender);
+            this._transactionSetBySender.remove(transaction.sender);
+        }
+
+        const recs = this._transactionSetByRecipient.get(transaction.recipient);
+        recs.remove(transaction);
+
+        if (recs.length === 0) {
+            this._transactionSetByRecipient.remove(transaction.recipient);
         }
 
         this.fire('transaction-removed', transaction);
@@ -119,14 +181,14 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      * @private
      */
-    _evictTransactions(blockHeader, transactions) {
+    async _evictTransactions(blockHeader, transactions) {
         // Remove expired transactions.
         for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
             const txHash = tx.hash();
             if (blockHeader.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this.removeTransaction(tx);
 
-                this.fire('transaction-expired', tx);
+                await this.fire('transaction-expired', tx);
             }
         }
 
@@ -136,7 +198,7 @@ class NanoMempool extends Observable {
             if (this._transactionsByHash.contains(txHash)) {
                 this.removeTransaction(tx);
 
-                this.fire('transaction-mined', tx, blockHeader);
+                await this.fire('transaction-mined', tx, blockHeader);
             }
         }
     }

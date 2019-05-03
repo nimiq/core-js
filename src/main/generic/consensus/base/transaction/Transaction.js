@@ -242,6 +242,77 @@ class Transaction {
             + `}`;
     }
 
+    toPlain() {
+        const data = Account.TYPE_MAP.get(this.recipientType).dataToPlain(this.data);
+        data.raw = BufferUtils.toHex(this.data);
+        const proof = Account.TYPE_MAP.get(this.senderType).proofToPlain(this.proof);
+        proof.raw = BufferUtils.toHex(this.proof);
+        return {
+            transactionHash: this.hash(),
+            format: /* TODO map to string */ this._format,
+            sender: this.sender,
+            senderType: /* TODO map to string */ this.senderType,
+            recipient: this.recipient,
+            recipientType: /* TODO map to string */ this.recipientType,
+            value: this.value,
+            fee: this.fee,
+            feePerByte: this.feePerByte,
+            validityStartHeight: this.validityStartHeight,
+            network: /* TODO map to string */ this.networkId,
+            flags: this.flags,
+            data,
+            proof,
+            size: this.serializedSize,
+            valid: this.verify()
+        };
+    }
+
+    /**
+     * @param {object} plain
+     * @return {Transaction}
+     */
+    static fromPlain(plain) {
+        if (!plain) throw new Error('Invalid transaction format');
+        switch (plain.format /* TODO map to string */) {
+            case Transaction.Format.BASIC:
+                return new BasicTransaction(
+                    new PublicKey(SerialBuffer.fromHex(plain.proof.publicKey)),
+                    Address.fromAny(plain.recipient),
+                    plain.value,
+                    plain.fee,
+                    plain.validityStartHeight,
+                    new Signature(SerialBuffer.fromHex(plain.proof.signature)),
+                    plain.network /* TODO map to string */
+                );
+            case Transaction.Format.EXTENDED:
+                return new ExtendedTransaction(
+                    Address.fromAny(plain.sender),
+                    plain.senderType,
+                    Address.fromAny(plain.recipient),
+                    plain.recipientType,
+                    plain.value,
+                    plain.fee,
+                    plain.validityStartHeight,
+                    plain.flags,
+                    BufferUtils.fromHex(plain.data.raw),
+                    BufferUtils.fromHex(plain.proof.raw),
+                    plain.network /* TODO map to string */
+                );
+        }
+        throw new Error('Invalid transaction format');
+    }
+
+    /**
+     * @param {Transaction|string|object} tx
+     * @returns {Transaction}
+     */
+    static fromAny(tx) {
+        if (tx instanceof Transaction) return tx;
+        if (typeof tx === 'object') return Transaction.fromPlain(tx);
+        if (typeof tx === 'string') return Transaction.unserialize(new SerialBuffer(BufferUtils.fromHex(tx)));
+        throw new Error('Invalid transaction format');
+    }
+
     /**
      * @return {Address}
      */

@@ -202,6 +202,7 @@ class FullChain extends BaseChain {
         await this._store.putChainData(hash, chainData);
 
         this._blockForkedCount++;
+        await this.fire('block', hash);
         return FullChain.OK_FORKED;
     }
 
@@ -276,7 +277,9 @@ class FullChain extends BaseChain {
         this._headHash = blockHash;
 
         // Tell listeners that the head of the chain has changed.
-        this.fire('head-changed', this.head, /*rebranching*/ false);
+        await this.fire('head-changed', this.head, /*rebranching*/ false);
+        await this.fire('block', blockHash);
+        await this.fire('extended', this.head);
 
         return true;
     }
@@ -453,7 +456,7 @@ class FullChain extends BaseChain {
         // Fire block-reverted event for each block reverted during rebranch.
         const revertBlocks = [];
         for (const revertedData of revertChain) {
-            this.fire('block-reverted', revertedData.head);
+            await this.fire('block-reverted', revertedData.head);
             revertBlocks.push(revertedData.head);
         }
 
@@ -462,12 +465,13 @@ class FullChain extends BaseChain {
         for (let i = forkChain.length - 1; i >= 0; i--) {
             this._mainChain = forkChain[i];
             this._headHash = forkHashes[i];
-            this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+            await this.fire('head-changed', this.head, /*rebranching*/ i > 0);
             forkBlocks.push(this.head);
         }
 
         // Tell listeners that we have rebranched.
-        await this.fire('rebranched', revertBlocks, forkBlocks);
+        await this.fire('block', blockHash);
+        await this.fire('rebranched', revertBlocks, forkBlocks, blockHash);
 
         return true;
     }

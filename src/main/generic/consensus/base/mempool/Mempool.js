@@ -30,7 +30,10 @@ class Mempool extends Observable {
                 this._evictTransactions().catch(Log.e.tag(Mempool));
             }
         });
-        blockchain.on('rebranched', (revertBlocks) => this._restoreTransactions(revertBlocks));
+        blockchain.on('rebranched', async (revertBlocks) => {
+            await this._evictTransactions();
+            await this._restoreTransactions(revertBlocks);
+        });
     }
 
     /**
@@ -106,6 +109,7 @@ class Mempool extends Observable {
         let tmpAccount = senderAccount;
         for (const tx of set.copyAndAdd(transaction).transactions) {
             let error = 'transactions per sender exceeded';
+            let exception;
             try {
                 if (transactions.length < Mempool.TRANSACTIONS_PER_SENDER_MAX) {
                     tmpAccount = tmpAccount.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
@@ -115,6 +119,7 @@ class Mempool extends Observable {
                     continue;
                 }
             } catch (e) {
+                exception = e;
                 error = e.message;
             }
 
@@ -123,7 +128,13 @@ class Mempool extends Observable {
             // Otherwise, evict the rejected transaction from the mempool.
             if (tx.equals(transaction)) {
                 Log.d(Mempool, () => `Rejected transaction from ${transaction.sender.toUserFriendlyAddress()} - ${error}`);
-                return Mempool.ReturnCode.INVALID;
+                if (exception instanceof Account.DoubleTransactionError) {
+                    return Mempool.ReturnCode.MINED;
+                } else if (exception instanceof Account.ValidityError) {
+                    return Mempool.ReturnCode.EXPIRED;
+                } else {
+                    return Mempool.ReturnCode.INVALID;
+                }
             } else {
                 txsToRemove.push(tx);
             }
@@ -169,6 +180,7 @@ class Mempool extends Observable {
         /** @type {MempoolTransactionSet} */
         const set = this._transactionSetBySender.get(transaction.sender);
         set.remove(transaction);
+        if (set.length === 0) this._transactionSetBySender.remove(transaction.sender);
 
         /** @type {HashSet.<Hash>} */
         const byRecipient = this._transactionSetByRecipient.get(transaction.recipient);
@@ -481,6 +493,8 @@ Mempool.SIZE_MAX = 50000;
 
 /** @enum {number} */
 Mempool.ReturnCode = {
+    EXPIRED: -5,
+    MINED: -4,
     FILTERED: -3,
     FEE_TOO_LOW: -2,
     INVALID: -1,

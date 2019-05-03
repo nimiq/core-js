@@ -351,6 +351,10 @@ class FullConsensusAgent extends BaseConsensusAgent {
                 this._peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
                     transaction.hash().serialize());
                 return false;
+            case Mempool.ReturnCode.MINED:
+            case Mempool.ReturnCode.EXPIRED:
+                Log.v(FullConsensusAgent, () => `Ignored transaction ${hash.toHex()} relayed by ${this._peer.peerAddress} (${this._peer.netAddress})`);
+                return false;
             case Mempool.ReturnCode.FILTERED:
                 Log.v(FullConsensusAgent, () => `Filtered transaction ${hash.toHex()} relayed by ${this._peer.peerAddress} (${this._peer.netAddress})`);
                 return false;

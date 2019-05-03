@@ -68,7 +68,7 @@ describe('Mempool', () => {
             // Make sure the transaction fails due to being outside the window
             transaction = wallet.createTransaction(Address.unserialize(BufferUtils.fromBase64(Dummy.address1)), 3523, 23, 3);
             result = await mempool.pushTransaction(transaction);
-            expect(result).toBe(Mempool.ReturnCode.INVALID);
+            expect(result).toBe(Mempool.ReturnCode.EXPIRED);
 
         })().then(done, done.fail);
     });

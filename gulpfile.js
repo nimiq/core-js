@@ -234,7 +234,12 @@ const sources = {
         './src/main/generic/wallet/WalletStore.js',
         './src/main/generic/miner/MinerWorker.js',
         './src/main/generic/miner/MinerWorkerImpl.js',
-        './src/main/generic/miner/MinerWorkerPool.js'
+        './src/main/generic/miner/MinerWorkerPool.js',
+        './src/main/generic/api/Client.js',
+        './src/main/generic/api/Configuration.js',
+        './src/main/generic/api/MempoolClient.js',
+        './src/main/generic/api/NetworkClient.js',
+        './src/main/generic/api/TransactionDetails.js',
     ],
     offline: [
         './src/main/generic/utils/array/ArrayUtils.js',

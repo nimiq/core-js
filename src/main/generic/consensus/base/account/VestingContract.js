@@ -206,12 +206,12 @@ class VestingContract extends Contract {
             const minCap = this.getMinCap(blockHeight);
             const newBalance = this._balance - transaction.value - transaction.fee;
             if (newBalance < minCap) {
-                throw new Error('Balance Error!');
+                throw new Account.BalanceError();
             }
 
             const buf = new SerialBuffer(transaction.proof);
             if (!SignatureProof.unserialize(buf).isSignedBy(this._owner)) {
-                throw new Error('Proof Error!');
+                throw new Account.ProofError();
             }
         }
         return super.withOutgoingTransaction(transaction, blockHeight, transactionsCache, revert);
@@ -235,6 +235,31 @@ class VestingContract extends Contract {
         return this._vestingStepBlocks && this._vestingStepAmount > 0
             ? Math.max(0, this._vestingTotalAmount - Math.floor((blockHeight - this._vestingStart) / this._vestingStepBlocks) * this._vestingStepAmount)
             : 0;
+    }
+
+    /**
+     * @return {object}
+     */
+    static dataToPlain() {
+        return {};
+    }
+
+    /**
+     * @param {Uint8Array} proof
+     * @return {object}
+     */
+    static proofToPlain(proof) {
+        try {
+            const signatureProof = SignatureProof.unserialize(new SerialBuffer(proof));
+            return {
+                signature: signatureProof.signature.toHex(),
+                publicKey: signatureProof.publicKey.toHex(),
+                signer: signatureProof.publicKey.toAddress().toPlain(),
+                pathLength: signatureProof.merklePath.nodes.length
+            };
+        } catch (e) {
+            return {};
+        }
     }
 }
 

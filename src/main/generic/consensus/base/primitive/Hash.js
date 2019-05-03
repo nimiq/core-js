@@ -135,6 +135,23 @@ class Hash extends Serializable {
     }
 
     /**
+     * @param {Hash|string} hash
+     * @return {Hash}
+     */
+    static fromAny(hash) {
+        if (hash instanceof Hash) return hash;
+        if (typeof hash === 'string') return Hash.fromString(hash);
+        throw new Error('Invalid hash format');
+    }
+
+    /**
+     * @returns {string}
+     */
+    toPlain() {
+        return this.toHex();
+    }
+
+    /**
      * @param {string} base64
      * @returns {Hash}
      */
