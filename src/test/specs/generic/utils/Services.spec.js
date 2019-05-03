@@ -7,38 +7,38 @@ describe('Services', () => {
     });
 
     it('is initialized correctly to the parameters that are passed to the constructor', () => {
-        const services = new Services(Services.FULL, Services.FULL | Services.NANO);
-        expect(services.provided).toBe(Services.FULL);
-        expect(services.accepted).toBe(Services.FULL | Services.NANO);
+        const services = new Services(Services.FLAG_FULL, Services.FLAG_FULL | Services.FLAG_NANO);
+        expect(services.provided).toBe(Services.FLAG_FULL);
+        expect(services.accepted).toBe(Services.FLAG_FULL | Services.FLAG_NANO);
     });
 
     it('has working getter and setter for provided services', () => {
         const services = new Services();
-        services.provided = Services.LIGHT;
-        expect(services.provided).toBe(Services.LIGHT);
+        services.provided = Services.FLAG_LIGHT;
+        expect(services.provided).toBe(Services.FLAG_LIGHT);
     });
 
     it('has working getter and setter for accepted services', () => {
         const services = new Services();
-        services.accepted = Services.FULL | Services.LIGHT | Services.NANO;
-        expect(services.accepted).toBe(Services.FULL | Services.LIGHT | Services.NANO);
+        services.accepted = Services.FLAG_FULL | Services.FLAG_LIGHT | Services.FLAG_NANO;
+        expect(services.accepted).toBe(Services.FLAG_FULL | Services.FLAG_LIGHT | Services.FLAG_NANO);
     });
 
     it('correctly identifies Full Nodes', () => {
-        expect(Services.isFullNode(Services.FULL)).toBe(true);
-        expect(Services.isFullNode(Services.LIGHT)).toBe(false);
-        expect(Services.isFullNode(Services.NANO)).toBe(false);
+        expect(Services.isFullNode(Services.FLAG_FULL)).toBe(true);
+        expect(Services.isFullNode(Services.FLAG_LIGHT)).toBe(false);
+        expect(Services.isFullNode(Services.FLAG_NANO)).toBe(false);
     });
 
     it('correctly identifies Light Nodes', () => {
-        expect(Services.isLightNode(Services.LIGHT)).toBe(true);
-        expect(Services.isLightNode(Services.FULL)).toBe(false);
-        expect(Services.isLightNode(Services.NANO)).toBe(false);
+        expect(Services.isLightNode(Services.FLAG_LIGHT)).toBe(true);
+        expect(Services.isLightNode(Services.FLAG_FULL)).toBe(false);
+        expect(Services.isLightNode(Services.FLAG_NANO)).toBe(false);
     });
 
     it('correctly identifies Nano Nodes', () => {
-        expect(Services.isNanoNode(Services.NANO)).toBe(true);
-        expect(Services.isNanoNode(Services.FULL)).toBe(false);
-        expect(Services.isNanoNode(Services.LIGHT)).toBe(false);
+        expect(Services.isNanoNode(Services.FLAG_NANO)).toBe(true);
+        expect(Services.isNanoNode(Services.FLAG_FULL)).toBe(false);
+        expect(Services.isNanoNode(Services.FLAG_LIGHT)).toBe(false);
     });
 });

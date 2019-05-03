@@ -151,7 +151,7 @@ class PeerScorer {
         }
 
         // Filter addresses not matching our accepted services.
-        if ((peerAddress.services & this._networkConfig.services.accepted) === 0) {
+        if (!Services.providesServices(peerAddress.services, this._networkConfig.services.accepted)) {
             return -1;
         }
 

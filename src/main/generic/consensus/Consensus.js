@@ -4,7 +4,7 @@ class Consensus {
      * @return {Promise.<FullConsensus>}
      */
     static async full(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.FULL, Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_FULL, Services.ACCEPTS_FULL);
         await netconfig.initPersistent();
 
         /** @type {Time} */
@@ -30,7 +30,7 @@ class Consensus {
      * @return {Promise.<LightConsensus>}
      */
     static async light(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_LIGHT, Services.ACCEPTS_LIGHT);
         await netconfig.initPersistent();
 
         /** @type {Time} */
@@ -54,7 +54,7 @@ class Consensus {
      * @return {Promise.<NanoConsensus>}
      */
     static async nano(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_NANO, Services.ACCEPTS_NANO);
         await netconfig.initPersistent();
 
         /** @type {Time} */
@@ -74,7 +74,7 @@ class Consensus {
      * @return {Promise.<FullConsensus>}
      */
     static async volatileFull(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.FULL, Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_FULL, Services.ACCEPTS_FULL);
         await netconfig.initVolatile();
 
         /** @type {Time} */
@@ -98,7 +98,7 @@ class Consensus {
      * @return {Promise.<LightConsensus>}
      */
     static async volatileLight(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.LIGHT, Services.LIGHT | Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_LIGHT, Services.ACCEPTS_LIGHT);
         await netconfig.initVolatile();
 
         /** @type {Time} */
@@ -120,7 +120,7 @@ class Consensus {
      * @return {Promise.<NanoConsensus>}
      */
     static async volatileNano(netconfig = NetworkConfig.getDefault()) {
-        netconfig.services = new Services(Services.NANO, Services.NANO | Services.LIGHT | Services.FULL);
+        netconfig.services = new Services(Services.PROVIDES_NANO, Services.ACCEPTS_NANO);
         await netconfig.initVolatile();
 
         /** @type {Time} */

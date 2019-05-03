@@ -231,8 +231,15 @@ class PeerAddressBook extends Observable {
                 continue;
             }
 
-            // Only return addresses matching the service mask.
-            if ((address.services & serviceMask) === 0) {
+            // Only return addresses matching any of legacy service mask if present.
+            const legacyServices = serviceMask & Services.ALL_LEGACY;
+            if (legacyServices > 0 && (address.services & legacyServices) === 0) {
+                continue;
+            }
+
+            // Only return addresses matching all of current service mask if present.
+            const currentServices = serviceMask & Services.ALL_CURRENT;
+            if (currentServices > 0 && (address.services & currentServices) !== currentServices) {
                 continue;
             }
 

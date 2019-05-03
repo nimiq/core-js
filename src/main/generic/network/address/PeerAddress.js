@@ -385,7 +385,7 @@ class WssPeerAddress extends WsBasePeerAddress {
      */
     static seed(host, port, publicKeyHex) {
         const publicKey = publicKeyHex ? new PublicKey(BufferUtils.fromHex(publicKeyHex)) : null;
-        return new WssPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
+        return new WssPeerAddress(Services.PROVIDES_FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
     }
 
     /**
@@ -446,7 +446,7 @@ class WsPeerAddress extends WsBasePeerAddress {
      */
     static seed(host, port, publicKeyHex) {
         const publicKey = publicKeyHex ? new PublicKey(BufferUtils.fromHex(publicKeyHex)) : null;
-        return new WsPeerAddress(Services.FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
+        return new WsPeerAddress(Services.PROVIDES_FULL, /*timestamp*/ 0, NetAddress.UNSPECIFIED, publicKey, 0, host, port);
     }
 
     /**
