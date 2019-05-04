@@ -866,6 +866,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Block>}
      */
     getBlockProofAt(blockHeightToProve, knownBlock) {
+        if (this._peer.version < 2) throw new Error('Request not supported by peer version');
         return this._synchronizer.push('getBlockProof',
             this._getBlockProofAt.bind(this, blockHeightToProve, knownBlock));
     }
@@ -985,6 +986,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Array.<Transaction>>}
      */
     getTransactionsProofByHashes(block, hashes) {
+        if (this._peer.version < 2) throw new Error('Request not supported by peer version');
         return this._synchronizer.push('getTransactionsProof',
             this._getTransactionsProofByHashes.bind(this, block, hashes));
     }
@@ -1134,6 +1136,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     getTransactionReceiptsByHashes(hashes) {
+        if (this._peer.version < 2) throw new Error('Request not supported by peer version');
         return this._synchronizer.push('getTransactionReceipts',
             this._getTransactionReceiptsByHashes.bind(this, hashes));
     }
