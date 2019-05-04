@@ -265,6 +265,49 @@ class BaseConsensus extends Observable {
     }
 
     /**
+     * @param {number} blockHeightToProve
+     * @returns {Promise.<Block>}
+     * @protected
+     */
+    async _requestBlockProofAt(blockHeightToProve) {
+        /** @type {Block} */
+        const knownBlock = await this._blockchain.getNearestBlockAt(blockHeightToProve, /*lower*/ false);
+        if (!knownBlock) {
+            throw new Error('No suitable reference block found for BlockProof');
+        }
+
+        if (blockHeightToProve === knownBlock.height) {
+            return knownBlock;
+        }
+
+        const agents = [];
+        for (const agent of this._agents.valueIterator()) {
+            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF)) {
+                agents.push(agent);
+            }
+        }
+
+        // Try agents first that (we think) know the reference block hash.
+        const knownBlockHash = knownBlock.hash();
+        agents.sort((a, b) =>
+            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+                ? -a.knowsBlock(knownBlockHash) + 0.5
+                : Math.random() - 0.5);
+
+        for (const /** @type {BaseConsensusAgent} */ agent of agents) {
+            try {
+                return await agent.getBlockProofAt(blockHeightToProve, knownBlock); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(BaseConsensus, `Failed to retrieve block proof at ${blockHeightToProve} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested account, fail.
+        throw new Error(`Failed to retrieve block proof at ${blockHeightToProve}`);
+    }
+
+    /**
      * @param {Array.<Address>} addresses
      * @param {Block} [block]
      * @returns {Promise.<Array<Transaction>>}

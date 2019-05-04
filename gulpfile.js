@@ -193,6 +193,7 @@ const sources = {
         './src/main/generic/network/message/GetTransactionReceiptsByHashesMessage.js',
         './src/main/generic/network/message/TransactionReceiptsMessage.js',
         './src/main/generic/network/message/GetBlockProofMessage.js',
+        './src/main/generic/network/message/GetBlockProofAtMessage.js',
         './src/main/generic/network/message/BlockProofMessage.js',
         './src/main/generic/network/message/GetHeadMessage.js',
         './src/main/generic/network/message/HeadMessage.js',

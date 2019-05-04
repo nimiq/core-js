@@ -861,6 +861,44 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
+     * @param {number} blockHeightToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<Block>}
+     */
+    getBlockProofAt(blockHeightToProve, knownBlock) {
+        return this._synchronizer.push('getBlockProof',
+            this._getBlockProofAt.bind(this, blockHeightToProve, knownBlock));
+    }
+
+    /**
+     * @param {number} blockHeightToProve
+     * @param {Block} knownBlock
+     * @returns {Promise.<Block>}
+     * @private
+     */
+    _getBlockProofAt(blockHeightToProve, knownBlock) {
+        Assert.that(this._blockProofRequest === null);
+
+        Log.v(BaseConsensusAgent, () => `Requesting BlockProof at ${blockHeightToProve} from ${this._peer.peerAddress}`);
+
+        return new Promise((resolve, reject) => {
+            this._blockProofRequest = {
+                blockHeightToProve,
+                knownBlock,
+                resolve,
+                reject
+            };
+
+            // Request BlockProof from peer.
+            this._peer.channel.getBlockProofAt(blockHeightToProve, knownBlock.hash());
+
+            this._peer.channel.expectMessage(Message.Type.BLOCK_PROOF, () => {
+                reject(new Error('timeout'));
+            }, BaseConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT);
+        });
+    }
+
+    /**
      * @param {BlockProofMessage} msg
      * @returns {Promise.<void>}
      * @private
@@ -875,7 +913,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        const { blockHashToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
+        const { blockHashToProve, blockHeightToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
         this._blockProofRequest = null;
 
         if (!msg.hasProof() || msg.proof.length === 0) {
@@ -885,7 +923,7 @@ class BaseConsensusAgent extends Observable {
 
         // Check that the tail of the proof corresponds to the requested block.
         const proof = msg.proof;
-        if (!blockHashToProve.equals(proof.tail.hash())) {
+        if (!blockHashToProve.equals(proof.tail.hash()) && proof.tail.height !== blockHeightToProve) {
             Log.w(BaseConsensusAgent, `Received BlockProof with invalid tail block from ${this._peer.peerAddress}`);
             reject(new Error('Invalid tail block'));
             return;

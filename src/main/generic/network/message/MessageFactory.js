@@ -51,6 +51,7 @@ MessageFactory.CLASSES[Message.Type.TRANSACTIONS_PROOF] = TransactionsProofMessa
 MessageFactory.CLASSES[Message.Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS] = GetTransactionReceiptsByAddressMessage;
 MessageFactory.CLASSES[Message.Type.TRANSACTION_RECEIPTS] = TransactionReceiptsMessage;
 MessageFactory.CLASSES[Message.Type.GET_BLOCK_PROOF] = GetBlockProofMessage;
+MessageFactory.CLASSES[Message.Type.GET_BLOCK_PROOF_AT] = GetBlockProofAtMessage;
 MessageFactory.CLASSES[Message.Type.BLOCK_PROOF] = BlockProofMessage;
 MessageFactory.CLASSES[Message.Type.GET_HEAD] = GetHeadMessage;
 MessageFactory.CLASSES[Message.Type.HEAD] = HeadMessage;
