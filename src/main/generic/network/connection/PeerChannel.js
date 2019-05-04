@@ -397,6 +397,15 @@ class PeerChannel extends Observable {
     }
 
     /**
+     * @param {number} blockHeightToProve
+     * @param {Hash} knownBlockHash
+     * @returns {boolean}
+     */
+    getBlockProofAt(blockHeightToProve, knownBlockHash) {
+        return this._send(new GetBlockProofAtMessage(blockHeightToProve, knownBlockHash));
+    }
+
+    /**
      * @param {BlockChain} [proof]
      * @returns {boolean}
      */
@@ -521,6 +530,7 @@ PeerChannel.Event[Message.Type.GET_BLOCK_PROOF] = 'get-block-proof';
 PeerChannel.Event[Message.Type.BLOCK_PROOF] = 'block-proof';
 PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF_BY_HASHES] = 'get-transactions-proof-by-hashes';
 PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS_BY_HASHES] = 'get-transaction-receipts-by-hashes';
+PeerChannel.Event[Message.Type.GET_BLOCK_PROOF_AT] = 'get-block-proof-at';
 PeerChannel.Event[Message.Type.GET_HEAD] = 'get-head';
 PeerChannel.Event[Message.Type.HEAD] = 'head';
 PeerChannel.Event[Message.Type.VERACK] = 'verack';

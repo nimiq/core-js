@@ -59,6 +59,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProofByAddress(msg));
         peer.channel.on('get-transaction-receipts', msg => this._onGetTransactionReceiptsByAddress(msg));
         peer.channel.on('get-block-proof', msg => this._onGetBlockProof(msg));
+        peer.channel.on('get-block-proof-at', msg => this._onGetBlockProofAt(msg));
         peer.channel.on('get-transactions-proof-by-hashes', msg => this._onGetTransactionsProofByHashes(msg));
         peer.channel.on('get-transaction-receipts-by-hashes', msg => this._onGetTransactionReceiptsByHashes(msg));
         peer.channel.on('mempool', msg => this._onMempool(msg));
@@ -438,6 +439,27 @@ class FullConsensusAgent extends BaseConsensusAgent {
             return;
         }
         const blockToProve = await this._blockchain.getBlock(msg.blockHashToProve);
+        const knownBlock = await this._blockchain.getBlock(msg.knownBlockHash);
+        if (!blockToProve || !knownBlock) {
+            this._peer.channel.blockProof();
+            return;
+        }
+
+        const proof = await this._blockchain.getBlockProof(blockToProve, knownBlock);
+        this._peer.channel.blockProof(proof);
+    }
+
+    /**
+     * @param {GetBlockProofAtMessage} msg
+     * @private
+     */
+    async _onGetBlockProofAt(msg) {
+        if (!this._blockProofLimit.note()) {
+            Log.w(FullConsensusAgent, 'Rejecting GetBlockProof message - rate-limit exceeded');
+            this._peer.channel.blockProof(null);
+            return;
+        }
+        const blockToProve = await this._blockchain.getBlockAt(msg.blockHeightToProve);
         const knownBlock = await this._blockchain.getBlock(msg.knownBlockHash);
         if (!blockToProve || !knownBlock) {
             this._peer.channel.blockProof();

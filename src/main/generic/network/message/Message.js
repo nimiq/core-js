@@ -188,6 +188,7 @@ Message.Type = {
     BLOCK_PROOF:                           52,
     GET_TRANSACTIONS_PROOF_BY_HASHES:      53,
     GET_TRANSACTION_RECEIPTS_BY_HASHES:    54,
+    GET_BLOCK_PROOF_AT:                    55,
 
     GET_HEAD:   60,
     HEAD:       61,
