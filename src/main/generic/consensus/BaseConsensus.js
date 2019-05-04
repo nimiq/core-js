@@ -282,7 +282,7 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF)) {
+            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF) && agent.peer.version >= 2) {
                 agents.push(agent);
             }
         }
