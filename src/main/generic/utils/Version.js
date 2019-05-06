@@ -4,8 +4,7 @@ class Version {
      * @return {boolean}
      */
     static isCompatible(code) {
-        // Allow future, backwards-compatible versions.
-        return code >= Version.CODE;
+        return code >= 1;
     }
 
     /**
