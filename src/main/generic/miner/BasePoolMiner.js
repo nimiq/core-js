@@ -202,9 +202,11 @@ class BasePoolMiner extends Miner {
     }
 
     _turnPoolOff() {
+        this.startConfigChanges();
         super.address = this._ourAddress;
         super.extraData = this._ourExtraData;
         super.shareCompact = null;
+        this.finishConfigChanges();
     }
 
     /**
@@ -215,10 +217,12 @@ class BasePoolMiner extends Miner {
      * @private
      */
     _onNewPoolSettings(address, extraData, targetCompact, nonce) {
+        this.startConfigChanges();
         super.address = address;
         super.extraData = extraData;
         super.shareCompact = targetCompact;
         super.nonce = nonce;
+        this.finishConfigChanges();
     }
 
     _changeConnectionState(connectionState) {

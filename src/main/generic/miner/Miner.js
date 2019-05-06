@@ -114,6 +114,11 @@ class Miner extends Observable {
         /** @type {number} */
         this._numBlocksMined = 0;
 
+        /** @type {boolean} */
+        this._activeConfigChanges = false;
+        /** @type {boolean} */
+        this._pendingConfigChanges = false;
+
         if (this._mempool) {
             // Listen to changes in the mempool which evicts invalid transactions
             // after every blockchain head change and then fires 'transactions-ready'
@@ -166,7 +171,7 @@ class Miner extends Observable {
                 return;
             }
 
-            Log.d(Miner, `Starting work on block #${block.header.height} with ${block.isFull() ? block.transactionCount : '(set by pool)'} transactions (${this._hashrate} H/s)`);
+            Log.d(Miner, `Starting work on block #${block.header.height} / ${block.minerAddr.toUserFriendlyAddress()} / ${BufferUtils.toBase64(block.body.extraData)} with ${block.isFull() ? block.transactionCount : '(set by pool)'} transactions (${this._hashrate} H/s)`);
 
             this._workerPool.startMiningOnBlock(block, this._shareCompactSet ? this._shareCompact : undefined).catch(Log.w.tag(Miner));
         } catch (e) {
@@ -370,6 +375,18 @@ class Miner extends Observable {
         this.fire('hashrate-changed', this._hashrate, this);
     }
 
+    startConfigChanges() {
+        this._activeConfigChanges = true;
+        this._pendingConfigChanges = false;
+    }
+
+    finishConfigChanges() {
+        if (this._pendingConfigChanges) {
+            this._startWork().catch(Log.w.tag(Miner));
+        }
+        this._activeConfigChanges = false;
+    }
+
     /** @type {Address} */
     get address() {
         return this._address;
@@ -379,7 +396,11 @@ class Miner extends Observable {
     set address(addr) {
         if (addr && !addr.equals(this._address)) {
             this._address = addr;
-            this._startWork().catch(Log.w.tag(Miner));
+            if (!this._activeConfigChanges) {
+                this._startWork().catch(Log.w.tag(Miner));
+            } else {
+                this._pendingConfigChanges = true;
+            }
         }
     }
 
@@ -438,7 +459,11 @@ class Miner extends Observable {
     set extraData(extra) {
         if (!BufferUtils.equals(extra, this._extraData)) {
             this._extraData = extra;
-            this._startWork().catch(Log.w.tag(Miner));
+            if (!this._activeConfigChanges) {
+                this._startWork().catch(Log.w.tag(Miner));
+            } else {
+                this._pendingConfigChanges = true;
+            }
         }
     }
 
