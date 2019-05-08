@@ -63,7 +63,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         allowip: null,
         methods: null,
         username: null,
-        password: null
+        password: null,
+        pollTimeout: 5000
     },
     uiServer: {
         enabled: false,
@@ -134,7 +135,8 @@ const CONFIG_TYPES = {
             allowip: {type: 'mixed', types: ['string', {type: 'array', inner: 'string'}]},
             methods: {type: 'array', inner: 'string'},
             username: 'string',
-            password: 'string'
+            password: 'string',
+            pollTimeout: 'number',
         }
     },
     uiServer: {

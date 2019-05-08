@@ -645,10 +645,11 @@ class JsonRpcServer {
 
     /**
      * @param {number|string} number
+     * @param {boolean} wait
      * @returns {Promise.<?Block>}
      * @private
      */
-    _getBlockByNumber(number) {
+    async _getBlockByNumber(number, wait) {
         if (typeof number === 'string') {
             if (number.startsWith('latest-')) {
                 number = this._blockchain.height - parseInt(number.substring(7));
@@ -659,8 +660,30 @@ class JsonRpcServer {
             }
         }
         if (number === 0) number = 1;
-        if (number === 1) return Promise.resolve(Nimiq.GenesisConfig.GENESIS_BLOCK);
-        return this._blockchain.getBlockAt(number, /*includeBody*/ true);
+        if (number === 1) return Nimiq.GenesisConfig.GENESIS_BLOCK;
+
+        let block = await this._blockchain.getBlockAt(number, /*includeBody*/ true);
+        if (wait && !block) {
+            return new Promise(resolve => {
+                let timeout;
+                const listener = this._blockchain.on('head-changed', head => {
+                    if (head.number === number)
+                        resolve(head);
+                    else if (head.number > number)
+                        resolve(await this._blockchain.getBlockAt(number, /*includeBody*/ true));
+                    else
+                        return;
+                    this._blockchain.off('head-changed', listener);
+                    clearTimeout(timeout);
+                });
+                timeout = setTimeout(() => {
+                    this._blockchain.off('head-changed', listener);
+                    resolve(null);
+                }, config.pollTimeout);
+            });
+        } else {
+            return block;
+        }
     }
 
     /**
