@@ -324,15 +324,16 @@ const sources = {
 const dependencies = ['./node_modules/@nimiq/jungle-db/dist/indexeddb.js']; // external dependencies
 
 const babel_config = {
-    plugins: [['transform-runtime', {
-        'polyfill': false
+    plugins: [['@babel/plugin-transform-runtime', {
+        'corejs': true,
+        'regenerator': true,
     }], 'transform-es2015-modules-commonjs'],
     presets: ['es2016', 'es2017']
 };
 
 const babel_loader = {
-    plugins: [['transform-runtime', {
-        'polyfill': false
+    plugins: [['@babel/plugin-transform-runtime', {
+        'regenerator': true,
     }]],
     presets: ['env']
 };
@@ -404,21 +405,21 @@ gulp.task('build-web-babel', ['build-worker', 'create-version-file'], function (
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/core-js/array/from',
-                'babel-runtime/core-js/object/values',
-                'babel-runtime/core-js/object/freeze',
-                'babel-runtime/core-js/object/keys',
-                'babel-runtime/core-js/json/stringify',
-                'babel-runtime/core-js/number/is-integer',
-                'babel-runtime/core-js/number/max-safe-integer',
-                'babel-runtime/core-js/math/clz32',
-                'babel-runtime/core-js/math/fround',
-                'babel-runtime/core-js/math/imul',
-                'babel-runtime/core-js/math/trunc',
-                'babel-runtime/core-js/promise',
-                'babel-runtime/core-js/get-iterator',
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator'
+                '@babel/runtime-corejs2/core-js/array/from',
+                '@babel/runtime-corejs2/core-js/object/values',
+                '@babel/runtime-corejs2/core-js/object/freeze',
+                '@babel/runtime-corejs2/core-js/object/keys',
+                '@babel/runtime-corejs2/core-js/json/stringify',
+                '@babel/runtime-corejs2/core-js/number/is-integer',
+                '@babel/runtime-corejs2/core-js/number/max-safe-integer',
+                '@babel/runtime-corejs2/core-js/math/clz32',
+                '@babel/runtime-corejs2/core-js/math/fround',
+                '@babel/runtime-corejs2/core-js/math/imul',
+                '@babel/runtime-corejs2/core-js/math/trunc',
+                '@babel/runtime-corejs2/core-js/promise',
+                '@babel/runtime-corejs2/core-js/get-iterator',
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator'
             ]
         }).bundle()
             .pipe(source('babel.js'))
@@ -471,21 +472,21 @@ gulp.task('build-offline-babel', ['build-worker', 'create-version-file'], functi
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/core-js/array/from',
-                'babel-runtime/core-js/object/values',
-                'babel-runtime/core-js/object/freeze',
-                'babel-runtime/core-js/object/keys',
-                'babel-runtime/core-js/json/stringify',
-                'babel-runtime/core-js/number/is-integer',
-                'babel-runtime/core-js/number/max-safe-integer',
-                'babel-runtime/core-js/math/clz32',
-                'babel-runtime/core-js/math/fround',
-                'babel-runtime/core-js/math/imul',
-                'babel-runtime/core-js/math/trunc',
-                'babel-runtime/core-js/promise',
-                'babel-runtime/core-js/get-iterator',
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator'
+                '@babel/runtime-corejs2/core-js/array/from',
+                '@babel/runtime-corejs2/core-js/object/values',
+                '@babel/runtime-corejs2/core-js/object/freeze',
+                '@babel/runtime-corejs2/core-js/object/keys',
+                '@babel/runtime-corejs2/core-js/json/stringify',
+                '@babel/runtime-corejs2/core-js/number/is-integer',
+                '@babel/runtime-corejs2/core-js/number/max-safe-integer',
+                '@babel/runtime-corejs2/core-js/math/clz32',
+                '@babel/runtime-corejs2/core-js/math/fround',
+                '@babel/runtime-corejs2/core-js/math/imul',
+                '@babel/runtime-corejs2/core-js/math/trunc',
+                '@babel/runtime-corejs2/core-js/promise',
+                '@babel/runtime-corejs2/core-js/get-iterator',
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator'
             ]
         }).bundle()
             .pipe(source('babel.js'))
@@ -523,10 +524,10 @@ gulp.task('build-loader', function () {
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator',
-                'babel-runtime/helpers/classCallCheck',
-                'babel-runtime/helpers/createClass'
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator',
+                '@babel/runtime-corejs2/helpers/classCallCheck',
+                '@babel/runtime-corejs2/helpers/createClass'
             ]
         }).bundle()
             .pipe(source('babel-runtime.js'))
