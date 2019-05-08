@@ -1,4 +1,4 @@
-# Nimiq Blockchain [![Build Status](https://travis-ci.org/nimiq-network/core.svg)](https://travis-ci.org/nimiq-network/core)
+# Nimiq Blockchain [![Build Status](https://travis-ci.org/nimiq/core-js.svg)](https://travis-ci.org/nimiq/core-js)
 
 **[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
 
