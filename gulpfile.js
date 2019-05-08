@@ -6,11 +6,13 @@ const buffer = require('vinyl-buffer');
 const concat = require('gulp-concat');
 const istanbul = require('istanbul-api');
 const merge = require('merge2');
+const minimist = require('minimist');
 const replace = require('gulp-string-replace');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const uglify = require('gulp-uglify-es').default;
-const util = require('gulp-util');
+
+const env = minimist(process.argv.slice(2));
 
 const sources = {
     platform: {
@@ -338,17 +340,18 @@ const sources = {
 const dependencies = ['./node_modules/@nimiq/jungle-db/dist/indexeddb.js']; // external dependencies
 
 const babel_config = {
-    plugins: [['transform-runtime', {
-        'polyfill': false
-    }], 'transform-es2015-modules-commonjs'],
-    presets: ['es2016', 'es2017']
+    plugins: [['@babel/plugin-transform-runtime', {
+        'corejs': 2,
+        'regenerator': true,
+    }], '@babel/plugin-transform-modules-commonjs'],
+    presets: ['@babel/preset-env']
 };
 
 const babel_loader = {
-    plugins: [['transform-runtime', {
-        'polyfill': false
+    plugins: [['@babel/plugin-transform-runtime', {
+        'regenerator': true,
     }]],
-    presets: ['env']
+    presets: ['@babel/preset-env']
 };
 
 const uglify_config = {
@@ -386,7 +389,7 @@ const uglify_babel = {
     }
 };
 
-gulp.task('create-version-file', function (cb) {
+gulp.task('create-version-file', function(cb) {
     const version = require('./package.json').version;
     fs.writeFile('./build/VersionNumber.js', `Version.CORE_JS_VERSION = '${version}';`, cb);
 });
@@ -399,6 +402,11 @@ gulp.task('build-worker', function () {
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
+
+// Build stage dependencies
+const prepareNode = gulp.series('create-version-file');
+const prepareWeb  = gulp.series('create-version-file', 'build-worker');
+const prepareAll  = prepareWeb; // node + web
 
 gulp.task('build-istanbul', function () {
     return new Promise((callback) => {
@@ -414,25 +422,25 @@ const BROWSER_SOURCES = [
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-web-babel', ['build-worker', 'create-version-file'], function () {
+gulp.task('run-build-web-babel', function () {
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/core-js/array/from',
-                'babel-runtime/core-js/object/values',
-                'babel-runtime/core-js/object/freeze',
-                'babel-runtime/core-js/object/keys',
-                'babel-runtime/core-js/json/stringify',
-                'babel-runtime/core-js/number/is-integer',
-                'babel-runtime/core-js/number/max-safe-integer',
-                'babel-runtime/core-js/math/clz32',
-                'babel-runtime/core-js/math/fround',
-                'babel-runtime/core-js/math/imul',
-                'babel-runtime/core-js/math/trunc',
-                'babel-runtime/core-js/promise',
-                'babel-runtime/core-js/get-iterator',
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator'
+                '@babel/runtime-corejs2/core-js/array/from',
+                '@babel/runtime-corejs2/core-js/object/values',
+                '@babel/runtime-corejs2/core-js/object/freeze',
+                '@babel/runtime-corejs2/core-js/object/keys',
+                '@babel/runtime-corejs2/core-js/json/stringify',
+                '@babel/runtime-corejs2/core-js/number/is-integer',
+                '@babel/runtime-corejs2/core-js/number/max-safe-integer',
+                '@babel/runtime-corejs2/core-js/math/clz32',
+                '@babel/runtime-corejs2/core-js/math/fround',
+                '@babel/runtime-corejs2/core-js/math/imul',
+                '@babel/runtime-corejs2/core-js/math/trunc',
+                '@babel/runtime-corejs2/core-js/promise',
+                '@babel/runtime-corejs2/core-js/get-iterator',
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator'
             ]
         }).bundle()
             .pipe(source('babel.js'))
@@ -448,7 +456,7 @@ gulp.task('build-web-babel', ['build-worker', 'create-version-file'], function (
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-web', ['build-worker', 'create-version-file'], function () {
+gulp.task('run-build-web', function () {
     return gulp.src(BROWSER_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.js'))
@@ -465,7 +473,7 @@ const BROWSER_MODULE_SOURCES = [
     './src/main/platform/browser/module.suffix.js'
 ];
 
-gulp.task('build-web-module', ['build-worker', 'create-version-file'], function () {
+gulp.task('run-build-web-module', function () {
     return gulp.src(BROWSER_MODULE_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web.esm.js'))
@@ -481,25 +489,25 @@ const OFFLINE_SOURCES = [
     './src/main/platform/browser/index.suffix.js'
 ];
 
-gulp.task('build-offline-babel', ['build-worker', 'create-version-file'], function () {
+gulp.task('run-build-offline-babel', function () {
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/core-js/array/from',
-                'babel-runtime/core-js/object/values',
-                'babel-runtime/core-js/object/freeze',
-                'babel-runtime/core-js/object/keys',
-                'babel-runtime/core-js/json/stringify',
-                'babel-runtime/core-js/number/is-integer',
-                'babel-runtime/core-js/number/max-safe-integer',
-                'babel-runtime/core-js/math/clz32',
-                'babel-runtime/core-js/math/fround',
-                'babel-runtime/core-js/math/imul',
-                'babel-runtime/core-js/math/trunc',
-                'babel-runtime/core-js/promise',
-                'babel-runtime/core-js/get-iterator',
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator'
+                '@babel/runtime-corejs2/core-js/array/from',
+                '@babel/runtime-corejs2/core-js/object/values',
+                '@babel/runtime-corejs2/core-js/object/freeze',
+                '@babel/runtime-corejs2/core-js/object/keys',
+                '@babel/runtime-corejs2/core-js/json/stringify',
+                '@babel/runtime-corejs2/core-js/number/is-integer',
+                '@babel/runtime-corejs2/core-js/number/max-safe-integer',
+                '@babel/runtime-corejs2/core-js/math/clz32',
+                '@babel/runtime-corejs2/core-js/math/fround',
+                '@babel/runtime-corejs2/core-js/math/imul',
+                '@babel/runtime-corejs2/core-js/math/trunc',
+                '@babel/runtime-corejs2/core-js/promise',
+                '@babel/runtime-corejs2/core-js/get-iterator',
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator'
             ]
         }).bundle()
             .pipe(source('babel.js'))
@@ -515,7 +523,7 @@ gulp.task('build-offline-babel', ['build-worker', 'create-version-file'], functi
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-offline', ['build-worker', 'create-version-file'], function () {
+gulp.task('run-build-offline', function () {
     return gulp.src(OFFLINE_SOURCES, {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-offline.js'))
@@ -524,7 +532,7 @@ gulp.task('build-offline', ['build-worker', 'create-version-file'], function () 
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-web-istanbul', ['build-worker', 'build-istanbul', 'create-version-file'], function () {
+gulp.task('run-build-web-istanbul', function () {
     return gulp.src(BROWSER_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(concat('web-istanbul.js'))
@@ -537,10 +545,10 @@ gulp.task('build-loader', function () {
     return merge(
         browserify([], {
             require: [
-                'babel-runtime/regenerator',
-                'babel-runtime/helpers/asyncToGenerator',
-                'babel-runtime/helpers/classCallCheck',
-                'babel-runtime/helpers/createClass'
+                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/helpers/asyncToGenerator',
+                '@babel/runtime-corejs2/helpers/classCallCheck',
+                '@babel/runtime-corejs2/helpers/createClass'
             ]
         }).bundle()
             .pipe(source('babel-runtime.js'))
@@ -562,7 +570,7 @@ const NODE_SOURCES = [
     './src/main/platform/nodejs/index.suffix.js'
 ];
 
-gulp.task('build-node', ['create-version-file'], function () {
+gulp.task('run-build-node', function () {
     return gulp.src(NODE_SOURCES)
         .pipe(sourcemaps.init())
         .pipe(concat('node.js'))
@@ -571,8 +579,8 @@ gulp.task('build-node', ['create-version-file'], function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build-node-istanbul', ['build-istanbul', 'create-version-file'], function () {
-    return gulp.src(NODE_SOURCES.map(f => `./.istanbul/${f}`))
+gulp.task('run-build-node-istanbul', function () {
+    return gulp.src(NODE_SOURCES.map(f => f.indexOf('./src/main') === 0 ? `./.istanbul/${f}` : f), {base: '.'})
         .pipe(sourcemaps.init())
         .pipe(concat('node-istanbul.js'))
         .pipe(uglify(uglify_config))
@@ -599,19 +607,6 @@ const RELEASE_ADDONS = [
     'build/Release/nimiq_node_avx512f.node'
 ];
 
-gulp.task('prepare-packages', ['build-node'], function () {
-    gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/node-ui/**/*']).pipe(gulp.dest('packaging/BUILD/node-ui'));
-    gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
-    gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${util.env.architecture}"`)).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/nimiq']).pipe(replace('node "\\$SCRIPT_PATH/index.js"', '/usr/share/nimiq/{{ cli_entrypoint }}')).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/index.js', 'clients/nodejs/remote.js', 'clients/nodejs/keytool.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/', '../lib/')).pipe(gulp.dest('packaging/BUILD/modules'));
-    gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
-    gulp.src(RELEASE_ADDONS).pipe(gulp.dest('packaging/BUILD/build'));
-});
-
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)
@@ -620,16 +615,49 @@ gulp.task('eslint', function () {
         .pipe(eslint.failAfterError());
 });
 
-gulp.task('build', [
-    'build-web',
-    'build-web-babel',
-    'build-web-module',
-    'build-web-istanbul',
-    'build-offline',
-    'build-offline-babel',
-    'build-loader',
-    'build-node',
-    'build-node-istanbul'
-]);
+gulp.task('build-web', gulp.series(prepareWeb, 'run-build-web'));
+gulp.task('build-web-babel', gulp.series(prepareWeb, 'run-build-web-babel'));
+gulp.task('build-web-module', gulp.series(prepareWeb, 'run-build-web-module'));
+gulp.task('build-web-istanbul', gulp.series(prepareWeb, 'build-istanbul', 'run-build-web-istanbul'));
 
-gulp.task('default', ['build']);
+gulp.task('build-offline', gulp.series(prepareWeb, 'run-build-offline'));
+gulp.task('build-offline-babel', gulp.series(prepareWeb, 'run-build-offline-babel'));
+
+gulp.task('build-node', gulp.series(prepareNode, 'run-build-node'));
+gulp.task('build-node-istanbul', gulp.series(prepareNode, 'build-istanbul', 'run-build-node-istanbul'));
+
+gulp.task('build', gulp.series(
+    prepareAll,
+    gulp.parallel(
+        'build-loader',
+        'run-build-web',
+        'run-build-web-babel',
+        'run-build-web-module',
+        'run-build-offline',
+        'run-build-offline-babel',
+        'run-build-node',
+        gulp.series(
+            'build-istanbul',
+            gulp.parallel(
+                'run-build-web-istanbul',
+                'run-build-node-istanbul',
+            )
+        ),
+    )
+));
+
+// Build packages
+gulp.task('prepare-packages', gulp.series('build-node', function () {
+    gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/node-ui/**/*']).pipe(gulp.dest('packaging/BUILD/node-ui'));
+    gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
+    gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${env.architecture}"`)).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/nimiq']).pipe(replace('node "\\$SCRIPT_PATH/index.js"', '/usr/share/nimiq/{{ cli_entrypoint }}')).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/index.js', 'clients/nodejs/remote.js', 'clients/nodejs/keytool.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/', '../lib/')).pipe(gulp.dest('packaging/BUILD/modules'));
+    gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
+    gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
+    gulp.src(RELEASE_ADDONS).pipe(gulp.dest('packaging/BUILD/build'));
+}));
+
+gulp.task('default', gulp.series('build'));
