@@ -76,7 +76,7 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
 
 const isNano = config.type === 'nano';
 
-if (isNano && config.miner.enabled) {
+if (isNano && config.miner.enabled && config.poolMining.mode !== 'nano') {
     console.error('Cannot mine when running as a nano client');
     process.exit(1);
 }
