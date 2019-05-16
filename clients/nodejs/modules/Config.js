@@ -81,7 +81,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     reverseProxy: {
         enabled: false,
         port: 8444,
-        address: '::ffff:127.0.0.1',
+        address: null,
+        addresses: [],
         header: 'x-forwarded-for'
     },
     log: {
@@ -161,6 +162,7 @@ const CONFIG_TYPES = {
             enabled: 'boolean',
             port: 'number',
             address: 'string',
+            addresses: {type: 'array', inner: 'string'},
             header: 'string'
         }
     },
@@ -369,6 +371,9 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
             config.reverseProxy.port = parseInt(split[0]);
             if (split.length === 2) config.reverseProxy.address = split[1];
         }
+    }
+    if (config.reverseProxy.address) {
+        config.reverseProxy.addresses.push(config.reverseProxy.address);
     }
     if (argv.log || argv.verbose) {
         config.log.level = 'verbose';
