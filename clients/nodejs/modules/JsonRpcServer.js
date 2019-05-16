@@ -702,6 +702,7 @@ class JsonRpcServer {
             obj.recipient = account.recipient.toHex();
             obj.recipientAddress = account.recipient.toUserFriendlyAddress();
             obj.hashRoot = account.hashRoot.toHex();
+            obj.hashAlgorithm = account.hashRoot.algorithm
             obj.hashCount = account.hashCount;
             obj.timeout = account.timeout;
             obj.totalAmount = account.totalAmount;
@@ -750,6 +751,7 @@ class JsonRpcServer {
             accountsHash: block.accountsHash.toHex(),
             difficulty: block.difficulty,
             timestamp: block.timestamp,
+            confirmations: this._blockchain.height - block.height
         };
         if (block.isFull()) {
             obj.miner = block.minerAddr.toHex();
