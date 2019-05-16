@@ -139,8 +139,8 @@ class WebSocketConnector extends Observable {
 
         // If we're behind a reverse proxy, the peer's IP will be in the header set by the reverse proxy, not in the req.connection object
         if (this._networkConfig.reverseProxy.enabled) {
-            const reverseProxyAddress = this._networkConfig.reverseProxy.address;
-            if (remoteAddress === reverseProxyAddress) {
+            const reverseProxyAddresses = this._networkConfig.reverseProxy.addresses;
+            if (reverseProxyAddresses.includes(remoteAddress)) {
                 const reverseProxyHeader = this._networkConfig.reverseProxy.header;
                 if (req.headers[reverseProxyHeader]) {
                     remoteAddress = req.headers[reverseProxyHeader].split(/\s*,\s*/)[0];

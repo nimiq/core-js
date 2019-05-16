@@ -157,7 +157,7 @@ class WsNetworkConfig extends NetworkConfig {
      * @constructor
      * @param {string} host
      * @param {number} port
-     * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
+     * @param {{enabled: boolean, port: number, addresses: Array.<string>, header: string}} reverseProxy
      */
     constructor(host, port, reverseProxy) {
         super(Protocol.WS | Protocol.WSS);
@@ -182,7 +182,7 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {{enabled: boolean, port: number, address: string, header: string}}
+     * @type {{enabled: boolean, port: number, addresses: Array.<string>, header: string}}
      */
     get reverseProxy() {
         return this._reverseProxy;
@@ -227,7 +227,7 @@ class WssNetworkConfig extends WsNetworkConfig {
      * @param {number} port
      * @param {string} [key]
      * @param {string} [cert]
-     * @param {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
+     * @param {{enabled: boolean, port: number, addresses: Array.<string>, header: string}} reverseProxy
      */
     constructor(host, port, key, cert, reverseProxy) {
         super(host, port, reverseProxy);
