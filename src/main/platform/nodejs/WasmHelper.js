@@ -1,18 +1,16 @@
 class WasmHelper {
 
-    /**
-     * @param {boolean} [forceJS]
-     */
-    static async doImport(forceJS) {
-        return WasmHelper.doImportBrowser(forceJS);
+    static forceJs(value) {
+        this._forceJs = value;
     }
 
-    /**
-     * @param {boolean} [forceJS]
-     */
-    static doImportNodeJs(forceJS) {
+    static async doImport() {
+        return WasmHelper.doImportBrowser();
+    }
+
+    static doImportNodeJs() {
         if (!PlatformUtils.isNodeJs()) return;
-        if (!forceJS && WasmHelper.importWasmNodeJs('worker-wasm.wasm')) {
+        if (!WasmHelper._forceJS && WasmHelper.importWasmNodeJs('worker-wasm.wasm')) {
             WasmHelper.importScriptNodeJs('worker-wasm.js');
         } else {
             WasmHelper.importScriptNodeJs('worker-js.js');
@@ -101,6 +99,7 @@ class WasmHelper {
 }
 
 WasmHelper._moduleLoadedCallbacks = {};
+WasmHelper._forceJs = false;
 
 Class.register(WasmHelper);
 
