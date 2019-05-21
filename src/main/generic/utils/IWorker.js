@@ -14,7 +14,9 @@ class IWorker {
             if (!workerScript) {
                 workerScript = `${Nimiq._path}worker.js`;
             }
-            return IWorker.createProxy(clazz, name, new Worker(URL.createObjectURL(new Blob([`Nimiq = {_path: '${Nimiq._path}'}; importScripts('${workerScript.replace(/'/g, '')}');`]))));
+            return IWorker.createProxy(clazz, name, new Worker(URL.createObjectURL(new Blob(
+                [`Nimiq = {_path: '${Nimiq._path}', _avoidWasm: ${!!Nimiq._avoidWasm}}; importScripts('${workerScript.replace(/'/g, '')}');`]
+            ))));
         }
     }
 

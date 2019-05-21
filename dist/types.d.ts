@@ -1,6 +1,7 @@
 export function load(): Promise<void>;
 
 export let _path: string | undefined;
+export let _avoidWasm: boolean | undefined;
 
 export class Class {
     public static scope: any;
@@ -480,7 +481,6 @@ export namespace IWorker {
 }
 
 export class WasmHelper {
-    public static forceJs(value?: boolean): void;
     public static doImport(): Promise<void>;
     public static importWasm(wasm: string, module?: string): Promise<boolean>;
     public static importScript(script: string, module?: string): Promise<boolean>;
