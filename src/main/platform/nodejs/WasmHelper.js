@@ -1,12 +1,18 @@
 class WasmHelper {
 
-    static async doImport() {
-        return WasmHelper.doImportNodeJs();
+    /**
+     * @param {boolean} [forceJS]
+     */
+    static async doImport(forceJS) {
+        return WasmHelper.doImportBrowser(forceJS);
     }
 
-    static doImportNodeJs() {
+    /**
+     * @param {boolean} [forceJS]
+     */
+    static doImportNodeJs(forceJS) {
         if (!PlatformUtils.isNodeJs()) return;
-        if (WasmHelper.importWasmNodeJs('worker-wasm.wasm')) {
+        if (!forceJS && WasmHelper.importWasmNodeJs('worker-wasm.wasm')) {
             WasmHelper.importScriptNodeJs('worker-wasm.js');
         } else {
             WasmHelper.importScriptNodeJs('worker-js.js');

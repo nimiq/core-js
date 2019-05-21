@@ -1,12 +1,18 @@
 class WasmHelper {
 
-    static async doImport() {
-        return WasmHelper.doImportBrowser();
+    /**
+     * @param {boolean} [forceJS]
+     */
+    static async doImport(forceJS) {
+        return WasmHelper.doImportBrowser(forceJS);
     }
 
-    static async doImportBrowser() {
+    /**
+     * @param {boolean} [forceJS]
+     */
+    static async doImportBrowser(forceJS) {
         WasmHelper._importBrowserPromise = WasmHelper._importBrowserPromise || (async () => {
-            if (await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
+            if (!forceJS && await WasmHelper.importWasmBrowser('worker-wasm.wasm')) {
                 await WasmHelper.importScriptBrowser('worker-wasm.js');
             } else {
                 await WasmHelper.importScriptBrowser('worker-js.js');
