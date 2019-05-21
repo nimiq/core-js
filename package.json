@@ -1,22 +1,8 @@
 {
-  "name": "@nimiq/core",
+  "name": "@nimiq/core-web",
   "version": "1.4.3",
-  "main": "dist/node.js",
-  "types": "dist/types.d.ts",
   "homepage": "https://nimiq.com/",
   "description": "",
-  "scripts": {
-    "prepare": "gulp build-node",
-    "build": "gulp build",
-    "build-deb": "gulp --architecture=`dpkg --print-architecture` prepare-packages && cd packaging/BUILD && mv fakeroot/etc/nimiq/sample.conf fakeroot/etc/nimiq/nimiq.conf && node-deb --no-default-package-dependencies -- node *.js cron-deb.sh VERSION build/ lib/ modules/ node-ui/ && mv *.deb ../../dist/",
-    "build-rpm": "gulp --architecture=`arch` prepare-packages && cd packaging && mv BUILD/fakeroot/etc/nimiq/sample.conf BUILD/fakeroot/etc/nimiq/nimiq.conf && rpmbuild -bb SPECS/nimiq.spec && mv RPMS/x86_64/*.rpm ../dist",
-    "esdoc": "esdoc",
-    "test": "jasmine && gulp test",
-    "test-node": "jasmine",
-    "test-browser": "karma start",
-    "lint": "gulp eslint",
-    "lint-types": "tslint ./dist/types.d.ts"
-  },
   "author": {
     "name": "The Nimiq Core Development Team",
     "url": "https://nimiq.com/"
@@ -29,93 +15,14 @@
     "type": "git",
     "url": "https://github.com/nimiq-network/core.git"
   },
-  "engines": {
-    "node": ">=7.9.0"
-  },
   "files": [
-    "dist/node.js",
-    "dist/types.d.ts",
-    "binding.gyp",
-    "src/native"
-  ],
-  "node_deb": {
-    "package_name": "nimiq",
-    "version": "1.4.3-1",
-    "init": "systemd",
-    "architecture": "none",
-    "install_strategy": "copy",
-    "description": "Nimiq node.js client",
-    "maintainer": "The Nimiq Core Development Team <info@nimiq.com>",
-    "extra_files": "fakeroot",
-    "templates": {
-      "executable": "nimiq",
-      "default_variables": "default",
-      "postinst": "postinst",
-      "postrm": "postrm",
-      "prerm": "prerm",
-      "systemd_service": "systemd.service"
-    },
-    "entrypoints": {
-      "daemon": "app/node /usr/share/nimiq/app/index.js"
-    }
-  },
-  "gypfile": true,
-  "dependencies": {
-    "@nimiq/jungle-db": "^0.9.17",
-    "atob": "^2.0.3",
-    "bindings": "^1.3.0",
-    "btoa": "^1.1.2",
-    "chalk": "^2.3.2",
-    "cpuid-git": "^0.3.0",
-    "json5": "^1.0.1",
-    "lodash.merge": "^4.6.1",
-    "minimist": "^1.2.0",
-    "nan": "^2.10.0",
-    "ws": "^5.2.0"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.5.1",
-    "babel-preset-es2016": "^6.24.1",
-    "babel-preset-es2017": "^6.24.1",
-    "babel-runtime": "^6.26.0",
-    "browserify": "^16.1.1",
-    "codecov": "^3.0.0",
-    "esdoc": "^1.0.4",
-    "esdoc-es7-plugin": "^0.0.3",
-    "esdoc-standard-plugin": "^1.0.0",
-    "eslint": "^4.19.0",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^7.0.1",
-    "gulp-concat": "^2.6.1",
-    "gulp-eslint": "^4.0.2",
-    "gulp-rename": "^1.2.2",
-    "gulp-sourcemaps": "^2.6.4",
-    "gulp-streamify": "^1.0.2",
-    "gulp-string-replace": "^1.0.0",
-    "gulp-uglify-es": "^1.0.1",
-    "gulp-util": "^3.0.8",
-    "gulp-watch": "^5.0.0",
-    "istanbul": "^1.1.0-alpha.1",
-    "jasmine": "^3.1.0",
-    "jasmine-console-reporter": "^3.0.0",
-    "jasmine-core": "^3.1.0",
-    "karma": "^3.1.1",
-    "karma-chrome-launcher": "^2.2.0",
-    "karma-cli": "^1.0.1",
-    "karma-coverage": "^1.1.1",
-    "karma-firefox-launcher": "^1.1.0",
-    "karma-jasmine": "*",
-    "karma-safari-launcher": "^1.0.0",
-    "karma-sauce-launcher": "^1.2.0",
-    "merge2": "^1.2.1",
-    "node-deb": "^0.10.4",
-    "node-gyp": "^3.6.2",
-    "tslint": "^5.12.1",
-    "typescript": "^3.3.3",
-    "vinyl-buffer": "^1.0.1",
-    "vinyl-source-stream": "^2.0.0"
-  }
+    "package.json",
+    "web-offline.js",
+    "web-offline.js.map",
+    "worker.js",
+    "worker-js.js",
+    "worker.js.map",
+    "worker-wasm.js",
+    "worker-wasm.wasm"
+  ]
 }
