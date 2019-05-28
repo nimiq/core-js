@@ -32,18 +32,21 @@ class BaseConsensus extends Observable {
         /** @type {InvRequestManager} */
         this._invRequestManager = new InvRequestManager();
 
-        network.on('peer-joined', peer => this._onPeerJoined(peer));
-        network.on('peer-left', peer => this._onPeerLeft(peer));
+        /** @type {Set.<{obj: Observable, type: string, id: number}>} */
+        this._listenersToDisconnect = new Set();
+
+        this._onToDisconnect(network, 'peer-joined', peer => this._onPeerJoined(peer));
+        this._onToDisconnect(network, 'peer-left', peer => this._onPeerLeft(peer));
 
         // Notify peers when our blockchain head changes.
-        blockchain.on('head-changed', head => this._onHeadChanged(head));
-        blockchain.on('rebranched', (revertBlocks, forkBlocks, blockHash) => this._onRebranched(blockHash, revertBlocks, forkBlocks));
-        blockchain.on('extended', (blockHash) => this._onExtended(blockHash));
+        this._onToDisconnect(blockchain, 'head-changed', head => this._onHeadChanged(head));
+        this._onToDisconnect(blockchain, 'rebranched', (revertBlocks, forkBlocks, blockHash) => this._onRebranched(blockHash, revertBlocks, forkBlocks));
+        this._onToDisconnect(blockchain, 'extended', (blockHash) => this._onExtended(blockHash));
         this.bubble(blockchain, 'block');
 
         // Relay new (verified) transactions to peers.
-        mempool.on('transaction-added', tx => this._onTransactionAdded(tx));
-        mempool.on('transaction-removed', tx => this._onTransactionRemoved(tx));
+        this._onToDisconnect(mempool,'transaction-added', tx => this._onTransactionAdded(tx));
+        this._onToDisconnect(mempool,'transaction-removed', tx => this._onTransactionRemoved(tx));
         this.bubble(mempool, 'transaction-added', 'transaction-removed');
     }
 
@@ -214,6 +217,39 @@ class BaseConsensus extends Observable {
 
     //
     //
+
+    /**
+     * @param {Observable} obj
+     * @param {string} type
+     * @param {function} callback
+     * @protected
+     */
+    _onToDisconnect(obj, type, callback) {
+        const id = obj.on(type, callback);
+        this._listenersToDisconnect.add({obj, type, id});
+    }
+
+    _disconnectListeners() {
+        for (let listener of this._listenersToDisconnect) {
+            listener.obj.off(listener.type, listener.id);
+        }
+        this._offAll();
+    }
+
+    /**
+     * @param {BaseConsensus} consensus
+     * @returns {BaseConsensus}
+     */
+    handoverTo(consensus) {
+        this._disconnectListeners();
+        for (let peerId of this._agents.keyIterator()) {
+            const peer = this._agents.get(peerId).peer;
+            this._agents.get(peerId)._disconnectListeners();
+            this._onPeerLeft(peer);
+            consensus._onPeerJoined(peer);
+        }
+        return consensus;
+    }
 
     /**
      * @param {Hash} hash

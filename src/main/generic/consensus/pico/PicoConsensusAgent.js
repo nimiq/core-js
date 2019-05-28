@@ -5,7 +5,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
      * @param {Subscription} targetSubscription
      */
     constructor(consensus, peer, targetSubscription) {
-        super(consensus.blockchain, consensus.network.time, peer, consensus.invRequestManager, targetSubscription);
+        super(consensus.blockchain, consensus.mempool, consensus.network.time, peer, consensus.invRequestManager, targetSubscription);
         this._consensus = consensus;
     }
 
@@ -32,9 +32,9 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         }
     }
 
-    _preProcessBlockMessage(msg) {
-        return new BlockMessage(msg.block.toLight());
-    }
+    // _preProcessBlockMessage(msg) {
+    //     return new BlockMessage(msg.block.toLight());
+    // }
 
     async syncBlockchain() {
         this._syncing = true;
@@ -60,6 +60,18 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         this.fire('sync');
     }
 
+    /**
+     * @param {Hash} hash
+     * @param {Transaction} transaction
+     * @returns {Promise.<void>}
+     * @protected
+     * @override
+     */
+    async _processTransaction(hash, transaction) {
+        await this._consensus.mempool.pushTransaction(transaction);
+        // TODO: Handle errors
+    }
+
     _getBlock(hash, includeForks, includeBody) {
         return this._blockchain.getBlock(hash, includeForks);
     }
@@ -69,8 +81,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
     }
 
     _getTransaction(hash) {
-        // TODO: mempool
-        return undefined;
+        return this._consensus.mempool.getTransaction(hash);
     }
 }
 

@@ -8,7 +8,7 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
      * @param {Subscription} targetSubscription
      */
     constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
-        super(blockchain, time, peer, invRequestManager, targetSubscription);
+        super(blockchain, mempool, time, peer, invRequestManager, targetSubscription);
         /** @type {NanoChain} */
         this._blockchain = blockchain;
         /** @type {NanoMempool} */

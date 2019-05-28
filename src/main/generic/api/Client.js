@@ -66,6 +66,7 @@ class Client {
         this._consensusOn(consensus, 'transaction-added', (tx) => this._onPendingTransaction(tx));
         this._consensusOn(consensus, 'transaction-added', (tx) => this._mempool._onTransactionAdded(tx));
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
+        this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
         consensus.network.connect();
     }
 
@@ -86,14 +87,16 @@ class Client {
      * @private
      */
     async _replaceConsensus(newConsensus) {
-        const consensus = await this._consensus;
+        const oldConsensus = await this._consensus;
 
         for (let {type, id} of this._consensusListenerIds) {
-            consensus.off(type, id);
+            oldConsensus.off(type, id);
         }
         this._consensusListenerIds = [];
 
         this._consensus = newConsensus;
+        const consensus = await this._consensus;
+        oldConsensus.handoverTo(consensus);
         await this._setupConsensus();
     }
 
@@ -193,6 +196,17 @@ class Client {
         for (let listener of this._consensusChangedListeners.valueIterator()) {
             listener(state);
         }
+    }
+
+    _onConsensusFailed() {
+        this._consensusSynchronizer.push(async () => {
+            const consensus = await this._consensus;
+            if (consensus instanceof PicoConsensus) {
+                // Upgrade pico consensus to nano consensus
+                const newConsensus = new NanoConsensus(await new NanoChain(consensus.network.time), consensus.mempool, consensus.network);
+                await this._replaceConsensus(Promise.resolve(newConsensus));
+            }
+        });
     }
 
     /**

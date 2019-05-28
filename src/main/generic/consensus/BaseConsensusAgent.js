@@ -96,28 +96,51 @@ class BaseConsensusAgent extends Observable {
         /** @type {InvRequestManager} */
         this._invRequestManager = invRequestManager;
 
+        /** @type {Set.<{obj: Observable, type: string, id: number}>} */
+        this._listenersToDisconnect = new Set();
+
         // Listen to consensus messages from the peer.
-        peer.channel.on('inv', msg => this._onInv(msg));
-        peer.channel.on('block', msg => this._onBlock(msg));
-        peer.channel.on('header', msg => this._onHeader(msg));
-        peer.channel.on('tx', msg => this._onTx(msg));
-        peer.channel.on('not-found', msg => this._onNotFound(msg));
+        this._onToDisconnect(peer.channel, 'inv', msg => this._onInv(msg));
+        this._onToDisconnect(peer.channel, 'block', msg => this._onBlock(msg));
+        this._onToDisconnect(peer.channel, 'header', msg => this._onHeader(msg));
+        this._onToDisconnect(peer.channel, 'tx', msg => this._onTx(msg));
+        this._onToDisconnect(peer.channel, 'not-found', msg => this._onNotFound(msg));
 
-        peer.channel.on('subscribe', msg => this._onSubscribe(msg));
-        peer.channel.on('get-data', msg => this._onGetData(msg));
-        peer.channel.on('get-header', msg => this._onGetHeader(msg));
+        this._onToDisconnect(peer.channel, 'subscribe', msg => this._onSubscribe(msg));
+        this._onToDisconnect(peer.channel, 'get-data', msg => this._onGetData(msg));
+        this._onToDisconnect(peer.channel, 'get-header', msg => this._onGetHeader(msg));
 
-        peer.channel.on('block-proof', msg => this._onBlockProof(msg));
-        peer.channel.on('transactions-proof', msg => this._onTransactionsProof(msg));
-        peer.channel.on('transaction-receipts', msg => this._onTransactionReceipts(msg));
+        this._onToDisconnect(peer.channel, 'block-proof', msg => this._onBlockProof(msg));
+        this._onToDisconnect(peer.channel, 'transactions-proof', msg => this._onTransactionsProof(msg));
+        this._onToDisconnect(peer.channel, 'transaction-receipts', msg => this._onTransactionReceipts(msg));
 
-        peer.channel.on('get-head', msg => this._onGetHead(msg));
-        peer.channel.on('head', msg => this._onHead(msg));
+        this._onToDisconnect(peer.channel, 'get-head', msg => this._onGetHead(msg));
+        this._onToDisconnect(peer.channel, 'head', msg => this._onHead(msg));
 
         // Clean up when the peer disconnects.
-        peer.channel.on('close', () => this._onClose());
+        this._onToDisconnect(peer.channel, 'close', () => this._onClose());
 
         this._requestHead();
+    }
+
+    /**
+     * @param {Observable} obj
+     * @param {string} type
+     * @param {function} callback
+     * @protected
+     */
+    _onToDisconnect(obj, type, callback) {
+        const id = obj.on(type, callback);
+        this._listenersToDisconnect.add({obj, type, id});
+    }
+
+    /**
+     * @package
+     */
+    _disconnectListeners() {
+        for (let listener of this._listenersToDisconnect) {
+            listener.obj.off(listener.type, listener.id);
+        }
     }
 
     /**
@@ -281,6 +304,7 @@ class BaseConsensusAgent extends Observable {
     relayTransaction(transaction) {
         // Only relay transaction if it matches the peer's subscription.
         if (!this._remoteSubscription.matchesTransaction(transaction)) {
+            Log.v(BaseConsensusAgent, `Not sending ${transaction.hash()} to ${this.peer.peerAddress}: not subscribed`);
             return false;
         }
 
@@ -289,6 +313,7 @@ class BaseConsensusAgent extends Observable {
 
         // Don't relay transaction to this peer if it already knows it.
         if (this._knownObjects.contains(vector)) {
+            Log.v(BaseConsensusAgent, `Not sending ${transaction.hash()} to ${this.peer.peerAddress}: already knows`);
             return false;
         }
 
@@ -302,6 +327,7 @@ class BaseConsensusAgent extends Observable {
 
         // Assume that the peer knows this transaction now.
         this._knownObjects.add(vector);
+        Log.v(BaseConsensusAgent, `Sending ${transaction.hash()} to ${this.peer.peerAddress}`);
 
         return true;
     }
@@ -362,6 +388,7 @@ class BaseConsensusAgent extends Observable {
     async __onInv(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
+            Log.v(BaseConsensusAgent, `Received ${vector.hash} from ${this.peer.peerAddress}`);
             this._knownObjects.add(vector);
             this._waitingInvVectors.remove(vector);
             this._waitingFreeInvVectors.remove(vector); // The inv vector has the same hashCode as a FreeTransactionVector
@@ -869,6 +896,7 @@ class BaseConsensusAgent extends Observable {
     async _onGetData(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
+            Log.v(BaseConsensusAgent, `Got request for ${vector.hash} from ${this.peer.peerAddress}`);
             this._knownObjects.add(vector);
         }
 
@@ -1054,7 +1082,7 @@ class BaseConsensusAgent extends Observable {
 
         // Check that the tail of the proof corresponds to the requested block.
         const proof = msg.proof;
-        if (!blockHashToProve.equals(proof.tail.hash()) && proof.tail.height !== blockHeightToProve) {
+        if (!proof.tail.hash().equals(blockHashToProve) && proof.tail.height !== blockHeightToProve) {
             Log.w(BaseConsensusAgent, `Received BlockProof with invalid tail block from ${this._peer.peerAddress}`);
             reject(new Error('Invalid tail block'));
             return;

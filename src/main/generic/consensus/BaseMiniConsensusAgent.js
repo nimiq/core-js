@@ -4,22 +4,25 @@
 class BaseMiniConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {BaseChain} blockchain
+     * @param {NanoMempool} mempool
      * @param {Time} time
      * @param {Peer} peer
      * @param {InvRequestManager} invRequestManager
      * @param {Subscription} [targetSubscription]
      */
-    constructor(blockchain, time, peer, invRequestManager, targetSubscription) {
+    constructor(blockchain, mempool, time, peer, invRequestManager, targetSubscription) {
         super(time, peer, invRequestManager, targetSubscription);
 
         /** @type {BaseChain} */
         this._blockchain = blockchain;
+        /** @type {NanoMempool} */
+        this._mempool = mempool;
 
         this._subscribeTarget();
 
         // Helper object to keep track of the accounts we're requesting from the peer.
         this._accountsRequest = null;
-        peer.channel.on('accounts-proof', msg => this._onAccountsProof(msg));
+        this._onToDisconnect(peer.channel, 'accounts-proof', msg => this._onAccountsProof(msg));
     }
 
     requestMempool() {
@@ -147,6 +150,29 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
         resolve(accounts);
     }
 
+    /**
+     * @param {SubscribeMessage} msg
+     * @override
+     * @private
+     */
+    _onSubscribe(msg) {
+        super._onSubscribe(msg);
+        let txs;
+        switch (msg.subscription.type) {
+            case Subscription.Type.MIN_FEE:
+                txs = this._mempool.getTransactions(BaseInventoryMessage.VECTORS_MAX_COUNT).filter((tx) => tx.feePerByte >= msg.subscription.minFeePerByte);
+                break;
+            case Subscription.Type.ANY:
+                txs = this._mempool.getTransactions(BaseInventoryMessage.VECTORS_MAX_COUNT);
+                break;
+            case Subscription.Type.ADDRESSES:
+                txs = this._mempool.getTransactionsByAddresses(msg.subscription.addresses, BaseInventoryMessage.VECTORS_MAX_COUNT);
+                break;
+        }
+        if (txs) {
+            this.peer.channel.inv(txs.map(tx => InvVector.fromTransaction(tx)));
+        }
+    }
 }
 /**
  * Maximum time (ms) to wait for accounts-proof after sending out get-accounts-proof before dropping the peer.
