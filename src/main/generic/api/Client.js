@@ -769,7 +769,7 @@ class Client {
         set.addAll(addresses);
 
         this._subscribedAddresses.addAll(set);
-        this._consensusSynchronizer.push(async () => {
+        await this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus.established) {
                 const oldSubscription = consensus.getSubscription();
