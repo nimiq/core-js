@@ -118,7 +118,7 @@ describe('Client', () => {
     allit('reports head changed', async (done, _, consensus) => {
         const client = startClient(consensus);
         let handle;
-        handle = client.addHeadChangedListener((hash => {
+        handle = await client.addHeadChangedListener((hash => {
             if (hash.equals(otherConsensus.blockchain.headHash)) {
                 client.removeListener(handle);
                 done();
@@ -131,7 +131,7 @@ describe('Client', () => {
         CryptoWorker.lib.getRandomValues(a);
         const newTx = TestBlockchain.createTransaction(testChain.users[0].publicKey, new Address(a), 1, 500, 1, testChain.users[0].privateKey);
         let handle;
-        handle = client.addTransactionListener((/** @type {TransactionDetails} */ tx) => {
+        handle = await client.addTransactionListener((/** @type {TransactionDetails} */ tx) => {
             if (tx.transaction.equals(newTx)) {
                 client.removeListener(handle);
                 done();
@@ -151,8 +151,8 @@ describe('Client', () => {
         });
         /** @type {Client.TransactionDetails} */
         const tx = await client.sendTransaction(newTx);
-        expect(tx.state).toBe(Client.TransactionState.PENDING);
-        if (tx.state !== Client.TransactionState.PENDING) {
+        if (tx.state !== Client.TransactionState.PENDING && tx.state !== Client.TransactionState.NEW) {
+            expect(false).toBeTruthy();
             done();
         }
     });
