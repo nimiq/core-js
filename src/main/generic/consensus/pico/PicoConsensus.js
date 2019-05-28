@@ -47,7 +47,7 @@ class PicoConsensus extends BaseMiniConsensus {
      * @override
      */
     _hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) {
-        return super._hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) && numSyncedNodes >= 3;
+        return super._hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) && numSyncedNodes >= PicoConsensus.MIN_SYNCED_NODES;
     }
 
     /** @type {PicoChain} */
@@ -60,5 +60,6 @@ class PicoConsensus extends BaseMiniConsensus {
         return this._mempool;
     }
 }
+PicoConsensus.MIN_SYNCED_NODES = 3;
 
 Class.register(PicoConsensus);

@@ -3,7 +3,7 @@ describe('Client', () => {
     let otherConsensus;
     let testChain;
     let clients = {};
-    let transactonRelayIntervalBak, freeTransactonRelayIntervalBak;
+    let transactonRelayIntervalBak, freeTransactonRelayIntervalBak, minSyncedNodesBak;
     
     function getConsensus(consensus) {
         const name = 'volatile' + consensus.charAt(0).toUpperCase() + consensus.slice(1);
@@ -30,11 +30,13 @@ describe('Client', () => {
         MockNetwork.install();
         transactonRelayIntervalBak = BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL;
         freeTransactonRelayIntervalBak = BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL;
+        minSyncedNodesBak = PicoConsensus.MIN_SYNCED_NODES;
         BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = 100;
         BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL = 100;
+        PicoConsensus.MIN_SYNCED_NODES = 1;
 
         otherConsensus = await startOtherNode();
-        for (const consensus of ['nano', 'light', 'full']) {
+        for (const consensus of ['pico', 'nano', 'light', 'full']) {
             clients[consensus] = startClient(consensus);
         }
     });
@@ -42,12 +44,13 @@ describe('Client', () => {
     afterAll(function () {
         BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = transactonRelayIntervalBak;
         BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL = freeTransactonRelayIntervalBak;
+        PicoConsensus.MIN_SYNCED_NODES = minSyncedNodesBak;
         MockClock.uninstall();
         MockNetwork.uninstall();
     });
 
     function allit(name, fn) {
-        for (const consensus of ['nano', 'light', 'full']) {
+        for (const consensus of ['pico', 'nano', 'light', 'full']) {
             it(name + ' (' + consensus + ')', async (done) => {
                 fn(done, await clients[consensus], consensus);
             });
@@ -146,7 +149,12 @@ describe('Client', () => {
                 done();
             }
         });
-        await client.sendTransaction(newTx);
+        /** @type {Client.TransactionDetails} */
+        const tx = await client.sendTransaction(newTx);
+        expect(tx.state).toBe(Client.TransactionState.PENDING);
+        if (tx.state !== Client.TransactionState.PENDING) {
+            done();
+        }
     });
     
     it('can replace consensus at runtime (nano to light)', async (done) => {
@@ -160,6 +168,22 @@ describe('Client', () => {
                 syncingLight = true;
             } else if (establishedNano && state === Client.ConsensusState.ESTABLISHED) {
                 expect(syncingLight).toBeTruthy();
+                done();
+            }
+        });
+    });
+
+    it('can replace consensus at runtime (pico failure)', async (done) => {
+        const client = startClient('pico');
+        let establishedPico = false, syncingNano = false;
+        client.addConsensusChangedListener((state) => {
+            if (!establishedPico && state === Client.ConsensusState.ESTABLISHED) {
+                establishedPico = true;
+                client._onConsensusFailed();
+            } else if (establishedPico && state === Client.ConsensusState.SYNCING) {
+                syncingNano = true;
+            } else if (establishedPico && state === Client.ConsensusState.ESTABLISHED) {
+                expect(syncingNano).toBeTruthy();
                 done();
             }
         });

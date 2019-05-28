@@ -52,6 +52,9 @@ class PicoChain extends BaseChain {
 
             Log.d(PicoChain, `Choosing initial block height=${block.height}, hash=${block.hash().toHex()}`);
             this.fire('head-changed', this.head);
+
+            await this.fire('block', block.hash());
+            await this.fire('extended', this.head);
             return PicoChain.OK_EXTENDED;
         } else if (await block.isImmediateSuccessorOf(this.head)) {
             this._mainChain.mainChainSuccessor = block.hash();
@@ -63,6 +66,9 @@ class PicoChain extends BaseChain {
 
             Log.d(PicoChain, `Appending block height=${block.height}, hash=${block.hash().toHex()}`);
             this.fire('head-changed', this.head);
+
+            await this.fire('block', block.hash());
+            await this.fire('extended', this.head);
             return PicoChain.OK_EXTENDED;
         } else if (await this.head.isImmediateSuccessorOf(block)) {
             const oldHead = this.head;
@@ -87,6 +93,9 @@ class PicoChain extends BaseChain {
 
                 return PicoChain.OK_REBRANCHED;
             }
+
+            await this.fire('block', block.hash());
+            return PicoChain.OK_FORKED;
         }
 
         Log.w(PicoChain, `Inconsistency between block height=${block.height}, hash=${block.hash().toHex()} and block height=${this.height}, hash=${this.headHash.toHex()}`);
@@ -162,15 +171,23 @@ class PicoChain extends BaseChain {
         await chainTx.commit();
 
         // Fire block-reverted event for each block reverted during rebranch
+        const revertBlocks = [];
         for (const revertedData of revertChain) {
             this.fire('block-reverted', revertedData.head);
+            revertBlocks.push(revertedData.head);
         }
 
         // Fire head-changed event for each fork block.
+        const forkBlocks = [];
         for (let i = forkChain.length - 1; i >= 0; i--) {
             this._mainChain = forkChain[i];
             this.fire('head-changed', this.head, /*rebranching*/ i > 0);
+            forkBlocks.push(this.head);
         }
+
+        // Tell listeners that we have rebranched.
+        await this.fire('block', blockHash);
+        await this.fire('rebranched', revertBlocks, forkBlocks, blockHash);
     }
 
     /**
@@ -199,4 +216,5 @@ PicoChain.ERR_INVALID = -1;
 PicoChain.OK_KNOWN = 0;
 PicoChain.OK_EXTENDED = 1;
 PicoChain.OK_REBRANCHED = 2;
+PicoChain.OK_FORKED = 2;
 Class.register(PicoChain);
