@@ -248,17 +248,17 @@ class Transaction {
         const proof = Account.TYPE_MAP.get(this.senderType).proofToPlain(this.proof);
         proof.raw = BufferUtils.toHex(this.proof);
         return {
-            transactionHash: this.hash(),
-            format: /* TODO map to string */ this._format,
-            sender: this.sender,
-            senderType: /* TODO map to string */ this.senderType,
-            recipient: this.recipient,
-            recipientType: /* TODO map to string */ this.recipientType,
+            transactionHash: this.hash().toPlain(),
+            format: Transaction.Format.toString(this._format),
+            sender: this.sender.toPlain(),
+            senderType: Account.Type.toString(this.senderType),
+            recipient: this.recipient.toPlain(),
+            recipientType: Account.Type.toString(this.recipientType),
             value: this.value,
             fee: this.fee,
             feePerByte: this.feePerByte,
             validityStartHeight: this.validityStartHeight,
-            network: /* TODO map to string */ this.networkId,
+            network: GenesisConfig.networkIdToNetworkName(this.networkId),
             flags: this.flags,
             data,
             proof,
@@ -273,30 +273,30 @@ class Transaction {
      */
     static fromPlain(plain) {
         if (!plain) throw new Error('Invalid transaction format');
-        switch (plain.format /* TODO map to string */) {
+        switch (Transaction.Format.fromAny(plain.format)) {
             case Transaction.Format.BASIC:
                 return new BasicTransaction(
-                    new PublicKey(SerialBuffer.fromHex(plain.proof.publicKey)),
+                    new PublicKey(BufferUtils.fromHex(plain.proof.publicKey)),
                     Address.fromAny(plain.recipient),
                     plain.value,
                     plain.fee,
                     plain.validityStartHeight,
-                    new Signature(SerialBuffer.fromHex(plain.proof.signature)),
-                    plain.network /* TODO map to string */
+                    new Signature(BufferUtils.fromHex(plain.proof.signature)),
+                    GenesisConfig.networkIdFromAny(plain.network)
                 );
             case Transaction.Format.EXTENDED:
                 return new ExtendedTransaction(
                     Address.fromAny(plain.sender),
-                    plain.senderType,
+                    Account.Type.fromAny(plain.senderType),
                     Address.fromAny(plain.recipient),
-                    plain.recipientType,
+                    Account.Type.fromAny(plain.recipientType),
                     plain.value,
                     plain.fee,
                     plain.validityStartHeight,
                     plain.flags,
                     BufferUtils.fromHex(plain.data.raw),
                     BufferUtils.fromHex(plain.proof.raw),
-                    plain.network /* TODO map to string */
+                    GenesisConfig.networkIdFromAny(plain.network)
                 );
         }
         throw new Error('Invalid transaction format');
@@ -405,6 +405,28 @@ class Transaction {
 Transaction.Format = {
     BASIC: 0,
     EXTENDED: 1
+};
+/**
+ * @param {Transaction.Format} format
+ */
+Transaction.Format.toString = function(format) {
+    switch (format) {
+        case Transaction.Format.BASIC: return 'basic';
+        case Transaction.Format.EXTENDED: return 'extended';
+    }
+    throw new Error('Invalid transaction format');
+};
+/**
+ * @param {Transaction.Format|string} format
+ * @return {Transaction.Format}
+ */
+Transaction.Format.fromAny = function(format) {
+    if (typeof format === 'number') return format;
+    switch (format) {
+        case 'basic': return Transaction.Format.BASIC;
+        case 'extended': return Transaction.Format.EXTENDED;
+    }
+    throw new Error('Invalid transaction format');
 };
 /**
  * @enum

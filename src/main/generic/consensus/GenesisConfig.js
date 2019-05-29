@@ -97,6 +97,18 @@ class GenesisConfig {
         }
         throw new Error(`Unable to find networkName for networkId ${networkId}`);
     }
+
+    /**
+     * @param {number|string} networkId
+     * @return {number}
+     */
+    static networkIdFromAny(networkId) {
+        if (typeof networkId === 'number') return networkId;
+        if (GenesisConfig.CONFIGS[networkId]) {
+            return GenesisConfig.CONFIGS[networkId].NETWORK_ID;
+        }
+        throw new Error(`Unable to find networkId for ${networkId}`);
+    }
 }
 Class.register(GenesisConfig);
 
