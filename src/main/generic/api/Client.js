@@ -182,7 +182,7 @@ class Client {
      * @param {Client.ConsensusState} state
      * @private
      */
-    _onConsensusChanged(state) {
+    async _onConsensusChanged(state) {
         this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus.established) {
@@ -194,7 +194,20 @@ class Client {
         });
         this._consensusState = state;
         for (let listener of this._consensusChangedListeners.valueIterator()) {
-            listener(state);
+            try {
+                listener(state);
+            } catch (e) {
+                Log.e(Client, `Error in listener: ${e}`);
+            }
+        }
+        const consensus = await this._consensus;
+        const headHash = await consensus.getHeadHash();
+        for (let listener of this._headChangedListeners.valueIterator()) {
+            try {
+                listener(headHash, 'established', [], [headHash]);
+            } catch (e) {
+                Log.e(Client, `Error in listener: ${e}`);
+            }
         }
     }
 
@@ -217,8 +230,14 @@ class Client {
      * @private
      */
     async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
-        for (let listener of this._headChangedListeners.valueIterator()) {
-            listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
+        if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
+            for (let listener of this._headChangedListeners.valueIterator()) {
+                try {
+                    listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
+            }
         }
         if (this._transactionListeners.length > 0) {
             const revertedTxs = new HashSet();
@@ -290,7 +309,11 @@ class Client {
                 } else {
                     details = details || new Client.TransactionDetails(tx, Client.TransactionState.PENDING);
                 }
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
         this._txClearFromConfirm(tx);
@@ -315,7 +338,11 @@ class Client {
                     state = confirmations >= this._config.requiredBlockConfirmations ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED;
                 }
                 details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations);
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
         this._txClearFromExpire(tx);
@@ -335,7 +362,11 @@ class Client {
         for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1);
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
     }
@@ -350,7 +381,11 @@ class Client {
         for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
     }
@@ -386,7 +421,8 @@ class Client {
      * Data returned by this method authenticated according to the current tip of the blockchain. Any further changes to
      * as well as forks of the blockchain might invalidate the data.
      *
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block that is the current tip of the chain
      */
     async getHeadBlock(includeBody = true) {
@@ -400,7 +436,8 @@ class Client {
      * that do not exist on the current chain but are present on forks.
      *
      * @param {Hash|string} hash The hash of a block
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block with the specified hash
      */
     async getBlock(hash, includeBody = true) {
@@ -417,7 +454,8 @@ class Client {
      * the blockchain might invalidate the data.
      *
      * @param {number} height The height or block number of the block to fetch
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block at the specified height or block number
      */
     async getBlockAt(height, includeBody) {

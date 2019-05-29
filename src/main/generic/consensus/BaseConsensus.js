@@ -76,7 +76,7 @@ class BaseConsensus extends Observable {
     async getBlock(hash, includeBody = true) {
         let block = await this._blockchain.getBlock(hash, true, includeBody);
         if (!block || (includeBody && !block.isFull())) {
-            block = await this._requestBlock(hash, includeBody, undefined, !!block);
+            block = await this._requestBlock(hash, includeBody, block ? block.height : undefined, !!block) || block;
         }
         return block;
     }
@@ -94,7 +94,7 @@ class BaseConsensus extends Observable {
         if (!block) {
             block = await this._requestBlockAt(height, includeBody);
         } else if (block && includeBody && !block.isFull()) {
-            block = await this._requestBlock(block.hash(), includeBody, height, true);
+            block = await this._requestBlock(block.hash(), includeBody, height, true) || block;
         }
         return block;
     }
