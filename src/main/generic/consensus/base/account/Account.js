@@ -195,14 +195,40 @@ Account.Type = {
     HTLC: 2
 };
 /**
+ * @param {Account.Type} type
+ * @return {string}
+ */
+Account.Type.toString = function(type) {
+    switch (type) {
+        case Account.Type.BASIC: return 'basic';
+        case Account.Type.VESTING: return 'vesting';
+        case Account.Type.HTLC: return 'htlc';
+    }
+    throw new Error('Invalid account type');
+};
+/**
+ * @param {Account.Type|string} type
+ * @return {Account.Type}
+ */
+Account.Type.fromAny = function(type) {
+    if (typeof type === 'number') return type;
+    switch (type) {
+        case 'basic': return Account.Type.BASIC;
+        case 'vesting': return Account.Type.VESTING;
+        case 'htlc': return Account.Type.HTLC;
+    }
+    throw new Error('Invalid account type');
+};
+/**
  * @type {Map.<Account.Type, {
  *  copy: function(o: *):Account,
  *  unserialize: function(buf: SerialBuffer):Account,
  *  create: function(balance: number, blockHeight: number, transaction: Transaction):Account,
  *  verifyOutgoingTransaction: function(transaction: Transaction):boolean,
  *  verifyIncomingTransaction: function(transaction: Transaction):boolean,
- *  dataToPlain(data: Uint8Array):object,
- *  proofToPlain(proof: Uint8Array):object}>}
+ *  dataToPlain: function(data: Uint8Array):object,
+ *  proofToPlain: function(proof: Uint8Array):object
+ * }>}
  */
 Account.TYPE_MAP = new Map();
 Account.BalanceError = class extends Error { constructor() { super('Balance Error!'); }};

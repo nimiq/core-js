@@ -40,6 +40,22 @@ describe('BasicTransaction', () => {
         expect(tx2.equals(tx1)).toBe(true);
     });
 
+    it('can be converted to plain and back', () => {
+        const tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature, networkId);
+        const plainTx = JSON.stringify(tx1.toPlain());
+        const tx2 = Transaction.fromPlain(JSON.parse(plainTx));
+
+        expect(tx2._format).toEqual(Transaction.Format.BASIC);
+        expect(tx2.senderPubKey.equals(senderPubKey)).toEqual(true);
+        expect(tx2.recipient.equals(recipientAddr)).toEqual(true);
+        expect(tx2.value).toEqual(value);
+        expect(tx2.fee).toEqual(fee);
+        expect(tx2.validityStartHeight).toEqual(validityStartHeight);
+        expect(tx2.networkId).toEqual(networkId);
+        expect(tx2.signature.equals(signature)).toBeTruthy();
+        expect(tx2.equals(tx1)).toBe(true);
+    });
+
     it('can falsify an invalid signature', () => {
         const tx1 = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature);
         expect(tx1.verify()).toBe(false);
