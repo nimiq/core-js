@@ -34,7 +34,7 @@ For developers looking to include Nimiq support on their applications, there are
 3. Install `yarn` globally: `sudo npm install -g yarn`.
 4. Install `gulp` globally:  `yarn global add gulp`.
 5. Clone this repository: `git clone https://github.com/nimiq/core-js`.
-6. Build the project: `cd core && yarn && yarn build`.
+6. Build the project: `cd core-js && yarn && yarn build`.
 7. Open `clients/browser/index.html` in your browser.
 
 ## Web Developers
