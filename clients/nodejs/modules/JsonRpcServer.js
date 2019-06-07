@@ -73,7 +73,7 @@ class JsonRpcServer {
         
         this.http.on('upgrade', async (req, socket, head) => {
             if (!JsonRpcServer._authenticate(req, null, config.username, config.password, /*raw*/ true))
-                socket.close();
+                socket.destroy();
     
             const wss = new WebSocket.Server({ noServer: true });
             await wss.handleUpgrade(req, socket, head, ws => {
