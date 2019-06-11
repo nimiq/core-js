@@ -41,7 +41,7 @@ Client.Network = class Network {
     }
 
     /**
-     * @returns {Promise<void>} Statistics on the network
+     * @returns {Promise.<Client.NetworkStatistics>} Statistics on the network
      */
     async getStatistics() {
         const consensus = await this._client._consensus;
@@ -124,16 +124,28 @@ Client.BasicAddress = class BasicAddress {
         this._address = address;
     }
 
+    /** @type {PeerAddress} */
     get peerAddress() {
         return this._address;
     }
 
+    /** @type {PeerId} */
     get peerId() {
         return this._address.peerId;
     }
 
+    /** @type {Array.<String>} */
     get services() {
         return Services.toNameArray(Services.legacyProvideToCurrent(this._address.services));
+    }
+
+    /** @type {object} */
+    toPlain() {
+        return {
+            peerAddress: this.peerAddress.toString(),
+            peerId: this.peerId.toString(),
+            services: this.services
+        };
     }
 };
 
@@ -147,12 +159,22 @@ Client.AddressInfo = class AddressInfo extends Client.BasicAddress {
         this._state = addressState.state;
     }
 
+    /** @type {boolean} */
     get banned() {
         return this._state === PeerAddressState.BANNED;
     }
 
+    /** @type {boolean} */
     get connected() {
         return this._state === PeerAddressState.ESTABLISHED;
+    }
+
+    /** @type {object} */
+    toPlain() {
+        const plain = super.toPlain();
+        plain.banned = this.banned;
+        plain.connected = this.connected;
+        return plain;
     }
 };
 
@@ -169,24 +191,40 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
         this._latency = this._connection.statistics.latencyMedian;
     }
 
+    /** @type {number} */
     get connectionSince() {
         return this._connection.establishedSince;
     }
 
+    /** @type {NetAddress} */
     get netAddress() {
         return this._connection.networkConnection.netAddress;
     }
 
+    /** @type {number} */
     get bytesReceived() {
         return this._bytesReceived;
     }
 
+    /** @type {number} */
     get bytesSent() {
         return this._bytesSent;
     }
 
+    /** @type {number} */
     get latency() {
         return this._latency;
+    }
+
+    /** @type {object} */
+    toPlain() {
+        const plain = super.toPlain();
+        plain.connectionSince = this.connectionSince;
+        plain.netAddress = this.netAddress.toString();
+        plain.bytesReceived = this.bytesReceived;
+        plain.bytesSent = this.bytesSent;
+        plain.latency = this.latency;
+        return plain;
     }
 };
 
@@ -215,14 +253,17 @@ Client.NetworkStatistics = class NetworkStatistics {
         this._timeOffset = network.time.offset;
     }
 
+    /** @type {number} */
     get bytesReceived() {
         return this._bytesReceived;
     }
 
+    /** @type {number} */
     get bytesSent() {
         return this._bytesSent;
     }
 
+    /** @type {number} */
     get totalPeerCount() {
         return this._peerCounts.total;
     }
@@ -231,6 +272,7 @@ Client.NetworkStatistics = class NetworkStatistics {
         return this._peerCounts;
     }
 
+    /** @type {number} */
     get totalKnownAddresses() {
         return this._knownAddressesCounts.total;
     }
@@ -239,10 +281,12 @@ Client.NetworkStatistics = class NetworkStatistics {
         return this._knownAddressesCounts;
     }
 
+    /** @type {number} */
     get timeOffset() {
         return this._timeOffset;
     }
 
+    /** @type {object} */
     toPlain() {
         return {
             bytesReceived: this.bytesReceived,

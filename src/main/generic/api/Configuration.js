@@ -48,7 +48,7 @@ Client.Configuration = class Configuration {
      * @param {Client.Feature} feature
      */
     hasFeature(feature) {
-        return false;
+        return this._features.includes(feature);
     }
 
     /**
@@ -86,6 +86,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     dumb() {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'dumb';
+        return this;
     }
 
     /**
@@ -94,6 +95,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     rtc() {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'rtc';
+        return this;
     }
 
     /**
@@ -107,6 +109,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
         this._protocol = 'ws';
         this._host = this._requiredType(host, 'host', 'string');
         this._port = this._requiredType(port, 'port', 'number');
+        return this;
     }
 
     /**
@@ -124,6 +127,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
         this._port = this._requiredType(port, 'port', 'number');
         this._tlsKey = this._requiredType(tlsKey, 'tlsKey', 'string');
         this._tlsCert = this._requiredType(tlsCert, 'tlsCert', 'string');
+        return this;
     }
 
     /**
@@ -146,6 +150,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
             this._tlsKey = this._requiredType(tlsKey, 'tlsKey', 'string');
             this._tlsCert = this._requiredType(tlsCert, 'tlsCert', 'string');
         }
+        return this;
     }
 
     /**
@@ -155,6 +160,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     volatile(volatile = true) {
         if (typeof this._volatile !== 'undefined') throw new Error('volatile already set');
         this._volatile = this._requiredType(volatile, 'volatile', 'boolean');
+        return this;
     }
 
     /**
@@ -163,6 +169,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     blockConfirmations(confirmations) {
         if (typeof this._blockConfirmations !== 'undefined') throw new Error('blockConfirmations already set.');
         this._blockConfirmations = this._requiredType(confirmations, 'confirmations', 'number');
+        return this;
     }
 
     /**
@@ -170,6 +177,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      */
     feature(...feature) {
         this._features.addAll(feature);
+        return this;
     }
 
     /**
@@ -185,6 +193,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
             header: this._requiredType(header, 'header', 'string'),
             addresses: addresses
         };
+        return this;
     }
 
     /**
