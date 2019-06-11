@@ -543,6 +543,12 @@ class Client {
 
         const consensus = await this._consensus;
 
+        const pending = await consensus.getPendingTransactions([hash]);
+        if (pending && pending[0]) {
+            this._txWaitForExpire(pending[0]);
+            return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
+        }
+
         if (!blockHash) {
             const receipts = await consensus.getTransactionReceiptsByHashes([hash]);
             if (receipts.length === 1 && receipts[0]) {
@@ -570,12 +576,6 @@ class Client {
                 if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
                 return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations);
             }
-        }
-
-        const pending = await consensus.getPendingTransactions([hash]);
-        if (pending && pending[0]) {
-            this._txWaitForExpire(pending[0]);
-            return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
         }
         return null;
     }

@@ -12,6 +12,8 @@ Client.Mempool = class Mempool {
         this._transactionAddedListeners = new HashMap();
         /** @type {HashMap.<Handle, MempoolListener>} */
         this._transactionRemovedListeners = new HashMap();
+        /** @type {Handle} */
+        this._listenerId = 0;
     }
 
     /**
@@ -20,7 +22,7 @@ Client.Mempool = class Mempool {
      */
     _onTransactionAdded(tx) {
         for (let listener of this._transactionAddedListeners.valueIterator()) {
-            listener(tx);
+            listener(tx.hash());
         }
     }
 
@@ -30,7 +32,7 @@ Client.Mempool = class Mempool {
      */
     _onTransactionRemoved(tx) {
         for (let listener of this._transactionRemovedListeners.valueIterator()) {
-            listener(tx);
+            listener(tx.hash());
         }
     }
 
@@ -44,12 +46,40 @@ Client.Mempool = class Mempool {
 
     /**
      * Gives some statistics on the current mempool. Well suited to estimate the ideal fee for a transaction
-     * 
+     *
      * @returns {Promise.<Client.MempoolStatistics>} Some statistics on the current mempool.
      */
     async getStatistics() {
         const consensus = await this._client._consensus;
         return new Client.Mempool.Statistics(consensus.getMempoolContents());
+    }
+
+    /**
+     * @param {MempoolListener} listener
+     * @return {Promise<Handle>}
+     */
+    async addTransactionAddedListener(listener) {
+        const listenerId = this._listenerId++;
+        this._transactionAddedListeners.put(listenerId, listener);
+        return listenerId;
+    }
+
+    /**
+     * @param {MempoolListener} listener
+     * @return {Promise<Handle>}
+     */
+    async addTransactionRemovedListener(listener) {
+        const listenerId = this._listenerId++;
+        this._transactionRemovedListeners.put(listenerId, listener);
+        return listenerId;
+    }
+
+    /**
+     * @param {Handle} handle
+     */
+    removeListener(handle) {
+        this._transactionAddedListeners.remove(handle);
+        this._transactionRemovedListeners.remove(handle);
     }
 };
 
@@ -89,7 +119,7 @@ Client.MempoolStatistics = class MempoolStatistics {
 
     /**
      * The number of transactions in the local mempool.
-     * @returns {number} 
+     * @returns {number}
      */
     get count() {
         return this._totalCount;

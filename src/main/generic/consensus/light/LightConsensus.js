@@ -85,9 +85,9 @@ class LightConsensus extends BaseConsensus {
     }
 
     /**
-     * @returns {Promise.<Array.<Transaction>>}
+     * @returns {Array.<Transaction>}
      */
-    async getMempoolContents() {
+    getMempoolContents() {
         return this._mempool.getTransactions();
     }
 
