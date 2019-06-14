@@ -39,17 +39,22 @@ class TransactionUi extends Nimiq.Observable {
         this.$sendButton = this.$el.querySelector('[tx-send]');
         this.$clearButton = this.$el.querySelector('[tx-clear]');
 
-        $.consensus.on('established', () => this.$sendButton.removeAttribute('disabled'));
-        $.consensus.on('lost', () => this.$sendButton.setAttribute('disabled', ''));
+        $.client.addConsensusChangedListener(state => {
+            if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
+                this.$sendButton.removeAttribute('disabled')
+            } else {
+                this.$sendButton.setAttribute('disabled', '')
+            }
+        });
         this.$typeSelector.addEventListener('change', () => this._onTransactionTypeSelected());
         this.$sendButton.addEventListener('click', e => this._onSendTransactionClick(e));
         this.$generateButton.addEventListener('click', e => this._onGenerateTransactionClick(e));
         this.$clearButton.addEventListener('click', e => this._onClearClick(e));
         this.$recipient.addEventListener('input', () => this._onRecipientChanged());
 
-        this.$validityStart.setAttribute('placeholder', this._getDefaultValidityStart());
-        $.blockchain.on('head-changed',
-            () => this.$validityStart.setAttribute('placeholder', this._getDefaultValidityStart()));
+        this._getDefaultValidityStart().then(height => this.$validityStart.setAttribute('placeholder', height));
+        $.client.addHeadChangedListener(
+            () => this._getDefaultValidityStart().then(height => this.$validityStart.setAttribute('placeholder', height)));
 
         this._onTransactionTypeSelected();
     }
@@ -139,7 +144,7 @@ class TransactionUi extends Nimiq.Observable {
         }
         let validityStart;
         if (this.$validityStart.value === '') {
-            validityStart = this._getDefaultValidityStart();
+            validityStart = Utils.readNumber(this.$validityStart.getAttribute('placeholder'));
             this.$validityStart.classList.remove('error');
         } else {
             validityStart = Utils.readNumber(this.$validityStart);
@@ -154,8 +159,9 @@ class TransactionUi extends Nimiq.Observable {
         };
     }
 
+    /* async */
     _getDefaultValidityStart() {
-        return this.$.blockchain.height + 1;
+        return this.$.client.getHeadHeight().then(height => height + 1);
     }
 
     /* async */
