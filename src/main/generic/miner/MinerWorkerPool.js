@@ -1,5 +1,5 @@
 /**
- *
+ * @deprecated
  */
 class MinerWorkerPool extends IWorker.Pool(MinerWorker) {
     constructor(size = 1) {

@@ -1,5 +1,6 @@
 /**
  * @interface
+ * @deprecated
  */
 class MinerWorker {
     /**

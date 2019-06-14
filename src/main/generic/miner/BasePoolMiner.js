@@ -1,5 +1,6 @@
 /**
  * @abstract
+ * @deprecated
  */
 class BasePoolMiner extends Miner {
     /**

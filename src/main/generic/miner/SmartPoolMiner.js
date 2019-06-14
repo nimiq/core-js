@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 class SmartPoolMiner extends BasePoolMiner {
     /**
      * @param {BaseChain} blockchain

@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 class Miner extends Observable {
     /**
      * @param {BaseChain} blockchain

@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 class MinerWorkerImpl extends IWorker.Stub(MinerWorker) {
     constructor() {
         super();

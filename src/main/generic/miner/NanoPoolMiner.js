@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 class NanoPoolMiner extends BasePoolMiner {
     /**
      * @param {BaseChain} blockchain
