@@ -23,6 +23,11 @@ class Miner extends Observable {
         this._mempool = mempool;
         /** @type {Time} */
         this._time = time;
+        /**
+         * @protected
+         * @type {BlockProducer}
+         */
+        this._producer = new BlockProducer(blockchain, accounts, mempool, time);
         /** @type {Address} */
         this._address = minerAddress;
         /** @type {Uint8Array} */
@@ -236,85 +241,13 @@ class Miner extends Observable {
     async getNextBlock(address = this._address, extraData = this._extraData) {
         this._retry++;
         try {
-            const nextTarget = await this._blockchain.getNextTarget();
-            const interlink = await this._getNextInterlink(nextTarget);
-            const body = await this._getNextBody(interlink.serializedSize, address, extraData);
-            const header = await this._getNextHeader(nextTarget, interlink, body);
-            if (!(await this._blockchain.getNextTarget()).equals(nextTarget)) return this.getNextBlock(address, extraData);
-            return new Block(header, interlink, body);
+            return this._producer.getNextBlock(address, extraData);
         } catch (e) {
             // Retry up to three times.
             if (this._retry <= 3) return this.getNextBlock(address, extraData);
             throw e;
         }
     }
-
-    /**
-     * @param {BigNumber} nextTarget
-     * @param {BlockInterlink} interlink
-     * @param {BlockBody} body
-     * @return {Promise.<BlockHeader>}
-     * @protected
-     */
-    async _getNextHeader(nextTarget, interlink, body) {
-        const prevHash = this._blockchain.headHash;
-        const interlinkHash = interlink.hash();
-        const height = this._blockchain.height + 1;
-
-        // Compute next accountsHash.
-        const accounts = await this._accounts.transaction();
-        let accountsHash;
-        try {
-            await accounts.commitBlockBody(body, height, this._blockchain.transactionCache);
-            accountsHash = await accounts.hash();
-        } catch (e) {
-            throw new Error(`Invalid block body: ${e.message}`);
-        } finally {
-            await accounts.abort();
-        }
-
-        const bodyHash = body.hash();
-        const timestamp = this._getNextTimestamp();
-        const nBits = BlockUtils.targetToCompact(nextTarget);
-        const nonce = 0;
-        return new BlockHeader(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce);
-    }
-
-    /**
-     * @param {BigNumber} nextTarget
-     * @returns {Promise.<BlockInterlink>}
-     * @protected
-     */
-    _getNextInterlink(nextTarget) {
-        return this._blockchain.head.getNextInterlink(nextTarget);
-    }
-
-    /**
-     * @param {number} interlinkSize
-     * @param {Address} [address]
-     * @param {Uint8Array} [extraData]
-     * @return {BlockBody}
-     * @protected
-     */
-    async _getNextBody(interlinkSize, address = this._address, extraData = this._extraData) {
-        const maxSize = Policy.BLOCK_SIZE_MAX
-            - BlockHeader.SERIALIZED_SIZE
-            - interlinkSize
-            - BlockBody.getMetadataSize(extraData);
-        const transactions = await this._mempool.getTransactionsForBlock(maxSize);
-        const prunedAccounts = await this._accounts.gatherToBePrunedAccounts(transactions, this._blockchain.height + 1, this._blockchain.transactionCache);
-        return new BlockBody(address, transactions, extraData, prunedAccounts);
-    }
-
-    /**
-     * @return {number}
-     * @protected
-     */
-    _getNextTimestamp() {
-        const now = Math.floor(this._time.now() / 1000);
-        return Math.max(now, this._blockchain.head.timestamp + 1);
-    }
-
 
     /**
      * @fires Miner#stop

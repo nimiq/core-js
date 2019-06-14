@@ -139,6 +139,7 @@ const sources = {
         './src/main/generic/consensus/base/blockchain/IBlockchain.js',
         './src/main/generic/consensus/base/blockchain/BaseChain.js',
         './src/main/generic/consensus/base/blockchain/BlockChain.js',
+        './src/main/generic/consensus/base/blockchain/BlockProducer.js',
         './src/main/generic/consensus/base/blockchain/HeaderChain.js',
         './src/main/generic/consensus/base/blockchain/ChainProof.js',
         './src/main/generic/consensus/base/blockchain/ChainData.js',

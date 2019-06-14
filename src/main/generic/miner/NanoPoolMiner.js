@@ -123,7 +123,7 @@ class NanoPoolMiner extends BasePoolMiner {
                 this._poolAccountsHash,
                 BlockUtils.targetToCompact(this._poolNextTarget),
                 this._poolPrevBlock.height + 1,
-                Math.max(this._getNextTimestamp(), this._poolPrevBlock.timestamp + 1),
+                Math.max(this._producer._getNextTimestamp(), this._poolPrevBlock.timestamp + 1),
                 0),
             this._poolNextInterlink);
     }
