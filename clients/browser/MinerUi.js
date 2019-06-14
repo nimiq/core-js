@@ -20,8 +20,13 @@ class MinerUi {
             this.$el.querySelector('[miner-mode-nano]').selected = true;
         }
 
-        $.consensus.on('established', () => this._onConsensusEstablished());
-        $.consensus.on('lost', () => this._onConsensusLost());
+        $.client.addConsensusChangedListener(state => {
+            if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
+                this._onConsensusEstablished();
+            } else {
+                this._onConsensusLost();
+            }
+        });
         this.$modeSelector.addEventListener('change', () => this._selectMode());
         this.$startButton.addEventListener('click', () => this._toggleMining());
         this._minerAddress.on('account-selected', address => $.miner.address = address);

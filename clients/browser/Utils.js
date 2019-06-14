@@ -11,31 +11,31 @@ class Utils {
     }
 
     static getAccount($, address) {
-        if ($.clientType !== DevUi.ClientType.NANO && $.clientType !== DevUi.ClientType.PICO) {
-            return $.accounts.get(address);
-        } else {
-            return Utils.awaitConsensus($)
-                .then(() => $.consensus.getAccount(address))
-                .then(account => account || Nimiq.Account.INITIAL);
-        }
+        return Utils.awaitConsensus($)
+            .then(() => $.client.getAccount(address))
+            .then(account => account || Nimiq.Account.INITIAL);
     }
 
     static broadcastTransaction($, tx) {
-        if ($.clientType !== DevUi.ClientType.NANO && $.clientType !== DevUi.ClientType.PICO) {
-            return $.mempool.pushTransaction(tx);
-        } else {
-            return Utils.awaitConsensus($).then(() => $.consensus.relayTransaction(tx));
-        }
+        $.client.sendTransaction(tx);
     }
 
     static awaitConsensus($) {
-        if ($.consensus.established) return Promise.resolve();
-        return new Promise(resolve => {
-            const onConsensus = () => {
-                $.consensus.off('established', onConsensus);
-                resolve();
-            };
-            $.consensus.on('established', onConsensus);
+        return new Promise((resolve) => {
+            let handle, consensusEstablished;
+            $.client.addConsensusChangedListener((state) => {
+                if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
+                    consensusEstablished = true;
+                    $.client.removeListener(handle);
+                    resolve();
+                }
+            }).then((x) => {
+                handle = x;
+                if (consensusEstablished) {
+                    $.client.removeListener(handle);
+                    resolve();
+                }
+            });
         });
     }
 

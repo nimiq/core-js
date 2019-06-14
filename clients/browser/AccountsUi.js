@@ -191,16 +191,19 @@ class AccountsUi extends Nimiq.Observable {
     }
 
     _checkPendingContract(address) {
+        let handle;
         const check = () => {
             Utils.getAccount(this.$, address).then(account => {
                 if (account.isInitial()) return; // still not mined
                 // readd the account to sort it into the correct category
                 this.removeAccount(address).then(() => this.addAccount(address));
-                this.$.blockchain.off('head-changed', check);
+                this.$.client.removeListener(handle);
             });
         };
-        this.$.blockchain.on('head-changed', check);
-        check();
+        handle = this.$.client.addHeadChangedListener(check).then((x) => {
+            handle = x;
+            check();
+        });
     }
 
     _checkForPrunedContracts() {
@@ -237,6 +240,8 @@ class AccountsUi extends Nimiq.Observable {
         if (this.$.clientType !== DevUi.ClientType.NANO && this.$.clientType !== DevUi.ClientType.PICO) return;
         // avoid frequent subsequent changes to nano subscriptions as these are costly
         clearTimeout(this._updateNanoSubscriptionsTimer);
+        // TODO: This subscribe is only such that mempool API returns meaningful things with nano consensus. However
+        //  mempool API is not supposed to be used with nano consensus, as it never reflects the actual mempool.
         this._updateNanoSubscriptionsTimer = setTimeout(
             () => this._getAddresses().then(addresses => this.$.consensus.subscribeAccounts(addresses)),
             1000);
