@@ -102,16 +102,14 @@ class BaseConsensus extends Observable {
      * @returns {Promise.<Block>}
      */
     async getBlockTemplate(minerAddress, extraData) {
-        // TODO
         throw new Error('not implemented: getBlockTemplate');
     }
 
     /**
      * @param {Block} block
-     * @returns {Promise<void>}
+     * @returns {Promise.<boolean>}
      */
     async submitBlock(block) {
-        // TODO
         throw new Error('not implemented: submitBlock');
     }
 

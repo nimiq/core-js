@@ -479,7 +479,7 @@ class Client {
      * Note that this functionality might not be available depending on your client configuration.
      *
      * @param {Block|string} block The block to append to the blockchain.
-     * @returns {Promise.<number>}
+     * @returns {Promise.<boolean>}
      */
     async submitBlock(block) {
         this._config.requireFeatures(Client.Feature.MINING);
