@@ -22,6 +22,10 @@ Client.Configuration = class Configuration {
         return this._requiredBlockConfirmations;
     }
 
+    get networkConfig() {
+        return this._networkConfig;
+    }
+
     /**
      * @returns {Promise.<BaseConsensus>}
      * @package
@@ -82,6 +86,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * Configure the client to be not reachable from the outside.
+     * @returns {Client.ConfigurationBuilder}
      */
     dumb() {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -91,6 +96,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * Configure the client to be publicly reachable via WebRTC.
+     * @returns {Client.ConfigurationBuilder}
      */
     rtc() {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -103,6 +109,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      *
      * @param {string} [host] Publicly reachable hostname of this node
      * @param {number} [port=8443] Publicly reachable port
+     * @returns {Client.ConfigurationBuilder}
      */
     ws(host, port = 8443) {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -119,6 +126,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @param {number} [port=8443] Publicly reachable port
      * @param {string} [tlsKey] Path to the tls private key
      * @param {string} [tlsCert] Path to the tls certificate
+     * @returns {Client.ConfigurationBuilder}
      */
     wss(host, port, tlsKey, tlsCert) {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -138,6 +146,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @param {number} [port=8443] Publicly reachable port (required for ws and wss)
      * @param {string} [tlsKey] Path to the tls private key (required for wss)
      * @param {string} [tlsCert] Path to the tls certificate (required for wss)
+     * @returns {Client.ConfigurationBuilder}
      */
     protocol(protocol, host, port = 8443, tlsKey, tlsCert) {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -156,6 +165,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * Disable persistent storage. By default persistent storage will be used.
      * @param {boolean} [volatile]
+     * @returns {Client.ConfigurationBuilder}
      */
     volatile(volatile = true) {
         if (typeof this._volatile !== 'undefined') throw new Error('volatile already set');
@@ -165,6 +175,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * Sets the number of blocks required to consider a transaction confirmed. Defaults to 10.
+     * @returns {Client.ConfigurationBuilder}
      */
     blockConfirmations(confirmations) {
         if (typeof this._blockConfirmations !== 'undefined') throw new Error('blockConfirmations already set.');
@@ -174,6 +185,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * @param {Client.Feature} feature
+     * @returns {Client.ConfigurationBuilder}
      */
     feature(...feature) {
         this._features.addAll(feature);
@@ -184,6 +196,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @param {number} port
      * @param {string} header
      * @param {string} addresses
+     * @returns {Client.ConfigurationBuilder}
      */
     reverseProxy(port, header, ...addresses) {
         if (this._protocol !== 'ws' && this._protocol !== 'wss') throw new Error('Protocol must be ws or wss for reverse proxy.');
@@ -269,5 +282,10 @@ Client.Feature = {
      * Have a full local mempool. This is required to build blocks using the {@link Client#getBlockTemplate} and to
      * access the {@link Client#mempool}.
      */
-    MEMPOOL: 'MEMPOOL'
+    MEMPOOL: 'MEMPOOL',
+    /**
+     * Make the client not connect to the network actively, but only accept incoming connections.
+     * Useful only if this node is registered as a seed node for the rest of the network.
+     */
+    PASSIVE: 'PASSIVE'
 };

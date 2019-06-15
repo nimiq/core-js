@@ -67,7 +67,11 @@ class Client {
         this._consensusOn(consensus, 'transaction-added', (tx) => this._mempool._onTransactionAdded(tx));
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
-        consensus.network.connect();
+        if (this._config.hasFeature(Client.Feature.PASSIVE)) {
+            consensus.network.allowInboundConnections = true;
+        } else {
+            consensus.network.connect();
+        }
     }
 
     /**
@@ -565,7 +569,7 @@ class Client {
 
         if (!blockHash) {
             const receipts = await consensus.getTransactionReceiptsByHashes([hash]);
-            if (receipts.length === 1 && receipts[0]) {
+            if (receipts && receipts.length === 1 && receipts[0]) {
                 blockHash = receipts[0].blockHash;
                 blockHeight = receipts[0].blockHeight;
             }

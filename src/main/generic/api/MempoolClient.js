@@ -51,7 +51,7 @@ Client.Mempool = class Mempool {
      */
     async getStatistics() {
         const consensus = await this._client._consensus;
-        return new Client.Mempool.Statistics(consensus.getMempoolContents());
+        return new Client.MempoolStatistics(consensus.getMempoolContents());
     }
 
     /**
@@ -99,16 +99,18 @@ Client.MempoolStatistics = class MempoolStatistics {
         for (const tx of mempoolContents) {
             // Find appropriate bucked
             let i = 0;
-            while (tx.feePerByte < buckets[i]) i++;
+            while (i < buckets.length && tx.feePerByte < buckets[i]) i++;
             const bucket = buckets[i];
-            if (!this._countPerBucket[bucket]) {
-                this._countPerBucket[bucket] = 0;
-                this._countPerBucket.buckets.push(bucket);
-                this._sizePerBucket[bucket] = 0;
-                this._sizePerBucket.buckets.push(bucket);
+            if (bucket !== undefined) {
+                if (!this._countPerBucket[bucket]) {
+                    this._countPerBucket[bucket] = 0;
+                    this._countPerBucket.buckets.push(bucket);
+                    this._sizePerBucket[bucket] = 0;
+                    this._sizePerBucket.buckets.push(bucket);
+                }
+                this._countPerBucket[bucket]++;
+                this._sizePerBucket[bucket] += tx.serializedSize;
             }
-            this._countPerBucket[bucket]++;
-            this._sizePerBucket[bucket] += tx.serializedSize;
             this._totalSize += tx.serializedSize;
             if (this._totalSize < Policy.BLOCK_SIZE_MAX) {
                 this._requiredFeePerByte = tx.feePerByte;

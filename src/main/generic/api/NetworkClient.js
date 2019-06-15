@@ -21,6 +21,19 @@ Client.Network = class Network {
     }
 
     /**
+     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @returns {Promise.<?Client.PeerInfo>}
+     */
+    async getPeer(address) {
+        const consensus = await this._client._consensus;
+        const connection = consensus.network.connections.getConnectionByPeerAddress(await this._toPeerAddress(address));
+        if (connection) {
+            return new Client.Network.PeerInfo(connection);
+        }
+        return null;
+    }
+
+    /**
      * @returns {Promise.<Array.<Client.AddressInfo>>} List of addresses known to this node.
      */
     async getAddresses() {
@@ -30,6 +43,19 @@ Client.Network = class Network {
             infos.push(new Client.Network.AddressInfo(addressState));
         }
         return infos;
+    }
+
+    /**
+     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @returns {Promise.<?Client.AddressInfo>}
+     */
+    async getAddress(address) {
+        const consensus = await this._client._consensus;
+        const addressState = consensus.network.addresses.getState(await this._toPeerAddress(address));
+        if (addressState) {
+            return new Client.Network.AddressInfo(addressState);
+        }
+        return null;
     }
 
     /**
@@ -169,6 +195,11 @@ Client.AddressInfo = class AddressInfo extends Client.BasicAddress {
         return this._state === PeerAddressState.ESTABLISHED;
     }
 
+    /** @type {number} */
+    get state() {
+        return this._state;
+    }
+
     /** @type {object} */
     toPlain() {
         const plain = super.toPlain();
@@ -189,6 +220,12 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
         this._bytesReceived = this._connection.networkConnection.bytesReceived;
         this._bytesSent = this._connection.networkConnection.bytesSent;
         this._latency = this._connection.statistics.latencyMedian;
+        this._state = this._connection.state;
+        this._version = this._connection.peer.version;
+        this._score = this._connection.score;
+        this._timeOffset = this._connection.peer.timeOffset;
+        this._headHash = this._connection.peer.headHash;
+        this._userAgent = this._connection.peer.userAgent;
     }
 
     /** @type {number} */
@@ -216,6 +253,36 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
         return this._latency;
     }
 
+    /** @type {number} */
+    get version() {
+        return this._version;
+    }
+
+    /** @type {number} */
+    get state() {
+        return this._state;
+    }
+
+    /** @type {number} */
+    get score() {
+        return this._score;
+    }
+
+    /** @type {number} */
+    get timeOffset() {
+        return this._timeOffset;
+    }
+
+    /** @type {Hash} */
+    get headHash() {
+        return this._headHash;
+    }
+
+    /** @type {string} */
+    get userAgent() {
+        return this._userAgent;
+    }
+
     /** @type {object} */
     toPlain() {
         const plain = super.toPlain();
@@ -224,6 +291,12 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
         plain.bytesReceived = this.bytesReceived;
         plain.bytesSent = this.bytesSent;
         plain.latency = this.latency;
+        plain.version = this.version;
+        plain.state = this.state;
+        plain.score = this.score;
+        plain.timeOffset = this.timeOffset;
+        plain.headHash = this.headHash.toPlain();
+        plain.userAgent = this.userAgent;
         return plain;
     }
 };
