@@ -22,7 +22,7 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number}} uiServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
- * @property {{enabled: boolean, port: number, address: string, header: string}} reverseProxy
+ * @property {{enabled: boolean, port: number, address: string, addresses: Array.<string>, header: string}} reverseProxy
  * @property {{level: string, tags: object}} log
  * @property {Array.<{host: string, port: number, publicKey: string, protocol: string}>} seedPeers
  * @property {object} constantOverrides
