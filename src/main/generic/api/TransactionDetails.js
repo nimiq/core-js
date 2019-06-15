@@ -105,7 +105,7 @@ Client.TransactionDetails = class TransactionDetails {
         return this._state;
     }
 
-    /** @type {number} */
+    /** @type {Hash} */
     get blockHash() {
         return this._blockHash;
     }
