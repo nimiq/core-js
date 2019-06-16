@@ -306,8 +306,8 @@ class JsonRpcServer {
         return this._getTransactionByHash(Nimiq.Hash.fromString(hash));
     }
 
-    async _getTransactionByHash(hash) {
-        const tx = await this._client.getTransaction(hash);
+    async _getTransactionByHash(hash, blockHash, blockHeight) {
+        const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
         if (tx) {
             return this._transactionDetailsToObj(tx);
         }
@@ -330,10 +330,14 @@ class JsonRpcServer {
 
     async getTransactionsByAddress(addr, limit = 1000) {
         const address = Nimiq.Address.fromString(addr);
-        const receipts = await this._client.getTransactionReceiptsByAddress(address);
+        const txs = await this._client.getTransactionsByAddress(address);
         const result = [];
-        for (const r of receipts) {
-            result.push(await this._getTransactionByHash(r.transactionHash));
+        for (const tx of txs) {
+            try {
+                result.push(this._transactionDetailsToObj(tx));
+            } catch (e) {
+                Nimiq.Log.w(JsonRpcServer, `Transactions from receipt is not available`);
+            }
             if (result.length >= limit) break;
         }
         return result;
@@ -521,7 +525,9 @@ class JsonRpcServer {
      */
 
     async accounts() {
-        return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._client.getAccount(address), address)));
+        const addresses = await this._walletStore.list();
+        const accounts = await this._client.getAccounts(addresses);
+        return addresses.map((address, i) => this._accountToObj(accounts[i], address));
     }
 
     async createAccount() {
@@ -682,7 +688,6 @@ class JsonRpcServer {
             version: peerInfo ? peerInfo.version : undefined,
             timeOffset: peerInfo ? peerInfo.timeOffset : undefined,
             headHash: peerInfo && peerInfo.headHash ? peerInfo.headHash.toHex() : undefined,
-            score: peerInfo ? peerInfo.score : undefined,
             latency: peerInfo ? peerInfo.latency : undefined,
             rx: peerInfo ? peerInfo.bytesReceived : undefined,
             tx: peerInfo ? peerInfo.bytesSent : undefined
@@ -753,6 +758,7 @@ class JsonRpcServer {
             hash: tx.transactionHash.toHex(),
             blockHash: tx.blockHash.toHex(),
             blockNumber: tx.blockHeight,
+            timestamp: tx.timestamp,
             confirmations: tx.confirmations,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),

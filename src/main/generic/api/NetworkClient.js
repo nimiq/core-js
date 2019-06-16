@@ -15,20 +15,20 @@ Client.Network = class Network {
         const consensus = await this._client._consensus;
         const infos = [];
         for (let connection of consensus.network.connections.valueIterator()) {
-            infos.push(new Client.Network.PeerInfo(connection));
+            infos.push(new Client.PeerInfo(connection));
         }
         return infos;
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.AddressInfo|string} address
      * @returns {Promise.<?Client.PeerInfo>}
      */
     async getPeer(address) {
         const consensus = await this._client._consensus;
         const connection = consensus.network.connections.getConnectionByPeerAddress(await this._toPeerAddress(address));
         if (connection) {
-            return new Client.Network.PeerInfo(connection);
+            return new Client.PeerInfo(connection);
         }
         return null;
     }
@@ -40,20 +40,20 @@ Client.Network = class Network {
         const consensus = await this._client._consensus;
         const infos = [];
         for (let addressState of consensus.network.addresses.iterator()) {
-            infos.push(new Client.Network.AddressInfo(addressState));
+            infos.push(new Client.AddressInfo(addressState));
         }
         return infos;
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.AddressInfo|string} address
      * @returns {Promise.<?Client.AddressInfo>}
      */
     async getAddress(address) {
         const consensus = await this._client._consensus;
         const addressState = consensus.network.addresses.getState(await this._toPeerAddress(address));
         if (addressState) {
-            return new Client.Network.AddressInfo(addressState);
+            return new Client.AddressInfo(addressState);
         }
         return null;
     }
@@ -75,7 +75,7 @@ Client.Network = class Network {
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.BasicAddress|string} address
      * @returns {Promise.<void>}
      */
     async connect(address) {
@@ -84,7 +84,7 @@ Client.Network = class Network {
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.BasicAddress|string} address
      * @returns {Promise.<void>}
      */
     async disconnect(address) {
@@ -96,7 +96,7 @@ Client.Network = class Network {
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.BasicAddress|string} address
      * @returns {Promise.<void>}
      */
     async ban(address) {
@@ -118,7 +118,7 @@ Client.Network = class Network {
     }
 
     /**
-     * @param {PeerAddress|Client.Network.AddressInfo|string} address
+     * @param {PeerAddress|Client.BasicAddress|string} address
      * @returns {Promise.<PeerAddress>}
      */
     async _toPeerAddress(address) {
@@ -126,7 +126,7 @@ Client.Network = class Network {
         let peerAddress;
         if (address instanceof PeerAddress) {
             peerAddress = consensus.network.addresses.get(address);
-        } else if (address instanceof Client.Network.AddressInfo) {
+        } else if (address instanceof Client.BasicAddress) {
             peerAddress = consensus.network.addresses.get(address.peerAddress);
         } else if (typeof address === 'string') {
             for (let peerAddressState of consensus.network.addresses.iterator()) {
@@ -217,15 +217,16 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
     constructor(connection) {
         super(connection.peerAddress);
         this._connection = connection;
-        this._bytesReceived = this._connection.networkConnection.bytesReceived;
-        this._bytesSent = this._connection.networkConnection.bytesSent;
+        const networkConnection = this._connection.networkConnection;
+        const peer = this._connection.peer;
+        this._bytesReceived = networkConnection ? networkConnection.bytesReceived : 0;
+        this._bytesSent = networkConnection ? networkConnection.bytesSent : 0;
         this._latency = this._connection.statistics.latencyMedian;
         this._state = this._connection.state;
-        this._version = this._connection.peer.version;
-        this._score = this._connection.score;
-        this._timeOffset = this._connection.peer.timeOffset;
-        this._headHash = this._connection.peer.headHash;
-        this._userAgent = this._connection.peer.userAgent;
+        this._version = peer ? peer.version : undefined;
+        this._timeOffset = peer ? peer.timeOffset : undefined;
+        this._headHash = peer ? peer.headHash : undefined;
+        this._userAgent = peer ? peer.userAgent : undefined;
     }
 
     /** @type {number} */
@@ -264,11 +265,6 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
     }
 
     /** @type {number} */
-    get score() {
-        return this._score;
-    }
-
-    /** @type {number} */
     get timeOffset() {
         return this._timeOffset;
     }
@@ -293,7 +289,6 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
         plain.latency = this.latency;
         plain.version = this.version;
         plain.state = this.state;
-        plain.score = this.score;
         plain.timeOffset = this.timeOffset;
         plain.headHash = this.headHash.toPlain();
         plain.userAgent = this.userAgent;

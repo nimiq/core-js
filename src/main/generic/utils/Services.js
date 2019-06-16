@@ -104,7 +104,7 @@ Services.FLAG_FULL  = 1 << 2;
 Services.ALL_LEGACY = (1 << 3) - 1;
 
 /**
- * The node provides at least the latest {@link Policy.NUM_BLOCKS_VERIFICATION} blocks.
+ * The node provides at least the latest {@link Policy.NUM_BLOCKS_VERIFICATION} as full blocks.
  */
 Services.FULL_BLOCKS       = 1 << 3;
 /**
@@ -117,6 +117,9 @@ Services.BLOCK_HISTORY     = 1 << 4;
  * The node provides a proof that a certain block is included in the current chain.
  *
  * If {@link Services.FULL_BLOCKS} is set, these blocks may be requested as full blocks.
+ *
+ * However, if {@link Services.BLOCK_HISTORY} is not set, this service is only provided for the latest
+ * {@link Policy.NUM_BLOCKS_VERIFICATION} blocks.
  */
 Services.BLOCK_PROOF       = 1 << 5;
 /**
@@ -152,6 +155,9 @@ Services.MEMPOOL           = 1 << 9;
 Services.TRANSACTION_INDEX = 1 << 10;
 /**
  * The node provides proofs for details from the block body, i.e. transaction proofs.
+ *
+ * However, if {@link Services.BLOCK_HISTORY} is not set, this service is only provided for the latest
+ * {@link Policy.NUM_BLOCKS_VERIFICATION} blocks.
  */
 Services.BODY_PROOF        = 1 << 11;
 Services.ALL_CURRENT       = (1 << 12) - 1 - Services.ALL_LEGACY;
@@ -165,21 +171,22 @@ Services.NAMES[Services.ACCOUNTS_PROOF] = 'ACCOUNTS_PROOF';
 Services.NAMES[Services.ACCOUNTS_CHUNKS] = 'ACCOUNTS_CHUNKS';
 Services.NAMES[Services.MEMPOOL] = 'MEMPOOL';
 Services.NAMES[Services.TRANSACTION_INDEX] = 'TRANSACTION_INDEX';
+Services.NAMES[Services.BODY_PROOF] = 'BODY_PROOF';
 
 Services.PROVIDES_FULL =        Services.FLAG_FULL | Services.ALL_CURRENT;
-Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
-                                Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS | Services.MEMPOOL |
-                                Services.BODY_PROOF;
+Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Services.BLOCK_PROOF |
+                                Services.CHAIN_PROOF | Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS |
+                                Services.MEMPOOL | Services.BODY_PROOF;
 Services.PROVIDES_NANO =        Services.FLAG_NANO | Services.CHAIN_PROOF;
 Services.PROVIDES_PICO =        Services.NONE;
 
-Services.ACCEPTS_FULL =         Services.FLAG_FULL | Services.FULL_BLOCKS | Services.BLOCK_HISTORY | Services.MEMPOOL;
+Services.ACCEPTS_FULL =         Services.FLAG_FULL | Services.FULL_BLOCKS | Services.BLOCK_HISTORY;
 Services.ACCEPTS_LIGHT =        Services.FLAG_LIGHT | Services.FLAG_FULL | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
-                                Services.ACCOUNTS_CHUNKS | Services.MEMPOOL;
+                                Services.ACCOUNTS_CHUNKS;
 Services.ACCEPTS_NANO =         Services.FLAG_NANO | Services.FLAG_LIGHT | Services.FLAG_FULL | Services.CHAIN_PROOF;
 Services.ACCEPTS_PICO =         Services.FLAG_NANO | Services.FLAG_LIGHT | Services.FLAG_FULL;
 
-Services.ACCEPTS_SPV =          Services.BLOCK_PROOF | Services.ACCOUNTS_PROOF | Services.ACCOUNTS_CHUNKS |
-                                Services.MEMPOOL | Services.TRANSACTION_INDEX | Services.BODY_PROOF;
+Services.ACCEPTS_SPV =          Services.BLOCK_PROOF | Services.ACCOUNTS_PROOF | Services.MEMPOOL |
+                                Services.TRANSACTION_INDEX | Services.BODY_PROOF;
 
 Class.register(Services);

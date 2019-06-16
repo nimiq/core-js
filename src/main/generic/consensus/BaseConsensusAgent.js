@@ -241,6 +241,7 @@ class BaseConsensusAgent extends Observable {
                 this._blockRequests.put(hash, [{resolve, reject}]);
                 this._peer.channel.getData([vector]);
                 this._timers.setTimeout('block_request_' + hash.toHex(), () => {
+                    if (!this._blockRequests.get(hash)) return;
                     Log.d(BaseConsensusAgent, `block timeout ${hash} from ${this.peer.peerAddress}`);
                     for (let {resolve, reject} of this._blockRequests.get(hash)) {
                         reject(new Error('timeout'));

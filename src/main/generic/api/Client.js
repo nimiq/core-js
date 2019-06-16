@@ -341,7 +341,7 @@ class Client {
                     confirmations = (blockNow.height - block.height) + 1;
                     state = confirmations >= this._config.requiredBlockConfirmations ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED;
                 }
-                details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations);
+                details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations, block.timestamp);
                 try {
                     listener(details);
                 } catch (e) {
@@ -365,7 +365,7 @@ class Client {
         let details;
         for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
-                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1);
+                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
                 try {
                     listener(details);
                 } catch (e) {
@@ -575,25 +575,21 @@ class Client {
             }
         }
 
-        if (blockHash && !blockHeight) {
-            const block = await consensus.getBlock(blockHash, false);
-            if (block) {
-                blockHeight = block.height;
-            } else {
-                throw new Error('Block hash is invalid');
-            }
+        const block = await consensus.getBlock(blockHash, false, true, blockHeight);
+        if (block) {
+            blockHeight = block.height;
+        } else {
+            throw new Error('Block hash is invalid');
         }
 
-        if (blockHash) {
-            const txs = await consensus.getTransactionsFromBlock([hash], blockHash, blockHeight);
-            if (txs && txs[0]) {
-                const tx = txs[0];
-                const height = await consensus.getHeadHeight();
-                const confirmations = (height - blockHeight) + 1;
-                const confirmed = confirmations >= this._config.requiredBlockConfirmations;
-                if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
-                return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations);
-            }
+        const txs = await consensus.getTransactionsFromBlock([hash], blockHash, blockHeight, block);
+        if (txs && txs[0]) {
+            const tx = txs[0];
+            const height = await consensus.getHeadHeight();
+            const confirmations = (height - blockHeight) + 1;
+            const confirmed = confirmations >= this._config.requiredBlockConfirmations;
+            if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
+            return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp);
         }
         return null;
     }
@@ -680,7 +676,7 @@ class Client {
         }
 
         const consensus = await this._consensus;
-        let txs = new HashSet((i) => i instanceof Hash ? i : i.transaction.hash());
+        let txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
         try {
             const pending = await consensus.getPendingTransactionsByAddress(address);
             for (const tx of pending) {
@@ -704,31 +700,34 @@ class Client {
                 // Was mined on different block or not confirmed yet, re-proof
             }
             if (receipt.blockHeight >= sinceBlockHeight) {
-                const pendingProofAtBlock = requestProofs.get(receipt.blockHash) || new HashSet();
+                const pendingProofAtBlock = requestProofs.get(receipt.blockHash.toBase64()) || new HashSet();
                 pendingProofAtBlock.add(receipt.transactionHash);
-                requestProofs.put(receipt.blockHash, pendingProofAtBlock);
-                blockHeights.put(receipt.blockHash, receipt.blockHeight);
+                requestProofs.put(receipt.blockHash.toBase64(), pendingProofAtBlock);
+                blockHeights.put(receipt.blockHash.toBase64(), receipt.blockHeight);
             }
         }
         for (const details of knownTxs.valueIterator()) {
             if (details.state === Client.TransactionState.MINED || details.state === Client.TransactionState.CONFIRMED) {
                 if (!receipts.contains(details)) {
-                    const pendingProofAtBlock = requestProofs.get(details.blockHash) || new HashSet();
+                    const pendingProofAtBlock = requestProofs.get(details.blockHash.toBase64()) || new HashSet();
                     pendingProofAtBlock.add(details.transactionHash);
-                    requestProofs.put(details.blockHash, pendingProofAtBlock);
-                    blockHeights.put(details.blockHash, details.blockHeight);
+                    requestProofs.put(details.blockHash.toBase64(), pendingProofAtBlock);
+                    blockHeights.put(details.blockHash.toBase64(), details.blockHeight);
                 }
             }
         }
         const height = await consensus.getHeadHeight();
-        for (const blockHash of requestProofs.keyIterator()) {
-            const blockHeight = blockHeights.get(blockHash);
-            const moreTx = await consensus.getTransactionsFromBlock(requestProofs.get(blockHash).values(), blockHash, blockHeight);
-            const confirmations = (height - blockHeights.get(blockHash)) + 1;
+        for (const blockHashBase64 of requestProofs.keyIterator()) {
+            const blockHash = Hash.fromBase64(blockHashBase64);
+            if (blockHash.equals(Hash.NULL)) throw new Error(`Illegal request for ${blockHashBase64} vs ${blockHash}`);
+            const blockHeight = blockHeights.get(blockHashBase64);
+            const block = await consensus.getBlock(blockHash, false, true, blockHeight);
+            const moreTx = await consensus.getTransactionsFromBlock(requestProofs.get(blockHashBase64).values(), blockHash, blockHeight, block);
+            const confirmations = (height - blockHeight) + 1;
             const confirmed = confirmations >= this._config.requiredBlockConfirmations;
             for (const tx of moreTx) {
                 if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
-                txs.add(new Client.TransactionDetails(tx[0], confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations));
+                txs.add(new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp));
             }
         }
         for (const /** @type {Client.TransactionDetails} */ details of knownTxs.valueIterator()) {
