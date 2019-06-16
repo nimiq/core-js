@@ -116,7 +116,7 @@ class NanoConsensus extends BaseConsensus {
 
         for (const /** @type {NanoConsensusAgent} */ agent of agents) {
             try {
-                return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
+                return (await agent.getAccounts(blockHash, addresses)).map(a => a || Account.INITIAL); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e}`);
                 // Try the next peer.

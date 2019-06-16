@@ -169,6 +169,17 @@ class NanoConsensusAgent extends BaseConsensusAgent {
 
     /**
      * @param {Hash} hash
+     * @param {boolean} [includeForks]
+     * @returns {Promise.<?Uint8Array>}
+     * @protected
+     * @override
+     */
+    _getRawBlock(hash, includeForks = false) {
+        return this._blockchain.getRawBlock(hash, includeForks);
+    }
+
+    /**
+     * @param {Hash} hash
      * @returns {?Transaction}
      * @protected
      * @override

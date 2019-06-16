@@ -92,6 +92,14 @@ class FullConsensus extends BaseConsensus {
     }
 
     /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     */
+    async getTransactionReceiptsByAddress(address) {
+        return this._blockchain.getTransactionReceiptsByAddress(address);
+    }
+
+    /**
      * @param {Array.<Hash>} hashes
      * @returns {Promise.<Array.<?TransactionReceipt>>}
      */
