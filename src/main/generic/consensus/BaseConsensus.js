@@ -49,7 +49,7 @@ class BaseConsensus extends Observable {
         this._onToDisconnect(mempool,'transaction-removed', tx => this._onTransactionRemoved(tx));
     }
 
-    // 
+    //
     // Public consensus interface
     //
 
@@ -185,7 +185,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     getTransactionReceiptsByAddress(address) {
         return this._requestTransactionReceiptsByAddress(address);
@@ -193,7 +193,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Array.<Hash>} hashes
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     getTransactionReceiptsByHashes(hashes) {
         return this._requestTransactionReceiptsByHashes(hashes);
@@ -396,7 +396,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Array.<Hash>} hashes
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async _requestTransactionReceiptsByHashes(hashes) {
         /** @type {Array.<BaseConsensusAgent>} */
@@ -423,8 +423,8 @@ class BaseConsensus extends Observable {
     /**
      * @param {Array.<Hash>} hashes
      * @param {Block} block
-     * @returns {Promise.<Array.<?Transaction>>}
-     */   
+     * @returns {Promise.<Array.<Transaction>>}
+     */
     async _requestTransactionsByHashes(hashes, block) {
         // TODO: Use the agent that provided the receipt
         /** @type {Array.<BaseConsensusAgent>} */

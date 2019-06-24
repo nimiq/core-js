@@ -83,7 +83,7 @@ class Network extends Observable {
         this._scorer = new PeerScorer(this._networkConfig, this._addresses, this._connections);
 
         /**
-         * @type {number|null}
+         * @type {?number}
          * @private
          */
         this._houseKeepingIntervalId = null;
@@ -480,7 +480,7 @@ Network.SCORE_INBOUND_EXCHANGE = 0.5;
  * @type {number}
  * @constant
  */
-Network.CONNECT_THROTTLE = 500; // 1 second
+Network.CONNECT_THROTTLE = 500; // 0.5 seconds
 /**
  * @type {number}
  * @constant

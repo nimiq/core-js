@@ -9,7 +9,7 @@ class SmartPoolMiner extends BasePoolMiner {
      * @param {Time} time
      * @param {Address} address
      * @param {number} deviceId
-     * @param {object|null} deviceData
+     * @param {?object} deviceData
      * @param {Uint8Array} [extraData=new Uint8Array(0)]
      */
     constructor(blockchain, accounts, mempool, time, address, deviceId, deviceData, extraData = new Uint8Array(0)) {

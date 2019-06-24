@@ -36,7 +36,7 @@ class ConnectionPool extends Observable {
          * @private
          */
         this._connectionsByPeerAddress = new HashMap();
-        
+
         /**
          * HashMap from netAddresses to connections.
          * @type {HashMap.<NetAddress, Array.<PeerConnection>>}
@@ -142,7 +142,7 @@ class ConnectionPool extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {PeerConnection|null}
+     * @returns {?PeerConnection}
      */
     getConnectionByPeerAddress(peerAddress) {
         return this._connectionsByPeerAddress.get(peerAddress);
@@ -588,7 +588,7 @@ class ConnectionPool extends Observable {
         if (peer.netAddress && !peer.netAddress.isPseudo() && this.getConnectionsByNetAddress(peer.netAddress).indexOf(peerConnection) < 0) {
             this._addNetAddress(peerConnection, peer.netAddress);
         }
- 
+
         this._updateConnectedPeerCount(peerConnection, 1);
 
         // Setup signal forwarding.

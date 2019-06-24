@@ -42,7 +42,7 @@ class Observable {
     /**
      * @param {string} type
      * @param {...*} args
-     * @returns {Promise|null}
+     * @returns {?Promise}
      */
     fire(type, ...args) {
         const promises = [];

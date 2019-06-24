@@ -14,7 +14,7 @@ class LightConsensus extends BaseConsensus {
         this._producer = new BlockProducer(blockchain, blockchain.accounts, mempool, network.time);
     }
 
-    // 
+    //
     // Public consensus interface
     //
 

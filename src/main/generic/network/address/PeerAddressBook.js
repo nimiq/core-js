@@ -128,7 +128,7 @@ class PeerAddressBook extends Observable {
 
     /**
      * @param {PeerAddress} peerAddress
-     * @returns {PeerAddress|null}
+     * @returns {?PeerAddress}
      */
     get(peerAddress) {
         /** @type {PeerAddressState} */
@@ -138,7 +138,7 @@ class PeerAddressBook extends Observable {
 
     /**
      * @param {PeerId} peerId
-     * @returns {PeerAddress|null}
+     * @returns {?PeerAddress}
      */
     getByPeerId(peerId) {
         /** @type {PeerAddressState} */
@@ -473,7 +473,7 @@ class PeerAddressBook extends Observable {
      */
     established(channel, peerAddress) {
         let peerAddressState = this._get(peerAddress);
-        
+
         if (!peerAddressState) {
             peerAddressState = new PeerAddressState(peerAddress);
             this._addToStore(peerAddressState);
@@ -503,7 +503,7 @@ class PeerAddressBook extends Observable {
      * Called when a connection to this peerAddress is closed.
      * @param {PeerChannel} channel
      * @param {PeerAddress} peerAddress
-     * @param {number|null} type
+     * @param {?number} type
      * @returns {void}
      */
     close(channel, peerAddress, type = null) {

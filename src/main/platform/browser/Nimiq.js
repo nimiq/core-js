@@ -106,7 +106,7 @@ class Nimiq {
 
     /**
      * Load classes into scope (so you don't need to prefix them with `Nimiq.`).
-     * @param {Array.<string>} classes Array of class names to load in global scope
+     * @param {...string} classes Array of class names to load in global scope
      * @returns {Promise.<void>}
      */
     static loadToScope(...classes) {
