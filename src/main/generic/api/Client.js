@@ -67,7 +67,11 @@ class Client {
         this._consensusOn(consensus, 'transaction-added', (tx) => this._mempool._onTransactionAdded(tx));
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
-        consensus.network.connect();
+        if (this._config.hasFeature(Client.Feature.PASSIVE)) {
+            consensus.network.allowInboundConnections = true;
+        } else {
+            consensus.network.connect();
+        }
     }
 
     /**
@@ -182,7 +186,7 @@ class Client {
      * @param {Client.ConsensusState} state
      * @private
      */
-    _onConsensusChanged(state) {
+    async _onConsensusChanged(state) {
         this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus.established) {
@@ -194,7 +198,20 @@ class Client {
         });
         this._consensusState = state;
         for (let listener of this._consensusChangedListeners.valueIterator()) {
-            listener(state);
+            try {
+                listener(state);
+            } catch (e) {
+                Log.e(Client, `Error in listener: ${e}`);
+            }
+        }
+        const consensus = await this._consensus;
+        const headHash = await consensus.getHeadHash();
+        for (let listener of this._headChangedListeners.valueIterator()) {
+            try {
+                listener(headHash, 'established', [], [headHash]);
+            } catch (e) {
+                Log.e(Client, `Error in listener: ${e}`);
+            }
         }
     }
 
@@ -217,8 +234,14 @@ class Client {
      * @private
      */
     async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
-        for (let listener of this._headChangedListeners.valueIterator()) {
-            listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
+        if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
+            for (let listener of this._headChangedListeners.valueIterator()) {
+                try {
+                    listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
+            }
         }
         if (this._transactionListeners.length > 0) {
             const revertedTxs = new HashSet();
@@ -290,7 +313,11 @@ class Client {
                 } else {
                     details = details || new Client.TransactionDetails(tx, Client.TransactionState.PENDING);
                 }
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
         this._txClearFromConfirm(tx);
@@ -314,8 +341,12 @@ class Client {
                     confirmations = (blockNow.height - block.height) + 1;
                     state = confirmations >= this._config.requiredBlockConfirmations ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED;
                 }
-                details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations);
-                listener(details);
+                details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations, block.timestamp);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
         this._txClearFromExpire(tx);
@@ -334,8 +365,12 @@ class Client {
         let details;
         for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
-                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1);
-                listener(details);
+                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
     }
@@ -350,7 +385,11 @@ class Client {
         for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
-                listener(details);
+                try {
+                    listener(details);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
     }
@@ -386,7 +425,8 @@ class Client {
      * Data returned by this method authenticated according to the current tip of the blockchain. Any further changes to
      * as well as forks of the blockchain might invalidate the data.
      *
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block that is the current tip of the chain
      */
     async getHeadBlock(includeBody = true) {
@@ -400,7 +440,8 @@ class Client {
      * that do not exist on the current chain but are present on forks.
      *
      * @param {Hash|string} hash The hash of a block
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block with the specified hash
      */
     async getBlock(hash, includeBody = true) {
@@ -417,7 +458,8 @@ class Client {
      * the blockchain might invalidate the data.
      *
      * @param {number} height The height or block number of the block to fetch
-     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block
+     * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
+     *                                       client is not able to do so, it will return a block without such data.
      * @returns {Promise.<Block>} The block at the specified height or block number
      */
     async getBlockAt(height, includeBody) {
@@ -455,7 +497,7 @@ class Client {
      * Note that this functionality might not be available depending on your client configuration.
      *
      * @param {Block|string} block The block to append to the blockchain.
-     * @returns {Promise.<number>}
+     * @returns {Promise.<boolean>}
      */
     async submitBlock(block) {
         this._config.requireFeatures(Client.Feature.MINING);
@@ -519,39 +561,35 @@ class Client {
 
         const consensus = await this._consensus;
 
+        const pending = await consensus.getPendingTransactions([hash]);
+        if (pending && pending[0]) {
+            this._txWaitForExpire(pending[0]);
+            return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
+        }
+
         if (!blockHash) {
             const receipts = await consensus.getTransactionReceiptsByHashes([hash]);
-            if (receipts.length === 1 && receipts[0]) {
+            if (receipts && receipts.length === 1 && receipts[0]) {
                 blockHash = receipts[0].blockHash;
                 blockHeight = receipts[0].blockHeight;
             }
         }
 
-        if (blockHash && !blockHeight) {
-            const block = await consensus.getBlock(blockHash, false);
-            if (block) {
-                blockHeight = block.height;
-            } else {
-                throw new Error('Block hash is invalid');
-            }
+        const block = await consensus.getBlock(blockHash, false, true, blockHeight);
+        if (block) {
+            blockHeight = block.height;
+        } else {
+            throw new Error('Block hash is invalid');
         }
 
-        if (blockHash) {
-            const txs = await consensus.getTransactionsFromBlock([hash], blockHash, blockHeight);
-            if (txs && txs[0]) {
-                const tx = txs[0];
-                const height = await consensus.getHeadHeight();
-                const confirmations = (height - blockHeight) + 1;
-                const confirmed = confirmations >= this._config.requiredBlockConfirmations;
-                if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
-                return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations);
-            }
-        }
-
-        const pending = await consensus.getPendingTransactions([hash]);
-        if (pending && pending[0]) {
-            this._txWaitForExpire(pending[0]);
-            return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
+        const txs = await consensus.getTransactionsFromBlock([hash], blockHash, blockHeight, block);
+        if (txs && txs[0]) {
+            const tx = txs[0];
+            const height = await consensus.getHeadHeight();
+            const confirmations = (height - blockHeight) + 1;
+            const confirmed = confirmations >= this._config.requiredBlockConfirmations;
+            if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
+            return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp);
         }
         return null;
     }
@@ -638,7 +676,7 @@ class Client {
         }
 
         const consensus = await this._consensus;
-        let txs = new HashSet((i) => i instanceof Hash ? i : i.transaction.hash());
+        let txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
         try {
             const pending = await consensus.getPendingTransactionsByAddress(address);
             for (const tx of pending) {
@@ -662,31 +700,34 @@ class Client {
                 // Was mined on different block or not confirmed yet, re-proof
             }
             if (receipt.blockHeight >= sinceBlockHeight) {
-                const pendingProofAtBlock = requestProofs.get(receipt.blockHash) || new HashSet();
+                const pendingProofAtBlock = requestProofs.get(receipt.blockHash.toBase64()) || new HashSet();
                 pendingProofAtBlock.add(receipt.transactionHash);
-                requestProofs.put(receipt.blockHash, pendingProofAtBlock);
-                blockHeights.put(receipt.blockHash, receipt.blockHeight);
+                requestProofs.put(receipt.blockHash.toBase64(), pendingProofAtBlock);
+                blockHeights.put(receipt.blockHash.toBase64(), receipt.blockHeight);
             }
         }
         for (const details of knownTxs.valueIterator()) {
             if (details.state === Client.TransactionState.MINED || details.state === Client.TransactionState.CONFIRMED) {
                 if (!receipts.contains(details)) {
-                    const pendingProofAtBlock = requestProofs.get(details.blockHash) || new HashSet();
+                    const pendingProofAtBlock = requestProofs.get(details.blockHash.toBase64()) || new HashSet();
                     pendingProofAtBlock.add(details.transactionHash);
-                    requestProofs.put(details.blockHash, pendingProofAtBlock);
-                    blockHeights.put(details.blockHash, details.blockHeight);
+                    requestProofs.put(details.blockHash.toBase64(), pendingProofAtBlock);
+                    blockHeights.put(details.blockHash.toBase64(), details.blockHeight);
                 }
             }
         }
         const height = await consensus.getHeadHeight();
-        for (const blockHash of requestProofs.keyIterator()) {
-            const blockHeight = blockHeights.get(blockHash);
-            const moreTx = await consensus.getTransactionsFromBlock(requestProofs.get(blockHash).values(), blockHash, blockHeight);
-            const confirmations = (height - blockHeights.get(blockHash)) + 1;
+        for (const blockHashBase64 of requestProofs.keyIterator()) {
+            const blockHash = Hash.fromBase64(blockHashBase64);
+            if (blockHash.equals(Hash.NULL)) throw new Error(`Illegal request for ${blockHashBase64} vs ${blockHash}`);
+            const blockHeight = blockHeights.get(blockHashBase64);
+            const block = await consensus.getBlock(blockHash, false, true, blockHeight);
+            const moreTx = await consensus.getTransactionsFromBlock(requestProofs.get(blockHashBase64).values(), blockHash, blockHeight, block);
+            const confirmations = (height - blockHeight) + 1;
             const confirmed = confirmations >= this._config.requiredBlockConfirmations;
             for (const tx of moreTx) {
                 if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
-                txs.add(new Client.TransactionDetails(tx[0], confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations));
+                txs.add(new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp));
             }
         }
         for (const /** @type {Client.TransactionDetails} */ details of knownTxs.valueIterator()) {

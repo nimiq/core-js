@@ -11,19 +11,23 @@ class NetworkUi {
         this.$bytesReceived = this.$el.querySelector('[bytes-received]');
         this.$bytesSent = this.$el.querySelector('[bytes-sent]');
 
-        $.network.on('peers-changed', () => this._networkChanged());
+        $.client.network.getOwnAddress().then(address => {
+            this.$peerAddress.textContent = address.peerAddress.toString();
+        });
+        // TODO: Listen for live updates of peer data once supported by client API
         setInterval(() => this._networkChanged(), 2500);
 
         this._networkChanged();
     }
     
     _networkChanged() {
-        this.$peerAddress.textContent = this.$.network._networkConfig.peerAddress;
-        this.$peerCount.textContent = this.$.network.peerCount;
-        this.$peerCountWs.textContent = this.$.network.peerCountWebSocket;
-        this.$peerCountWss.textContent = this.$.network.peerCountWebSocketSecure;
-        this.$peerCountRtc.textContent = this.$.network.peerCountWebRtc;
-        this.$bytesReceived.textContent = Utils.humanBytes(this.$.network.bytesReceived);
-        this.$bytesSent.textContent = Utils.humanBytes(this.$.network.bytesSent);
+        this.$.client.network.getStatistics().then(/** @type {Client.NetworkStatistics} */ stats => {
+            this.$peerCount.textContent = stats.totalPeerCount;
+            this.$peerCountWs.textContent = stats.peerCountsByType['ws'];
+            this.$peerCountWss.textContent = stats.peerCountsByType['wss'];
+            this.$peerCountRtc.textContent = stats.peerCountsByType['rtc'];
+            this.$bytesReceived.textContent = stats.bytesReceived;
+            this.$bytesSent.textContent = stats.bytesSent;
+        });
     }
 }

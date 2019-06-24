@@ -10,6 +10,8 @@ class FullConsensus extends BaseConsensus {
         this._blockchain = blockchain;
         /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {BlockProducer} */
+        this._producer = new BlockProducer(blockchain, blockchain.accounts, mempool, network.time);
     }
 
     // 
@@ -34,6 +36,23 @@ class FullConsensus extends BaseConsensus {
     async getBlockAt(height, includeBody = true) {
         // Override to not fallback to network
         return this._blockchain.getBlockAt(height, includeBody);
+    }
+
+    /**
+     * @param {Address} minerAddress
+     * @param {Uint8Array} [extraData]
+     * @returns {Promise.<Block>}
+     */
+    async getBlockTemplate(minerAddress, extraData) {
+        return this._producer.getNextBlock(minerAddress, extraData);
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async submitBlock(block) {
+        return (await this.blockchain.pushBlock(block)) >= 0;
     }
 
     /**
@@ -70,6 +89,14 @@ class FullConsensus extends BaseConsensus {
         // Override to not fallback to network
         let block = await this._blockchain.getBlock(blockHash, false, true);
         return block.transactions.filter(tx => hashes.find(hash => hash.equals(tx.hash())));
+    }
+
+    /**
+     * @param {Address} address
+     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     */
+    async getTransactionReceiptsByAddress(address) {
+        return this._blockchain.getTransactionReceiptsByAddress(address);
     }
 
     /**

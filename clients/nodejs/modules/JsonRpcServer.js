@@ -66,32 +66,27 @@ class JsonRpcServer {
         /** @type {Map.<string, function(*)>} */
         this._methods = new Map();
 
-        /** @type {string} */
-        this._consensusState = 'syncing';
+        /** @type {Client.ConsensusState} */
+        this._consensusState = Nimiq.Client.ConsensusState.SYNCING;
     }
 
     /**
+     * @param {Client} client
      * @param {FullConsensus} consensus
-     * @param {FullChain} blockchain
-     * @param {Accounts} accounts
-     * @param {Mempool} mempool
-     * @param {Network} network
      * @param {Miner|SmartPoolMiner|NanoPoolMiner} miner
      * @param {WalletStore} walletStore
      */
-    init(consensus, blockchain, accounts, mempool, network, miner, walletStore) {
-        this._consensus = consensus;
-        this._blockchain = blockchain;
-        this._accounts = accounts;
-        this._mempool = mempool;
-        this._network = network;
+    async init(client, consensus, miner, walletStore) {
+        /** @type {Client} */
+        this._client = client;
+        this._consensus = consensus; // TODO: Required for minFeePerByte
         this._miner = miner;
         this._walletStore = walletStore;
 
-        this._startingBlock = blockchain.height;
-        this._consensus.on('established', () => this._consensusState = 'established');
-        this._consensus.on('syncing', () => this._consensusState = 'syncing');
-        this._consensus.on('lost', () => this._consensusState = 'lost');
+        this._startingBlock = await this._client.getHeadHeight();
+        await this._client.addConsensusChangedListener((state) => {
+            this._consensusState = state;
+        });
 
         // Network
         this._methods.set('peerCount', this.peerCount.bind(this));
@@ -175,18 +170,19 @@ class JsonRpcServer {
      * Network
      */
 
-    peerCount() {
-        return this._network.peerCount;
+    async peerCount() {
+        const stats = await this._client.network.getStatistics();
+        return stats.totalPeerCount;
     }
 
     consensus() {
         return this._consensusState;
     }
 
-    syncing() {
-        if (this._consensusState === 'established') return false;
-        const currentBlock = this._blockchain.height;
-        const highestBlock = this._blockchain.height; // TODO
+    async syncing() {
+        if (this._consensusState === Nimiq.Client.ConsensusState.ESTABLISHED) return false;
+        const currentBlock = await this._client.getHeadHeight();
+        const highestBlock = await this._client.getHeadHeight(); // TODO
         return {
             startingBlock: this._startingBlock,
             currentBlock: currentBlock,
@@ -194,10 +190,13 @@ class JsonRpcServer {
         };
     }
 
-    peerList() {
+    async peerList() {
         const peers = [];
-        for (const peerAddressState of this._network.addresses.iterator()) {
-            peers.push(this._peerAddressStateToPeerObj(peerAddressState));
+        const addresses = await this._client.network.getAddresses();
+        const allPeers = await this._client.network.getPeers();
+
+        for (const address of addresses) {
+            peers.push(this._infoToPeerObj(allPeers.find(peer => peer.peerAddress.equals(address.peerAddress)), address));
         }
         return peers;
     }
@@ -205,51 +204,25 @@ class JsonRpcServer {
     /**
      * @param {string} peer
      */
-    peerState(peer, set) {
-        const split = peer.split('/');
-        let peerAddress;
-        if (split.length === 1 || (split.length === 4 && split[3].length > 0)) {
-            const peerId = Nimiq.PeerId.fromHex(split[split.length - 1]);
-            peerAddress = this._network.addresses.getByPeerId(peerId);
-        } else if ((split[0] === 'wss:' || split[0] === 'ws:') && split.length >= 3) {
-            const colons = split[2].split(':', 2);
-            if (colons.length === 2) {
-                peerAddress = this._network.addresses.get(Nimiq.WsPeerAddress.seed(colons[0], parseInt(colons[1])));
-            }
-        }
-        const addressState = peerAddress ? this._network.addresses.getState(peerAddress) : null;
-        const connection = peerAddress ? this._network.connections.getConnectionByPeerAddress(peerAddress) : null;
+    async peerState(peer, set) {
         if (typeof set === 'string') {
             set = set.toLowerCase();
             switch (set) {
                 case 'disconnect':
-                    if (connection) {
-                        connection.peerChannel.close(Nimiq.CloseType.MANUAL_PEER_DISCONNECT);
-                    }
-                    break;
-                case 'fail':
-                    if (connection) {
-                        connection.peerChannel.close(Nimiq.CloseType.MANUAL_PEER_FAIL);
-                    }
+                    await this._client.network.disconnect(peer);
                     break;
                 case 'ban':
-                    if (connection) {
-                        connection.peerChannel.close(Nimiq.CloseType.MANUAL_PEER_BAN);
-                    }
+                    await this._client.network.ban(peer);
                     break;
                 case 'unban':
-                    if (addressState.state === Nimiq.PeerAddressState.BANNED) {
-                        addressState.state = Nimiq.PeerAddressState.TRIED;
-                    }
+                    await this._client.network.unban(peer);
                     break;
                 case 'connect':
-                    if (!connection) {
-                        this._network.connections.connectOutbound(peerAddress);
-                    }
+                    await this._client.network.connect(peer);
                     break;
             }
         }
-        return this._peerAddressStateToPeerObj(addressState);
+        return this._infoToPeerObj(await this._client.network.getPeer(peer), await this._client.network.getAddress(peer));
     }
 
     /*
@@ -258,15 +231,12 @@ class JsonRpcServer {
 
     async sendRawTransaction(txHex) {
         const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txHex));
-        if (this._mempool.constructor === Nimiq.NanoMempool) {
-            this._consensus.relayTransaction(tx);
-        } else {
-            const ret = await this._mempool.pushTransaction(tx);
-            if (ret < 0) {
-                const e = new Error(`Transaction not accepted: ${ret}`);
-                e.code = ret;
-                throw e;
-            }
+        const details = await this._client.sendTransaction(tx);
+        switch (details.state) {
+            case Nimiq.Client.TransactionState.INVALIDATED:
+                throw new Error('Transaction invalid');
+            case Nimiq.Client.TransactionState.EXPIRED:
+                throw new Error('Transaction invalid');
         }
         return tx.hash().toHex();
     }
@@ -280,6 +250,7 @@ class JsonRpcServer {
         const fee = parseInt(tx.fee);
         const flags = tx.flags ? Number.parseInt(tx.flags) : Nimiq.Transaction.Flag.NONE;
         const data = tx.data ? Nimiq.BufferUtils.fromHex(tx.data) : null;
+        const validityStartHeight = tx.validityStartHeight ? Number.parseInt(tx.validityStartHeight) : (await this._client.getHeadHeight());
         /** @type {Wallet} */
         const wallet = await this._walletStore.get(from);
         if (!wallet || !(wallet instanceof Nimiq.Wallet)) {
@@ -289,10 +260,10 @@ class JsonRpcServer {
         if (fromType !== Nimiq.Account.Type.BASIC) {
             throw new Error('Only transactions from basic accounts may be created using this function.');
         } else if (toType !== Nimiq.Account.Type.BASIC || data !== null) {
-            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, this._blockchain.height, flags, data);
+            transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, validityStartHeight, flags, data);
             transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
         } else {
-            transaction = wallet.createTransaction(to, value, fee, this._blockchain.height);
+            transaction = wallet.createTransaction(to, value, fee, validityStartHeight);
         }
         return Nimiq.BufferUtils.toHex(transaction.serialize());
     }
@@ -309,14 +280,14 @@ class JsonRpcServer {
             liveTx.inMempool = (liveTx.confirmations === 0);
             return liveTx;
         }
-        const txObj = this._transactionToObj(tx);
+        const txObj = await this._transactionToObj(tx);
         txObj.valid = await tx.verify();
         txObj.inMempool = false;
         return txObj;
     }
 
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
+        const block = await this._client.getBlock(Nimiq.Hash.fromString(blockHash), true);
         if (block && block.transactions.length > txIndex) {
             return this._transactionToObj(block.transactions[txIndex], block, txIndex);
         }
@@ -335,64 +306,53 @@ class JsonRpcServer {
         return this._getTransactionByHash(Nimiq.Hash.fromString(hash));
     }
 
-    async _getTransactionByHash(hash) {
-        const entry = await this._blockchain.getTransactionInfoByHash(hash);
-        if (entry) {
-            const block = await this._blockchain.getBlock(entry.blockHash, /*includeForks*/ false, /*includeBody*/ true);
-            return this._transactionToObj(block.transactions[entry.index], block, entry.index);
-        }
-        const mempoolTx = this._mempool.getTransaction(hash);
-        if (mempoolTx) {
-            return this._transactionToObj(mempoolTx);
+    async _getTransactionByHash(hash, blockHash, blockHeight) {
+        const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
+        if (tx) {
+            return this._transactionDetailsToObj(tx);
         }
         return null;
     }
 
     async getTransactionReceipt(hash) {
-        const entry = await this._blockchain.getTransactionInfoByHash(Nimiq.Hash.fromString(hash));
-        if (!entry) return null;
-        const block = await this._blockchain.getBlock(entry.blockHash);
+        const receipt = await this._client.getTransactionReceipt(hash);
+        if (!receipt) return null;
+        const block = await this._client.getBlock(receipt.blockHash);
         return {
-            transactionHash: entry.transactionHash.toHex(),
-            transactionIndex: entry.index,
-            blockNumber: entry.blockHeight,
-            blockHash: entry.blockHash.toHex(),
-            confirmations: this._blockchain.height - entry.blockHeight,
+            transactionHash: receipt.transactionHash.toHex(),
+            transactionIndex: block ? block.transactions.findIndex(tx => tx.hash().equals(hash)) : undefined,
+            blockNumber: receipt.blockHeight,
+            blockHash: receipt.blockHash.toHex(),
+            confirmations: (await this._client.getHeadHeight()) - receipt.blockHeight,
             timestamp: block ? block.timestamp : undefined
         };
     }
 
     async getTransactionsByAddress(addr, limit = 1000) {
         const address = Nimiq.Address.fromString(addr);
-        const receipts = await this._blockchain.getTransactionReceiptsByAddress(address, limit);
+        const txs = await this._client.getTransactionsByAddress(address);
         const result = [];
-        for (const r of receipts) {
-            result.push(await this._getTransactionByHash(r.transactionHash));
+        for (const tx of txs) {
+            try {
+                result.push(this._transactionDetailsToObj(tx));
+            } catch (e) {
+                Nimiq.Log.w(JsonRpcServer, `Transactions from receipt is not available`);
+            }
+            if (result.length >= limit) break;
         }
-        // const result = await Promise.all(receipts.map((r) => this._getTransactionByHash(r.transactionHash)));
         return result;
     }
 
-    mempoolContent(includeTransactions) {
-        return this._mempool.getTransactions().map((tx) => includeTransactions ? this._transactionToObj(tx) : tx.hash().toHex());
+    async mempoolContent(includeTransactions) {
+        return Promise.all((await this._client.mempool.getTransactions()).map(async (txHash) => {
+            return includeTransactions ? this._transactionDetailsToObj(await this._client.getTransaction(txHash)) : txHash.toHex();
+        }));
     }
 
-    mempool() {
-        const transactions = this._mempool.getTransactions();
-        const buckets = [10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0];
-        const transactionsPerBucket = { total: transactions.length, buckets: [] };
-        let i = 0;
-        // Transactions are ordered by feePerByte
-        for (const tx of transactions) {
-            // Find appropriate bucked
-            while (tx.feePerByte < buckets[i]) i++;
-            const bucket = buckets[i];
-            if (!transactionsPerBucket[bucket]) {
-                transactionsPerBucket[bucket] = 0;
-                transactionsPerBucket.buckets.push(bucket);
-            }
-            transactionsPerBucket[bucket]++;
-        }
+    async mempool() {
+        const stats = await this._client.mempool.getStatistics();
+        const transactionsPerBucket = stats.countInBuckets;
+        transactionsPerBucket.total = stats.count;
         return transactionsPerBucket;
     }
 
@@ -413,7 +373,7 @@ class JsonRpcServer {
             if (this._poolConfig.enabled && this._isPoolValid() && this._miner.isDisconnected()) {
                 this._miner.connect(this._poolConfig.host, this._poolConfig.port);
             }
-            if (!this._miner.working && this._consensus.established) this._miner.startWork();
+            if (!this._miner.working && this._consensusState === Nimiq.Client.ConsensusState.ESTABLISHED) this._miner.startWork();
         } else if (enabled === false) {
             this._minerConfig.enabled = false;
             if (this._miner.working) this._miner.stopWork();
@@ -565,7 +525,9 @@ class JsonRpcServer {
      */
 
     async accounts() {
-        return Promise.all((await this._walletStore.list()).map(async (address) => this._accountToObj(await this._accounts.get(address), address)));
+        const addresses = await this._walletStore.list();
+        const accounts = await this._client.getAccounts(addresses);
+        return addresses.map((address, i) => this._accountToObj(accounts[i], address));
     }
 
     async createAccount() {
@@ -576,12 +538,12 @@ class JsonRpcServer {
 
     async getBalance(addrString, atBlock) {
         if (atBlock && atBlock !== 'latest') throw new Error(`Cannot calculate balance at block ${atBlock}`);
-        return (await this._accounts.get(Nimiq.Address.fromString(addrString))).balance;
+        return (await this._client.getAccount(Nimiq.Address.fromString(addrString))).balance;
     }
 
     async getAccount(addr) {
         const address = Nimiq.Address.fromString(addr);
-        const account = await this._accounts.get(address);
+        const account = await this._client.getAccount(address);
         return this._accountToObj(account, address);
     }
 
@@ -589,12 +551,12 @@ class JsonRpcServer {
      * Blockchain
      */
 
-    blockNumber() {
-        return this._blockchain.height;
+    async blockNumber() {
+        return this._client.getHeadHeight();
     }
 
     async getBlockTransactionCountByHash(blockHash) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
+        const block = await this._client.getBlock(Nimiq.Hash.fromString(blockHash), true);
         return block ? block.transactionCount : null;
     }
 
@@ -604,7 +566,7 @@ class JsonRpcServer {
     }
 
     async getBlockByHash(blockHash, includeTransactions) {
-        const block = await this._blockchain.getBlock(Nimiq.Hash.fromString(blockHash), /*includeForks*/ false, /*includeBody*/ true);
+        const block = await this._client.getBlock(Nimiq.Hash.fromString(blockHash), true);
         return block ? this._blockToObj(block, includeTransactions) : null;
     }
 
@@ -648,19 +610,19 @@ class JsonRpcServer {
      * @returns {Promise.<?Block>}
      * @private
      */
-    _getBlockByNumber(number) {
+    async _getBlockByNumber(number) {
         if (typeof number === 'string') {
             if (number.startsWith('latest-')) {
-                number = this._blockchain.height - parseInt(number.substring(7));
+                number = (await this._client.getHeadHeight()) - parseInt(number.substring(7));
             } else if (number === 'latest') {
-                number = this._blockchain.height;
+                number = await this._client.getHeadHeight();
             } else {
                 number = parseInt(number);
             }
         }
         if (number === 0) number = 1;
         if (number === 1) return Promise.resolve(Nimiq.GenesisConfig.GENESIS_BLOCK);
-        return this._blockchain.getBlockAt(number, /*includeBody*/ true);
+        return this._client.getBlockAt(number, true);
     }
 
     /**
@@ -710,27 +672,24 @@ class JsonRpcServer {
     }
 
     /**
-     * @param {PeerAddressState} peerAddressState
-     * @param {PeerConnection} [connection]
+     * @param {Client.PeerInfo} peerInfo
+     * @param {Client.AddressInfo} addressInfo
      * @private
      */
-    _peerAddressStateToPeerObj(peerAddressState, connection) {
-        if (!peerAddressState) return null;
-        if (!connection) connection = this._network.connections.getConnectionByPeerAddress(peerAddressState.peerAddress);
-        const peerAddress = connection && connection.peer && connection.peer.peerAddress ? connection.peer.peerAddress : peerAddressState.peerAddress;
+    _infoToPeerObj(peerInfo, addressInfo) {
+        const basicAddress = peerInfo || addressInfo;
+        if (!basicAddress) return null;
         return {
-            id: peerAddress.peerId ? peerAddress.peerId.toHex() : null,
-            address: peerAddress.toString(),
-            failedAttempts: peerAddressState.failedAttempts,
-            addressState: peerAddressState.state,
-            connectionState: connection ? connection.state : undefined,
-            version: connection && connection.peer ? connection.peer.version : undefined,
-            timeOffset: connection && connection.peer ? connection.peer.timeOffset : undefined,
-            headHash: connection && connection.peer ? connection.peer.headHash.toHex() : undefined,
-            score: connection ? connection.score : undefined,
-            latency: connection ? connection.statistics.latencyMedian : undefined,
-            rx: connection && connection.networkConnection ? connection.networkConnection.bytesReceived : undefined,
-            tx: connection && connection.networkConnection ? connection.networkConnection.bytesSent : undefined
+            id: basicAddress.peerId ? basicAddress.peerId.toHex() : null,
+            address: basicAddress.peerAddress.toString(),
+            addressState: addressInfo ? addressInfo.state : undefined,
+            connectionState: peerInfo ? peerInfo.state : undefined,
+            version: peerInfo ? peerInfo.version : undefined,
+            timeOffset: peerInfo ? peerInfo.timeOffset : undefined,
+            headHash: peerInfo && peerInfo.headHash ? peerInfo.headHash.toHex() : undefined,
+            latency: peerInfo ? peerInfo.latency : undefined,
+            rx: peerInfo ? peerInfo.bytesReceived : undefined,
+            tx: peerInfo ? peerInfo.bytesSent : undefined
         };
     }
 
@@ -755,7 +714,7 @@ class JsonRpcServer {
             size: block.serializedSize,
             timestamp: block.timestamp,
             transactions: includeTransactions
-                ? block.transactions.map((tx, i) => this._transactionToObj(tx, block, i))
+                ? await Promise.all(block.transactions.map((tx, i) => this._transactionToObj(tx, block, i)))
                 : block.transactions.map((tx) => tx.hash().toHex())
         };
     }
@@ -766,13 +725,13 @@ class JsonRpcServer {
      * @param {number} [i]
      * @private
      */
-    _transactionToObj(tx, block, i) {
+    async _transactionToObj(tx, block, i) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
             timestamp: block ? block.timestamp : undefined,
-            confirmations: block ? this._blockchain.height - block.height + 1 : 0,
+            confirmations: block ? (await this._client.getHeadHeight()) - block.height + 1 : 0,
             transactionIndex: i,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),
@@ -781,6 +740,28 @@ class JsonRpcServer {
             value: tx.value,
             fee: tx.fee,
             data: Nimiq.BufferUtils.toHex(tx.data) || null,
+            flags: tx.flags
+        };
+    }
+
+    /**
+     * @param {Client.TransactionDetails} tx
+     * @private
+     */
+    _transactionDetailsToObj(tx) {
+        return {
+            hash: tx.transactionHash.toHex(),
+            blockHash: tx.blockHash.toHex(),
+            blockNumber: tx.blockHeight,
+            timestamp: tx.timestamp,
+            confirmations: tx.confirmations,
+            from: tx.sender.toHex(),
+            fromAddress: tx.sender.toUserFriendlyAddress(),
+            to: tx.recipient.toHex(),
+            toAddress: tx.recipient.toUserFriendlyAddress(),
+            value: tx.value,
+            fee: tx.fee,
+            data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
             flags: tx.flags
         };
     }

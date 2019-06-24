@@ -22,6 +22,10 @@ Client.Configuration = class Configuration {
         return this._requiredBlockConfirmations;
     }
 
+    get networkConfig() {
+        return this._networkConfig;
+    }
+
     /**
      * @returns {Promise.<BaseConsensus>}
      * @package
@@ -48,7 +52,7 @@ Client.Configuration = class Configuration {
      * @param {Client.Feature} feature
      */
     hasFeature(feature) {
-        return false;
+        return this._features.includes(feature);
     }
 
     /**
@@ -82,18 +86,22 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * Configure the client to be not reachable from the outside.
+     * @returns {Client.ConfigurationBuilder}
      */
     dumb() {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'dumb';
+        return this;
     }
 
     /**
      * Configure the client to be publicly reachable via WebRTC.
+     * @returns {Client.ConfigurationBuilder}
      */
     rtc() {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'rtc';
+        return this;
     }
 
     /**
@@ -101,12 +109,14 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      *
      * @param {string} [host] Publicly reachable hostname of this node
      * @param {number} [port=8443] Publicly reachable port
+     * @returns {Client.ConfigurationBuilder}
      */
     ws(host, port = 8443) {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'ws';
         this._host = this._requiredType(host, 'host', 'string');
         this._port = this._requiredType(port, 'port', 'number');
+        return this;
     }
 
     /**
@@ -116,6 +126,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @param {number} [port=8443] Publicly reachable port
      * @param {string} [tlsKey] Path to the tls private key
      * @param {string} [tlsCert] Path to the tls certificate
+     * @returns {Client.ConfigurationBuilder}
      */
     wss(host, port, tlsKey, tlsCert) {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -124,6 +135,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
         this._port = this._requiredType(port, 'port', 'number');
         this._tlsKey = this._requiredType(tlsKey, 'tlsKey', 'string');
         this._tlsCert = this._requiredType(tlsCert, 'tlsCert', 'string');
+        return this;
     }
 
     /**
@@ -134,6 +146,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @param {number} [port=8443] Publicly reachable port (required for ws and wss)
      * @param {string} [tlsKey] Path to the tls private key (required for wss)
      * @param {string} [tlsCert] Path to the tls certificate (required for wss)
+     * @returns {Client.ConfigurationBuilder}
      */
     protocol(protocol, host, port = 8443, tlsKey, tlsCert) {
         if (this._protocol) throw new Error('Protocol already configured');
@@ -146,36 +159,44 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
             this._tlsKey = this._requiredType(tlsKey, 'tlsKey', 'string');
             this._tlsCert = this._requiredType(tlsCert, 'tlsCert', 'string');
         }
+        return this;
     }
 
     /**
      * Disable persistent storage. By default persistent storage will be used.
      * @param {boolean} [volatile]
+     * @returns {Client.ConfigurationBuilder}
      */
     volatile(volatile = true) {
         if (typeof this._volatile !== 'undefined') throw new Error('volatile already set');
         this._volatile = this._requiredType(volatile, 'volatile', 'boolean');
+        return this;
     }
 
     /**
      * Sets the number of blocks required to consider a transaction confirmed. Defaults to 10.
+     * @returns {Client.ConfigurationBuilder}
      */
     blockConfirmations(confirmations) {
         if (typeof this._blockConfirmations !== 'undefined') throw new Error('blockConfirmations already set.');
         this._blockConfirmations = this._requiredType(confirmations, 'confirmations', 'number');
+        return this;
     }
 
     /**
      * @param {Client.Feature} feature
+     * @returns {Client.ConfigurationBuilder}
      */
     feature(...feature) {
         this._features.addAll(feature);
+        return this;
     }
 
     /**
      * @param {number} port
      * @param {string} header
      * @param {string} addresses
+     * @returns {Client.ConfigurationBuilder}
      */
     reverseProxy(port, header, ...addresses) {
         if (this._protocol !== 'ws' && this._protocol !== 'wss') throw new Error('Protocol must be ws or wss for reverse proxy.');
@@ -185,6 +206,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
             header: this._requiredType(header, 'header', 'string'),
             addresses: addresses
         };
+        return this;
     }
 
     /**
@@ -260,5 +282,10 @@ Client.Feature = {
      * Have a full local mempool. This is required to build blocks using the {@link Client#getBlockTemplate} and to
      * access the {@link Client#mempool}.
      */
-    MEMPOOL: 'MEMPOOL'
+    MEMPOOL: 'MEMPOOL',
+    /**
+     * Make the client not connect to the network actively, but only accept incoming connections.
+     * Useful only if this node is registered as a seed node for the rest of the network.
+     */
+    PASSIVE: 'PASSIVE'
 };

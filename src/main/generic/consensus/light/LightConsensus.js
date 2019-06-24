@@ -8,14 +8,32 @@ class LightConsensus extends BaseConsensus {
         super(blockchain, mempool, network);
         /** @type {LightChain} */
         this._blockchain = blockchain;
-        this.bubble(this._blockchain, 'block');
         /** @type {Mempool} */
         this._mempool = mempool;
+        /** @type {BlockProducer} */
+        this._producer = new BlockProducer(blockchain, blockchain.accounts, mempool, network.time);
     }
 
     // 
     // Public consensus interface
     //
+
+    /**
+     * @param {Address} minerAddress
+     * @param {Uint8Array} [extraData]
+     * @returns {Promise.<Block>}
+     */
+    async getBlockTemplate(minerAddress, extraData) {
+        return this._producer.getNextBlock(minerAddress, extraData);
+    }
+
+    /**
+     * @param {Block} block
+     * @returns {Promise.<boolean>}
+     */
+    async submitBlock(block) {
+        return (await this.blockchain.pushBlock(block)) >= 0;
+    }
 
     /**
      * @param {Array.<Address>} addresses
@@ -85,9 +103,9 @@ class LightConsensus extends BaseConsensus {
     }
 
     /**
-     * @returns {Promise.<Array.<Transaction>>}
+     * @returns {Array.<Transaction>}
      */
-    async getMempoolContents() {
+    getMempoolContents() {
         return this._mempool.getTransactions();
     }
 

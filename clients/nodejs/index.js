@@ -164,18 +164,12 @@ const $ = {};
         Nimiq.GenesisConfig.SEED_PEERS.push(address);
     }
 
-    let networkConfig;
-    switch (config.protocol) {
-        case 'wss':
-            networkConfig = new Nimiq.WssNetworkConfig(config.host, config.port, config.tls.key, config.tls.cert, config.reverseProxy);
-            break;
-        case 'ws':
-            networkConfig = new Nimiq.WsNetworkConfig(config.host, config.port, config.reverseProxy);
-            break;
-        case 'dumb':
-            networkConfig = new Nimiq.DumbNetworkConfig();
-            break;
-    }
+    const clientConfigBuilder = Nimiq.Client.Configuration.builder();
+    clientConfigBuilder.protocol(config.protocol, config.host, config.port, config.tls.key, config.tls.cert);
+    if (config.reverseProxy.enabled) clientConfigBuilder.reverseProxy(config.reverseProxy.port, config.reverseProxy.header, ...config.reverseProxy.addresses);
+    if (config.passive) clientConfigBuilder.feature(Nimiq.Client.Feature.PASSIVE);
+    const clientConfig = clientConfigBuilder.build();
+    const networkConfig = clientConfig.networkConfig;
 
     switch (config.type) {
         case 'full':
@@ -195,6 +189,7 @@ const $ = {};
             $.consensus = await Nimiq.Consensus.pico(networkConfig);
     }
 
+    $.client = new Nimiq.Client(clientConfig, $.consensus);
     $.blockchain = $.consensus.blockchain;
     $.accounts = $.blockchain.accounts;
     $.mempool = $.consensus.mempool;
@@ -227,11 +222,13 @@ const $ = {};
     const addresses = await $.walletStore.list();
     Nimiq.Log.i(TAG, `Managing wallets [${addresses.map(address => address.toUserFriendlyAddress())}]`);
 
-    const account = !isNano ? await $.accounts.get($.wallet.address) : null;
+    const account = await $.client.getAccount($.wallet.address).catch(() => null);
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
         + (!isNano ? ` Balance: ${Nimiq.Policy.lunasToCoins(account.balance)} NIM` : ''));
 
-    Nimiq.Log.i(TAG, `Blockchain state: height=${$.blockchain.height}, headHash=${$.blockchain.headHash}`);
+    const chainHeight = await $.client.getHeadHeight();
+    const chainHeadHash = await $.client.getHeadHash();
+    Nimiq.Log.i(TAG, `Blockchain state: height=${chainHeight}, headHash=${chainHeadHash}`);
 
     const extraData = config.miner.extraData ? Nimiq.BufferUtils.fromAscii(config.miner.extraData) : new Uint8Array(0);
     if (config.poolMining.enabled || config.uiServer.enabled) { // ui requires SmartPoolMiner to be able to switch
@@ -249,25 +246,43 @@ const $ = {};
                 $.miner = new Nimiq.SmartPoolMiner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, deviceId, deviceData, extraData);
                 break;
         }
-        $.consensus.on('established', () => {
-            if (!config.poolMining.enabled || !$.miner.isDisconnected()) return;
-            if (!config.poolMining.host || config.poolMining.port === -1) {
-                Nimiq.Log.i(TAG, 'Not connecting to pool as mining pool host or port were not specified.');
-                return;
+        $.client.addConsensusChangedListener((state) => {
+            if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
+                if (!config.poolMining.enabled || !$.miner.isDisconnected()) return;
+                if (!config.poolMining.host || config.poolMining.port === -1) {
+                    Nimiq.Log.i(TAG, 'Not connecting to pool as mining pool host or port were not specified.');
+                    return;
+                }
+                Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
+                $.miner.connect(config.poolMining.host, config.poolMining.port);
             }
-            Nimiq.Log.i(TAG, `Connecting to pool ${config.poolMining.host} using device id ${deviceId} as a ${poolMode} client.`);
-            $.miner.connect(config.poolMining.host, config.poolMining.port);
         });
     } else {
         $.miner = new Nimiq.Miner($.blockchain, $.accounts, $.mempool, $.network.time, $.wallet.address, extraData);
     }
 
-    $.blockchain.on('head-changed', (head) => {
-        if ($.consensus.established || head.height % 100 === 0) {
-            Nimiq.Log.i(TAG, `Now at block: ${head.height}`);
+    let consensusState = Nimiq.Client.ConsensusState.CONNECTING;
+    $.client.addConsensusChangedListener(async (state) => {
+        consensusState = state;
+        if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
+            if (config.miner.enabled) $.miner.startWork();
+            Nimiq.Log.i(TAG, `Blockchain ${config.type}-consensus established in ${(Date.now() - START) / 1000}s.`);
+            const chainHeight = await $.client.getHeadHeight();
+            const chainHeadHash = await $.client.getHeadHash();
+            Nimiq.Log.i(TAG, `Current state: height=${chainHeight}, headHash=${chainHeadHash}`);
+        } else {
+            if (!config.poolMining.enabled || config.poolMining.mode !== 'nano') $.miner.stopWork();
         }
     });
 
+    $.client.addHeadChangedListener(async (hash, reason) => {
+        const head = await $.client.getBlock(hash, false);
+        if (consensusState === Nimiq.Client.ConsensusState.ESTABLISHED || head.height % 100 === 0) {
+            Nimiq.Log.i(TAG, `Now at block: ${head.height} (${reason})`);
+        }
+    });
+
+    // TODO: Peer changed listeners
     $.network.on('peer-joined', (peer) => {
         Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
@@ -282,32 +297,15 @@ const $ = {};
         }
     });
 
-    if (!config.passive) {
-        $.network.connect();
-    } else {
-        $.network.allowInboundConnections = true;
-    }
-
     if (config.miner.enabled && config.passive) {
         $.miner.startWork();
     }
-    $.consensus.on('established', () => {
-        if (config.miner.enabled) $.miner.startWork();
-    });
-    $.consensus.on('lost', () => {
-        if (!config.poolMining.enabled || config.poolMining.mode !== 'nano') $.miner.stopWork()
-    });
 
     if (typeof config.miner.threads === 'number') {
         $.miner.threads = config.miner.threads;
     }
     $.miner.throttleAfter = config.miner.throttleAfter;
     $.miner.throttleWait = config.miner.throttleWait;
-
-    $.consensus.on('established', () => {
-        Nimiq.Log.i(TAG, `Blockchain ${config.type}-consensus established in ${(Date.now() - START) / 1000}s.`);
-        Nimiq.Log.i(TAG, `Current state: height=${$.blockchain.height}, totalWork=${$.blockchain.totalWork}, headHash=${$.blockchain.headHash}`);
-    });
 
     $.miner.on('block-mined', (block) => {
         Nimiq.Log.i(TAG, `Block mined: #${block.header.height}, hash=${block.header.hash()}`);
@@ -361,12 +359,12 @@ const $ = {};
         }
 
         $.rpcServer = new JsonRpcServer(config.rpcServer, config.miner, config.poolMining);
-        $.rpcServer.init($.consensus, $.blockchain, $.accounts, $.mempool, $.network, $.miner, $.walletStore);
+        await $.rpcServer.init($.client, $.consensus, $.miner, $.walletStore);
     }
 
     if (config.metricsServer.enabled) {
         $.metricsServer = new MetricsServer(networkConfig.ssl, config.metricsServer.port, config.metricsServer.password);
-        $.metricsServer.init($.blockchain, $.accounts, $.mempool, $.network, $.miner);
+        $.metricsServer.init($.client, $.blockchain, $.mempool, $.network, $.miner);
     }
 
     if (config.uiServer.enabled) {

@@ -23,12 +23,16 @@ class AccountInfoUi {
 
         this.$ = $;
         this._address = null;
+        this._consensusState = Nimiq.Client.ConsensusState.CONNECTING;
         this._reset();
 
         this.$addressInput.addEventListener('input', () => this._onAddressInput());
         this.$clearButton.addEventListener('click', () => this._reset());
-        this.$.blockchain.on('head-changed', (head, rebranching) => this._update(head, rebranching));
-        this.$.consensus.on('established', () => this._update());
+        this.$.client.addHeadChangedListener(() => this._update());
+        this.$.client.addConsensusChangedListener((state) => {
+            this._consensusState = state;
+            if (state === Nimiq.Client.ConsensusState.ESTABLISHED) this._update();
+        });
     }
 
     set address(address) {
@@ -75,7 +79,7 @@ class AccountInfoUi {
 
     _update(head, rebranching) {
         if (!this._address
-            || this.$.clientType === DevUi.ClientType.NANO && (!this.$.consensus.established || rebranching)) {
+            || this.$.clientType === DevUi.ClientType.NANO && (this._consensusState !== Nimiq.Client.ConsensusState.ESTABLISHED || rebranching)) {
             return; // updates are expensive on nano, so don't do it till consensus
         }
         Utils.getAccount(this.$, this._address).then(account => {
@@ -104,9 +108,11 @@ class AccountInfoUi {
         this.$vestingStepBlocks.textContent = contract.vestingStepBlocks;
         this.$vestingStepAmount.textContent = Utils.lunasToCoins(contract.vestingStepAmount);
         this.$vestingTotalAmount.textContent = Utils.lunasToCoins(contract.vestingTotalAmount);
-        const currentMinCap = contract.getMinCap(this.$.blockchain.height);
-        this.$vestingCurrentCap.textContent = Utils.lunasToCoins(currentMinCap);
-        this.$vestingCurrentlyTransferable.textContent = Utils.lunasToCoins(Math.max(0, contract.balance - currentMinCap));
+        this.$.client.getHeadHeight().then(height => {
+            const currentMinCap = contract.getMinCap(height);
+            this.$vestingCurrentCap.textContent = Utils.lunasToCoins(currentMinCap);
+            this.$vestingCurrentlyTransferable.textContent = Utils.lunasToCoins(Math.max(0, contract.balance - currentMinCap));
+        });
     }
 
     _updateHtlcDetails(contract) {

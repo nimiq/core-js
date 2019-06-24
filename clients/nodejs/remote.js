@@ -467,15 +467,19 @@ async function action(args, rl) {
             const accounts = await jsonRpcFetch('accounts');
             accounts.sort((a, b) => a.address > b.address);
             for (const account of accounts) {
-                const balance = await jsonRpcFetch('getBalance', account.id);
-                console.log(`${account.address} | ${nimValueFormat(balance, 14)}`);
+                if (account.balance === undefined) {
+                    account.balance = await jsonRpcFetch('getBalance', account.id);
+                }
+                console.log(`${account.address} | ${nimValueFormat(account.balance, 14)}`);
             }
             return;
         }
         case 'accounts.json': {
             const accounts = await jsonRpcFetch('accounts');
             for (const account of accounts) {
-                account.balance = await jsonRpcFetch('getBalance', account.id);
+                if (account.balance === undefined) {
+                    account.balance = await jsonRpcFetch('getBalance', account.id);
+                }
             }
             console.log(JSON.stringify(accounts));
             return;

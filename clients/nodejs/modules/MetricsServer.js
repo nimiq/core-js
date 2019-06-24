@@ -11,7 +11,7 @@ class MetricsServer {
             cert: fs.readFileSync(sslConfig.cert)
         };
 
-        https.createServer(options, (req, res) => {
+        https.createServer(options, async (req, res) => {
             if (req.url !== '/metrics') {
                 res.writeHead(301, {'Location': '/metrics'});
                 res.end();
@@ -19,7 +19,7 @@ class MetricsServer {
                 res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use username metrics and user-defined password to access metrics." charset="UTF-8"'});
                 res.end();
             } else {
-                this._metrics(res);
+                await this._metrics(res);
                 res.end();
             }
         }).listen(port);
@@ -29,17 +29,17 @@ class MetricsServer {
     }
 
     /**
+     * @param {Client} client
      * @param {FullChain} blockchain
-     * @param {Accounts} accounts
      * @param {Mempool} mempool
      * @param {Network} network
      * @param {Miner} miner
      */
-    init(blockchain, accounts, mempool, network, miner) {
+    init(client, blockchain, mempool, network, miner) {
+        /** @type {Client} */
+        this._client = client;
         /** @type {FullChain} */
         this._blockchain = blockchain;
-        /** @type {Accounts} */
-        this._accounts = accounts;
         /** @type {Mempool} */
         this._mempool = mempool;
         /** @type {Network} */
@@ -94,15 +94,15 @@ class MetricsServer {
         return res;
     }
 
-    _metrics(res) {
-        this._chainMetrics(res);
-        this._mempoolMetrics(res);
-        this._networkMetrics(res);
+    async _metrics(res) {
+        await this._chainMetrics(res);
+        await this._mempoolMetrics(res);
+        await this._networkMetrics(res);
         this._minerMetrics(res);
     }
 
-    _chainMetrics(res) {
-        const head = this._blockchain.head;
+    async _chainMetrics(res) {
+        const head = this._client.getHeadBlock(false);
 
         MetricsServer._metric(res, 'chain_head_height', this._desc, head.height);
         MetricsServer._metric(res, 'chain_head_difficulty', this._desc, head.difficulty);
@@ -122,14 +122,15 @@ class MetricsServer {
         MetricsServer._metric(res, 'chain_block', this._with({'action': 'known'}), this._blockchain.blockKnownCount);
     }
 
-    _mempoolMetrics(res) {
-        const txs = this._mempool.getTransactions();
-        const group = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
-        for (let i = 1; i < group.length; ++i) {
-            MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `<${group[i]}`}), txs.filter((tx) => tx.feePerByte >= group[i - 1] && tx.feePerByte < group[i]).length);
+    async _mempoolMetrics(res) {
+        const stats = await this._client.mempool.getStatistics();
+        let inGroup = 0;
+        for (let i = 1; i < stats.countInBuckets.buckets.length; ++i) {
+            MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `<${stats.countInBuckets.buckets[i]}`}), stats.countInBuckets[stats.countInBuckets.buckets[i]]);
+            inGroup += stats.countInBuckets[stats.countInBuckets.buckets[i]];
         }
-        MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `>=${group[group.length - 1]}`}), txs.filter((tx) => tx.feePerByte >= group[group.length - 1]).length);
-        MetricsServer._metric(res, 'mempool_size', this._desc, txs.reduce((a, b) => a + b.serializedSize, 0));
+        MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `>=10000`}), stats.count - inGroup);
+        MetricsServer._metric(res, 'mempool_size', this._desc, stats.size);
 
         MetricsServer._metric(res, 'mempool_queue_jobs', this._desc, this._mempool.queue.totalJobs);
         MetricsServer._metric(res, 'mempool_queue_elapsed', this._desc, this._mempool.queue.totalElapsed);
@@ -137,12 +138,12 @@ class MetricsServer {
         MetricsServer._metric(res, 'mempool_queue_length', this._desc, this._mempool.queue.length);
     }
 
-    _networkMetrics(res) {
+    async _networkMetrics(res) {
         /** @type {Map.<string, number>} */
         const peers = new Map();
-        for (let connection of this._network.connections.values()) {
+        for (let peer of (await this._client.network.getPeers())) {
             let o = {};
-            switch (connection.peerAddress ? connection.peerAddress.protocol : -1) {
+            switch (peer.peerAddress ? peer.peerAddress.protocol : -1) {
                 case Nimiq.Protocol.DUMB:
                     o.type = 'dumb';
                     break;
@@ -158,7 +159,7 @@ class MetricsServer {
                 default:
                     o.type = 'unknown';
             }
-            switch (connection.state) {
+            switch (peer.state) {
                 case Nimiq.PeerConnectionState.NEW:
                     o.state = 'new';
                     break;
@@ -177,9 +178,9 @@ class MetricsServer {
                 case Nimiq.PeerConnectionState.CLOSED:
                     o.state = 'closed';
             }
-            if (connection.peer) {
-                o.version = connection.peer.version;
-                o.agent = connection.peer.userAgent ? connection.peer.userAgent : undefined;
+            if (peer.peer) {
+                o.version = peer.version;
+                o.agent = peer.userAgent ? peer.userAgent : undefined;
             }
             const os = JSON.stringify(o);
             if (peers.has(os)) {
@@ -190,7 +191,7 @@ class MetricsServer {
         }
         /** @type {Map.<string, number>} */
         const addresses = new Map();
-        for (let address of this._network.addresses.iterator()) {
+        for (let address of (await this._client.network.getAddresses())) {
             let type = 'unknown';
             switch (address.peerAddress.protocol) {
                 case Nimiq.Protocol.DUMB:
@@ -218,9 +219,11 @@ class MetricsServer {
         for (let type of addresses.keys()) {
             MetricsServer._metric(res, 'network_known_addresses', this._with({type: type}), addresses.get(type));
         }
+        const stats = await this._client.network.getStatistics();
         MetricsServer._metric(res, 'network_time_now', this._desc, this._network.time.now());
-        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'sent'}), this._network.bytesSent);
-        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'received'}), this._network.bytesReceived);
+        MetricsServer._metric(res, 'network_time_offset', this._desc, stats.timeOffset);
+        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'sent'}), stats.bytesSent);
+        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'received'}), stats.bytesReceived);
         for(const type of this._messageMeasures.keys()) {
             const obj = this._messageMeasures.get(type);
             MetricsServer._metric(res, 'message_rx_count', this._with({'type': type}), obj.occurrences);

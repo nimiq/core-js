@@ -56,8 +56,9 @@ class DevUi {
                     new Nimiq.WalletStore()
                 ]).then(promiseResults => {
                     $.consensus = promiseResults[0];
+                    $.client = new Nimiq.Client(Nimiq.Client.Configuration.builder().feature(Nimiq.Client.Feature.MEMPOOL).build(), $.consensus);
 
-                    // XXX Legacy API
+                    // XXX Legacy API, still being used for miner at this point.
                     $.blockchain = $.consensus.blockchain;
                     $.mempool = $.consensus.mempool;
                     $.network = $.consensus.network;
@@ -67,7 +68,6 @@ class DevUi {
                     }
 
                     $.walletStore = promiseResults[1];
-                    $.network.connect();
                     this.$overlay.style.display = 'none';
                     resolve($);
                 });

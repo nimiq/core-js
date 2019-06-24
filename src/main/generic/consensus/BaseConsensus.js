@@ -71,12 +71,16 @@ class BaseConsensus extends Observable {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeBody = true]
+     * @param {boolean} [includeBodyFromLocal]
+     * @param {number} [blockHeight]
      * @returns {Promise.<?Block>}
      */
-    async getBlock(hash, includeBody = true) {
-        let block = await this._blockchain.getBlock(hash, true, includeBody);
+    async getBlock(hash, includeBody = true, includeBodyFromLocal = includeBody, blockHeight) {
+        let block = await this._blockchain.getBlock(hash, true, includeBody || includeBodyFromLocal);
+        // XXX: Fetches full blocks if no peer supports protocol version 2 and it would be full from local.
+        includeBody = includeBody || (includeBodyFromLocal && !this._hasPeersWithVersion(2));
         if (!block || (includeBody && !block.isFull())) {
-            block = await this._requestBlock(hash, includeBody, undefined, !!block);
+            block = await this._requestBlock(hash, includeBody, block ? block.height : blockHeight, !!block) || block;
         }
         return block;
     }
@@ -94,7 +98,7 @@ class BaseConsensus extends Observable {
         if (!block) {
             block = await this._requestBlockAt(height, includeBody);
         } else if (block && includeBody && !block.isFull()) {
-            block = await this._requestBlock(block.hash(), includeBody, height, true);
+            block = await this._requestBlock(block.hash(), includeBody, height, true) || block;
         }
         return block;
     }
@@ -105,16 +109,14 @@ class BaseConsensus extends Observable {
      * @returns {Promise.<Block>}
      */
     async getBlockTemplate(minerAddress, extraData) {
-        // TODO
         throw new Error('not implemented: getBlockTemplate');
     }
 
     /**
      * @param {Block} block
-     * @returns {Promise<void>}
+     * @returns {Promise.<boolean>}
      */
     async submitBlock(block) {
-        // TODO
         throw new Error('not implemented: submitBlock');
     }
 
@@ -147,13 +149,12 @@ class BaseConsensus extends Observable {
      * @param {Array.<Hash>} hashes
      * @param {Hash} blockHash
      * @param {number} [blockHeight]
+     * @param {Block} [block]
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getTransactionsFromBlock(hashes, blockHash, blockHeight) {
-        let block = await this._blockchain.getBlock(blockHash, false, true);
-        
+    async getTransactionsFromBlock(hashes, blockHash, blockHeight, block) {
         if (!block) {
-            block = this._requestBlock(blockHash, false, blockHeight);
+            block = await this.getBlock(blockHash, false, true, blockHeight);
         }
         if (block && block.isFull()) {
             // Just search the block
@@ -252,6 +253,15 @@ class BaseConsensus extends Observable {
     }
 
     /**
+     * @param {number} version
+     * @returns {boolean}
+     * @private
+     */
+    _hasPeersWithVersion(version) {
+        return !!this._agents.values().find((agent) => agent.peer.version >= version);
+    }
+
+    /**
      * @param {Hash} hash
      * @param {boolean} [includeBody=false]
      * @param {?number} [blockHeight]
@@ -265,7 +275,8 @@ class BaseConsensus extends Observable {
             /** @type {Array.<BaseConsensusAgent>} */
             const agents = [];
             for (const agent of this._agents.valueIterator()) {
-                if (agent.synced && agent.providesServices(Services.BLOCK_HISTORY, Services.FULL_BLOCKS)) {
+                const requiresHistory = !blockHeight || blockHeight < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+                if (agent.synced && agent.providesServices(Services.FULL_BLOCKS) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY))) {
                     agents.push(agent);
                 }
             }
@@ -276,26 +287,24 @@ class BaseConsensus extends Observable {
                     ? -a.knowsBlock(hash) + 0.5
                     : Math.random() - 0.5);
 
-            let attempt = 0;
             for (const agent of agents) {
                 try {
                     block = await agent.requestBlock(hash);
-                    break;
+                    if (block) break;
                 } catch (e) {
                     Log.w(BaseConsensus, `Failed to retrieve block for ${hash} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
-                    if (attempt++ <= BaseConsensus.MAX_ATTEMPTS_TO_FETCH) {
-                        continue;
-                    }
+                    // Try the next peer.
                 }
+            }
+            if (!block) {
                 throw new Error(`Failed to retrieve block for ${hash}`);
             }
-            if (!block) return null;
             if (!proven) await this._requestBlockProof(hash, block.height);
+            return block;
         } else {
             // TODO: Should block be proofed?
-            block = await this._requestBlockProof(hash, blockHeight);
+            return await this._requestBlockProof(hash, blockHeight);
         }
-        return block;
     }
 
     /**
@@ -311,7 +320,8 @@ class BaseConsensus extends Observable {
             /** @type {Array.<BaseConsensusAgent>} */
             const agents = [];
             for (const agent of this._agents.valueIterator()) {
-                if (agent.synced && agent.providesServices(Services.BLOCK_HISTORY, Services.FULL_BLOCKS)) {
+                const requiresHistory = blockHeight < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+                if (agent.synced && agent.providesServices(Services.FULL_BLOCKS) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY))) {
                     agents.push(agent);
                 }
             }
@@ -322,20 +332,15 @@ class BaseConsensus extends Observable {
                     ? -a.knowsBlock(hash) + 0.5
                     : Math.random() - 0.5);
 
-            let attempt = 0;
             for (const agent of agents) {
                 try {
-                    block = await agent.requestBlock(hash);
-                    break;
+                    return await agent.requestBlock(hash);
                 } catch (e) {
                     Log.w(BaseConsensus, `Failed to retrieve block for ${hash}@${blockHeight} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
-                    // Try a few others or stop.
-                    if (attempt++ <= BaseConsensus.MAX_ATTEMPTS_TO_FETCH) {
-                        continue;
-                    }
+                    // Try the next peer.
                 }
-                throw new Error(`Failed to retrieve block for ${hash}@${blockHeight}`);
             }
+            throw new Error(`Failed to retrieve block for ${hash}@${blockHeight}`);
         }
         return block;
     }
@@ -368,17 +373,13 @@ class BaseConsensus extends Observable {
                 ? -a.knowsTransaction(hash) + 0.5
                 : Math.random() - 0.5);
 
-        let attempt = 0;
         for (const agent of agents) {
             try {
                 const tx = await agent.requestTransaction(hash);
                 if (tx) return tx;
             } catch (e) {
                 Log.w(BaseConsensus, `Failed to retrieve block for ${hash} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
-            }
-            // Try a few others or stop.
-            if (attempt++ > BaseConsensus.MAX_ATTEMPTS_TO_FETCH) {
-                break;
+                // Try the next peer.
             }
         }
         throw new Error(`Failed to retrieve block for ${hash}`);
@@ -389,20 +390,24 @@ class BaseConsensus extends Observable {
      * @returns {Promise.<Array.<?TransactionReceipt>>}
      */
     async _requestTransactionReceiptsByHashes(hashes) {
-        let attempt = 0;
+        const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.TRANSACTION_INDEX)) {
-                try {
-                    return await agent.getTransactionReceiptsByHashes(hashes);
-                } catch (e) {
-                    // Try a few others or stop.
-                    if (attempt++ > BaseConsensus.MAX_ATTEMPTS_TO_FETCH) {
-                        return null;
-                    }
-                }
+            if (agent.synced && agent.providesServices(Services.TRANSACTION_INDEX) && agent.peer.version >= 2) {
+                agents.push(agent);
             }
         }
-        return null;
+
+        for (const /** @type {BaseConsensusAgent} */ agent of agents) {
+            try {
+                return await agent.getTransactionReceiptsByHashes(hashes); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${hashes} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested transaction, fail.
+        throw new Error(`Failed to retrieve transaction receipts for ${hashes}`);
     }
 
     /**
@@ -412,20 +417,32 @@ class BaseConsensus extends Observable {
      */   
     async _requestTransactionsByHashes(hashes, block) {
         // TODO: Use the agent that provided the receipt
-        let attempt = 0;
+        const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.BODY_PROOF)) {
-                try {
-                    return await agent.getTransactionsProofByHashes(block, hashes);
-                } catch (e) {
-                    // Try a few others or stop.
-                    if (attempt++ > BaseConsensus.MAX_ATTEMPTS_TO_FETCH) {
-                        return null;
-                    }
-                }
+            const requiresHistory = blockHeight < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+            if (agent.synced && agent.providesServices(Services.BODY_PROOF) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY)) && agent.peer.version >= 2) {
+                agents.push(agent);
             }
         }
-        return null;
+
+        // Try agents first that (we think) know the reference block hash.
+        const knownBlockHash = block.hash();
+        agents.sort((a, b) =>
+            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+                ? -a.knowsBlock(knownBlockHash) + 0.5
+                : Math.random() - 0.5);
+
+        for (const /** @type {BaseConsensusAgent} */ agent of agents) {
+            try {
+                return await agent.getTransactionsProofByHashes(block, hashes); // eslint-disable-line no-await-in-loop
+            } catch (e) {
+                Log.w(BaseConsensus, `Failed to retrieve transactions for ${hashes} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
+                // Try the next peer.
+            }
+        }
+
+        // No peer supplied the requested transaction, fail.
+        throw new Error(`Failed to retrieve transactions for ${hashes}`);
     }
 
     /**
@@ -660,7 +677,9 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF)) {
+            const requiresHistory = blockHeightToProve < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION ||
+                knownBlock.height < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY))) {
                 agents.push(agent);
             }
         }
@@ -703,7 +722,9 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF) && agent.peer.version >= 2) {
+            const requiresHistory = blockHeightToProve < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION ||
+                knownBlock.height < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+            if (agent.synced && agent.providesServices(Services.BLOCK_PROOF) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY)) && agent.peer.version >= 2) {
                 agents.push(agent);
             }
         }
@@ -741,7 +762,8 @@ class BaseConsensus extends Observable {
 
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced && agent.providesServices(Services.BLOCK_HISTORY, Services.BODY_PROOF)) {
+            const requiresHistory = block.height < this._blockchain.height - Policy.NUM_BLOCKS_VERIFICATION;
+            if (agent.synced && agent.providesServices(Services.BODY_PROOF) && (!requiresHistory || agent.providesServices(Services.BLOCK_HISTORY))) {
                 agents.push(agent);
             }
         }
@@ -857,7 +879,7 @@ class BaseConsensus extends Observable {
         return this._invRequestManager;
     }
 }
-BaseConsensus.MAX_ATTEMPTS_TO_FETCH = 3;
+BaseConsensus.MAX_ATTEMPTS_TO_FETCH = 5;
 BaseConsensus.SYNC_THROTTLE = 1500; // ms
 BaseConsensus.MIN_FULL_NODES = 1;
 BaseConsensus.TRANSACTION_RELAY_TIMEOUT = 10000;

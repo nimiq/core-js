@@ -30,64 +30,70 @@ class BlockchainUi {
         this.$blockTransactionsTitle = this.$el.querySelector('[block-transactions-title]');
         this.$blockTransactionsCount = this.$el.querySelector('[block-transactions-count]');
 
-        $.blockchain.on('head-changed', head => this._headChanged(head));
-        $.consensus.on('established', () => this._headChanged($.blockchain.head));
+        $.client.addHeadChangedListener((hash) => {
+            this.$.client.getBlock(hash).then((block) => this._headChanged(block));
+        });
+        $.client.addConsensusChangedListener((state) => {
+            this.$title.classList.remove('connecting', 'syncing', 'consensus-established');
+            switch (state) {
+                case Nimiq.Client.ConsensusState.CONNECTING:
+                    this.$title.classList.add('connecting');
+                    break;
+                case Nimiq.Client.ConsensusState.SYNCING:
+                    this.$title.classList.add('syncing');
+                    break;
+                case Nimiq.Client.ConsensusState.ESTABLISHED:
+                    this.$title.classList.add('consensus-established');
+                    if (!this._timeToFirstConsensusSet) {
+                        this.$timeToFirstConsensus.textContent = ((Date.now() - this.$.timeStart) / 1000.0) + 's';
+                        this._timeToFirstConsensusSet = true;
+                    }
+                    $.client.getHeadBlock().then((head) => this._headChanged(head));
+                    break;
+            }
+        });
 
-        this._headChanged($.blockchain.head);
+        $.client.getHeadBlock().then((head) => this._headChanged(head));
         const inputEventName = ($.clientType === DevUi.ClientType.NANO || $.clientType === DevUi.ClientType.PICO) ? 'change' : 'input';
         this.$blockHeightInput.addEventListener(inputEventName, () => this._updateUserRequestedBlock());
         this.$blockInterlinkTitle.addEventListener('click', () => this._toggleBlockInterlink());
         this.$blockTransactionsTitle.addEventListener('click', () => this._toggleTransactions());
-
-        $.consensus.on('syncing', () => this.$title.classList.add('syncing'));
-        $.consensus.on('sync-chain-proof', () => this.$title.classList.add('sync-chain-proof'));
-        $.consensus.on('verify-chain-proof', () => this.$title.classList.add('verify-chain-proof'));
-        $.consensus.on('sync-accounts-tree', () => this.$title.classList.add('sync-accounts-tree'));
-        $.consensus.on('verify-accounts-tree', () => this.$title.classList.add('verify-accounts-tree'));
-        $.consensus.on('established', () => {
-            this.$title.classList.add('consensus-established');
-            if (!this._timeToFirstConsensusSet) {
-                this.$timeToFirstConsensus.textContent = ((Date.now() - this.$.timeStart) / 1000.0) + 's';
-                this._timeToFirstConsensusSet = true;
-            }
-        });
-        $.consensus.on('lost', () => this.$title.classList.remove('initializing', 'connecting', 'syncing',
-            'sync-chain-proof', 'verify-chain-proof', 'sync-accounts-tree', 'verify-accounts-tree',
-            'consensus-established'));
-
-        this.$title.classList.add('connecting');
     }
 
     _headChanged(head) {
-        this.$chainHeight.textContent = this.$.blockchain.height;
-        this.$blockHeightInput.placeholder = this.$.blockchain.height;
+        this.$chainHeight.textContent = head.height;
+        this.$blockHeightInput.placeholder = head.height;
         this._updateAverageBlockTime();
 
         if (this.$.clientType !== DevUi.ClientType.NANO && this.$.clientType !== DevUi.ClientType.PICO) {
-            this.$totalDifficulty.textContent = this.$.blockchain.totalDifficulty;
-            this.$totalWork.textContent = this.$.blockchain.totalWork;
+            // TODO:
+            //  Does it make sense to expose such functionality through Client API?
+            //  It is only reliable with full consensus...
+            //this.$totalDifficulty.textContent = this.$.blockchain.totalDifficulty;
+            //this.$totalWork.textContent = this.$.blockchain.totalWork;
         }
 
         if (this.$blockHeightInput.value === '') this._showBlockInfo(head);
     }
 
     _updateAverageBlockTime() {
-        const head = this.$.blockchain.head;
-        const tailHeight = Math.max(head.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
+        this.$.client.getHeadBlock(false).then((head) => {
+            const tailHeight = Math.max(head.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
 
-        this.$.blockchain.getBlockAt(tailHeight).then(tailBlock => {
-            let averageBlockTime;
-            if (tailBlock) {
-                averageBlockTime =
-                    (head.timestamp - tailBlock.timestamp) / (Math.max(head.height - tailBlock.height, 1));
-            } else {
-                averageBlockTime = 'unknown';
-            }
-            this.$averageBlockTime.textContent = averageBlockTime + 's';
-        });
+            this.$.client.getBlockAt(tailHeight, false).then(tailBlock => {
+                let averageBlockTime;
+                if (tailBlock) {
+                    averageBlockTime =
+                        (head.timestamp - tailBlock.timestamp) / (Math.max(head.height - tailBlock.height, 1));
+                } else {
+                    averageBlockTime = 'unknown';
+                }
+                this.$averageBlockTime.textContent = averageBlockTime + 's';
+            });
 
-        this.$.blockchain.getBlock(head.prevHash).then(prevBlock => {
-            this.$lastBlockTime.textContent = (prevBlock ? (head.timestamp - prevBlock.timestamp) : 0) + 's';
+            this.$.client.getBlock(head.prevHash, false).then(prevBlock => {
+                this.$lastBlockTime.textContent = (prevBlock ? (head.timestamp - prevBlock.timestamp) : 0) + 's';
+            });
         });
     }
 
@@ -144,11 +150,11 @@ class BlockchainUi {
 
     _updateUserRequestedBlock() {
         if (this.$blockHeightInput.value === '') {
-            this._showBlockInfo(this.$.blockchain.head);
+            this.$.client.getHeadBlock().then((head) => this._showBlockInfo(head));
             return;
         }
         const blockHeight = parseInt(this.$blockHeightInput.value);
-        this.$.blockchain.getBlockAt(blockHeight).then(block => {
+        this.$.client.getBlockAt(blockHeight).then(block => {
             if (parseInt(this.$blockHeightInput.value) !== blockHeight) return; // user changed value again
             this._showBlockInfo(block);
         });

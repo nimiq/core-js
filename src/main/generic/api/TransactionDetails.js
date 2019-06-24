@@ -8,12 +8,13 @@ Client.TransactionDetails = class TransactionDetails {
      * @param {number} [confirmations]
      * @package
      */
-    constructor(transaction, state, blockHash, blockHeight, confirmations) {
+    constructor(transaction, state, blockHash, blockHeight, confirmations, timestamp) {
         this._transaction = transaction;
         this._state = state;
         this._blockHash = blockHash;
         this._blockHeight = blockHeight;
         this._confirmations = confirmations;
+        this._timestamp = timestamp;
     }
 
     /** @type {Hash} */
@@ -105,7 +106,7 @@ Client.TransactionDetails = class TransactionDetails {
         return this._state;
     }
 
-    /** @type {number} */
+    /** @type {Hash} */
     get blockHash() {
         return this._blockHash;
     }
@@ -120,6 +121,11 @@ Client.TransactionDetails = class TransactionDetails {
         return this._confirmations;
     }
 
+    /** @type {number} */
+    get timestamp() {
+        return this._timestamp;
+    }
+
     /**
      * @returns {object}
      */
@@ -129,6 +135,7 @@ Client.TransactionDetails = class TransactionDetails {
         o.blockHash = this._blockHash.toPlain();
         o.blockHeight = this._blockHeight;
         o.confirmations = this._confirmations;
+        o.timestamp = this._timestamp;
         return o;
     }
 

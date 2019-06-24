@@ -6,37 +6,37 @@ class MempoolUi {
         this.$transactionCount = this.$el.querySelector('[transaction-count]');
         this.$transactions = this.$el.querySelector('[transactions]');
 
-        if ($.clientType !== DevUi.ClientType.NANO && $.clientType !== DevUi.ClientType.PICO) {
-            $.mempool.on('transactions-ready', () => this._rerender());
-            $.mempool.on('transaction-added', tx => this._transactionAdded(tx));
-        } else {
-            $.mempool.on('*', () => this._rerender());
-        }
+        $.client.mempool.addTransactionAddedListener((hash) => this._transactionAdded(hash));
+        $.client.mempool.addTransactionRemovedListener((hash) => this._transactionRemoved(hash));
 
-        this._rerender();
+        this._rerenderAll();
     }
 
-    _transactionAdded(tx) {
-        // XXX inefficient
-        const txs = this.$.mempool.getTransactions();
-        this.$transactionCount.textContent = txs.length;
-        this._renderTransaction(tx);
+    _transactionAdded(hash) {
+        this.$transactionCount.textContent = (parseInt(this.$transactionCount.textContent) + 1).toString();
+        $.client.getTransaction(hash).then(tx => this._addTransaction(tx));
     }
 
-    _rerender() {
-        // XXX inefficient
-        const txs = this.$.mempool.getTransactions();
-        this.$transactionCount.textContent = txs.length;
+    _transactionRemoved(hash) {
+        this.$transactionCount.textContent = (parseInt(this.$transactionCount.textContent) - 1).toString();
+        this.$transactions.removeChild(document.getElementById('tx.' + hash.toHex()));
+    }
 
-        this.$transactions.innerHTML = '';
+    _rerenderAll() {
+        this.$.client.mempool.getTransactions().then((txHashes) => {
+            this.$transactionCount.textContent = txHashes.length;
 
-        txs.forEach(tx => {
-            this._renderTransaction(tx);
+            this.$transactions.innerHTML = '';
+
+            txHashes.forEach(hash => {
+                this.$.client.getTransaction(hash).then(tx => this._addTransaction(tx));
+            });
         });
     }
 
-    _renderTransaction(tx) {
+    _addTransaction(tx) {
         const el = document.createElement('div');
+        el.id = 'tx.' + tx.transactionHash.toHex();
         const value = Utils.lunasToCoins(tx.value);
         const fee = Utils.lunasToCoins(tx.fee);
         el.innerHTML = `from=<hash>${tx.sender.toUserFriendlyAddress(false)}</hash>, to=<hash>${tx.recipient.toUserFriendlyAddress(false)}</hash>, value=${value}, fee=${fee}, validityStartHeight=${tx.validityStartHeight}`;
