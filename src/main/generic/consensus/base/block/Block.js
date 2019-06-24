@@ -5,9 +5,9 @@ class Block {
      * @param {BlockBody} [body]
      */
     constructor(header, interlink, body) {
-        if (!(header instanceof BlockHeader)) throw 'Malformed header';
-        if (!(interlink instanceof BlockInterlink)) throw 'Malformed interlink';
-        if (body && !(body instanceof BlockBody)) throw 'Malformed body';
+        if (!(header instanceof BlockHeader)) throw new Error('Malformed header');
+        if (!(interlink instanceof BlockInterlink)) throw new Error('Malformed interlink');
+        if (body && !(body instanceof BlockBody)) throw new Error('Malformed body');
 
         /** @type {BlockHeader} */
         this._header = header;
@@ -397,7 +397,7 @@ class Block {
      */
     get body() {
         if (this.isLight()) {
-            throw 'Cannot access body of light block';
+            throw new Error('Cannot access body of light block');
         }
         return this._body;
     }

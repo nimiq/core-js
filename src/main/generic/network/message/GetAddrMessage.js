@@ -6,9 +6,9 @@ class GetAddrMessage extends Message {
      */
     constructor(protocolMask, serviceMask, maxResults) {
         super(Message.Type.GET_ADDR);
-        if (!NumberUtils.isUint8(protocolMask)) throw 'Malformed protocolMask';
-        if (!NumberUtils.isUint32(serviceMask)) throw 'Malformed serviceMask';
-        if (!NumberUtils.isUint16(maxResults)) throw 'Malformed maxResults';
+        if (!NumberUtils.isUint8(protocolMask)) throw new Error('Malformed protocolMask');
+        if (!NumberUtils.isUint32(serviceMask)) throw new Error('Malformed serviceMask');
+        if (!NumberUtils.isUint16(maxResults)) throw new Error('Malformed maxResults');
         this._protocolMask = protocolMask;
         this._serviceMask = serviceMask;
         this._maxResults = maxResults;

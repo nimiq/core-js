@@ -11,15 +11,15 @@ class BlockHeader {
      * @param {number} version
      */
     constructor(prevHash, interlinkHash, bodyHash, accountsHash, nBits, height, timestamp, nonce, version = BlockHeader.CURRENT_VERSION) {
-        if (!NumberUtils.isUint16(version)) throw 'Malformed version';
-        if (!Hash.isHash(prevHash)) throw 'Malformed prevHash';
-        if (!Hash.isHash(interlinkHash)) throw 'Malformed interlinkHash';
-        if (!Hash.isHash(bodyHash)) throw 'Malformed bodyHash';
-        if (!Hash.isHash(accountsHash)) throw 'Malformed accountsHash';
-        if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw 'Malformed nBits';
-        if (!NumberUtils.isUint32(height)) throw 'Invalid height';
-        if (!NumberUtils.isUint32(timestamp)) throw 'Malformed timestamp';
-        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
+        if (!NumberUtils.isUint16(version)) throw new Error('Malformed version');
+        if (!Hash.isHash(prevHash)) throw new Error('Malformed prevHash');
+        if (!Hash.isHash(interlinkHash)) throw new Error('Malformed interlinkHash');
+        if (!Hash.isHash(bodyHash)) throw new Error('Malformed bodyHash');
+        if (!Hash.isHash(accountsHash)) throw new Error('Malformed accountsHash');
+        if (!NumberUtils.isUint32(nBits) || !BlockUtils.isValidCompact(nBits)) throw new Error('Malformed nBits');
+        if (!NumberUtils.isUint32(height)) throw new Error('Invalid height');
+        if (!NumberUtils.isUint32(timestamp)) throw new Error('Malformed timestamp');
+        if (!NumberUtils.isUint32(nonce)) throw new Error('Malformed nonce');
 
         /** @type {number} */
         this._version = version;

@@ -183,7 +183,7 @@ class MultiSigWallet extends Wallet {
      */
     signTransaction(transaction, aggregatedPublicKey, aggregatedCommitment, signatures) {
         if (signatures.length !== this._minSignatures) {
-            throw 'Not enough signatures to complete this transaction';
+            throw new Error('Not enough signatures to complete this transaction');
         }
 
         const signature = Signature.fromPartialSignatures(aggregatedCommitment, signatures);

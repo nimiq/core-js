@@ -12,7 +12,7 @@ class BlockUtils {
      * @returns {number}
      */
     static targetToCompact(target) {
-        if (!target.isFinite() || target.isNaN()) throw 'Invalid Target';
+        if (!target.isFinite() || target.isNaN()) throw new Error('Invalid Target');
 
         // Divide to get first byte
         let size = Math.max(Math.ceil(Math.log2(target.toNumber()) / 8), 1);

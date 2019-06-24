@@ -44,7 +44,7 @@ class TestBlockchain extends FullChain {
         if (!signature) {
             // if no signature is provided, the secret key is required
             if (!senderPrivKey) {
-                throw 'Signature computation requested, but no sender private key provided';
+                throw new Error('Signature computation requested, but no sender private key provided');
             }
             signature = Signature.create(senderPrivKey, senderPubKey, transaction.serializeContent());
         }
@@ -193,7 +193,7 @@ class TestBlockchain extends FullChain {
             const newBlock = await testBlockchain.createBlock(); //eslint-disable-line no-await-in-loop
             const success = await testBlockchain.pushBlock(newBlock); //eslint-disable-line no-await-in-loop
             if (success !== FullChain.OK_EXTENDED) {
-                throw 'Failed to commit block';
+                throw new Error('Failed to commit block');
             }
         }
 
@@ -276,7 +276,7 @@ class TestBlockchain extends FullChain {
 
         block.header.nonce = share.nonce;
         if (!(await block.header.verifyProofOfWork())) {
-            throw 'While mining the block was succesful, it is still considered invalid.';
+            throw new Error('While mining the block was succesful, it is still considered invalid.');
         }
 
         return share.nonce;

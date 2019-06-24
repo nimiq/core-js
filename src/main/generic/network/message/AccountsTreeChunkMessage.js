@@ -5,8 +5,8 @@ class AccountsTreeChunkMessage extends Message {
      */
     constructor(blockHash, accountsTreeChunk=null) {
         super(Message.Type.ACCOUNTS_TREE_CHUNK);
-        if (!(blockHash instanceof Hash)) throw 'Malformed blockHash';
-        if (accountsTreeChunk && !(accountsTreeChunk instanceof AccountsTreeChunk)) throw 'Malformed chunk';
+        if (!(blockHash instanceof Hash)) throw new Error('Malformed blockHash');
+        if (accountsTreeChunk && !(accountsTreeChunk instanceof AccountsTreeChunk)) throw new Error('Malformed chunk');
         /** @type {Hash} */
         this._blockHash = blockHash;
         /** @type {AccountsTreeChunk} */

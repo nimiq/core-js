@@ -176,7 +176,7 @@ describe('Accounts', () => {
                 done();
                 return;
             }
-            throw 'Invalid block not rejected';
+            throw new Error('Invalid block not rejected');
         })().then(done, done.fail);
     });
 

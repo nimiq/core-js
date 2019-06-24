@@ -40,22 +40,22 @@ describe('BlockHeader', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockHeader(undefined, interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         expect(() => {
             const test2 = new BlockHeader(null, interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         expect(() => {
             const test3 = new BlockHeader(true, interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         expect(() => {
             const test4 = new BlockHeader(new Address(new Uint8Array(20)), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         expect(() => {
             const test5 = new BlockHeader(new Signature(new Uint8Array(Signature.SIZE)), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         expect(() => {
             const test5 = new BlockHeader(new ArrayBuffer(32), interlinkHash, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed prevHash');
+        }).toThrowError('Malformed prevHash');
         /* eslint-enable no-unused-vars */
     });
 
@@ -63,22 +63,22 @@ describe('BlockHeader', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockHeader(prevHash, undefined, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         expect(() => {
             const test2 = new BlockHeader(prevHash, null, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         expect(() => {
             const test3 = new BlockHeader(prevHash, true, bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         expect(() => {
             const test4 = new BlockHeader(prevHash, new Address(new Uint8Array(20)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, new Signature(new Uint8Array(Signature.SIZE)), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, new Uint8Array(32), bodyHash, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed interlinkHash');
+        }).toThrowError('Malformed interlinkHash');
         /* eslint-enable no-unused-vars */
     });
 
@@ -86,22 +86,22 @@ describe('BlockHeader', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockHeader(prevHash, interlinkHash, undefined, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         expect(() => {
             const test2 = new BlockHeader(prevHash, interlinkHash, null, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         expect(() => {
             const test3 = new BlockHeader(prevHash, interlinkHash, true, accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         expect(() => {
             const test4 = new BlockHeader(prevHash, interlinkHash, new Address(new Uint8Array(20)), accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, new Signature(new Uint8Array(Signature.SIZE)), accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, new Uint8Array(32), accountsHash, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed bodyHash');
+        }).toThrowError('Malformed bodyHash');
         /* eslint-enable no-unused-vars */
     });
 
@@ -109,22 +109,22 @@ describe('BlockHeader', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockHeader(prevHash, interlinkHash, bodyHash, undefined, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         expect(() => {
             const test2 = new BlockHeader(prevHash, interlinkHash, bodyHash, null, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         expect(() => {
             const test3 = new BlockHeader(prevHash, interlinkHash, bodyHash, true, difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         expect(() => {
             const test4 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Address(new Uint8Array(20)), difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Signature(new Uint8Array(Signature.SIZE)), difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         expect(() => {
             const test5 = new BlockHeader(prevHash, interlinkHash, bodyHash, new Uint8Array(32), difficulty, 2, timestamp, nonce);
-        }).toThrow('Malformed accountsHash');
+        }).toThrowError('Malformed accountsHash');
         /* eslint-enable no-unused-vars */
     });
 

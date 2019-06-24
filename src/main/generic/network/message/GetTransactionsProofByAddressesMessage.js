@@ -22,9 +22,10 @@ class GetTransactionsProofByAddressesMessage extends Message {
         Message.unserialize(buf);
         const blockHash = Hash.unserialize(buf);
         const count = buf.readUint16();
-        const addresses = [];
+        if (count > GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT) throw new Error('Malformed count');
+        const addresses = new Array(count);
         for (let i = 0; i < count; i++) {
-            addresses.push(Address.unserialize(buf));
+            addresses[i] = Address.unserialize(buf);
         }
         return new GetTransactionsProofByAddressesMessage(blockHash, addresses);
     }
@@ -66,7 +67,7 @@ class GetTransactionsProofByAddressesMessage extends Message {
 /**
  * @type {number}
  */
-GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT = 256;
+GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT = 255;
 Class.register(GetTransactionsProofByAddressesMessage);
 /** @deprecated */
 GetTransactionsProofMessage = GetTransactionsProofByAddressesMessage;

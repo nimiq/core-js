@@ -15,15 +15,15 @@ describe('InvMessage', () => {
     });
 
     it('must have well defined vectors', () => {
-        expect( () => {
-            const test1 = new InvMessage(undefined);
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test1 = new InvMessage([undefined]);
-        }).toThrow('Malformed vectors');
-        expect( () => {
-            const test1 = new InvMessage([undefined, undefined, undefined]);
-        }).toThrow('Malformed vectors');
+        expect(() => {
+            new InvMessage(undefined);
+        }).toThrowError('Malformed vectors');
+        expect(() => {
+            new InvMessage([undefined]);
+        }).toThrowError('Malformed vectors');
+        expect(() => {
+            new InvMessage([undefined, undefined, undefined]);
+        }).toThrowError('Malformed vectors');
     });
 
     it('must have a length <= 1000', () => {
@@ -32,14 +32,14 @@ describe('InvMessage', () => {
             vectors.push(vector1);
         }
 
-        expect( () => {
-            const test1 = new InvMessage(vectors);
-        }).not.toThrow('Malformed vectors');
+        expect(() => {
+            new InvMessage(vectors);
+        }).not.toThrowError('Malformed vectors');
 
         vectors.push(vector1);
 
-        expect( () => {
-            const test2 = new InvMessage(vectors);
-        }).toThrow('Malformed vectors');
+        expect(() => {
+            new InvMessage(vectors);
+        }).toThrowError('Malformed vectors');
     });
 });

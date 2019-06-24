@@ -4,7 +4,9 @@ class GetTransactionReceiptsByHashesMessage extends Message {
      */
     constructor(hashes) {
         super(Message.Type.GET_TRANSACTION_RECEIPTS_BY_HASHES);
-        if (!Array.isArray(hashes) || hashes.length === 0 || !NumberUtils.isUint16(hashes.length) || hashes.some(hash => !(hash instanceof Hash))) throw new Error('Malformed hashes');
+        if (!Array.isArray(hashes) || hashes.length === 0 || !NumberUtils.isUint16(hashes.length)
+            || hashes.length > GetTransactionReceiptsByHashesMessage.HASHES_MAX_COUNT
+            || hashes.some(hash => !(hash instanceof Hash))) throw new Error('Malformed hashes');
         /** @type {Array.<Hash>} */
         this._hashes = hashes;
     }
@@ -16,6 +18,7 @@ class GetTransactionReceiptsByHashesMessage extends Message {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
+        if (count > GetTransactionReceiptsByHashesMessage.HASHES_MAX_COUNT) throw new Error('Malformed count');
         const hashes = new Array(count);
         for (let i = 0; i < count; i++) {
             hashes[i] = Hash.unserialize(buf);
@@ -50,4 +53,5 @@ class GetTransactionReceiptsByHashesMessage extends Message {
         return this._hashes;
     }
 }
+GetTransactionReceiptsByHashesMessage.HASHES_MAX_COUNT = 255;
 Class.register(GetTransactionReceiptsByHashesMessage);

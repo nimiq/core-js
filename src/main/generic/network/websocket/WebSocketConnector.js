@@ -33,7 +33,7 @@ class WebSocketConnector extends Observable {
      * @returns {boolean}
      */
     connect(peerAddress) {
-        if (peerAddress.protocol !== this._protocol) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== this._protocol) throw new Error('Malformed peerAddress');
 
         const timeoutKey = `connect_${peerAddress}`;
         if (this._timers.timeoutExists(timeoutKey)) {

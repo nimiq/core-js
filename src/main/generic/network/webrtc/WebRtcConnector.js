@@ -22,7 +22,7 @@ class WebRtcConnector extends Observable {
      * @returns {boolean}
      */
     connect(peerAddress, signalChannel) {
-        if (peerAddress.protocol !== Protocol.RTC) throw 'Malformed peerAddress';
+        if (peerAddress.protocol !== Protocol.RTC) throw new Error('Malformed peerAddress');
 
         const peerId = peerAddress.peerId;
         if (this._connectors.contains(peerId)) {

@@ -18,9 +18,9 @@ class BlockBody {
      * @param {Array.<PrunedAccount>} prunedAccounts
      */
     constructor(minerAddr, transactions, extraData = new Uint8Array(0), prunedAccounts = []) {
-        if (!(minerAddr instanceof Address)) throw 'Malformed minerAddr';
-        if (!Array.isArray(transactions) || transactions.some(it => !(it instanceof Transaction))) throw 'Malformed transactions';
-        if (!(extraData instanceof Uint8Array) || !NumberUtils.isUint8(extraData.byteLength)) throw 'Malformed extraData';
+        if (!(minerAddr instanceof Address)) throw new Error('Malformed minerAddr');
+        if (!Array.isArray(transactions) || transactions.some(it => !(it instanceof Transaction))) throw new Error('Malformed transactions');
+        if (!(extraData instanceof Uint8Array) || !NumberUtils.isUint8(extraData.byteLength)) throw new Error('Malformed extraData');
 
         /** @type {Address} */
         this._minerAddr = minerAddr;

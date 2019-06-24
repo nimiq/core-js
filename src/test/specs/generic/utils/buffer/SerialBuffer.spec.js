@@ -207,7 +207,7 @@ describe('SerialBuffer', () => {
 
         expect(() => {
             buffer.writePaddedString(string1, length1 - 2);
-        }).toThrow('Malformed value/length');
+        }).toThrowError('Malformed value/length');
     });
 
     it('throws an error on invalid writes/reads', () => {

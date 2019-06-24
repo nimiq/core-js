@@ -4,7 +4,7 @@ class PingMessage extends Message {
      */
     constructor(nonce) {
         super(Message.Type.PING);
-        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
+        if (!NumberUtils.isUint32(nonce)) throw new Error('Malformed nonce');
         /** @type {number} */
         this._nonce = nonce;
     }

@@ -218,7 +218,7 @@ class SerialBuffer extends Uint8Array {
      * @param {number} length
      */
     writeString(value, length) {
-        if (StringUtils.isMultibyte(value) || value.length !== length) throw 'Malformed value/length';
+        if (StringUtils.isMultibyte(value) || value.length !== length) throw new Error('Malformed value/length');
         const bytes = BufferUtils.fromAscii(value);
         this.write(bytes);
     }
@@ -240,7 +240,7 @@ class SerialBuffer extends Uint8Array {
      * @param {number} length
      */
     writePaddedString(value, length) {
-        if (StringUtils.isMultibyte(value) || value.length > length) throw 'Malformed value/length';
+        if (StringUtils.isMultibyte(value) || value.length > length) throw new Error('Malformed value/length');
         const bytes = BufferUtils.fromAscii(value);
         this.write(bytes);
         const padding = length - bytes.byteLength;
@@ -252,7 +252,7 @@ class SerialBuffer extends Uint8Array {
      */
     readVarLengthString() {
         const length = this.readUint8();
-        if (this._readPos + length > this.length) throw 'Malformed length';
+        if (this._readPos + length > this.length) throw new Error('Malformed length');
         const bytes = this.read(length);
         return BufferUtils.toAscii(bytes);
     }

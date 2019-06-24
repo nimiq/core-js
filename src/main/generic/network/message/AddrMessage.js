@@ -5,7 +5,8 @@ class AddrMessage extends Message {
     constructor(addresses) {
         super(Message.Type.ADDR);
         if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.some(it => !(it instanceof PeerAddress))) throw 'Malformed addresses';
+            || addresses.length > AddrMessage.ADDRESSES_MAX_COUNT
+            || addresses.some(it => !(it instanceof PeerAddress))) throw new Error('Malformed addresses');
         this._addresses = addresses;
     }
 
@@ -16,9 +17,10 @@ class AddrMessage extends Message {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const addresses = [];
-        for (let i = 0; i < count; ++i) {
-            addresses.push(PeerAddress.unserialize(buf));
+        if (count > AddrMessage.ADDRESSES_MAX_COUNT) throw new Error('Malformed count');
+        const addresses = new Array(count);
+        for (let i = 0; i < count; i++) {
+            addresses[i] = PeerAddress.unserialize(buf);
         }
         return new AddrMessage(addresses);
     }
@@ -57,4 +59,5 @@ class AddrMessage extends Message {
         return `AddrMessage{size=${this._addresses.length}}`;
     }
 }
+AddrMessage.ADDRESSES_MAX_COUNT = 1000;
 Class.register(AddrMessage);

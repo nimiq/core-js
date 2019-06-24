@@ -65,7 +65,7 @@ class Message {
         const checksum = buf.readUint32();
 
         // Validate magic.
-        if (magic !== Message.MAGIC) throw 'Malformed magic';
+        if (magic !== Message.MAGIC) throw new Error('Malformed magic');
 
         // Validate checksum.
         Message._writeChecksum(type, buf, 0);

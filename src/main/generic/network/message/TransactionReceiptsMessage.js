@@ -5,8 +5,8 @@ class TransactionReceiptsMessage extends Message {
     constructor(receipts = null) {
         super(Message.Type.TRANSACTION_RECEIPTS);
         if (receipts && (!Array.isArray(receipts) || !NumberUtils.isUint16(receipts.length)
-            || receipts.some(it => !(it instanceof TransactionReceipt))
-            || receipts.length > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT)) throw new Error('Malformed receipts');
+            || receipts.length > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT
+            || receipts.some(it => !(it instanceof TransactionReceipt)))) throw new Error('Malformed receipts');
         /** @type {Array.<TransactionReceipt>} */
         this._receipts = receipts;
     }
@@ -21,9 +21,10 @@ class TransactionReceiptsMessage extends Message {
         let receipts = null;
         if (hasReceipts !== 0) {
             const count = buf.readUint16();
-            receipts = [];
-            for (let i = 0; i < count; ++i) {
-                receipts.push(TransactionReceipt.unserialize(buf));
+            if (count > TransactionReceiptsMessage.RECEIPTS_MAX_COUNT) throw new Error('Malformed count');
+            receipts = new Array(count);
+            for (let i = 0; i < count; i++) {
+                receipts[i] = TransactionReceipt.unserialize(buf);
             }
         }
         return new TransactionReceiptsMessage(receipts);

@@ -4,7 +4,7 @@ class ChainProofMessage extends Message {
      */
     constructor(proof) {
         super(Message.Type.CHAIN_PROOF);
-        if (!(proof instanceof ChainProof)) throw 'Malformed chainProof';
+        if (!(proof instanceof ChainProof)) throw new Error('Malformed chainProof');
 
         /** @type {ChainProof} */
         this._proof = proof;

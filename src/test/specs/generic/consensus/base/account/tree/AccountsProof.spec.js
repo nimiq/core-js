@@ -56,19 +56,19 @@ describe('AccountsProof', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const tesT3 = new AccountsProof(undefined);
-        }).toThrow('Malformed nodes');
+        }).toThrowError('Malformed nodes');
 
         expect(() => {
             const tesT3 = new AccountsProof(null);
-        }).toThrow('Malformed nodes');
+        }).toThrowError('Malformed nodes');
 
         expect(() => {
             const tesT3 = new AccountsProof(1);
-        }).toThrow('Malformed nodes');
+        }).toThrowError('Malformed nodes');
 
         expect(() => {
             const tesT3 = new AccountsProof(new Uint8Array(101));
-        }).toThrow('Malformed nodes');
+        }).toThrowError('Malformed nodes');
         /* eslint-enable no-unused-vars */
     });
 

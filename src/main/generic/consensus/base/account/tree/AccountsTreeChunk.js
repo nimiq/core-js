@@ -5,7 +5,7 @@ class AccountsTreeChunk {
      */
     constructor(nodes, proof) {
         if (!nodes || !NumberUtils.isUint16(nodes.length)
-            || nodes.some(it => !(it instanceof AccountsTreeNode) || !it.isTerminal())) throw 'Malformed nodes';
+            || nodes.some(it => !(it instanceof AccountsTreeNode) || !it.isTerminal())) throw new Error('Malformed nodes');
 
         /** @type {Array.<AccountsTreeNode>} */
         this._nodes = nodes;

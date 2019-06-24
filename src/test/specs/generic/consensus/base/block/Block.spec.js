@@ -13,46 +13,46 @@ describe('Block', () => {
         const interlink = block.interlink;
         expect(() => {
             const test1 = new Block(undefined, interlink);
-        }).toThrow('Malformed header');
+        }).toThrowError('Malformed header');
 
         expect(() => {
             const test1 = new Block(null, interlink);
-        }).toThrow('Malformed header');
+        }).toThrowError('Malformed header');
 
         expect(() => {
             const test1 = new Block(1, interlink);
-        }).toThrow('Malformed header');
+        }).toThrowError('Malformed header');
 
         expect(() => {
             const test1 = new Block(new Uint8Array(101), interlink);
-        }).toThrow('Malformed header');
+        }).toThrowError('Malformed header');
 
         expect(() => {
             const test1 = new Block(block, interlink);
-        }).toThrow('Malformed header');
+        }).toThrowError('Malformed header');
     });
 
     it('must have a well defined interlink', () => {
         const header = block.header;
         expect(() => {
             const test1 = new Block(header, undefined);
-        }).toThrow('Malformed interlink');
+        }).toThrowError('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, null);
-        }).toThrow('Malformed interlink');
+        }).toThrowError('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, 1);
-        }).toThrow('Malformed interlink');
+        }).toThrowError('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, new Uint8Array(101));
-        }).toThrow('Malformed interlink');
+        }).toThrowError('Malformed interlink');
 
         expect(() => {
             const test1 = new Block(header, block);
-        }).toThrow('Malformed interlink');
+        }).toThrowError('Malformed interlink');
     });
 
     it('must have a well defined body (optional)', () => {
@@ -60,15 +60,15 @@ describe('Block', () => {
         const interlink = block.interlink;
         expect(() => {
             const test1 = new Block(header, interlink, 1);
-        }).toThrow('Malformed body');
+        }).toThrowError('Malformed body');
 
         expect(() => {
             const test1 = new Block(header, interlink, new Uint8Array(101));
-        }).toThrow('Malformed body');
+        }).toThrowError('Malformed body');
 
         expect(() => {
             const test1 = new Block(header, interlink, block);
-        }).toThrow('Malformed body');
+        }).toThrowError('Malformed body');
     });
 
     it('is serializable and unserializable', () => {

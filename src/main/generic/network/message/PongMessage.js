@@ -4,7 +4,7 @@ class PongMessage extends Message {
      */
     constructor(nonce) {
         super(Message.Type.PONG);
-        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
+        if (!NumberUtils.isUint32(nonce)) throw new Error('Malformed nonce');
 
         this._nonce = nonce;
     }

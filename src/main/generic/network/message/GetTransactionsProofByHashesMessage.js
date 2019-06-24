@@ -6,7 +6,9 @@ class GetTransactionsProofByHashesMessage extends Message {
     constructor(blockHash, hashes) {
         super(Message.Type.GET_TRANSACTIONS_PROOF_BY_HASHES);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
-        if (!Array.isArray(hashes) || hashes.length === 0 || !NumberUtils.isUint16(hashes.length) || hashes.some(hash => !(hash instanceof Hash))) throw new Error('Malformed hashes');
+        if (!Array.isArray(hashes) || hashes.length === 0 || !NumberUtils.isUint16(hashes.length)
+            || hashes.length > GetTransactionsProofByHashesMessage.HASHES_MAX_COUNT
+            || hashes.some(hash => !(hash instanceof Hash))) throw new Error('Malformed hashes');
         this._blockHash = blockHash;
         /** @type {Array.<Hash>} */
         this._hashes = hashes;
@@ -20,6 +22,7 @@ class GetTransactionsProofByHashesMessage extends Message {
         Message.unserialize(buf);
         const blockHash = Hash.unserialize(buf);
         const count = buf.readUint16();
+        if (count > GetTransactionsProofByHashesMessage.HASHES_MAX_COUNT) throw new Error('Malformed count');
         const hashes = new Array(count);
         for (let i = 0; i < count; i++) {
             hashes[i] = Hash.unserialize(buf);
@@ -64,5 +67,5 @@ class GetTransactionsProofByHashesMessage extends Message {
 /**
  * @type {number}
  */
-GetTransactionsProofByHashesMessage.ADDRESSES_MAX_COUNT = 256;
+GetTransactionsProofByHashesMessage.HASHES_MAX_COUNT = 255;
 Class.register(GetTransactionsProofByHashesMessage);

@@ -177,7 +177,7 @@ class SpyConnection extends Observable {
     constructor(send, ban) {
         super();
         this.send = send || (() => {});
-        this.ban = ban || (() => { throw 'Spy was banned unexpectedly.';});
+        this.ban = ban || (() => { throw new Error('Spy was banned unexpectedly.');});
         this.onmessage = ( (msg) => {
             this.fire('message', msg);
         } );

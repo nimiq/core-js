@@ -11,15 +11,15 @@ class SignalMessage extends Message {
      */
     constructor(senderId, recipientId, nonce, ttl, flags = 0, payload = new Uint8Array(0), senderPubKey, signature) {
         super(Message.Type.SIGNAL);
-        if (!(senderId instanceof PeerId)) throw 'Malformed senderId';
-        if (!(recipientId instanceof PeerId)) throw 'Malformed recipientId';
-        if (!NumberUtils.isUint32(nonce)) throw 'Malformed nonce';
-        if (!NumberUtils.isUint8(ttl)) throw 'Malformed ttl';
-        if (!NumberUtils.isUint8(flags)) throw 'Malformed flags';
-        if (!(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw 'Malformed payload';
+        if (!(senderId instanceof PeerId)) throw new Error('Malformed senderId');
+        if (!(recipientId instanceof PeerId)) throw new Error('Malformed recipientId');
+        if (!NumberUtils.isUint32(nonce)) throw new Error('Malformed nonce');
+        if (!NumberUtils.isUint8(ttl)) throw new Error('Malformed ttl');
+        if (!NumberUtils.isUint8(flags)) throw new Error('Malformed flags');
+        if (!(payload instanceof Uint8Array) || !NumberUtils.isUint16(payload.byteLength)) throw new Error('Malformed payload');
         const hasPayload = payload.byteLength > 0;
-        if (hasPayload && !(signature instanceof Signature)) throw 'Malformed signature';
-        if (hasPayload && !(senderPubKey instanceof PublicKey)) throw 'Malformed public key';
+        if (hasPayload && !(signature instanceof Signature)) throw new Error('Malformed signature');
+        if (hasPayload && !(senderPubKey instanceof PublicKey)) throw new Error('Malformed public key');
 
         // Note that the signature is NOT verified here.
         // Callers must explicitly invoke verifySignature() to check it.

@@ -32,7 +32,7 @@ class InvVector {
      */
     constructor(type, hash) {
         // TODO validate type
-        if (!Hash.isHash(hash)) throw 'Malformed hash';
+        if (!Hash.isHash(hash)) throw new Error('Malformed hash');
         /** @type {InvVector.Type} */
         this._type = type;
         /** @type {Hash} */
@@ -125,9 +125,9 @@ class BaseInventoryMessage extends Message {
      */
     constructor(type, vectors) {
         super(type);
-        if (!vectors || !NumberUtils.isUint16(vectors.length)
-            || vectors.some(it => !(it instanceof InvVector))
-            || vectors.length > BaseInventoryMessage.VECTORS_MAX_COUNT) throw 'Malformed vectors';
+        if (!Array.isArray(vectors) || !NumberUtils.isUint16(vectors.length)
+            || vectors.length > BaseInventoryMessage.VECTORS_MAX_COUNT
+            || vectors.some(it => !(it instanceof InvVector))) throw new Error('Malformed vectors');
         /** @type {Array.<InvVector>} */
         this._vectors = vectors;
     }
@@ -185,9 +185,10 @@ class InvMessage extends BaseInventoryMessage {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const vectors = [];
-        for (let i = 0; i < count; ++i) {
-            vectors.push(InvVector.unserialize(buf));
+        if (count > BaseInventoryMessage.VECTORS_MAX_COUNT) throw new Error('Malformed count');
+        const vectors = new Array(count);
+        for (let i = 0; i < count; i++) {
+            vectors[i] = InvVector.unserialize(buf);
         }
         return new InvMessage(vectors);
     }
@@ -213,9 +214,10 @@ class GetDataMessage extends BaseInventoryMessage {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const vectors = [];
-        for (let i = 0; i < count; ++i) {
-            vectors.push(InvVector.unserialize(buf));
+        if (count > BaseInventoryMessage.VECTORS_MAX_COUNT) throw new Error('Malformed count');
+        const vectors = new Array(count);
+        for (let i = 0; i < count; i++) {
+            vectors[i] = InvVector.unserialize(buf);
         }
         return new GetDataMessage(vectors);
     }
@@ -241,9 +243,10 @@ class GetHeaderMessage extends BaseInventoryMessage {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const vectors = [];
-        for (let i = 0; i < count; ++i) {
-            vectors.push(InvVector.unserialize(buf));
+        if (count > BaseInventoryMessage.VECTORS_MAX_COUNT) throw new Error('Malformed count');
+        const vectors = new Array(count);
+        for (let i = 0; i < count; i++) {
+            vectors[i] = InvVector.unserialize(buf);
         }
         return new GetHeaderMessage(vectors);
     }
@@ -269,9 +272,10 @@ class NotFoundMessage extends BaseInventoryMessage {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const vectors = [];
-        for (let i = 0; i < count; ++i) {
-            vectors.push(InvVector.unserialize(buf));
+        if (count > BaseInventoryMessage.VECTORS_MAX_COUNT) throw new Error('Malformed count');
+        const vectors = new Array(count);
+        for (let i = 0; i < count; i++) {
+            vectors[i] = InvVector.unserialize(buf);
         }
         return new NotFoundMessage(vectors);
     }

@@ -4,7 +4,7 @@ class AccountsProof {
      */
     constructor(nodes) {
         if (!nodes || !Array.isArray(nodes) || !NumberUtils.isUint16(nodes.length)
-            || nodes.some(it => !(it instanceof AccountsTreeNode))) throw 'Malformed nodes';
+            || nodes.some(it => !(it instanceof AccountsTreeNode))) throw new Error('Malformed nodes');
 
         /** @type {Array.<AccountsTreeNode>} */
         this._nodes = nodes;

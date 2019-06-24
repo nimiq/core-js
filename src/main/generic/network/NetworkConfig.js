@@ -79,7 +79,7 @@ class NetworkConfig {
      * @type {number}
      */
     get protocol() {
-        throw 'Unimplemented';
+        throw new Error('Unimplemented');
     }
 
     /**
@@ -194,7 +194,7 @@ class WsNetworkConfig extends NetworkConfig {
      */
     get peerAddress() {
         if (!this._services || !this._keyPair) {
-            throw 'PeerAddress is not configured.';
+            throw new Error('PeerAddress is not configured.');
         }
 
         const port = this._reverseProxy.enabled ? this._reverseProxy.port : this._port;
@@ -204,7 +204,7 @@ class WsNetworkConfig extends NetworkConfig {
             this._host, port);
 
         if (!peerAddress.globallyReachable()) {
-            throw 'PeerAddress not globally reachable.';
+            throw new Error('PeerAddress not globally reachable.');
         }
 
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
@@ -262,7 +262,7 @@ class WssNetworkConfig extends WsNetworkConfig {
      */
     get peerAddress() {
         if (!this._services || !this._keyPair) {
-            throw 'PeerAddress is not configured.';
+            throw new Error('PeerAddress is not configured.');
         }
 
         const port = this._reverseProxy.enabled ? this._reverseProxy.port : this._port;
@@ -272,7 +272,7 @@ class WssNetworkConfig extends WsNetworkConfig {
             this._host, port);
 
         if (!peerAddress.globallyReachable()) {
-            throw 'PeerAddress not globally reachable.';
+            throw new Error('PeerAddress not globally reachable.');
         }
 
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
@@ -323,7 +323,7 @@ class RtcNetworkConfig extends NetworkConfig {
      */
     get peerAddress() {
         if (!this._services || !this._keyPair) {
-            throw 'PeerAddress is not configured.';
+            throw new Error('PeerAddress is not configured.');
         }
 
         const peerAddress = new RtcPeerAddress(
@@ -358,7 +358,7 @@ class DumbNetworkConfig extends NetworkConfig {
      */
     get peerAddress() {
         if (!this._services || !this._keyPair) {
-            throw 'PeerAddress is not configured.';
+            throw new Error('PeerAddress is not configured.');
         }
 
         const peerAddress = new DumbPeerAddress(

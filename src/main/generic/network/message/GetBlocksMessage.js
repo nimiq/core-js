@@ -8,9 +8,9 @@ class GetBlocksMessage extends Message {
         super(Message.Type.GET_BLOCKS);
         if (!locators || !NumberUtils.isUint16(locators.length)
             || locators.length > GetBlocksMessage.LOCATORS_MAX_COUNT
-            || locators.some(it => !Hash.isHash(it))) throw 'Malformed locators';
-        if (!NumberUtils.isUint16(maxInvSize)) throw 'Malformed maxInvSize';
-        if (!NumberUtils.isUint8(direction)) throw 'Malformed direction';
+            || locators.some(it => !Hash.isHash(it))) throw new Error('Malformed locators');
+        if (!NumberUtils.isUint16(maxInvSize)) throw new Error('Malformed maxInvSize');
+        if (!NumberUtils.isUint8(direction)) throw new Error('Malformed direction');
         /** @type {Array.<Hash>} */
         this._locators = locators;
         this._maxInvSize = maxInvSize;
@@ -24,9 +24,10 @@ class GetBlocksMessage extends Message {
     static unserialize(buf) {
         Message.unserialize(buf);
         const count = buf.readUint16();
-        const locators = [];
+        if (count > GetBlocksMessage.LOCATORS_MAX_COUNT) throw new Error('Malformed count');
+        const locators = new Array(count);
         for (let i = 0; i < count; i++) {
-            locators.push(Hash.unserialize(buf));
+            locators[i] = Hash.unserialize(buf);
         }
         const maxInvSize = buf.readUint16();
         const direction = buf.readUint8();

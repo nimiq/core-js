@@ -27,19 +27,19 @@ describe('BlockBody', () => {
         /* eslint-disable no-unused-vars */
         expect(() => {
             const test1 = new BlockBody(minerAddress, null);
-        }).toThrow('Malformed transactions');
+        }).toThrowError('Malformed transactions');
         expect(() => {
             const test2 = new BlockBody(minerAddress, undefined);
-        }).toThrow('Malformed transactions');
+        }).toThrowError('Malformed transactions');
         expect(() => {
             const test3 = new BlockBody(minerAddress, [null]);
-        }).toThrow('Malformed transactions');
+        }).toThrowError('Malformed transactions');
         expect(() => {
             const test4 = new BlockBody(minerAddress, [undefined]);
-        }).toThrow('Malformed transactions');
+        }).toThrowError('Malformed transactions');
         expect(() => {
             const test5 = new BlockBody(minerAddress, [true]);
-        }).toThrow('Malformed transactions');
+        }).toThrowError('Malformed transactions');
         /* eslint-enable no-unused-vars */
     });
 
