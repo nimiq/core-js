@@ -114,6 +114,8 @@ class BaseConsensusAgent extends Observable {
         this._onToDisconnect(peer.channel, 'transactions-proof', msg => this._onTransactionsProof(msg));
         this._onToDisconnect(peer.channel, 'transaction-receipts', msg => this._onTransactionReceipts(msg));
 
+        this._onToDisconnect(peer.channel, 'mempool', msg => this._onMempool(msg));
+
         this._onToDisconnect(peer.channel, 'get-head', msg => this._onGetHead(msg));
         this._onToDisconnect(peer.channel, 'head', msg => this._onHead(msg));
 
@@ -369,6 +371,42 @@ class BaseConsensusAgent extends Observable {
      */
     _onSubscribe(msg) {
         this._remoteSubscription = msg.subscription;
+    }
+
+    /**
+     * @param {MempoolMessage} msg
+     * @return {Promise}
+     * @private
+     */
+    async _onMempool(msg) {
+        // Query mempool for transactions
+        const transactions = this._getSubscribedMempoolTransactions();
+
+        // Send an InvVector for each transaction in the mempool.
+        // Split into multiple Inv messages if the mempool is large.
+        let vectors = [];
+        for (const tx of transactions) {
+            vectors.push(InvVector.fromTransaction(tx));
+
+            if (vectors.length >= BaseInventoryMessage.VECTORS_MAX_COUNT) {
+                this._peer.channel.inv(vectors);
+                vectors = [];
+                await new Promise((resolve) => setTimeout(resolve, FullConsensusAgent.MEMPOOL_THROTTLE));
+            }
+        }
+
+        if (vectors.length > 0) {
+            this._peer.channel.inv(vectors);
+        }
+    }
+
+    /**
+     * @returns {Iterable.<Transaction>}
+     * @protected
+     * @override
+     */
+    _getSubscribedMempoolTransactions() {
+        return [];
     }
 
     /**

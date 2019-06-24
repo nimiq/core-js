@@ -32,6 +32,7 @@ jasmine.getEnv().addReporter(reporter);
 Nimiq.Log.instance._native._global_prefix = String.fromCharCode(27) + '[1K\r';
 
 global.Class = {
+    scope: global,
     register: clazz => {
         global[clazz.prototype.constructor.name] = clazz;
     }

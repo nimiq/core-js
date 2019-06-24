@@ -137,6 +137,26 @@ class Subscription {
     }
 
     /**
+     * @param {Subscription} other
+     * @returns {boolean}
+     */
+    isSubsetOf(other) {
+        if (other.type === Subscription.Type.ANY || this.type === Subscription.Type.NONE) {
+            return true;
+        }
+        if (other.type !== this.type) {
+            return false;
+        }
+        switch (this.type) {
+            case Subscription.Type.ADDRESSES:
+                return this.addresses.reduce((isSubset, address) => isSubset && other.addresses.find(a => a.equals(address)), true);
+            case Subscription.Type.MIN_FEE:
+                return this.minFeePerByte > other.minFeePerByte;
+        }
+        return false;
+    }
+
+    /**
      * @returns {string}
      */
     toString() {
