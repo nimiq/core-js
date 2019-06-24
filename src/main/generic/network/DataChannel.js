@@ -9,6 +9,8 @@ class DataChannel extends Observable {
         // XXX We currently only support one chunked message at a time.
         /** @type {SerialBuffer} */
         this._buffer = null;
+        /** @type {number} */
+        this._currentMessageLength = 0;
 
         /** @type {Message.Type} */
         this._msgType = 0;
@@ -144,7 +146,8 @@ class DataChannel extends Observable {
                     return;
                 }
 
-                this._buffer = new SerialBuffer(messageSize);
+                this._buffer = new SerialBuffer(Math.min(messageSize, DataChannel.CHUNK_SIZE_MAX));
+                this._currentMessageLength = messageSize;
                 this._receivingTag = tag;
                 this._msgType = Message.peekType(chunkBuffer);
             }
@@ -160,7 +163,7 @@ class DataChannel extends Observable {
                 return;
             }
 
-            let remainingBytes = this._buffer.byteLength - this._buffer.writePos;
+            let remainingBytes = this._currentMessageLength - this._buffer.writePos;
 
             // Mismatch between buffer sizes.
             if (effectiveChunkLength > remainingBytes) {
@@ -168,7 +171,20 @@ class DataChannel extends Observable {
                 return;
             }
 
+            // Chunk too short
+            if (buffer.byteLength !== DataChannel.CHUNK_SIZE_MAX && effectiveChunkLength !== remainingBytes) {
+                this._error('Received chunk that is neither max chunk size nor the final chunk');
+                return;
+            }
+
             // Write chunk and subtract remaining byte length.
+            if (this._buffer.byteLength < this._buffer.writePos + effectiveChunkLength) {
+                // XXX: Use ArrayBuffer.transfer once available
+                const newBuffer = new SerialBuffer(Math.min(this._buffer.byteLength * 2, this._currentMessageLength));
+                newBuffer.set(this._buffer);
+                newBuffer.writePos = this._buffer.writePos;
+                this._buffer = newBuffer;
+            }
             this._buffer.write(chunk);
             remainingBytes -= effectiveChunkLength;
 
@@ -179,11 +195,15 @@ class DataChannel extends Observable {
             if (remainingBytes === 0) {
                 const msg = this._buffer.buffer;
                 this._buffer = null;
+                this._currentMessageLength = 0;
+                this._timers.clearTimeout('next-chunk');
                 this.fire('message', msg, this);
             } else {
                 // Set timeout.
                 if (expectedMsg) {
                     this._timers.resetTimeout(`chunk-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), expectedMsg.chunkTimeout);
+                } else {
+                    this._timers.resetTimeout('next-chunk', this._onTimeout.bind(this), DataChannel.CHUNK_TIMEOUT);
                 }
                 this.fire('chunk', this._buffer);
             }

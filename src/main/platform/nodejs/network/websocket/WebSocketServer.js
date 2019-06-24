@@ -27,7 +27,7 @@ class WebSocketServer extends WebSocket.Server {
      */
     constructor(networkConfig) {
         const server = WebSocketServer._newHttpServer(networkConfig);
-        super({ server });
+        super({ server, maxPayload: WebSocketServer.PAYLOAD_MAX });
 
         /** @type {Map.<string,{listener:function(),timeout:*}>} */
         this._clients = new Map();
@@ -186,6 +186,7 @@ class WebSocketServer extends WebSocket.Server {
 }
 WebSocketServer.UPGRADE_TIMEOUT = 1000 * 3; // 3 seconds
 WebSocketServer.TLS_HANDSHAKE_TIMEOUT = 1000 * 3; // 3 seconds
+WebSocketServer.PAYLOAD_MAX = DataChannel.CHUNK_SIZE_MAX;
 WebSocketServer.PENDING_UPGRADES_MAX = 1000;
 WebSocketServer.PENDING_UPGRADES_PER_IP_MAX = 2;
 WebSocketServer.PENDING_UPGRADES_PER_SUBNET_MAX = 6;

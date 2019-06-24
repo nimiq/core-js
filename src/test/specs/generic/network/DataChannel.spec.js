@@ -49,7 +49,7 @@ describe('DataChannel', () => {
         first.send(largeArray);
     });
 
-    it('closes the connection on invalid chunks', (done) => {
+    it('closes the connection on invalid chunks (too large)', (done) => {
         const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
         let secondClosed = false;
         first.on('close', () => secondClosed ? done() : done.fail());
@@ -61,6 +61,22 @@ describe('DataChannel', () => {
         chunk.writeUint32(0x42042042);
         chunk.writeVarUint(Message.Type.VERSION);
         chunk.writeUint32(0xffff0000);
+        first.sendChunk(chunk);
+        expect(true).toBe(true);
+    });
+
+    it('closes the connection on invalid chunks (too short)', (done) => {
+        const { /** @type {DataChannel} */  first, /** @type {DataChannel} */  second } = MockDataChannel.pair();
+        let secondClosed = false;
+        first.on('close', () => secondClosed ? done() : done.fail());
+        second.on('close', () => secondClosed = true);
+
+        // Send chunk with excessive size.
+        const chunk = new SerialBuffer(10);
+        chunk.writeUint8(0);
+        chunk.writeUint32(0x42042042);
+        chunk.writeVarUint(Message.Type.VERSION);
+        chunk.writeUint32(0x00000010);
         first.sendChunk(chunk);
         expect(true).toBe(true);
     });
