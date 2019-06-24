@@ -151,27 +151,20 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {SubscribeMessage} msg
+     * @returns {Iterable.<Transaction>}
+     * @protected
      * @override
-     * @private
      */
-    _onSubscribe(msg) {
-        super._onSubscribe(msg);
-        let txs;
-        switch (msg.subscription.type) {
-            case Subscription.Type.MIN_FEE:
-                txs = this._mempool.getTransactions(BaseInventoryMessage.VECTORS_MAX_COUNT).filter((tx) => tx.feePerByte >= msg.subscription.minFeePerByte);
-                break;
-            case Subscription.Type.ANY:
-                txs = this._mempool.getTransactions(BaseInventoryMessage.VECTORS_MAX_COUNT);
-                break;
+    _getSubscribedMempoolTransactions() {
+        switch (this._remoteSubscription.type) {
             case Subscription.Type.ADDRESSES:
-                txs = this._mempool.getTransactionsByAddresses(msg.subscription.addresses, BaseInventoryMessage.VECTORS_MAX_COUNT);
-                break;
+                return this._mempool.getTransactionsByAddresses(this._remoteSubscription.addresses, BaseMiniConsensusAgent.MEMPOOL_ENTRIES_MAX);
+            case Subscription.Type.MIN_FEE:
+                return this._mempool.getTransactions().filter((tx) => tx.feePerByte >= this._remoteSubscription.minFeePerByte);
+            case Subscription.Type.ANY:
+                return this._mempool.getTransactions(BaseMiniConsensusAgent.MEMPOOL_ENTRIES_MAX);
         }
-        if (txs) {
-            this.peer.channel.inv(txs.map(tx => InvVector.fromTransaction(tx)));
-        }
+        return [];
     }
 }
 /**
@@ -183,10 +176,15 @@ BaseMiniConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT = 1000 * 5;
  * Minimum time {ms} to wait before triggering the initial mempool request.
  * @type {number}
  */
-BaseMiniConsensusAgent.MEMPOOL_DELAY_MIN = 1000 * 2; // 2 seconds
+BaseMiniConsensusAgent.MEMPOOL_DELAY_MIN = 500; // 0.5 seconds
 /**
  * Maximum time {ms} to wait before triggering the initial mempool request.
  * @type {number}
  */
-BaseMiniConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 20; // 20 seconds
+BaseMiniConsensusAgent.MEMPOOL_DELAY_MAX = 1000 * 5; // 5 seconds
+/**
+ * Number of transaction vectors to send
+ * @type {number}
+ */
+BaseMiniConsensusAgent.MEMPOOL_ENTRIES_MAX = 1000;
 Class.register(BaseMiniConsensusAgent);

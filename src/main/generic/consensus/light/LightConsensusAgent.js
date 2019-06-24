@@ -41,8 +41,8 @@ class LightConsensusAgent extends FullConsensusAgent {
         this._numWeakProofs = 0;
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('chain-proof', msg => this._onChainProof(msg));
-        peer.channel.on('accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
+        this._onToDisconnect(peer.channel, 'chain-proof', msg => this._onChainProof(msg));
+        this._onToDisconnect(peer.channel, 'accounts-tree-chunk', msg => this._onAccountsTreeChunk(msg));
     }
 
     /**

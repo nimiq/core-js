@@ -73,7 +73,15 @@ class ConstantHelper {
         this._ensureIsConstant(constant);
         if (this._originalValues.has(constant)) {
             this.set(constant, this._originalValues.get(constant));
+            this._originalValues.delete(constant);
         }
+    }
+
+    resetAll() {
+        for(const constant of this._originalValues.keys()) {
+            this.set(constant, this._originalValues.get(constant));
+        }
+        this._originalValues.clear();
     }
 }
 

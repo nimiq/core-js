@@ -52,17 +52,16 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._getBlocksLimit = new RateLimit(FullConsensusAgent.GET_BLOCKS_RATE_LIMIT);
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('get-blocks', msg => this._onGetBlocks(msg));
-        peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
-        peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
-        peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
-        peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProofByAddress(msg));
-        peer.channel.on('get-transaction-receipts', msg => this._onGetTransactionReceiptsByAddress(msg));
-        peer.channel.on('get-block-proof', msg => this._onGetBlockProof(msg));
-        peer.channel.on('get-block-proof-at', msg => this._onGetBlockProofAt(msg));
-        peer.channel.on('get-transactions-proof-by-hashes', msg => this._onGetTransactionsProofByHashes(msg));
-        peer.channel.on('get-transaction-receipts-by-hashes', msg => this._onGetTransactionReceiptsByHashes(msg));
-        peer.channel.on('mempool', msg => this._onMempool(msg));
+        this._onToDisconnect(peer.channel, 'get-blocks', msg => this._onGetBlocks(msg));
+        this._onToDisconnect(peer.channel, 'get-chain-proof', msg => this._onGetChainProof(msg));
+        this._onToDisconnect(peer.channel, 'get-accounts-proof', msg => this._onGetAccountsProof(msg));
+        this._onToDisconnect(peer.channel, 'get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
+        this._onToDisconnect(peer.channel, 'get-transactions-proof', msg => this._onGetTransactionsProofByAddress(msg));
+        this._onToDisconnect(peer.channel, 'get-transaction-receipts', msg => this._onGetTransactionReceiptsByAddress(msg));
+        this._onToDisconnect(peer.channel, 'get-block-proof', msg => this._onGetBlockProof(msg));
+        this._onToDisconnect(peer.channel, 'get-block-proof-at', msg => this._onGetBlockProofAt(msg));
+        this._onToDisconnect(peer.channel, 'get-transactions-proof-by-hashes', msg => this._onGetTransactionsProofByHashes(msg));
+        this._onToDisconnect(peer.channel, 'get-transaction-receipts-by-hashes', msg => this._onGetTransactionReceiptsByHashes(msg));
     }
 
     async syncBlockchain() {
@@ -560,47 +559,26 @@ class FullConsensusAgent extends BaseConsensusAgent {
         this._peer.channel.transactionReceipts(receipts);
     }
 
-    /**
-     * @param {MempoolMessage} msg
-     * @return {Promise}
-     * @private
-     */
-    async _onMempool(msg) {
-        // Query mempool for transactions
-        let transactions = [];
-        switch (this._remoteSubscription.type) {
-            case Subscription.Type.ADDRESSES:
-                transactions = this._mempool.getTransactionsByAddresses(this._remoteSubscription.addresses, FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
-                break;
-            case Subscription.Type.MIN_FEE:
-                transactions = new LimitIterable(this._mempool.transactionGenerator(/*maxSize*/ undefined, this._remoteSubscription.minFeePerByte), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
-                break;
-            case Subscription.Type.ANY:
-                transactions = new LimitIterable(this._mempool.transactionGenerator(), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
-                break;
-        }
-
-        // Send an InvVector for each transaction in the mempool.
-        // Split into multiple Inv messages if the mempool is large.
-        let vectors = [];
-        for (const tx of transactions) {
-            vectors.push(InvVector.fromTransaction(tx));
-
-            if (vectors.length >= BaseInventoryMessage.VECTORS_MAX_COUNT) {
-                this._peer.channel.inv(vectors);
-                vectors = [];
-                await new Promise((resolve) => setTimeout(resolve, FullConsensusAgent.MEMPOOL_THROTTLE));
-            }
-        }
-
-        if (vectors.length > 0) {
-            this._peer.channel.inv(vectors);
-        }
-    }
-
     /** @type {boolean} */
     get syncing() {
         return this._syncing;
+    }
+
+    /**
+     * @returns {Iterable.<Transaction>}
+     * @protected
+     * @override
+     */
+    _getSubscribedMempoolTransactions() {
+        switch (this._remoteSubscription.type) {
+            case Subscription.Type.ADDRESSES:
+                return this._mempool.getTransactionsByAddresses(this._remoteSubscription.addresses, FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+            case Subscription.Type.MIN_FEE:
+                return new LimitIterable(this._mempool.transactionGenerator(/*maxSize*/ undefined, this._remoteSubscription.minFeePerByte), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+            case Subscription.Type.ANY:
+                return new LimitIterable(this._mempool.transactionGenerator(), FullConsensusAgent.MEMPOOL_ENTRIES_MAX);
+        }
+        return [];
     }
 }
 /**

@@ -3,7 +3,6 @@ describe('Client', () => {
     let otherConsensus;
     let testChain;
     let clients = {};
-    let transactonRelayIntervalBak, freeTransactonRelayIntervalBak, minSyncedNodesBak;
     
     function getConsensus(consensus) {
         const name = 'volatile' + consensus.charAt(0).toUpperCase() + consensus.slice(1);
@@ -28,12 +27,13 @@ describe('Client', () => {
     beforeAll(async function () {
         MockClock.install();
         MockNetwork.install();
-        transactonRelayIntervalBak = BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL;
-        freeTransactonRelayIntervalBak = BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL;
-        minSyncedNodesBak = PicoConsensus.MIN_SYNCED_NODES;
-        BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = 100;
-        BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL = 100;
-        PicoConsensus.MIN_SYNCED_NODES = 1;
+        ConstantHelper.instance.set('BaseMiniConsensusAgent.MEMPOOL_DELAY_MIN', 5);
+        ConstantHelper.instance.set('BaseMiniConsensusAgent.MEMPOOL_DELAY_MAX', 5);
+        ConstantHelper.instance.set('FullConsensusAgent.MEMPOOL_DELAY_MIN', 5);
+        ConstantHelper.instance.set('FullConsensusAgent.MEMPOOL_DELAY_MAX', 5);
+        ConstantHelper.instance.set('BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL', 10);
+        ConstantHelper.instance.set('BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL', 10);
+        ConstantHelper.instance.set('PicoConsensus.MIN_SYNCED_NODES', 1);
 
         otherConsensus = await startOtherNode();
         for (const consensus of ['pico', 'nano', 'light', 'full']) {
@@ -42,9 +42,7 @@ describe('Client', () => {
     });
 
     afterAll(function () {
-        BaseConsensusAgent.TRANSACTION_RELAY_INTERVAL = transactonRelayIntervalBak;
-        BaseConsensusAgent.FREE_TRANSACTION_RELAY_INTERVAL = freeTransactonRelayIntervalBak;
-        PicoConsensus.MIN_SYNCED_NODES = minSyncedNodesBak;
+        ConstantHelper.instance.resetAll();
         MockClock.uninstall();
         MockNetwork.uninstall();
     });

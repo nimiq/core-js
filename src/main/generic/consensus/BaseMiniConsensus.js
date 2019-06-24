@@ -21,17 +21,28 @@ class BaseMiniConsensus extends BaseConsensus {
 
     /**
      * @param {Array.<Address>} addresses
+     * @deprecated
      */
     subscribeAccounts(addresses) {
         this.subscribe(Subscription.fromAddresses(addresses));
-        this._mempool.evictExceptAddresses(addresses);
-        for (const /** @type {BaseMiniConsensusAgent} */ agent of this._agents.valueIterator()) {
-            agent.requestMempool();
+    }
+
+    subscribe(subscription) {
+        const oldSubscription = this._subscription;
+        super.subscribe(subscription);
+        if (subscription.type === Subscription.Type.ADDRESSES) {
+            this._mempool.evictExceptAddresses(subscription.addresses);
+        }
+        if (!subscription.isSubsetOf(oldSubscription)) {
+            for (const /** @type {BaseMiniConsensusAgent} */ agent of this._agents.valueIterator()) {
+                agent.requestMempool();
+            }
         }
     }
 
     /**
      * @param {Array.<Address>|Address} newAddresses
+     * @deprecated
      */
     addSubscriptions(newAddresses) {
         newAddresses = Array.isArray(newAddresses) ? newAddresses : [newAddresses];
@@ -43,6 +54,7 @@ class BaseMiniConsensus extends BaseConsensus {
 
     /**
      * @param {Array.<Address>|Address} addressesToRemove
+     * @deprecated
      */
     removeSubscriptions(addressesToRemove) {
         addressesToRemove = Array.isArray(addressesToRemove) ? addressesToRemove : [addressesToRemove];
