@@ -56,7 +56,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
         peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
         peer.channel.on('get-accounts-proof', msg => this._onGetAccountsProof(msg));
         peer.channel.on('get-accounts-tree-chunk', msg => this._onGetAccountsTreeChunk(msg));
-        peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProofByAddress(msg));
+        peer.channel.on('get-transactions-proof', msg => this._onGetTransactionsProofByAddresses(msg));
         peer.channel.on('get-transaction-receipts', msg => this._onGetTransactionReceiptsByAddress(msg));
         peer.channel.on('get-block-proof', msg => this._onGetBlockProof(msg));
         peer.channel.on('get-block-proof-at', msg => this._onGetBlockProofAt(msg));
@@ -485,16 +485,16 @@ class FullConsensusAgent extends BaseConsensusAgent {
     }
 
     /**
-     * @param {GetTransactionsProofByAddressMessage} msg
+     * @param {GetTransactionsProofByAddressesMessage} msg
      * @private
      */
-    async _onGetTransactionsProofByAddress(msg) {
+    async _onGetTransactionsProofByAddresses(msg) {
         if (!this._transactionsProofLimit.note()) {
             Log.w(FullConsensusAgent, 'Rejecting GetTransactionsProof message - rate-limit exceeded');
             this._peer.channel.transactionsProof(msg.blockHash, null);
             return;
         }
-        const proof = await this._blockchain.getTransactionsProofByAddress(msg.blockHash, msg.addresses);
+        const proof = await this._blockchain.getTransactionsProofByAddresses(msg.blockHash, msg.addresses);
         this._peer.channel.transactionsProof(msg.blockHash, proof);
     }
 

@@ -117,10 +117,10 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
-     * @param {number} services
+     * @param {...number} services
      */
     providesServices(...services) {
-        return Services.providesServices(this._peer.peerAddress.services, services.reduce((a,b) => a | b));
+        return Services.providesServices(this._peer.peerAddress.services, ...services);
     }
 
     _requestHead() {
@@ -522,6 +522,7 @@ class BaseConsensusAgent extends Observable {
             }
         }
 
+        // Track the peer's head.
         if ((!this._peer.head && this._peer.headHash.equals(hash)) || (this._peer.head && this._peer.head.height < msg.block.height)) {
             this._peer.head = msg.block.header;
             this.onHeadUpdated();
@@ -564,6 +565,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
+        // Track the peer's head.
         if ((!this._peer.head && this._peer.headHash.equals(hash)) || (this._peer.head && this._peer.head.height < msg.header.height)) {
             this._peer.head = msg.header;
             this.onHeadUpdated();
@@ -855,7 +857,7 @@ class BaseConsensusAgent extends Observable {
             this._peer.channel.getBlockProof(blockHashToProve, knownBlock.hash());
 
             this._peer.channel.expectMessage(Message.Type.BLOCK_PROOF, () => {
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT);
         });
     }
@@ -894,7 +896,7 @@ class BaseConsensusAgent extends Observable {
             this._peer.channel.getBlockProofAt(blockHeightToProve, knownBlock.hash());
 
             this._peer.channel.expectMessage(Message.Type.BLOCK_PROOF, () => {
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.BLOCK_PROOF_REQUEST_TIMEOUT);
         });
     }
@@ -907,14 +909,13 @@ class BaseConsensusAgent extends Observable {
     async _onBlockProof(msg) {
         Log.v(BaseConsensusAgent, () => `[BLOCK-PROOF] Received from ${this._peer.peerAddress}: proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
-        // Check if we have requested a BlockProof, reject unsolicited ones.
+        // Check if we have requested a BlockProof, discard unsolicited ones.
         if (!this._blockProofRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited header proof received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
             return;
         }
 
-        const { blockHashToProve, blockHeightToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
+        const { /** @type {Hash} */ blockHashToProve, blockHeightToProve, /** @type {Block} */ knownBlock, resolve, reject } = this._blockProofRequest;
         this._blockProofRequest = null;
 
         if (!msg.hasProof() || msg.proof.length === 0) {
@@ -924,7 +925,7 @@ class BaseConsensusAgent extends Observable {
 
         // Check that the tail of the proof corresponds to the requested block.
         const proof = msg.proof;
-        if (!blockHashToProve.equals(proof.tail.hash()) && proof.tail.height !== blockHeightToProve) {
+        if (!proof.tail.hash().equals(blockHashToProve) && proof.tail.height !== blockHeightToProve) {
             Log.w(BaseConsensusAgent, `Received BlockProof with invalid tail block from ${this._peer.peerAddress}`);
             reject(new Error('Invalid tail block'));
             return;
@@ -940,7 +941,6 @@ class BaseConsensusAgent extends Observable {
         // Verify the proof.
         if (!(await proof.verify())) {
             Log.w(BaseConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
             this._peer.channel.close(CloseType.INVALID_BLOCK_PROOF, 'Invalid BlockProof');
             reject(new Error('Invalid BlockProof'));
             return;
@@ -950,7 +950,6 @@ class BaseConsensusAgent extends Observable {
         const verificationResults = await Promise.all(proof.blocks.map(block => block.verify(this._time)));
         if (!verificationResults.every(result => result)) {
             Log.w(BaseConsensusAgent, `Invalid BlockProof received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
             this._peer.channel.close(CloseType.INVALID_BLOCK_PROOF, 'Invalid BlockProof');
             reject(new Error('Invalid BlockProof'));
             return;
@@ -967,7 +966,7 @@ class BaseConsensusAgent extends Observable {
      * @deprecated
      */
     getTransactionsProof(block, addresses) {
-        return this.getTransactionsProofByAddress(block, addresses);
+        return this.getTransactionsProofByAddresses(block, addresses);
     }
 
     /**
@@ -975,9 +974,9 @@ class BaseConsensusAgent extends Observable {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Transaction>>}
      */
-    getTransactionsProofByAddress(block, addresses) {
+    getTransactionsProofByAddresses(block, addresses) {
         return this._synchronizer.push('getTransactionsProof',
-            this._getTransactionsProofByAddress.bind(this, block, addresses));
+            this._getTransactionsProofByAddresses.bind(this, block, addresses));
     }
 
     /**
@@ -997,7 +996,7 @@ class BaseConsensusAgent extends Observable {
      * @returns {Promise.<Array.<Transaction>>}
      * @private
      */
-    _getTransactionsProofByAddress(block, addresses) {
+    _getTransactionsProofByAddresses(block, addresses) {
         Assert.that(this._transactionsProofRequest === null);
 
         Log.v(BaseConsensusAgent, () => `Requesting TransactionsProof for ${addresses}@${block.height} from ${this._peer.peerAddress}`);
@@ -1011,12 +1010,12 @@ class BaseConsensusAgent extends Observable {
             };
 
             // Request TransactionProof from peer.
-            this._peer.channel.getTransactionsProofByAddress(block.hash(), addresses);
+            this._peer.channel.getTransactionsProofByAddresses(block.hash(), addresses);
 
             // Drop the peer if it doesn't send the TransactionProof within the timeout.
             this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.TRANSACTIONS_PROOF_REQUEST_TIMEOUT);
         });
     }
@@ -1046,7 +1045,7 @@ class BaseConsensusAgent extends Observable {
             // Drop the peer if it doesn't send the TransactionProof within the timeout.
             this._peer.channel.expectMessage(Message.Type.TRANSACTIONS_PROOF, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTIONS_PROOF_TIMEOUT, 'getTransactionsProof timeout');
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.TRANSACTIONS_PROOF_REQUEST_TIMEOUT);
         });
     }
@@ -1060,14 +1059,13 @@ class BaseConsensusAgent extends Observable {
         Log.v(BaseConsensusAgent, () => `[TRANSACTIONS-PROOF] Received from ${this._peer.peerAddress}:`
             + ` blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
-        // Check if we have requested a TransactionsProof, reject unsolicited ones.
+        // Check if we have requested a TransactionsProof, discard unsolicited ones.
         if (!this._transactionsProofRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited transactions proof received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
             return;
         }
 
-        const {/** @type {Array.<Address>} */ addresses, /** @type {Array.<Hash>} */ hashes, /** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
+        const {/** @type {Array.<Address>} */ addresses = [], /** @type {Array.<Hash>} */ hashes = [], /** @type {Block} */ block, resolve, reject} = this._transactionsProofRequest;
         this._transactionsProofRequest = null;
 
         if (!msg.hasProof()) {
@@ -1098,10 +1096,10 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        // Verify that the proof only contains transactions that match the given addresses.
+        // Verify that the proof only contains transactions that match the requested addresses/hashes.
         for (const tx of proof.transactions) {
-            if (addresses.find(address => tx.sender.equals(address) || tx.recipient.equals(address)) === undefined &&
-                hashes.find(hash => tx.hash().equals(hash)) === undefined) {
+            if (!addresses.some(address => tx.sender.equals(address) || tx.recipient.equals(address))
+                && !hashes.some(hash => tx.hash().equals(hash))) {
                 Log.w(BaseConsensusAgent, `TransactionsProof with unwanted transactions received from ${this._peer.peer}`);
                 this._peer.channel.close(CloseType.INVALID_TRANSACTION_PROOF, 'TransactionsProof contains unwanted transactions');
                 reject(new Error('TransactionsProof contains unwanted transactions'));
@@ -1160,7 +1158,7 @@ class BaseConsensusAgent extends Observable {
 
             this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.TRANSACTION_RECEIPTS_REQUEST_TIMEOUT);
         });
     }
@@ -1184,7 +1182,7 @@ class BaseConsensusAgent extends Observable {
 
             this._peer.channel.expectMessage(Message.Type.TRANSACTION_RECEIPTS, () => {
                 this._peer.channel.close(CloseType.GET_TRANSACTION_RECEIPTS_TIMEOUT, 'getTransactionReceipts timeout');
-                reject(new Error('timeout'));
+                reject(new Error('Timeout'));
             }, BaseConsensusAgent.TRANSACTION_RECEIPTS_REQUEST_TIMEOUT);
         });
     }
@@ -1198,11 +1196,10 @@ class BaseConsensusAgent extends Observable {
         Log.v(BaseConsensusAgent, () => `[TRANSACTION-RECEIPTS] Received from ${this._peer.peerAddress}:`
             + ` ${msg.hasReceipts() ? msg.receipts.length : '<rejected>'}`);
 
-        // Check if we have requested transaction receipts, reject unsolicited ones.
+        // Check if we have requested transaction receipts, discard unsolicited ones.
         // TODO: How about more than one transactionReceipts message?
         if (!this._transactionReceiptsRequest) {
             Log.w(BaseConsensusAgent, `Unsolicited transaction receipts received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
             return;
         }
 

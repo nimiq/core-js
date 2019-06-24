@@ -178,7 +178,7 @@ Message.Type = {
     ACCOUNTS_TREE_CHUNK:                   45,
     /** @deprecated **/
     GET_TRANSACTIONS_PROOF:                47,
-    GET_TRANSACTIONS_PROOF_BY_ADDRESS:     47,
+    GET_TRANSACTIONS_PROOF_BY_ADDRESSES:   47,
     TRANSACTIONS_PROOF:                    48,
     /** @deprecated **/
     GET_TRANSACTION_RECEIPTS:              49,

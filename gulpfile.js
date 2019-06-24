@@ -187,7 +187,7 @@ const sources = {
         './src/main/generic/network/message/AccountsTreeChunkMessage.js',
         './src/main/generic/network/message/GetAccountsTreeChunkMessage.js',
         './src/main/generic/network/message/TransactionsProofMessage.js',
-        './src/main/generic/network/message/GetTransactionsProofByAddressMessage.js',
+        './src/main/generic/network/message/GetTransactionsProofByAddressesMessage.js',
         './src/main/generic/network/message/GetTransactionsProofByHashesMessage.js',
         './src/main/generic/network/message/GetTransactionReceiptsByAddressMessage.js',
         './src/main/generic/network/message/GetTransactionReceiptsByHashesMessage.js',

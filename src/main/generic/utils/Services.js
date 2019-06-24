@@ -66,7 +66,7 @@ class Services {
 
     /**
      * @param {number} flags
-     * @param {number} services
+     * @param {...number} services
      */
     static providesServices(flags, ...services) {
         if (flags === Services.FLAG_NANO) flags = Services.PROVIDES_NANO;

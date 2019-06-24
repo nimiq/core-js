@@ -276,7 +276,7 @@ class NanoConsensusAgent extends BaseConsensusAgent {
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._peer.channel.expectMessage(Message.Type.ACCOUNTS_PROOF, () => {
                 this._peer.channel.close(CloseType.GET_ACCOUNTS_PROOF_TIMEOUT, 'getAccountsProof timeout');
-                reject(new Error('timeout')); // TODO error handling
+                reject(new Error('Timeout')); // TODO error handling
             }, NanoConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT);
         });
     }

@@ -517,7 +517,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             this._peer.channel.expectMessage(Message.Type.HEADER, () => {
                 this._headerRequest = null;
                 this._peer.channel.close(CloseType.GET_HEADER_TIMEOUT, 'getHeader timeout');
-                reject(new Error('timeout')); // TODO error handling
+                reject(new Error('Timeout')); // TODO error handling
             }, BaseConsensusAgent.REQUEST_TIMEOUT);
         });
     }

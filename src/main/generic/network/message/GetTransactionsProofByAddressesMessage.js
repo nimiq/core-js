@@ -1,13 +1,13 @@
-class GetTransactionsProofByAddressMessage extends Message {
+class GetTransactionsProofByAddressesMessage extends Message {
     /**
      * @param {Hash} blockHash
      * @param {Array.<Address>} addresses
      */
     constructor(blockHash, addresses) {
-        super(Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS);
+        super(Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESSES);
         if (!blockHash || !(blockHash instanceof Hash)) throw new Error('Malformed block hash');
-        if (!addresses || !NumberUtils.isUint16(addresses.length)
-            || addresses.length > GetTransactionsProofByAddressMessage.ADDRESSES_MAX_COUNT
+        if (!Array.isArray(addresses) || !NumberUtils.isUint16(addresses.length)
+            || addresses.length > GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT
             || addresses.some(it => !(it instanceof Address))) throw new Error('Malformed addresses');
         this._blockHash = blockHash;
         /** @type {Array.<Address>} */
@@ -16,7 +16,7 @@ class GetTransactionsProofByAddressMessage extends Message {
 
     /**
      * @param {SerialBuffer} buf
-     * @returns {GetTransactionsProofByAddressMessage}
+     * @returns {GetTransactionsProofByAddressesMessage}
      */
     static unserialize(buf) {
         Message.unserialize(buf);
@@ -26,7 +26,7 @@ class GetTransactionsProofByAddressMessage extends Message {
         for (let i = 0; i < count; i++) {
             addresses.push(Address.unserialize(buf));
         }
-        return new GetTransactionsProofByAddressMessage(blockHash, addresses);
+        return new GetTransactionsProofByAddressesMessage(blockHash, addresses);
     }
 
     /**
@@ -66,8 +66,8 @@ class GetTransactionsProofByAddressMessage extends Message {
 /**
  * @type {number}
  */
-GetTransactionsProofByAddressMessage.ADDRESSES_MAX_COUNT = 256;
-Class.register(GetTransactionsProofByAddressMessage);
+GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT = 256;
+Class.register(GetTransactionsProofByAddressesMessage);
 /** @deprecated */
-GetTransactionsProofMessage = GetTransactionsProofByAddressMessage;
+GetTransactionsProofMessage = GetTransactionsProofByAddressesMessage;
 Class.register(GetTransactionsProofMessage);

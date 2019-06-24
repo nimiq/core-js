@@ -533,7 +533,7 @@ class FullChain extends BaseChain {
      * @deprecated
      */
     async getTransactionsProof(blockHash, addresses) {
-        return this.getTransactionsProofByAddress(blockHash, addresses);
+        return this.getTransactionsProofByAddresses(blockHash, addresses);
     }
 
     /**
@@ -541,17 +541,17 @@ class FullChain extends BaseChain {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<?TransactionsProof>}
      */
-    async getTransactionsProofByAddress(blockHash, addresses) {
+    async getTransactionsProofByAddresses(blockHash, addresses) {
         const block = await this.getBlock(blockHash, /*includeForks*/ false, /*includeBody*/ true);
         if (!block || !block.isFull()) {
             return null;
         }
 
         const matches = [];
-        const addressesSet = new HashSet();
-        addressesSet.addAll(addresses);
+        const addressSet = new HashSet();
+        addressSet.addAll(addresses);
         for (const transaction of block.transactions) {
-            if (addressesSet.contains(transaction.sender) || addressesSet.contains(transaction.recipient)) {
+            if (addressSet.contains(transaction.sender) || addressSet.contains(transaction.recipient)) {
                 matches.push(transaction);
             }
         }

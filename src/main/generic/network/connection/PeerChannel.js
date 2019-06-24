@@ -323,7 +323,7 @@ class PeerChannel extends Observable {
      * @deprecated
      */
     getTransactionsProof(blockHash, addresses) {
-        return this.getTransactionsProofByAddress(blockHash, addresses);
+        return this.getTransactionsProofByAddresses(blockHash, addresses);
     }
 
     /**
@@ -331,8 +331,8 @@ class PeerChannel extends Observable {
      * @param {Array.<Address>} addresses
      * @return {boolean}
      */
-    getTransactionsProofByAddress(blockHash, addresses) {
-        return this._send(new GetTransactionsProofByAddressMessage(blockHash, addresses));
+    getTransactionsProofByAddresses(blockHash, addresses) {
+        return this._send(new GetTransactionsProofByAddressesMessage(blockHash, addresses));
     }
 
     /**
@@ -522,7 +522,7 @@ PeerChannel.Event[Message.Type.GET_ACCOUNTS_PROOF] = 'get-accounts-proof';
 PeerChannel.Event[Message.Type.ACCOUNTS_PROOF] = 'accounts-proof';
 PeerChannel.Event[Message.Type.GET_ACCOUNTS_TREE_CHUNK] = 'get-accounts-tree-chunk';
 PeerChannel.Event[Message.Type.ACCOUNTS_TREE_CHUNK] = 'accounts-tree-chunk';
-PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS] = 'get-transactions-proof';
+PeerChannel.Event[Message.Type.GET_TRANSACTIONS_PROOF_BY_ADDRESSES] = 'get-transactions-proof';
 PeerChannel.Event[Message.Type.TRANSACTIONS_PROOF] = 'transactions-proof';
 PeerChannel.Event[Message.Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS] = 'get-transaction-receipts';
 PeerChannel.Event[Message.Type.TRANSACTION_RECEIPTS] = 'transaction-receipts';

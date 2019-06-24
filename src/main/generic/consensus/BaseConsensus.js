@@ -334,7 +334,7 @@ class BaseConsensus extends Observable {
 
         for (const /** @type {BaseConsensusAgent} */ agent of agents) {
             try {
-                return await agent.getTransactionsProofByAddress(block, addresses); // eslint-disable-line no-await-in-loop
+                return await agent.getTransactionsProofByAddresses(block, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(BaseConsensus, `Failed to retrieve transactions proof for ${addresses} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
                 // Try the next peer.
