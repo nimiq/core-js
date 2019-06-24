@@ -7,6 +7,96 @@ export class Class {
     public static register(cls: any): void;
 }
 
+type Handle = number;
+type BlockListener = (blockHash: Hash) => void;
+type ConsensusChangedListener = (consensusState: Client.ConsensusState) => void;
+type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => void;
+type TransactionListener = (transaction: Client.TransactionDetails) => void;
+
+export class Client {
+    public static Configuration: ClientConfiguration;
+    public static ConfigurationBuilder: ClientConfigurationBuilder;
+    public static Feature: {
+        MINING: 'MINING';
+        LOCAL_HISTORY: 'LOCAL_HISTORY';
+        MEMPOOL: 'MEMPOOL';
+        PASSIVE: 'PASSIVE';
+    };
+    public static ConsensusState: {
+        CONNECTING: 'connecting';
+        SYNCING: 'syncing';
+        ESTABLISHED: 'established';
+    };
+    public network: Client.Network;
+    public mempool: Client.Mempool;
+    constructor(config: Client.Configuration | object, consensus?: Promise<BaseConsensus>);
+    public getHeadHash(): Promise<Hash>;
+    public getHeadHeight(): Promise<number>;
+    public getHeadBlock(includeBody = true): Promise<Block>;
+    public getBlock(hash: Hash | string, includeBody = true): Promise<Block | null>;
+    public getBlockAt(height: number, includeBody = true): Promise<Block | null>;
+    public getBlockTemplate(minerAddress: Address | string, extraData?: Uint8Array | string): Promise<Block>;
+    public submitBlock(block: Block): Promise<boolean>;
+    public getAccount(address: Address | string): Promise<Account>;
+    public getAccounts(addresses: Array<Address | string>): Promise<Account[]>;
+    public getTransaction(hash: Hash | string, blockHash?: Hash | string, blockHeight?: number): Promise<Client.TransactionDetails | null>;
+    public getTransactionReceipt(hash: Hash | string): Promise<TransactionReceipt | null>;
+    public getTransactionReceiptsByAddress(address: Address | string): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByHashes(hashes: Array<Hash | string>): Promise<Array<TransactionReceipt | null>>;
+    public getTransactionsByAddress(address: Address | string, sinceBlockHeight = 0, knownTransactionDetails?: Client.TransactionDetails[]): Promise<Client.TransactionDetails[]>;
+    public sendTransaction(tx: Transaction | object | string): Promise<Client.TransactionDetails>;
+    public addBlockListener(listener: BlockListener): Promise<Handle>;
+    public addConsensusChangedListener(listener: ConsensusChangedListener): Promise<Handle>;
+    public addHeadChangedListener(listner: HeadChangedListener): Promise<Handle>;
+    public addTransactionListener(listener: TransactionListener, addresses: Array<Address | string>): Promise<Handle>;
+    public removeListener(handle: Handle): void;
+}
+
+export namespace Client {
+    type ConsensusState = ConsensusState.CONNECTING | ConsensusState.SYNCING | ConsensusState.ESTABLISHED;
+    namespace ConsensusState {
+        type CONNECTING = 'connecting';
+        type SYNCING = 'syncing';
+        type ESTABLISHED = 'established';
+    }
+    type Configuration = ClientConfiguration;
+    type ConfigurationBuilder = ClientConfigurationBuilder;
+    type Feature = Feature.MINING | Feature.LOCAL_HISTORY | Feature.MEMPOOL | Feature.PASSIVE;
+    namespace Feature {
+        type MINING = 'MINING';
+        type LOCAL_HISTORY = 'LOCAL_HISTORY';
+        type MEMPOOL = 'MEMPOOL';
+        type PASSIVE = 'PASSIVE';
+    }
+}
+
+class ClientConfiguration {
+    public static builder: Client.ConfigurationBuilder;
+    public features: Client.Features[];
+    public requiredBlockConfirmations: number;
+    public networkConfig: NetworkConfig;
+    constructor(networkConfig: NetworkConfig, features = [] as Client.Features[], useVolatileStorage = false, requiredBlockConfirmations = 10);
+    public createConsensus(): Promise<BaseConsensus>;
+    public hasFeature(feature: Client.Feature): boolean;
+    public requireFeatures(...features: Client.Features[]): void;
+    public instantiateClient(): Client;
+}
+
+class ClientConfigurationBuilder {
+    constructor();
+    public dumb(): this;
+    public rtc(): this;
+    public ws(host: string, port = 8443): this;
+    public wss(host: string, port = 8443, tlsKey: string, tlsCert: string): this;
+    public protocol(protocol: 'dumb' | 'rtc' | 'ws' | 'wss', host: string, port = 8443, tlsKey: string, tlsCert: string): this;
+    public volatile(volatile = true): this;
+    public blockConfirmations(confirmations: number): this;
+    public feature(...feature: Client.Feature[]): this;
+    public reverseProxy(port: number, header: string, ...addresses: string[]): this;
+    public build(): Client.Configuration;
+    public instantiateClient(): Client;
+}
+
 export class LogNative {
     constructor()
     public isLoggable(tag: string, level: number): boolean;

@@ -2,7 +2,6 @@
 /** @typedef {function(blockHash: Hash):void} BlockListener */
 /** @typedef {function(consensusState: Client.ConsensusState):void} ConsensusChangedListener */
 /** @typedef {function(blockHash: Hash, reason: string, revertedBlocks: Array.<Hash>, adoptedBlocks: Array.<Hash>):void} HeadChangedListener */
-
 /** @typedef {function(transaction: Client.TransactionDetails):void} TransactionListener */
 
 /** @class Client */
@@ -442,7 +441,7 @@ class Client {
      * @param {Hash|string} hash The hash of a block
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<Block>} The block with the specified hash
+     * @returns {Promise.<Block|null>} The block with the specified hash if available
      */
     async getBlock(hash, includeBody = true) {
         hash = Hash.fromAny(hash);
@@ -460,7 +459,7 @@ class Client {
      * @param {number} height The height or block number of the block to fetch
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<Block>} The block at the specified height or block number
+     * @returns {Promise.<Block|null>} The block at the specified height or block number
      */
     async getBlockAt(height, includeBody) {
         const consensus = await this._consensus;
@@ -553,7 +552,7 @@ class Client {
      * @param {Hash|string} hash Hash of a transaction
      * @param {Hash|string} [blockHash] The hash of the block containing that transaction
      * @param {number} [blockHeight] The height of the block containing that transaction
-     * @returns {Promise.<TransactionDetails>}
+     * @returns {Promise.<TransactionDetails|null>}
      */
     async getTransaction(hash, blockHash, blockHeight) {
         hash = Hash.fromAny(hash);
@@ -660,7 +659,7 @@ class Client {
      * {@link Client.TransactionState.CONFIRMED} are considered confirmed according to the configuration provided
      * during client initialization.
      *
-     * @param {Address} address Address of an account
+     * @param {Address|string} address Address of an account
      * @param {number} [sinceBlockHeight=0] Minimum block height to consider for updates
      * @param {Array.<TransactionDetails>} [knownTransactionDetails] List of transaction details on already known transactions since {@param sinceBlockHeight}
      * @return {Promise.<Array.<TransactionDetails>>}

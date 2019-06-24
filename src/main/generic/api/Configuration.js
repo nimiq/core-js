@@ -50,6 +50,7 @@ Client.Configuration = class Configuration {
 
     /**
      * @param {Client.Feature} feature
+     * @returns {boolean}
      */
     hasFeature(feature) {
         return this._features.includes(feature);
@@ -57,6 +58,7 @@ Client.Configuration = class Configuration {
 
     /**
      * @param {Client.Feature} features
+     * @throws
      */
     requireFeatures(...features) {
         for (let feature of features) {
@@ -107,7 +109,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * Configure the client to provide a public, insecure WebSocket server.
      *
-     * @param {string} [host] Publicly reachable hostname of this node
+     * @param {string} host Publicly reachable hostname of this node
      * @param {number} [port=8443] Publicly reachable port
      * @returns {Client.ConfigurationBuilder}
      */
@@ -122,13 +124,13 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * Configure the client to provide a public, secure WebSocket server.
      *
-     * @param {string} [host] Publicly reachable hostname of this node
+     * @param {string} host Publicly reachable hostname of this node
      * @param {number} [port=8443] Publicly reachable port
-     * @param {string} [tlsKey] Path to the tls private key
-     * @param {string} [tlsCert] Path to the tls certificate
+     * @param {string} tlsKey Path to the tls private key
+     * @param {string} tlsCert Path to the tls certificate
      * @returns {Client.ConfigurationBuilder}
      */
-    wss(host, port, tlsKey, tlsCert) {
+    wss(host, port = 8443, tlsKey, tlsCert) {
         if (this._protocol) throw new Error('Protocol already configured');
         this._protocol = 'wss';
         this._host = this._requiredType(host, 'host', 'string');
@@ -175,6 +177,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     /**
      * Sets the number of blocks required to consider a transaction confirmed. Defaults to 10.
+     * @param {number} confirmations
      * @returns {Client.ConfigurationBuilder}
      */
     blockConfirmations(confirmations) {
@@ -184,7 +187,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     }
 
     /**
-     * @param {Client.Feature} feature
+     * @param {Array.<Client.Feature>} feature
      * @returns {Client.ConfigurationBuilder}
      */
     feature(...feature) {
@@ -195,7 +198,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * @param {number} port
      * @param {string} header
-     * @param {string} addresses
+     * @param {Array.<string>} addresses
      * @returns {Client.ConfigurationBuilder}
      */
     reverseProxy(port, header, ...addresses) {
@@ -287,5 +290,5 @@ Client.Feature = {
      * Make the client not connect to the network actively, but only accept incoming connections.
      * Useful only if this node is registered as a seed node for the rest of the network.
      */
-    PASSIVE: 'PASSIVE'
+    PASSIVE: 'PASSIVE',
 };
