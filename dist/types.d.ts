@@ -7,15 +7,34 @@ export class Class {
     public static register(cls: any): void;
 }
 
-type Handle = number;
-type BlockListener = (blockHash: Hash) => void;
-type ConsensusChangedListener = (consensusState: Client.ConsensusState) => void;
-type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => void;
-type TransactionListener = (transaction: Client.TransactionDetails) => void;
+/* Client API */
+
+declare type Handle = number;
+declare type BlockListener = (blockHash: Hash) => void;
+declare type ConsensusChangedListener = (consensusState: Client.ConsensusState) => void;
+declare type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => void;
+declare type TransactionListener = (transaction: Client.TransactionDetails) => void;
+declare type MempoolListener = (transactionHash: Hash) => void;
 
 export class Client {
     public static Configuration: ClientConfiguration;
     public static ConfigurationBuilder: ClientConfigurationBuilder;
+    public static Mempool: ClientMempool;
+    public static MempoolStatistics: ClientMempoolStatistics;
+    public static Network: ClientNetwork;
+    public static BasicAddress: ClientBasicAddress;
+    public static AddressInfo: ClientAddressInfo;
+    public static PeerInfo: ClientPeerInfo;
+    public static NetworkStatistics: ClientNetworkStatistics;
+    public static TransactionDetails: ClientTransactionDetails;
+    public static TransactionState: {
+        NEW: 'new';
+        PENDING: 'pending';
+        MINED: 'mined';
+        INVALIDATED: 'invalidated';
+        EXPIRED: 'expired';
+        CONFIRMED: 'confirmed';
+    };
     public static Feature: {
         MINING: 'MINING';
         LOCAL_HISTORY: 'LOCAL_HISTORY';
@@ -32,9 +51,9 @@ export class Client {
     constructor(config: Client.Configuration | object, consensus?: Promise<BaseConsensus>);
     public getHeadHash(): Promise<Hash>;
     public getHeadHeight(): Promise<number>;
-    public getHeadBlock(includeBody = true): Promise<Block>;
-    public getBlock(hash: Hash | string, includeBody = true): Promise<Block | null>;
-    public getBlockAt(height: number, includeBody = true): Promise<Block | null>;
+    public getHeadBlock(includeBody?: boolean): Promise<Block>;
+    public getBlock(hash: Hash | string, includeBody?: boolean): Promise<Block | null>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
     public getBlockTemplate(minerAddress: Address | string, extraData?: Uint8Array | string): Promise<Block>;
     public submitBlock(block: Block): Promise<boolean>;
     public getAccount(address: Address | string): Promise<Account>;
@@ -43,7 +62,7 @@ export class Client {
     public getTransactionReceipt(hash: Hash | string): Promise<TransactionReceipt | null>;
     public getTransactionReceiptsByAddress(address: Address | string): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Array<Hash | string>): Promise<Array<TransactionReceipt | null>>;
-    public getTransactionsByAddress(address: Address | string, sinceBlockHeight = 0, knownTransactionDetails?: Client.TransactionDetails[]): Promise<Client.TransactionDetails[]>;
+    public getTransactionsByAddress(address: Address | string, sinceBlockHeight?: number, knownTransactionDetails?: Client.TransactionDetails[]): Promise<Client.TransactionDetails[]>;
     public sendTransaction(tx: Transaction | object | string): Promise<Client.TransactionDetails>;
     public addBlockListener(listener: BlockListener): Promise<Handle>;
     public addConsensusChangedListener(listener: ConsensusChangedListener): Promise<Handle>;
@@ -68,33 +87,243 @@ export namespace Client {
         type MEMPOOL = 'MEMPOOL';
         type PASSIVE = 'PASSIVE';
     }
+    type Mempool = ClientMempool;
+    type MempoolStatistics = ClientMempoolStatistics;
+    type Network = ClientNetwork;
+    type BasicAddress = ClientBasicAddress;
+    type AddressInfo = ClientAddressInfo;
+    type PeerInfo = ClientPeerInfo;
+    type NetworkStatistics = ClientNetworkStatistics;
+    type TransactionDetails = ClientTransactionDetails;
+    type TransactionState = TransactionState.NEW | TransactionState.PENDING | TransactionState.MINED | TransactionState.INVALIDATED | TransactionState.EXPIRED | TransactionState.CONFIRMED;
+    namespace TransactionState {
+        type NEW = 'new';
+        type PENDING = 'pending';
+        type MINED = 'mined';
+        type INVALIDATED = 'invalidated';
+        type EXPIRED = 'expired';
+        type CONFIRMED = 'confirmed';
+    }
 }
 
-class ClientConfiguration {
+declare class ClientConfiguration {
     public static builder: Client.ConfigurationBuilder;
-    public features: Client.Features[];
+    public features: Client.Feature[];
     public requiredBlockConfirmations: number;
     public networkConfig: NetworkConfig;
-    constructor(networkConfig: NetworkConfig, features = [] as Client.Features[], useVolatileStorage = false, requiredBlockConfirmations = 10);
+    constructor(networkConfig: NetworkConfig, features?: Client.Feature[], useVolatileStorage?: boolean, requiredBlockConfirmations?: number);
     public createConsensus(): Promise<BaseConsensus>;
     public hasFeature(feature: Client.Feature): boolean;
-    public requireFeatures(...features: Client.Features[]): void;
+    public requireFeatures(...features: Client.Feature[]): void;
     public instantiateClient(): Client;
 }
 
-class ClientConfigurationBuilder {
+declare class ClientConfigurationBuilder {
     constructor();
     public dumb(): this;
     public rtc(): this;
-    public ws(host: string, port = 8443): this;
-    public wss(host: string, port = 8443, tlsKey: string, tlsCert: string): this;
-    public protocol(protocol: 'dumb' | 'rtc' | 'ws' | 'wss', host: string, port = 8443, tlsKey: string, tlsCert: string): this;
-    public volatile(volatile = true): this;
+    public ws(host: string, port?: number): this;
+    public wss(host: string, port: number, tlsKey: string, tlsCert: string): this;
+    public protocol(protocol: 'dumb' | 'rtc' | 'ws' | 'wss', host: string, port: number, tlsKey: string, tlsCert: string): this;
+    public volatile(volatile?: boolean): this;
     public blockConfirmations(confirmations: number): this;
     public feature(...feature: Client.Feature[]): this;
     public reverseProxy(port: number, header: string, ...addresses: string[]): this;
     public build(): Client.Configuration;
     public instantiateClient(): Client;
+}
+
+declare class ClientNetwork {
+    constructor(client: Client);
+    public getPeers(): Promise<Client.PeerInfo[]>;
+    public getPeer(address: PeerAddress | Client.AddressInfo | string): Promise<Client.PeerInfo | null>;
+    public getAddresses(): Promise<Client.AddressInfo[]>;
+    public getAddress(address: PeerAddress | Client.AddressInfo | string): Promise<Client.AddressInfo | null>;
+    public getOwnAddress(): Promise<Client.BasicAddress>;
+    public getStatistics(): Promise<Client.NetworkStatistics>;
+    public connect(address: PeerAddress | Client.BasicAddress | string): Promise<void>;
+    public disconnect(address: PeerAddress | Client.BasicAddress | string): Promise<void>;
+    public ban(address: PeerAddress | Client.BasicAddress | string): Promise<void>;
+    public unban(address: PeerAddress | Client.BasicAddress | string): Promise<void>;
+}
+
+declare class ClientBasicAddress {
+    public peerAddress: PeerAddress;
+    public peerId: PeerId;
+    public services: string[];
+    constructor(address: PeerAddress);
+    public toPlain(): {
+        peerAddress: string,
+        peerId: string,
+        services: string[],
+    };
+}
+
+declare class ClientAddressInfo extends ClientBasicAddress {
+    public banned: boolean;
+    public connected: boolean;
+    public state: number;
+    constructor(addressState: PeerAddressState);
+    public toPlain(): {
+        peerAddress: string,
+        peerId: string,
+        services: string[],
+        banned: boolean,
+        connected: boolean,
+    };
+}
+
+declare class ClientPeerInfo extends ClientBasicAddress {
+    public connectionSince: number;
+    public netAddress: NetAddress;
+    public bytesReceived: number;
+    public bytesSent: number;
+    public latency: number;
+    public version: number;
+    public state: number;
+    public timeOffset: number;
+    public headHash: Hash;
+    public userAgent: string;
+    constructor(connection: PeerConnection);
+    public toPlain(): {
+        peerAddress: string,
+        peerId: string,
+        services: string[],
+        connectionSince: number,
+        netAddress: string,
+        bytesReceived: number,
+        bytesSent: number,
+        latency: number,
+        version: number,
+        state: number,
+        timeOffset: number,
+        headHash: string,
+        userAgent: string,
+    };
+}
+
+declare class ClientNetworkStatistics {
+    public bytesReceived: number;
+    public bytesSent: number;
+    public totalPeerCount: number;
+    public peerCountsByType: {
+        total: number,
+        connecting: number,
+        dumb: number,
+        rtc: number,
+        ws: number,
+        wss: number,
+    };
+    public totalKnownAddresses: number;
+    public knownAddressesByType: {
+        total: number,
+        rtc: number,
+        ws: number,
+        wss: number,
+    };
+    public timeOffset: number;
+    constructor(network: Network);
+    public toPlain(): {
+        bytesReceived: number,
+        bytesSent: number,
+        totalPeerCount: number,
+        peerCountsByType: {
+            total: number,
+            connecting: number,
+            dumb: number,
+            rtc: number,
+            ws: number,
+            wss: number,
+        },
+        totalKnownAddresses: number,
+        knownAddressesByType: {
+            total: number,
+            rtc: number,
+            ws: number,
+            wss: number,
+        },
+        timeOffset: number,
+    };
+}
+
+declare class ClientMempool {
+    constructor(client: Client);
+    public getTransactions(): Promise<Hash[]>;
+    public getStatistics(): Promise<Client.MempoolStatistics>;
+    public addTransactionAddedListener(listener: MempoolListener): Promise<Handle>;
+    public addTransactionRemovedListener(listener: MempoolListener): Promise<Handle>;
+    public removeListener(handle: Handle): void;
+}
+
+declare class ClientMempoolStatistics {
+    public count: number;
+    public size: number;
+    public requiredFeePerByte: number;
+    public countInBuckets: {buckets: []} | any;
+    public sizeInBuckets: {buckets: []} | any;
+    constructor(mempoolContents: Transaction[]);
+}
+
+declare class ClientTransactionDetails {
+    public static fromPlain(o: object): Client.TransactionDetails;
+    public transactionHash: Hash;
+    public sender: Address;
+    public senderType: Account.Type;
+    public recipient: Address;
+    public recipientType: Account.Type;
+    public value: number;
+    public fee: number;
+    public feePerByte: number;
+    public validityStartHeight: number;
+    public network: number;
+    public flags: number;
+    public data: {raw: Uint8Array};
+    public proof: {raw: Uint8Array};
+    public size: number;
+    public valid: boolean;
+    public transaction: Transaction;
+    public state: Client.TransactionState;
+    public blockHash: Hash;
+    public blockHeight: number;
+    public confirmations: number;
+    public timestamp: number;
+    constructor(
+        transaction: Transaction,
+        state: Client.TransactionState,
+        blockHash?: Hash,
+        blockHeight?: number,
+        confirmations?: number,
+        timestamp?: number,
+    );
+    public toPlain(): {
+        transactionHash: string,
+        format: string;
+        sender: string;
+        senderType: string;
+        recipient: string;
+        recipientType: string;
+        value: number;
+        fee: number;
+        feePerByte: number;
+        validityStartHeight: number;
+        network: string;
+        flags: number;
+        data: {raw: string};
+        proof: {
+            raw: string,
+            signature?: string,
+            publicKey?: string,
+            signer?: string,
+            pathLength?: number,
+        };
+        size: number;
+        valid: boolean;
+        state: Client.TransactionState;
+        blockHash?: string;
+        blockHeight?: number;
+        confirmations?: number;
+        timestamp?: number;
+    };
 }
 
 export class LogNative {
@@ -1491,6 +1720,30 @@ export abstract class Transaction {
     public toString(): string;
     public getContractCreationAddress(): Address;
     public hasFlag(flag: number): boolean;
+    public toPlain(): {
+        transactionHash: string,
+        format: string;
+        sender: string;
+        senderType: string;
+        recipient: string;
+        recipientType: string;
+        value: number;
+        fee: number;
+        feePerByte: number;
+        validityStartHeight: number;
+        network: string;
+        flags: number;
+        data: {raw: string};
+        proof: {
+            raw: string,
+            signature?: string,
+            publicKey?: string,
+            signer?: string,
+            pathLength?: number,
+        };
+        size: number;
+        valid: boolean;
+    };
 }
 
 export namespace Transaction {

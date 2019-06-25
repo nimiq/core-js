@@ -6,6 +6,7 @@ Client.TransactionDetails = class TransactionDetails {
      * @param {Hash} [blockHash]
      * @param {number} [blockHeight]
      * @param {number} [confirmations]
+     * @param {number} [timestamp]
      * @package
      */
     constructor(transaction, state, blockHash, blockHeight, confirmations, timestamp) {
@@ -106,22 +107,22 @@ Client.TransactionDetails = class TransactionDetails {
         return this._state;
     }
 
-    /** @type {Hash} */
+    /** @type {Hash|undefined} */
     get blockHash() {
         return this._blockHash;
     }
 
-    /** @type {number} */
+    /** @type {number|undefined} */
     get blockHeight() {
         return this._blockHeight;
     }
 
-    /** @type {number} */
+    /** @type {number|undefined} */
     get confirmations() {
         return this._confirmations;
     }
 
-    /** @type {number} */
+    /** @type {number|undefined} */
     get timestamp() {
         return this._timestamp;
     }
