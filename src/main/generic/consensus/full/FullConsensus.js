@@ -14,7 +14,7 @@ class FullConsensus extends BaseConsensus {
         this._producer = new BlockProducer(blockchain, blockchain.accounts, mempool, network.time);
     }
 
-    // 
+    //
     // Public consensus interface
     //
 
@@ -93,7 +93,7 @@ class FullConsensus extends BaseConsensus {
 
     /**
      * @param {Address} address
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByAddress(address) {
         return this._blockchain.getTransactionReceiptsByAddress(address);
@@ -101,7 +101,7 @@ class FullConsensus extends BaseConsensus {
 
     /**
      * @param {Array.<Hash>} hashes
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByHashes(hashes) {
         return this._blockchain.getTransactionReceiptsByHashes(hashes);

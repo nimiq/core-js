@@ -462,12 +462,34 @@ export class ConstantHelper {
 
 export class Services {
     public static NONE: 0;
-    public static NANO: 1;
-    public static LIGHT: 2;
-    public static FULL: 4;
+    public static FLAG_NANO: 1;
+    public static FLAG_LIGHT: 2;
+    public static FLAG_FULL: 4;
+    public static ALL_LEGACY: 7;
+    public static FULL_BLOCKS: number;
+    public static BLOCK_HISTORY: number;
+    public static BLOCK_PROOF: number;
+    public static CHAIN_PROOF: number;
+    public static ACCOUNTS_PROOF: number;
+    public static ACCOUNTS_CHUNKS: number;
+    public static MEMPOOL: number;
+    public static TRANSACTION_INDEX: number;
+    public static BODY_PROOF: number;
+    public static ALL_CURRENT: number;
+    public static NAMES: {[name: number]: string};
+    public static PROVIDES_FULL: number;
+    public static PROVIDES_LIGHT: number;
+    public static PROVIDES_NANO: number;
+    public static ACCEPTS_FULL: number;
+    public static ACCEPTS_LIGHT: number;
+    public static ACCEPTS_NANO: number;
+    public static ACCEPTS_SPV: number;
     public static isFullNode(services: number): boolean;
     public static isLightNode(services: number): boolean;
     public static isNanoNode(services: number): boolean;
+    public static providesServices(flags: number, ...services: number[]): boolean;
+    public static legacyProvideToCurrent(flags: number): number;
+    public static toNameArray(flags): string[];
     public provided: number;
     public accepted: number;
     constructor(provided?: number, accepted?: number);
@@ -487,7 +509,7 @@ export class Timers {
 }
 
 export class Version {
-    public static CODE: 1;
+    public static CODE: 2;
     public static CORE_JS_VERSION: string;
     public static isCompatible(code: number): boolean;
     public static createUserAgent(appAgent?: string): string;
@@ -978,6 +1000,7 @@ export class Hash extends Serializable {
     public static sha512(arr: Uint8Array): Hash;
     public static compute(arr: Uint8Array, algorithm: Hash.Algorithm.BLAKE2B | Hash.Algorithm.SHA256): Hash;
     public static unserialize(buf: SerialBuffer, algorithm?: Hash.Algorithm): Hash;
+    public static fromAny(hash: Hash | string): Hash;
     public static fromBase64(base64: string): Hash;
     public static fromHex(hex: string): Hash;
     public static fromString(str: string): Hash;
@@ -992,6 +1015,7 @@ export class Hash extends Serializable {
     constructor(arg?: Uint8Array, algorithm?: Hash.Algorithm);
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public subarray(begin: number, end: number): Uint8Array;
+    public toPlain(): string;
     public equals(o: Serializable): boolean;
 }
 
@@ -1216,6 +1240,8 @@ export class Address extends Serializable {
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public subarray(begin: number, end: number): Uint8Array;
     public equals(o: Address): boolean;
+    public static fromAny(addr: Address | string): Address;
+    public toPlain(): string;
     public toUserFriendlyAddress(withSpaces?: boolean): string;
 }
 
@@ -1224,7 +1250,13 @@ export abstract class Account {
         BASIC: 0;
         VESTING: 1;
         HTLC: 2;
+        toString(type: Account.Type): string;
+        fromAny(type: Account.Type | string): Account.Type;
     };
+    public static BalanceError: Error;
+    public static DoubleTransactionError: Error;
+    public static ProofError: Error;
+    public static ValidityError: Error;
     public static unserialize(buf: SerialBuffer): Account;
     public serializedSize: number;
     public balance: number;
@@ -1239,6 +1271,8 @@ export abstract class Account {
     public withContractCommand(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public isInitial(): boolean;
     public isToBePruned(): boolean;
+    public static dataToPlain(data: Uint8Array): {};
+    public static proofToPlain(proof: Uint8Array): {};
 }
 
 export namespace Account {
@@ -1274,6 +1308,12 @@ export class BasicAccount extends Account {
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public withContractCommand(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public isInitial(): boolean;
+    public static proofToPlain(proof: Uint8Array): {
+        signature: string,
+        publicKey: string,
+        signer: string,
+        pathLength: number,
+    };
 }
 
 export class Contract extends Account {
@@ -1352,6 +1392,13 @@ export class VestingContract extends Contract {
     public withOutgoingTransaction(transaction: Transaction, blockHeight: number, transactionCache: TransactionCache, revert?: boolean): Account;
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public getMinCap(blockHeight: number): number;
+    public static dataToPlain(): {};
+    public static proofToPlain(proof: Uint8Array): {
+        signature: string,
+        publicKey: string,
+        signer: string,
+        pathLength: number,
+    };
 }
 
 export class AccountsTreeNode {
@@ -1676,12 +1723,16 @@ export abstract class Transaction {
     public static Format: {
         BASIC: 0;
         EXTENDED: 1;
+        toString(format: Transaction.Format): string;
+        fromAny(format: Transaction.Format | string): Transaction.Format;
     };
     public static Flag: {
         NONE: 0;
         CONTRACT_CREATION: 0b1;
     };
     public static unserialize(buf: SerialBuffer): Transaction;
+    public static fromPlain(plain: object): Transaction;
+    public static fromAny(tx: Transaction | string | object): Transaction;
     public serializedContentSize: number;
     public serializedSize: number;
     public sender: Address;
@@ -1764,6 +1815,7 @@ export class SignatureProof {
     public static singleSig(publicKey: PublicKey, signature: Signature): SignatureProof;
     public static multiSig(signerKey: PublicKey, publicKeys: PublicKey[], signature: Signature): SignatureProof;
     public static unserialize(buf: SerialBuffer): SignatureProof;
+    public static SINGLE_SIG_SIZE: number;
     public serializedSize: number;
     public publicKey: PublicKey;
     public merklePath: MerklePath;
@@ -1901,11 +1953,20 @@ export class TransactionReceipt {
         blockHeight: number,
     );
     public serialize(buf?: SerialBuffer): SerialBuffer;
+    public equals(o: any): boolean;
+    public toPlain(): {
+        transactionHash: Hash,
+        blockHash: Hash,
+        blockHeight: number,
+    };
+    public static fromPlain(o: object): TransactionReceipt;
+    public static fromAny(o: TransactionReceipt | string | object): TransactionReceipt;
 }
 
 export class Block {
     public static TIMESTAMP_DRIFT_MAX: 600 /* seconds */; // 10 minutes
     public static unserialize(buf: SerialBuffer): Block;
+    public static fromAny(block: Block | string): Block;
     public serializedSize: number;
     public header: BlockHeader;
     public interlink: BlockInterlink;
@@ -1943,6 +2004,11 @@ export class Block {
     public hash(buf?: SerialBuffer): Hash;
     public pow(buf?: SerialBuffer): Promise<Hash>;
     public toString(): string;
+}
+
+export class BlockProducer {
+    constructor(blockchain: BaseChain, accounts: Accounts, mempool: Mempool, time: Time);
+    public getNextBlock(address: Address, extraData?: Uint8Array): Promise<Block>;
 }
 
 export abstract class IBlockchain extends Observable {
@@ -2147,6 +2213,9 @@ export class Mempool extends Observable {
     public static FREE_TRANSACTIONS_PER_SENDER_MAX: 10;
     public static SIZE_MAX: number;
     public static ReturnCode: {
+        EXPIRED: -5;
+        MINED: -4;
+        FILTERED: -3;
         FEE_TOO_LOW: -2;
         INVALID: -1;
         ACCEPTED: 1;
@@ -2171,6 +2240,9 @@ export class Mempool extends Observable {
 export namespace Mempool {
     type ReturnCode = ReturnCode.FEE_TOO_LOW | ReturnCode.INVALID | ReturnCode.ACCEPTED | ReturnCode.KNOWN;
     namespace ReturnCode {
+        type EXPIRED = -5;
+        type MINED = -4;
+        type FILTERED = -3;
         type FEE_TOO_LOW = -2;
         type INVALID = -1;
         type ACCEPTED = 1;
@@ -2216,16 +2288,25 @@ export class BaseConsensusAgent extends Observable {
         invRequestManager: InvRequestManager,
         targetSubscription?: Subscription,
     );
+    public providesServices(...services: number[]): boolean;
     public onHeadUpdated(): void;
     public subscribe(subscription: Subscription): void;
     public relayBlock(block: Block): boolean;
+    public requestBlock(hash: Hash): Promise<Block | null>;
+    public requestTransaction(hash: Hash): Promise<Transaction | null>;
     public relayTransaction(transaction: Transaction): boolean;
     public removeTransaction(transaction: Transaction): void;
     public knowsBlock(blockHash: Hash): boolean;
+    public knowsTransaction(txHash: Hash): boolean;
     public requestVector(...vector: InvVector[]): void;
     public getBlockProof(blockHashToProve: Hash, knownBlock: Block): Promise<Block>;
+    public getBlockProofAt(blockHeightToProve: number, knownBlock: Block): Promise<Block | null>;
     public getTransactionProof(block: Block, addresses: Address[]): Promise<Transaction[]>;
+    public getTransactionsProofByAddress(block: Block, addresses: Address[]): Promise<Transaction[]>;
+    public getTransactionsProofByHashes(block: Block, hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionReceipts(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
 }
 
 // Not registered globally
@@ -2238,8 +2319,20 @@ export class BaseConsensusAgent extends Observable {
 // }
 
 export class BaseConsensus extends Observable {
+    public static MAX_ATTEMPTS_TO_FETCH: 5;
     public static SYNC_THROTTLE: 1500; // ms
     public static MIN_FULL_NODES: 1;
+    public static TRANSACTION_RELAY_TIMEOUT: 10000;
+    public static SendTransactionResult: {
+        REJECTED_LOCAL: -4,
+        EXPIRED: -3,
+        ALREADY_MINED: -2,
+        INVALID: -1,
+        NONE: 0,
+        RELAYED: 1,
+        KNOWN: 2,
+        PENDING_LOCAL: 3,
+    };
     public established: boolean;
     public network: Network;
     public invRequestManager: InvRequestManager;
@@ -2248,7 +2341,30 @@ export class BaseConsensus extends Observable {
         mempool: Observable,
         network: Network,
     );
+    public getHeadHash(): Promise<Hash>;
+    public getHeadHeight(): Promise<number>;
+    public getBlock(hash: Hash, includeBody?: boolean, includeBodyFromLocal?: boolean, blockHeight?: number): Promise<Block | null>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
+    public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
+    public getTransactionsFromBlockByAddresses(addresses: Address[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
+    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public subscribe(subscription: Subscription): void;
+    public getSubscription(): Subscription;
+}
+
+export namespace BaseConsensus {
+    type SendTransactionResult = SendTransactionResult.REJECTED_LOCAL | SendTransactionResult.EXPIRED | SendTransactionResult.ALREADY_MINED | SendTransactionResult.INVALID | SendTransactionResult.NONE | SendTransactionResult.RELAYED | SendTransactionResult.KNOWN | SendTransactionResult.PENDING_LOCAL;
+    namespace SendTransactionResult {
+        type REJECTED_LOCAL = -4;
+        type EXPIRED = -3;
+        type ALREADY_MINED = -2;
+        type INVALID = -1;
+        type NONE = 0;
+        type RELAYED = 1;
+        type KNOWN = 2;
+        type PENDING_LOCAL = 3;
+    }
 }
 
 export class FullChain extends BaseChain {
@@ -2288,7 +2404,10 @@ export class FullChain extends BaseChain {
     public getAccountsTreeChunk(blockHash: Hash, startPrefix: string): Promise<null | AccountsTreeChunk>;
     public getAccountsProof(blockHash: Hash, addresses: Address[]): Promise<null | AccountsProof>;
     public getTransactionsProof(blockHash: Hash, addresses: Address[]): Promise<null | TransactionsProof>;
+    public getTransactionsProofByAddress(blockHash: Hash, address: Address[]): Promise<TransactionsProof | null>;
+    public getTransactionsProofByHashes(blockHash: Hash, hashes: Hash[]): Promise<TransactionsProof | null>;
     public getTransactionReceiptsByAddress(address: Address, limit?: number): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByHashes(hashes: Hash[], limit?: number): Promise<TransactionReceipt[]>;
     public getTransactionInfoByHash(transactionHash: Hash): Promise<null | TransactionStoreEntry>;
     public accountsHash(): Promise<Hash>;
     public queue(): PrioritySynchronizer;
@@ -2330,6 +2449,18 @@ export class FullConsensus extends BaseConsensus {
         mempool: Mempool,
         network: Network,
     );
+    public getBlock(hash: Hash, includeBody?: boolean): Promise<Block | null>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
+    public getBlockTemplate(minerAddress: Address, extraData?: Uint8Array): Promise<Block>;
+    public submitBlock(block: Block): Promise<boolean>;
+    public getAccounts(addresses: Address[]): Promise<Account[]>;
+    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
+    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
+    public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
+    public getMempoolContents(): Transaction[];
     public subscribeMinFeePerByte(minFeePerByte: number): void;
 }
 
@@ -2373,6 +2504,13 @@ export class LightConsensus extends BaseConsensus {
         mempool: Mempool,
         network: Network,
     );
+    public getBlockTemplate(minerAddress: Address, extraData?: Uint8Array): Promise<Block>;
+    public submitBlock(block: Block): Promise<boolean>;
+    public getAccounts(addresses: Address[]): Promise<Account[]>;
+    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
+    public getMempoolContents(): Transaction[];
     public subscribeMinFeePerByte(minFeePerByte: number): void;
 }
 
@@ -2456,7 +2594,13 @@ export class NanoConsensusAgent extends BaseConsensusAgent {
     public getAccounts(blockHash: Hash, addresses: Address[]): Promise<Account[]>;
 }
 
+declare class NanoConsensusMempoolRejectedError extends Error {
+    constructor(mempoolCode: Mempool.ReturnCode);
+    public mempoolReturnCode: Mempool.ReturnCode;
+}
+
 export class NanoConsensus extends BaseConsensus {
+    public static MempoolRejectedError: NanoConsensusMempoolRejectedError;
     public blockchain: NanoChain;
     public mempool: NanoMempool;
     constructor(
@@ -2467,19 +2611,24 @@ export class NanoConsensus extends BaseConsensus {
     public subscribeAccounts(addresses: Address[]): void;
     public addSubscriptions(newAddresses: Address[] | Address): void;
     public removeSubscriptions(addressesToRemove: Address[] | Address): void;
-    public getAccount(address: Address, blockHash?: Hash): Promise<undefined | Account>;
     public getAccounts(addresses: Address[], blockHash?: Hash): Promise<Account[]>;
+    public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
+    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
     public relayTransaction(transaction: Transaction): Promise<void>;
 }
 
 export class NanoMempool extends Observable {
     public length: number;
     constructor(blockchain: IBlockchain);
-    public pushTransaction(transaction: Transaction): Promise<boolean>;
+    public pushTransaction(transaction: Transaction): Promise<Mempool.ReturnCode>;
     public getTransaction(hash: Hash): undefined | Transaction;
     public getTransactions(maxCount?: number): Transaction[];
     public getPendingTransactions(address: Address): Transaction[];
-    public changeHead(block: Block, transactions: Transaction[]): void;
+    public getTransactionsBySender(address: Address): Transaction[];
+    public getTransactionsByRecipient(address: Address): Transaction[];
+    public getTransactionsByAddresses(addresses: Address[], maxTransactions?: number): Transaction[];
+    public changeHead(block: Block, transactions: Transaction[]): Promise<void>;
     public removeTransaction(transaction: Transaction): void;
     public evictExceptAddresses(addresses: Address[]): void;
 }
@@ -2545,11 +2694,16 @@ export class Message {
         GET_ACCOUNTS_TREE_CHUNK: 44;
         ACCOUNTS_TREE_CHUNK: 45;
         GET_TRANSACTIONS_PROOF: 47;
+        GET_TRANSACTIONS_PROOF_BY_ADDRESS: 47;
         TRANSACTIONS_PROOF: 48;
         GET_TRANSACTION_RECEIPTS: 49;
+        GET_TRANSACTION_RECEIPTS_BY_ADDRESS: 49;
         TRANSACTION_RECEIPTS: 50;
         GET_BLOCK_PROOF: 51;
         BLOCK_PROOF: 52;
+        GET_TRANSACTIONS_PROOF_BY_HASHES: 53;
+        GET_TRANSACTION_RECEIPTS_BY_HASHES: 54;
+        GET_BLOCK_PROOF_AT: 55;
 
         GET_HEAD: 60;
         HEAD: 61;
@@ -2567,7 +2721,7 @@ export class Message {
 }
 
 export namespace Message {
-    type Type = Type.VERSION | Type.INV | Type.GET_DATA | Type.GET_HEADER | Type.NOT_FOUND | Type.GET_BLOCKS | Type.BLOCK | Type.HEADER | Type.TX | Type.MEMPOOL | Type.REJECT | Type.SUBSCRIBE | Type.ADDR | Type.GET_ADDR | Type.PING | Type.PONG | Type.SIGNAL | Type.GET_CHAIN_PROOF | Type.CHAIN_PROOF | Type.GET_ACCOUNTS_PROOF | Type.ACCOUNTS_PROOF | Type.GET_ACCOUNTS_TREE_CHUNK | Type.ACCOUNTS_TREE_CHUNK | Type.GET_TRANSACTIONS_PROOF | Type.TRANSACTIONS_PROOF | Type.GET_TRANSACTION_RECEIPTS | Type.TRANSACTION_RECEIPTS | Type.GET_BLOCK_PROOF | Type.BLOCK_PROOF | Type.GET_HEAD | Type.HEAD | Type.VERACK;
+    type Type = Type.VERSION | Type.INV | Type.GET_DATA | Type.GET_HEADER | Type.NOT_FOUND | Type.GET_BLOCKS | Type.BLOCK | Type.HEADER | Type.TX | Type.MEMPOOL | Type.REJECT | Type.SUBSCRIBE | Type.ADDR | Type.GET_ADDR | Type.PING | Type.PONG | Type.SIGNAL | Type.GET_CHAIN_PROOF | Type.CHAIN_PROOF | Type.GET_ACCOUNTS_PROOF | Type.ACCOUNTS_PROOF | Type.GET_ACCOUNTS_TREE_CHUNK | Type.ACCOUNTS_TREE_CHUNK | Type.GET_TRANSACTIONS_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS | Type.TRANSACTIONS_PROOF | Type.GET_TRANSACTION_RECEIPTS | Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS | Type.TRANSACTION_RECEIPTS | Type.GET_BLOCK_PROOF | Type.BLOCK_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_HASHES | Type.GET_TRANSACTION_RECEIPTS_BY_HASHES | Type.GET_BLOCK_PROOF_AT | Type.GET_HEAD | Type.HEAD | Type.VERACK;
     namespace Type {
         type VERSION = 0;
         type INV = 1;
@@ -2596,11 +2750,16 @@ export namespace Message {
         type GET_ACCOUNTS_TREE_CHUNK = 44;
         type ACCOUNTS_TREE_CHUNK = 45;
         type GET_TRANSACTIONS_PROOF = 47;
+        type GET_TRANSACTIONS_PROOF_BY_ADDRESS = 47;
         type TRANSACTIONS_PROOF = 48;
         type GET_TRANSACTION_RECEIPTS = 49;
+        type GET_TRANSACTION_RECEIPTS_BY_ADDRESS = 49;
         type TRANSACTION_RECEIPTS = 50;
         type GET_BLOCK_PROOF = 51;
         type BLOCK_PROOF = 52;
+        type GET_TRANSACTIONS_PROOF_BY_HASHES = 53;
+        type GET_TRANSACTION_RECEIPTS_BY_HASHES = 54;
+        type GET_BLOCK_PROOF_AT = 55;
 
         type GET_HEAD = 60;
         type HEAD = 61;
@@ -2905,16 +3064,16 @@ export class TransactionsProofMessage extends Message {
     public hasProof(): boolean;
 }
 
-export class GetTransactionsProofMessage extends Message {
+export class GetTransactionsProofByAddressMessage extends Message {
     public static ADDRESSES_MAX_COUNT: 256;
-    public static unserialize(buf: SerialBuffer): GetTransactionsProofMessage;
+    public static unserialize(buf: SerialBuffer): GetTransactionsProofByAddressMessage;
     public addresses: Address[];
     public blockHash: Hash;
     constructor(blockHash: Hash, addresses: Address[]);
 }
 
-export class GetTransactionReceiptsMessage extends Message {
-    public static unserialize(buf: SerialBuffer): GetTransactionReceiptsMessage;
+export class GetTransactionReceiptsByAddressMessage extends Message {
+    public static unserialize(buf: SerialBuffer): GetTransactionReceiptsByAddressMessage;
     public address: Address;
     public offset: number;
     constructor(address: Address, offset?: number);
@@ -2952,6 +3111,12 @@ export class HeadMessage extends Message {
     public header: BlockHeader;
     constructor(header: BlockHeader);
 }
+
+export class GetBlockProofAtMessage extends Message {} // TODO
+
+export class GetTransactionReceiptsByHashesMessage extends Message {} // TODO
+
+export class GetTransactionsProofByHashesMessage extends Message {} // TODO
 
 export class MessageFactory {
     public static CLASSES: { [messageType: number]: Message };
@@ -3308,6 +3473,7 @@ export class GenesisConfig {
     public static dev(): void;
     public static init(config: { NETWORK_ID: number, NETWORK_NAME: string, GENESIS_BLOCK: Block, GENESIS_ACCOUNTS: string, SEED_PEERS: PeerAddress[] }): void;
     public static networkIdToNetworkName(networkId: number): string;
+    public static networkIdFromAny(networkId: number | string): number;
 }
 
 export class CloseType {
@@ -3457,10 +3623,15 @@ export class PeerChannel extends Observable {
     public getAccountsTreeChunk(blockHash: Hash, startPrefix: string): boolean;
     public accountsTreeChunk(blockHash: Hash, chunk?: AccountsTreeChunk): boolean;
     public getTransactionsProof(blockHash: Hash, addresses: Address[]): boolean;
+    public getTransactionsProofByAddress(blockHash: Hash, addresses: Address[]): boolean;
+    public getTransactionsProofByHashes(blockHash: Hash, hashes: Hash[]): boolean;
     public transactionsProof(blockHash: Hash, proof?: TransactionsProof): boolean;
     public getTransactionReceipts(address: Address): boolean;
+    public getTransactionReceiptsByAddress(address: Address): boolean;
+    public getTransactionReceiptsByHashes(hashes: Hash[]): boolean;
     public transactionReceipts(transactionReceipts?: TransactionReceipt[]): boolean;
     public getBlockProof(blockHashToProve: Hash, knownBlockHash: Hash): boolean;
+    public getBlockProofAt(blockHeightToProve: number, knownBlockHash: Hash): boolean;
     public blockProof(proof?: BlockChain): boolean;
     public getHead(): boolean;
     public head(header: BlockHeader): boolean;
@@ -3640,13 +3811,13 @@ export class NetworkConfig {
 export class WsNetworkConfig extends NetworkConfig {
     public protocol: number;
     public port: number;
-    public reverseProxy: { enabled: boolean, port: number, address: string, header: string };
+    public reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string };
     public peerAddress: WsPeerAddress | WssPeerAddress;
     public secure: boolean;
     constructor(
         host: string,
         port: number,
-        reverseProxy: { enabled: boolean, port: number, address: string, header: string },
+        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string },
     );
 }
 
@@ -3657,7 +3828,7 @@ export class WssNetworkConfig extends WsNetworkConfig {
         port: number,
         key: string,
         cert: string,
-        reverseProxy: { enabled: boolean, port: number, address: string, header: string },
+        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string },
     );
 }
 

@@ -14,7 +14,7 @@ class LightConsensus extends BaseConsensus {
         this._producer = new BlockProducer(blockchain, blockchain.accounts, mempool, network.time);
     }
 
-    // 
+    //
     // Public consensus interface
     //
 
@@ -61,7 +61,7 @@ class LightConsensus extends BaseConsensus {
 
     /**
      * @param {Transaction} tx
-     * @returns {Promise.<void>} TODO
+     * @returns {Promise.<BaseConsensus.SendTransactionResult>}
      */
     async sendTransaction(tx) {
         const mempoolCode = await this._mempool.pushTransaction(tx);

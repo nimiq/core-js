@@ -73,14 +73,18 @@ class Services {
         const all = services.reduce((a, b) => a | b) & Services.ALL_CURRENT;
         return (flags & all) === all;
     }
-    
+
     static legacyProvideToCurrent(flags) {
         if (flags === Services.FLAG_NANO) flags = Services.PROVIDES_NANO;
         if (flags === Services.FLAG_LIGHT) flags = Services.PROVIDES_LIGHT;
         if (flags === Services.FLAG_FULL) flags = Services.PROVIDES_FULL;
         return flags;
     }
-    
+
+    /**
+     * @param {number} flags
+     * @returns {Array.<string>}
+     */
     static toNameArray(flags) {
         const res = [];
         let i = 1;

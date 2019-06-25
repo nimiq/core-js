@@ -50,7 +50,7 @@ class BaseConsensus extends Observable {
         this.bubble(mempool, 'transaction-added', 'transaction-removed');
     }
 
-    // 
+    //
     // Public consensus interface
     //
 
@@ -186,7 +186,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByAddress(address) {
         return this._requestTransactionReceiptsByAddress(address);
@@ -194,7 +194,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Array.<Hash>} hashes
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByHashes(hashes) {
         return this._requestTransactionReceiptsByHashes(hashes);
@@ -387,7 +387,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Array.<Hash>} hashes
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async _requestTransactionReceiptsByHashes(hashes) {
         const agents = [];
@@ -413,8 +413,8 @@ class BaseConsensus extends Observable {
     /**
      * @param {Array.<Hash>} hashes
      * @param {Block} block
-     * @returns {Promise.<Array.<?Transaction>>}
-     */   
+     * @returns {Promise.<Array.<Transaction>>}
+     */
     async _requestTransactionsByHashes(hashes, block) {
         // TODO: Use the agent that provided the receipt
         const agents = [];
