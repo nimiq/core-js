@@ -66,19 +66,30 @@ class TransactionReceipt {
             this.blockHeight === o.blockHeight;
     }
 
+    /**
+     * @return {object}
+     */
     toPlain() {
         return {
-            transactionHash: this.transactionHash,
-            blockHash: this.blockHash,
+            transactionHash: this.transactionHash.toPlain(),
+            blockHash: this.blockHash.toPlain(),
             blockHeight: this.blockHeight
         };
     }
 
+    /**
+     * @param {object} o
+     * @return {TransactionReceipt}
+     */
     static fromPlain(o) {
         if (!o) throw new Error('invalid transaction receipt');
-        return new TransactionReceipt(o.transactionHash, o.blockHash, o.blockHeight);
+        return new TransactionReceipt(Hash.fromAny(o.transactionHash), Hash.fromAny(o.blockHash), o.blockHeight);
     }
 
+    /**
+     * @param {TransactionReceipt|object|string} o
+     * @return {TransactionReceipt}
+     */
     static fromAny(o) {
         if (o instanceof TransactionReceipt) return o;
         if (typeof o === 'string') return TransactionReceipt.unserialize(BufferUtils.fromHex(o));

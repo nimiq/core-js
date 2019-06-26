@@ -81,6 +81,14 @@ class VestingContract extends Contract {
     }
 
     /**
+     * @param {object} plain
+     */
+    static fromPlain(plain) {
+        if (!plain) throw new Error('Invalid account');
+        return new VestingContract(plain.balance, Address.fromAny(plain.owner), plain.vestingStart, plain.vestingStepBlocks, plain.vestingStepAmount, plain.vestingTotalAmount);
+    }
+
+    /**
      * Serialize this VestingContract object into binary form.
      * @param {?SerialBuffer} [buf] Buffer to write to.
      * @return {SerialBuffer} Buffer from `buf` or newly generated one.
@@ -135,6 +143,19 @@ class VestingContract extends Contract {
 
     toString() {
         return `VestingAccount{balance=${this._balance}, owner=${this._owner.toUserFriendlyAddress()}`;
+    }
+
+    /**
+     * @returns {object}
+     */
+    toPlain() {
+        const plain = super.toPlain();
+        plain.owner = this.owner.toPlain();
+        plain.vestingStart = this.vestingStart;
+        plain.vestingStepBlocks = this.vestingStepBlocks;
+        plain.vestingStepAmount = this.vestingStepAmount;
+        plain.vestingTotalAmount = this.vestingTotalAmount;
+        return plain;
     }
 
     /**
@@ -237,11 +258,45 @@ class VestingContract extends Contract {
             : 0;
     }
 
+
     /**
+     * @param {Uint8Array} data
      * @return {object}
      */
-    static dataToPlain() {
-        return {};
+    static dataToPlain(data) {
+        try {
+            let vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount;
+            const buf = new SerialBuffer(data);
+            const owner = Address.unserialize(buf);
+            switch (transaction.data.length) {
+                case Address.SERIALIZED_SIZE + 4:
+                    vestingStart = 0;
+                    vestingStepBlocks = buf.readUint32();
+                    break;
+                case Address.SERIALIZED_SIZE + 16:
+                    vestingStart = buf.readUint32();
+                    vestingStepBlocks = buf.readUint32();
+                    vestingStepAmount = buf.readUint64();
+                    break;
+                case Address.SERIALIZED_SIZE + 24:
+                    vestingStart = buf.readUint32();
+                    vestingStepBlocks = buf.readUint32();
+                    vestingStepAmount = buf.readUint64();
+                    vestingTotalAmount = buf.readUint64();
+                    break;
+                default:
+                    throw new Error('Invalid transaction data');
+            }
+            return {
+                owner: owner.toPlain(),
+                vestingStart,
+                vestingStepBlocks,
+                vestingStepAmount,
+                vestingTotalAmount
+            };
+        } catch (e) {
+            return Account.dataToPlain(data);
+        }
     }
 
     /**
@@ -258,7 +313,7 @@ class VestingContract extends Contract {
                 pathLength: signatureProof.merklePath.nodes.length
             };
         } catch (e) {
-            return {};
+            return Account.proofToPlain(proof);
         }
     }
 }

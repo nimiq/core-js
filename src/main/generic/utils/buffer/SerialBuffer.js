@@ -276,4 +276,5 @@ class SerialBuffer extends Uint8Array {
         return /*length*/ 1 + value.length;
     }
 }
+SerialBuffer.EMPTY = new SerialBuffer(0);
 Class.register(SerialBuffer);

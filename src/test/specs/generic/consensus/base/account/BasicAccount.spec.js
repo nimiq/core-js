@@ -10,6 +10,19 @@ describe('BasicAccount', () => {
         expect(account.balance).toEqual(account2.balance);
     });
 
+    it('is self plain', () => {
+        const account1 = new BasicAccount(100);
+        const account2 = Account.fromPlain(account1);
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
+    it('can be converted to plain and back', () => {
+        const account1 = new BasicAccount(100);
+        const plain = JSON.stringify(account1.toPlain());
+        const account2 = Account.fromPlain(JSON.parse(plain));
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
     it('can handle balance changes', () => {
         const account = new BasicAccount(0);
 

@@ -66,6 +66,34 @@ class Account {
     }
 
     /**
+     * @param {Account|object} o
+     */
+    static fromAny(o) {
+        if (o instanceof Account) return o;
+        return Account.fromPlain(o);
+    }
+
+    /**
+     * @param {object} plain
+     * @returns {Account}
+     */
+    static fromPlain(plain) {
+        if (!plain || plain.type === undefined) throw new Error('Invalid account');
+        const type = Account.Type.fromAny(plain.type);
+        return Account.TYPE_MAP.get(type).fromPlain(plain);
+    }
+
+    /**
+     * @returns {object}
+     */
+    toPlain() {
+        return {
+            type: Account.Type.toString(this.type),
+            balance: this.balance
+        };
+    }
+
+    /**
      * @type {number} Account balance
      */
     get balance() {
@@ -226,6 +254,7 @@ Account.Type.fromAny = function(type) {
  *  create: function(balance: number, blockHeight: number, transaction: Transaction):Account,
  *  verifyOutgoingTransaction: function(transaction: Transaction):boolean,
  *  verifyIncomingTransaction: function(transaction: Transaction):boolean,
+ *  fromPlain: function(o: object):Account,
  *  dataToPlain: function(data: Uint8Array):object,
  *  proofToPlain: function(proof: Uint8Array):object
  * }>}

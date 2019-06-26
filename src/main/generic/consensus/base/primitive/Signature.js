@@ -50,6 +50,20 @@ class Signature extends Serializable {
     }
 
     /**
+     * @param {Signature|Uint8Array|string} o
+     * @return {Signature}
+     */
+    static fromAny(o) {
+        if (!o) throw new Error('Invalid signature format');
+        if (o instanceof Signature) return o;
+        try {
+            return new Signature(BufferUtils.fromAny(o, Signature.SIZE));
+        } catch (e) {
+            throw new Error('Invalid signature format');
+        }
+    }
+
+    /**
      * @param {SerialBuffer} [buf]
      * @return {SerialBuffer}
      */

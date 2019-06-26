@@ -16,6 +16,19 @@ describe('VestingContract', () => {
         expect(account2.vestingTotalAmount).toEqual(account.vestingTotalAmount);
     });
 
+    it('is self plain', () => {
+        const account1 = new VestingContract(1000, Address.NULL, 1, 1440, 1, 800);
+        const account2 = Account.fromPlain(account1);
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
+    it('can be converted to plain and back', () => {
+        const account1 = new VestingContract(1000, Address.NULL, 1, 1440, 1, 800);
+        const plain = JSON.stringify(account1.toPlain());
+        const account2 = Account.fromPlain(JSON.parse(plain));
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
     it('can handle balance changes', () => {
         const account = new VestingContract(0);
 
@@ -212,6 +225,49 @@ describe('VestingContract', () => {
         transaction = new ExtendedTransaction(creationTransaction.recipient, Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 201, Transaction.Flag.NONE, new Uint8Array(0));
         transaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
         expect(account.withOutgoingTransaction(transaction, 201, cache).balance).toBe(0);
+    });
+
+    it('can plain creation transaction', () => {
+        const keyPair = KeyPair.generate();
+        const address = keyPair.publicKey.toAddress();
+
+        let buf = new SerialBuffer(4 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(1000);
+        let creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(creationTransaction.equals(Transaction.fromPlain(creationTransaction.toPlain())));
+
+        buf = new SerialBuffer(16 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(0);
+        buf.writeUint32(100);
+        buf.writeUint64(50);
+        creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(creationTransaction.equals(Transaction.fromPlain(creationTransaction.toPlain())));
+
+        buf = new SerialBuffer(24 + Address.SERIALIZED_SIZE);
+        address.serialize(buf);
+        buf.writeUint32(0);
+        buf.writeUint32(100);
+        buf.writeUint64(40);
+        buf.writeUint64(80);
+        creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.VESTING, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, buf);
+        creationTransaction.proof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, creationTransaction.serializeContent())).serialize();
+        expect(creationTransaction.equals(Transaction.fromPlain(creationTransaction.toPlain())));
+    });
+
+    it('can plain outgoing transaction', () => {
+        const keyPair = KeyPair.generate();
+
+        const transaction = new ExtendedTransaction(keyPair.publicKey.toAddress(), Account.Type.VESTING, recipient, Account.Type.BASIC, 100, 0, 0, Transaction.Flag.NONE, new Uint8Array(0));
+        const sigProof = SignatureProof.singleSig(keyPair.publicKey, Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+        const proof = new SerialBuffer(sigProof.serializedSize + 1);
+        sigProof.serialize(proof);
+        transaction.proof = proof;
+
+        expect(transaction.equals(Transaction.fromPlain(transaction.toPlain())));
     });
 
     it('has toString method', () => {

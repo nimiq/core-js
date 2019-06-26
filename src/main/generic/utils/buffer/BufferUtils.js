@@ -109,10 +109,13 @@ class BufferUtils {
 
     /**
      * @param {string} base64
+     * @param {number} [length]
      * @return {SerialBuffer}
      */
-    static fromBase64(base64) {
-        return new SerialBuffer(Uint8Array.from(atob(base64), c => c.charCodeAt(0)));
+    static fromBase64(base64, length) {
+        const arr = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        if (length !== undefined && arr.length !== length) throw new Error('Decoded length does not match expected length');
+        return new SerialBuffer(arr);
     }
 
     /**
@@ -125,10 +128,11 @@ class BufferUtils {
 
     /**
      * @param {string} base64
+     * @param {number} [length]
      * @return {SerialBuffer}
      */
-    static fromBase64Url(base64) {
-        return new SerialBuffer(Uint8Array.from(atob(base64.replace(/_/g, '/').replace(/-/g, '+').replace(/\./g, '=')), c => c.charCodeAt(0)));
+    static fromBase64Url(base64, length) {
+        return BufferUtils.fromBase64(base64.replace(/_/g, '/').replace(/-/g, '+').replace(/\./g, '='), length);
     }
 
     /**
@@ -221,11 +225,12 @@ class BufferUtils {
 
     /**
      * @param {string} hex
+     * @param {number} [length]
      * @return {SerialBuffer}
      */
-    static fromHex(hex) {
+    static fromHex(hex, length) {
         hex = hex.trim();
-        if (!StringUtils.isHexBytes(hex)) return null;
+        if (!StringUtils.isHexBytes(hex, length)) throw new Error('String is not an hex string (of matching length)');
         return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g) || [], byte => parseInt(byte, 16)));
     }
 
@@ -311,6 +316,28 @@ class BufferUtils {
             }
         }
         return BufferUtils._strToUint8Array(str);
+    }
+
+    /**
+     * @param {Uint8Array|string} o
+     * @param {number} [length]
+     * @return {Uint8Array}
+     */
+    static fromAny(o, length) {
+        if (o === '') return SerialBuffer.EMPTY;
+        if (!o) throw new Error('Invalid buffer format');
+        if (o instanceof Uint8Array) return new SerialBuffer(o);
+        try {
+            return BufferUtils.fromHex(o, length);
+        } catch (e) {
+            // Ignore
+        }
+        try {
+            return BufferUtils.fromBase64(o, length);
+        } catch (e) {
+            // Ignore
+        }
+        throw new Error('Invalid buffer format');
     }
 
 

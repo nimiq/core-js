@@ -17,6 +17,19 @@ describe('HashedTimeLockedContract', () => {
         expect(account2.timeout).toEqual(account.timeout);
     });
 
+    it('is self plain', () => {
+        const account1 = new HashedTimeLockedContract(1000, sender, recipient, Hash.NULL, 42, 1000, 800);
+        const account2 = Account.fromPlain(account1);
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
+    it('can be converted to plain and back', () => {
+        const account1 = new HashedTimeLockedContract(1000, sender, recipient, Hash.NULL, 42, 1000, 800);
+        const plain = JSON.stringify(account1.toPlain());
+        const account2 = Account.fromPlain(JSON.parse(plain));
+        expect(account1.equals(account2)).toBeTruthy();
+    });
+
     it('will deny incoming transaction after creation', () => {
         const account = new HashedTimeLockedContract();
         let transaction = new ExtendedTransaction(Address.NULL, Account.Type.BASIC, Address.NULL, Account.Type.BASIC, 1000, 0, 1, Transaction.Flag.NONE, new Uint8Array(0));
@@ -384,6 +397,50 @@ describe('HashedTimeLockedContract', () => {
 
             expect(contract.withContractCommand(transaction, 1, true).withIncomingTransaction(transaction, 1, true).isInitial()).toBeTruthy();
         })().then(done, done.fail);
+    });
+
+    it('can plain creation transaction', () => {
+        const data = new SerialBuffer(Address.SERIALIZED_SIZE * 2 + Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + 6);
+        sender.serialize(data);
+        recipient.serialize(data);
+        data.writeUint8(Hash.Algorithm.BLAKE2B);
+        Hash.NULL.serialize(data);
+        data.writeUint8(2);
+        data.writeUint32(1000);
+        const creationTransaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.CONTRACT_CREATION, data);
+        expect(creationTransaction.equals(Transaction.fromPlain(creationTransaction.toPlain())));
+    });
+
+    it('can plain outgoing transaction', () => {
+        const keyPair = KeyPair.generate();
+        const addr = keyPair.publicKey.toAddress();
+        const hashRoot = Hash.blake2b(Hash.NULL.array);
+        let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 500, Transaction.Flag.NONE, new Uint8Array(0));
+
+        let signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+        let proof = new SerialBuffer(3 + 2 * Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
+        proof.writeUint8(Hash.Algorithm.BLAKE2B);
+        proof.writeUint8(1);
+        hashRoot.serialize(proof);
+        Hash.NULL.serialize(proof);
+        signatureProof.serialize(proof);
+        transaction.proof = proof;
+        expect(transaction.equals(Transaction.fromPlain(transaction.toPlain())));
+
+        signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+        proof = new SerialBuffer(1 + signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
+        signatureProof.serialize(proof);
+        transaction.proof = proof;
+        expect(transaction.equals(Transaction.fromPlain(transaction.toPlain())));
+
+        proof = new SerialBuffer(1 + 2 * signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.EARLY_RESOLVE);
+        signatureProof.serialize(proof);
+        signatureProof.serialize(proof);
+        transaction.proof = proof;
+        expect(transaction.equals(Transaction.fromPlain(transaction.toPlain())));
     });
 
     it('has toString method', (done) => {

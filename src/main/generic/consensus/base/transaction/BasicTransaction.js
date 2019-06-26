@@ -42,6 +42,23 @@ class BasicTransaction extends Transaction {
     }
 
     /**
+     * @param {object} plain
+     * @return {Transaction}
+     */
+    static fromPlain(plain) {
+        if (!plain) throw new Error('Invalid transaction format');
+        return new BasicTransaction(
+            PublicKey.fromAny(plain.proof.publicKey || plain.senderPubKey),
+            Address.fromAny(plain.recipient),
+            plain.value,
+            plain.fee,
+            plain.validityStartHeight,
+            Signature.fromAny(plain.proof.signature || plain.signature),
+            GenesisConfig.networkIdFromAny(plain.network || plain.networkId)
+        );
+    }
+
+    /**
      * @param {?SerialBuffer} [buf]
      * @return {SerialBuffer}
      */

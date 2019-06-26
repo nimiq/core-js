@@ -273,33 +273,9 @@ class Transaction {
      */
     static fromPlain(plain) {
         if (!plain) throw new Error('Invalid transaction format');
-        switch (Transaction.Format.fromAny(plain.format)) {
-            case Transaction.Format.BASIC:
-                return new BasicTransaction(
-                    new PublicKey(BufferUtils.fromHex(plain.proof.publicKey)),
-                    Address.fromAny(plain.recipient),
-                    plain.value,
-                    plain.fee,
-                    plain.validityStartHeight,
-                    new Signature(BufferUtils.fromHex(plain.proof.signature)),
-                    GenesisConfig.networkIdFromAny(plain.network)
-                );
-            case Transaction.Format.EXTENDED:
-                return new ExtendedTransaction(
-                    Address.fromAny(plain.sender),
-                    Account.Type.fromAny(plain.senderType),
-                    Address.fromAny(plain.recipient),
-                    Account.Type.fromAny(plain.recipientType),
-                    plain.value,
-                    plain.fee,
-                    plain.validityStartHeight,
-                    plain.flags,
-                    BufferUtils.fromHex(plain.data.raw),
-                    BufferUtils.fromHex(plain.proof.raw),
-                    GenesisConfig.networkIdFromAny(plain.network)
-                );
-        }
-        throw new Error('Invalid transaction format');
+        const format = Transaction.Format.fromAny(plain.format);
+        if (!Transaction.FORMAT_MAP.has(format)) throw new Error('Invalid transaction type');
+        return Transaction.FORMAT_MAP.get(format).fromPlain(plain);
     }
 
     /**
@@ -321,6 +297,11 @@ class Transaction {
         tx._recipient = Address.NULL;
         tx._hash = null;
         return Address.fromHash(tx.hash());
+    }
+
+    /** @type {Transaction.Format} */
+    get format() {
+        return this._format;
     }
 
     /** @type {Address} */
@@ -436,7 +417,7 @@ Transaction.Flag = {
     CONTRACT_CREATION: 0b1,
     ALL: 0b1
 };
-/** @type {Map.<Transaction.Format, {unserialize: function(buf: SerialBuffer):Transaction}>} */
+/** @type {Map.<Transaction.Format, {unserialize: function(buf: SerialBuffer):Transaction, fromPlain: function(plain:object):Transaction}>} */
 Transaction.FORMAT_MAP = new Map();
 
 Class.register(Transaction);

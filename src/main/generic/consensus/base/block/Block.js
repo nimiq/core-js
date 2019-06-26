@@ -277,8 +277,7 @@ class Block {
             for (let i = 1; i < prevInterlink.length && i - depthDiff < thisInterlink.length; i++) {
                 if (prevInterlink[i].equals(thisInterlink[i - depthDiff])) {
                     commonBlock = true;
-                }
-                else if (commonBlock) {
+                } else if (commonBlock) {
                     Log.v(Block, 'No interlink successor - invalid common suffix');
                     return false;
                 }
@@ -327,7 +326,7 @@ class Block {
         for (let i = interlinkOffset; i < this.interlink.length; i++) {
             hashes.push(this.interlink.hashes[i]);
         }
-        
+
         return new BlockInterlink(hashes, hash);
     }
 
@@ -419,6 +418,13 @@ class Block {
     /**
      * @type {Hash}
      */
+    get interlinkHash() {
+        return this._header.interlinkHash;
+    }
+
+    /**
+     * @type {Hash}
+     */
     get bodyHash() {
         return this._header.bodyHash;
     }
@@ -457,7 +463,7 @@ class Block {
     get height() {
         return this._header.height;
     }
-    
+
     /**
      * @type {number}
      */
@@ -476,21 +482,35 @@ class Block {
      * @type {Address}
      */
     get minerAddr() {
-        return this._body.minerAddr;
+        return this._body ? this._body.minerAddr : undefined;
     }
 
     /**
-     * @type {Array.<Transaction>}
+     * @type {?Array.<Transaction>}
      */
     get transactions() {
-        return this._body.transactions;
+        return this._body ? this._body.transactions : undefined;
     }
 
     /**
-     * @type {number}
+     * @returns {?Uint8Array}
+     */
+    get extraData() {
+        return this._body ? this._body.extraData : undefined;
+    }
+
+    /**
+     * @returns {?Array.<PrunedAccount>}
+     */
+    get prunedAccounts() {
+        return this._body ? this._body.prunedAccounts : undefined;
+    }
+
+    /**
+     * @type {?number}
      */
     get transactionCount() {
-        return this._body.transactionCount;
+        return this._body ? this._body.transactionCount : undefined;
     }
 
     /**
@@ -514,14 +534,67 @@ class Block {
      */
     static fromAny(block) {
         if (block instanceof Block) return block;
+        if (typeof block === 'object') return Block.fromPlain(block);
         if (typeof block === 'string') return Block.unserialize(BufferUtils.fromHex(block));
         throw new Error('Invalid block');
+    }
+
+    /**
+     * @param {object} plain
+     */
+    static fromPlain(plain) {
+        const header = new BlockHeader(
+            Hash.fromAny(plain.prevHash),
+            Hash.fromAny(plain.interlinkHash),
+            Hash.fromAny(plain.bodyHash),
+            Hash.fromAny(plain.accountsHash),
+            plain.nBits,
+            plain.height,
+            plain.timestamp,
+            plain.nonce,
+            plain.version
+        );
+        const interlink = new BlockInterlink((plain.interlink.hashes || plain.interlink).map(h => Hash.fromAny(h)), Hash.fromAny(plain.prevHash));
+        let body = null;
+        if (plain.minerAddr && plain.extraData !== undefined && Array.isArray(plain.transactions) && Array.isArray(plain.prunedAccounts)) {
+            body = new BlockBody(
+                Address.fromAny(plain.minerAddr),
+                plain.transactions.map(tx => Transaction.fromAny(tx)),
+                BufferUtils.fromAny(plain.extraData),
+                plain.prunedAccounts.map(pa => PrunedAccount.fromAny(pa))
+            );
+        }
+        return new Block(header, interlink, body);
     }
 
     toString() {
         return `Block{height=${this.height},prev=${this.prevHash}}`;
     }
 
+    toPlain() {
+        const plain = {
+            version: this.version,
+            hash: this.hash().toPlain(),
+            prevHash: this.prevHash.toPlain(),
+            interlinkHash: this.interlinkHash.toPlain(),
+            bodyHash: this.bodyHash.toPlain(),
+            accountsHash: this.accountsHash.toPlain(),
+            nBits: this.nBits,
+            difficulty: this.difficulty.toString(),
+            height: this.height,
+            timestamp: this.timestamp,
+            nonce: this.nonce,
+            interlink: this.interlink.hashes.map(h => h.toPlain()),
+        };
+        if (this.isFull()) {
+            plain.minerAddr = this.minerAddr.toPlain();
+            plain.transactions = this.transactions.map(tx => tx.toPlain());
+            plain.extraData = BufferUtils.toHex(this.extraData);
+            plain.prunedAccounts = this.prunedAccounts.map(pa => pa.toPlain());
+        }
+        return plain;
+    }
 }
+
 Block.TIMESTAMP_DRIFT_MAX = 600 /* seconds */; // 10 minutes
 Class.register(Block);

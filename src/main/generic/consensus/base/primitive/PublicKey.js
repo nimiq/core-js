@@ -46,6 +46,20 @@ class PublicKey extends Serializable {
     }
 
     /**
+     * @param {PublicKey|Uint8Array|string} o
+     * @return {PublicKey}
+     */
+    static fromAny(o) {
+        if (!o) throw new Error('Invalid public key format');
+        if (o instanceof PublicKey) return o;
+        try {
+            return new PublicKey(BufferUtils.fromAny(o, PublicKey.SIZE));
+        } catch (e) {
+            throw new Error('Invalid public key format');
+        }
+    }
+
+    /**
      * @param {SerialBuffer} [buf]
      * @return {SerialBuffer}
      */

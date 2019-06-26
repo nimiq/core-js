@@ -65,12 +65,12 @@ describe('MultiSigWallet', () => {
         }).toThrowError('Invalid wallet seed');
 
         expect(() => {
-            MultiSigWallet.loadPlain('i am not a valid base64 seed :(');
-        }).toThrowError('Invalid wallet seed');
+            MultiSigWallet.loadPlain('i am not a valid hex seed :(');
+        }).toThrowError('String is not an hex string (of matching length)');
 
         expect(() => {
             MultiSigWallet.loadPlain('527ec2efe780dc38a5561348b928bf0225a6986c0b56796ba9af81f91b10c16ffdaa8cab1175bfbf7de576bb0b0009737ecb5c59e60bd0c86fae0f9fa457706b8fca286eaa4030fcd6d2b4d55d24f243f08c9c8bf03d5c1e11ab3860f759607');
-        }).toThrowError('Invalid wallet seed');
+        }).toThrowError();
     });
 
     it('can export & import a plaintext wallet', () => {

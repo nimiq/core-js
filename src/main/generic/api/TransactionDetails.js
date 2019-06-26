@@ -6,6 +6,7 @@ Client.TransactionDetails = class TransactionDetails {
      * @param {Hash} [blockHash]
      * @param {number} [blockHeight]
      * @param {number} [confirmations]
+     * @param {number} [timestamp]
      * @package
      */
     constructor(transaction, state, blockHash, blockHeight, confirmations, timestamp) {
@@ -20,6 +21,11 @@ Client.TransactionDetails = class TransactionDetails {
     /** @type {Hash} */
     get transactionHash() {
         return this._transaction.hash();
+    }
+
+    /** @type {Transaction.Format} */
+    get format() {
+        return this._transaction.format;
     }
 
     /** @type {Address} */
@@ -132,7 +138,7 @@ Client.TransactionDetails = class TransactionDetails {
     toPlain() {
         const o = this._transaction.toPlain();
         o.state = this._state;
-        o.blockHash = this._blockHash.toPlain();
+        o.blockHash = this._blockHash ? this._blockHash.toPlain() : null;
         o.blockHeight = this._blockHeight;
         o.confirmations = this._confirmations;
         o.timestamp = this._timestamp;
@@ -141,10 +147,10 @@ Client.TransactionDetails = class TransactionDetails {
 
     /**
      * @param {object} o
-     * @returns {TransactionDetails}
+     * @returns {Client.TransactionDetails}
      */
     static fromPlain(o) {
-        return new Client.TransactionDetails(Transaction.fromPlain(o), o.state || Client.TransactionState.NEW, o.blockHash ? Hash.fromAny(o.blockHash) : undefined, o.blockHeight || undefined, o.confirmations || undefined);
+        return new Client.TransactionDetails(Transaction.fromPlain(o), o.state || Client.TransactionState.NEW, o.blockHash ? Hash.fromAny(o.blockHash) : undefined, o.blockHeight || undefined, o.confirmations || undefined, o.timestamp || undefined);
     }
 };
 

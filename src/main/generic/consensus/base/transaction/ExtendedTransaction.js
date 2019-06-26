@@ -42,6 +42,27 @@ class ExtendedTransaction extends Transaction {
     }
 
     /**
+     * @param {object} plain
+     * @return {Transaction}
+     */
+    static fromPlain(plain) {
+        if (!plain) throw new Error('Invalid transaction format');
+        return new ExtendedTransaction(
+            Address.fromAny(plain.sender),
+            Account.Type.fromAny(plain.senderType),
+            Address.fromAny(plain.recipient),
+            Account.Type.fromAny(plain.recipientType),
+            plain.value,
+            plain.fee,
+            plain.validityStartHeight,
+            plain.flags,
+            BufferUtils.fromAny(plain.data.raw === undefined ? plain.data : plain.data.raw),
+            BufferUtils.fromAny(plain.proof.raw === undefined ? plain.proof : plain.proof.raw),
+            GenesisConfig.networkIdFromAny(plain.network || plain.networkId)
+        );
+    }
+
+    /**
      * @param {?SerialBuffer} [buf]
      * @return {SerialBuffer}
      */

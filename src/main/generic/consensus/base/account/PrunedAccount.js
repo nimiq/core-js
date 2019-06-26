@@ -21,6 +21,22 @@ class PrunedAccount {
     }
 
     /**
+     * @param {PrunedAccount|object} o
+     * @returns {PrunedAccount}
+     */
+    static fromAny(o) {
+        if (o instanceof PrunedAccount) return o;
+        return PrunedAccount.fromPlain(o);
+    }
+
+    /**
+     * @param {object} plain
+     */
+    static fromPlain(plain) {
+        return new PrunedAccount(Address.fromAny(plain.address), Account.fromAny(plain.account));
+    }
+
+    /**
      * @param {PrunedAccount} o
      * @return {number} negative if this is smaller than o, positive if this is larger than o, zero if equal.
      */
@@ -64,6 +80,16 @@ class PrunedAccount {
      */
     hashCode() {
         return this._address.hashCode();
+    }
+
+    /**
+     * @returns {object}
+     */
+    toPlain() {
+        return {
+            address: this.address.toPlain(),
+            account: this.account.toPlain()
+        };
     }
 }
 

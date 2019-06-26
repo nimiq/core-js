@@ -79,6 +79,17 @@ describe('Block', () => {
         expect(BufferUtils.equals(block, block2)).toBe(true);
     });
 
+    it('is self plain', () => {
+        const block2 = Block.fromPlain(block);
+        expect(block2.equals(block)).toBeTruthy();
+    });
+
+    it('can be converted to plain and back', () => {
+        const plain = JSON.stringify(block.toPlain());
+        const block2 = Block.fromPlain(JSON.parse(plain));
+        expect(block.equals(block2)).toBeTruthy();
+    });
+
     it('can handle light blocks', () => {
         const block = GenesisConfig.GENESIS_BLOCK.toLight();
         expect(block.isLight()).toBeTruthy();

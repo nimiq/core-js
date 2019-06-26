@@ -32,6 +32,14 @@ class BasicAccount extends Account {
     }
 
     /**
+     * @param {object} o
+     */
+    static fromPlain(o) {
+        if (!o) throw new Error('Invalid account');
+        return new BasicAccount(o.balance);
+    }
+
+    /**
      * Check if two Accounts are the same.
      * @param {Account} o Object to compare with.
      * @return {boolean} Set if both objects describe the same data.
@@ -110,6 +118,14 @@ class BasicAccount extends Account {
     }
 
     /**
+     * @param {Uint8Array} data
+     * @return {object}
+     */
+    static dataToPlain(data) {
+        return Account.dataToPlain(data);
+    }
+
+    /**
      * @param {Uint8Array} proof
      * @return {object}
      */
@@ -123,7 +139,7 @@ class BasicAccount extends Account {
                 pathLength: signatureProof.merklePath.nodes.length
             };
         } catch (e) {
-            return {};
+            return Account.proofToPlain(proof);
         }
     }
 }

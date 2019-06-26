@@ -19,4 +19,23 @@ describe('TransactionReceipt', () => {
         expect(receipt2.blockHash.equals(receipt1.blockHash)).toBeTruthy();
         expect(receipt2.blockHeight === receipt1.blockHeight).toBeTruthy();
     });
+
+    it('is self plain', () => {
+        const receipt1 = new TransactionReceipt(txHash, blockHash, 42);
+        const receipt2 = TransactionReceipt.fromPlain(receipt1);
+
+        expect(receipt2.transactionHash.equals(receipt1.transactionHash)).toBeTruthy();
+        expect(receipt2.blockHash.equals(receipt1.blockHash)).toBeTruthy();
+        expect(receipt2.blockHeight === receipt1.blockHeight).toBeTruthy();
+    });
+
+    it('can be converted to plain and back', () => {
+        const receipt1 = new TransactionReceipt(txHash, blockHash, 42);
+        const plainReceipt = JSON.stringify(receipt1.toPlain());
+        const receipt2 = TransactionReceipt.fromPlain(JSON.parse(plainReceipt));
+
+        expect(receipt2.transactionHash.equals(receipt1.transactionHash)).toBeTruthy();
+        expect(receipt2.blockHash.equals(receipt1.blockHash)).toBeTruthy();
+        expect(receipt2.blockHeight === receipt1.blockHeight).toBeTruthy();
+    });
 });

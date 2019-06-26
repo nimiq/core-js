@@ -135,13 +135,17 @@ class Hash extends Serializable {
     }
 
     /**
-     * @param {Hash|string} hash
+     * @param {Hash|Uint8Array|string} hash
+     * @param {Hash.Algorithm} algorithm
      * @return {Hash}
      */
-    static fromAny(hash) {
+    static fromAny(hash, algorithm = Hash.Algorithm.BLAKE2B) {
         if (hash instanceof Hash) return hash;
-        if (typeof hash === 'string') return Hash.fromString(hash);
-        throw new Error('Invalid hash format');
+        try {
+            return new Hash(BufferUtils.fromAny(hash, Hash.SIZE.get(algorithm)), algorithm);
+        } catch (e) {
+            throw new Error('Invalid hash format');
+        }
     }
 
     /**
@@ -165,6 +169,14 @@ class Hash extends Serializable {
      */
     static fromHex(hex) {
         return new Hash(BufferUtils.fromHex(hex));
+    }
+
+    /**
+     * @param {string} str
+     * @returns {Hash}
+     */
+    static fromPlain(str) {
+        return Hash.fromString(str);
     }
 
     /**
@@ -308,6 +320,20 @@ Hash.Algorithm = {
     SHA256: 3,
     SHA512: 4
 };
+/**
+ * @param {Hash.Algorithm} hashAlgorithm
+ * @return {string}
+ */
+Hash.Algorithm.toString = function(hashAlgorithm) {
+    switch (hashAlgorithm) {
+        case Hash.Algorithm.BLAKE2B: return 'blake2b';
+        case Hash.Algorithm.ARGON2D: return 'argon2d';
+        case Hash.Algorithm.SHA256: return 'sha256';
+        case Hash.Algorithm.SHA512: return 'sha512';
+    }
+    throw new Error('Invalid hash algorithm');
+};
+
 /**
  * @type {Map<Hash.Algorithm, number>}
  */

@@ -68,6 +68,14 @@ class HashedTimeLockedContract extends Contract {
         return new HashedTimeLockedContract(balance, sender, recipient, hashRoot, hashCount, timeout, totalAmount);
     }
 
+    /**
+     * @param {object} plain
+     */
+    static fromPlain(plain) {
+        if (!plain) throw new Error('Invalid account');
+        return new HashedTimeLockedContract(plain.balance, Address.fromAny(plain.sender), Address.fromAny(plain.recipient), Hash.fromAny(plain.hashRoot), plain.hashCount, plain.timeout, plain.totalAmount);
+    }
+
 
     /**
      * Serialize this HTLC object into binary form.
@@ -133,6 +141,20 @@ class HashedTimeLockedContract extends Contract {
 
     toString() {
         return `HashedTimeLockedContract{balance=${this._balance}, sender=${this._sender.toUserFriendlyAddress(false)}, recipient=${this._sender.toUserFriendlyAddress(false)}, amount=${this._totalAmount}/${this._hashCount}, timeout=${this._timeout}}`;
+    }
+
+    /**
+     * @returns {object}
+     */
+    toPlain() {
+        const plain = super.toPlain();
+        plain.sender = this.sender.toPlain();
+        plain.recipient = this.recipient.toPlain();
+        plain.hashRoot = this.hashRoot.toPlain();
+        plain.hashCount = this.hashCount;
+        plain.timeout = this.timeout;
+        plain.totalAmount = this.totalAmount;
+        return plain;
     }
 
     /**
@@ -336,12 +358,114 @@ class HashedTimeLockedContract extends Contract {
     withIncomingTransaction(transaction, blockHeight, revert = false) {
         throw new Error('Illegal incoming transaction');
     }
+
+    /**
+     * @param {Uint8Array} data
+     * @return {object}
+     */
+    static dataToPlain(data) {
+        try {
+            const buf = new SerialBuffer(proof);
+
+            const sender = Address.unserialize(buf);
+            const recipient = Address.unserialize(buf);
+            const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
+            const hashRoot = Hash.unserialize(buf, hashAlgorithm);
+            const hashCount = buf.readUint8();
+            const timeout = buf.readUint32();
+
+            return {
+                sender: sender.toPlain(),
+                recipient: recipient.toPlain(),
+                hashAlgorithm: Hash.Algorithm.toString(hashAlgorithm),
+                hashRoot: hashRoot.toPlain(),
+                hashCount,
+                timeout
+            };
+        } catch (e) {
+            return Account.dataToPlain(data);
+        }
+    }
+
+    /**
+     * @param {Uint8Array} proof
+     * @return {object}
+     */
+    static proofToPlain(proof) {
+        try {
+            const buf = new SerialBuffer(proof);
+            const type = buf.readUint8();
+            switch (type) {
+                case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
+                    const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
+                    const hashDepth = buf.readUint8();
+                    const hashRoot = Hash.unserialize(buf, hashAlgorithm);
+                    const preImage = Hash.unserialize(buf, hashAlgorithm);
+                    const signatureProof = SignatureProof.unserialize(buf);
+
+                    return {
+                        type: HashedTimeLockedContract.ProofType.toString(type),
+                        hashAlgorithm: Hash.Algorithm.toString(hashAlgorithm),
+                        hashDepth,
+                        hashRoot: hashRoot.toPlain(),
+                        preImage: preImage.toPlain(),
+                        signer: signatureProof.publicKey.toAddress().toPlain(),
+                        signature: signatureProof.signature.toHex(),
+                        publicKey: signatureProof.publicKey.toHex(),
+                        pathLength: signatureProof.merklePath.nodes.length
+                    };
+                }
+                case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: {
+                    const signatureProof = SignatureProof.unserialize(buf);
+                    const creatorSignatureProof = SignatureProof.unserialize(buf);
+                    return {
+                        type: HashedTimeLockedContract.ProofType.toString(type),
+                        signer: signatureProof.publicKey.toAddress().toPlain(),
+                        signature: signatureProof.signature.toHex(),
+                        publicKey: signatureProof.publicKey.toHex(),
+                        pathLength: signatureProof.merklePath.nodes.length,
+                        creator: creatorSignatureProof.publicKey.toAddress().toPlain(),
+                        creatorSignature: creatorSignatureProof.signature.toHex(),
+                        creatorPublicKey: creatorSignatureProof.publicKey.toHex(),
+                        creatorPathLength: creatorSignatureProof.merklePath.nodes.length
+                    };
+                }
+                case HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE: {
+                    const creatorSignatureProof = SignatureProof.unserialize(buf);
+                    return {
+                        type: HashedTimeLockedContract.ProofType.toString(type),
+                        creator: creatorSignatureProof.publicKey.toAddress().toPlain(),
+                        creatorSignature: creatorSignatureProof.signature.toHex(),
+                        creatorPublicKey: creatorSignatureProof.publicKey.toHex(),
+                        creatorPathLength: creatorSignatureProof.merklePath.nodes.length
+                    };
+                }
+                default:
+                    return false;
+            }
+        } catch (e) {
+            return Account.proofToPlain(proof);
+        }
+    }
 }
 
 HashedTimeLockedContract.ProofType = {
     REGULAR_TRANSFER: 1,
     EARLY_RESOLVE: 2,
     TIMEOUT_RESOLVE: 3
+};
+
+/**
+ * @param {HashedTimeLockedContract.ProofType} proofType
+ * @return {string}
+ */
+HashedTimeLockedContract.ProofType.toString = function(proofType) {
+    switch (proofType) {
+        case HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: return 'regular-transfer';
+        case HashedTimeLockedContract.ProofType.EARLY_RESOLVE: return 'early-resolve';
+        case HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE: return 'timeout-resolve';
+    }
+    throw new Error('Invalid proof type');
 };
 
 Account.TYPE_MAP.set(Account.Type.HTLC, HashedTimeLockedContract);
