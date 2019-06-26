@@ -83,7 +83,7 @@ class Network extends Observable {
         this._scorer = new PeerScorer(this._networkConfig, this._addresses, this._connections);
 
         /**
-         * @type {number|null}
+         * @type {?number}
          * @private
          */
         this._houseKeepingIntervalId = null;

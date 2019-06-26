@@ -8,7 +8,7 @@
  */
 class LinkedList {
     /**
-     * @param {*} args
+     * @param {...*} args
      */
     constructor(...args) {
         /** @type {number} */

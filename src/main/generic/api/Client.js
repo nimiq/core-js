@@ -441,7 +441,7 @@ class Client {
      * @param {Hash|string} hash The hash of a block
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<Block|null>} The block with the specified hash if available
+     * @returns {Promise.<?Block>} The block with the specified hash if available
      */
     async getBlock(hash, includeBody = true) {
         hash = Hash.fromAny(hash);
@@ -459,7 +459,7 @@ class Client {
      * @param {number} height The height or block number of the block to fetch
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<Block|null>} The block at the specified height or block number
+     * @returns {Promise.<?Block>} The block at the specified height or block number
      */
     async getBlockAt(height, includeBody) {
         const consensus = await this._consensus;
@@ -552,7 +552,7 @@ class Client {
      * @param {Hash|string} hash Hash of a transaction
      * @param {Hash|string} [blockHash] The hash of the block containing that transaction
      * @param {number} [blockHeight] The height of the block containing that transaction
-     * @returns {Promise.<TransactionDetails|null>}
+     * @returns {Promise.<?TransactionDetails>}
      */
     async getTransaction(hash, blockHash, blockHeight) {
         hash = Hash.fromAny(hash);

@@ -57,7 +57,7 @@ Client.Configuration = class Configuration {
     }
 
     /**
-     * @param {Client.Feature} features
+     * @param {...Client.Feature} features
      * @throws
      */
     requireFeatures(...features) {
@@ -187,7 +187,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     }
 
     /**
-     * @param {Array.<Client.Feature>} feature
+     * @param {...Client.Feature} feature
      * @returns {Client.ConfigurationBuilder}
      */
     feature(...feature) {
@@ -198,7 +198,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * @param {number} port
      * @param {string} header
-     * @param {Array.<string>} addresses
+     * @param {...string} addresses
      * @returns {Client.ConfigurationBuilder}
      */
     reverseProxy(port, header, ...addresses) {

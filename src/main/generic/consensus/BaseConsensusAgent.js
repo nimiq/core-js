@@ -146,7 +146,7 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
-     * @param {number} services
+     * @param {...number} services
      * @returns {boolean}
      */
     providesServices(...services) {
@@ -490,7 +490,7 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
-     * @param {InvVector} vector
+     * @param {...InvVector} vector
      */
     requestVector(...vector) {
         // Store unknown vectors in objectsToRequest.

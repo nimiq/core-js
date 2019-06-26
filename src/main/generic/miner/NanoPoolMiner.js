@@ -4,7 +4,7 @@ class NanoPoolMiner extends BasePoolMiner {
      * @param {Time} time
      * @param {Address} address
      * @param {number} deviceId
-     * @param {object|null} deviceData
+     * @param {?object} deviceData
      */
     constructor(blockchain, time, address, deviceId, deviceData) {
         super(BasePoolMiner.Mode.NANO, blockchain, null, null, time, address, deviceId, deviceData);

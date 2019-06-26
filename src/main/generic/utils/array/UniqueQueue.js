@@ -10,7 +10,7 @@ class UniqueQueue extends Queue {
     }
 
     /**
-     * @param {*} args
+     * @param {...*} args
      * @returns {LinkedList.<V|*>}
      * @protected
      * @override

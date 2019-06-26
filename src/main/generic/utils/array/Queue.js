@@ -3,7 +3,7 @@
  */
 class Queue {
     /**
-     * @param {*} args
+     * @param {...*} args
      */
     constructor(...args) {
         /**
@@ -14,7 +14,7 @@ class Queue {
     }
 
     /**
-     * @param {*} args
+     * @param {...*} args
      * @returns {LinkedList.<V|*>}
      * @protected
      */
