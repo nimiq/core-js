@@ -458,6 +458,7 @@ export class ConstantHelper {
     public get(constant: string): number;
     public set(constant: string, value: number): void;
     public reset(constant: string): void;
+    public resetAll(): void;
 }
 
 export class Services {
@@ -480,9 +481,11 @@ export class Services {
     public static PROVIDES_FULL: number;
     public static PROVIDES_LIGHT: number;
     public static PROVIDES_NANO: number;
+    public static PROVIDES_PICO: number;
     public static ACCEPTS_FULL: number;
     public static ACCEPTS_LIGHT: number;
     public static ACCEPTS_NANO: number;
+    public static ACCEPTS_PICO: number;
     public static ACCEPTS_SPV: number;
     public static isFullNode(services: number): boolean;
     public static isLightNode(services: number): boolean;
@@ -1706,6 +1709,7 @@ export class Subscription {
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public matchesBlock(block: Block): boolean;
     public matchesTransaction(transaction: Transaction): boolean;
+    public isSubsetOf(other: Subscription): boolean;
     public toString(): string;
 }
 
@@ -2349,6 +2353,8 @@ export class BaseConsensus extends Observable {
     public getTransactionsFromBlockByAddresses(addresses: Address[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
     public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
+    public getMempoolContents(): Transaction[];
+    public handoverTo(consensus: BaseConsensus): BaseConsensus;
     public subscribe(subscription: Subscription): void;
     public getSubscription(): Subscription;
 }
@@ -2555,6 +2561,43 @@ export namespace PartialLightChain {
     }
 }
 
+export class BaseMiniConsensusAgent extends BaseConsensusAgent {
+    public static ACCOUNTSPROOF_REQUEST_TIMEOUT: 5000;
+    public static MEMPOOL_DELAY_MIN: 500;
+    public static MEMPOOL_DELAY_MAX: 5000;
+    public static MEMPOOL_ENTRIES_MAX: 1000;
+    constructor(
+        blockchain: BaseChain,
+        mempool: NanoMempool,
+        time: Time,
+        peer: Peer,
+        invRequestManager: InvRequestManager,
+        targetSubscription: Subscription,
+    );
+    public requestMempool(): void;
+    public getAccounts(blockHash: Hash, addresses: Address[]): Promise<Account[]>;
+}
+
+export class BaseMiniConsensus extends BaseConsensus {
+    public static MempoolRejectedError: BaseMiniConsensusMempoolRejectedError;
+    constructor(blockchain: BaseChain, mempool: Observable, network: Network);
+    public subscribeAccounts(addresses: Address[]): void;
+    public subscribe(subscription: Subscription): void;
+    public addSubscriptions(newAddresses: Address[] | Address): void;
+    public removeSubscriptions(addressesToRemove: Address[] | Address): void;
+    public getAccount(address: Address, blockHash?: Hash): Promise<Account | null>;
+    public getAccounts(addresses: Address[], blockHash?: Hash): Promise<Account[]>;
+    public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
+    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public relayTransaction(transaction: Transaction): Promise<void>;
+}
+
+declare class BaseMiniConsensusMempoolRejectedError extends Error {
+    constructor(mempoolCode: Mempool.ReturnCode);
+    public mempoolReturnCode: Mempool.ReturnCode;
+}
+
 export class NanoChain extends BaseChain {
     public static ERR_ORPHAN: -2;
     public static ERR_INVALID: -1;
@@ -2567,19 +2610,15 @@ export class NanoChain extends BaseChain {
     public head: Block;
     public headHash: Hash;
     public height: number;
-    // @ts-ignore
-    constructor(time: Time): Promise<NanoChain>;
+    constructor(time: Time);
     public pushProof(proof: ChainProof): Promise<boolean>;
     public pushHeader(header: BlockHeader): Promise<number>;
     public getChainProof(): Promise<ChainProof>;
 }
 
-export class NanoConsensusAgent extends BaseConsensusAgent {
+export class NanoConsensusAgent extends BaseMiniConsensusAgent {
     public static CHAINPROOF_REQUEST_TIMEOUT: 45000;
     public static CHAINPROOF_CHUNK_TIMEOUT: 10000;
-    public static ACCOUNTSPROOF_REQUEST_TIMEOUT: 5000;
-    public static MEMPOOL_DELAY_MIN: 2000;
-    public static MEMPOOL_DELAY_MAX: 20000;
     public syncing: boolean;
     constructor(
         blockchain: NanoChain,
@@ -2590,17 +2629,9 @@ export class NanoConsensusAgent extends BaseConsensusAgent {
         targetSubscription: Subscription,
     );
     public syncBlockchain(): Promise<void>;
-    public requestMempool(): void;
-    public getAccounts(blockHash: Hash, addresses: Address[]): Promise<Account[]>;
 }
 
-declare class NanoConsensusMempoolRejectedError extends Error {
-    constructor(mempoolCode: Mempool.ReturnCode);
-    public mempoolReturnCode: Mempool.ReturnCode;
-}
-
-export class NanoConsensus extends BaseConsensus {
-    public static MempoolRejectedError: NanoConsensusMempoolRejectedError;
+export class NanoConsensus extends BaseMiniConsensus {
     public blockchain: NanoChain;
     public mempool: NanoMempool;
     constructor(
@@ -2608,14 +2639,6 @@ export class NanoConsensus extends BaseConsensus {
         mempool: NanoMempool,
         network: Network,
     );
-    public subscribeAccounts(addresses: Address[]): void;
-    public addSubscriptions(newAddresses: Address[] | Address): void;
-    public removeSubscriptions(addressesToRemove: Address[] | Address): void;
-    public getAccounts(addresses: Address[], blockHash?: Hash): Promise<Account[]>;
-    public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
-    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
-    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
-    public relayTransaction(transaction: Transaction): Promise<void>;
 }
 
 export class NanoMempool extends Observable {
@@ -2631,6 +2654,34 @@ export class NanoMempool extends Observable {
     public changeHead(block: Block, transactions: Transaction[]): Promise<void>;
     public removeTransaction(transaction: Transaction): void;
     public evictExceptAddresses(addresses: Address[]): void;
+}
+
+export class PicoChain extends BaseChain {
+    public static ERR_INCONSISTENT: -2;
+    public static ERR_INVALID: -1;
+    public static OK_KNOWN: 0;
+    public static OK_EXTENDED: 1;
+    public static OK_REBRANCHED: 2;
+    public static OK_FORKED: 3;
+    public head: Block;
+    public headHash: Hash;
+    public height: number;
+    constructor(time: Time);
+    public reset(): Promise<void>;
+    public pushBlock(block: Block): Promise<number>;
+}
+
+export class PicoConsensusAgent extends BaseMiniConsensusAgent {
+    constructor(consensus: PicoConsensus, peer: Peer, targetSubscription: Subscription);
+    public onHeadUpdated(): void;
+    public syncBlockchain(): Promise<void>;
+}
+
+export class PicoConsensus extends BaseMiniConsensus {
+    public static MIN_SYNCED_NODES: 3;
+    public blockchain: PicoChain;
+    public mempool: NanoMempool;
+    constructor(blockchain: PicoChain, mempool: NanoMempool, network: Network);
 }
 
 export class ConsensusDB /* extends JDB.JungleDB */ {
@@ -2652,9 +2703,11 @@ export class Consensus {
     public static full(netconfig?: NetworkConfig): Promise<FullConsensus>;
     public static light(netconfig?: NetworkConfig): Promise<LightConsensus>;
     public static nano(netconfig?: NetworkConfig): Promise<NanoConsensus>;
+    public static pico(netconfig?: NetworkConfig): Promise<PicoConsensus>;
     public static volatileFull(netconfig?: NetworkConfig): Promise<FullConsensus>;
     public static volatileLight(netconfig?: NetworkConfig): Promise<LightConsensus>;
     public static volatileNano(netconfig?: NetworkConfig): Promise<NanoConsensus>;
+    public static volatilePico(netconfig?: NetworkConfig): Promise<PicoConsensus>;
 }
 
 export class Protocol {
@@ -3861,7 +3914,7 @@ export class Network extends Observable {
     public static TIME_OFFSET_MAX: number; // 10 minutes
     public static HOUSEKEEPING_INTERVAL: number; // 5 minutes
     public static SCORE_INBOUND_EXCHANGE: 0.5;
-    public static CONNECT_THROTTLE: 1000; // 1 second
+    public static CONNECT_THROTTLE: 500; // 0.5 seconds
     public static ADDRESS_REQUEST_CUTOFF: 250;
     public static ADDRESS_REQUEST_PEERS: 2;
     public static SIGNALING_ENABLED: 1;

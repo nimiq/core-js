@@ -28,6 +28,10 @@ class PicoChain extends BaseChain {
         return this;
     }
 
+    /**
+     * @param {Block} block
+     * @returns {Promise.<number>}
+     */
     async pushBlock(block) {
         return this._synchronizer.push(() => {
             return this._pushBlock(block);
@@ -36,6 +40,7 @@ class PicoChain extends BaseChain {
 
     /**
      * @param {Block} block
+     * @returns {Promise.<number>}
      */
     async _pushBlock(block) {
         if (await this._store.getChainData(block.hash())) return PicoChain.OK_KNOWN;
@@ -216,5 +221,5 @@ PicoChain.ERR_INVALID = -1;
 PicoChain.OK_KNOWN = 0;
 PicoChain.OK_EXTENDED = 1;
 PicoChain.OK_REBRANCHED = 2;
-PicoChain.OK_FORKED = 2;
+PicoChain.OK_FORKED = 3;
 Class.register(PicoChain);
