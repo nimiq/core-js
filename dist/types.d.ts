@@ -1238,12 +1238,12 @@ export class Address extends Serializable {
     public static fromBase64(base64: string): Address;
     public static fromHex(hex: string): Address;
     public static fromUserFriendlyAddress(str: string): Address;
+    public static fromAny(addr: Address | string): Address;
     public serializedSize: number;
     constructor(arg: Uint8Array);
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public subarray(begin: number, end: number): Uint8Array;
     public equals(o: Address): boolean;
-    public static fromAny(addr: Address | string): Address;
     public toPlain(): string;
     public toUserFriendlyAddress(withSpaces?: boolean): string;
 }
@@ -1261,6 +1261,8 @@ export abstract class Account {
     public static ProofError: Error;
     public static ValidityError: Error;
     public static unserialize(buf: SerialBuffer): Account;
+    public static dataToPlain(data: Uint8Array): {};
+    public static proofToPlain(proof: Uint8Array): {};
     public serializedSize: number;
     public balance: number;
     public type: number;
@@ -1274,8 +1276,6 @@ export abstract class Account {
     public withContractCommand(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public isInitial(): boolean;
     public isToBePruned(): boolean;
-    public static dataToPlain(data: Uint8Array): {};
-    public static proofToPlain(proof: Uint8Array): {};
 }
 
 export namespace Account {
@@ -1304,6 +1304,12 @@ export class BasicAccount extends Account {
     public static unserialize(buf: SerialBuffer): BasicAccount;
     public static verifyOutgoingTransaction(transaction: Transaction): boolean;
     public static verifyIncomingTransaction(transaction: Transaction): boolean;
+    public static proofToPlain(proof: Uint8Array): {
+        signature: string,
+        publicKey: string,
+        signer: string,
+        pathLength: number,
+    };
     constructor(balance?: number);
     public equals(o: any): boolean;
     public toString(): string;
@@ -1311,12 +1317,6 @@ export class BasicAccount extends Account {
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public withContractCommand(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public isInitial(): boolean;
-    public static proofToPlain(proof: Uint8Array): {
-        signature: string,
-        publicKey: string,
-        signer: string,
-        pathLength: number,
-    };
 }
 
 export class Contract extends Account {
@@ -1374,6 +1374,13 @@ export class VestingContract extends Contract {
     public static unserialize(buf: SerialBuffer): VestingContract;
     public static verifyOutgoingTransaction(transaction: Transaction): boolean;
     public static verifyIncomingTransaction(transaction: Transaction): boolean;
+    public static dataToPlain(): {};
+    public static proofToPlain(proof: Uint8Array): {
+        signature: string,
+        publicKey: string,
+        signer: string,
+        pathLength: number,
+    };
     public serializedSize: number;
     public owner: Address;
     public vestingStart: number;
@@ -1395,13 +1402,6 @@ export class VestingContract extends Contract {
     public withOutgoingTransaction(transaction: Transaction, blockHeight: number, transactionCache: TransactionCache, revert?: boolean): Account;
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
     public getMinCap(blockHeight: number): number;
-    public static dataToPlain(): {};
-    public static proofToPlain(proof: Uint8Array): {
-        signature: string,
-        publicKey: string,
-        signer: string,
-        pathLength: number,
-    };
 }
 
 export class AccountsTreeNode {
@@ -1815,11 +1815,11 @@ export namespace Transaction {
 }
 
 export class SignatureProof {
+    public static SINGLE_SIG_SIZE: number;
     public static verifyTransaction(transaction: Transaction): boolean;
     public static singleSig(publicKey: PublicKey, signature: Signature): SignatureProof;
     public static multiSig(signerKey: PublicKey, publicKeys: PublicKey[], signature: Signature): SignatureProof;
     public static unserialize(buf: SerialBuffer): SignatureProof;
-    public static SINGLE_SIG_SIZE: number;
     public serializedSize: number;
     public publicKey: PublicKey;
     public merklePath: MerklePath;
@@ -1947,6 +1947,8 @@ export class TransactionStoreCodec {
 
 export class TransactionReceipt {
     public static unserialize(buf: SerialBuffer): TransactionReceipt;
+    public static fromPlain(o: object): TransactionReceipt;
+    public static fromAny(o: TransactionReceipt | string | object): TransactionReceipt;
     public serializedSize: number;
     public transactionHash: Hash;
     public blockHash: Hash;
@@ -1963,8 +1965,6 @@ export class TransactionReceipt {
         blockHash: Hash,
         blockHeight: number,
     };
-    public static fromPlain(o: object): TransactionReceipt;
-    public static fromAny(o: TransactionReceipt | string | object): TransactionReceipt;
 }
 
 export class Block {
@@ -2594,8 +2594,8 @@ export class BaseMiniConsensus extends BaseConsensus {
 }
 
 declare class BaseMiniConsensusMempoolRejectedError extends Error {
-    constructor(mempoolCode: Mempool.ReturnCode);
     public mempoolReturnCode: Mempool.ReturnCode;
+    constructor(mempoolCode: Mempool.ReturnCode);
 }
 
 export class NanoChain extends BaseChain {
