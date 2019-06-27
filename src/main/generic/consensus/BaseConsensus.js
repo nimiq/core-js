@@ -42,14 +42,11 @@ class BaseConsensus extends Observable {
         this._onToDisconnect(blockchain, 'head-changed', head => this._onHeadChanged(head));
         this._onToDisconnect(blockchain, 'rebranched', (revertBlocks, forkBlocks, blockHash) => this._onRebranched(blockHash, revertBlocks, forkBlocks));
         this._onToDisconnect(blockchain, 'extended', (blockHash) => this._onExtended(blockHash));
-        // FIXME disconnect
-        this.bubble(blockchain, 'block');
+        this._onToDisconnect(blockchain, 'block', (blockHash) => this.fire('block', blockHash));
 
         // Relay new (verified) transactions to peers.
         this._onToDisconnect(mempool,'transaction-added', tx => this._onTransactionAdded(tx));
         this._onToDisconnect(mempool,'transaction-removed', tx => this._onTransactionRemoved(tx));
-        // FIXME disconnect
-        this.bubble(mempool, 'transaction-added', 'transaction-removed');
     }
 
     // 
@@ -232,6 +229,9 @@ class BaseConsensus extends Observable {
         this._listenersToDisconnect.add({obj, type, id});
     }
 
+    /**
+     * @protected
+     */
     _disconnectListeners() {
         for (const listener of this._listenersToDisconnect) {
             listener.obj.off(listener.type, listener.id);
@@ -246,9 +246,8 @@ class BaseConsensus extends Observable {
     handoverTo(consensus) {
         this._disconnectListeners();
         for (const agent of this._agents.valueIterator()) {
-            agent._disconnectListeners();
-
             const peer = agent.peer;
+            agent.shutdown();
             this._onPeerLeft(peer);
             consensus._onPeerJoined(peer);
         }
@@ -652,6 +651,8 @@ class BaseConsensus extends Observable {
      * @protected
      */
     _onTransactionAdded(tx) {
+        this.fire('transaction-added', tx);
+
         // Don't relay transactions if we are not synced yet.
         if (!this._established) return;
 
@@ -665,6 +666,8 @@ class BaseConsensus extends Observable {
      * @protected
      */
     _onTransactionRemoved(tx) {
+        this.fire('transaction-removed', tx);
+
         for (const agent of this._agents.valueIterator()) {
             agent.removeTransaction(tx);
         }

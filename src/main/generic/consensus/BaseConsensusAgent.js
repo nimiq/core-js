@@ -137,7 +137,7 @@ class BaseConsensusAgent extends Observable {
     }
 
     /**
-     * @package
+     * @protected
      */
     _disconnectListeners() {
         for (const listener of this._listenersToDisconnect) {
@@ -1415,6 +1415,22 @@ class BaseConsensusAgent extends Observable {
      * @protected
      */
     _onClose() {
+        this._shutdown();
+
+        // Notify listeners that the peer has disconnected.
+        this.fire('close', this);
+
+        this._disconnectListeners();
+    }
+
+    /** @package */
+    shutdown() {
+        this._disconnectListeners();
+        this._shutdown();
+    }
+
+    /** @private */
+    _shutdown() {
         this._synchronizer.clear();
 
         // Clear all timers and intervals when the peer disconnects.
@@ -1422,9 +1438,6 @@ class BaseConsensusAgent extends Observable {
         this._txsToRequest.stop();
         this._waitingInvVectors.stop();
         this._waitingFreeInvVectors.stop();
-
-        // Notify listeners that the peer has disconnected.
-        this.fire('close', this);
     }
 
     /** @type {Peer} */
