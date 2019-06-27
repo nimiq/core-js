@@ -97,7 +97,7 @@ class BaseMiniConsensus extends BaseConsensus {
     /**
      * @param {Array.<Address>} addresses
      * @param {Hash} [blockHash]
-     * @returns {Promise.<Array<Account>>}
+     * @returns {Promise.<Array.<Account>>}
      */
     async getAccounts(addresses, blockHash) {
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
@@ -133,6 +133,7 @@ class BaseMiniConsensus extends BaseConsensus {
             // Wait for transaction relay
             const relayed = await new Promise((resolve) => {
                 let id;
+                // eslint-disable-next-line prefer-const
                 id = this.on('transaction-relayed', relayedTx => {
                     if (relayedTx.equals(tx)) {
                         this.off('transaction-relayed', id);
@@ -191,7 +192,7 @@ class BaseMiniConsensus extends BaseConsensus {
      * @returns {Promise.<Array.<Transaction>>}
      */
     async getPendingTransactionsByAddress(address) {
-        if (this._subscription.addresses && this._subscription.addresses.find(a => a.equals(address))) {
+        if (this._subscription.addresses && this._subscription.addresses.some(a => a.equals(address))) {
             return this._mempool.getTransactionsByAddresses([address]);
         } else {
             throw new Error('Can not provide pending transactions without prior subscription');

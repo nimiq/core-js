@@ -225,7 +225,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onNoUnknownObjects() {
         // The peer does not have any new inv vectors for us.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
+            this.syncBlockchain().catch(Log.e.tag(FullConsensusAgent));
         }
     }
 
@@ -236,7 +236,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onAllObjectsReceived() {
         // If all objects have been received, request more if we're syncing the blockchain.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
+            this.syncBlockchain().catch(Log.e.tag(FullConsensusAgent));
         }
     }
 
@@ -331,34 +331,28 @@ class FullConsensusAgent extends BaseConsensusAgent {
     /**
      * @param {Hash} hash
      * @param {Transaction} transaction
-     * @returns {Promise.<boolean>}
+     * @returns {Promise.<void>}
      * @protected
      * @override
      */
     async _processTransaction(hash, transaction) {
         const result = await this._mempool.pushTransaction(transaction);
         switch (result) {
-            case Mempool.ReturnCode.ACCEPTED:
-                return true;
-            case Mempool.ReturnCode.KNOWN:
-                return false;
             case Mempool.ReturnCode.FEE_TOO_LOW:
                 this._peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INSUFFICIENT_FEE,
                     'Sender has too many free transactions', transaction.hash().serialize());
-                return false;
+                break;
             case Mempool.ReturnCode.INVALID:
                 this._peer.channel.reject(Message.Type.TX, RejectMessage.Code.REJECT_INVALID, 'Invalid transaction',
                     transaction.hash().serialize());
-                return false;
+                break;
             case Mempool.ReturnCode.MINED:
             case Mempool.ReturnCode.EXPIRED:
                 Log.v(FullConsensusAgent, () => `Ignored transaction ${hash.toHex()} relayed by ${this._peer.peerAddress} (${this._peer.netAddress})`);
-                return false;
+                break;
             case Mempool.ReturnCode.FILTERED:
                 Log.v(FullConsensusAgent, () => `Filtered transaction ${hash.toHex()} relayed by ${this._peer.peerAddress} (${this._peer.netAddress})`);
-                return false;
-            default:
-                return false;
+                break;
         }
     }
 
@@ -369,7 +363,7 @@ class FullConsensusAgent extends BaseConsensusAgent {
     _onAllObjectsProcessed() {
         // If all objects have been processed, request more if we're syncing the blockchain.
         if (this._syncing) {
-            this.syncBlockchain().catch(Log.w.tag(FullConsensusAgent));
+            this.syncBlockchain().catch(Log.e.tag(FullConsensusAgent));
         }
     }
 

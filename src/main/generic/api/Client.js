@@ -40,15 +40,17 @@ class Client {
 
         /** @type {Client.ConsensusState} */
         this._consensusState = Client.ConsensusState.CONNECTING;
-        /** @type {HashMap.<number, HashSet<TransactionDetails>>} */
+        /** @type {HashMap.<number, HashSet.<TransactionDetails>>} */
         this._transactionConfirmWaiting = new HashMap();
-        /** @type {HashMap.<number, HashSet<TransactionDetails>>} */
+        /** @type {HashMap.<number, HashSet.<TransactionDetails>>} */
         this._transactionExpireWaiting = new HashMap();
 
         this._network = new Client.Network(this);
         this._mempool = new Client.Mempool(this);
 
-        this._consensusSynchronizer.push(() => this._setupConsensus().catch(Log.w.tag(Client))).catch(Log.w.tag(Client));
+        this._consensusSynchronizer
+            .push(() => this._setupConsensus().catch(Log.w.tag(Client)))
+            .catch(Log.w.tag(Client));
     }
 
     /**
@@ -61,12 +63,12 @@ class Client {
         this._consensusOn(consensus, 'established', () => this._onConsensusChanged(Client.ConsensusState.ESTABLISHED));
         this._consensusOn(consensus, 'waiting', () => this._onConsensusChanged(Client.ConsensusState.CONNECTING));
         this._consensusOn(consensus, 'syncing', () => this._onConsensusChanged(Client.ConsensusState.SYNCING));
-        this._consensusOn(consensus, 'lost', () => this._onConsensusChanged(Client.ConsensusState.SYNCING));
         this._consensusOn(consensus, 'head-changed', (blockHash, reason, revertedBlocks, adoptedBlocks) => this._onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks));
         this._consensusOn(consensus, 'transaction-added', (tx) => this._onPendingTransaction(tx));
         this._consensusOn(consensus, 'transaction-added', (tx) => this._mempool._onTransactionAdded(tx));
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
+
         if (this._config.hasFeature(Client.Feature.PASSIVE)) {
             consensus.network.allowInboundConnections = true;
         } else {
@@ -93,7 +95,7 @@ class Client {
     async _replaceConsensus(newConsensus) {
         const oldConsensus = await this._consensus;
 
-        for (let {type, id} of this._consensusListenerIds) {
+        for (const {type, id} of this._consensusListenerIds) {
             oldConsensus.off(type, id);
         }
         this._consensusListenerIds = [];
@@ -160,8 +162,7 @@ class Client {
      * @private
      */
     _txClearFromConfirm(tx) {
-        for (let key of this._transactionConfirmWaiting.keyIterator()) {
-            const value = this._transactionConfirmWaiting.get(key);
+        for (const [key, value] of this._transactionConfirmWaiting.entryIterator()) {
             if (value.contains(tx)) {
                 value.remove(tx);
                 if (value.length === 0) {
@@ -177,7 +178,7 @@ class Client {
      * @private
      */
     _onBlock(blockHash) {
-        for (let listener of this._blockListeners.valueIterator()) {
+        for (const listener of this._blockListeners.valueIterator()) {
             listener(blockHash);
         }
     }
@@ -196,21 +197,25 @@ class Client {
                 }
             }
         });
+
         this._consensusState = state;
-        for (let listener of this._consensusChangedListeners.valueIterator()) {
+        for (const listener of this._consensusChangedListeners.valueIterator()) {
             try {
                 listener(state);
             } catch (e) {
                 Log.e(Client, `Error in listener: ${e}`);
             }
         }
-        const consensus = await this._consensus;
-        const headHash = await consensus.getHeadHash();
-        for (let listener of this._headChangedListeners.valueIterator()) {
-            try {
-                listener(headHash, 'established', [], [headHash]);
-            } catch (e) {
-                Log.e(Client, `Error in listener: ${e}`);
+
+        if (state === Client.ConsensusState.ESTABLISHED) {
+            const consensus = await this._consensus;
+            const headHash = await consensus.getHeadHash();
+            for (const listener of this._headChangedListeners.valueIterator()) {
+                try {
+                    listener(headHash, 'established', [], [headHash]);
+                } catch (e) {
+                    Log.e(Client, `Error in listener: ${e}`);
+                }
             }
         }
     }
@@ -235,7 +240,7 @@ class Client {
      */
     async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
         if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
-            for (let listener of this._headChangedListeners.valueIterator()) {
+            for (const listener of this._headChangedListeners.valueIterator()) {
                 try {
                     listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
                 } catch (e) {
@@ -246,39 +251,39 @@ class Client {
         if (this._transactionListeners.length > 0) {
             const revertedTxs = new HashSet();
             const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
-            for (let block of revertedBlocks) {
+            for (const block of revertedBlocks) {
                 revertedTxs.addAll(block.transactions);
-                for (let tx of block.transactions) {
+                for (const tx of block.transactions) {
                     this._transactionConfirmWaiting.remove(this._txConfirmsAt(tx, block.height));
                 }
             }
-            for (let block of adoptedBlocks) {
-                for (let tx of block.transactions) {
+            for (const block of adoptedBlocks) {
+                for (const tx of block.transactions) {
                     if (revertedTxs.contains(tx)) {
                         revertedTxs.remove(tx);
                     }
                     adoptedTxs.add({tx, block});
                 }
             }
-            for (let tx of revertedTxs.valueIterator()) {
+            for (const tx of revertedTxs.valueIterator()) {
                 this._onPendingTransaction(tx, adoptedBlocks[adoptedBlocks.length - 1]);
             }
-            for (let block of adoptedBlocks) {
+            for (const block of adoptedBlocks) {
                 const set = this._transactionConfirmWaiting.get(block.height);
                 if (set) {
-                    for (let tx of set.valueIterator()) {
+                    for (const tx of set.valueIterator()) {
                         this._onConfirmedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
                     }
                     this._transactionConfirmWaiting.remove(block.height);
                 }
             }
-            for (let {tx, block} of adoptedTxs.valueIterator()) {
+            for (const {tx, block} of adoptedTxs.valueIterator()) {
                 this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
             }
-            for (let block of adoptedBlocks) {
+            for (const block of adoptedBlocks) {
                 const set = this._transactionExpireWaiting.get(block.height);
                 if (set) {
-                    for (let tx of set.valueIterator()) {
+                    for (const tx of set.valueIterator()) {
                         this._onExpiredTransaction(block, tx);
                     }
                     this._transactionExpireWaiting.remove(block.height);
@@ -287,9 +292,9 @@ class Client {
             if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
                 const consensus = await this._consensus;
                 const addresses = this._subscribedAddresses.values();
-                for (let block of adoptedBlocks) {
+                for (const block of adoptedBlocks) {
                     const txs = await consensus.getTransactionsFromBlockByAddresses(addresses, block.hash(), block.height);
-                    for (let tx of txs) {
+                    for (const tx of txs) {
                         if (!adoptedTxs.contains(tx)) {
                             this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
                         }
@@ -306,7 +311,7 @@ class Client {
      */
     _onPendingTransaction(tx, blockNow) {
         let details;
-        for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 if (blockNow && blockNow.height >= this._txExpiresAt(tx)) {
                     details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
@@ -334,7 +339,7 @@ class Client {
      */
     _onMinedTransaction(block, tx, blockNow) {
         let details;
-        for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 let state = Client.TransactionState.MINED, confirmations = 1;
                 if (blockNow) {
@@ -363,7 +368,7 @@ class Client {
      */
     _onConfirmedTransaction(block, tx, blockNow) {
         let details;
-        for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
                 try {
@@ -382,7 +387,7 @@ class Client {
      */
     _onExpiredTransaction(block, tx) {
         let details;
-        for (let {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
                 try {
@@ -431,7 +436,7 @@ class Client {
      */
     async getHeadBlock(includeBody = true) {
         const consensus = await this._consensus;
-        let hash = await consensus.getHeadHash();
+        const hash = await consensus.getHeadHash();
         return consensus.getBlock(hash, includeBody);
     }
 
@@ -572,6 +577,8 @@ class Client {
             if (receipts && receipts.length === 1 && receipts[0]) {
                 blockHash = receipts[0].blockHash;
                 blockHeight = receipts[0].blockHeight;
+            } else {
+                throw new Error('Unknown transaction hash');
             }
         }
 
@@ -579,7 +586,7 @@ class Client {
         if (block) {
             blockHeight = block.height;
         } else {
-            throw new Error('Block hash is invalid');
+            throw new Error('Unknown block hash');
         }
 
         const txs = await consensus.getTransactionsFromBlock([hash], blockHash, blockHeight, block);
@@ -591,7 +598,8 @@ class Client {
             if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
             return new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp);
         }
-        return null;
+
+        throw new Error('Unknown transaction hash');
     }
 
     /**
@@ -667,7 +675,7 @@ class Client {
      */
     async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails) {
         address = Address.fromAny(address);
-        let knownTxs = new HashMap();
+        const knownTxs = new HashMap();
         if (knownTransactionDetails) {
             knownTransactionDetails = knownTransactionDetails.map(tx => Client.TransactionDetails.fromPlain(tx));
             for (const receipt of knownTransactionDetails) {
@@ -675,8 +683,9 @@ class Client {
             }
         }
 
+        // Get pending transactions from local mempool.
         const consensus = await this._consensus;
-        let txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
+        const txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
         try {
             const pending = await consensus.getPendingTransactionsByAddress(address);
             for (const tx of pending) {
@@ -686,19 +695,23 @@ class Client {
         } catch (e) {
             // Ignore
         }
+
+        // Fetch transaction receipts.
         const receipts = new HashSet((receipt) => receipt.transactionHash);
         receipts.addAll(await consensus.getTransactionReceiptsByAddress(address));
+
+        /** @type {HashMap.<string, HashSet.<Hash>>} */
         const requestProofs = new HashMap();
+        /** @type {HashMap.<string, number>} */
         const blockHeights = new HashMap();
         for (const receipt of receipts.valueIterator()) {
-            if (knownTxs.contains(receipt.transactionHash)) {
-                if (knownTxs.get(receipt.transactionHash).blockHash.equals(receipt.blockHash)) {
-                    if (knownTxs.get(receipt.transactionHash).state === Client.TransactionState.CONFIRMED) {
-                        continue;
-                    }
-                }
-                // Was mined on different block or not confirmed yet, re-proof
+            // Skip known transactions that are already considered confirmed.
+            const knownTx = knownTxs.get(receipt.transactionHash);
+            if (knownTx && knownTx.blockHash.equals(receipt.blockHash) && knownTx.state === Client.TransactionState.CONFIRMED) {
+                continue;
             }
+
+            // Check all receipts that are newer than sinceBlockHeight.
             if (receipt.blockHeight >= sinceBlockHeight) {
                 const pendingProofAtBlock = requestProofs.get(receipt.blockHash.toBase64()) || new HashSet();
                 pendingProofAtBlock.add(receipt.transactionHash);
@@ -706,42 +719,52 @@ class Client {
                 blockHeights.put(receipt.blockHash.toBase64(), receipt.blockHeight);
             }
         }
+
+        // Re-check known transactions that are not contained in the receipts.
         for (const details of knownTxs.valueIterator()) {
-            if (details.state === Client.TransactionState.MINED || details.state === Client.TransactionState.CONFIRMED) {
-                if (!receipts.contains(details)) {
-                    const pendingProofAtBlock = requestProofs.get(details.blockHash.toBase64()) || new HashSet();
-                    pendingProofAtBlock.add(details.transactionHash);
-                    requestProofs.put(details.blockHash.toBase64(), pendingProofAtBlock);
-                    blockHeights.put(details.blockHash.toBase64(), details.blockHeight);
-                }
+            if ((details.state === Client.TransactionState.MINED || details.state === Client.TransactionState.CONFIRMED)
+                && details.blockHeight >= sinceBlockHeight
+                && !receipts.contains(details)) {
+
+                const transactionsToProve = requestProofs.get(details.blockHash.toBase64()) || new HashSet();
+                transactionsToProve.add(details.transactionHash);
+                requestProofs.put(details.blockHash.toBase64(), transactionsToProve);
+                blockHeights.put(details.blockHash.toBase64(), details.blockHeight);
             }
         }
+
         const height = await consensus.getHeadHeight();
-        for (const blockHashBase64 of requestProofs.keyIterator()) {
+        for (const [blockHashBase64, /** @type {HashSet.<Hash>} */ transactionsToProve] of requestProofs.entryIterator()) {
             const blockHash = Hash.fromBase64(blockHashBase64);
-            if (blockHash.equals(Hash.NULL)) throw new Error(`Illegal request for ${blockHashBase64} vs ${blockHash}`);
+            if (blockHash.equals(Hash.NULL)) {
+                throw new Error(`Illegal request for ${blockHashBase64} vs ${blockHash}`);
+            }
+
             const blockHeight = blockHeights.get(blockHashBase64);
             const block = await consensus.getBlock(blockHash, false, true, blockHeight);
-            const moreTx = await consensus.getTransactionsFromBlock(requestProofs.get(blockHashBase64).values(), blockHash, blockHeight, block);
+            const moreTx = await consensus.getTransactionsFromBlock(transactionsToProve.values(), blockHash, blockHeight, block);
             const confirmations = (height - blockHeight) + 1;
             const confirmed = confirmations >= this._config.requiredBlockConfirmations;
+
             for (const tx of moreTx) {
                 if (!confirmed) this._txWaitForConfirm(tx, blockHeight);
                 txs.add(new Client.TransactionDetails(tx, confirmed ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED, blockHash, blockHeight, confirmations, block.timestamp));
             }
         }
+
         for (const /** @type {Client.TransactionDetails} */ details of knownTxs.valueIterator()) {
-            if (details.state === Client.TransactionState.NEW || details.state === Client.TransactionState.PENDING || !txs.contains(details)) {
-                // Add to mempool
-                if (!txs.contains(details)) {
-                    if (this._txExpiresAt(details) <= height) {
-                        txs.add(new Client.TransactionDetails(details.transaction, Client.TransactionState.EXPIRED));
-                    } else {
-                        txs.add(this.sendTransaction(details.transaction));
-                    }
+            if ((details.state === Client.TransactionState.NEW || details.state === Client.TransactionState.PENDING)
+                && !txs.contains(details)) {
+
+                if (this._txExpiresAt(details) <= height) {
+                    txs.add(new Client.TransactionDetails(details.transaction, Client.TransactionState.EXPIRED));
+                } else {
+                    // Add to mempool.
+                    txs.add(this.sendTransaction(details.transaction));
                 }
             }
         }
+
         return txs.values();
     }
 
@@ -772,7 +795,7 @@ class Client {
      * @param {BlockListener} listener
      * @return {Promise.<Handle>}
      */
-    async addBlockListener(listener) {
+    async addBlockListener(listener) { // eslint-disable-line require-await
         const listenerId = this._listenerId++;
         this._blockListeners.put(listenerId, listener);
         return listenerId;
@@ -782,10 +805,9 @@ class Client {
      * @param {ConsensusChangedListener} listener
      * @return {Promise.<Handle>}
      */
-    async addConsensusChangedListener(listener) {
+    async addConsensusChangedListener(listener) { // eslint-disable-line require-await
         const listenerId = this._listenerId++;
         this._consensusChangedListeners.put(listenerId, listener);
-        listener(this._consensusState);
         return listenerId;
     }
 
@@ -793,7 +815,7 @@ class Client {
      * @param {HeadChangedListener} listener
      * @return {Promise.<Handle>}
      */
-    async addHeadChangedListener(listener) {
+    async addHeadChangedListener(listener) { // eslint-disable-line require-await
         const listenerId = this._listenerId++;
         this._headChangedListeners.put(listenerId, listener);
         return listenerId;
@@ -826,8 +848,9 @@ class Client {
 
     /**
      * @param {Handle} handle
+     * @returns {Promise}
      */
-    removeListener(handle) {
+    async removeListener(handle) { // eslint-disable-line require-await
         this._blockListeners.remove(handle);
         this._consensusChangedListeners.remove(handle);
         this._headChangedListeners.remove(handle);
@@ -836,6 +859,26 @@ class Client {
             this._transactionConfirmWaiting.clear();
             this._transactionExpireWaiting.clear();
         }
+    }
+
+    /**
+     * @returns {Promise}
+     */
+    waitForConsensusEstablished() {
+        return new Promise(async resolve => {
+            if ((await this._consensus).established) {
+                resolve();
+            } else {
+                let handle;
+                // eslint-disable-next-line prefer-const
+                handle = this.addConsensusChangedListener(async state => {
+                    if (state === Client.ConsensusState.ESTABLISHED) {
+                        await this.removeListener(handle);
+                        resolve();
+                    }
+                });
+            }
+        });
     }
 
     /**

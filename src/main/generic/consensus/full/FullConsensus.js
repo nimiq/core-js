@@ -118,6 +118,7 @@ class FullConsensus extends BaseConsensus {
                 // Wait for transaction relay
                 const relayed = await new Promise((resolve) => {
                     let id;
+                    // eslint-disable-next-line prefer-const
                     id = this.on('transaction-relayed', relayedTx => {
                         if (relayedTx.equals(tx)) {
                             this.off('transaction-relayed', id);

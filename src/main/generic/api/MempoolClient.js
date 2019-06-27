@@ -21,7 +21,7 @@ Client.Mempool = class Mempool {
      * @package
      */
     _onTransactionAdded(tx) {
-        for (let listener of this._transactionAddedListeners.valueIterator()) {
+        for (const listener of this._transactionAddedListeners.valueIterator()) {
             listener(tx.hash());
         }
     }
@@ -31,7 +31,7 @@ Client.Mempool = class Mempool {
      * @package
      */
     _onTransactionRemoved(tx) {
-        for (let listener of this._transactionRemovedListeners.valueIterator()) {
+        for (const listener of this._transactionRemovedListeners.valueIterator()) {
             listener(tx.hash());
         }
     }

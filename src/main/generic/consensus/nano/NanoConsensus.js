@@ -43,7 +43,7 @@ class NanoConsensus extends BaseMiniConsensus {
 
         // Update mempool.
         try {
-            const includedTransactions = await this._requestTransactionsByAddress(this._subscription.addresses, head);
+            const includedTransactions = await this._requestTransactionsByAddresses(this._subscription.addresses, head);
             await this._mempool.changeHead(head, includedTransactions);
         } catch (e) {
             Log.e(NanoConsensus, `Failed to retrieve transaction proof to update mempool: ${e.message || e}`);

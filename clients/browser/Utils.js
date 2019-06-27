@@ -21,22 +21,7 @@ class Utils {
     }
 
     static awaitConsensus($) {
-        return new Promise((resolve) => {
-            let handle, consensusEstablished;
-            $.client.addConsensusChangedListener((state) => {
-                if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
-                    consensusEstablished = true;
-                    $.client.removeListener(handle);
-                    resolve();
-                }
-            }).then((x) => {
-                handle = x;
-                if (consensusEstablished) {
-                    $.client.removeListener(handle);
-                    resolve();
-                }
-            });
-        });
+        return $.client.waitForConsensusEstablished();
     }
 
     static humanBytes(bytes) {

@@ -3,7 +3,7 @@ describe('Client', () => {
     let otherConsensus;
     let testChain;
     let clients = {};
-    
+
     function getConsensus(consensus) {
         const name = 'volatile' + consensus.charAt(0).toUpperCase() + consensus.slice(1);
         return Consensus[name]();
@@ -49,7 +49,7 @@ describe('Client', () => {
 
     function allit(name, fn) {
         for (const consensus of ['pico', 'nano', 'light', 'full']) {
-            it(name + ' (' + consensus + ')', async (done) => {
+            it(`${name} (${consensus})`, async (done) => {
                 fn(done, await clients[consensus], consensus);
             });
         }
@@ -57,11 +57,9 @@ describe('Client', () => {
 
     function established(name, fn) {
         allit(name, (done, client, consensus) => {
-            client.addConsensusChangedListener(async state => {
-                if (state === Client.ConsensusState.ESTABLISHED) {
-                    fn(done, client, consensus);
-                }
-            });
+            client
+                .waitForConsensusEstablished()
+                .then(() => fn(done, client, consensus));
         });
     }
 

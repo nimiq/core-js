@@ -11,30 +11,26 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
 
     onHeadUpdated() {
         super.onHeadUpdated();
-        this.syncBlockchain();
+        this.syncBlockchain().catch(Log.e.tag(PicoConsensusAgent));
     }
 
     async _processBlock(hash, block) {
         if (this._peer.headHash.equals(hash)) {
             const result = await this._blockchain.pushBlock(block);
             if (result === PicoChain.ERR_INVALID) {
-                // TODO: Ban peer?
+                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
             } else if (result === PicoChain.ERR_INCONSISTENT) {
                 this.fire('out-of-sync');
                 this.fire('consensus-failed');
             } else if (this._syncing) {
-                await this._syncFinished();
+                this._syncFinished();
             }
         } else {
             if (await this._blockchain.pushBlock(block) === PicoChain.ERR_INVALID) {
-                // TODO: Ban peer?
+                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
             }
         }
     }
-
-    // _preProcessBlockMessage(msg) {
-    //     return new BlockMessage(msg.block.toLight());
-    // }
 
     async syncBlockchain() {
         this._syncing = true;
@@ -43,7 +39,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         if (!headBlock) {
             this.requestVector(new InvVector(InvVector.Type.BLOCK, this._peer.headHash));
         } else {
-            await this._syncFinished();
+            this._syncFinished();
         }
     }
 
@@ -51,7 +47,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
      * @returns {void}
      * @private
      */
-    async _syncFinished() {
+    _syncFinished() {
         this._syncing = false;
         this._synced = true;
 

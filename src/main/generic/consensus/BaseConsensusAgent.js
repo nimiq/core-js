@@ -140,9 +140,10 @@ class BaseConsensusAgent extends Observable {
      * @package
      */
     _disconnectListeners() {
-        for (let listener of this._listenersToDisconnect) {
+        for (const listener of this._listenersToDisconnect) {
             listener.obj.off(listener.type, listener.id);
         }
+        this._offAll();
     }
 
     /**
@@ -234,7 +235,6 @@ class BaseConsensusAgent extends Observable {
      * @return {Promise.<?Block>}
      */
     requestBlock(hash) {
-        Log.d(BaseConsensusAgent, `requestBlock: ${hash} from ${this.peer.peerAddress}`);
         return new Promise((resolve, reject) => {
             const vector = new InvVector(InvVector.Type.BLOCK, hash);
             if (this._blockRequests.contains(hash)) {
@@ -242,11 +242,10 @@ class BaseConsensusAgent extends Observable {
             } else {
                 this._blockRequests.put(hash, [{resolve, reject}]);
                 this._peer.channel.getData([vector]);
-                this._timers.setTimeout('block_request_' + hash.toHex(), () => {
+                this._timers.setTimeout(`block_request_${hash.toHex()}`, () => {
                     if (!this._blockRequests.get(hash)) return;
-                    Log.d(BaseConsensusAgent, `block timeout ${hash} from ${this.peer.peerAddress}`);
-                    for (let {resolve, reject} of this._blockRequests.get(hash)) {
-                        reject(new Error('timeout'));
+                    for (const {reject} of this._blockRequests.get(hash)) {
+                        reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
             }
@@ -264,13 +263,16 @@ class BaseConsensusAgent extends Observable {
                 this._txRequests.get(hash).push({resolve, reject});
             } else {
                 this._txRequests.put(hash, [{resolve, reject}]);
+
                 if (!this._objectsInFlight.contains(vector)) {
                     this._peer.channel.getData([vector]);
                     this._objectsInFlight.add(vector);
                 }
-                this._timers.setTimeout('tx_request_' + hash.toHex(), () => {
-                    for (let {resolve, reject} of this._txRequests.get(hash)) {
-                        reject(new Error('timeout'));
+
+                this._timers.setTimeout(`tx_request_${hash.toHex()}`, () => {
+                    if (!this._txRequests.get(hash)) return;
+                    for (const {reject} of this._txRequests.get(hash)) {
+                        reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
             }
@@ -661,8 +663,6 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        msg = this._preProcessBlockMessage(msg);
-
         // Reuse already known (verified) transactions
         const transactions = msg.block.isFull() ? msg.block.body.transactions : [];
         const transactionsFromMempool = transactions.map(t => this._getTransaction(t.hash()));
@@ -675,8 +675,8 @@ class BaseConsensusAgent extends Observable {
 
         if (blockRequest) {
             this._blockRequests.remove(hash);
-            this._timers.clearTimeout('block_request_' + hash.toHex());
-            for (let {resolve, reject} of blockRequest) {
+            this._timers.clearTimeout(`block_request_${hash.toHex()}`);
+            for (const {resolve} of blockRequest) {
                 try {
                     resolve(msg.block);
                 } catch (e) {
@@ -703,14 +703,6 @@ class BaseConsensusAgent extends Observable {
         this._onObjectProcessed(vector);
 
         this._invRequestManager.noteVectorReceived(InvVector.fromBlock(msg.block));
-    }
-
-    /**
-     * @param {BlockMessage} msg
-     * @protected
-     */
-    _preProcessBlockMessage(msg) {
-        return msg;
     }
 
     /**
@@ -784,18 +776,20 @@ class BaseConsensusAgent extends Observable {
         // Mark object as received.
         this._onObjectReceived(vector);
 
-        // Process transaction.
+        // Mark transaction as processing.
         this._objectsProcessing.add(vector);
 
-        // Check whether we subscribed for this transaction.
+        // Process transaction if we subscribed for this transaction.
         if (this._localSubscription.matchesTransaction(msg.transaction)) {
             await this._processTransaction(hash, msg.transaction);
         }
+
+        // Resolve any transaction requests for this transaction.
         const txRequest = this._txRequests.get(hash);
         if (txRequest) {
             this._txRequests.remove(hash);
-            this._timers.clearTimeout('tx_request_' + hash.toHex());
-            for (let {resolve, reject} of txRequest) {
+            this._timers.clearTimeout(`tx_request_${hash.toHex()}`);
+            for (const {resolve} of txRequest) {
                 try {
                     resolve(msg.transaction);
                 } catch (e) {
@@ -827,13 +821,12 @@ class BaseConsensusAgent extends Observable {
     _onNotFound(msg) {
         Log.d(BaseConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
-        // Remove unknown objects from in-flight list.
         for (const vector of msg.vectors) {
             const requests = (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).get(vector.hash);
             if (requests) {
                 (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).remove(vector.hash);
-                this._timers.clearTimeout((vector.type === InvVector.Type.BLOCK ? 'block' : 'tx') + '_request_' + hash.toHex());
-                for (let {resolve, reject} of requests) {
+                this._timers.clearTimeout((vector.type === InvVector.Type.BLOCK ? 'block' : 'tx') + '_request_' + vector.hash.toHex());
+                for (const {resolve} of requests) {
                     try {
                         resolve(null);
                     } catch (e) {
@@ -841,9 +834,12 @@ class BaseConsensusAgent extends Observable {
                     }
                 }
             }
+
+            // Remove unknown objects from in-flight list.
             if (!this._objectsInFlight.contains(vector)) {
                 continue;
             }
+
             this._invRequestManager.noteVectorNotReceived(this, vector);
 
             // Mark object as received.

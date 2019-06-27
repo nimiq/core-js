@@ -265,7 +265,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // TODO add all blocks from the chain proof to knownObjects.
         this._busy = false;
-        this.syncBlockchain().catch(Log.w.tag(LightConsensusAgent));
+        this.syncBlockchain().catch(Log.e.tag(LightConsensusAgent));
     }
 
     // Stage 2: Request AccountsTree.
@@ -364,7 +364,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         }
 
         this._busy = false;
-        this.syncBlockchain().catch(Log.w.tag(LightConsensusAgent));
+        this.syncBlockchain().catch(Log.e.tag(LightConsensusAgent));
     }
 
     // Stage 3: Request proof blocks.
@@ -425,7 +425,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
             this._onMainChain = false;
             await this._initChainProofSync();
-            this.syncBlockchain().catch(Log.w.tag(LightConsensusAgent));
+            this.syncBlockchain().catch(Log.e.tag(LightConsensusAgent));
             return;
         } else {
             this._onMainChain = true;
@@ -471,7 +471,7 @@ class LightConsensusAgent extends FullConsensusAgent {
                 && (!this._partialChain || this._partialChain.state !== PartialLightChain.State.PROVE_BLOCKS)) {
                 this._onMainChain = false;
                 await this._initChainProofSync();
-                this.syncBlockchain().catch(e => Log.e(LightConsensusAgent, e));
+                this.syncBlockchain().catch(Log.e.tag(LightConsensusAgent));
                 return;
             } else {
                 this._onMainChain = true;

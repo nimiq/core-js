@@ -61,7 +61,7 @@ class LightConsensus extends BaseConsensus {
 
     /**
      * @param {Transaction} tx
-     * @returns {Promise.<void>} TODO
+     * @returns {Promise.<BaseConsensus.SendTransactionResult>}
      */
     async sendTransaction(tx) {
         const mempoolCode = await this._mempool.pushTransaction(tx);
@@ -70,6 +70,7 @@ class LightConsensus extends BaseConsensus {
                 // Wait for transaction relay
                 const relayed = await new Promise((resolve) => {
                     let id;
+                    // eslint-disable-next-line prefer-const
                     id = this.on('transaction-relayed', relayedTx => {
                         if (relayedTx.equals(tx)) {
                             this.off('transaction-relayed', id);

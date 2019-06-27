@@ -50,11 +50,8 @@ class Observable {
         if (this._listeners.has(type)) {
             const listeners = this._listeners.get(type);
             for (const key in listeners) {
-                // Skip non-numeric properties.
-                if (isNaN(key)) continue;
-
-                const listener = listeners[key];
-                const res = listener.apply(null, args);
+                if (!listeners.hasOwnProperty(key)) continue;
+                const res = listeners[key].apply(null, args);
                 if (res instanceof Promise) promises.push(res);
             }
         }
@@ -63,11 +60,8 @@ class Observable {
         if (this._listeners.has(Observable.WILDCARD)) {
             const listeners = this._listeners.get(Observable.WILDCARD);
             for (const key in listeners) {
-                // Skip non-numeric properties.
-                if (isNaN(key)) continue;
-
-                const listener = listeners[key];
-                const res = listener.apply(null, arguments);
+                if (!listeners.hasOwnProperty(key)) continue;
+                const res = listeners[key].apply(null, arguments);
                 if (res instanceof Promise) promises.push(res);
             }
         }
