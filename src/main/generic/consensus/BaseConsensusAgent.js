@@ -225,8 +225,10 @@ class BaseConsensusAgent extends Observable {
         // Relay block to peer.
         this._peer.channel.inv([vector, ...this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT - 1)]);
 
-        // Assume that the peer knows this block now.
-        this._knownObjects.add(vector);
+        // Assume that the peer knows this block after short time.
+        this._timers.setTimeout(`knows-block-${vector.hash.toBase64()}`, () => {
+            this._knownObjects.add(vector);
+        }, BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY);
 
         return true;
     }
@@ -331,8 +333,11 @@ class BaseConsensusAgent extends Observable {
             this._waitingInvVectors.enqueue(vector);
         }
 
-        // Assume that the peer knows this transaction now.
-        this._knownObjects.add(vector);
+        // Assume that the peer knows this transaction after short time.
+        this._timers.setTimeout(`knows-tx-${vector.hash.toBase64()}`, () => {
+            this._knownObjects.add(vector);
+        }, BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY);
+
         Log.v(BaseConsensusAgent, `Sending ${transaction.hash()} to ${this.peer.peerAddress}`);
 
         return true;
@@ -1518,6 +1523,7 @@ BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
  */
 BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
 BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give client time to announce new head without request
+BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY = 1000 * 5;
 
 BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX = 40000;
 Class.register(BaseConsensusAgent);

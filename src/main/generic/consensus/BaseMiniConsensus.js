@@ -17,6 +17,8 @@ class BaseMiniConsensus extends BaseConsensus {
 
         /** @type {Subscription} */
         this._subscription = Subscription.BLOCKS_ONLY;
+        this._onToDisconnect(this, 'head-changed', (hash, reason, reverted, adopted) => this._onNewAdoptedBlocks(adopted));
+        this._onToDisconnect(mempool, 'transaction-mined', (tx, block) => this.fire('transaction-mined', tx, block, this._blockchain.head));
     }
 
     /**
@@ -85,6 +87,22 @@ class BaseMiniConsensus extends BaseConsensus {
         this.fire('transaction-added', tx);
 
         // Don't relay transactions added to the mempool.
+    }
+
+    /**
+     * @param {Array.<Block>} adoptedBlocks
+     * @private
+     */
+    async _onNewAdoptedBlocks(adoptedBlocks) {
+        if (!this._established) return;
+        for (const block of adoptedBlocks) {
+            try {
+                const includedTransactions = await this._requestTransactionsByAddresses(this._subscription.addresses, block);
+                await this._mempool.changeHead(block, includedTransactions);
+            } catch (e) {
+                Log.e(BaseMiniConsensus, `Failed to retrieve transaction proof to update mempool: ${e.message || e}`);
+            }
+        }
     }
 
     /**

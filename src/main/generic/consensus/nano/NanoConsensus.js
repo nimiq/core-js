@@ -34,26 +34,6 @@ class NanoConsensus extends BaseMiniConsensus {
         return agent;
     }
 
-    /**
-     * @param {Block} head
-     * @override
-     */
-    async _onHeadChanged(head) {
-        if (!this._established) return;
-
-        // Update mempool.
-        try {
-            const includedTransactions = await this._requestTransactionsByAddresses(this._subscription.addresses, head);
-            await this._mempool.changeHead(head, includedTransactions);
-        } catch (e) {
-            Log.e(NanoConsensus, `Failed to retrieve transaction proof to update mempool: ${e.message || e}`);
-        }
-
-        // Relay block *after* requesting the TransactionsProof. Otherwise, we might
-        // send the request to a peer (first) that has not adopted the new block yet.
-        super._onHeadChanged(head);
-    }
-
     /** @type {NanoChain} */
     get blockchain() {
         return this._blockchain;

@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 class NanoMempool extends Observable {
     /**
      * @param {IBlockchain} blockchain
@@ -51,7 +54,7 @@ class NanoMempool extends Observable {
         this._transactionSetByRecipient.put(transaction.recipient, recs);
 
         // Tell listeners about the new transaction we received.
-        this.fire('transaction-added', transaction);
+        await this.fire('transaction-added', transaction);
 
         return Mempool.ReturnCode.ACCEPTED;
     }
@@ -136,7 +139,7 @@ class NanoMempool extends Observable {
      * @param {Array.<Transaction>} transactions
      */
     async changeHead(block, transactions) {
-        await this._evictTransactions(block.header, transactions);
+        await this._evictTransactions(block, transactions);
     }
 
     /**
@@ -177,15 +180,14 @@ class NanoMempool extends Observable {
     }
 
     /**
-     * @param {BlockHeader} blockHeader
+     * @param {Block} block
      * @param {Array.<Transaction>} transactions
      * @private
      */
-    async _evictTransactions(blockHeader, transactions) {
+    async _evictTransactions(block, transactions) {
         // Remove expired transactions.
         for (const /** @type {Transaction} */ tx of this._transactionsByHash.values()) {
-            const txHash = tx.hash();
-            if (blockHeader.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
+            if (block.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this.removeTransaction(tx);
 
                 await this.fire('transaction-expired', tx);
@@ -198,7 +200,7 @@ class NanoMempool extends Observable {
             if (this._transactionsByHash.contains(txHash)) {
                 this.removeTransaction(tx);
 
-                await this.fire('transaction-mined', tx, blockHeader);
+                await this.fire('transaction-mined', tx, block);
             }
         }
     }

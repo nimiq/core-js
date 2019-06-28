@@ -20,7 +20,10 @@ class BaseConsensus extends Observable {
         /** @type {Timers} */
         this._timers = new Timers();
 
-        /** @type {boolean} */
+        /**
+         * @type {boolean}
+         * @protected
+         */
         this._established = false;
 
         /** @type {Peer} */

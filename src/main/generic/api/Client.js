@@ -66,6 +66,7 @@ class Client {
         this._consensusOn(consensus, 'transaction-added', (tx) => this._onPendingTransaction(tx));
         this._consensusOn(consensus, 'transaction-added', (tx) => this._mempool._onTransactionAdded(tx));
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
+        this._consensusOn(consensus, 'transaction-mined', (tx, block, blockNow) => this._onMinedTransaction(block, tx, blockNow));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
 
         if (this._config.hasFeature(Client.Feature.PASSIVE)) {
@@ -136,12 +137,11 @@ class Client {
     }
 
     /**
-     * @param {Transaction }tx
      * @param {number} blockHeight
      * @returns {number}
      * @private
      */
-    _txConfirmsAt(tx, blockHeight) {
+    _txConfirmsAt(blockHeight) {
         return blockHeight + this._config.requiredBlockConfirmations - 1;
     }
 
@@ -151,9 +151,9 @@ class Client {
      * @private
      */
     _txWaitForConfirm(tx, blockHeight) {
-        const set = this._transactionConfirmWaiting.get(this._txConfirmsAt(tx, blockHeight)) || new HashSet();
+        const set = this._transactionConfirmWaiting.get(this._txConfirmsAt(blockHeight)) || new HashSet();
         set.add(tx);
-        this._transactionConfirmWaiting.put(this._txConfirmsAt(tx, blockHeight), set);
+        this._transactionConfirmWaiting.put(this._txConfirmsAt(blockHeight), set);
     }
 
     /**
@@ -237,7 +237,7 @@ class Client {
      * @param {Array.<Block>} adoptedBlocks
      * @private
      */
-    async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
+    _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
         // Process head-changed listeners.
         if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
             for (const listener of this._headChangedListeners.valueIterator()) {
@@ -253,23 +253,38 @@ class Client {
         if (this._transactionListeners.length > 0) {
             const revertedTxs = new HashSet();
             const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
+
+            // Gather reverted transactions
             for (const block of revertedBlocks) {
-                revertedTxs.addAll(block.transactions);
-                for (const tx of block.transactions) {
-                    this._transactionConfirmWaiting.remove(this._txConfirmsAt(tx, block.height));
+                if (block.isFull()) {
+                    revertedTxs.addAll(block.transactions);
                 }
+                // FIXME
+                for (const tx of this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height)).valueIterator()) {
+                    revertedTxs.add(tx);
+                }
+                this._transactionConfirmWaiting.remove(this._txConfirmsAt(block.height));
             }
+
+            // Gather applied transactions
+            // Only for full blocks, nano/pico nodes will fire transaction mined events later independently
             for (const block of adoptedBlocks) {
-                for (const tx of block.transactions) {
-                    if (revertedTxs.contains(tx)) {
-                        revertedTxs.remove(tx);
+                if (block.isFull()) {
+                    for (const tx of block.transactions) {
+                        if (revertedTxs.contains(tx)) {
+                            revertedTxs.remove(tx);
+                        }
+                        adoptedTxs.add({tx, block});
                     }
-                    adoptedTxs.add({tx, block});
                 }
             }
+
+            // Report all reverted transactions that weren't applied again as pending
             for (const tx of revertedTxs.valueIterator()) {
                 this._onPendingTransaction(tx, adoptedBlocks[adoptedBlocks.length - 1]);
             }
+
+            // Report confirmed transactions
             for (const block of adoptedBlocks) {
                 const set = this._transactionConfirmWaiting.get(block.height);
                 if (set) {
@@ -279,9 +294,13 @@ class Client {
                     this._transactionConfirmWaiting.remove(block.height);
                 }
             }
+
+            // Report newly applied transactions
             for (const {tx, block} of adoptedTxs.valueIterator()) {
                 this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
             }
+
+            // Report expired transactions
             for (const block of adoptedBlocks) {
                 const set = this._transactionExpireWaiting.get(block.height);
                 if (set) {
@@ -289,18 +308,6 @@ class Client {
                         this._onExpiredTransaction(block, tx);
                     }
                     this._transactionExpireWaiting.remove(block.height);
-                }
-            }
-            if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
-                const consensus = await this._consensus;
-                const addresses = this._subscribedAddresses.values();
-                for (const block of adoptedBlocks) {
-                    const txs = await consensus.getTransactionsFromBlockByAddresses(addresses, block.hash(), block.height);
-                    for (const tx of txs) {
-                        if (!adoptedTxs.contains(tx)) {
-                            this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
-                        }
-                    }
                 }
             }
         }
