@@ -86,9 +86,8 @@ class BaseConsensusAgent extends Observable {
         // Helper object to keep track of transaction receipts we're requesting.
         this._transactionReceiptsRequest = null;
 
-        /** @type {HashMap.<Hash, Array.<{resolve: function, reject: function}>>} */
-        this._blockRequests = new HashMap();
-        this._txRequests = new HashMap();
+        /** @type {HashMap.<InvVector, Array.<{resolve: function, reject: function}>>} */
+        this._pendingRequests = new HashMap();
 
         /** @type {MultiSynchronizer} */
         this._synchronizer = new MultiSynchronizer();
@@ -240,14 +239,14 @@ class BaseConsensusAgent extends Observable {
     requestBlock(hash) {
         return new Promise((resolve, reject) => {
             const vector = new InvVector(InvVector.Type.BLOCK, hash);
-            if (this._blockRequests.contains(hash)) {
-                this._blockRequests.get(hash).push({resolve, reject});
+            if (this._pendingRequests.contains(vector)) {
+                this._pendingRequests.get(vector).push({resolve, reject});
             } else {
-                this._blockRequests.put(hash, [{resolve, reject}]);
+                this._pendingRequests.put(vector, [{resolve, reject}]);
                 this._peer.channel.getData([vector]);
-                this._timers.setTimeout(`block_request_${hash.toHex()}`, () => {
-                    if (!this._blockRequests.get(hash)) return;
-                    for (const {reject} of this._blockRequests.get(hash)) {
+                this._timers.setTimeout(`block-request-${vector.hash.toBase64()}`, () => {
+                    if (!this._pendingRequests.get(vector)) return;
+                    for (const {reject} of this._pendingRequests.get(vector)) {
                         reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
@@ -262,19 +261,16 @@ class BaseConsensusAgent extends Observable {
     requestTransaction(hash) {
         return new Promise((resolve, reject) => {
             const vector = new InvVector(InvVector.Type.TRANSACTION, hash);
-            if (this._txRequests.contains(hash)) {
-                this._txRequests.get(hash).push({resolve, reject});
+            if (this._pendingRequests.contains(vector)) {
+                this._pendingRequests.get(vector).push({resolve, reject});
             } else {
-                this._txRequests.put(hash, [{resolve, reject}]);
-
+                this._pendingRequests.put(vector, [{resolve, reject}]);
                 if (!this._objectsInFlight.contains(vector)) {
                     this._peer.channel.getData([vector]);
                     this._objectsInFlight.add(vector);
                 }
-
-                this._timers.setTimeout(`tx_request_${hash.toHex()}`, () => {
-                    if (!this._txRequests.get(hash)) return;
-                    for (const {reject} of this._txRequests.get(hash)) {
+                this._timers.setTimeout(`tx-request-${vector.hash.toBase64()}`, () => {
+                    for (const {reject} of this._pendingRequests.get(vector)) {
                         reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
@@ -660,10 +656,10 @@ class BaseConsensusAgent extends Observable {
      */
     async _onBlock(msg) {
         const hash = msg.block.hash();
-        const blockRequest = this._blockRequests.get(hash);
+        const vector = new InvVector(InvVector.Type.BLOCK, hash);
+        const blockRequest = this._pendingRequests.get(vector);
 
         // Check if we have requested this block.
-        const vector = new InvVector(InvVector.Type.BLOCK, hash);
         if (!blockRequest && !this._objectsInFlight.contains(vector) && !this._objectsThatFlew.contains(vector)) {
             Log.w(BaseConsensusAgent, `Unsolicited block ${hash} received from ${this._peer.peerAddress}, discarding`);
             return;
@@ -680,8 +676,8 @@ class BaseConsensusAgent extends Observable {
         }
 
         if (blockRequest) {
-            this._blockRequests.remove(hash);
-            this._timers.clearTimeout(`block_request_${hash.toHex()}`);
+            this._pendingRequests.remove(vector);
+            this._timers.clearTimeout(`block-request-${vector.hash.toBase64()}`);
             for (const {resolve} of blockRequest) {
                 try {
                     resolve(msg.block);
@@ -790,11 +786,10 @@ class BaseConsensusAgent extends Observable {
             await this._processTransaction(hash, msg.transaction);
         }
 
-        // Resolve any transaction requests for this transaction.
-        const txRequest = this._txRequests.get(hash);
+        const txRequest = this._pendingRequests.get(vector);
         if (txRequest) {
-            this._txRequests.remove(hash);
-            this._timers.clearTimeout(`tx_request_${hash.toHex()}`);
+            this._pendingRequests.remove(vector);
+            this._timers.clearTimeout(`tx-request-${vector.hash.toBase64()}`);
             for (const {resolve} of txRequest) {
                 try {
                     resolve(msg.transaction);
@@ -828,13 +823,13 @@ class BaseConsensusAgent extends Observable {
         Log.d(BaseConsensusAgent, `[NOTFOUND] ${msg.vectors.length} unknown objects received from ${this._peer.peerAddress}`);
 
         for (const vector of msg.vectors) {
-            const requests = (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).get(vector.hash);
+            const requests = this._pendingRequests.get(vector);
             if (requests) {
-                (vector.type === InvVector.Type.BLOCK ? this._blockRequests : this._txRequests).remove(vector.hash);
-                this._timers.clearTimeout((vector.type === InvVector.Type.BLOCK ? 'block' : 'tx') + '_request_' + vector.hash.toHex());
-                for (const {resolve} of requests) {
+                this._pendingRequests.remove(vector);
+                this._timers.clearTimeout((vector.type === InvVector.Type.BLOCK ? 'block' : 'tx') + '-request-' + vector.hash.toBase64());
+                for (const {reject} of requests) {
                     try {
-                        resolve(null);
+                        reject(new Error('Not found'));
                     } catch (e) {
                         // Ignore
                     }
