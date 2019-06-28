@@ -21,21 +21,37 @@ class FullConsensus extends BaseConsensus {
     /**
      * @param {Hash} hash
      * @param {boolean} [includeBody = true]
-     * @returns {Promise.<?Block>}
+     * @param {boolean} [includeBodyFromLocal]
+     * @param {number} [blockHeight]
+     * @returns {Promise.<Block>}
+     * @override
      */
-    async getBlock(hash, includeBody = true) {
-        // Override to not fallback to network
-        return this._blockchain.getBlock(hash, true, includeBody);
+    getBlock(hash, includeBody = true, includeBodyFromLocal = includeBody, blockHeight) { // eslint-disable-line no-unused-vars
+        // Override to not fallback to network.
+        const block = this._blockchain.getBlock(hash, true, includeBody);
+        if (!block) {
+            throw new Error(`No block found for hash ${hash}`);
+        }
+        return block;
     }
 
     /**
      * @param {number} height
      * @param {boolean} [includeBody = true]
-     * @returns {Promise.<?Block>}
+     * @returns {Promise.<Block>}
+     * @override
      */
-    async getBlockAt(height, includeBody = true) {
-        // Override to not fallback to network
-        return this._blockchain.getBlockAt(height, includeBody);
+    getBlockAt(height, includeBody = true) {
+        // Override to not fallback to network.
+        if (height > this._blockchain.height || height < 1) {
+            throw new Error('Invalid height');
+        }
+
+        const block = this._blockchain.getBlockAt(height, includeBody);
+        if (!block) {
+            throw new Error(`No block found at height ${height}`);
+        }
+        return block;
     }
 
     /**
@@ -43,7 +59,7 @@ class FullConsensus extends BaseConsensus {
      * @param {Uint8Array} [extraData]
      * @returns {Promise.<Block>}
      */
-    async getBlockTemplate(minerAddress, extraData) {
+    getBlockTemplate(minerAddress, extraData) {
         return this._producer.getNextBlock(minerAddress, extraData);
     }
 
@@ -59,7 +75,7 @@ class FullConsensus extends BaseConsensus {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Account>>}
      */
-    async getAccounts(addresses) {
+    getAccounts(addresses) {
         return Promise.all(addresses.map(addr => this._blockchain.accounts.get(addr)));
     }
 
@@ -67,7 +83,7 @@ class FullConsensus extends BaseConsensus {
      * @param {Array.<Hash>} hashes
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactions(hashes) {
+    async getPendingTransactions(hashes) { // eslint-disable-line require-await
         return /** @type {Array.<Transaction>} */ hashes.map(hash => this._mempool.getTransaction(hash)).filter(tx => tx != null);
     }
 
@@ -75,7 +91,7 @@ class FullConsensus extends BaseConsensus {
      * @param {Address} address
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) {
+    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await
         return this._mempool.getTransactionsByAddresses([address]);
     }
 
@@ -83,11 +99,15 @@ class FullConsensus extends BaseConsensus {
      * @param {Array.<Hash>} hashes
      * @param {Hash} blockHash
      * @param {number} [blockHeight]
+     * @param {Block} [block]
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getTransactionsFromBlock(hashes, blockHash, blockHeight) {
+    async getTransactionsFromBlock(hashes, blockHash, blockHeight, block) {
         // Override to not fallback to network
-        let block = await this._blockchain.getBlock(blockHash, false, true);
+        block = block && block.isFull() ? block : await this._blockchain.getBlock(blockHash, false, true);
+        if (!block) {
+            throw new Error(`No block found for hash ${blockHash}`);
+        }
         return block.transactions.filter(tx => hashes.find(hash => hash.equals(tx.hash())));
     }
 
@@ -95,7 +115,8 @@ class FullConsensus extends BaseConsensus {
      * @param {Address} address
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    async getTransactionReceiptsByAddress(address) {
+    getTransactionReceiptsByAddress(address) {
+        // XXX Assumes that blockchain supports transaction index.
         return this._blockchain.getTransactionReceiptsByAddress(address);
     }
 
@@ -103,7 +124,8 @@ class FullConsensus extends BaseConsensus {
      * @param {Array.<Hash>} hashes
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    async getTransactionReceiptsByHashes(hashes) {
+    getTransactionReceiptsByHashes(hashes) {
+        // XXX Assumes that blockchain supports transaction index.
         return this._blockchain.getTransactionReceiptsByHashes(hashes);
     }
 

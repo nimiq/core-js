@@ -146,18 +146,19 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
 
     /**
      * @param {Hash} hash
-     * @param {boolean} [includeForks]
+     * @param {boolean} [includeForks = false]
+     * @param {boolean} [includeBody = false]
      * @returns {Promise.<?Block>}
      * @protected
      * @override
      */
-    _getBlock(hash, includeForks = false) {
-        return this._blockchain.getBlock(hash, includeForks);
+    _getBlock(hash, includeForks = false, includeBody = false) {
+        return this._blockchain.getBlock(hash, includeForks, includeBody);
     }
 
     /**
      * @param {Hash} hash
-     * @param {boolean} [includeForks]
+     * @param {boolean} [includeForks = false]
      * @returns {Promise.<?Uint8Array>}
      * @protected
      * @override

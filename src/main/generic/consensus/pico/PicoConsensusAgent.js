@@ -14,6 +14,13 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         this.syncBlockchain().catch(Log.e.tag(PicoConsensusAgent));
     }
 
+    /**
+     * @param {Hash} hash
+     * @param {Block} block
+     * @returns {Promise.<void>}
+     * @protected
+     * @override
+     */
     async _processBlock(hash, block) {
         if (this._peer.headHash.equals(hash)) {
             const result = await this._blockchain.pushBlock(block);
@@ -65,17 +72,38 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
      */
     async _processTransaction(hash, transaction) {
         await this._consensus.mempool.pushTransaction(transaction);
-        // TODO: Handle errors
     }
 
-    _getBlock(hash, includeForks, includeBody) {
-        return this._blockchain.getBlock(hash, includeForks);
+    /**
+     *
+     * @param {Hash} hash
+     * @param {boolean} [includeForks = false]
+     * @param {boolean} [includeBody = false]
+     * @returns {Promise.<?Block>}
+     * @protected
+     * @override
+     */
+    _getBlock(hash, includeForks = false, includeBody = false) {
+        return this._blockchain.getBlock(hash, includeForks, includeBody);
     }
 
+    /**
+     * @param {Hash} hash
+     * @param {boolean} [includeForks = false]
+     * @returns {Promise.<?Uint8Array>}
+     * @protected
+     * @override
+     */
     _getRawBlock(hash, includeForks = false) {
         return this._blockchain.getRawBlock(hash, includeForks);
     }
 
+    /**
+     * @param {Hash} hash
+     * @returns {Transaction}
+     * @protected
+     * @override
+     */
     _getTransaction(hash) {
         return this._consensus.mempool.getTransaction(hash);
     }

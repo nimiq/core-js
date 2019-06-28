@@ -23,7 +23,7 @@ class LightConsensus extends BaseConsensus {
      * @param {Uint8Array} [extraData]
      * @returns {Promise.<Block>}
      */
-    async getBlockTemplate(minerAddress, extraData) {
+    getBlockTemplate(minerAddress, extraData) {
         return this._producer.getNextBlock(minerAddress, extraData);
     }
 
@@ -39,7 +39,7 @@ class LightConsensus extends BaseConsensus {
      * @param {Array.<Address>} addresses
      * @returns {Promise.<Array.<Account>>}
      */
-    async getAccounts(addresses) {
+    getAccounts(addresses) {
         return Promise.all(addresses.map(addr => this._blockchain.accounts.get(addr)));
     }
 
@@ -47,7 +47,7 @@ class LightConsensus extends BaseConsensus {
      * @param {Array.<Hash>} hashes
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactions(hashes) {
+    async getPendingTransactions(hashes) { // eslint-disable-line require-await
         return /** @type {Array.<Transaction>} */ hashes.map(hash => this._mempool.getTransaction(hash)).filter(tx => tx != null);
     }
 
@@ -55,7 +55,7 @@ class LightConsensus extends BaseConsensus {
      * @param {Address} address
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) {
+    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await
         return this._mempool.getTransactionsByAddresses([address]);
     }
 

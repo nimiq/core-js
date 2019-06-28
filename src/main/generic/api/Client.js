@@ -238,6 +238,7 @@ class Client {
      * @private
      */
     async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
+        // Process head-changed listeners.
         if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
             for (const listener of this._headChangedListeners.valueIterator()) {
                 try {
@@ -247,6 +248,8 @@ class Client {
                 }
             }
         }
+
+        // Process transaction listeners.
         if (this._transactionListeners.length > 0) {
             const revertedTxs = new HashSet();
             const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
@@ -446,7 +449,8 @@ class Client {
      * @param {Hash|string} hash The hash of a block
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<?Block>} The block with the specified hash if available
+     * @returns {Promise.<Block>} The block with the specified hash. Throws an error if the block cannot be retrieved or
+     *                            no block with the specified hash exists.
      */
     async getBlock(hash, includeBody = true) {
         hash = Hash.fromAny(hash);
@@ -464,7 +468,8 @@ class Client {
      * @param {number} height The height or block number of the block to fetch
      * @param {boolean} [includeBody = true] Whether to include the transactions and other details of the block. If the
      *                                       client is not able to do so, it will return a block without such data.
-     * @returns {Promise.<?Block>} The block at the specified height or block number
+     * @returns {Promise.<Block>} The block at the specified height or block number. Throws an error if the block cannot
+     *                            be retrieved or no block at the specified height exists.
      */
     async getBlockAt(height, includeBody) {
         const consensus = await this._consensus;
@@ -557,7 +562,8 @@ class Client {
      * @param {Hash|string} hash Hash of a transaction
      * @param {Hash|string} [blockHash] The hash of the block containing that transaction
      * @param {number} [blockHeight] The height of the block containing that transaction
-     * @returns {Promise.<?TransactionDetails>}
+     * @returns {Promise.<TransactionDetails>} Details about the requested transaction. Throws an error if the no such
+     *                                         transaction exists.
      */
     async getTransaction(hash, blockHash, blockHeight) {
         hash = Hash.fromAny(hash);
@@ -639,7 +645,7 @@ class Client {
      * not necessarily be considered a confirmation that a transaction was actually mined in a block.
      *
      * @param {Array.<Hash|string>} hashes List of hashes of transactions
-     * @returns {Promise.<Array.<?TransactionReceipt>>}
+     * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByHashes(hashes) {
         hashes = hashes.map(hash => Hash.fromAny(hash));
@@ -669,8 +675,8 @@ class Client {
      *
      * @param {Address|string} address Address of an account
      * @param {number} [sinceBlockHeight=0] Minimum block height to consider for updates
-     * @param {Array.<TransactionDetails>} [knownTransactionDetails] List of transaction details on already known transactions since {@param sinceBlockHeight}
-     * @return {Promise.<Array.<TransactionDetails>>}
+     * @param {Array.<Client.TransactionDetails>} [knownTransactionDetails] List of transaction details on already known transactions since {@param sinceBlockHeight}
+     * @return {Promise.<Array.<Client.TransactionDetails>>}
      */
     async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails) {
         address = Address.fromAny(address);
@@ -719,7 +725,7 @@ class Client {
             }
         }
 
-        // Re-check known transactions that are not contained in the receipts.
+        // Re-check known (mined or confirmed) transactions that are not contained in the receipts.
         for (const details of knownTxs.valueIterator()) {
             if ((details.state === Client.TransactionState.MINED || details.state === Client.TransactionState.CONFIRMED)
                 && details.blockHeight >= sinceBlockHeight
@@ -732,6 +738,7 @@ class Client {
             }
         }
 
+        // Retrieve proofs for the transaction we want to check.
         const height = await consensus.getHeadHeight();
         for (const [blockHashBase64, /** @type {HashSet.<Hash>} */ transactionsToProve] of requestProofs.entryIterator()) {
             const blockHash = Hash.fromBase64(blockHashBase64);
@@ -751,6 +758,7 @@ class Client {
             }
         }
 
+        // Track known (new or pending) transactions
         for (const /** @type {Client.TransactionDetails} */ details of knownTxs.valueIterator()) {
             if ((details.state === Client.TransactionState.NEW || details.state === Client.TransactionState.PENDING)
                 && !txs.contains(details)) {

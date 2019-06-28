@@ -56,14 +56,14 @@ class BaseConsensus extends Observable {
     /**
      * @returns {Promise.<Hash>}
      */
-    async getHeadHash() {
+    async getHeadHash() { // eslint-disable-line require-await
         return this._blockchain.headHash;
     }
 
     /**
      * @returns {Promise.<number>}
      */
-    async getHeadHeight() {
+    async getHeadHeight() { // eslint-disable-line require-await
         return this._blockchain.height;
     }
 
@@ -171,7 +171,6 @@ class BaseConsensus extends Observable {
      */
     async getTransactionsFromBlockByAddresses(addresses, blockHash, blockHeight) {
         let block = await this._blockchain.getBlock(blockHash, false, true);
-
         if (!block) {
             block = this._requestBlock(blockHash, false, blockHeight);
         }
@@ -270,9 +269,9 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Hash} hash
-     * @param {boolean} [includeBody=false]
+     * @param {boolean} [includeBody = false]
      * @param {?number} [blockHeight]
-     * @param {boolean} [proven=false]
+     * @param {boolean} [proven = false]
      * @returns {Promise.<?Block>}
      */
     async _requestBlock(hash, includeBody = false, blockHeight, proven) {
@@ -290,7 +289,7 @@ class BaseConsensus extends Observable {
 
             // Try agents first that (we think) know the block hash.
             agents.sort((a, b) =>
-                b.knowsBlock(hash) !== a.knowsBlock(hash)
+                a.knowsBlock(hash) !== b.knowsBlock(hash)
                     ? -a.knowsBlock(hash) + 0.5
                     : Math.random() - 0.5);
 
@@ -335,7 +334,7 @@ class BaseConsensus extends Observable {
 
             // Try agents first that (we think) know the block hash.
             agents.sort((a, b) =>
-                b.knowsBlock(hash) !== a.knowsBlock(hash)
+                a.knowsBlock(hash) !== b.knowsBlock(hash)
                     ? -a.knowsBlock(hash) + 0.5
                     : Math.random() - 0.5);
 
@@ -376,7 +375,7 @@ class BaseConsensus extends Observable {
 
         // Try agents first that (we think) know the transaction hash.
         agents.sort((a, b) =>
-            b.knowsTransaction(hash) !== a.knowsTransaction(hash)
+            a.knowsTransaction(hash) !== b.knowsTransaction(hash)
                 ? -a.knowsTransaction(hash) + 0.5
                 : Math.random() - 0.5);
 
@@ -439,7 +438,7 @@ class BaseConsensus extends Observable {
         // Try agents first that (we think) know the reference block hash.
         const knownBlockHash = block.hash();
         agents.sort((a, b) =>
-            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+            a.knowsBlock(knownBlockHash) !== b.knowsBlock(knownBlockHash)
                 ? -a.knowsBlock(knownBlockHash) + 0.5
                 : Math.random() - 0.5);
 
@@ -703,7 +702,7 @@ class BaseConsensus extends Observable {
         // Try agents first that (we think) know the reference block hash.
         const knownBlockHash = knownBlock.hash();
         agents.sort((a, b) =>
-            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+            a.knowsBlock(knownBlockHash) !== b.knowsBlock(knownBlockHash)
                 ? -a.knowsBlock(knownBlockHash) + 0.5
                 : Math.random() - 0.5);
 
@@ -749,7 +748,7 @@ class BaseConsensus extends Observable {
         // Try agents first that (we think) know the reference block hash.
         const knownBlockHash = knownBlock.hash();
         agents.sort((a, b) =>
-            b.knowsBlock(knownBlockHash) !== a.knowsBlock(knownBlockHash)
+            a.knowsBlock(knownBlockHash) !== b.knowsBlock(knownBlockHash)
                 ? -a.knowsBlock(knownBlockHash) + 0.5
                 : Math.random() - 0.5);
 
@@ -789,7 +788,7 @@ class BaseConsensus extends Observable {
         // Try agents first that (we think) know the reference block hash.
         const blockHash = block.hash();
         agents.sort((a, b) =>
-            b.knowsBlock(blockHash) !== a.knowsBlock(blockHash)
+            a.knowsBlock(blockHash) !== b.knowsBlock(blockHash)
                 ? -a.knowsBlock(blockHash) + 0.5
                 : Math.random() - 0.5);
 

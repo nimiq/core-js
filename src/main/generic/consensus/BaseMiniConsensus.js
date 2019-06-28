@@ -103,20 +103,26 @@ class BaseMiniConsensus extends BaseConsensus {
      */
     async getAccounts(addresses, blockHash) {
         blockHash = blockHash ? blockHash : this._blockchain.headHash;
+
+        /** @type {Array.<BaseMiniConsensusAgent>} */
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
-            if (agent.synced
-                && agent.knowsBlock(blockHash)
-                && Services.providesServices(agent.peer.peerAddress.services, Services.ACCOUNTS_PROOF)) {
+            if (agent.synced && Services.providesServices(agent.peer.peerAddress.services, Services.ACCOUNTS_PROOF)) {
                 agents.push(agent);
             }
         }
 
-        for (const /** @type {NanoConsensusAgent} */ agent of agents) {
+        // Try agents first that (we think) know the block hash.
+        agents.sort((a, b) =>
+            a.knowsBlock(blockHash) !== b.knowsBlock(blockHash)
+                ? -a.knowsBlock(hash) + 0.5
+                : Math.random() - 0.5);
+
+        for (const agent of agents) {
             try {
                 return await agent.getAccounts(blockHash, addresses); // eslint-disable-line no-await-in-loop
             } catch (e) {
-                Log.w(NanoConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e}`);
+                Log.w(BaseMiniConsensus, `Failed to retrieve accounts ${addresses} from ${agent.peer.peerAddress}: ${e}`);
                 // Try the next peer.
             }
         }
@@ -179,7 +185,7 @@ class BaseMiniConsensus extends BaseConsensus {
      */
     async getPendingTransactions(hashes) {
         const txs = new HashSet();
-        for (let hash of hashes) {
+        for (const hash of hashes) {
             const tx = this._mempool.getTransaction(hash);
             txs.add(tx);
         }
@@ -193,7 +199,7 @@ class BaseMiniConsensus extends BaseConsensus {
      * @param {Address} address
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) {
+    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await
         if (this._subscription.addresses && this._subscription.addresses.some(a => a.equals(address))) {
             return this._mempool.getTransactionsByAddresses([address]);
         } else {
@@ -206,11 +212,6 @@ class BaseMiniConsensus extends BaseConsensus {
      * @returns {Promise.<void>}
      */
     async relayTransaction(transaction) {
-        // Fail if we are not connected to at least one full/light node.
-        if (!this._agents.values().some(agent => Services.providesServices(agent.peer.peerAddress.services, Services.MEMPOOL))) {
-            throw new Error('Failed to relay transaction - only nodes without mempool connected');
-        }
-
         // Store transaction in mempool.
         const mempoolCode = await this._mempool.pushTransaction(transaction);
         if (mempoolCode !== Mempool.ReturnCode.ACCEPTED) {
@@ -219,8 +220,8 @@ class BaseMiniConsensus extends BaseConsensus {
 
         // Relay transaction to all connected peers.
         let relayed = false;
-        for (const agent of this._agents.values()) {
-            relayed = agent.relayTransaction(transaction) || relayed;
+        for (const agent of this._agents.valueIterator()) {
+            relayed = (agent.relayTransaction(transaction) && agent.providesServices(Services.MEMPOOL)) || relayed;
         }
 
         // Fail if the transaction was not relayed.

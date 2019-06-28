@@ -591,7 +591,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Address} address
      * @param {?number} [limit]
-     * @returns {Promise.<Array.<TransactionReceipt>>}
+     * @returns {Promise.<?Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByAddress(address, limit = null) {
         if (!this._transactionStore) {
@@ -616,7 +616,7 @@ class FullChain extends BaseChain {
     /**
      * @param {Array.<Hash>} hashes
      * @param {?number} [limit]
-     * @returns {Promise.<Array.<TransactionReceipt>>}
+     * @returns {Promise.<?Array.<TransactionReceipt>>}
      */
     async getTransactionReceiptsByHashes(hashes, limit = null) {
         if (!this._transactionStore) {

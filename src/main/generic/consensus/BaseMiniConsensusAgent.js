@@ -139,7 +139,6 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
                 accounts.push(account);
             } catch (e) {
                 Log.w(BaseMiniConsensusAgent, `Incomplete AccountsProof received from ${this._peer.peerAddress}`);
-                // TODO ban instead?
                 this._peer.channel.close(CloseType.INCOMPLETE_ACCOUNTS_PROOF, 'Incomplete AccountsProof');
                 reject(new Error('Incomplete AccountsProof'));
                 return;

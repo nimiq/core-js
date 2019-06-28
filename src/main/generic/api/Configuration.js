@@ -61,7 +61,7 @@ Client.Configuration = class Configuration {
      * @throws
      */
     requireFeatures(...features) {
-        for (let feature of features) {
+        for (const feature of features) {
             if (!this.hasFeature(feature)) {
                 throw new Error(`Missing required client feature: ${feature}`);
             }

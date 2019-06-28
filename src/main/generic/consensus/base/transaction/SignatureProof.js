@@ -16,7 +16,7 @@ class SignatureProof {
 
             return proof.verify(transaction.sender, transaction.serializeContent());
         } catch (e) {
-            Log.w(SignatureProof, `Failed to verify transaction: ${e.message || e}`, e);
+            Log.w(SignatureProof, `Failed to verify transaction: ${e.message || e}`);
             return false;
         }
     }
