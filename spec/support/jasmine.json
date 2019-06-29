@@ -1,7 +1,14 @@
 {
   "spec_dir": "src/test/specs",
   "spec_files": [
-    "**/*.[sS]pec.js"
+    "*.[sS]pec.js",
+    "generic/*.[sS]pec.js",
+    "generic/utils/**/*.[sS]pec.js",
+    "generic/wallet/**/*.[sS]pec.js",
+    "generic/network/**/*.[sS]pec.js",
+    "generic/consensus/**/*.[sS]pec.js",
+    "generic/miner/**/*.[sS]pec.js",
+    "generic/api/**/*.[sS]pec.js"
   ],
   "helpers": [
     "spec.js"
