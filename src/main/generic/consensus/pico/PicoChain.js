@@ -94,7 +94,12 @@ class PicoChain extends BaseChain {
             Log.d(PicoChain, `Storing block height=${block.height}, hash=${block.hash().toHex()}`);
 
             if (newChainData.totalWork.gt(this._mainChain.totalWork)) {
-                await this._rebranch(block.hash(), newChainData);
+                try {
+                    await this._rebranch(block.hash(), newChainData);
+                } catch (e) {
+                    Log.w(PicoChain, 'Error while rebranching', e);
+                    return PicoChain.ERR_INCONSISTENT;
+                }
 
                 return PicoChain.OK_REBRANCHED;
             }

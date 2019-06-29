@@ -46,6 +46,7 @@ describe('Client', () => {
     });
 
     afterAll(function () {
+        otherConsensus.network.disconnect();
         ConstantHelper.instance.resetAll();
         MockClock.uninstall();
         MockNetwork.uninstall();

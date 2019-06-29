@@ -456,6 +456,7 @@ class MockNetwork {
      * @returns {void}
      */
     static uninstall() {
+        MockNetwork._servers.clear();
         WebSocketFactory.newWebSocketServer.and.callThrough();
         WebSocketFactory.newWebSocket.and.callThrough();
         WebRtcFactory.newPeerConnection.and.callThrough();
