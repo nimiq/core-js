@@ -44,7 +44,14 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
 
         const headBlock = await this._getBlock(this._peer.headHash);
         if (!headBlock) {
-            this.requestVector(new InvVector(InvVector.Type.BLOCK, this._peer.headHash));
+            try {
+                const hash = this._peer.headHash;
+                const block = await this.requestBlock(hash);
+                await this._processBlock(hash, block);
+            } catch (e) {
+                this._peer.channel.close(CloseType.ABORTED_SYNC, 'aborted sync');
+                this._syncFinished();
+            }
         } else {
             this._syncFinished();
         }

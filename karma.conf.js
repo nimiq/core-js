@@ -16,7 +16,14 @@ module.exports = function (config) {
         // list of files / patterns to load in the browser
         files: [
             'dist/web.js',
-            'src/test/specs/**/*.spec.js',
+            'src/test/specs/*.[sS]pec.js',
+            'src/test/specs/generic/*.[sS]pec.js',
+            'src/test/specs/generic/utils/**/*.[sS]pec.js',
+            'src/test/specs/generic/wallet/**/*.[sS]pec.js',
+            'src/test/specs/generic/network/**/*.[sS]pec.js',
+            'src/test/specs/generic/consensus/**/*.[sS]pec.js',
+            'src/test/specs/generic/miner/**/*.[sS]pec.js',
+            'src/test/specs/generic/api/**/*.[sS]pec.js',
             { pattern: 'dist/worker*', included: false },
             { pattern: 'dist/*.map', included: false }
         ],
