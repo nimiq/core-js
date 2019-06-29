@@ -1,8 +1,8 @@
 /** @typedef {number} Handle */
-/** @typedef {function(blockHash: Hash):void} BlockListener */
-/** @typedef {function(consensusState: Client.ConsensusState):void} ConsensusChangedListener */
-/** @typedef {function(blockHash: Hash, reason: string, revertedBlocks: Array.<Hash>, adoptedBlocks: Array.<Hash>):void} HeadChangedListener */
-/** @typedef {function(transaction: Client.TransactionDetails):void} TransactionListener */
+/** @typedef {function(blockHash: Hash):?Promise} BlockListener */
+/** @typedef {function(consensusState: Client.ConsensusState):?Promise} ConsensusChangedListener */
+/** @typedef {function(blockHash: Hash, reason: string, revertedBlocks: Array.<Hash>, adoptedBlocks: Array.<Hash>):?Promise} HeadChangedListener */
+/** @typedef {function(transaction: Client.TransactionDetails):?Promise} TransactionListener */
 
 /** @class Client */
 class Client {
@@ -43,6 +43,8 @@ class Client {
         this._transactionConfirmWaiting = new HashMap();
         /** @type {HashMap.<number, HashSet.<TransactionDetails>>} */
         this._transactionExpireWaiting = new HashMap();
+        /** @type {Synchronizer} */
+        this._transactionSynchronizer = new Synchronizer();
 
         this._network = new Client.Network(this);
         this._mempool = new Client.Mempool(this);
@@ -68,6 +70,8 @@ class Client {
         this._consensusOn(consensus, 'transaction-removed', (tx) => this._mempool._onTransactionRemoved(tx));
         this._consensusOn(consensus, 'transaction-mined', (tx, block, blockNow) => this._onMinedTransaction(block, tx, blockNow));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
+
+        await this._onConsensusChanged(consensus.established ? Client.ConsensusState.ESTABLISHED : Client.ConsensusState.CONNECTING);
 
         if (this._config.hasFeature(Client.Feature.PASSIVE)) {
             consensus.network.allowInboundConnections = true;
@@ -186,7 +190,8 @@ class Client {
      * @param {Client.ConsensusState} state
      * @private
      */
-    async _onConsensusChanged(state) {
+    _onConsensusChanged(state) {
+        if (state === this._consensusState) return;
         this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus.established) {
@@ -195,35 +200,35 @@ class Client {
                     consensus.subscribe(Subscription.fromAddresses(this._subscribedAddresses.values()));
                 }
             }
-        });
 
-        this._consensusState = state;
-        for (const listener of this._consensusChangedListeners.valueIterator()) {
-            try {
-                listener(state);
-            } catch (e) {
-                Log.e(Client, `Error in listener: ${e}`);
-            }
-        }
-
-        if (state === Client.ConsensusState.ESTABLISHED) {
-            const consensus = await this._consensus;
-            const headHash = await consensus.getHeadHash();
-            for (const listener of this._headChangedListeners.valueIterator()) {
+            this._consensusState = state;
+            for (const listener of this._consensusChangedListeners.valueIterator()) {
                 try {
-                    listener(headHash, 'established', [], [headHash]);
+                    await listener(state);
                 } catch (e) {
                     Log.e(Client, `Error in listener: ${e}`);
                 }
             }
-        }
+
+            if (state === Client.ConsensusState.ESTABLISHED) {
+                const headHash = await consensus.getHeadHash();
+                for (const listener of this._headChangedListeners.valueIterator()) {
+                    try {
+                        await listener(headHash, 'established', [], [headHash]);
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
+                }
+            }
+        }).catch(Log.e.tag(Client));
     }
 
     _onConsensusFailed() {
-        this._consensusSynchronizer.push(async () => {
+        return this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus instanceof PicoConsensus) {
                 // Upgrade pico consensus to nano consensus
+                Log.w(Client, 'Pico consensus failed, automatically upgrading to nano consensus');
                 const newConsensus = new NanoConsensus(await new NanoChain(consensus.network.time), consensus.mempool, consensus.network);
                 await this._replaceConsensus(Promise.resolve(newConsensus));
             }
@@ -237,80 +242,82 @@ class Client {
      * @param {Array.<Block>} adoptedBlocks
      * @private
      */
-    _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
-        // Process head-changed listeners.
-        if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
-            for (const listener of this._headChangedListeners.valueIterator()) {
-                try {
-                    listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
-                } catch (e) {
-                    Log.e(Client, `Error in listener: ${e}`);
+    async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
+        this._consensusSynchronizer.push(async () => {
+            // Process head-changed listeners.
+            if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
+                for (const listener of this._headChangedListeners.valueIterator()) {
+                    try {
+                        await listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
                 }
             }
-        }
 
-        // Process transaction listeners.
-        if (this._transactionListeners.length > 0) {
-            const revertedTxs = new HashSet();
-            const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
+            // Process transaction listeners.
+            if (this._transactionListeners.length > 0) {
+                const revertedTxs = new HashSet();
+                const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
 
-            // Gather reverted transactions
-            for (const block of revertedBlocks) {
-                if (block.isFull()) {
-                    revertedTxs.addAll(block.transactions);
-                }
+                // Gather reverted transactions
+                for (const block of revertedBlocks) {
+                    if (block.isFull()) {
+                        revertedTxs.addAll(block.transactions);
+                    }
                 // FIXME
-                for (const tx of this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height)).valueIterator()) {
-                    revertedTxs.add(tx);
+                    for (const tx of this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height)).valueIterator()) {
+                        revertedTxs.add(tx);
+                    }
+                    this._transactionConfirmWaiting.remove(this._txConfirmsAt(block.height));
                 }
-                this._transactionConfirmWaiting.remove(this._txConfirmsAt(block.height));
-            }
 
-            // Gather applied transactions
-            // Only for full blocks, nano/pico nodes will fire transaction mined events later independently
-            for (const block of adoptedBlocks) {
-                if (block.isFull()) {
-                    for (const tx of block.transactions) {
-                        if (revertedTxs.contains(tx)) {
-                            revertedTxs.remove(tx);
+                // Gather applied transactions
+                // Only for full blocks, nano/pico nodes will fire transaction mined events later independently
+                for (const block of adoptedBlocks) {
+                    if (block.isFull()) {
+                        for (const tx of block.transactions) {
+                            if (revertedTxs.contains(tx)) {
+                                revertedTxs.remove(tx);
+                            }
+                            adoptedTxs.add({tx, block});
                         }
-                        adoptedTxs.add({tx, block});
+                    }
+                }
+
+                // Report all reverted transactions that weren't applied again as pending
+                for (const tx of revertedTxs.valueIterator()) {
+                    this._onPendingTransaction(tx, adoptedBlocks[adoptedBlocks.length - 1]);
+                }
+
+                // Report confirmed transactions
+                for (const block of adoptedBlocks) {
+                    const set = this._transactionConfirmWaiting.get(block.height);
+                    if (set) {
+                        for (const tx of set.valueIterator()) {
+                            this._onConfirmedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
+                        }
+                        this._transactionConfirmWaiting.remove(block.height);
+                    }
+                }
+
+                // Report newly applied transactions
+                for (const {tx, block} of adoptedTxs.valueIterator()) {
+                    this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
+                }
+
+                // Report expired transactions
+                for (const block of adoptedBlocks) {
+                    const set = this._transactionExpireWaiting.get(block.height);
+                    if (set) {
+                        for (const tx of set.valueIterator()) {
+                            this._onExpiredTransaction(block, tx);
+                        }
+                        this._transactionExpireWaiting.remove(block.height);
                     }
                 }
             }
-
-            // Report all reverted transactions that weren't applied again as pending
-            for (const tx of revertedTxs.valueIterator()) {
-                this._onPendingTransaction(tx, adoptedBlocks[adoptedBlocks.length - 1]);
-            }
-
-            // Report confirmed transactions
-            for (const block of adoptedBlocks) {
-                const set = this._transactionConfirmWaiting.get(block.height);
-                if (set) {
-                    for (const tx of set.valueIterator()) {
-                        this._onConfirmedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
-                    }
-                    this._transactionConfirmWaiting.remove(block.height);
-                }
-            }
-
-            // Report newly applied transactions
-            for (const {tx, block} of adoptedTxs.valueIterator()) {
-                this._onMinedTransaction(block, tx, adoptedBlocks[adoptedBlocks.length - 1]);
-            }
-
-            // Report expired transactions
-            for (const block of adoptedBlocks) {
-                const set = this._transactionExpireWaiting.get(block.height);
-                if (set) {
-                    for (const tx of set.valueIterator()) {
-                        this._onExpiredTransaction(block, tx);
-                    }
-                    this._transactionExpireWaiting.remove(block.height);
-                }
-            }
-        }
+        }).catch(Log.e.tag(Client));
     }
 
     /**
@@ -320,6 +327,7 @@ class Client {
      */
     _onPendingTransaction(tx, blockNow) {
         let details;
+        let fs = [];
         for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 if (blockNow && blockNow.height >= this._txExpiresAt(tx)) {
@@ -327,16 +335,21 @@ class Client {
                 } else {
                     details = details || new Client.TransactionDetails(tx, Client.TransactionState.PENDING);
                 }
-                try {
-                    listener(details);
-                } catch (e) {
-                    Log.e(Client, `Error in listener: ${e}`);
-                }
+                fs.push(async () => {
+                    try {
+                        await listener(details);
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
+                });
             }
         }
         this._txClearFromConfirm(tx);
         if (details && details.state === Client.TransactionState.PENDING) {
             this._txWaitForExpire(tx);
+        }
+        if (fs.length > 0) {
+            this._transactionSynchronizer.push(() => fs.forEach(f => f())).catch(Log.e.tag(Client));
         }
     }
 
@@ -348,6 +361,7 @@ class Client {
      */
     _onMinedTransaction(block, tx, blockNow) {
         let details;
+        let fs = [];
         for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 let state = Client.TransactionState.MINED, confirmations = 1;
@@ -356,16 +370,21 @@ class Client {
                     state = confirmations >= this._config.requiredBlockConfirmations ? Client.TransactionState.CONFIRMED : Client.TransactionState.MINED;
                 }
                 details = details || new Client.TransactionDetails(tx, state, block.hash(), block.height, confirmations, block.timestamp);
-                try {
-                    listener(details);
-                } catch (e) {
-                    Log.e(Client, `Error in listener: ${e}`);
-                }
+                fs.push(async () => {
+                    try {
+                        await listener(details);
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
+                });
             }
         }
         this._txClearFromExpire(tx);
         if (details && details.state === Client.TransactionState.MINED) {
             this._txWaitForConfirm(tx, block.height);
+        }
+        if (fs.length > 0) {
+            this._transactionSynchronizer.push(() => fs.forEach(f => f())).catch(Log.e.tag(Client));
         }
     }
 
@@ -377,15 +396,21 @@ class Client {
      */
     _onConfirmedTransaction(block, tx, blockNow) {
         let details;
+        let fs = [];
         for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
-                try {
-                    listener(details);
-                } catch (e) {
-                    Log.e(Client, `Error in listener: ${e}`);
-                }
+                fs.push(async () => {
+                    try {
+                        await listener(details);
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
+                });
             }
+        }
+        if (fs.length > 0) {
+            this._transactionSynchronizer.push(() => fs.forEach(f => f())).catch(Log.e.tag(Client));
         }
     }
 
@@ -396,15 +421,21 @@ class Client {
      */
     _onExpiredTransaction(block, tx) {
         let details;
+        let fs = [];
         for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
-                try {
-                    listener(details);
-                } catch (e) {
-                    Log.e(Client, `Error in listener: ${e}`);
-                }
+                fs.push(async () => {
+                    try {
+                        await listener(details);
+                    } catch (e) {
+                        Log.e(Client, `Error in listener: ${e}`);
+                    }
+                });
             }
+        }
+        if (fs.length > 0) {
+            this._transactionSynchronizer.push(() => fs.forEach(f => f())).catch(Log.e.tag(Client));
         }
     }
 

@@ -86,14 +86,14 @@ class HashMap {
     }
 
     /**
-     * @returns {Array.<[(K|*), (V|*)]>}
+     * @returns {Array.<Array.<K|V|*>>}
      */
     entries() {
         return Array.from(this._map.entries());
     }
 
     /**
-     * @returns {Iterator.<[(K|*), (V|*)]>}
+     * @returns {Iterator.<Array.<K|V|*>>}
      */
     entryIterator() {
         return this._map.entries();

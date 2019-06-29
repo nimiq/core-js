@@ -85,7 +85,6 @@ class BaseMiniConsensus extends BaseConsensus {
      */
     _onTransactionAdded(tx) {
         this.fire('transaction-added', tx);
-
         // Don't relay transactions added to the mempool.
     }
 

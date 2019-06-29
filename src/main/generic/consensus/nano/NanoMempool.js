@@ -54,7 +54,7 @@ class NanoMempool extends Observable {
         this._transactionSetByRecipient.put(transaction.recipient, recs);
 
         // Tell listeners about the new transaction we received.
-        await this.fire('transaction-added', transaction);
+        this.fire('transaction-added', transaction);
 
         return Mempool.ReturnCode.ACCEPTED;
     }
@@ -190,7 +190,7 @@ class NanoMempool extends Observable {
             if (block.height >= tx.validityStartHeight + Policy.TRANSACTION_VALIDITY_WINDOW) {
                 this.removeTransaction(tx);
 
-                await this.fire('transaction-expired', tx);
+                this.fire('transaction-expired', tx);
             }
         }
 
@@ -200,7 +200,7 @@ class NanoMempool extends Observable {
             if (this._transactionsByHash.contains(txHash)) {
                 this.removeTransaction(tx);
 
-                await this.fire('transaction-mined', tx, block);
+                this.fire('transaction-mined', tx, block);
             }
         }
     }

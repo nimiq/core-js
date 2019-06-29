@@ -76,16 +76,16 @@ class PicoChain extends BaseChain {
             await this.fire('extended', this.head);
             return PicoChain.OK_EXTENDED;
         } else if (await this.head.isImmediateSuccessorOf(block)) {
-            const oldHead = this.head;
+            const tempChain = await ChainData.initial(block);
+            tempChain.mainChainSuccessor = this.head.hash();
+            await this._store.putChainData(tempChain.head.hash(), tempChain);
 
-            this._mainChain = await ChainData.initial(block);
-            await this._store.putChainData(this._mainChain.head.hash(), this._mainChain);
-
-            this._mainChain = await this._mainChain.nextChainData(oldHead);
+            this._mainChain = await tempChain.nextChainData(this.head);
             this._mainChain.onMainChain = true;
             await this._store.putChainData(this._mainChain.head.hash(), this._mainChain);
 
             Log.d(PicoChain, `Prepending block height=${block.height}, hash=${block.hash().toHex()}`);
+            await this.fire('block', block.hash());
             return PicoChain.OK_KNOWN;
         } else if (prevChainData) {
             // The block is on a fork that we could resolve.
