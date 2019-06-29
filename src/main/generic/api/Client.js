@@ -71,7 +71,7 @@ class Client {
         this._consensusOn(consensus, 'transaction-mined', (tx, block, blockNow) => this._onMinedTransaction(block, tx, blockNow));
         this._consensusOn(consensus, 'consensus-failed', () => this._onConsensusFailed());
 
-        await this._onConsensusChanged(consensus.established ? Client.ConsensusState.ESTABLISHED : Client.ConsensusState.CONNECTING);
+        this._onConsensusChanged(consensus.established ? Client.ConsensusState.ESTABLISHED : Client.ConsensusState.CONNECTING);
 
         if (this._config.hasFeature(Client.Feature.PASSIVE)) {
             consensus.network.allowInboundConnections = true;
@@ -107,7 +107,7 @@ class Client {
         this._consensus = newConsensus;
         const consensus = await this._consensus;
         oldConsensus.handoverTo(consensus);
-        await this._setupConsensus();
+        return this._setupConsensus();
     }
 
     /**
@@ -181,7 +181,7 @@ class Client {
      * @private
      */
     _onBlock(blockHash) {
-        for (const listener of this._blockListeners.valueIterator()) {
+        for (const listener of this._blockListeners.values()) {
             listener(blockHash);
         }
     }
@@ -191,9 +191,10 @@ class Client {
      * @private
      */
     _onConsensusChanged(state) {
-        if (state === this._consensusState) return;
         this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
+            if (state === this._consensusState) return;
+
             if (consensus.established) {
                 const oldSubscription = consensus.getSubscription();
                 if (oldSubscription.type === Subscription.Type.ADDRESSES) {
@@ -202,7 +203,7 @@ class Client {
             }
 
             this._consensusState = state;
-            for (const listener of this._consensusChangedListeners.valueIterator()) {
+            for (const listener of this._consensusChangedListeners.values()) {
                 try {
                     await listener(state);
                 } catch (e) {
@@ -210,9 +211,9 @@ class Client {
                 }
             }
 
-            if (state === Client.ConsensusState.ESTABLISHED) {
+            if (consensus.established) {
                 const headHash = await consensus.getHeadHash();
-                for (const listener of this._headChangedListeners.valueIterator()) {
+                for (const listener of this._headChangedListeners.values()) {
                     try {
                         await listener(headHash, 'established', [], [headHash]);
                     } catch (e) {
@@ -224,7 +225,7 @@ class Client {
     }
 
     _onConsensusFailed() {
-        return this._consensusSynchronizer.push(async () => {
+        this._consensusSynchronizer.push(async () => {
             const consensus = await this._consensus;
             if (consensus instanceof PicoConsensus) {
                 // Upgrade pico consensus to nano consensus
@@ -232,7 +233,7 @@ class Client {
                 const newConsensus = new NanoConsensus(await new NanoChain(consensus.network.time), consensus.mempool, consensus.network);
                 await this._replaceConsensus(Promise.resolve(newConsensus));
             }
-        });
+        }).catch(Log.e.tag(Client));
     }
 
     /**
@@ -246,7 +247,7 @@ class Client {
         this._consensusSynchronizer.push(async () => {
             // Process head-changed listeners.
             if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
-                for (const listener of this._headChangedListeners.valueIterator()) {
+                for (const listener of this._headChangedListeners.values()) {
                     try {
                         await listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
                     } catch (e) {
@@ -265,7 +266,7 @@ class Client {
                     if (block.isFull()) {
                         revertedTxs.addAll(block.transactions);
                     }
-                // FIXME
+                    // FIXME
                     for (const tx of this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height)).valueIterator()) {
                         revertedTxs.add(tx);
                     }
@@ -328,7 +329,7 @@ class Client {
     _onPendingTransaction(tx, blockNow) {
         let details;
         let fs = [];
-        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.values()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 if (blockNow && blockNow.height >= this._txExpiresAt(tx)) {
                     details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
@@ -362,7 +363,7 @@ class Client {
     _onMinedTransaction(block, tx, blockNow) {
         let details;
         let fs = [];
-        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.values()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 let state = Client.TransactionState.MINED, confirmations = 1;
                 if (blockNow) {
@@ -397,7 +398,7 @@ class Client {
     _onConfirmedTransaction(block, tx, blockNow) {
         let details;
         let fs = [];
-        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.values()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
                 fs.push(async () => {
@@ -422,7 +423,7 @@ class Client {
     _onExpiredTransaction(block, tx) {
         let details;
         let fs = [];
-        for (const {listener, addresses} of this._transactionListeners.valueIterator()) {
+        for (const {listener, addresses} of this._transactionListeners.values()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
                 details = details || new Client.TransactionDetails(tx, Client.TransactionState.EXPIRED);
                 fs.push(async () => {
@@ -910,8 +911,8 @@ class Client {
      * @returns {Promise}
      */
     waitForConsensusEstablished() {
-        return new Promise(async resolve => {
-            if ((await this._consensus).established) {
+        return new Promise(resolve => {
+            if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
                 resolve();
             } else {
                 let handle;

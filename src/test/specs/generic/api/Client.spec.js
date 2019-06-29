@@ -175,18 +175,17 @@ describe('Client', () => {
 
     it('can replace consensus at runtime (pico failure)', async (done) => {
         const client = startClient('pico');
-        let establishedPico = false, syncingNano = false;
-        client.addConsensusChangedListener((state) => {
-            if (!establishedPico && state === Client.ConsensusState.ESTABLISHED) {
-                establishedPico = true;
-                client._onConsensusFailed();
-            } else if (establishedPico && state === Client.ConsensusState.SYNCING) {
+        let syncingNano = false;
+        await client.waitForConsensusEstablished();
+        await client.addConsensusChangedListener(async (state) => {
+            if (state !== Client.ConsensusState.ESTABLISHED) {
                 syncingNano = true;
-            } else if (establishedPico && state === Client.ConsensusState.ESTABLISHED) {
+            } else if (state === Client.ConsensusState.ESTABLISHED) {
                 expect(syncingNano).toBeTruthy();
                 done();
             }
         });
+        client._onConsensusFailed();
     });
 
 });
