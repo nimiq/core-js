@@ -243,10 +243,16 @@ class BaseConsensusAgent extends Observable {
                 this._pendingRequests.get(vector).push({resolve, reject});
             } else {
                 this._pendingRequests.put(vector, [{resolve, reject}]);
+
                 this._peer.channel.getData([vector]);
+
                 this._timers.setTimeout(`block-request-${vector.hash.toBase64()}`, () => {
-                    if (!this._pendingRequests.get(vector)) return;
-                    for (const {reject} of this._pendingRequests.get(vector)) {
+                    const requests = this._pendingRequests.get(vector);
+                    if (!requests) return;
+
+                    this._pendingRequests.remove(vector);
+
+                    for (const {reject} of requests) {
                         reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
@@ -265,12 +271,19 @@ class BaseConsensusAgent extends Observable {
                 this._pendingRequests.get(vector).push({resolve, reject});
             } else {
                 this._pendingRequests.put(vector, [{resolve, reject}]);
+
                 if (!this._objectsInFlight.contains(vector)) {
                     this._peer.channel.getData([vector]);
                     this._objectsInFlight.add(vector);
                 }
+
                 this._timers.setTimeout(`tx-request-${vector.hash.toBase64()}`, () => {
-                    for (const {reject} of this._pendingRequests.get(vector)) {
+                    const requests = this._pendingRequests.get(vector);
+                    if (!requests) return;
+
+                    this._pendingRequests.remove(vector);
+
+                    for (const {reject} of requests) {
                         reject(new Error('Timeout'));
                     }
                 }, BaseConsensusAgent.REQUEST_TIMEOUT);
@@ -1518,7 +1531,7 @@ BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
  */
 BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
 BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give client time to announce new head without request
-BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY = 1000 * 5;
+BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY = 1000 * 3;
 
 BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX = 40000;
 Class.register(BaseConsensusAgent);

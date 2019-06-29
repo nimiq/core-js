@@ -238,7 +238,6 @@ class BlockHeader {
         this._pow = null;
     }
 }
-// FIXME: Clean up for mainnet.
 BlockHeader.Version = {
     V1: 1
 };

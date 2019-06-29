@@ -14,7 +14,7 @@ Client.Network = class Network {
     async getPeers() {
         const consensus = await this._client._consensus;
         const infos = [];
-        for (let connection of consensus.network.connections.valueIterator()) {
+        for (const connection of consensus.network.connections.valueIterator()) {
             infos.push(new Client.PeerInfo(connection));
         }
         return infos;
@@ -39,7 +39,7 @@ Client.Network = class Network {
     async getAddresses() {
         const consensus = await this._client._consensus;
         const infos = [];
-        for (let addressState of consensus.network.addresses.iterator()) {
+        for (const addressState of consensus.network.addresses.iterator()) {
             infos.push(new Client.AddressInfo(addressState));
         }
         return infos;
@@ -129,7 +129,7 @@ Client.Network = class Network {
         } else if (address instanceof Client.BasicAddress) {
             peerAddress = consensus.network.addresses.get(address.peerAddress);
         } else if (typeof address === 'string') {
-            for (let peerAddressState of consensus.network.addresses.iterator()) {
+            for (const peerAddressState of consensus.network.addresses.iterator()) {
                 if (peerAddressState.peerAddress.toString() === address) {
                     peerAddress = peerAddressState.peerAddress;
                     break;

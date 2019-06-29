@@ -178,7 +178,6 @@ Policy.TOTAL_SUPPLY = 21e14;
 
 /**
  * Initial supply before genesis block in lunas.
- * FIXME: Change for main net.
  * @type {number}
  * @constant
  */

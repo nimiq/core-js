@@ -132,7 +132,7 @@ class BaseMiniConsensus extends BaseConsensus {
         // Try agents first that (we think) know the block hash.
         agents.sort((a, b) =>
             a.knowsBlock(blockHash) !== b.knowsBlock(blockHash)
-                ? -a.knowsBlock(hash) + 0.5
+                ? -a.knowsBlock(blockHash) + 0.5
                 : Math.random() - 0.5);
 
         for (const agent of agents) {

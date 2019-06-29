@@ -266,11 +266,13 @@ class Client {
                     if (block.isFull()) {
                         revertedTxs.addAll(block.transactions);
                     }
-                    // FIXME
-                    for (const tx of this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height)).valueIterator()) {
-                        revertedTxs.add(tx);
+                    const set = this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height));
+                    if (set) {
+                        for (const tx of set.valueIterator()) {
+                            revertedTxs.add(tx);
+                        }
+                        this._transactionConfirmWaiting.remove(this._txConfirmsAt(block.height));
                     }
-                    this._transactionConfirmWaiting.remove(this._txConfirmsAt(block.height));
                 }
 
                 // Gather applied transactions

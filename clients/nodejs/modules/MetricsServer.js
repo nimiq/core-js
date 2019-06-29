@@ -141,8 +141,8 @@ class MetricsServer {
     async _networkMetrics(res) {
         /** @type {Map.<string, number>} */
         const peers = new Map();
-        for (let peer of (await this._client.network.getPeers())) {
-            let o = {};
+        for (const peer of (await this._client.network.getPeers())) {
+            const o = {};
             switch (peer.peerAddress ? peer.peerAddress.protocol : -1) {
                 case Nimiq.Protocol.DUMB:
                     o.type = 'dumb';
@@ -191,7 +191,7 @@ class MetricsServer {
         }
         /** @type {Map.<string, number>} */
         const addresses = new Map();
-        for (let address of (await this._client.network.getAddresses())) {
+        for (const address of (await this._client.network.getAddresses())) {
             let type = 'unknown';
             switch (address.peerAddress.protocol) {
                 case Nimiq.Protocol.DUMB:
@@ -213,10 +213,10 @@ class MetricsServer {
             }
         }
 
-        for (let os of peers.keys()) {
+        for (const os of peers.keys()) {
             MetricsServer._metric(res, 'network_peers', this._with(JSON.parse(os)), peers.get(os));
         }
-        for (let type of addresses.keys()) {
+        for (const type of addresses.keys()) {
             MetricsServer._metric(res, 'network_known_addresses', this._with({type: type}), addresses.get(type));
         }
         const stats = await this._client.network.getStatistics();

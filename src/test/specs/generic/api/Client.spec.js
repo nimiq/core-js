@@ -21,7 +21,7 @@ describe('Client', () => {
         const netconfig = Dummy.NETCONFIG;
         const consensus = await Consensus.volatileFull(netconfig);
         testChain = await TestBlockchain.createVolatileTest(numBlocks);
-        for (let block of (await testChain.getBlocks(consensus.blockchain.headHash))) {
+        for (const block of (await testChain.getBlocks(consensus.blockchain.headHash))) {
             await consensus.blockchain.pushBlock(await testChain.getBlock(block.hash(), true, true));
         }
         consensus.network.connect();

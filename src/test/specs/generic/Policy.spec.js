@@ -22,23 +22,17 @@ describe('Policy', () => {
     });
 
     it('reaches total supply after ~100 years', () => {
-        // FIXME: replace initialSupply by Policy.INITIAL_SUPPLY for main net
-        const initialSupply = 252e12;
-
         // Should reach 21mio NIM at block 52888984.
         const block = 101*365*24*60*60 / Policy.BLOCK_TIME; // 101 years
-        const supply = Policy._supplyAfter(initialSupply, block-1);
+        const supply = Policy._supplyAfter(Policy.INITIAL_SUPPLY, block - 1);
         expect(supply).toBe(Policy.TOTAL_SUPPLY, 'Wrong supply.');
         expect(Policy._blockRewardAt(supply, block)).toBe(0, 'Wrong reward.');
     });
 
     it('correctly switches to tail emission', () => {
-        // FIXME: replace initialSupply by Policy.INITIAL_SUPPLY for main net
-        const initialSupply = 252e12;
-
         // Should reach 21mio NIM at block 52888984.
         const block = Policy.EMISSION_TAIL_START;
-        const supply = Policy._supplyAfter(initialSupply, block-2);
+        const supply = Policy._supplyAfter(Policy.INITIAL_SUPPLY, block - 2);
         const previousReward = Policy._blockRewardAt(supply, block-1);
         expect(previousReward > Policy.EMISSION_TAIL_REWARD).toBe(true, 'Wrong reward before starting block.');
         expect(Policy._blockRewardAt(supply + previousReward, block)).toBe(Policy.EMISSION_TAIL_REWARD, 'Wrong reward at starting block.');

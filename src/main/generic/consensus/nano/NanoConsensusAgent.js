@@ -94,11 +94,9 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
     async _onChainProof(msg) {
         Log.d(NanoConsensusAgent, `[CHAIN-PROOF] Received from ${this._peer.peerAddress}: ${msg.proof}`);
 
-        // Check if we have requested a chain proof, reject unsolicited ones.
-        // FIXME
+        // Check if we have requested a chain proof, discard unsolicited ones.
         if (!this._requestedChainProof) {
             Log.w(NanoConsensusAgent, `Unsolicited chain proof received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
             return;
         }
         this._requestedChainProof = false;

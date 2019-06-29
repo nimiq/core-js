@@ -572,7 +572,7 @@ class BaseChain extends IBlockchain {
             promises.push(worker.computeArgon2dBatch(part));
         }
         const pows = (await Promise.all(promises)).reduce((a, b) => [...a, ...b], []);
-        for(let i = 0; i < headers.length; ++i) {
+        for (let i = 0; i < headers.length; ++i) {
             headers[i]._pow = new Hash(pows[i]);
         }
     }
