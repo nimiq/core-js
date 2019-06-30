@@ -599,13 +599,13 @@ class ConnectionPool extends Observable {
         // Mark address as established.
         this._addresses.established(peer.channel, peer.peerAddress);
 
+        Log.d(ConnectionPool, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, userAgent=${peer.userAgent || '<unknown>'}, headHash=${peer.headHash.toBase64()})`);
+
         // Let listeners know about this peer.
         this.fire('peer-joined', peer);
 
         // Let listeners know that the peers changed.
         this.fire('peers-changed');
-
-        Log.d(ConnectionPool, () => `[PEER-JOINED] ${peer.peerAddress} ${peer.netAddress} (version=${peer.version}, services=${peer.peerAddress.services}, userAgent=${peer.userAgent || '<unknown>'}, headHash=${peer.headHash.toBase64()})`);
     }
 
     /**
@@ -643,16 +643,16 @@ class ConnectionPool extends Observable {
 
             this._updateConnectedPeerCount(peerConnection, -1);
 
+            const kbTransferred = ((peerConnection.networkConnection.bytesSent
+                + peerConnection.networkConnection.bytesReceived) / 1000).toFixed(2);
+            Log.d(ConnectionPool, () => `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
+                + `(transferred=${kbTransferred} kB, closeType=${type} ${reason})`);
+
             // Tell listeners that this peer has gone away.
             this.fire('peer-left', peerConnection.peer);
 
             // Let listeners know that the peers changed.
             this.fire('peers-changed');
-
-            const kbTransferred = ((peerConnection.networkConnection.bytesSent
-                + peerConnection.networkConnection.bytesReceived) / 1000).toFixed(2);
-            Log.d(ConnectionPool, () => `[PEER-LEFT] ${peerConnection.peerAddress} ${peerConnection.peer.netAddress} `
-                + `(transferred=${kbTransferred} kB, closeType=${type} ${reason})`);
         } else {
             if (peerConnection.networkConnection.inbound) {
                 this._inboundCount--;

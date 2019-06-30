@@ -26,8 +26,8 @@ class NetworkUi {
             this.$peerCountWs.textContent = stats.peerCountsByType['ws'];
             this.$peerCountWss.textContent = stats.peerCountsByType['wss'];
             this.$peerCountRtc.textContent = stats.peerCountsByType['rtc'];
-            this.$bytesReceived.textContent = stats.bytesReceived;
-            this.$bytesSent.textContent = stats.bytesSent;
+            this.$bytesReceived.textContent = Utils.humanBytes(stats.bytesReceived);
+            this.$bytesSent.textContent = Utils.humanBytes(stats.bytesSent);
         });
     }
 }

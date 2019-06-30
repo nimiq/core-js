@@ -214,7 +214,7 @@ class BaseConsensus extends Observable {
      * @returns {Array.<Transaction>}
      */
     getMempoolContents() {
-        throw new Error('not implemented: getMempoolContents');
+        return [];
     }
 
     //

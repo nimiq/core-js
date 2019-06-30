@@ -25,9 +25,8 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
         this._requestedChainProof = false;
 
         // Listen to consensus messages from the peer.
-        peer.channel.on('chain-proof', msg => this._onChainProof(msg));
-
-        peer.channel.on('get-chain-proof', msg => this._onGetChainProof(msg));
+        this._onToDisconnect(peer.channel, 'chain-proof', msg => this._onChainProof(msg));
+        this._onToDisconnect(peer.channel, 'get-chain-proof', msg => this._onGetChainProof(msg));
 
         // Subscribe to all announcements from the peer.
         this._subscribeTarget();

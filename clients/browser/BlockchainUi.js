@@ -76,20 +76,22 @@ class BlockchainUi {
         this.$.client.getHeadBlock(false).then((head) => {
             const tailHeight = Math.max(head.height - Nimiq.Policy.DIFFICULTY_BLOCK_WINDOW, 1);
 
-            this.$.client.getBlockAt(tailHeight, false).then(tailBlock => {
-                let averageBlockTime;
-                if (tailBlock) {
-                    averageBlockTime =
-                        (head.timestamp - tailBlock.timestamp) / (Math.max(head.height - tailBlock.height, 1));
-                } else {
-                    averageBlockTime = 'unknown';
-                }
-                this.$averageBlockTime.textContent = averageBlockTime + 's';
-            });
+            this.$.client.getBlockAt(tailHeight, false)
+                .then(tailBlock => {
+                    const averageBlockTime = (head.timestamp - tailBlock.timestamp) / Math.max(head.height - tailBlock.height, 1);
+                    this.$averageBlockTime.textContent = averageBlockTime + 's';
+                })
+                .catch(() => {
+                    this.$averageBlockTime.textContent = 'unknown';
+                });
 
-            this.$.client.getBlock(head.prevHash, false).then(prevBlock => {
-                this.$lastBlockTime.textContent = (prevBlock ? (head.timestamp - prevBlock.timestamp) : 0) + 's';
-            });
+            this.$.client.getBlock(head.prevHash, false)
+                .then(prevBlock => {
+                    this.$lastBlockTime.textContent = (head.timestamp - prevBlock.timestamp) + 's';
+                })
+                .catch(() => {
+                    this.$lastBlockTime.textContent = '0s';
+                });
         });
     }
 

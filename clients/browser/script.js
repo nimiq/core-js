@@ -48,7 +48,7 @@ class DevUi {
             Nimiq.init(() => {
                 const $ = {};
                 $.clientType = this.clientType;
-                const config = Nimiq.GenesisConfig.CONFIGS[this.networkName] || Nimiq.GenesisConfig.CONFIGS['dev'];
+                const config = Nimiq.GenesisConfig.CONFIGS[this.networkName] || Nimiq.GenesisConfig.CONFIGS['test'];
                 Nimiq.GenesisConfig.init(config);
 
                 Promise.all([

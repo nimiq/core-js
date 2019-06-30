@@ -36,8 +36,8 @@ class NetworkConnection extends Observable {
         this._id = NetworkConnection._instanceCount++;
 
         this._channel.on('message', msg => this._onMessage(msg));
-        this._channel.on('close', () => this._onClose(CloseType.CLOSED_BY_REMOTE, 'Closed by remote'));
         this._channel.on('error', e => this._onError(e));
+        this._channel.on('close', () => this._close(CloseType.CLOSED_BY_REMOTE, 'Closed by remote'));
     }
 
     /**
@@ -45,7 +45,7 @@ class NetworkConnection extends Observable {
      * @private
      */
     _onMessage(msg) {
-        // Don't emit messages if this channel is closed.
+        // Don't emit events if this channel is closed.
         if (this._closed) {
             return;
         }
@@ -59,6 +59,11 @@ class NetworkConnection extends Observable {
      * @private
      */
     _onError(e) {
+        // Don't emit events if this channel is closed.
+        if (this._closed) {
+            return;
+        }
+
         this._lastError = e;
         this.fire('error', e, this);
     }
@@ -68,8 +73,8 @@ class NetworkConnection extends Observable {
      * @param {string} [reason]
      * @private
      */
-    _onClose(type, reason) {
-        // Don't fire close event again when already closed.
+    _close(type, reason) {
+        // Don't emit events if this channel is closed.
         if (this._closed) {
             return;
         }
@@ -85,25 +90,25 @@ class NetworkConnection extends Observable {
 
         // Tell listeners that this connection has closed.
         this.fire('close', type, reason, this);
+
+        // Close the native channel.
+        this._channel.close();
+        this._channel = null;
+
+        // Remove all listeners.
+        this._offAll();
     }
 
     /**
      * @param {number} [type]
      * @param {string} [reason]
-     * @private
      */
-    _close(type, reason) {
-        if (this._closed) {
-            return;
+    close(type, reason) {
+        if (!this._closed) {
+            const connType = this._inbound ? 'inbound' : 'outbound';
+            Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : '') + ` (${type})`);
         }
-
-        // Don't wait for the native close event to fire.
-        this._onClose(type, reason);
-
-        // Close the native channel.
-        this._channel.close();
-        this._channel = null;
-        this._offAll();
+        this._close(type, reason);
     }
 
     /**
@@ -143,7 +148,7 @@ class NetworkConnection extends Observable {
         // Fire close event (early) if channel is closing/closed.
         if (this._isChannelClosing() || this._isChannelClosed()) {
             Log.d(NetworkConnection, () => `Not sending data to ${logAddress} - channel closing/closed (${this._channel.readyState})`);
-            this._onClose(CloseType.CHANNEL_CLOSING, 'channel closing');
+            this._close(CloseType.CHANNEL_CLOSING, 'channel closing');
             return false;
         }
 
@@ -196,18 +201,6 @@ class NetworkConnection extends Observable {
             return;
         }
         this._channel.confirmExpectedMessage(type, success);
-    }
-
-    /**
-     * @param {number} [type]
-     * @param {string} [reason]
-     */
-    close(type, reason) {
-        if (!this._closed) {
-            const connType = this._inbound ? 'inbound' : 'outbound';
-            Log.d(NetworkConnection, `Closing ${connType} connection #${this._id} ${this._peerAddress || this._netAddress}` + (reason ? ` - ${reason}` : '') + ` (${type})`);
-        }
-        this._close(type, reason);
     }
 
     /**

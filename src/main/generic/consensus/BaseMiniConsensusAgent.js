@@ -50,17 +50,22 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
      * @returns {Promise.<Array<Account>>}
      * @private
      */
-    _getAccounts(blockHash, addresses) {
+    async _getAccounts(blockHash, addresses) {
         Assert.that(this._accountsRequest === null);
+
+        const block = await this._blockchain.getBlock(blockHash);
+        if (!block) {
+            throw new Error('Unknown block hash');
+        }
 
         Log.d(BaseMiniConsensusAgent, `Requesting AccountsProof for ${addresses} from ${this._peer.peerAddress}`);
 
         return new Promise((resolve, reject) => {
             this._accountsRequest = {
-                addresses: addresses,
-                blockHash: blockHash,
-                resolve: resolve,
-                reject: reject
+                addresses,
+                block,
+                resolve,
+                reject
             };
 
             // Request AccountsProof from peer.
@@ -69,7 +74,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
             // Drop the peer if it doesn't send the accounts proof within the timeout.
             this._peer.channel.expectMessage(Message.Type.ACCOUNTS_PROOF, () => {
                 this._peer.channel.close(CloseType.GET_ACCOUNTS_PROOF_TIMEOUT, 'getAccountsProof timeout');
-                reject(new Error('timeout')); // TODO error handling
+                reject(new Error('Timeout'));
             }, BaseMiniConsensusAgent.ACCOUNTSPROOF_REQUEST_TIMEOUT);
         });
     }
@@ -82,19 +87,14 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
     async _onAccountsProof(msg) {
         Log.d(BaseMiniConsensusAgent, `[ACCOUNTS-PROOF] Received from ${this._peer.peerAddress}: blockHash=${msg.blockHash}, proof=${msg.proof} (${msg.serializedSize} bytes)`);
 
-        // Check if we have requested an accounts proof, reject unsolicited ones.
+        // Check if we have requested an accounts proof, discard unsolicited ones.
         if (!this._accountsRequest) {
             Log.w(BaseMiniConsensusAgent, `Unsolicited accounts proof received from ${this._peer.peerAddress}`);
-            // TODO close/ban?
             return;
         }
 
-        const addresses = this._accountsRequest.addresses;
-        const blockHash = this._accountsRequest.blockHash;
-        const resolve = this._accountsRequest.resolve;
-        const reject = this._accountsRequest.reject;
-
         // Reset accountsRequest.
+        const {addresses, /** @type {Block} */ block, resolve, reject} = this._accountsRequest;
         this._accountsRequest = null;
 
         if (!msg.hasProof()) {
@@ -103,6 +103,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
         }
 
         // Check that the reference block corresponds to the one we requested.
+        const blockHash = block.hash();
         if (!blockHash.equals(msg.blockHash)) {
             Log.w(BaseMiniConsensusAgent, `Received AccountsProof for invalid reference block from ${this._peer.peerAddress}`);
             reject(new Error('Invalid reference block'));
@@ -121,7 +122,6 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
 
         // Check that the proof root hash matches the accountsHash in the reference block.
         const rootHash = proof.root();
-        const block = await this._blockchain.getBlock(blockHash);
         if (!block.accountsHash.equals(rootHash)) {
             Log.w(BaseMiniConsensusAgent, `Invalid AccountsProof (root hash) received from ${this._peer.peerAddress}`);
             // TODO ban instead?
