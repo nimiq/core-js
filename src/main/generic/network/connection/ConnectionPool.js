@@ -734,8 +734,11 @@ class ConnectionPool extends Observable {
 
         const peerConnection = this.getConnectionByPeerAddress(peerAddress);
         Assert.that(!!peerConnection, `PeerAddress not stored ${peerAddress}`);
-        Assert.that(peerConnection.state === PeerConnectionState.CONNECTING,
-            `PeerConnection state not CONNECTING, but ${peerConnection.state} (${peerAddress})`);
+        if (peerConnection.state !== PeerConnectionState.CONNECTING) {
+            Log.e(ConnectionPool, `PeerConnection state not CONNECTING, but ${peerConnection.state} (${peerAddress})`);
+            return;
+        }
+
         this._remove(peerConnection);
 
         this._connectingCount--;

@@ -37,7 +37,7 @@ class WebRtcConnector extends Observable {
             this._connectors.remove(peerId);
             this._timers.clearTimeout(`connect_${peerId}`);
 
-            connector.rtcConnection.close();
+            connector.close();
 
             this.fire('error', peerAddress, 'timeout');
         }, WebRtcConnector.CONNECT_TIMEOUT);
@@ -64,7 +64,7 @@ class WebRtcConnector extends Observable {
                 this._connectors.remove(msg.senderId);
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
 
-                connector.rtcConnection.close();
+                connector.close();
 
                 // XXX Reason needs to be adapted when more flags are added.
                 const reason = msg.isUnroutable() ? 'unroutable' : 'ttl exceeded';
@@ -112,7 +112,7 @@ class WebRtcConnector extends Observable {
                     this._timers.clearTimeout(`connect_${msg.senderId}`);
 
                     // Abort the outbound connection attempt.
-                    connector.rtcConnection.close();
+                    connector.close();
 
                     // Let listeners know that the connection attempt was aborted.
                     this.fire('error', connector.peerAddress, 'simultaneous inbound connection');
@@ -127,7 +127,7 @@ class WebRtcConnector extends Observable {
             this._timers.setTimeout(`connect_${msg.senderId}`, () => {
                 this._timers.clearTimeout(`connect_${msg.senderId}`);
                 this._connectors.remove(msg.senderId);
-                connector.rtcConnection.close();
+                connector.close();
             }, WebRtcConnector.CONNECT_TIMEOUT);
         }
 
@@ -190,13 +190,15 @@ class PeerConnector extends Observable {
         this._lastIceCandidate = null;
         this._iceCandidateQueue = [];
         this._localIceCandidates = [];
+
+        this._timers = new Timers();
     }
 
     /**
      * @param {*} signal
      */
     onSignal(signal) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         if (signal.sdp) {
             this._rtcConnection.setRemoteDescription(WebRtcFactory.newSessionDescription(signal))
                 .then(() => {
@@ -221,18 +223,27 @@ class PeerConnector extends Observable {
     }
 
     _onConnectionStateChange(e) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         switch (this._rtcConnection.connectionState) {
             case 'failed':
             case 'disconnected':
             case 'closed':
-                this._onClose();
+                this.close();
         }
     }
 
-    _onClose() {
+    close() {
+        if (!this._rtcConnection) return;
+
+        this._rtcConnection.onicecandidate = null;
+        this._rtcConnection.onconnectionstatechange = null;
+        this._rtcConnection.onicegatheringstatechange = null;
+        this._rtcConnection.close();
+
         this._rtcConnection = null;
         this._signalChannel = null;
+
+        this._timers.clearAll();
         this._offAll();
     }
 
@@ -242,7 +253,7 @@ class PeerConnector extends Observable {
      * @private
      */
     _addIceCandidate(signal) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return Promise.resolve();
         this._lastIceCandidate = WebRtcFactory.newIceCandidate(signal);
 
         // Do not try to add ICE candidates before the remote description is set.
@@ -256,7 +267,7 @@ class PeerConnector extends Observable {
     }
 
     async _handleCandidateQueue() {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         // Handle ICE candidates if they already arrived.
         for (const candidate of this._iceCandidateQueue) {
             await this._addIceCandidate(candidate);
@@ -265,7 +276,7 @@ class PeerConnector extends Observable {
     }
 
     _signal(signal) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         const payload = BufferUtils.fromAscii(JSON.stringify(signal));
         const keyPair = this._networkConfig.keyPair;
         const peerId = this._networkConfig.peerId;
@@ -282,15 +293,27 @@ class PeerConnector extends Observable {
     }
 
     _onIceCandidate(event) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         if (event.candidate !== null) {
             this._localIceCandidates.push(event.candidate);
+            if (!this._timers.timeoutExists('ice-gathering')) {
+                this._timers.setTimeout('ice-gathering', this._sendIceCandidates.bind(this),
+                    PeerConnector.ICE_GATHERING_TIMEOUT);
+            }
         }
     }
 
     _onIceGatheringStateChange(event) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
-        if (this._rtcConnection.iceGatheringState === 'complete' && this._localIceCandidates.length > 0) {
+        if (!this._rtcConnection) return;
+        if (this._rtcConnection.iceGatheringState === 'complete') {
+            this._sendIceCandidates();
+        }
+    }
+
+    _sendIceCandidates() {
+        this._timers.clearTimeout('ice-gathering');
+
+        if (this._localIceCandidates.length > 0) {
             // Build backwards compatible structure:
             // We assume the last ice candidate to be the most promising one for old clients.
             let lastIceCandidate = this._localIceCandidates.pop();
@@ -298,31 +321,34 @@ class PeerConnector extends Observable {
             lastIceCandidate = lastIceCandidate.toJSON ? lastIceCandidate.toJSON() : JSON.parse(JSON.stringify(lastIceCandidate));
             // Embed other candidates in this one ice candidate.
             lastIceCandidate.otherCandidates = this._localIceCandidates;
+
+            // Send ice candidate.
             this._signal(lastIceCandidate);
+
+            // Reset local candidates.
             this._localIceCandidates = [];
         }
     }
 
     _onDescription(description) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         this._rtcConnection.setLocalDescription(description)
             .then(() => this._signal(this._rtcConnection.localDescription))
             .catch(Log.e.tag(PeerConnector));
     }
 
     _onDataChannel(event) {
-        if (!this._rtcConnection) throw new Error('RTC connection closed');
+        if (!this._rtcConnection) return;
         const channel = new WebRtcDataChannel(event.channel || event.target);
 
         // Make sure to close the corresponding RTCPeerConnection when the RTCDataChannel is closed
         channel.on('close', () => {
-            if (!this._rtcConnection) throw new Error('RTC connection closed');
-            this._rtcConnection.close();
+            if (!this._rtcConnection) return;
+            this.close();
         });
 
         // There is no API to get the remote IP address. As a crude heuristic, we parse the IP address
         // from the last ICE candidate seen before the connection was established.
-        // TODO Can we improve this?
         let netAddress = null;
         if (this._lastIceCandidate) {
             try {
@@ -331,12 +357,14 @@ class PeerConnector extends Observable {
                 Log.w(PeerConnector, `Failed to parse IP from ICE candidate: ${this._lastIceCandidate}`);
             }
         } else {
-            // XXX Why does this happen?
-            Log.w(PeerConnector, 'No ICE candidate seen for inbound connection');
+            Log.d(PeerConnector, 'No ICE candidate seen for RTC connection');
         }
 
         const conn = new NetworkConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
-        this.fire('connection', conn);
+
+        // Some browsers (Firefox, Safari) send the data-channel-open event before the channel is ready to use.
+        // Add a small delay here to account for that behaviour.
+        setTimeout(() => this.fire('connection', conn), PeerConnector.CONNECTION_OPEN_DELAY);
     }
 
     get nonce() {
@@ -346,12 +374,9 @@ class PeerConnector extends Observable {
     get peerAddress() {
         return this._peerAddress;
     }
-
-    get rtcConnection() {
-        return this._rtcConnection;
-    }
 }
-
+PeerConnector.ICE_GATHERING_TIMEOUT = 1000;
+PeerConnector.CONNECTION_OPEN_DELAY = 200;
 Class.register(PeerConnector);
 
 class OutboundPeerConnector extends PeerConnector {
@@ -368,8 +393,8 @@ class OutboundPeerConnector extends PeerConnector {
             .catch(Log.e.tag(OutboundPeerConnector));
     }
 
-    _onClose() {
-        super._onClose();
+    close() {
+        super.close();
         if (!this._channel) return;
         this._channel.onopen = null;
         this._channel = null;
