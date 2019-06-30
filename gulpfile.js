@@ -391,6 +391,9 @@ const uglify_babel = {
 
 gulp.task('create-version-file', function(cb) {
     const version = require('./package.json').version;
+    if (!fs.existsSync('./build')) {
+        fs.mkdirSync('/.build');
+    }
     fs.writeFile('./build/VersionNumber.js', `Version.CORE_JS_VERSION = '${version}';`, cb);
 });
 
