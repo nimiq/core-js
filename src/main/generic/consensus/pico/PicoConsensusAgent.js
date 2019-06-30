@@ -50,7 +50,6 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
                 await this._processBlock(hash, block);
             } catch (e) {
                 this._peer.channel.close(CloseType.ABORTED_SYNC, 'aborted sync');
-                this._syncFinished();
             }
         } else {
             this._syncFinished();
