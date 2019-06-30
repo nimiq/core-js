@@ -30,7 +30,7 @@
     "url": "https://github.com/nimiq/core-js.git"
   },
   "engines": {
-    "node": ">=7.9.0"
+    "node": ">=8.10.0"
   },
   "files": [
     "dist/node.js",
