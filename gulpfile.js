@@ -349,6 +349,7 @@ const babel_config = {
 
 const babel_loader = {
     plugins: [['@babel/plugin-transform-runtime', {
+        'corejs': 2,
         'regenerator': true,
     }]],
     presets: ['@babel/preset-env']
@@ -548,10 +549,15 @@ gulp.task('build-loader', function () {
     return merge(
         browserify([], {
             require: [
-                '@babel/runtime-corejs2/regenerator',
+                '@babel/runtime-corejs2/core-js/date/now',
+                '@babel/runtime-corejs2/core-js/number/is-integer',
+                '@babel/runtime-corejs2/core-js/number/max-safe-integer',
+                '@babel/runtime-corejs2/core-js/promise',
                 '@babel/runtime-corejs2/helpers/asyncToGenerator',
                 '@babel/runtime-corejs2/helpers/classCallCheck',
-                '@babel/runtime-corejs2/helpers/createClass'
+                '@babel/runtime-corejs2/helpers/createClass',
+                '@babel/runtime-corejs2/helpers/interopRequireDefault',
+                '@babel/runtime-corejs2/regenerator',
             ]
         }).bundle()
             .pipe(source('babel-runtime.js'))
