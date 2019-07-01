@@ -275,11 +275,18 @@ const $ = {};
         }
     });
 
+    $.client.addBlockListener(async (hash) => {
+        if (consensusState === Nimiq.Client.ConsensusState.SYNCING) {
+            const head = await $.client.getBlock(hash, false);
+            if (head.height % 100 === 0) {
+                Nimiq.Log.i(TAG, `Syncing at block: ${head.height}`);
+            }
+        }
+    });
+
     $.client.addHeadChangedListener(async (hash, reason) => {
         const head = await $.client.getBlock(hash, false);
-        if (consensusState === Nimiq.Client.ConsensusState.ESTABLISHED || head.height % 100 === 0) {
-            Nimiq.Log.i(TAG, `Now at block: ${head.height} (${reason})`);
-        }
+        Nimiq.Log.i(TAG, `Now at block: ${head.height} (${reason})`);
     });
 
     // TODO: Peer changed listeners
