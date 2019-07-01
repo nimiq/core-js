@@ -11,6 +11,8 @@ class PicoConsensus extends BaseMiniConsensus {
         this._blockchain = blockchain;
         /** @type {NanoMempool} */
         this._mempool = mempool;
+        /** @type {boolean} */
+        this._failed = false;
     }
 
     /**
@@ -22,15 +24,25 @@ class PicoConsensus extends BaseMiniConsensus {
         return new PicoConsensusAgent(this, peer, this._subscription);
     }
 
+    /**
+     * @param {Peer} peer
+     * @override
+     */
     _onPeerJoined(peer) {
         const agent = super._onPeerJoined(peer);
-        this.bubble(agent, 'consensus-failed');
+        agent.on('consensus-failed', () => this._onConsensusFailed());
+
         if (this._agents.length >= 3) {
             this._syncBlockchain();
         }
+
         return agent;
     }
 
+    /**
+     * @param {Peer} peer
+     * @override
+     */
     async _onPeerLeft(peer) {
         super._onPeerLeft(peer);
 
@@ -41,6 +53,14 @@ class PicoConsensus extends BaseMiniConsensus {
     }
 
     /**
+     * @override
+     */
+    _syncBlockchain() {
+        if (this._failed) return;
+        super._syncBlockchain();
+    }
+
+    /**
      * @param {number} numSyncedFullNodes
      * @param {number} numSyncedNodes
      * @return {boolean}
@@ -48,6 +68,15 @@ class PicoConsensus extends BaseMiniConsensus {
      */
     _hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) {
         return super._hasEnoughPeers(numSyncedFullNodes, numSyncedNodes) && numSyncedNodes >= PicoConsensus.MIN_SYNCED_NODES;
+    }
+
+    /**
+     * @private
+     */
+    _onConsensusFailed() {
+        this._failed = true;
+        this._syncPeer = null;
+        this.fire('consensus-failed');
     }
 
     /** @type {PicoChain} */

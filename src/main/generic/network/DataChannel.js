@@ -226,9 +226,10 @@ class DataChannel extends Observable {
             }
 
             expectedMsg.timeoutCallback();
+        } else {
+            Log.w(DataChannel, 'DataChannel receive timeout');
         }
 
-        Log.e(DataChannel, 'Timeout while receiving chunked message');
         this._buffer = null;
     }
 

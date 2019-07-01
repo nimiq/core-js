@@ -9,11 +9,6 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         this._consensus = consensus;
     }
 
-    onHeadUpdated() {
-        super.onHeadUpdated();
-        this.syncBlockchain().catch(Log.e.tag(PicoConsensusAgent));
-    }
-
     /**
      * @param {Hash} hash
      * @param {Block} block
@@ -27,7 +22,6 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
             if (result === PicoChain.ERR_INVALID) {
                 this._peer.channel.close(CloseType.INVALID_BLOCK, 'received invalid block');
             } else if (result === PicoChain.ERR_INCONSISTENT) {
-                this.fire('out-of-sync');
                 this.fire('consensus-failed');
             } else if (this._syncing) {
                 this._syncFinished();
@@ -42,7 +36,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
     async syncBlockchain() {
         this._syncing = true;
 
-        const headBlock = await this._getBlock(this._peer.headHash);
+        const headBlock = await this._getBlock(this._peer.headHash, /*includeForks*/ true);
         if (!headBlock) {
             try {
                 const hash = this._peer.headHash;
