@@ -119,12 +119,12 @@ describe('Client', () => {
     allit('reports head changed', async (done, _, consensus) => {
         const client = startClient(consensus);
         let handle;
-        handle = await client.addHeadChangedListener((hash => {
+        handle = await client.addHeadChangedListener(hash => {
             if (hash.equals(otherConsensus.blockchain.headHash)) {
                 client.removeListener(handle);
                 done();
             }
-        }));
+        });
     });
 
     established('can subscribe to mempool tx updates', async (done, /** @type {Client} */ client) => {

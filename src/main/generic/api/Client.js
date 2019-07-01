@@ -39,6 +39,8 @@ class Client {
 
         /** @type {Client.ConsensusState} */
         this._consensusState = Client.ConsensusState.CONNECTING;
+        /** @type {Hash} */
+        this._headHash = null;
         /** @type {HashMap.<number, HashSet.<TransactionDetails>>} */
         this._transactionConfirmWaiting = new HashMap();
         /** @type {HashMap.<number, HashSet.<TransactionDetails>>} */
@@ -213,6 +215,9 @@ class Client {
 
             if (consensus.established) {
                 const headHash = await consensus.getHeadHash();
+                if (headHash.equals(this._headHash)) return;
+                this._headHash = headHash;
+
                 for (const listener of this._headChangedListeners.values()) {
                     try {
                         await listener(headHash, 'established', [], [headHash]);
@@ -246,7 +251,9 @@ class Client {
     async _onHeadChanged(blockHash, reason, revertedBlocks, adoptedBlocks) {
         this._consensusSynchronizer.push(async () => {
             // Process head-changed listeners.
-            if (this._consensusState === Client.ConsensusState.ESTABLISHED) {
+            if (this._consensusState === Client.ConsensusState.ESTABLISHED && !blockHash.equals(this._headHash)) {
+                this._headHash = blockHash;
+
                 for (const listener of this._headChangedListeners.values()) {
                     try {
                         await listener(blockHash, reason, revertedBlocks.map(b => b.hash()), adoptedBlocks.map(b => b.hash()));
