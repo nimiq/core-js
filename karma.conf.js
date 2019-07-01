@@ -86,10 +86,10 @@ module.exports = function (config) {
             startConnect: false,
             tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
             build: process.env.TRAVIS_BUILD_NUMBER,
-            tags: [process.env.TRAVIS_BRANCH, process.env.TRAVIS_PULL_REQUEST]
+            tags: process.env.TRAVIS_BRANCH ? [process.env.TRAVIS_BRANCH, process.env.TRAVIS_PULL_REQUEST] : undefined
         },
 
-        browserNoActivityTimeout: 120000
+        browserNoActivityTimeout: 180000
     };
 
     function sauceLabsConfig(platform, browserName, version, browserRead, versionRead) {
@@ -97,7 +97,8 @@ module.exports = function (config) {
             base: 'SauceLabs',
             browserName: browserName,
             platform: platform,
-            version: version
+            version: version,
+            idleTimeout: configuration.browserNoActivityTimeout / 1000
         };
     }
 
