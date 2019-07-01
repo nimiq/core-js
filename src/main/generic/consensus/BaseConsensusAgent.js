@@ -444,7 +444,6 @@ class BaseConsensusAgent extends Observable {
     async __onInv(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
-            Log.v(BaseConsensusAgent, `Received ${vector.hash} from ${this.peer.peerAddress}`);
             this._knownObjects.add(vector);
             this._waitingInvVectors.remove(vector);
             this._waitingFreeInvVectors.remove(vector); // The inv vector has the same hashCode as a FreeTransactionVector
@@ -811,7 +810,7 @@ class BaseConsensusAgent extends Observable {
                 }
             }
         } else if (!this._localSubscription.matchesTransaction(msg.transaction) && this._lastSubscriptionChange + BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD > Date.now()) {
-            this._peer.channel.close(CloseType.RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION, 'received transaction not matching our subscription');
+            this._peer.channel.close(CloseType.TRANSACTION_NOT_MATCHING_SUBSCRIPTION, 'received transaction not matching our subscription');
         }
 
         // Mark object as processed.
@@ -1529,8 +1528,8 @@ BaseConsensusAgent.TRANSACTION_RELAY_FEE_MIN = 1;
  * Number of ms the peer may send non-matching transactions/blocks after a subscription change.
  * @type {number}
  */
-BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 2;
-BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 100 * 1000; // 100 seconds, give client time to announce new head without request
+BaseConsensusAgent.SUBSCRIPTION_CHANGE_GRACE_PERIOD = 1000 * 3;
+BaseConsensusAgent.HEAD_REQUEST_INTERVAL = 1000 * 100; // 100 seconds, give client time to announce new head without request
 BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY = 1000 * 3;
 
 BaseConsensusAgent.KNOWN_OBJECTS_COUNT_MAX = 40000;

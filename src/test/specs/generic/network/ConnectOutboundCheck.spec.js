@@ -20,7 +20,7 @@ describe('ConnectOutboundCheck', () => {
             expect(consensus1.network._connections.connectOutbound(peer.peerAddress)).toBe(false);
             peer.peerAddress._protocol = Protocol.RTC;
             expect(consensus1.network._connections.connectOutbound(peer.peerAddress)).toBe(false);
-            peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'Ban consensus 2');
+            peer.channel.close(CloseType.INVALID_BLOCK, 'Ban consensus 2');
         }
 
         /**

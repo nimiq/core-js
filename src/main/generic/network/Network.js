@@ -395,7 +395,7 @@ class Network extends Observable {
  * @type {number}
  * @constant
  */
-Network.PEER_COUNT_MAX = PlatformUtils.isBrowser() ? 15 : 4000;
+Network.PEER_COUNT_MAX = PlatformUtils.isBrowser() ? 12 : 4000;
 /**
  * @type {number}
  * @constant

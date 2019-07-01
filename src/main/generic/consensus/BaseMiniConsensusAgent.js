@@ -114,7 +114,6 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
         const proof = msg.proof;
         if (!proof.verify()) {
             Log.w(BaseMiniConsensusAgent, `Invalid AccountsProof received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
             this._peer.channel.close(CloseType.INVALID_ACCOUNTS_PROOF, 'Invalid AccountsProof');
             reject(new Error('Invalid AccountsProof'));
             return;
@@ -124,8 +123,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
         const rootHash = proof.root();
         if (!block.accountsHash.equals(rootHash)) {
             Log.w(BaseMiniConsensusAgent, `Invalid AccountsProof (root hash) received from ${this._peer.peerAddress}`);
-            // TODO ban instead?
-            this._peer.channel.close(CloseType.ACCOUNTS_PROOF_ROOT_HASH_MISMATCH, 'AccountsProof root hash mismatch');
+            this._peer.channel.close(CloseType.INVALID_ACCOUNTS_PROOF, 'AccountsProof root hash mismatch');
             reject(new Error('AccountsProof root hash mismatch'));
             return;
         }
@@ -139,7 +137,7 @@ class BaseMiniConsensusAgent extends BaseConsensusAgent {
                 accounts.push(account);
             } catch (e) {
                 Log.w(BaseMiniConsensusAgent, `Incomplete AccountsProof received from ${this._peer.peerAddress}`);
-                this._peer.channel.close(CloseType.INCOMPLETE_ACCOUNTS_PROOF, 'Incomplete AccountsProof');
+                this._peer.channel.close(CloseType.INVALID_ACCOUNTS_PROOF, 'Incomplete AccountsProof');
                 reject(new Error('Incomplete AccountsProof'));
                 return;
             }

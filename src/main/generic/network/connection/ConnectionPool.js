@@ -369,7 +369,7 @@ class ConnectionPool extends Observable {
         if (conn.netAddress && !conn.netAddress.isPseudo() && conn.netAddress.reliable) {
             // Close connection if peer's IP is banned.
             if (this._isIpBanned(conn.netAddress)) {
-                conn.close(CloseType.BANNED_IP, `connection with banned IP ${conn.netAddress}`);
+                conn.close(CloseType.IP_BANNED, `connection with banned IP ${conn.netAddress}`);
                 return false;
             }
 
@@ -474,7 +474,7 @@ class ConnectionPool extends Observable {
     _checkHandshake(peerConnection, peer) {
         // Close connection if peer's address is banned.
         if (this._addresses.isBanned(peer.peerAddress)) {
-            peerConnection.peerChannel.close(CloseType.PEER_IS_BANNED,
+            peerConnection.peerChannel.close(CloseType.PEER_BANNED,
                 `connection with banned address ${peer.peerAddress} (post version)`);
             return false;
         }

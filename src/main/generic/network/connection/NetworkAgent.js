@@ -146,7 +146,6 @@ class NetworkAgent extends Observable {
         // Drop the peer if it doesn't send us a version message.
         // Only do this if we haven't received the peer's version message already.
         if (!this._versionReceived) {
-            // TODO Should we ban instead?
             this._timers.setTimeout('version', () => {
                 this._timers.clearTimeout('version');
                 this._channel.close(CloseType.VERSION_TIMEOUT, 'version timeout');

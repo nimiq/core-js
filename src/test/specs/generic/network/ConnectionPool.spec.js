@@ -448,7 +448,7 @@ describe('ConnectionPool', () => {
 
             const conn = await new Promise(resolve => consensus.network._connections.on('connection', (conn) => { resolve(conn); }));
             await new Promise(resolve => sameIP1.on('established', () => {
-                conn.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                conn.close(CloseType.INVALID_BLOCK, 'received invalid block');
                 resolve();
             }));
 

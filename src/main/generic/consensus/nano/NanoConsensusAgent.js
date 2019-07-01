@@ -107,8 +107,7 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
         // Push the proof into the NanoChain.
         if (!(await this._blockchain.pushProof(msg.proof))) {
             Log.w(NanoConsensusAgent, `Invalid chain proof received from ${this._peer.peerAddress} - verification failed`);
-            // TODO ban instead?
-            this._peer.channel.close(CloseType.INVALID_CHAIN_PROOF, 'invalid chain proof');
+            this._peer.channel.close(CloseType.INVALID_CHAIN_PROOF, 'Invalid chain proof');
             return;
         }
 
@@ -130,7 +129,7 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
         for (const header of this._orphanedBlocks) {
             const status = await this._blockchain.pushHeader(header);
             if (status === NanoChain.ERR_INVALID) {
-                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                this._peer.channel.close(CloseType.INVALID_BLOCK, 'received invalid block');
                 break;
             }
         }
@@ -185,7 +184,7 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
         // TODO send reject message if we don't like the block
         const status = await this._blockchain.pushHeader(header);
         if (status === NanoChain.ERR_INVALID) {
-            this._peer.channel.close(CloseType.RECEIVED_INVALID_HEADER, 'received invalid header');
+            this._peer.channel.close(CloseType.INVALID_HEADER, 'received invalid header');
         }
         // Re-sync with this peer if it starts sending orphan blocks after the initial sync.
         else if (status === NanoChain.ERR_ORPHAN) {
@@ -205,7 +204,6 @@ class NanoConsensusAgent extends BaseMiniConsensusAgent {
      */
     async _processTransaction(hash, transaction) {
         await this._mempool.pushTransaction(transaction);
-        // TODO: Handle errors
     }
 
     /**

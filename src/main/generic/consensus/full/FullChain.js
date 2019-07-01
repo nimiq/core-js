@@ -140,12 +140,6 @@ class FullChain extends BaseChain {
             return FullChain.ERR_INVALID;
         }
 
-        // Check that all known interlink blocks are valid predecessors of the given block.
-        // if (!(await this._verifyInterlink(block))) {
-        //     Log.w(FullChain, 'Rejecting block - interlink verification failed');
-        //     return FullChain.ERR_INVALID;
-        // }
-
         // Check if the block's immediate predecessor is part of the chain.
         /** @type {ChainData} */
         const prevData = await this._store.getChainData(block.prevHash);
@@ -236,7 +230,6 @@ class FullChain extends BaseChain {
             await accountsTx.commitBlock(chainData.head, this._transactionCache);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
-            // TODO error handling
             Log.w(FullChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
             accountsTx.abort().catch(Log.w.tag(FullChain));
             return false;

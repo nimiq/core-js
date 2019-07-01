@@ -361,10 +361,7 @@ class PeerConnector extends Observable {
         }
 
         const conn = new NetworkConnection(channel, Protocol.RTC, netAddress, this._peerAddress);
-
-        // Some browsers (Firefox, Safari) send the data-channel-open event before the channel is ready to use.
-        // Add a small delay here to account for that behaviour.
-        setTimeout(() => this.fire('connection', conn), PeerConnector.CONNECTION_OPEN_DELAY);
+        this.fire('connection', conn);
     }
 
     get nonce() {

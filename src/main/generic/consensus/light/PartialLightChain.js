@@ -413,7 +413,6 @@ class PartialLightChain extends LightChain {
             await this._accountsTx.revertBlock(chainData.head, transactionCache);
         } catch (e) {
             // AccountsHash mismatch. This can happen if someone gives us an invalid block.
-            // TODO error handling
             Log.w(PartialLightChain, `Rejecting block - failed to commit to AccountsTree: ${e.message || e}`);
             return false;
         }

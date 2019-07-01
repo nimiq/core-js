@@ -25,7 +25,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
         if (this._peer.headHash.equals(hash)) {
             const result = await this._blockchain.pushBlock(block);
             if (result === PicoChain.ERR_INVALID) {
-                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                this._peer.channel.close(CloseType.INVALID_BLOCK, 'received invalid block');
             } else if (result === PicoChain.ERR_INCONSISTENT) {
                 this.fire('out-of-sync');
                 this.fire('consensus-failed');
@@ -34,7 +34,7 @@ class PicoConsensusAgent extends BaseMiniConsensusAgent {
             }
         } else {
             if (await this._blockchain.pushBlock(block) === PicoChain.ERR_INVALID) {
-                this._peer.channel.close(CloseType.RECEIVED_INVALID_BLOCK, 'received invalid block');
+                this._peer.channel.close(CloseType.INVALID_BLOCK, 'received invalid block');
             }
         }
     }
