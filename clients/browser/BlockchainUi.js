@@ -12,7 +12,6 @@ class BlockchainUi {
         this.$totalWork = this.$el.querySelector('[total-work]');
         this.$averageBlockTime = this.$el.querySelector('[average-block-time]');
         this.$lastBlockTime = this.$el.querySelector('[last-block-time]');
-        this.$timeToFirstConsensus = this.$el.querySelector('[time-to-first-consensus]');
 
         this.$blockInfo = this.$el.querySelector('[block-info]');
         this.$blockNotFound = this.$el.querySelector('[block-not-found]');
@@ -33,6 +32,9 @@ class BlockchainUi {
         $.client.addHeadChangedListener((hash) => {
             this.$.client.getBlock(hash).then((block) => this._headChanged(block));
         });
+
+        let startTime = Date.now();
+        let $timeToFirstConsensus = this.$el.querySelector('[time-to-first-consensus]');
         $.client.addConsensusChangedListener((state) => {
             this.$title.classList.remove('connecting', 'syncing', 'consensus-established');
             switch (state) {
@@ -45,6 +47,10 @@ class BlockchainUi {
                 case Nimiq.Client.ConsensusState.ESTABLISHED:
                     this.$title.classList.add('consensus-established');
                     $.client.getHeadBlock().then((head) => this._headChanged(head));
+                    if (startTime) {
+                        $timeToFirstConsensus.textContent = `${((Date.now() - startTime) / 1000).toFixed(2)}s`;
+                        startTime = null;
+                    }
                     break;
             }
         });
@@ -79,7 +85,7 @@ class BlockchainUi {
             this.$.client.getBlockAt(tailHeight, false)
                 .then(tailBlock => {
                     const averageBlockTime = (head.timestamp - tailBlock.timestamp) / Math.max(head.height - tailBlock.height, 1);
-                    this.$averageBlockTime.textContent = averageBlockTime + 's';
+                    this.$averageBlockTime.textContent = `${averageBlockTime}s`;
                 })
                 .catch(() => {
                     this.$averageBlockTime.textContent = 'unknown';
