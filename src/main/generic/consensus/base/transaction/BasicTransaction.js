@@ -43,7 +43,7 @@ class BasicTransaction extends Transaction {
 
     /**
      * @param {object} plain
-     * @return {Transaction}
+     * @return {BasicTransaction}
      */
     static fromPlain(plain) {
         if (!plain) throw new Error('Invalid transaction format');

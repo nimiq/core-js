@@ -530,7 +530,7 @@ class Block {
     }
 
     /**
-     * @param {Block|string} block
+     * @param {Block|object|string} block
      */
     static fromAny(block) {
         if (block instanceof Block) return block;

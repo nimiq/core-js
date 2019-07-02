@@ -10,11 +10,11 @@ export class Class {
 /* Client API */
 
 declare type Handle = number;
-declare type BlockListener = (blockHash: Hash) => void;
-declare type ConsensusChangedListener = (consensusState: Client.ConsensusState) => void;
-declare type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => void;
-declare type TransactionListener = (transaction: Client.TransactionDetails) => void;
-declare type MempoolListener = (transactionHash: Hash) => void;
+declare type BlockListener = (blockHash: Hash) => Promise<void> | void;
+declare type ConsensusChangedListener = (consensusState: Client.ConsensusState) => Promise<void> | void;
+declare type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => Promise<void> | void;
+declare type TransactionListener = (transaction: Client.TransactionDetails) => Promise<void> | void;
+declare type MempoolListener = (transactionHash: Hash) => Promise<void> | void;
 
 export class Client {
     public static Configuration: ClientConfiguration;
@@ -52,23 +52,24 @@ export class Client {
     public getHeadHash(): Promise<Hash>;
     public getHeadHeight(): Promise<number>;
     public getHeadBlock(includeBody?: boolean): Promise<Block>;
-    public getBlock(hash: Hash | string, includeBody?: boolean): Promise<Block | null>;
-    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
+    public getBlock(hash: Hash | string, includeBody?: boolean): Promise<Block>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block>;
     public getBlockTemplate(minerAddress: Address | string, extraData?: Uint8Array | string): Promise<Block>;
     public submitBlock(block: Block): Promise<boolean>;
     public getAccount(address: Address | string): Promise<Account>;
     public getAccounts(addresses: Array<Address | string>): Promise<Account[]>;
-    public getTransaction(hash: Hash | string, blockHash?: Hash | string, blockHeight?: number): Promise<Client.TransactionDetails | null>;
-    public getTransactionReceipt(hash: Hash | string): Promise<TransactionReceipt | null>;
+    public getTransaction(hash: Hash | string, blockHash?: Hash | string, blockHeight?: number): Promise<Client.TransactionDetails>;
+    public getTransactionReceipt(hash: Hash | string): Promise<TransactionReceipt | undefined>;
     public getTransactionReceiptsByAddress(address: Address | string): Promise<TransactionReceipt[]>;
-    public getTransactionReceiptsByHashes(hashes: Array<Hash | string>): Promise<Array<TransactionReceipt | null>>;
+    public getTransactionReceiptsByHashes(hashes: Array<Hash | string>): Promise<TransactionReceipt[]>;
     public getTransactionsByAddress(address: Address | string, sinceBlockHeight?: number, knownTransactionDetails?: Client.TransactionDetails[]): Promise<Client.TransactionDetails[]>;
     public sendTransaction(tx: Transaction | object | string): Promise<Client.TransactionDetails>;
     public addBlockListener(listener: BlockListener): Promise<Handle>;
     public addConsensusChangedListener(listener: ConsensusChangedListener): Promise<Handle>;
     public addHeadChangedListener(listner: HeadChangedListener): Promise<Handle>;
     public addTransactionListener(listener: TransactionListener, addresses: Array<Address | string>): Promise<Handle>;
-    public removeListener(handle: Handle): void;
+    public removeListener(handle: Handle): Promise<void>;
+    public waitForConsensusEstablished(): Promise<void>;
 }
 
 export namespace Client {
@@ -267,6 +268,7 @@ declare class ClientMempoolStatistics {
 declare class ClientTransactionDetails {
     public static fromPlain(o: object): Client.TransactionDetails;
     public transactionHash: Hash;
+    public format: Transaction.Format;
     public sender: Address;
     public senderType: Account.Type;
     public recipient: Address;
@@ -443,9 +445,16 @@ export class WebSocketFactory {
 }
 
 export class WebSocketServer {
-    public static UPGRADE_TIMEOUT: 10000;
-    public static TLS_HANDSHAKE_TIMEOUT: 10000;
-    public static MAX_PENDING_UPGRADES: 100;
+    public static UPGRADE_TIMEOUT: 3000; // 3 seconds
+    public static TLS_HANDSHAKE_TIMEOUT: 3000; // 3 seconds
+    public static PAYLOAD_MAX: number;
+    public static PENDING_UPGRADES_MAX: 1000;
+    public static PENDING_UPGRADES_PER_IP_MAX: 2;
+    public static PENDING_UPGRADES_PER_SUBNET_MAX: 6;
+    public static CONNECTION_RATE_LIMIT_PER_IP: 10; // per minute
+    public static CONNECTION_RATE_LIMIT_PER_SUBNET: 30; // per minute
+    public static LIMIT_TRACKING_AGE_MAX: 120000; // 2 minutes
+    public static HOUSEKEEPING_INTERVAL: 300000; // 5 minutes
     constructor(
         networkConfig: WsNetworkConfig | WssNetworkConfig,
     );
@@ -542,31 +551,33 @@ export class ArrayUtils {
 export class HashMap<K, V> {
     public length: number;
     constructor(fnHash?: (o: object) => string);
-    public get(key: K | any): V | any;
-    public put(key: K | any, value: V | any): void;
-    public remove(key: K | any): void;
+    public get(key: K): V;
+    public put(key: K, value: V): void;
+    public remove(key: K): void;
     public clear(): void;
-    public contains(key: K | any): boolean;
-    public keys(): Array<K | any>;
-    public keyIterator(): Iterator<K | any>;
-    public values(): Array<V | any>;
-    public valueIterator(): Iterator<V | any>;
+    public contains(key: K): boolean;
+    public keys(): K[];
+    public keyIterator(): Iterator<K>;
+    public values(): V[];
+    public valueIterator(): Iterator<V>;
+    public entries(): Array<[K, V]>;
+    public entryIterator(): Iterator<[K, V]>;
     public isEmpty(): boolean;
 }
 
 export class HashSet<V> {
-    public [Symbol.iterator]: Iterator<V | any>;
+    public [Symbol.iterator]: Iterator<V>;
     public length: number;
     constructor(fnHash?: (o: object) => string);
-    public add(value: V | any): void;
-    public addAll(collection: Iterable<V | any>): void;
-    public get(value: V | any): V | any;
-    public remove(value: V | any): void;
-    public removeAll(collection: Array<V | any>): void;
+    public add(value: V): void;
+    public addAll(collection: Iterable<V>): void;
+    public get(value: V): V;
+    public remove(value: V): void;
+    public removeAll(collection: V[]): void;
     public clear(): void;
-    public contains(value: V | any): boolean;
-    public values(): Array<V | any>;
-    public valueIterator(): Iterator<V | any>;
+    public contains(value: V): boolean;
+    public values(): V[];
+    public valueIterator(): Iterator<V>;
     public isEmpty(): boolean;
 }
 
@@ -590,12 +601,12 @@ export class InclusionHashSet<V> {
     public [Symbol.iterator]: Iterator<string>;
     public length: number;
     constructor(fnHash?: (o: object) => string);
-    public add(value: V | any): void;
-    public addAll(collection: Iterable<V | any>): void;
-    public remove(value: V | any): void;
-    public removeAll(collection: Array<V | any>): void;
+    public add(value: V): void;
+    public addAll(collection: Iterable<V>): void;
+    public remove(value: V): void;
+    public removeAll(collection: V[]): void;
     public clear(): void;
-    public contains(value: V | any): boolean;
+    public contains(value: V): boolean;
     public values(): string[];
     public valueIterator(): Iterator<string>;
     public isEmpty(): boolean;
@@ -726,15 +737,16 @@ export class BufferUtils {
     public static toAscii(buffer: Uint8Array): string;
     public static fromAscii(string: string): SerialBuffer;
     public static toBase64(buffer: Uint8Array): string;
-    public static fromBase64(base64: string): SerialBuffer;
+    public static fromBase64(base64: string, length?: number): SerialBuffer;
     public static toBase64Url(buffer: Uint8Array): string;
-    public static fromBase64Url(base64: string): SerialBuffer;
+    public static fromBase64Url(base64: string, length?: number): SerialBuffer;
     public static toBase32(buf: Uint8Array, [alphabet]: string): string;
     public static fromBase32(base32: string, [alphabet]: string): Uint8Array;
     public static toHex(buffer: Uint8Array): string;
-    public static fromHex(hex: string): SerialBuffer;
+    public static fromHex(hex: string, length?: number): SerialBuffer;
     public static toBinary(buffer: Uint8Array): string;
     public static fromUtf8(str: string): Uint8Array;
+    public static fromAny(o: Uint8Array | string, length?: number): SerialBuffer;
     public static concatTypedArrays(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): Uint8Array | Uint16Array | Uint32Array;
     public static equals(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): boolean;
     public static compare(a: Uint8Array | Uint16Array | Uint32Array, b: Uint8Array | Uint16Array | Uint32Array): -1 | 0 | 1;
@@ -742,6 +754,7 @@ export class BufferUtils {
 }
 
 export class SerialBuffer extends Uint8Array {
+    public static EMPTY: SerialBuffer;
     public static varUintSize(value: number): number;
     public static varLengthStringSize(value: string): number;
     public readPos: number;
@@ -805,7 +818,8 @@ export class PrioritySynchronizer extends Observable {
 }
 
 export class RateLimit {
-    constructor(allowedOccurences: number, timeRange?: number);
+    public lastReset: number;
+    constructor(allowedOccurrences: number, timeRange?: number);
     public note(number?: number): boolean;
 }
 
@@ -994,6 +1008,7 @@ export class Hash extends Serializable {
         ARGON2D: 2;
         SHA256: 3;
         SHA512: 4;
+        toString(hashAlgorithm: Hash.Algorithm): string;
     };
     public static light(arr: Uint8Array): Hash;
     public static blake2b(arr: Uint8Array): Hash;
@@ -1003,9 +1018,10 @@ export class Hash extends Serializable {
     public static sha512(arr: Uint8Array): Hash;
     public static compute(arr: Uint8Array, algorithm: Hash.Algorithm.BLAKE2B | Hash.Algorithm.SHA256): Hash;
     public static unserialize(buf: SerialBuffer, algorithm?: Hash.Algorithm): Hash;
-    public static fromAny(hash: Hash | string): Hash;
+    public static fromAny(hash: Hash | Uint8Array | string, algorithm?: Hash.Algorithm): Hash;
     public static fromBase64(base64: string): Hash;
     public static fromHex(hex: string): Hash;
+    public static fromPlain(str: string): Hash;
     public static fromString(str: string): Hash;
     public static isHash(o: any): boolean;
     public static getSize(algorithm: Hash.Algorithm): number;
@@ -1050,6 +1066,7 @@ export class PublicKey extends Serializable {
     public static derive(privateKey: PrivateKey): PublicKey;
     public static sum(publicKeys: PublicKey[]): PublicKey;
     public static unserialize(buf: SerialBuffer): PublicKey;
+    public static fromAny(o: PublicKey | Uint8Array | string): PublicKey;
     public serializedSize: number;
     constructor(arg: Uint8Array);
     public serialize(buf?: SerialBuffer): SerialBuffer;
@@ -1156,6 +1173,7 @@ export class Signature extends Serializable {
     public static create(privateKey: PrivateKey, publicKey: PublicKey, data: Uint8Array): Signature;
     public static fromPartialSignatures(commitment: Commitment, signatures: PartialSignature[]): Signature;
     public static unserialize(buf: SerialBuffer): Signature;
+    public static fromAny(o: Signature | Uint8Array | string): Signature;
     public serializedSize: number;
     constructor(args: Uint8Array);
     public serialize(buf?: SerialBuffer): SerialBuffer;
@@ -1263,6 +1281,8 @@ export abstract class Account {
     public static unserialize(buf: SerialBuffer): Account;
     public static dataToPlain(data: Uint8Array): {};
     public static proofToPlain(proof: Uint8Array): {};
+    public static fromAny(o: Account | {type: Account.Type | string, balance: number}): Account;
+    public static fromPlain(plain: {type: Account.Type | string, balance: number}): Account;
     public serializedSize: number;
     public balance: number;
     public type: number;
@@ -1270,6 +1290,10 @@ export abstract class Account {
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public equals(o: any): boolean;
     public toString(): string;
+    public toPlain(): {
+        type: string,
+        balance: number,
+    };
     public withBalance(balance: number): Account;
     public withOutgoingTransaction(transaction: Transaction, blockHeight: number, transactionCache: TransactionCache, revert?: boolean): Account;
     public withIncomingTransaction(transaction: Transaction, blockHeight: number, revert?: boolean): Account;
@@ -1289,6 +1313,8 @@ export namespace Account {
 
 export class PrunedAccount {
     public static unserialize(buf: SerialBuffer): PrunedAccount;
+    public static fromAny(o: PrunedAccount | object): PrunedAccount;
+    public static fromPlain(plain: object): PrunedAccount;
     public address: Address;
     public account: Account;
     public serializedSize: number;
@@ -1296,12 +1322,17 @@ export class PrunedAccount {
     public compare(o: PrunedAccount): number;
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public hashCode(): string;
+    public toPlain(): {
+        address: string,
+        account: object,
+    };
 }
 
 export class BasicAccount extends Account {
     public static INITIAL: BasicAccount;
     public static copy(o: BasicAccount): BasicAccount;
     public static unserialize(buf: SerialBuffer): BasicAccount;
+    public static fromPlain(o: {balance: number}): BasicAccount;
     public static verifyOutgoingTransaction(transaction: Transaction): boolean;
     public static verifyIncomingTransaction(transaction: Transaction): boolean;
     public static proofToPlain(proof: Uint8Array): {
@@ -1309,7 +1340,8 @@ export class BasicAccount extends Account {
         publicKey: string,
         signer: string,
         pathLength: number,
-    };
+    } | {};
+    public static dataToPlain(data: Uint8Array): {};
     constructor(balance?: number);
     public equals(o: any): boolean;
     public toString(): string;
@@ -1331,11 +1363,22 @@ export class HashedTimeLockedContract extends Contract {
         REGULAR_TRANSFER: 1;
         EARLY_RESOLVE: 2;
         TIMEOUT_RESOLVE: 3;
+        toString(proofType: HashedTimeLockedContract.ProofType): string;
     };
     public static create(balance: number, blockHeight: number, transaction: Transaction): HashedTimeLockedContract;
     public static unserialize(buf: SerialBuffer): HashedTimeLockedContract;
+    public static fromPlain(plain: object): HashedTimeLockedContract;
     public static verifyOutgoingTransaction(transaction: Transaction): boolean;
     public static verifyIncomingTransaction(transaction: Transaction): boolean;
+    public static dataToPlain(data: Uint8Array): {
+        sender: string,
+        recipient: string,
+        hashAlgorithm: string,
+        hashRoot: string,
+        hashCount: number,
+        timeout: number,
+    } | {};
+    public static proofToPlain(proof: Uint8Array): object;
     public serializedSize: number;
     public sender: Address;
     public recipient: Address;
@@ -1354,6 +1397,16 @@ export class HashedTimeLockedContract extends Contract {
     );
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public toString(): string;
+    public toPlain(): {
+        type: string,
+        balance: number,
+        sender: string,
+        recipient: string,
+        hashRoot: string,
+        hashCount: number,
+        timeout: number,
+        totalAmount: number,
+    };
     public equals(o: any): boolean;
     public withBalance(balance: number): Account;
     public withOutgoingTransaction(transaction: Transaction, blockHeight: number, transactionCache: TransactionCache, revert?: boolean): Account;
@@ -1372,9 +1425,16 @@ export namespace HashedTimeLockedContract {
 export class VestingContract extends Contract {
     public static create(balance: number, blockHeight: number, transaction: Transaction): VestingContract;
     public static unserialize(buf: SerialBuffer): VestingContract;
+    public static fromPlain(plain: object): VestingContract;
     public static verifyOutgoingTransaction(transaction: Transaction): boolean;
     public static verifyIncomingTransaction(transaction: Transaction): boolean;
-    public static dataToPlain(): {};
+    public static dataToPlain(data: Uint8Array): {
+        owner: string,
+        vestingStart: number,
+        vestingStepBlocks: number,
+        vestingStepAmount: number,
+        vestingTotalAmount: number,
+    } | {};
     public static proofToPlain(proof: Uint8Array): {
         signature: string,
         publicKey: string,
@@ -1397,6 +1457,15 @@ export class VestingContract extends Contract {
     );
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public toString(): string;
+    public toPlain(): {
+        type: string,
+        balance: number,
+        owner: string,
+        vestingStart: number,
+        vestingStepBlocks: number,
+        vestingStepAmount: number,
+        vestingTotalAmount: number,
+    };
     public equals(o: any): boolean;
     public withBalance(balance: number): Account;
     public withOutgoingTransaction(transaction: Transaction, blockHeight: number, transactionCache: TransactionCache, revert?: boolean): Account;
@@ -1481,7 +1550,7 @@ export class AccountsProof {
     constructor(nodes: AccountsTreeNode[]);
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public verify(): boolean;
-    public getAccount(address: Address): null | Account;
+    public getAccount(address: Address): Account;
     public toString(): string;
     public root(): Hash;
 }
@@ -1734,11 +1803,13 @@ export abstract class Transaction {
         NONE: 0;
         CONTRACT_CREATION: 0b1;
     };
+    public static FORMAT_MAP: Map<Transaction.Format, {unserialize: (buf: SerialBuffer) => Transaction, fromPlain: (plain: object) => Transaction}>;
     public static unserialize(buf: SerialBuffer): Transaction;
     public static fromPlain(plain: object): Transaction;
     public static fromAny(tx: Transaction | string | object): Transaction;
     public serializedContentSize: number;
     public serializedSize: number;
+    public format: Transaction.Format;
     public sender: Address;
     public senderType: Account.Type;
     public recipient: Address;
@@ -1837,6 +1908,7 @@ export class SignatureProof {
 
 export class BasicTransaction extends Transaction {
     public static unserialize(buf: SerialBuffer): BasicTransaction;
+    public static fromPlain(plain: object): BasicTransaction;
     public serializedSize: number;
     public senderPubKey: PublicKey;
     public signature: Signature;
@@ -1854,6 +1926,7 @@ export class BasicTransaction extends Transaction {
 
 export class ExtendedTransaction extends Transaction {
     public static unserialize(buf: SerialBuffer): ExtendedTransaction;
+    public static fromPlain(plain: object): ExtendedTransaction;
     public serializedSize: number;
     constructor(
         sender: Address,
@@ -1948,7 +2021,7 @@ export class TransactionStoreCodec {
 export class TransactionReceipt {
     public static unserialize(buf: SerialBuffer): TransactionReceipt;
     public static fromPlain(o: object): TransactionReceipt;
-    public static fromAny(o: TransactionReceipt | string | object): TransactionReceipt;
+    public static fromAny(o: TransactionReceipt | object | string): TransactionReceipt;
     public serializedSize: number;
     public transactionHash: Hash;
     public blockHash: Hash;
@@ -1961,8 +2034,8 @@ export class TransactionReceipt {
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public equals(o: any): boolean;
     public toPlain(): {
-        transactionHash: Hash,
-        blockHash: Hash,
+        transactionHash: string,
+        blockHash: string,
         blockHeight: number,
     };
 }
@@ -1970,13 +2043,15 @@ export class TransactionReceipt {
 export class Block {
     public static TIMESTAMP_DRIFT_MAX: 600 /* seconds */; // 10 minutes
     public static unserialize(buf: SerialBuffer): Block;
-    public static fromAny(block: Block | string): Block;
+    public static fromAny(block: Block | object | string): Block;
+    public static fromPlain(o: object): Block;
     public serializedSize: number;
     public header: BlockHeader;
     public interlink: BlockInterlink;
     public body: BlockBody;
     public version: number;
     public prevHash: Hash;
+    public interlinkHash: Hash;
     public bodyHash: Hash;
     public accountsHash: Hash;
     public nBits: number;
@@ -1985,9 +2060,11 @@ export class Block {
     public height: number;
     public timestamp: number;
     public nonce: number;
-    public minerAddr: Address;
-    public transactions: Transaction[];
-    public transactionCount: number;
+    public minerAddr: Address | undefined;
+    public transactions: Transaction[] | undefined;
+    public extraData: Uint8Array | undefined;
+    public prunedAccounts: PrunedAccount[] | undefined;
+    public transactionCount: number | undefined;
     constructor(
         header: BlockHeader,
         interlink: BlockInterlink,
@@ -2008,6 +2085,24 @@ export class Block {
     public hash(buf?: SerialBuffer): Hash;
     public pow(buf?: SerialBuffer): Promise<Hash>;
     public toString(): string;
+    public toPlain(): {
+        version: number,
+        hash: string,
+        prevHash: string,
+        interlinkHash: string,
+        bodyHash: string,
+        accountsHash: string,
+        nBits: number,
+        difficulty: string,
+        height: number,
+        timestamp: number,
+        nonce: number,
+        interlink: string[],
+        minerAddr?: string,
+        transactions?: object[],
+        extraData?: string,
+        prunedAccounts?: object[],
+    };
 }
 
 export class BlockProducer {
@@ -2230,7 +2325,7 @@ export class Mempool extends Observable {
     constructor(blockchain: IBlockchain, accounts: Accounts);
     public pushTransaction(transaction: Transaction): Promise<Mempool.ReturnCode>;
     public getTransaction(hash: Hash): Transaction;
-    // public *transactionGenerator(maxSize?: number, minFeePerByte?: number): Transaction[];
+    public *transactionGenerator(maxSize?: number, minFeePerByte?: number): IterableIterator<Transaction>;
     public getTransactions(maxSize?: number, minFeePerByte?: number): Transaction[];
     public getTransactionsForBlock(maxSize: number): Promise<Transaction[]>;
     public getPendingTransactions(address: Address): Transaction[];
@@ -2280,8 +2375,9 @@ export class BaseConsensusAgent extends Observable {
     public static FREE_TRANSACTIONS_PER_SECOND: 1;
     public static FREE_TRANSACTION_SIZE_PER_INTERVAL: 15000; // ~100 legacy transactions
     public static TRANSACTION_RELAY_FEE_MIN: 1;
-    public static SUBSCRIPTION_CHANGE_GRACE_PERIOD: 2000;
+    public static SUBSCRIPTION_CHANGE_GRACE_PERIOD: 3000;
     public static HEAD_REQUEST_INTERVAL: 100000; // 100 seconds, give client time to announce new head without request
+    public static KNOWS_OBJECT_AFTER_INV_DELAY: 3000;
     public static KNOWN_OBJECTS_COUNT_MAX: 40000;
     public peer: Peer;
     public synced: boolean;
@@ -2304,13 +2400,14 @@ export class BaseConsensusAgent extends Observable {
     public knowsTransaction(txHash: Hash): boolean;
     public requestVector(...vector: InvVector[]): void;
     public getBlockProof(blockHashToProve: Hash, knownBlock: Block): Promise<Block>;
-    public getBlockProofAt(blockHeightToProve: number, knownBlock: Block): Promise<Block | null>;
+    public getBlockProofAt(blockHeightToProve: number, knownBlock: Block): Promise<Block>;
     public getTransactionProof(block: Block, addresses: Address[]): Promise<Transaction[]>;
-    public getTransactionsProofByAddress(block: Block, addresses: Address[]): Promise<Transaction[]>;
+    public getTransactionsProofByAddresses(block: Block, addresses: Address[]): Promise<Transaction[]>;
     public getTransactionsProofByHashes(block: Block, hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionReceipts(address: Address): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
+    public shutdown(): void;
 }
 
 // Not registered globally
@@ -2347,8 +2444,9 @@ export class BaseConsensus extends Observable {
     );
     public getHeadHash(): Promise<Hash>;
     public getHeadHeight(): Promise<number>;
-    public getBlock(hash: Hash, includeBody?: boolean, includeBodyFromLocal?: boolean, blockHeight?: number): Promise<Block | null>;
-    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
+    public getBlock(hash: Hash, includeBody?: boolean, includeBodyFromLocal?: boolean, blockHeight?: number): Promise<Block>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block>;
+    public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
     public getTransactionsFromBlockByAddresses(addresses: Address[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
     public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
@@ -2410,10 +2508,10 @@ export class FullChain extends BaseChain {
     public getAccountsTreeChunk(blockHash: Hash, startPrefix: string): Promise<null | AccountsTreeChunk>;
     public getAccountsProof(blockHash: Hash, addresses: Address[]): Promise<null | AccountsProof>;
     public getTransactionsProof(blockHash: Hash, addresses: Address[]): Promise<null | TransactionsProof>;
-    public getTransactionsProofByAddress(blockHash: Hash, address: Address[]): Promise<TransactionsProof | null>;
+    public getTransactionsProofByAddresses(blockHash: Hash, addresses: Address[]): Promise<TransactionsProof | null>;
     public getTransactionsProofByHashes(blockHash: Hash, hashes: Hash[]): Promise<TransactionsProof | null>;
-    public getTransactionReceiptsByAddress(address: Address, limit?: number): Promise<TransactionReceipt[]>;
-    public getTransactionReceiptsByHashes(hashes: Hash[], limit?: number): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address, limit?: number): Promise<TransactionReceipt[] | null>;
+    public getTransactionReceiptsByHashes(hashes: Hash[], limit?: number): Promise<TransactionReceipt[] | null>;
     public getTransactionInfoByHash(transactionHash: Hash): Promise<null | TransactionStoreEntry>;
     public accountsHash(): Promise<Hash>;
     public queue(): PrioritySynchronizer;
@@ -2455,14 +2553,14 @@ export class FullConsensus extends BaseConsensus {
         mempool: Mempool,
         network: Network,
     );
-    public getBlock(hash: Hash, includeBody?: boolean): Promise<Block | null>;
-    public getBlockAt(height: number, includeBody?: boolean): Promise<Block | null>;
+    public getBlock(hash: Hash, includeBody?: boolean, includeBodyFromLocal?: boolean, blockHeight?: number): Promise<Block>;
+    public getBlockAt(height: number, includeBody?: boolean): Promise<Block>;
     public getBlockTemplate(minerAddress: Address, extraData?: Uint8Array): Promise<Block>;
     public submitBlock(block: Block): Promise<boolean>;
     public getAccounts(addresses: Address[]): Promise<Account[]>;
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
     public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
-    public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
+    public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
     public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
@@ -2585,7 +2683,7 @@ export class BaseMiniConsensus extends BaseConsensus {
     public subscribe(subscription: Subscription): void;
     public addSubscriptions(newAddresses: Address[] | Address): void;
     public removeSubscriptions(addressesToRemove: Address[] | Address): void;
-    public getAccount(address: Address, blockHash?: Hash): Promise<Account | null>;
+    public getAccount(address: Address, blockHash?: Hash): Promise<Account>;
     public getAccounts(addresses: Address[], blockHash?: Hash): Promise<Account[]>;
     public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
@@ -2673,7 +2771,6 @@ export class PicoChain extends BaseChain {
 
 export class PicoConsensusAgent extends BaseMiniConsensusAgent {
     constructor(consensus: PicoConsensus, peer: Peer, targetSubscription: Subscription);
-    public onHeadUpdated(): void;
     public syncBlockchain(): Promise<void>;
 }
 
@@ -2747,7 +2844,7 @@ export class Message {
         GET_ACCOUNTS_TREE_CHUNK: 44;
         ACCOUNTS_TREE_CHUNK: 45;
         GET_TRANSACTIONS_PROOF: 47;
-        GET_TRANSACTIONS_PROOF_BY_ADDRESS: 47;
+        GET_TRANSACTIONS_PROOF_BY_ADDRESSES: 47;
         TRANSACTIONS_PROOF: 48;
         GET_TRANSACTION_RECEIPTS: 49;
         GET_TRANSACTION_RECEIPTS_BY_ADDRESS: 49;
@@ -2774,7 +2871,7 @@ export class Message {
 }
 
 export namespace Message {
-    type Type = Type.VERSION | Type.INV | Type.GET_DATA | Type.GET_HEADER | Type.NOT_FOUND | Type.GET_BLOCKS | Type.BLOCK | Type.HEADER | Type.TX | Type.MEMPOOL | Type.REJECT | Type.SUBSCRIBE | Type.ADDR | Type.GET_ADDR | Type.PING | Type.PONG | Type.SIGNAL | Type.GET_CHAIN_PROOF | Type.CHAIN_PROOF | Type.GET_ACCOUNTS_PROOF | Type.ACCOUNTS_PROOF | Type.GET_ACCOUNTS_TREE_CHUNK | Type.ACCOUNTS_TREE_CHUNK | Type.GET_TRANSACTIONS_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_ADDRESS | Type.TRANSACTIONS_PROOF | Type.GET_TRANSACTION_RECEIPTS | Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS | Type.TRANSACTION_RECEIPTS | Type.GET_BLOCK_PROOF | Type.BLOCK_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_HASHES | Type.GET_TRANSACTION_RECEIPTS_BY_HASHES | Type.GET_BLOCK_PROOF_AT | Type.GET_HEAD | Type.HEAD | Type.VERACK;
+    type Type = Type.VERSION | Type.INV | Type.GET_DATA | Type.GET_HEADER | Type.NOT_FOUND | Type.GET_BLOCKS | Type.BLOCK | Type.HEADER | Type.TX | Type.MEMPOOL | Type.REJECT | Type.SUBSCRIBE | Type.ADDR | Type.GET_ADDR | Type.PING | Type.PONG | Type.SIGNAL | Type.GET_CHAIN_PROOF | Type.CHAIN_PROOF | Type.GET_ACCOUNTS_PROOF | Type.ACCOUNTS_PROOF | Type.GET_ACCOUNTS_TREE_CHUNK | Type.ACCOUNTS_TREE_CHUNK | Type.GET_TRANSACTIONS_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_ADDRESSES | Type.TRANSACTIONS_PROOF | Type.GET_TRANSACTION_RECEIPTS | Type.GET_TRANSACTION_RECEIPTS_BY_ADDRESS | Type.TRANSACTION_RECEIPTS | Type.GET_BLOCK_PROOF | Type.BLOCK_PROOF | Type.GET_TRANSACTIONS_PROOF_BY_HASHES | Type.GET_TRANSACTION_RECEIPTS_BY_HASHES | Type.GET_BLOCK_PROOF_AT | Type.GET_HEAD | Type.HEAD | Type.VERACK;
     namespace Type {
         type VERSION = 0;
         type INV = 1;
@@ -2803,7 +2900,7 @@ export namespace Message {
         type GET_ACCOUNTS_TREE_CHUNK = 44;
         type ACCOUNTS_TREE_CHUNK = 45;
         type GET_TRANSACTIONS_PROOF = 47;
-        type GET_TRANSACTIONS_PROOF_BY_ADDRESS = 47;
+        type GET_TRANSACTIONS_PROOF_BY_ADDRESSES = 47;
         type TRANSACTIONS_PROOF = 48;
         type GET_TRANSACTION_RECEIPTS = 49;
         type GET_TRANSACTION_RECEIPTS_BY_ADDRESS = 49;
@@ -2822,6 +2919,7 @@ export namespace Message {
 }
 
 export class AddrMessage extends Message {
+    public static ADDRESSES_MAX_COUNT: 1000;
     public static unserialize(buf: SerialBuffer): AddrMessage;
     public addresses: PeerAddress[];
     constructor(addresses: PeerAddress[]);
@@ -3169,6 +3267,8 @@ export class GetBlockProofAtMessage extends Message {} // TODO
 
 export class GetTransactionReceiptsByHashesMessage extends Message {} // TODO
 
+export class GetTransactionsProofByAddressesMessage extends Message {} // TODO
+
 export class GetTransactionsProofByHashesMessage extends Message {} // TODO
 
 export class MessageFactory {
@@ -3186,6 +3286,8 @@ export class WebRtcConnector extends Observable {
 }
 
 export class PeerConnector extends Observable {
+    public static ICE_GATHERING_TIMEOUT: 1000;
+    public static CONNECTION_OPEN_DELAY: 200;
     public nonce: any;
     public peerAddress: PeerAddress;
     public rtcConnection: RTCPeerConnection;
@@ -3196,6 +3298,7 @@ export class PeerConnector extends Observable {
         peerAddress: PeerAddress,
     );
     public onSignal(signal: any): void;
+    public close(): void;
 }
 
 export class OutboundPeerConnector extends PeerConnector {
@@ -3204,6 +3307,7 @@ export class OutboundPeerConnector extends PeerConnector {
         peerAddress: PeerAddress,
         signalChannel: PeerChannel,
     );
+    public close(): void;
 }
 
 export class InboundPeerConnector extends PeerConnector {
@@ -3530,82 +3634,86 @@ export class GenesisConfig {
 }
 
 export class CloseType {
+    // Regular Close Types
+
     public static GET_BLOCKS_TIMEOUT: 1;
-    public static GET_CHAIN_PROOF_TIMEOUT: 2;
-    public static GET_ACCOUNTS_TREE_CHUNK_TIMEOUT: 3;
-    public static GET_HEADER_TIMEOUT: 4;
-    public static INVALID_ACCOUNTS_TREE_CHUNK: 5;
-    public static ACCOUNTS_TREE_CHUNCK_ROOT_HASH_MISMATCH: 6;
-    public static RECEIVED_WRONG_HEADER: 8;
-    public static DID_NOT_GET_REQUESTED_HEADER: 9;
+    public static GET_HEADER_TIMEOUT: 2;
+    public static GET_CHAIN_PROOF_TIMEOUT: 3;
+    public static GET_ACCOUNTS_PROOF_TIMEOUT: 4;
+    public static GET_ACCOUNTS_TREE_CHUNK_TIMEOUT: 5;
+    public static GET_TRANSACTIONS_PROOF_TIMEOUT: 6;
+    public static GET_TRANSACTION_RECEIPTS_TIMEOUT: 7;
 
-    public static GET_ACCOUNTS_PROOF_TIMEOUT: 11;
-    public static GET_TRANSACTIONS_PROOF_TIMEOUT: 12;
-    public static GET_TRANSACTION_RECEIPTS_TIMEOUT: 13;
-    public static INVALID_ACCOUNTS_PROOF: 14;
-    public static ACCOUNTS_PROOF_ROOT_HASH_MISMATCH: 15;
-    public static INCOMPLETE_ACCOUNTS_PROOF: 16;
-    public static INVALID_BLOCK: 17;
-    public static INVALID_CHAIN_PROOF: 18;
-    public static INVALID_TRANSACTION_PROOF: 19;
-    public static INVALID_BLOCK_PROOF: 20;
+    public static SENDING_PING_MESSAGE_FAILED: 10;
+    public static SENDING_OF_VERSION_MESSAGE_FAILED: 11;
 
-    public static SENDING_PING_MESSAGE_FAILED: 22;
-    public static SENDING_OF_VERSION_MESSAGE_FAILED: 23;
+    public static SIMULTANEOUS_CONNECTION: 20;
+    public static DUPLICATE_CONNECTION: 21;
+    public static INVALID_CONNECTION_STATE: 22;
 
-    public static SIMULTANEOUS_CONNECTION: 29;
-    public static DUPLICATE_CONNECTION: 30;
-    public static PEER_IS_BANNED: 31;
-    public static MANUAL_NETWORK_DISCONNECT: 33;
-    public static MANUAL_WEBSOCKET_DISCONNECT: 34;
-    public static MAX_PEER_COUNT_REACHED: 35;
+    public static PEER_BANNED: 30;
+    public static IP_BANNED: 31;
 
-    public static PEER_CONNECTION_RECYCLED: 36;
-    public static PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE: 37;
-    public static INBOUND_CONNECTIONS_BLOCKED: 38;
+    public static MAX_PEER_COUNT_REACHED: 40;
+    public static PEER_CONNECTION_RECYCLED: 41;
+    public static PEER_CONNECTION_RECYCLED_INBOUND_EXCHANGE: 42;
+    public static INBOUND_CONNECTIONS_BLOCKED: 43;
 
-    public static INVALID_CONNECTION_STATE: 40;
-
-    public static MANUAL_PEER_DISCONNECT: 90;
+    public static MANUAL_NETWORK_DISCONNECT: 50;
+    public static MANUAL_WEBSOCKET_DISCONNECT: 51;
+    public static MANUAL_PEER_DISCONNECT: 52;
 
     // Ban Close Types
-    public static RECEIVED_INVALID_BLOCK: 100;
-    public static BLOCKCHAIN_SYNC_FAILED: 101;
-    public static RECEIVED_INVALID_HEADER: 102;
-    public static RECEIVED_TRANSACTION_NOT_MATCHING_OUR_SUBSCRIPTION: 103;
-    public static ADDR_MESSAGE_TOO_LARGE: 104;
-    public static INVALID_ADDR: 105;
-    public static ADDR_NOT_GLOBALLY_REACHABLE: 106;
-    public static INVALID_SIGNAL_TTL: 107;
-    public static INVALID_SIGNATURE: 108;
-    public static RECEIVED_BLOCK_NOT_MATCHING_OUR_SUBSCRIPTION: 109;
 
-    public static INCOMPATIBLE_VERSION: 110;
-    public static DIFFERENT_GENESIS_BLOCK: 111;
-    public static INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE: 112;
-    public static UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE: 113;
-    public static INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE: 114;
-    public static INVALID_SIGNATURE_IN_VERACK_MESSAGE: 115;
-    public static BANNED_IP: 116;
+    public static INCOMPATIBLE_VERSION: 100;
+    public static DIFFERENT_GENESIS_BLOCK: 101;
+    public static INVALID_PEER_ADDRESS_IN_VERSION_MESSAGE: 102;
+    public static UNEXPECTED_PEER_ADDRESS_IN_VERSION_MESSAGE: 103;
+    public static INVALID_PUBLIC_KEY_IN_VERACK_MESSAGE: 104;
+    public static INVALID_SIGNATURE_IN_VERACK_MESSAGE: 105;
 
-    public static RATE_LIMIT_EXCEEDED: 120;
+    public static ADDR_MESSAGE_TOO_LARGE: 110;
+    public static ADDR_NOT_GLOBALLY_REACHABLE: 111;
+    public static INVALID_ADDR: 112;
+    public static INVALID_SIGNAL_TTL: 113;
 
-    public static MANUAL_PEER_BAN: 190;
+    public static INVALID_BLOCK: 120;
+    public static INVALID_HEADER: 121;
+    public static INVALID_ACCOUNTS_TREE_CHUNCK: 122;
+    public static INVALID_ACCOUNTS_PROOF: 123;
+    public static INVALID_CHAIN_PROOF: 124;
+    public static INVALID_TRANSACTION_PROOF: 125;
+    public static INVALID_BLOCK_PROOF: 126;
+
+    public static RATE_LIMIT_EXCEEDED: 130;
+
+    public static BLOCKCHAIN_SYNC_FAILED: 140;
+
+    public static MANUAL_PEER_BAN: 150;
 
     // Fail Close Types
-    public static CLOSED_BY_REMOTE: 200;
-    public static PING_TIMEOUT: 201;
-    public static CONNECTION_FAILED: 202;
-    public static NETWORK_ERROR: 203;
-    public static VERSION_TIMEOUT: 204;
-    public static VERACK_TIMEOUT: 205;
-    public static ABORTED_SYNC: 206;
-    public static FAILED_TO_PARSE_MESSAGE_TYPE: 207;
-    public static CONNECTION_LIMIT_PER_IP: 208;
-    public static CHANNEL_CLOSING: 209;
-    public static CONNECTION_LIMIT_DUMB: 210;
 
-    public static MANUAL_PEER_FAIL: 290;
+    public static CONNECTION_FAILED: 200;
+    public static CLOSED_BY_REMOTE: 201;
+    public static NETWORK_ERROR: 202;
+    public static CHANNEL_CLOSING: 203;
+
+    public static VERSION_TIMEOUT: 210;
+    public static VERACK_TIMEOUT: 211;
+    public static PING_TIMEOUT: 212;
+
+    public static CONNECTION_LIMIT_PER_IP: 220;
+    public static CONNECTION_LIMIT_DUMB: 221;
+
+    public static FAILED_TO_PARSE_MESSAGE_TYPE: 230;
+    public static UNEXPECTED_ACCOUNTS_TREE_CHUNK: 231;
+    public static UNEXPECTED_HEADER: 232;
+    public static TRANSACTION_NOT_MATCHING_SUBSCRIPTION: 233;
+
+    public static ABORTED_SYNC: 240;
+
+    public static MANUAL_PEER_FAIL: 250;
+
     public static isBanningType(closeType: number): boolean;
     public static isFailingType(closeType: number): boolean;
 }
@@ -3676,7 +3784,7 @@ export class PeerChannel extends Observable {
     public getAccountsTreeChunk(blockHash: Hash, startPrefix: string): boolean;
     public accountsTreeChunk(blockHash: Hash, chunk?: AccountsTreeChunk): boolean;
     public getTransactionsProof(blockHash: Hash, addresses: Address[]): boolean;
-    public getTransactionsProofByAddress(blockHash: Hash, addresses: Address[]): boolean;
+    public getTransactionsProofByAddresses(blockHash: Hash, addresses: Address[]): boolean;
     public getTransactionsProofByHashes(blockHash: Hash, hashes: Hash[]): boolean;
     public transactionsProof(blockHash: Hash, proof?: TransactionsProof): boolean;
     public getTransactionReceipts(address: Address): boolean;
@@ -4020,6 +4128,8 @@ export class Miner extends Observable {
     public onWorkerShare(obj: {hash: Hash, nonce: number, block: Block}): void;
     public getNextBlock(address?: Address, extraData?: Uint8Array): Promise<Block>;
     public stopWork(): void;
+    public startConfigChanges(): void;
+    public finishConfigChanges(): void;
 }
 
 export abstract class BasePoolMiner extends Miner {

@@ -321,7 +321,7 @@ class BufferUtils {
     /**
      * @param {Uint8Array|string} o
      * @param {number} [length]
-     * @return {Uint8Array}
+     * @return {SerialBuffer}
      */
     static fromAny(o, length) {
         if (o === '') return SerialBuffer.EMPTY;

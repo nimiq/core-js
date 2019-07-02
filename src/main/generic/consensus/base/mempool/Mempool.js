@@ -234,7 +234,7 @@ class Mempool extends Observable {
     /**
      * @param {number} [maxSize]
      * @param {number} [minFeePerByte]
-     * @yields {Array.<Transaction>}
+     * @yields {IterableIterator.<Transaction>}
      */
     *transactionGenerator(maxSize = Infinity, minFeePerByte = 0) {
         let size = 0;
