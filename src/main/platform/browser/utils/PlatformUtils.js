@@ -25,7 +25,7 @@ class PlatformUtils {
      */
     static supportsWebRTC() {
         const RTCPeerConnection = PlatformUtils.isBrowser() ? (window.RTCPeerConnection || window.webkitRTCPeerConnection) : null;
-        return !!RTCPeerConnection;
+        return !!RTCPeerConnection && typeof RTCPeerConnection.prototype.createDataChannel === 'function';
     }
 
     /**
