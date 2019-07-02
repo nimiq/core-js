@@ -82,12 +82,15 @@ class NetworkConnection extends Observable {
         // Mark this connection as closed.
         this._closed = true;
 
+        // Close DataChannel.
+        this._channel.close();
+        this._channel = null;
+
         // Propagate last network error.
         if (type === CloseType.CLOSED_BY_REMOTE && this._lastError) {
             type = CloseType.NETWORK_ERROR;
             reason = this._lastError;
         }
-
         // Convert ErrorEvents to strings.
         if (reason && typeof reason !== 'string') {
             reason = typeof reason.message === 'string' ? reason.message : '';
@@ -95,10 +98,6 @@ class NetworkConnection extends Observable {
 
         // Tell listeners that this connection has closed.
         this.fire('close', type, reason, this);
-
-        // Close the native channel.
-        this._channel.close();
-        this._channel = null;
 
         // Remove all listeners.
         this._offAll();

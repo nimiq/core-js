@@ -29,6 +29,9 @@ class DataChannel extends Observable {
 
         /** @type {number} */
         this._lastChunkReceivedAt = 0;
+
+        /** @type {boolean} */
+        this._closed = false;
     }
 
     /**
@@ -81,21 +84,26 @@ class DataChannel extends Observable {
         this._timers.resetTimeout(`msg-${expectedMsg.id}`, this._onTimeout.bind(this, expectedMsg), msgTimeout);
     }
 
+    close() {
+        if (this._closed) {
+            return;
+        }
+        this._closed = true;
+
+        this._timers.clearAll();
+
+        this._close();
+
+        this.fire('close', this);
+
+        this._offAll();
+    }
+
     /**
      * @abstract
      */
-
     /* istanbul ignore next */
-    close() { throw new Error('Not implemented'); }
-
-    /**
-     * @protected
-     */
-    _onClose() {
-        this._timers.clearAll();
-        this.fire('close', this);
-        this._offAll();
-    }
+    _close() { throw new Error('Not implemented'); }
 
     /**
      * @param {string} msg

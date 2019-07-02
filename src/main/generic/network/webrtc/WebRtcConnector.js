@@ -29,6 +29,11 @@ class WebRtcConnector extends Observable {
             return false;
         }
 
+        // Check connector limit.
+        if (this._connectors.length >= WebRtcConnector.CONNECTORS_MAX) {
+            return false;
+        }
+
         const connector = new OutboundPeerConnector(this._networkConfig, peerAddress, signalChannel);
         connector.on('connection', conn => this._onConnection(conn, peerId));
         this._connectors.put(peerId, connector);
@@ -119,6 +124,26 @@ class WebRtcConnector extends Observable {
                 }
             }
 
+            // Check connector limit.
+            if (this._connectors.length >= WebRtcConnector.CONNECTORS_MAX) {
+                Log.d(WebRtcConnector, `Rejecting offer from ${msg.senderId} - max connectors exceeded`);
+                return;
+            }
+
+            // Check inbound connector limit.
+            if (this._connectors.length >= WebRtcConnector.INBOUND_CONNECTORS_MAX) {
+                let numInboundConnectors = 0;
+                for (const c of this._connectors.valueIterator()) {
+                    if (c instanceof InboundPeerConnector) {
+                        numInboundConnectors++;
+                    }
+                }
+                if (numInboundConnectors >= WebRtcConnector.INBOUND_CONNECTORS_MAX) {
+                    Log.d(WebRtcConnector, `Rejecting offer from ${msg.senderId} - max inbound connectors exceeded`);
+                    return;
+                }
+            }
+
             // Accept the offer.
             connector = new InboundPeerConnector(this._networkConfig, channel, msg.senderId, payload);
             connector.on('connection', conn => this._onConnection(conn, msg.senderId));
@@ -158,6 +183,8 @@ class WebRtcConnector extends Observable {
 }
 
 WebRtcConnector.CONNECT_TIMEOUT = 8000; // ms
+WebRtcConnector.CONNECTORS_MAX = 6;
+WebRtcConnector.INBOUND_CONNECTORS_MAX = 3;
 Class.register(WebRtcConnector);
 
 class PeerConnector extends Observable {
