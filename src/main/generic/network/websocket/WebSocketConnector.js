@@ -150,7 +150,7 @@ class WebSocketConnector extends Observable {
                     return;
                 }
             } else {
-                Log.e(WebSocketConnector, `Received connection from ${remoteAddress} when all connections were expected from the reverse proxy at ${reverseProxyAddress}: closing the connection`);
+                Log.e(WebSocketConnector, `Received connection from ${remoteAddress} when all connections were expected from the reverse proxy at ${reverseProxyAddresses}: closing the connection`);
                 ws.close();
                 return;
             }

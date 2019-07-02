@@ -81,7 +81,7 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
     reverseProxy: {
         enabled: false,
         port: 8444,
-        address: null,
+        address: '::ffff:127.0.0.1', // deprecated
         addresses: [],
         header: 'x-forwarded-for'
     },
@@ -161,7 +161,7 @@ const CONFIG_TYPES = {
         type: 'object', sub: {
             enabled: 'boolean',
             port: 'number',
-            address: 'string',
+            address: 'string', // deprecated
             addresses: {type: 'array', inner: 'string'},
             header: 'string'
         }
@@ -281,12 +281,16 @@ if (!validateObjectType(DEFAULT_CONFIG)) {
  */
 function readFromFile(file, oldConfig = merge({}, DEFAULT_CONFIG)) {
     try {
-        const config = JSON5.parse(fs.readFileSync(file));
+        let config = JSON5.parse(fs.readFileSync(file));
         if (!validateObjectType(config)) {
             Log.e(TAG, `Configuration file ${file} is invalid.`);
             return false;
         } else {
-            return merge(oldConfig, config);
+            config = merge(oldConfig, config);
+            if (config.reverseProxy.address && config.reverseProxy.addresses.length === 0) {
+                config.reverseProxy.addresses.push(config.reverseProxy.address);
+            }
+            return config;
         }
     } catch (e) {
         Log.e(TAG, `Failed to read file ${file}: ${e.message}`);
@@ -369,11 +373,8 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         if (typeof argv['reverse-proxy'] === 'string') {
             const split = argv['reverse-proxy'].split(',', 2);
             config.reverseProxy.port = parseInt(split[0]);
-            if (split.length === 2) config.reverseProxy.address = split[1];
+            if (split.length === 2) config.reverseProxy.addresses = [split[1]];
         }
-    }
-    if (config.reverseProxy.address) {
-        config.reverseProxy.addresses.push(config.reverseProxy.address);
     }
     if (argv.log || argv.verbose) {
         config.log.level = 'verbose';
