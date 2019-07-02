@@ -12,8 +12,7 @@ class Utils {
 
     static getAccount($, address) {
         return Utils.awaitConsensus($)
-            .then(() => $.client.getAccount(address))
-            .then(account => account || Nimiq.Account.INITIAL);
+            .then(() => $.client.getAccount(address));
     }
 
     static broadcastTransaction($, tx) {

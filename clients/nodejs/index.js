@@ -224,7 +224,7 @@ const $ = {};
 
     const account = await $.client.getAccount($.wallet.address).catch(() => null);
     Nimiq.Log.i(TAG, `Wallet initialized for address ${$.wallet.address.toUserFriendlyAddress()}.`
-        + (!isNano ? ` Balance: ${Nimiq.Policy.lunasToCoins(account.balance)} NIM` : ''));
+        + (account ? ` Balance: ${Nimiq.Policy.lunasToCoins(account.balance)} NIM` : ''));
 
     const chainHeight = await $.client.getHeadHeight();
     const chainHeadHash = await $.client.getHeadHash();
@@ -330,7 +330,7 @@ const $ = {};
                 const account = !isNano ? await $.accounts.get($.wallet.address) : null;
                 const sum = hashrates.reduce((acc, val) => acc + val, 0);
                 Nimiq.Log.i(TAG, `Hashrate: ${(sum / hashrates.length).toFixed(2).padStart(7)} H/s`
-                    + (!isNano ? ` - Balance: ${Nimiq.Policy.lunasToCoins(account.balance)} NIM` : '')
+                    + (account ? ` - Balance: ${Nimiq.Policy.lunasToCoins(account.balance)} NIM` : '')
                     + (config.poolMining.enabled ? ` - Pool balance: ${Nimiq.Policy.lunasToCoins($.miner.balance)} NIM (confirmed ${Nimiq.Policy.lunasToCoins($.miner.confirmedBalance)} NIM)` : '')
                     + ` - Mempool: ${$.mempool.getTransactions().length} tx`);
                 hashrates.length = 0;

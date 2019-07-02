@@ -22,7 +22,7 @@ describe('AccountsTreeChunk', () => {
             const chunk2 = AccountsTreeChunk.unserialize(chunk1.serialize());
             expect(chunk2.verify()).toBeTruthy();
             // AccountsProof should proof absence of last address
-            expect(chunk2.proof.getAccount(Address.unserialize(BufferUtils.fromHex('ffffffffffffffffffffffffffffffffffffffff')))).toBeNull();
+            expect(chunk2.proof.getAccount(Address.unserialize(BufferUtils.fromHex('ffffffffffffffffffffffffffffffffffffffff'))) === Account.INITIAL).toBe(true);
         })().then(done, done.fail);
     });
 
