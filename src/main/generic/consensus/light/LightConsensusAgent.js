@@ -280,7 +280,7 @@ class LightConsensusAgent extends FullConsensusAgent {
         Log.d(LightConsensusAgent, `Requesting AccountsTreeChunk starting at ${startPrefix} from ${this._peer.peerAddress}`);
 
         this._accountsRequest = {
-            startPrefix: startPrefix,
+            startPrefix,
             blockHash: headHash
         };
 
@@ -289,6 +289,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         // Drop the peer if it doesn't send the accounts proof within the timeout.
         this._peer.channel.expectMessage(Message.Type.ACCOUNTS_TREE_CHUNK, () => {
+            this._accountsRequest = null;
             this._peer.channel.close(CloseType.GET_ACCOUNTS_TREE_CHUNK_TIMEOUT, 'getAccountsTreeChunk timeout');
         }, LightConsensusAgent.ACCOUNTS_TREE_CHUNK_REQUEST_TIMEOUT);
     }
@@ -309,10 +310,7 @@ class LightConsensusAgent extends FullConsensusAgent {
 
         Assert.that(this._partialChain && this._partialChain.state === PartialLightChain.State.PROVE_ACCOUNTS_TREE);
 
-        const startPrefix = this._accountsRequest.startPrefix;
-        const blockHash = this._accountsRequest.blockHash;
-
-        // Reset accountsRequest.
+        const {startPrefix, blockHash} = this._accountsRequest;
         this._accountsRequest = null;
 
         if (!msg.hasChunk()) {
@@ -500,9 +498,9 @@ class LightConsensusAgent extends FullConsensusAgent {
         return new Promise((resolve, reject) => {
             const vector = new InvVector(InvVector.Type.BLOCK, hash);
             this._headerRequest = {
-                hash: hash,
-                resolve: resolve,
-                reject: reject
+                hash,
+                resolve,
+                reject
             };
 
             this._peer.channel.getHeader([vector]);
@@ -532,11 +530,7 @@ class LightConsensusAgent extends FullConsensusAgent {
             return;
         }
 
-        const requestedHash = this._headerRequest.hash;
-        const resolve = this._headerRequest.resolve;
-        const reject = this._headerRequest.reject;
-
-        // Reset headerRequest.
+        const {hash: requestedHash, resolve, reject} = this._headerRequest;
         this._headerRequest = null;
 
         // Check that it is the correct hash.
