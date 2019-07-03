@@ -40,7 +40,9 @@ class MockPhy {
      */
     send(msg) {
         if (Math.random() >= MockNetwork._lossrate) {
-            setTimeout(() => this._channel.onmessage(msg), MockNetwork._delay);
+            setTimeout(() => {
+                if (this._channel.onmessage) this._channel.onmessage(msg);
+            }, MockNetwork._delay);
         }
     }
 }
@@ -258,7 +260,7 @@ class MockPeerConnection extends Observable {
 
         if (description.type === 'answer') {
             MockNetwork._peerConnections.set(`${description.sdp.label}-${this._nonce}`, this);
-            this.ondatachannel({ channel: this.dataChannel });
+            if (this.ondatachannel) this.ondatachannel({ channel: this.dataChannel });
         }
 
         return Promise.resolve();
@@ -280,10 +282,10 @@ class MockPeerConnection extends Observable {
             const [firstOctet, secondOctet] = MockNetwork._nonceToOctets(this._nonce);
             const [peerFirstOctet, peerSecondOctet] = MockNetwork._nonceToOctets(description.sdp.nonce);
             setTimeout(() => {
-                this.onicecandidate(new MockRTCIceCandidate(firstOctet, secondOctet));
-                peer.onicecandidate(new MockRTCIceCandidate(peerSecondOctet, peerFirstOctet));
-                this.onicegatheringstatechange();
-                peer.onicegatheringstatechange();
+                if (this.onicecandidate) this.onicecandidate(new MockRTCIceCandidate(firstOctet, secondOctet));
+                if (peer.onicecandidate) peer.onicecandidate(new MockRTCIceCandidate(peerSecondOctet, peerFirstOctet));
+                if (this.onicegatheringstatechange) this.onicegatheringstatechange();
+                if (peer.onicegatheringstatechange) peer.onicegatheringstatechange();
             }, 0);
         }
 
@@ -350,10 +352,12 @@ class MockNetwork {
                     }
                 };
                 server.fire('connection', serverMockWebSocket, request);
-                client.onopen();
+                if (client.onopen) client.onopen();
             }, 0);
         } else {
-            setTimeout(() => client.onerror(), 0);
+            setTimeout(() => {
+                if (client.onerror) client.onerror();
+            }, 0);
         }
     }
 
@@ -369,8 +373,8 @@ class MockNetwork {
 
         setTimeout(() => {
             if (first.closed || second.closed) return;
-            first.onopen({ channel: first });
-            second.onopen({ channel: second });
+            if (first.onopen) first.onopen({ channel: first });
+            if (second.onopen) second.onopen({ channel: second });
         }, 0);
     }
 
