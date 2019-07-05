@@ -405,7 +405,7 @@ export abstract class DataChannel extends Observable {
     public isExpectingMessage(type: Message.Type): boolean;
     public confirmExpectedMessage(type: Message.Type, success: boolean): void;
     public expectMessage(types: Message.Type | Message.Type[], timeoutCallback: () => any, msgTimeout?: number, chunkTimeout?: number): void;
-    public abstract close(): void;
+    public close(): void;
     public send(msg: Uint8Array): void;
     public abstract sendChunk(msg: Uint8Array): void;
 }
@@ -3279,6 +3279,8 @@ export class MessageFactory {
 
 export class WebRtcConnector extends Observable {
     public static CONNECT_TIMEOUT: 8000;
+    public static CONNECTORS_MAX: 6;
+    public static INBOUND_CONNECTORS_MAX: 3;
     constructor(networkConfig: NetworkConfig);
     public connect(peerAddress: PeerAddress, signalChannel: PeerChannel): boolean;
     public isValidSignal(msg: { senderId: any, nonce: any }): boolean;
@@ -3318,7 +3320,6 @@ export class WebRtcDataChannel extends DataChannel {
     public readyState: DataChannel.ReadyState;
     constructor(nativeChannel: any);
     public sendChunk(msg: any): void;
-    public close(): void;
 }
 
 export class WebRtcUtils {
@@ -3339,7 +3340,6 @@ export class WebSocketConnector extends Observable {
 export class WebSocketDataChannel extends DataChannel {
     public readyState: DataChannel.ReadyState;
     constructor(ws: WebSocket);
-    public close(): void;
     public sendChunk(msg: any): void;
 }
 
