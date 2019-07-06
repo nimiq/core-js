@@ -12,6 +12,14 @@ class Time {
     }
 
     /**
+     * Returns the network's offset
+     * @returns {number}
+     */
+    get offset() {
+        return this._offset;
+    }
+
+    /**
      * @param {number} offset
      */
     set offset(offset) {

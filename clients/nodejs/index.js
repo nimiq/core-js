@@ -168,6 +168,7 @@ const $ = {};
     clientConfigBuilder.protocol(config.protocol, config.host, config.port, config.tls.key, config.tls.cert);
     if (config.reverseProxy.enabled) clientConfigBuilder.reverseProxy(config.reverseProxy.port, config.reverseProxy.header, ...config.reverseProxy.addresses);
     if (config.passive) clientConfigBuilder.feature(Nimiq.Client.Feature.PASSIVE);
+    if (config.type === 'full' || config.type === 'light') clientConfigBuilder.feature(Nimiq.Client.Feature.MEMPOOL);
     const clientConfig = clientConfigBuilder.build();
     const networkConfig = clientConfig.networkConfig;
 

@@ -102,7 +102,7 @@ class MetricsServer {
     }
 
     async _chainMetrics(res) {
-        const head = this._client.getHeadBlock(false);
+        const head = await this._client.getHeadBlock(true);
 
         MetricsServer._metric(res, 'chain_head_height', this._desc, head.height);
         MetricsServer._metric(res, 'chain_head_difficulty', this._desc, head.difficulty);
@@ -123,6 +123,9 @@ class MetricsServer {
     }
 
     async _mempoolMetrics(res) {
+        // Only process this section if there's mempool support
+        if (!this._client._config.hasFeature(Nimiq.Client.Feature.MEMPOOL)) return;
+
         const stats = await this._client.mempool.getStatistics();
         let inGroup = 0;
         for (let i = 1; i < stats.countInBuckets.buckets.length; ++i) {
