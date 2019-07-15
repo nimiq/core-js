@@ -157,7 +157,24 @@ describe('Client', () => {
             done();
         }
     });
-    
+
+    established('can send free transaction', async (done, client) => {
+        const a = new Uint8Array(20);
+        CryptoWorker.lib.getRandomValues(a);
+        const newTx = TestBlockchain.createTransaction(testChain.users[0].publicKey, new Address(a), 1, 0, 1, testChain.users[0].privateKey);
+        otherConsensus.mempool.on('transaction-added', (tx) => {
+            if (tx.equals(newTx)) {
+                done();
+            }
+        });
+        /** @type {Client.TransactionDetails} */
+        const tx = await client.sendTransaction(newTx);
+        if (tx.state !== Client.TransactionState.PENDING && tx.state !== Client.TransactionState.NEW) {
+            expect(false).toBeTruthy();
+            done();
+        }
+    });
+
     it('can replace consensus at runtime (nano to light)', async (done) => {
         const client = startClient('nano');
         let establishedNano = false, syncingLight = false;

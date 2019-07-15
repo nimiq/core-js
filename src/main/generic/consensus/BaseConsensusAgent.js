@@ -302,7 +302,7 @@ class BaseConsensusAgent extends Observable {
     _sendFreeWaitingInvVectors() {
         const invVectors = [];
         let size = 0;
-        while (invVectors.length <= BaseInventoryMessage.VECTORS_MAX_COUNT && this._waitingFreeInvVectors.isAvailable()
+        while (invVectors.length < BaseInventoryMessage.VECTORS_MAX_COUNT && this._waitingFreeInvVectors.isAvailable()
             && size < BaseConsensusAgent.FREE_TRANSACTION_SIZE_PER_INTERVAL) {
             const freeTransaction = this._waitingFreeInvVectors.dequeue();
             invVectors.push(freeTransaction.inv);
