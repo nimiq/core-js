@@ -35,7 +35,7 @@ Client.Configuration = class Configuration {
             if (this._features.includes(Client.Feature.MEMPOOL) || this._features.includes(Client.Feature.MINING)) {
                 return Consensus.volatileLight(this._networkConfig);
             } else {
-                return Consensus.volatileNano(this._networkConfig);
+                return Consensus.volatilePico(this._networkConfig);
             }
         } else {
             if (this._features.includes(Client.Feature.LOCAL_HISTORY)) {
@@ -43,7 +43,7 @@ Client.Configuration = class Configuration {
             } else if (this._features.includes(Client.Feature.MEMPOOL) || this._features.includes(Client.Feature.MINING)) {
                 return Consensus.light(this._networkConfig);
             } else {
-                return Consensus.nano(this._networkConfig);
+                return Consensus.pico(this._networkConfig);
             }
         }
     }
