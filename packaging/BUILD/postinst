@@ -72,10 +72,6 @@ start_service () {
   fi
 }
 
-# Link and run the cron job immediately to perform repository configuration.
-ln -s '/usr/share/{{ node_deb_package_name }}/app/cron-deb.sh' '/etc/cron.daily/{{ node_deb_package_name }}'
-nohup sh /etc/cron.daily/nimiq > /dev/null 2>&1 &
-
 if [[ "$init_type" != 'none' ]]; then
   add_group '{{ node_deb_group }}' ''
   add_user '{{ node_deb_user }}' '' '{{ node_deb_group }}' '{{ node_deb_user }} user-daemon' '/bin/false'

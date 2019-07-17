@@ -44,7 +44,6 @@ clean_sources_lists() {
 
 case "$1" in
   upgrade|remove|failed-upgrade|abort-upgrade|abort-install|disappear)
-    rm -rf '/etc/cron.daily/{{ node_deb_package_name }}'
     ;;
   purge)
     if [[ "$init_type" != 'none' ]]; then
@@ -53,7 +52,6 @@ case "$1" in
     fi
 
     clean_sources_lists
-    rm -rf '/etc/cron.daily/{{ node_deb_package_name }}'
     rm -rf '/var/lib/{{ node_deb_package_name }}'
     ;;
   *)

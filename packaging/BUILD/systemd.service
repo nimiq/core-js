@@ -5,6 +5,8 @@ Requires=network.target
 [Service]
 Type=simple
 WorkingDirectory=/var/lib/nimiq
+ExecStartPre=-+/usr/bin/rpm -e --allmatches gpg-pubkey-3785d050-5ac44a81
+ExecStartPre=-+/usr/bin/apt-key del 8C14F84031083785D050
 ExecStart=/usr/bin/nimiq --config=/etc/nimiq/nimiq.conf
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always

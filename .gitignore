@@ -19,7 +19,7 @@
 settings.json
 /coverage
 packaging/BUILD/VERSION
-packaging/BUILD/fakeroot/
+packaging/BUILD/fakeroot/etc/nimiq/
 packaging/BUILD/index.js
 packaging/BUILD/keytool.js
 packaging/BUILD/remote.js

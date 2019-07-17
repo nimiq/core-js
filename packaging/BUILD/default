@@ -1,4 +1,2 @@
-# Configuration for the {{ node_deb_package_name }} daemon
-
-repo_add_once="true"
-repo_reenable_on_distupgrade="true"
+# This file is not used anymore, please check /etc/nimiq/nimiq.conf
+# if you want to configure nimiq systemd service
