@@ -330,7 +330,7 @@ class JsonRpcServer {
 
     async getTransactionsByAddress(addr, limit = 1000) {
         const address = Nimiq.Address.fromString(addr);
-        const txs = await this._client.getTransactionsByAddress(address);
+        const txs = await this._client.getTransactionsByAddress(address, 0, [], limit);
         const result = [];
         for (const tx of txs) {
             try {
@@ -710,7 +710,7 @@ class JsonRpcServer {
             accountsHash: block.accountsHash.toHex(),
             difficulty: block.difficulty,
             timestamp: block.timestamp,
-            confirmations: this._blockchain.height - block.height
+            confirmations: (await this._client.getHeadHeight()) - block.height
         };
         if (block.isFull()) {
             obj.miner = block.minerAddr.toHex();
@@ -756,7 +756,7 @@ class JsonRpcServer {
     _transactionDetailsToObj(tx) {
         return {
             hash: tx.transactionHash.toHex(),
-            blockHash: tx.blockHash.toHex(),
+            blockHash: tx.blockHash ? tx.blockHash.toHex() : undefined,
             blockNumber: tx.blockHeight,
             timestamp: tx.timestamp,
             confirmations: tx.confirmations,

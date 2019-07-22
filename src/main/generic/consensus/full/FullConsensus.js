@@ -91,8 +91,8 @@ class FullConsensus extends BaseConsensus {
      * @param {Address} address
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await
-        return this._mempool.getTransactionsByAddresses([address]);
+    async getPendingTransactionsByAddress(address, limit) { // eslint-disable-line require-await
+        return this._mempool.getTransactionsByAddresses([address], limit);
     }
 
     /**
@@ -113,11 +113,12 @@ class FullConsensus extends BaseConsensus {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    getTransactionReceiptsByAddress(address) {
+    getTransactionReceiptsByAddress(address, limit) {
         // XXX Assumes that blockchain supports transaction index.
-        return this._blockchain.getTransactionReceiptsByAddress(address);
+        return this._blockchain.getTransactionReceiptsByAddress(address, limit);
     }
 
     /**

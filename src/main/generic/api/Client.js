@@ -724,9 +724,10 @@ class Client {
      * @param {Address|string} address Address of an account
      * @param {number} [sinceBlockHeight=0] Minimum block height to consider for updates
      * @param {Array.<Client.TransactionDetails>} [knownTransactionDetails] List of transaction details on already known transactions since {@param sinceBlockHeight}
+     * @param {number} [limit=NumberUtils.UINT64_MAX] Maximum number of transactions to return, this number may be exceeded for large knownTransactionDetails sets.
      * @return {Promise.<Array.<Client.TransactionDetails>>}
      */
-    async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails) {
+    async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails, limit = NumberUtils.UINT64_MAX) {
         address = Address.fromAny(address);
         const knownTxs = new HashMap();
         if (knownTransactionDetails) {
@@ -740,7 +741,7 @@ class Client {
         const consensus = await this._consensus;
         const txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
         try {
-            const pending = await consensus.getPendingTransactionsByAddress(address);
+            const pending = await consensus.getPendingTransactionsByAddress(address, limit);
             for (const tx of pending) {
                 this._txWaitForExpire(tx);
                 txs.add(new Client.TransactionDetails(tx, Client.TransactionState.PENDING));
@@ -751,7 +752,7 @@ class Client {
 
         // Fetch transaction receipts.
         const receipts = new HashSet((receipt) => receipt.transactionHash);
-        receipts.addAll(await consensus.getTransactionReceiptsByAddress(address));
+        if (txs.length < count) receipts.addAll(await consensus.getTransactionReceiptsByAddress(address, txs.length - limit));
 
         /** @type {HashMap.<string, HashSet.<Hash>>} */
         const requestProofs = new HashMap();

@@ -214,11 +214,12 @@ class BaseMiniConsensus extends BaseConsensus {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await
+    async getPendingTransactionsByAddress(address, limit) { // eslint-disable-line require-await
         if (this._subscription.addresses && this._subscription.addresses.some(a => a.equals(address))) {
-            return this._mempool.getTransactionsByAddresses([address]);
+            return this._mempool.getTransactionsByAddresses([address], limit);
         } else {
             throw new Error('Can not provide pending transactions without prior subscription');
         }

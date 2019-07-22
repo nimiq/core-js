@@ -141,9 +141,10 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<Transaction>>}
      */
-    async getPendingTransactionsByAddress(address) { // eslint-disable-line require-await, no-unused-vars
+    async getPendingTransactionsByAddress(address, limit) { // eslint-disable-line require-await, no-unused-vars
         throw new Error('not implemented: getPendingTransactionsByAddress');
     }
 
@@ -187,10 +188,11 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    getTransactionReceiptsByAddress(address) {
-        return this._requestTransactionReceiptsByAddress(address);
+    getTransactionReceiptsByAddress(address, limit) {
+        return this._requestTransactionReceiptsByAddress(address, limit);
     }
 
     /**
@@ -810,10 +812,11 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @protected
      */
-    async _requestTransactionReceiptsByAddress(address) {
+    async _requestTransactionReceiptsByAddress(address, limit) {
         /** @type {Array.<BaseConsensusAgent>} */
         const agents = [];
         for (const agent of this._agents.valueIterator()) {
