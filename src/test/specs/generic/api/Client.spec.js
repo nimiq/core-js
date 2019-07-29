@@ -72,47 +72,85 @@ describe('Client', () => {
         done();
     });
 
-    established('can be used to fetch head height', async (done, client) => {
+    established('can fetch head height', async (done, client) => {
         expect(await client.getHeadHeight()).toBe(otherConsensus.blockchain.height);
         done();
     });
 
-    established('can be used to fetch head hash', async (done, client) => {
+    established('can fetch head hash', async (done, client) => {
         expect((await client.getHeadHash()).equals(otherConsensus.blockchain.headHash)).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch light head block', async (done, client) => {
+    established('can fetch light head block', async (done, client) => {
         expect((await client.getHeadBlock(false)).toLight().equals(otherConsensus.blockchain.head.toLight())).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch full head block', async (done, client) => {
+    established('can fetch full head block', async (done, client) => {
         expect((await client.getHeadBlock(true)).equals(otherConsensus.blockchain.head)).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch light block by hash', async (done, client) => {
+    established('can fetch light block by hash', async (done, client) => {
         const block = await otherConsensus.blockchain.getBlockAt(2);
         expect((await client.getBlock(block.hash(), false)).toLight().equals(block.toLight())).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch full block by hash', async (done, client) => {
+    established('can fetch full block by hash', async (done, client) => {
         const block = await otherConsensus.blockchain.getBlockAt(2);
         expect((await client.getBlock(block.hash(), true)).toLight().equals(block)).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch light block by height', async (done, client) => {
+    established('can fetch light block by height', async (done, client) => {
         const block = await otherConsensus.blockchain.getBlockAt(2);
         expect((await client.getBlockAt(block.height, false)).toLight().equals(block.toLight())).toBeTruthy();
         done();
     });
 
-    established('can be used to fetch full block by height', async (done, client) => {
+    established('can fetch full block by height', async (done, client) => {
         const block = await otherConsensus.blockchain.getBlockAt(2);
         expect((await client.getBlockAt(block.height, true)).toLight().equals(block)).toBeTruthy();
+        done();
+    });
+
+    established('can fetch an account', async (done, client) => {
+        const block = await otherConsensus.blockchain.getBlockAt(1, true);
+        const account = (await otherConsensus.getAccounts([block.minerAddr]))[0];
+        expect((await client.getAccount(block.minerAddr)).equals(account)).toBeTruthy();
+        done();
+    });
+
+    established('can fetch multiple accounts', async (done, client) => {
+        const block = await otherConsensus.blockchain.getBlockAt(2, true);
+        const accounts = await otherConsensus.getAccounts([block.minerAddr, Address.NULL]);
+        expect((await client.getAccounts([block.minerAddr, Address.NULL])).every((account, i) => accounts[i].equals(account))).toBeTruthy();
+        done();
+    });
+
+    established('can fetch a transaction by hash', async (done, client) => {
+        const block = await otherConsensus.blockchain.getBlockAt(2, true);
+        const tx = block.transactions[0];
+        expect((await client.getTransaction(tx.hash())).transaction.equals(tx)).toBeTruthy();
+        done();
+    });
+
+    established('can fetch transactions by address', async (done, client) => {
+        const block = await otherConsensus.blockchain.getBlockAt(1, true);
+        const receipts = await otherConsensus.getTransactionReceiptsByAddress(block.minerAddr, Infinity);
+        const details = (await client.getTransactionsByAddress(block.minerAddr))
+            .filter(detail => detail.state === Client.TransactionState.MINED || detail.state === Client.TransactionState.CONFIRMED);
+        receipts.sort((a, b) => a.transactionHash.compare(b.transactionHash));
+        details.sort((a, b) => a.transaction.hash().compare(b.transaction.hash()));
+        expect(details.length).toBe(receipts.length);
+        expect(details.every((detail, i) => {
+            const receipt = receipts[i];
+            return detail.transaction.hash().equals(receipt.transactionHash)
+                && detail.blockHash.equals(receipt.blockHash)
+                && detail.blockHeight === receipt.blockHeight;
+        })).toBeTruthy();
         done();
     });
 

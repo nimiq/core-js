@@ -677,13 +677,14 @@ class Client {
      * not necessarily be considered a confirmation that a transaction was actually mined in a block.
      *
      * @param {Address|string} address Address of an account
+     * @param {number} [limit=Infinity] Maximum number of receipts to return, may be exceeded depending on your client configuration.
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    async getTransactionReceiptsByAddress(address) {
+    async getTransactionReceiptsByAddress(address, limit = Infinity) {
         address = Address.fromAny(address);
 
         const consensus = await this._consensus;
-        return consensus.getTransactionReceiptsByAddress(address);
+        return consensus.getTransactionReceiptsByAddress(address, limit);
     }
 
     /**
@@ -724,10 +725,10 @@ class Client {
      * @param {Address|string} address Address of an account
      * @param {number} [sinceBlockHeight=0] Minimum block height to consider for updates
      * @param {Array.<Client.TransactionDetails>} [knownTransactionDetails] List of transaction details on already known transactions since {@param sinceBlockHeight}
-     * @param {number} [limit=NumberUtils.UINT64_MAX] Maximum number of transactions to return, this number may be exceeded for large knownTransactionDetails sets.
+     * @param {number} [limit=Infinity] Maximum number of transactions to return, this number may be exceeded for large knownTransactionDetails sets.
      * @return {Promise.<Array.<Client.TransactionDetails>>}
      */
-    async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails, limit = NumberUtils.UINT64_MAX) {
+    async getTransactionsByAddress(address, sinceBlockHeight = 0, knownTransactionDetails, limit = Infinity) {
         address = Address.fromAny(address);
         const knownTxs = new HashMap();
         if (knownTransactionDetails) {
@@ -752,7 +753,7 @@ class Client {
 
         // Fetch transaction receipts.
         const receipts = new HashSet((receipt) => receipt.transactionHash);
-        if (txs.length < count) receipts.addAll(await consensus.getTransactionReceiptsByAddress(address, txs.length - limit));
+        if (txs.length < limit) receipts.addAll(await consensus.getTransactionReceiptsByAddress(address, limit - txs.length));
 
         /** @type {HashMap.<string, HashSet.<Hash>>} */
         const requestProofs = new HashMap();

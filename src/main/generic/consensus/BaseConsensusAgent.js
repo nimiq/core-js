@@ -946,7 +946,6 @@ class BaseConsensusAgent extends Observable {
     async _onGetData(msg) {
         // Keep track of the objects the peer knows.
         for (const vector of msg.vectors) {
-            Log.v(BaseConsensusAgent, `Got request for ${vector.hash} from ${this.peer.peerAddress}`);
             this._knownObjects.add(vector);
         }
 

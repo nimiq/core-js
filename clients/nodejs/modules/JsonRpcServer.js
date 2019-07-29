@@ -664,7 +664,7 @@ class JsonRpcServer {
             obj.recipient = account.recipient.toHex();
             obj.recipientAddress = account.recipient.toUserFriendlyAddress();
             obj.hashRoot = account.hashRoot.toHex();
-            obj.hashAlgorithm = account.hashRoot.algorithm
+            obj.hashAlgorithm = account.hashRoot.algorithm;
             obj.hashCount = account.hashCount;
             obj.timeout = account.timeout;
             obj.totalAmount = account.totalAmount;

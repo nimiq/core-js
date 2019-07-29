@@ -23,12 +23,12 @@ if (process.env.JASMINE_VERBOSE) {
         listStyle: 'indent', // "flat"|"indent"
         activity: true
     });
-    Nimiq.Log.instance.level = process.env.NIMIQ_LOG ? 2 : 10;
 }
 // initialize and execute
 jasmine.getEnv().clearReporters();
 jasmine.getEnv().addReporter(reporter);
 
+Nimiq.Log.instance.level = process.env.NIMIQ_LOG ? 2 : 10;
 Nimiq.Log.instance._native._global_prefix = String.fromCharCode(27) + '[1K\r';
 
 global.Class = {
