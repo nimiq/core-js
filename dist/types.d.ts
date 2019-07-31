@@ -60,9 +60,9 @@ export class Client {
     public getAccounts(addresses: Array<Address | string>): Promise<Account[]>;
     public getTransaction(hash: Hash | string, blockHash?: Hash | string, blockHeight?: number): Promise<Client.TransactionDetails>;
     public getTransactionReceipt(hash: Hash | string): Promise<TransactionReceipt | undefined>;
-    public getTransactionReceiptsByAddress(address: Address | string): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address | string, limit?: number): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Array<Hash | string>): Promise<TransactionReceipt[]>;
-    public getTransactionsByAddress(address: Address | string, sinceBlockHeight?: number, knownTransactionDetails?: Client.TransactionDetails[]): Promise<Client.TransactionDetails[]>;
+    public getTransactionsByAddress(address: Address | string, sinceBlockHeight?: number, knownTransactionDetails?: Client.TransactionDetails[], limit?: number): Promise<Client.TransactionDetails[]>;
     public sendTransaction(tx: Transaction | object | string): Promise<Client.TransactionDetails>;
     public addBlockListener(listener: BlockListener): Promise<Handle>;
     public addConsensusChangedListener(listener: ConsensusChangedListener): Promise<Handle>;
@@ -2449,7 +2449,7 @@ export class BaseConsensus extends Observable {
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
     public getTransactionsFromBlockByAddresses(addresses: Address[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
-    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address, limit: number): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public getMempoolContents(): Transaction[];
     public handoverTo(consensus: BaseConsensus): BaseConsensus;
@@ -2559,9 +2559,9 @@ export class FullConsensus extends BaseConsensus {
     public submitBlock(block: Block): Promise<boolean>;
     public getAccounts(addresses: Address[]): Promise<Account[]>;
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
-    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address, limit: number): Promise<Transaction[]>;
     public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
-    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address, limit: number): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
     public getMempoolContents(): Transaction[];
@@ -2612,7 +2612,7 @@ export class LightConsensus extends BaseConsensus {
     public submitBlock(block: Block): Promise<boolean>;
     public getAccounts(addresses: Address[]): Promise<Account[]>;
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
-    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address, limit: number): Promise<Transaction[]>;
     public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
     public getMempoolContents(): Transaction[];
     public subscribeMinFeePerByte(minFeePerByte: number): void;
@@ -2687,7 +2687,7 @@ export class BaseMiniConsensus extends BaseConsensus {
     public getAccounts(addresses: Address[], blockHash?: Hash): Promise<Account[]>;
     public sendTransaction(tx: Transaction): Promise<BaseConsensus.SendTransactionResult>;
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
-    public getPendingTransactionsByAddress(address: Address): Promise<Transaction[]>;
+    public getPendingTransactionsByAddress(address: Address, limit: number): Promise<Transaction[]>;
     public relayTransaction(transaction: Transaction): Promise<void>;
 }
 
