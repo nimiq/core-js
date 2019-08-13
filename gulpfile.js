@@ -593,6 +593,7 @@ const RELEASE_LIB = [
 
 const RELEASE_ADDONS = [
     'build/Release/nimiq_node_compat.node',
+    'build/Release/nimiq_node_sse2.node',
     'build/Release/nimiq_node_avx.node',
     'build/Release/nimiq_node_avx2.node',
     'build/Release/nimiq_node_avx512f.node'

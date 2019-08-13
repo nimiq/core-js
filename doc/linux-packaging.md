@@ -16,7 +16,7 @@ Note: creating deb packages only has been tested extensively on Ubuntu and Debia
 #### Fedora/CentOS/RHEL (RPM package format)
 
 1. Make sure you have `rpm-build` installed (otherwise, install it with `yum` or `dnf`).
-2. Run `PACKAGING=1 yarn `
+2. Run `PACKAGING=1 yarn`
 3. Then run `yarn run build-rpm`.
 4. The RPM package will be located in the `dist/` directory.
 
