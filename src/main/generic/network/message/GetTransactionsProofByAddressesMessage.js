@@ -69,6 +69,3 @@ class GetTransactionsProofByAddressesMessage extends Message {
  */
 GetTransactionsProofByAddressesMessage.ADDRESSES_MAX_COUNT = 255;
 Class.register(GetTransactionsProofByAddressesMessage);
-/** @deprecated */
-GetTransactionsProofMessage = GetTransactionsProofByAddressesMessage;
-Class.register(GetTransactionsProofMessage);

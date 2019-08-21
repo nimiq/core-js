@@ -55,6 +55,3 @@ class GetTransactionReceiptsByAddressMessage extends Message {
     }
 }
 Class.register(GetTransactionReceiptsByAddressMessage);
-/** @deprecated */
-GetTransactionReceiptsMessage = GetTransactionReceiptsByAddressMessage;
-Class.register(GetTransactionReceiptsMessage);
