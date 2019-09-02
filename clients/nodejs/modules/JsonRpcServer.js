@@ -274,11 +274,15 @@ class JsonRpcServer {
 
     async getRawTransactionInfo(txHex) {
         const tx = Nimiq.Transaction.unserialize(Nimiq.BufferUtils.fromHex(txHex));
-        const liveTx = await this._getTransactionByHash(tx.hash());
-        if (liveTx) {
-            liveTx.valid = true;
-            liveTx.inMempool = (liveTx.confirmations === 0);
-            return liveTx;
+        try {
+            const liveTx = await this._getTransactionByHash(tx.hash());
+            if (liveTx) {
+                liveTx.valid = true;
+                liveTx.inMempool = (liveTx.confirmations === 0);
+                return liveTx;
+            }
+        } catch (e) {
+            // Ignore, the tx is not yet known
         }
         const txObj = await this._transactionToObj(tx);
         txObj.valid = await tx.verify();
@@ -718,7 +722,7 @@ class JsonRpcServer {
             obj.extraData = Nimiq.BufferUtils.toHex(block.body.extraData);
             obj.size = block.serializedSize;
             obj.transactions = includeTransactions
-                ? block.transactions.map((tx, i) => this._transactionToObj(tx, block, i))
+                ? await Promise.all(block.transactions.map((tx, i) => this._transactionToObj(tx, block, i)))
                 : block.transactions.map((tx) => tx.hash().toHex());
         }
         return obj;
