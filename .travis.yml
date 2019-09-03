@@ -1,8 +1,11 @@
-dist: trusty
+dist: xenial
 
 language: node_js
 node_js:
 - "9"
+
+services:
+- xvfb
 
 cache: yarn
 
@@ -11,15 +14,6 @@ env:
     # include $HOME/.local/bin for `aws`
     - PATH=$HOME/.local/bin:$PATH
     - CHROME_BIN=/usr/bin/google-chrome
-    - CC=gcc-4.9
-    - CXX=g++-4.9
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.9
 
 before_install:
 # set up awscli packages
@@ -60,11 +54,6 @@ jobs:
     - stage: test
       env: TO_TEST=Karma/SauceLabs/Edge_18
       addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
         sauce_connect:
           username: nimiq
         jwt:
@@ -92,10 +81,8 @@ jobs:
         apt:
           sources:
           - google-chrome
-          - ubuntu-toolchain-r-test
           packages:
           - google-chrome-stable
-          - g++-4.9
       script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Chrome_Stable USE_BABEL=1
@@ -103,10 +90,8 @@ jobs:
         apt:
           sources:
           - google-chrome
-          - ubuntu-toolchain-r-test
           packages:
           - google-chrome-stable
-          - g++-4.9
       script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Chrome_Beta
@@ -114,10 +99,8 @@ jobs:
         apt:
           sources:
           - google-chrome
-          - ubuntu-toolchain-r-test
           packages:
           - google-chrome-beta
-          - g++-4.9
       script: ./travis-script.sh
 #    - stage: test
 #      env: TO_TEST=Karma/SauceLabs/Chrome_Old
@@ -130,31 +113,16 @@ jobs:
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Firefox_Stable
       addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
         firefox: latest
       script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Firefox_ESR
       addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
         firefox: latest-esr
       script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Firefox_Beta
       addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
         firefox: latest-beta
       script: ./travis-script.sh
 #    - stage: test

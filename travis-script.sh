@@ -9,8 +9,6 @@ else
     cp -r ~/shared/* .
     tar xzf node_modules.tar.gz
 fi
-if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] || [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]]; then export DISPLAY=:99.0; fi
-if [[ "$TO_TEST" == Karma/Travis_CI/Firefox_* ]] || [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]]; then sh -e /etc/init.d/xvfb start; fi
 if [[ "$TO_TEST" == Karma/SauceLabs/Chrome_Old ]]; then export KARMA_BROWSERS="SL_Chrome_61,SL_Chrome_60,SL_Chrome_59,SL_Chrome_58" TO_TEST=Karma; fi
 if [[ "$TO_TEST" == Karma/SauceLabs/* ]]; then export KARMA_BROWSERS="SL_$(basename "$TO_TEST")" TO_TEST=Karma; fi
 if [[ "$TO_TEST" == Karma/Travis_CI/Chrome_* ]] && [ "$KARMA_BROWSERS" = "" ]; then export KARMA_BROWSERS=Travis_Chrome TO_TEST=Karma USE_ISTANBUL=1; fi
