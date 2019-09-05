@@ -102,6 +102,15 @@ jobs:
           packages:
           - google-chrome-beta
       script: ./travis-script.sh
+    - stage: test
+      env: TO_TEST=Karma/Travis_CI/Chrome_Module USE_ESM=1
+      addons:
+        apt:
+          sources:
+          - google-chrome
+          packages:
+          - google-chrome-beta
+      script: ./travis-script.sh
 #    - stage: test
 #      env: TO_TEST=Karma/SauceLabs/Chrome_Old
 #      addons:
@@ -122,6 +131,11 @@ jobs:
       script: ./travis-script.sh
     - stage: test
       env: TO_TEST=Karma/Travis_CI/Firefox_Beta
+      addons:
+        firefox: latest-beta
+      script: ./travis-script.sh
+    - stage: test
+      env: TO_TEST=Karma/Travis_CI/Firefox_Module USE_ESM=1
       addons:
         firefox: latest-beta
       script: ./travis-script.sh
