@@ -148,5 +148,11 @@ module.exports = function (config) {
         configuration.files.push('src/test/specs/generic/consensus/base/account/Address.spec.js');
         configuration.files.push('src/test/specs/generic/consensus/base/transaction/ExtendedTransaction.spec.js');
     }
+    if (process.env.USE_ESM) {
+        configuration.files = [
+            { pattern: 'dist/web.esm.js', included: false },
+            { pattern: 'src/test/specs/esm/*.[sS]pec.js', type: 'module' }
+        ];
+    }
     config.set(configuration);
 };
