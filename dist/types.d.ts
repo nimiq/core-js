@@ -17,16 +17,16 @@ declare type TransactionListener = (transaction: Client.TransactionDetails) => P
 declare type MempoolListener = (transactionHash: Hash) => Promise<void> | void;
 
 export class Client {
-    public static Configuration: ClientConfiguration;
-    public static ConfigurationBuilder: ClientConfigurationBuilder;
-    public static Mempool: ClientMempool;
-    public static MempoolStatistics: ClientMempoolStatistics;
-    public static Network: ClientNetwork;
-    public static BasicAddress: ClientBasicAddress;
-    public static AddressInfo: ClientAddressInfo;
-    public static PeerInfo: ClientPeerInfo;
-    public static NetworkStatistics: ClientNetworkStatistics;
-    public static TransactionDetails: ClientTransactionDetails;
+    public static Configuration: typeof ClientConfiguration;
+    public static ConfigurationBuilder: typeof ClientConfigurationBuilder;
+    public static Mempool: typeof ClientMempool;
+    public static MempoolStatistics: typeof ClientMempoolStatistics;
+    public static Network: typeof ClientNetwork;
+    public static BasicAddress: typeof ClientBasicAddress;
+    public static AddressInfo:typeof  ClientAddressInfo;
+    public static PeerInfo: typeof ClientPeerInfo;
+    public static NetworkStatistics: typeof ClientNetworkStatistics;
+    public static TransactionDetails: typeof ClientTransactionDetails;
     public static TransactionState: {
         NEW: 'new';
         PENDING: 'pending';
@@ -70,6 +70,7 @@ export class Client {
     public addTransactionListener(listener: TransactionListener, addresses: Array<Address | string>): Promise<Handle>;
     public removeListener(handle: Handle): Promise<void>;
     public waitForConsensusEstablished(): Promise<void>;
+    public _consensusState: Client.ConsensusState;
 }
 
 export namespace Client {
@@ -108,7 +109,7 @@ export namespace Client {
 }
 
 declare class ClientConfiguration {
-    public static builder: Client.ConfigurationBuilder;
+    public static builder(): Client.ConfigurationBuilder;
     public features: Client.Feature[];
     public requiredBlockConfirmations: number;
     public networkConfig: NetworkConfig;
@@ -501,7 +502,7 @@ export class Services {
     public static isNanoNode(services: number): boolean;
     public static providesServices(flags: number, ...services: number[]): boolean;
     public static legacyProvideToCurrent(flags: number): number;
-    public static toNameArray(flags): string[];
+    public static toNameArray(flags: number): string[];
     public provided: number;
     public accepted: number;
     constructor(provided?: number, accepted?: number);
@@ -551,7 +552,7 @@ export class ArrayUtils {
 export class HashMap<K, V> {
     public length: number;
     constructor(fnHash?: (o: object) => string);
-    public get(key: K): V;
+    public get(key: K): V | undefined;
     public put(key: K, value: V): void;
     public remove(key: K): void;
     public clear(): void;
@@ -571,7 +572,7 @@ export class HashSet<V> {
     constructor(fnHash?: (o: object) => string);
     public add(value: V): void;
     public addAll(collection: Iterable<V>): void;
-    public get(value: V): V;
+    public get(value: V): V | undefined;
     public remove(value: V): void;
     public removeAll(collection: V[]): void;
     public clear(): void;
@@ -715,7 +716,7 @@ export class SortedList {
 }
 
 export class Assert {
-    public static that(condition: boolean, [message]: string): void;
+    public static that(condition: boolean, message?: string): void;
 }
 
 export class CryptoUtils {
@@ -740,8 +741,8 @@ export class BufferUtils {
     public static fromBase64(base64: string, length?: number): SerialBuffer;
     public static toBase64Url(buffer: Uint8Array): string;
     public static fromBase64Url(base64: string, length?: number): SerialBuffer;
-    public static toBase32(buf: Uint8Array, [alphabet]: string): string;
-    public static fromBase32(base32: string, [alphabet]: string): Uint8Array;
+    public static toBase32(buf: Uint8Array, alphabet?: string): string;
+    public static fromBase32(base32: string, alphabet?: string): Uint8Array;
     public static toHex(buffer: Uint8Array): string;
     public static fromHex(hex: string, length?: number): SerialBuffer;
     public static toBinary(buffer: Uint8Array): string;
@@ -2325,7 +2326,7 @@ export class Mempool extends Observable {
     constructor(blockchain: IBlockchain, accounts: Accounts);
     public pushTransaction(transaction: Transaction): Promise<Mempool.ReturnCode>;
     public getTransaction(hash: Hash): Transaction;
-    public *transactionGenerator(maxSize?: number, minFeePerByte?: number): IterableIterator<Transaction>;
+    // public *transactionGenerator(maxSize?: number, minFeePerByte?: number): IterableIterator<Transaction>;
     public getTransactions(maxSize?: number, minFeePerByte?: number): Transaction[];
     public getTransactionsForBlock(maxSize: number): Promise<Transaction[]>;
     public getPendingTransactions(address: Address): Transaction[];
