@@ -5,6 +5,7 @@ const JDB = require('@nimiq/jungle-db');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
+const tls = require('tls');
 let cpuid;
 try {
     cpuid = require('cpuid-git');
