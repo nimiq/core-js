@@ -5,11 +5,31 @@ class WebSocketServer extends WebSocket.Server {
      */
     static _newHttpServer(networkConfig) {
         if (networkConfig.secure) {
+            // Debounce utility
+            let timeout;
+            const debounce = (fn) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(fn, 1000);
+            };
+
+            let secureContext;
             const options = {
-                key: fs.readFileSync(networkConfig.ssl.key),
-                cert: fs.readFileSync(networkConfig.ssl.cert),
+                SNICallback: (servername, cb) => cb(null, secureContext),
                 handshakeTimeout: WebSocketServer.TLS_HANDSHAKE_TIMEOUT
             };
+
+            const reloadTlsConfig = () => {
+                Log.d(WebSocketServer, `(Re-)Loading SSL config`);
+                options.key = fs.readFileSync(networkConfig.ssl.key);
+                options.cert = fs.readFileSync(networkConfig.ssl.cert);
+                secureContext = tls.createSecureContext({key: options.key, cert: options.cert});
+            };
+            reloadTlsConfig();
+
+            // Watch filesystem for changes to the key and cert files
+            fs.watch(networkConfig.ssl.key, () => debounce(reloadTlsConfig));
+            fs.watch(networkConfig.ssl.cert, () => debounce(reloadTlsConfig));
+
             return https.createServer(options, (req, res) => {
                 res.writeHead(200);
                 res.end('Nimiq Node.js Client\n');
