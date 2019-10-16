@@ -828,7 +828,7 @@ class BaseConsensus extends Observable {
 
         for (const agent of agents) {
             try {
-                return await agent.getTransactionReceiptsByAddress(address); // eslint-disable-line no-await-in-loop
+                return await agent.getTransactionReceiptsByAddress(address, limit); // eslint-disable-line no-await-in-loop
             } catch (e) {
                 Log.w(BaseConsensus, `Failed to retrieve transaction receipts for ${address} from ${agent.peer.peerAddress}: ${e && e.message || e}`);
                 // Try the next peer.

@@ -1331,11 +1331,12 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
-    getTransactionReceiptsByAddress(address) {
+    getTransactionReceiptsByAddress(address, limit) {
         return this._synchronizer.push('getTransactionReceipts',
-            this._getTransactionReceiptsByAddress.bind(this, address));
+            this._getTransactionReceiptsByAddress.bind(this, address, limit));
     }
 
     /**
@@ -1350,15 +1351,17 @@ class BaseConsensusAgent extends Observable {
 
     /**
      * @param {Address} address
+     * @param {number} limit
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @private
      */
-    _getTransactionReceiptsByAddress(address) {
+    _getTransactionReceiptsByAddress(address, limit) {
         Assert.that(this._transactionReceiptsRequest === null);
 
         return new Promise((resolve, reject) => {
             this._transactionReceiptsRequest = {
                 address,
+                limit,
                 resolve,
                 reject
             };
@@ -1414,7 +1417,7 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        const {resolve, reject} = this._transactionReceiptsRequest;
+        const {address, hashes, limit, resolve, reject} = this._transactionReceiptsRequest;
         this._transactionReceiptsRequest = null;
 
         if (!msg.hasReceipts()) {
@@ -1423,9 +1426,21 @@ class BaseConsensusAgent extends Observable {
             return;
         }
 
-        // TODO Verify that the transaction receipts match the given address/hashes.
+        let receipts = msg.receipts;
+        if (limit !== undefined && limit < receipts.length) receipts = receipts.slice(0, limit);
 
-        resolve(msg.receipts);
+        if (hashes !== undefined) {
+            for (const receipt of receipts) {
+                if (!hashes.some(hash => hash.equals(receipt.transactionHash))) {
+                    Log.w(BaseConsensusAgent, `TransactionsReceipts with unwanted transactions received from ${this._peer.peer}`);
+                    this._peer.channel.close(CloseType.INVALID_TRANSACTION_RECEIPTS, 'TransactionsReceipts contains unwanted transactions');
+                    reject(new Error('TransactionsReceipts contains unwanted transactions'));
+                    return;
+                }
+            }
+        }
+
+        resolve(receipts);
     }
 
     /**
