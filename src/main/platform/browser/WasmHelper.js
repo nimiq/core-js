@@ -73,29 +73,30 @@ class WasmHelper {
 
         const moduleSettings = WasmHelper._global[module] || {};
         return new Promise(async (resolve, reject) => {
-            if (module) {
+            const runtimeInitialized = new Promise((resolve) => {
                 moduleSettings.onRuntimeInitialized = () => resolve(true);
-            }
+            });
             if (typeof importScripts === 'function') {
                 await new Promise((resolve) => {
                     WasmHelper._moduleLoadedCallbacks[module] = resolve;
                     importScripts(script);
                 });
                 WasmHelper._global[module] = WasmHelper._global[module](moduleSettings);
-                if (!module) resolve(true);
             } else if (typeof window === 'object') {
                 await new Promise((resolve) => {
                     WasmHelper._moduleLoadedCallbacks[module] = resolve;
                     WasmHelper._loadBrowserScript(script);
                 });
                 WasmHelper._global[module] = WasmHelper._global[module](moduleSettings);
-                if (!module) resolve(true);
             } else if (typeof require === 'function') {
                 WasmHelper._global[module] = require(script)(moduleSettings);
-                if (!module) resolve(true);
             } else {
                 reject('No way to load scripts.');
+                return;
             }
+            await runtimeInitialized;
+            if (moduleSettings.asm && !WasmHelper._global[module].asm) WasmHelper._global[module] = moduleSettings;
+            resolve(true);
         });
     }
 
