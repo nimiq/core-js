@@ -266,7 +266,7 @@ class Client {
             // Process transaction listeners.
             if (this._transactionListeners.length > 0) {
                 const revertedTxs = new HashSet();
-                const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash() : a.hash());
+                const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash().hashCode() : a.hash().hashCode());
 
                 // Gather reverted transactions
                 for (const block of revertedBlocks) {
@@ -740,7 +740,7 @@ class Client {
 
         // Get pending transactions from local mempool.
         const consensus = await this._consensus;
-        const txs = new HashSet((i) => i instanceof Hash ? i : i.transactionHash);
+        const txs = new HashSet((i) => i instanceof Hash ? i.hashCode() : i.transactionHash.hashCode());
         try {
             const pending = await consensus.getPendingTransactionsByAddress(address, limit);
             for (const tx of pending) {
@@ -752,7 +752,7 @@ class Client {
         }
 
         // Fetch transaction receipts.
-        const receipts = new HashSet((receipt) => receipt.transactionHash);
+        const receipts = new HashSet((receipt) => receipt.transactionHash.hashCode());
         if (txs.length < limit) receipts.addAll(await consensus.getTransactionReceiptsByAddress(address, limit - txs.length));
 
         /** @type {HashMap.<string, HashSet.<Hash>>} */
