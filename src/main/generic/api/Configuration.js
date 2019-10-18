@@ -91,9 +91,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @returns {Client.ConfigurationBuilder}
      */
     dumb() {
-        if (this._protocol) throw new Error('Protocol already configured');
-        this._protocol = 'dumb';
-        return this;
+        return this.protocol('dumb');
     }
 
     /**
@@ -101,9 +99,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @returns {Client.ConfigurationBuilder}
      */
     rtc() {
-        if (this._protocol) throw new Error('Protocol already configured');
-        this._protocol = 'rtc';
-        return this;
+        return this.protocol('rtc');
     }
 
     /**
@@ -114,11 +110,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @returns {Client.ConfigurationBuilder}
      */
     ws(host, port = 8443) {
-        if (this._protocol) throw new Error('Protocol already configured');
-        this._protocol = 'ws';
-        this._host = this._requiredType(host, 'host', 'string');
-        this._port = this._requiredType(port, 'port', 'number');
-        return this;
+        return this.protocol('ws', host, port);
     }
 
     /**
@@ -131,13 +123,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @returns {Client.ConfigurationBuilder}
      */
     wss(host, port = 8443, tlsKey, tlsCert) {
-        if (this._protocol) throw new Error('Protocol already configured');
-        this._protocol = 'wss';
-        this._host = this._requiredType(host, 'host', 'string');
-        this._port = this._requiredType(port, 'port', 'number');
-        this._tlsKey = this._requiredType(tlsKey, 'tlsKey', 'string');
-        this._tlsCert = this._requiredType(tlsCert, 'tlsCert', 'string');
-        return this;
+        return this.protocol('wss', host, port, tlsKey, tlsCert);
     }
 
     /**
