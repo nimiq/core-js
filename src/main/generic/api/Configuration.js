@@ -216,7 +216,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
      * @returns {Client.Configuration} The configuration object to create a client with.
      */
     build() {
-        if (!this._volatile && this._features.contains(Client.Feature.LOCAL_HISTORY)) {
+        if (this._volatile && this._features.contains(Client.Feature.LOCAL_HISTORY)) {
             throw new Error('Local history is not available with volatile storage');
         }
         if (!this._protocol) {
@@ -255,7 +255,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     }
 
     _requiredType(val, name, type) {
-        if (!val) throw new Error(`${name} is required`);
+        if (typeof val === 'undefined') throw new Error(`${name} is required`);
         if (typeof val !== type) throw new Error(`Type of ${name} must be ${type}`);
         return val;
     }
