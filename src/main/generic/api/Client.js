@@ -762,7 +762,7 @@ class Client {
         for (const receipt of receipts.valueIterator()) {
             // Skip known transactions that are already considered confirmed.
             const knownTx = knownTxs.get(receipt.transactionHash);
-            if (knownTx && knownTx.state === Client.TransactionState.CONFIRMED && knownTx.blockHash.equals(receipt.blockHash)) {
+            if (knownTx && knownTx.state === Client.TransactionState.CONFIRMED && receipt.blockHash.equals(knownTx.blockHash)) {
                 continue;
             }
 
