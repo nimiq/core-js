@@ -261,7 +261,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
 
     _requiredSet(val, name, ...values) {
         if (!val) throw new Error(`${name} is required`);
-        if (!values.includes(val)) throw new Error(`Type of ${name} must one of: ${values.join(', ')}`);
+        if (!values.includes(val)) throw new Error(`${name} must be one of: ${values.join(', ')}`);
         return val;
     }
 };
