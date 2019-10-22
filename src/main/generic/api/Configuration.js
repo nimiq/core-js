@@ -255,8 +255,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     }
 
     _requiredType(val, name, type) {
-        if (typeof val === 'undefined') throw new Error(`${name} is required`);
-        if (typeof val !== type) throw new Error(`Type of ${name} must be ${type}`);
+        if (typeof val !== type) throw new Error(`Type of ${name} must be ${type}, but is ${typeof val}`);
         return val;
     }
 
