@@ -154,6 +154,28 @@ describe('Client', () => {
         done();
     });
 
+    established('can handle pending known transactions in getTransactionsByAddress', async (done, client) => {
+        // Create a pending txDetail from a known mined detail (simulating a cached pending tx that has been mined in the meantime)
+        const address = (await otherConsensus.blockchain.getBlockAt(1, true)).minerAddr;
+        const minedTxDetails = await client.getTransactionsByAddress(address);
+        const cachedTxDetail = new Client.TransactionDetails(minedTxDetails[0].transaction, Client.TransactionState.PENDING);
+
+        // Create a new transaction
+        const senderPubKey = PublicKey.unserialize(BufferUtils.fromBase64(Dummy.publicKey1));
+        const recipientAddr = Address.unserialize(BufferUtils.fromBase64(Dummy.address1));
+        const value = 1;
+        const fee = 1;
+        const validityStartHeight = 1;
+        const signature = Signature.unserialize(BufferUtils.fromBase64(Dummy.signature1));
+        const networkId = 4;
+        const newTx = new BasicTransaction(senderPubKey, recipientAddr, value, fee, validityStartHeight, signature, networkId);
+        const newTxDetail = new Client.TransactionDetails(newTx, Client.TransactionState.NEW);
+
+        // Request the history with the pending details passed in
+        await client.getTransactionsByAddress(address, 1, [cachedTxDetail, newTxDetail]);
+        done();
+    });
+
     allit('reports head changed', async (done, _, consensus) => {
         const client = startClient(consensus);
         let handle;
@@ -178,7 +200,7 @@ describe('Client', () => {
         }, [newTx.recipient]);
         await otherConsensus.mempool.pushTransaction(newTx);
     });
-    
+
     established('can send transaction', async (done, client) => {
         const a = new Uint8Array(20);
         CryptoWorker.lib.getRandomValues(a);
