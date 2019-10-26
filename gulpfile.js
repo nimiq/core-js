@@ -656,7 +656,7 @@ gulp.task('build', gulp.series(
 ));
 
 // Build packages
-gulp.task('prepare-packages', gulp.series('build-node', function () {
+gulp.task('prepare-packages', gulp.series('build-node', async function () {
     gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
     gulp.src(['clients/nodejs/node-ui/**/*']).pipe(gulp.dest('packaging/BUILD/node-ui'));
     gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
