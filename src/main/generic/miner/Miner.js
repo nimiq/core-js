@@ -180,7 +180,7 @@ class Miner extends Observable {
             }
 
             if (block.isFull()) {
-                Log.d(Miner, `Starting work on block #${block.header.height} / {block.minerAddr.toUserFriendlyAddress()} / ${BufferUtils.toBase64(block.body.extraData)} with ${block.transactionCount} transactions (${this._hashrate} H/s)`);
+                Log.d(Miner, `Starting work on block #${block.header.height} / ${block.minerAddr.toUserFriendlyAddress()} / ${BufferUtils.toBase64(block.body.extraData)} with ${block.transactionCount} transactions (${this._hashrate} H/s)`);
             } else {
                 Log.d(Miner, `Starting work on block #${block.header.height} from pool (${this._hashrate} H/s)`);
             }
