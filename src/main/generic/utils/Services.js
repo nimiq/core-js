@@ -89,7 +89,7 @@ class Services {
         const res = [];
         let i = 1;
         do {
-            if ((flags % i) === i && Services.NAMES[i]) res.push(Services.NAMES[i]);
+            if ((flags & i) === i && Services.NAMES[i]) res.push(Services.NAMES[i]);
             i <<= 1;
         } while (i < Services.ALL_CURRENT);
         return res;
