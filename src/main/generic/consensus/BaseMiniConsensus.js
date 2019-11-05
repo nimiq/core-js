@@ -67,19 +67,6 @@ class BaseMiniConsensus extends BaseConsensus {
     }
 
     /**
-     * @param {Peer} peer
-     * @override
-     */
-    _onPeerJoined(peer) {
-        const agent = super._onPeerJoined(peer);
-
-        // Forward sync events.
-        this.bubble(agent, 'transaction-relayed');
-
-        return agent;
-    }
-
-    /**
      * @param {Transaction} tx
      * @protected
      */
