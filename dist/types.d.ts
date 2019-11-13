@@ -1,4 +1,4 @@
-export function load(): Promise<void>;
+export function load(path?: string): Promise<void>;
 
 export let _path: string | undefined;
 
