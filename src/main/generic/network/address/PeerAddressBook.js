@@ -265,6 +265,9 @@ class PeerAddressBook extends Observable {
             // Return this address.
             addresses.push(address);
         }
+
+        Log.v(PeerAddressBook, () => `Returned ${addresses.length} valid addresses from ${numAddresses} that were considered`);
+
         return addresses;
     }
 
