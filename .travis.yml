@@ -26,7 +26,9 @@ install: true
 jobs:
   include:
     - stage: build nimiq
-      env: BUILD=true
+      env:
+        - BUILD=true
+        - PACKAGING=1
       script:
         - npm install -g gulp
         - yarn
