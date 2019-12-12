@@ -238,8 +238,11 @@ class PeerAddressBook extends Observable {
             }
 
             // Only return addresses matching all of current service mask if present.
+            // Note: if legacy services were requested and we got to this point (i.e. previous conditional didn't match), that means that this address
+            // matches the requested legacy services, so the current services check shouldn't apply to it (thus this check is only performed if
+            // no legacy services were requested, i.e. if legacyServices === 0)
             const currentServices = serviceMask & Services.ALL_CURRENT;
-            if (currentServices > 0 && (address.services & currentServices) !== currentServices) {
+            if (legacyServices === 0 && currentServices > 0 && (address.services & currentServices) !== currentServices) {
                 continue;
             }
 

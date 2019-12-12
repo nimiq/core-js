@@ -184,6 +184,7 @@ Services.PROVIDES_LIGHT =       Services.FLAG_LIGHT | Services.FULL_BLOCKS | Ser
 Services.PROVIDES_NANO =        Services.FLAG_NANO | Services.CHAIN_PROOF;
 Services.PROVIDES_PICO =        Services.NONE;
 
+// This should be interpreted as accepting a node with (FLAG_FULL OR (FULL_BLOCKS AND BLOCK_HISTORY)), same for the other "ACCEPTS_*"
 Services.ACCEPTS_FULL =         Services.FLAG_FULL | Services.FULL_BLOCKS | Services.BLOCK_HISTORY;
 Services.ACCEPTS_LIGHT =        Services.FLAG_LIGHT | Services.FLAG_FULL | Services.FULL_BLOCKS | Services.CHAIN_PROOF |
                                 Services.ACCOUNTS_CHUNKS;
