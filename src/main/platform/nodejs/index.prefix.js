@@ -39,7 +39,7 @@ function detectAddOn() {
     cpuSupport = cpuSupport || function() {
         try {
             const cpu = cpuid();
-            return ['avx512f', 'avx2', 'sse2'].find(f => cpu.features[f]) || 'compat';
+            return ['avx512f', 'avx2', 'avx', 'sse2'].find(f => cpu.features[f]) || 'compat';
         } catch (e) {
             return 'compat';
         }
