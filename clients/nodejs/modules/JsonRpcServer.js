@@ -324,7 +324,7 @@ class JsonRpcServer {
         const block = await this._client.getBlock(receipt.blockHash);
         return {
             transactionHash: receipt.transactionHash.toHex(),
-            transactionIndex: block ? block.transactions.findIndex(tx => tx.hash().equals(hash)) : undefined,
+            transactionIndex: block ? block.transactions.findIndex(tx => tx.hash().toHex() === hash) : undefined,
             blockNumber: receipt.blockHeight,
             blockHash: receipt.blockHash.toHex(),
             confirmations: (await this._client.getHeadHeight()) - receipt.blockHeight,
