@@ -10,11 +10,11 @@ export class Class {
 /* Client API */
 
 declare type Handle = number;
-declare type BlockListener = (blockHash: Hash) => Promise<void> | void;
-declare type ConsensusChangedListener = (consensusState: Client.ConsensusState) => Promise<void> | void;
-declare type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => Promise<void> | void;
-declare type TransactionListener = (transaction: Client.TransactionDetails) => Promise<void> | void;
-declare type MempoolListener = (transactionHash: Hash) => Promise<void> | void;
+declare type BlockListener = (blockHash: Hash) => Promise<any> | any;
+declare type ConsensusChangedListener = (consensusState: Client.ConsensusState) => Promise<any> | any;
+declare type HeadChangedListener = (blockHash: Hash, reason: string, revertedBlocks: Hash[], adoptedBlocks: Hash[]) => Promise<any> | any;
+declare type TransactionListener = (transaction: Client.TransactionDetails) => Promise<any> | any;
+declare type MempoolListener = (transactionHash: Hash) => Promise<any> | any;
 
 export class Client {
     public static Configuration: typeof ClientConfiguration;
