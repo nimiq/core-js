@@ -144,7 +144,7 @@ class TransactionUi extends Nimiq.Observable {
         }
         let validityStart;
         if (this.$validityStart.value === '') {
-            validityStart = Utils.readNumber(this.$validityStart.getAttribute('placeholder'));
+            validityStart = parseInt(this.$validityStart.getAttribute('placeholder'));
             this.$validityStart.classList.remove('error');
         } else {
             validityStart = Utils.readNumber(this.$validityStart);
