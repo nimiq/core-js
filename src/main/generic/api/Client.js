@@ -619,17 +619,19 @@ class Client {
 
         const consensus = await this._consensus;
 
-        const pending = await consensus.getPendingTransactions([hash]);
-        if (pending && pending[0]) {
-            this._txWaitForExpire(pending[0]);
-            return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
-        }
-
         if (!blockHash) {
             const receipts = await consensus.getTransactionReceiptsByHashes([hash]);
             if (receipts && receipts.length === 1 && receipts[0]) {
                 blockHash = receipts[0].blockHash;
                 blockHeight = receipts[0].blockHeight;
+            }
+        }
+
+        if (!blockHash) {
+            const pending = await consensus.getPendingTransactions([hash]);
+            if (pending && pending[0]) {
+                this._txWaitForExpire(pending[0]);
+                return new Client.TransactionDetails(pending[0], Client.TransactionState.PENDING);
             } else {
                 throw new Error('Unknown transaction hash');
             }

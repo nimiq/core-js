@@ -361,7 +361,8 @@ class BaseConsensus extends Observable {
      * @returns {Promise.<Array.<Transaction>>}
      */
     _requestPendingTransactions(hashes) {
-        return Promise.all(hashes.map(hash => this._requestPendingTransaction(hash)));
+        return Promise.all(hashes.map(hash => this._requestPendingTransaction(hash).catch(() => null)))
+            .then(/** @type {Array.<Transaction>} */ txs => txs.filter(tx => !!tx));
     }
 
     /**

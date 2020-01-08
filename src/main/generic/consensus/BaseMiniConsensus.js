@@ -188,14 +188,18 @@ class BaseMiniConsensus extends BaseConsensus {
      * @returns {Promise.<Array.<Transaction>>}
      */
     async getPendingTransactions(hashes) {
-        const txs = new HashSet();
+        const txs = new HashSet(o => o instanceof Transaction ? o.hash().hashCode() : o.hashCode());
         for (const hash of hashes) {
             const tx = this._mempool.getTransaction(hash);
-            txs.add(tx);
+            if (tx) {
+                txs.add(tx);
+            }
         }
+
         if (txs.length !== hashes.length) {
             txs.addAll(await this._requestPendingTransactions(hashes.filter(h => !txs.get(h))));
         }
+
         return /** @type {Array.<Transaction>} */ hashes.map(h => txs.get(h)).filter(tx => !!tx);
     }
 
