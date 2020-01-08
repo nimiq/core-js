@@ -278,7 +278,7 @@ class JsonRpcServer {
             const liveTx = await this._getTransactionByHash(tx.hash());
             if (liveTx) {
                 liveTx.valid = true;
-                liveTx.inMempool = (liveTx.confirmations === 0);
+                liveTx.inMempool = !liveTx.confirmations;
                 return liveTx;
             }
         } catch (e) {
