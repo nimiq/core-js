@@ -616,8 +616,8 @@ FullConsensusAgent.MEMPOOL_ENTRIES_MAX = 10000;
 FullConsensusAgent.CHAIN_PROOF_RATE_LIMIT = 3; // per minute
 FullConsensusAgent.ACCOUNTS_PROOF_RATE_LIMIT = 60; // per minute
 FullConsensusAgent.ACCOUNTS_TREE_CHUNK_RATE_LIMIT = 300; // per minute
-FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 60; // per minute
+FullConsensusAgent.TRANSACTION_PROOF_RATE_LIMIT = 180; // per minute
 FullConsensusAgent.TRANSACTION_RECEIPTS_RATE_LIMIT = 30; // per minute
-FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT = 60; // per minute
+FullConsensusAgent.BLOCK_PROOF_RATE_LIMIT = 180; // per minute
 FullConsensusAgent.GET_BLOCKS_RATE_LIMIT = 30; // per minute
 Class.register(FullConsensusAgent);
