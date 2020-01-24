@@ -27,7 +27,7 @@ For developers looking to include Nimiq support on their applications, there are
 
 ## Quickstart
 
-1. Install [Node.js](https://nodejs.org) v8.0.0 or higher.
+1. Install [Node.js](https://nodejs.org) v8.10.0 or higher.
 2. On Ubuntu and Debian, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
     - On other Linux systems, install `git`, `python2.7`, `make`, `gcc` and `gcc-c++`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
@@ -45,7 +45,7 @@ A good way to get started is to have a look at [the most simple web application 
 Follow the [Quickstart](#quickstart) guide or make use of our CDN:
 
 ```
-<script src="https://cdn.nimiq.com/nimiq.js"></script>
+<script src="https://cdn.nimiq.com/latest/nimiq.js"></script>
 ```
 
 ## Browser client
