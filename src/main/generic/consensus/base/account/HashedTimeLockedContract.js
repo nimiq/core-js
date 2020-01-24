@@ -248,8 +248,12 @@ class HashedTimeLockedContract extends Contract {
             Address.unserialize(buf); // recipient address
             const hashAlgorithm = /** @type {Hash.Algorithm} */ buf.readUint8();
             Hash.unserialize(buf, hashAlgorithm);
-            buf.readUint8(); // hash count
+            const hashCount = buf.readUint8(); // hash count
             buf.readUint32(); // timeout
+
+            if (hashCount === 0) {
+                return false;
+            }
 
             // Blacklist Argon2 hash function.
             if (hashAlgorithm === Hash.Algorithm.ARGON2D) {

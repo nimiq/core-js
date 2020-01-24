@@ -70,6 +70,17 @@ describe('HashedTimeLockedContract', () => {
             transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
             expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
 
+            // Invalid hash count
+            data = new SerialBuffer(Address.SERIALIZED_SIZE * 2 + Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + 6);
+            sender.serialize(data);
+            recipient.serialize(data);
+            data.writeUint8(Hash.Algorithm.BLAKE2B);
+            Hash.NULL.serialize(data);
+            data.writeUint8(0);
+            data.writeUint32(1000);
+            transaction = new ExtendedTransaction(sender, Account.Type.BASIC, Address.CONTRACT_CREATION, Account.Type.HTLC, 100, 0, 0, Transaction.Flag.NONE, data);
+            expect(await HashedTimeLockedContract.verifyIncomingTransaction(transaction)).toBeFalsy();
+
             // Invalid contract address
             data = new SerialBuffer(Address.SERIALIZED_SIZE * 2 + Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + 6);
             sender.serialize(data);
