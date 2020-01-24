@@ -79,7 +79,9 @@ class Mempool extends Observable {
         /** @type {Account} */
         try {
             const recipientAccount = await this._accounts.get(transaction.recipient);
-            const newRecipientAccount = recipientAccount.withIncomingTransaction(transaction, this._blockchain.height + 1);
+            const newRecipientAccount = recipientAccount
+                .withIncomingTransaction(transaction, this._blockchain.height + 1)
+                .withContractCommand(transaction, this._blockchain.height + 1);
 
             // Check recipient account against filter rules.
             if (!this._filter.acceptsRecipientAccount(transaction, recipientAccount, newRecipientAccount)) {
@@ -429,7 +431,9 @@ class Mempool extends Observable {
                         const tmpAccount = account.withOutgoingTransaction(tx, this._blockchain.height + 1, this._blockchain.transactionCache);
 
                         const recipientAccount = await this._accounts.get(tx.recipient);
-                        recipientAccount.withIncomingTransaction(tx, this._blockchain.height + 1);
+                        recipientAccount
+                            .withIncomingTransaction(tx, this._blockchain.height + 1)
+                            .withContractCommand(tx, this._blockchain.height + 1);
 
                         transactions.push(tx);
                         account = tmpAccount;
