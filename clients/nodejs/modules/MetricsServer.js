@@ -181,10 +181,8 @@ class MetricsServer {
                 case Nimiq.PeerConnectionState.CLOSED:
                     o.state = 'closed';
             }
-            if (peer.peer) {
-                o.version = peer.version;
-                o.agent = peer.userAgent ? peer.userAgent : undefined;
-            }
+            o.version = peer.version;
+            o.agent = peer.userAgent;
             const os = JSON.stringify(o);
             if (peers.has(os)) {
                 peers.set(os, peers.get(os) + 1);
