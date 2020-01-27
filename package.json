@@ -106,7 +106,7 @@
     "karma-firefox-launcher": "^1.1.0",
     "karma-jasmine": "*",
     "karma-safari-launcher": "^1.0.0",
-    "karma-sauce-launcher": "^2.0.2",
+    "karma-sauce-launcher": "^1.2.0",
     "merge2": "^1.2.1",
     "minimist": "^1.2.0",
     "node-deb": "^0.10.4",
