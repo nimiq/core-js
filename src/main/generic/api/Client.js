@@ -268,9 +268,11 @@ class Client {
                 const revertedTxs = new HashSet();
                 const adoptedTxs = new HashSet(a => a.tx instanceof Transaction ? a.tx.hash().hashCode() : a.hash().hashCode());
 
+                const consensus = await this._consensus;
+
                 // Gather reverted transactions
                 for (const block of revertedBlocks) {
-                    if (block.isFull()) {
+                    if (block.isFull() && !(consensus instanceof PicoConsensus)) {
                         revertedTxs.addAll(block.transactions);
                     }
                     const set = this._transactionConfirmWaiting.get(this._txConfirmsAt(block.height));
@@ -285,7 +287,7 @@ class Client {
                 // Gather applied transactions
                 // Only for full blocks, nano/pico nodes will fire transaction mined events later independently
                 for (const block of adoptedBlocks) {
-                    if (block.isFull()) {
+                    if (block.isFull() && !(consensus instanceof PicoConsensus)) {
                         for (const tx of block.transactions) {
                             if (revertedTxs.contains(tx)) {
                                 revertedTxs.remove(tx);
