@@ -4,11 +4,6 @@ Nimiq is the world’s first browser-based blockchain and ecosystem. We look for
 
 ## Reporting a Vulnerability
 
-Nimiq is committed to working with researchers who submit security vulnerability
-notifications to us to resolve those issues on an appropriate timeline and perform
-a coordinated release, giving credit to the reporter if they would like.
+Nimiq is committed to working with researchers who submit security vulnerability notifications to us to resolve those issues on an appropriate timeline and perform a coordinated release, giving credit to the reporter if they would like.
 
-Please submit security related issues to our [vulnerability disclosure program at
-Hacker One](https://hackerone.com/nimiq) according to the policy discribed there.
-
-If you prefer not to use Hacker One, you can also email us directly at `security@nimiq.com`.
+You can find all the information related to our vulnerability disclosure program [on its own section in our website](https://nimiq.com/bug-bounty).
