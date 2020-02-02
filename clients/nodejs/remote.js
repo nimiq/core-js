@@ -218,10 +218,10 @@ function approxTimeDifference(diff, withA) {
  */
 function blockNumberFormat(blockNumber, head) {
     if (!head) return blockNumber.toString();
-    if (blockNumber === head.height) return `${blockNumber} (Now)`;
-    const targetTimestamp = head.timestamp - (head.height - blockNumber) * Nimiq.Policy.BLOCK_TIME;
+    if (blockNumber === head.number) return `${blockNumber} (Now)`;
+    const targetTimestamp = head.timestamp - (head.number - blockNumber) * Nimiq.Policy.BLOCK_TIME;
     const diff = targetTimestamp - Date.now() / 1000;
-    return `${blockNumber} (${diff < 0 ? 'in ' : ''}${approxTimeDifference((head.height - blockNumber) * 60, true)}${diff > 0 ? ' ago' : ''})`;
+    return `${blockNumber} (${diff > 0 ? 'in ' : ''}${approxTimeDifference((head.number - blockNumber) * Nimiq.Policy.BLOCK_TIME, true)}${diff < 0 ? ' ago' : ''})`;
 }
 
 function blockAmountFormat(blocks) {
@@ -281,13 +281,13 @@ async function displayAccount(account, name, head) {
     console.log(`Type          | ${accountTypeName(account.type)}`);
     console.log(`Balance       | ${nimValueFormat(account.balance)}`);
     if (account.type === Nimiq.Account.Type.VESTING) {
-        console.log(`Vested amount | ${account.vestingTotalAmount}`);
+        console.log(`Vested amount | ${nimValueFormat(account.vestingTotalAmount)}`);
         console.log(`Vesting start | ${blockNumberFormat(account.vestingStart, head)}`);
         console.log(`Vesting step  | ${nimValueFormat(account.vestingStepAmount)} every ${blockAmountFormat(account.vestingStepBlocks)}`);
-        if (account.vestingStart + Math.ceil(account.vestingTotalAmount / account.vestingStepAmount) * account.vestingStepBlocks > head.height) {
+        if (account.vestingStart + Math.ceil(account.vestingTotalAmount / account.vestingStepAmount) * account.vestingStepBlocks > head.number) {
             let nextVestingBlockNumber = account.vestingStart + account.vestingStepBlocks;
-            while (nextVestingBlockNumber < head.height) nextVestingBlockNumber += account.vestingStepBlocks;
-            const nextVestingAmount = Math.min(account.vestingStepAmount, account.vestingTotalAmount - Math.floor((head.height - account.vestingStart) / account.vestingStepBlocks) * account.vestingStepAmount);
+            while (nextVestingBlockNumber < head.number) nextVestingBlockNumber += account.vestingStepBlocks;
+            const nextVestingAmount = Math.min(account.vestingStepAmount, account.vestingTotalAmount - Math.floor((head.number - account.vestingStart) / account.vestingStepBlocks) * account.vestingStepAmount);
             console.log(`Next vesting  | ${nimValueFormat(nextVestingAmount)} at ${blockNumberFormat(nextVestingBlockNumber, head)}`);
         } else {
             console.log(chalk`Next vesting  | {italic Fully vested}`);
@@ -295,7 +295,7 @@ async function displayAccount(account, name, head) {
     } else if (account.type === Nimiq.Account.Type.HTLC) {
         console.log(`Sender        | ${account.senderAddress}`);
         console.log(`Recipient     | ${account.recipientAddress}`);
-        console.log(`Locked amount | ${account.totalAmount}`);
+        console.log(`Locked amount | ${nimValueFormat(account.totalAmount)}`);
         console.log(`Timeout       | ${blockNumberFormat(account.timeout, head)}`);
         console.log(`Hash depth    | ${account.hashCount}`);
         console.log(`Hash root     | ${account.hashRoot}`);
