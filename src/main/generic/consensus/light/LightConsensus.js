@@ -53,7 +53,7 @@ class LightConsensus extends BaseConsensus {
 
     /**
      * @param {Address} address
-     * @param {number} limit
+     * @param {number} [limit]
      * @returns {Promise.<Array.<Transaction>>}
      */
     async getPendingTransactionsByAddress(address, limit) { // eslint-disable-line require-await
