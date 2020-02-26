@@ -16,6 +16,15 @@ if (config.dumb) {
 if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && config.tls.cert && config.tls.key)) ||
     (config.protocol === 'ws' && !(config.host && config.port)) ||
     argv.help) {
+
+    if (!argv.help && config.protocol === 'wss') {
+        console.error('WSS protocol requries host, port, TLS cert and TLS key to be configured!');
+    }
+
+    if (!argv.help && config.protocol === 'ws') {
+        console.error('WS protocol requries host and port to be configured!');
+    }
+
     console.log(
         'Nimiq NodeJS client\n' +
         '\n' +
