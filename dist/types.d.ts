@@ -1286,7 +1286,7 @@ export abstract class Account {
     public static fromPlain(plain: {type: Account.Type | string, balance: number}): Account;
     public serializedSize: number;
     public balance: number;
-    public type: number;
+    public type: Account.Type;
     constructor(type: Account.Type, balance: number);
     public serialize(buf?: SerialBuffer): SerialBuffer;
     public equals(o: any): boolean;
