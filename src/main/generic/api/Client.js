@@ -688,11 +688,7 @@ class Client {
         address = Address.fromAny(address);
 
         const consensus = await this._consensus;
-        const receipts = await consensus.getTransactionReceiptsByAddress(address);
-        // Send receipts are returned first in the resulting array, so we need to order by blockHeight DESC
-        // to have the most recent receipts across both sends and receives first.
-        receipts.sort((a, b) => b.blockHeight - a.blockHeight);
-        return receipts.slice(0, limit);
+        return consensus.getTransactionReceiptsByAddress(address, limit);
     }
 
     /**
@@ -761,7 +757,7 @@ class Client {
 
         // Fetch transaction receipts.
         const receipts = new HashSet((receipt) => receipt.transactionHash.hashCode());
-        if (txs.length < limit) receipts.addAll(await this.getTransactionReceiptsByAddress(address, limit - txs.length));
+        if (txs.length < limit) receipts.addAll(await consensus.getTransactionReceiptsByAddress(address, limit - txs.length));
 
         /** @type {HashMap.<string, HashSet.<Hash>>} */
         const requestProofs = new HashMap();
