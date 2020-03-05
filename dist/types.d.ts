@@ -2406,7 +2406,7 @@ export class BaseConsensusAgent extends Observable {
     public getTransactionsProofByAddresses(block: Block, addresses: Address[]): Promise<Transaction[]>;
     public getTransactionsProofByHashes(block: Block, hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionReceipts(address: Address): Promise<TransactionReceipt[]>;
-    public getTransactionReceiptsByAddress(address: Address): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address, limit?: number): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public shutdown(): void;
 }
@@ -2450,7 +2450,7 @@ export class BaseConsensus extends Observable {
     public getPendingTransactions(hashes: Hash[]): Promise<Transaction[]>;
     public getTransactionsFromBlock(hashes: Hash[], blockHash: Hash, blockHeight?: number, block?: Block): Promise<Transaction[]>;
     public getTransactionsFromBlockByAddresses(addresses: Address[], blockHash: Hash, blockHeight?: number): Promise<Transaction[]>;
-    public getTransactionReceiptsByAddress(address: Address, limit: number): Promise<TransactionReceipt[]>;
+    public getTransactionReceiptsByAddress(address: Address, limit?: number): Promise<TransactionReceipt[]>;
     public getTransactionReceiptsByHashes(hashes: Hash[]): Promise<TransactionReceipt[]>;
     public getMempoolContents(): Transaction[];
     public handoverTo(consensus: BaseConsensus): BaseConsensus;

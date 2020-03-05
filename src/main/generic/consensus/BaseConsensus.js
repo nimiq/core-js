@@ -188,7 +188,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
-     * @param {number} limit
+     * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      */
     getTransactionReceiptsByAddress(address, limit) {
@@ -813,7 +813,7 @@ class BaseConsensus extends Observable {
 
     /**
      * @param {Address} address
-     * @param {number} limit
+     * @param {number} [limit]
      * @returns {Promise.<Array.<TransactionReceipt>>}
      * @protected
      */
