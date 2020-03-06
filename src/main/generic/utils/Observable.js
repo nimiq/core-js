@@ -46,23 +46,40 @@ class Observable {
      */
     fire(type, ...args) {
         const promises = [];
+
         // Notify listeners for this event type.
         if (this._listeners.has(type)) {
             const listeners = this._listeners.get(type);
             for (const key in listeners) {
                 if (!listeners.hasOwnProperty(key)) continue;
-                const res = listeners[key].apply(null, args);
-                if (res instanceof Promise) promises.push(res);
+                try {
+                    const res = listeners[key].apply(null, args);
+                    if (res instanceof Promise) {
+                        promises.push(res.catch(e => Log.e(this.constructor.name,
+                            `Exception thrown by '${type}' listener #${key}: ${e.message || e}`, e)));
+                    }
+                } catch (e) {
+                    Log.e(this.constructor.name,
+                        `Exception thrown by '${type}' listener #${key}: ${e.message || e}`, e);
+                }
             }
         }
 
-        // Notify wildcard listeners. Pass event type as first argument
+        // Notify wildcard listeners. Pass event type as first argument.
         if (this._listeners.has(Observable.WILDCARD)) {
             const listeners = this._listeners.get(Observable.WILDCARD);
             for (const key in listeners) {
                 if (!listeners.hasOwnProperty(key)) continue;
-                const res = listeners[key].apply(null, arguments);
-                if (res instanceof Promise) promises.push(res);
+                try {
+                    const res = listeners[key].apply(null, arguments);
+                    if (res instanceof Promise) {
+                        promises.push(res.catch(e => Log.e(this.constructor.name,
+                            `Exception thrown by '${type}' wildcard listener #${key}: ${e.message || e}`, e)));
+                    }
+                } catch (e) {
+                    Log.e(this.constructor.name,
+                        `Exception thrown by '${type}' wildcard listener #${key}: ${e.message || e}`, e);
+                }
             }
         }
 
