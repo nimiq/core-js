@@ -1427,6 +1427,11 @@ class BaseConsensusAgent extends Observable {
         }
 
         let receipts = msg.receipts;
+        // Receipts of sent transactions are returned first in the receipts array
+        // (see FullChain.getTransactionReceiptsByAddress), so we need to order
+        // by descending blockHeight to have the most recent receipts across both
+        // sent and received transactions first.
+        receipts.sort((a, b) => b.blockHeight - a.blockHeight);
         if (limit !== undefined && limit < receipts.length) receipts = receipts.slice(0, limit);
 
         if (hashes !== undefined) {
