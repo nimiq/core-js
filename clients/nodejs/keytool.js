@@ -94,7 +94,15 @@ async function _import(type, format) {
             break;
         }
         case 'bip39': {
-            throw new Error('BIP39 not yet supported in keytool');
+            const masterKey = entropy.toExtendedPrivateKey();
+            const privateKey = masterKey.derivePath("m/44'/242'/0'/0'").privateKey;
+            const keyPair = Nimiq.KeyPair.derive(privateKey);
+            const wallet = new Nimiq.Wallet(keyPair);
+            const walletStore = await new Nimiq.WalletStore();
+            await walletStore.put(wallet);
+            await walletStore.close();
+            console.log('Imported wallet for address:', wallet.address.toUserFriendlyAddress());
+            break;
         }
         default: {
             throw new Error('Unknown key type');
