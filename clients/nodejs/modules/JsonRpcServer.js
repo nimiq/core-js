@@ -242,24 +242,25 @@ class JsonRpcServer {
     }
 
     async createRawTransaction(tx) {
+        const flags = tx.flags ? Number.parseInt(tx.flags) : Nimiq.Transaction.Flag.NONE;
         const from = Nimiq.Address.fromString(tx.from);
+        const signer = tx.signer ? Nimiq.Address.fromString(tx.signer) : from;
         const fromType = tx.fromType ? Number.parseInt(tx.fromType) : Nimiq.Account.Type.BASIC;
-        const to = Nimiq.Address.fromString(tx.to);
+        const to = (!tx.to && flags == Nimiq.Transaction.Flag.CONTRACT_CREATION) ? Nimiq.Address.CONTRACT_CREATION : Nimiq.Address.fromString(tx.to);
         const toType = tx.toType ? Number.parseInt(tx.toType) : Nimiq.Account.Type.BASIC;
         const value = parseInt(tx.value);
         const fee = parseInt(tx.fee);
-        const flags = tx.flags ? Number.parseInt(tx.flags) : Nimiq.Transaction.Flag.NONE;
-        const data = tx.data ? Nimiq.BufferUtils.fromHex(tx.data) : null;
+        const data = tx.data ? Nimiq.BufferUtils.fromHex(tx.data) : new Uint8Array(0);
         const validityStartHeight = tx.validityStartHeight ? Number.parseInt(tx.validityStartHeight) : (await this._client.getHeadHeight());
         /** @type {Wallet} */
-        const wallet = await this._walletStore.get(from);
+        const wallet = await this._walletStore.get(signer);
         if (!wallet || !(wallet instanceof Nimiq.Wallet)) {
-            throw new Error(`"${tx.from}" can not sign transactions using this node.`);
+            throw new Error(`"${signer.toUserFriendlyAddress()}" can not sign transactions using this node.`);
         }
         let transaction;
-        if (fromType !== Nimiq.Account.Type.BASIC) {
-            throw new Error('Only transactions from basic accounts may be created using this function.');
-        } else if (toType !== Nimiq.Account.Type.BASIC || data !== null) {
+        if (fromType !== Nimiq.Account.Type.BASIC && fromType !== Nimiq.Account.Type.VESTING) {
+            throw new Error('Only transactions from basic or vesting accounts may be created using this function.');
+        } else if (fromType !== Nimiq.Account.Type.BASIC || toType !== Nimiq.Account.Type.BASIC || data.length != 0) {
             transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, validityStartHeight, flags, data);
             transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
         } else {
