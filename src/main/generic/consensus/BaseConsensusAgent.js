@@ -224,10 +224,12 @@ class BaseConsensusAgent extends Observable {
         // Relay block to peer.
         this._peer.channel.inv([vector, ...this._waitingInvVectors.dequeueMulti(BaseInventoryMessage.VECTORS_MAX_COUNT - 1)]);
 
-        // Assume that the peer knows this block after short time.
-        this._timers.setTimeout(`knows-block-${vector.hash.toBase64()}`, () => {
-            this._knownObjects.add(vector);
-        }, BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY);
+        if (!this._timers.timeoutExists(`knows-block-${vector.hash.toBase64()}`)) {
+            // Assume that the peer knows this block after short time.
+            this._timers.setTimeout(`knows-block-${vector.hash.toBase64()}`, () => {
+                this._knownObjects.add(vector);
+            }, BaseConsensusAgent.KNOWS_OBJECT_AFTER_INV_DELAY);
+        }
 
         return true;
     }
