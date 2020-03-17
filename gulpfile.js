@@ -550,6 +550,7 @@ gulp.task('build-loader', function () {
         browserify([], {
             require: [
                 '@babel/runtime-corejs2/core-js/date/now',
+                '@babel/runtime-corejs2/core-js/get-iterator',
                 '@babel/runtime-corejs2/core-js/number/is-integer',
                 '@babel/runtime-corejs2/core-js/number/max-safe-integer',
                 '@babel/runtime-corejs2/core-js/promise',
