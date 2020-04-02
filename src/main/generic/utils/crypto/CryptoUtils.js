@@ -26,7 +26,7 @@ class CryptoUtils {
      * @param {Uint8Array} salt
      * @param {number} iterations
      * @param {number} derivedKeyLength
-     * @return {Uint8Array}
+     * @return {SerialBuffer}
      */
     static computePBKDF2sha512(password, salt, iterations, derivedKeyLength) {
         // Following https://www.ietf.org/rfc/rfc2898.txt

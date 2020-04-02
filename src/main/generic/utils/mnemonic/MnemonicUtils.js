@@ -187,7 +187,7 @@ class MnemonicUtils {
     /**
      * @param {string|Array.<string>} mnemonic
      * @param {string} [password]
-     * @returns {Uint8Array}
+     * @returns {SerialBuffer}
      */
     static mnemonicToSeed(mnemonic, password) {
         if (Array.isArray(mnemonic)) mnemonic = mnemonic.join(' ');

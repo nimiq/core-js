@@ -727,7 +727,7 @@ export class Assert {
 export class CryptoUtils {
     public static SHA512_BLOCK_SIZE: 128;
     public static computeHmacSha512(key: Uint8Array, data: Uint8Array): Uint8Array;
-    public static computePBKDF2sha512(password: Uint8Array, salt: Uint8Array, iterations: number, derivedKeyLength: number): Uint8Array;
+    public static computePBKDF2sha512(password: Uint8Array, salt: Uint8Array, iterations: number, derivedKeyLength: number): SerialBuffer;
     public static otpKdfLegacy(message: Uint8Array, key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
     public static otpKdf(message: Uint8Array, key: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array>;
 }
@@ -1234,7 +1234,7 @@ export class MnemonicUtils {
     public static entropyToLegacyMnemonic(entropy: string | ArrayBuffer | Uint8Array | Entropy, wordlist?: string[]): string[];
     public static mnemonicToEntropy(mnemonic: string | string[], wordlist?: string[]): Entropy;
     public static legacyMnemonicToEntropy(mnemonic: string | string[], wordlist?: string[]): Entropy;
-    public static mnemonicToSeed(mnemonic: string | string[], password?: string): Uint8Array;
+    public static mnemonicToSeed(mnemonic: string | string[], password?: string): SerialBuffer;
     public static mnemonicToExtendedPrivateKey(mnemonic: string | string[], password?: string): ExtendedPrivateKey;
     public static isCollidingChecksum(entropy: Entropy): boolean;
     public static getMnemonicType(mnemonic: string | string[], wordlist?: string[]): MnemonicUtils.MnemonicType;
