@@ -207,7 +207,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
         }
         if (!this._protocol) {
             if (PlatformUtils.supportsWebRTC()) this._protocol = 'rtc';
-            this._protocol = 'dumb';
+            else this._protocol = 'dumb';
         }
         if (!this._reverseProxy) {
             this._reverseProxy = {enabled: false};
@@ -219,7 +219,7 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
                 networkConfig = new DumbNetworkConfig();
                 break;
             case 'rtc':
-                if (PlatformUtils.supportsWebRTC()) throw new Error('WebRTC not supported on this platform');
+                if (!PlatformUtils.supportsWebRTC()) throw new Error('WebRTC not supported on this platform');
                 networkConfig = new RtcNetworkConfig();
                 break;
             case 'ws':
