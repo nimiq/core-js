@@ -103,8 +103,8 @@ class Hash extends Serializable {
     }
 
     /**
-     * @param {number} begin
-     * @param {number} end
+     * @param {number} [begin]
+     * @param {number} [end]
      * @returns {Uint8Array}
      */
     subarray(begin, end) {

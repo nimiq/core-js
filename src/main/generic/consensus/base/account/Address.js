@@ -44,6 +44,11 @@ class Address extends Serializable {
         return buf;
     }
 
+    /**
+     * @param {number} [begin]
+     * @param {number} [end]
+     * @returns {Uint8Array}
+     */
     subarray(begin, end) {
         return this._obj.subarray(begin, end);
     }

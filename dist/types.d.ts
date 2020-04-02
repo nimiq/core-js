@@ -550,7 +550,7 @@ export class IteratorUtils {
 
 export class ArrayUtils {
     public static randomElement(arr: any[]): any;
-    public static subarray(uintarr: Uint8Array, begin: number, end: number): Uint8Array;
+    public static subarray(uintarr: Uint8Array, begin?: number, end?: number): Uint8Array;
     public static k_combinations(list: any[], k: number): Generator;
 }
 
@@ -766,7 +766,7 @@ export class SerialBuffer extends Uint8Array {
     public readPos: number;
     public writePos: number;
     constructor(bufferOrArrayOrLength: any)
-    public subarray(start: number, end: number): Uint8Array;
+    public subarray(start?: number, end?: number): Uint8Array;
     public reset(): void;
     public read(length: number): Uint8Array;
     public write(array: any): void;
@@ -1039,7 +1039,7 @@ export class Hash extends Serializable {
     public algorithm: Hash.Algorithm;
     constructor(arg?: Uint8Array, algorithm?: Hash.Algorithm);
     public serialize(buf?: SerialBuffer): SerialBuffer;
-    public subarray(begin: number, end: number): Uint8Array;
+    public subarray(begin?: number, end?: number): Uint8Array;
     public toPlain(): string;
     public equals(o: Serializable): boolean;
 }
@@ -1266,7 +1266,7 @@ export class Address extends Serializable {
     public serializedSize: number;
     constructor(arg: Uint8Array);
     public serialize(buf?: SerialBuffer): SerialBuffer;
-    public subarray(begin: number, end: number): Uint8Array;
+    public subarray(begin?: number, end?: number): Uint8Array;
     public equals(o: Address): boolean;
     public toPlain(): string;
     public toUserFriendlyAddress(withSpaces?: boolean): string;
@@ -3395,7 +3395,7 @@ export class PeerId extends Serializable {
     public serializedSize: number;
     constructor(arg: Uint8Array);
     public serialize(buf?: SerialBuffer): SerialBuffer;
-    public subarray(begin: number, end: number): Uint8Array;
+    public subarray(begin?: number, end?: number): Uint8Array;
     public equals(o: any): boolean;
     public toString(): string;
 }

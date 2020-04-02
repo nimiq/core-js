@@ -10,8 +10,8 @@ class SerialBuffer extends Uint8Array {
     }
 
     /**
-     * @param {number} start
-     * @param {number} end
+     * @param {number} [start]
+     * @param {number} [end]
      * @return {Uint8Array}
      */
     subarray(start, end) {

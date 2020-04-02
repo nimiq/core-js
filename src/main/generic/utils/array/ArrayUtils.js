@@ -10,8 +10,8 @@ class ArrayUtils {
 
     /**
      * @param {Uint8Array} uintarr
-     * @param {number} begin
-     * @param {number} end
+     * @param {number} [begin]
+     * @param {number} [end]
      * @return {Uint8Array}
      */
     static subarray(uintarr, begin, end) {
