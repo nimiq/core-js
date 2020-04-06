@@ -666,6 +666,7 @@ class PeerAddressBook extends Observable {
 
         // Delete the address.
         this._store.remove(peerAddress);
+        this.fire('removed', peerAddress, this);
     }
 
     /**
