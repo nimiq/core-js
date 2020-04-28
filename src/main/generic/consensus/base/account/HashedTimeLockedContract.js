@@ -10,9 +10,9 @@ class HashedTimeLockedContract extends Contract {
      */
     constructor(balance = 0, sender = Address.NULL, recipient = Address.NULL, hashRoot = Hash.NULL, hashCount = 1, timeout = 0, totalAmount = balance) {
         super(Account.Type.HTLC, balance);
-        if (!(sender instanceof Address)) throw new Error('Malformed address');
-        if (!(recipient instanceof Address)) throw new Error('Malformed address');
-        if (!(hashRoot instanceof Hash)) throw new Error('Malformed address');
+        if (!(sender instanceof Address)) throw new Error('Malformed sender address');
+        if (!(recipient instanceof Address)) throw new Error('Malformed recipient address');
+        if (!(hashRoot instanceof Hash)) throw new Error('Malformed hashRoot');
         if (!NumberUtils.isUint8(hashCount) || hashCount === 0) throw new Error('Malformed hashCount');
         if (!NumberUtils.isUint32(timeout)) throw new Error('Malformed timeout');
         if (!NumberUtils.isUint64(totalAmount)) throw new Error('Malformed totalAmount');

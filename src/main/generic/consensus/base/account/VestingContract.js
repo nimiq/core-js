@@ -9,11 +9,11 @@ class VestingContract extends Contract {
      */
     constructor(balance = 0, owner = Address.NULL, vestingStart = 0, vestingStepBlocks = 0, vestingStepAmount = balance, vestingTotalAmount = balance) {
         super(Account.Type.VESTING, balance);
-        if (!(owner instanceof Address)) throw new Error('Malformed address');
+        if (!(owner instanceof Address)) throw new Error('Malformed owner address');
         if (!NumberUtils.isUint32(vestingStart)) throw new Error('Malformed vestingStart');
         if (!NumberUtils.isUint32(vestingStepBlocks)) throw new Error('Malformed vestingStepBlocks');
         if (!NumberUtils.isUint64(vestingStepAmount)) throw new Error('Malformed vestingStepAmount');
-        if (!NumberUtils.isUint64(vestingTotalAmount)) throw new Error('Malformed lowerCap');
+        if (!NumberUtils.isUint64(vestingTotalAmount)) throw new Error('Malformed vestingTotalAmount');
 
         /** @type {Address} */
         this._owner = owner;

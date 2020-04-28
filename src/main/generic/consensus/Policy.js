@@ -28,7 +28,7 @@ class Policy {
 
     /**
      * @deprecated Use lunasToCoins instead
-     * @param {number} lunas Number of Lunas.
+     * @param {number} satoshis Number of Lunas.
      * @return {number} Nimiq count in decimal.
      */
     static satoshisToCoins(satoshis) {
