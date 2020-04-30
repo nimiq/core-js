@@ -113,7 +113,7 @@ class BufferUtils {
      * @return {SerialBuffer}
      */
     static fromBase64(base64, length) {
-        const arr = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const arr = new Uint8Array(atob(base64).split('').map(c => c.charCodeAt(0)));
         if (length !== undefined && arr.length !== length) throw new Error('Decoded length does not match expected length');
         return new SerialBuffer(arr);
     }
@@ -231,7 +231,7 @@ class BufferUtils {
     static fromHex(hex, length) {
         hex = hex.trim();
         if (!StringUtils.isHexBytes(hex, length)) throw new Error('String is not an hex string (of matching length)');
-        return new SerialBuffer(Uint8Array.from(hex.match(/.{2}/g) || [], byte => parseInt(byte, 16)));
+        return new SerialBuffer(new Uint8Array((hex.match(/.{2}/g) || []).map(byte => parseInt(byte, 16))));
     }
 
     /**
@@ -410,7 +410,7 @@ class BufferUtils {
         } else if (arrayLike.buffer instanceof ArrayBuffer) {
             return new Uint8Array(arrayLike.buffer);
         } else {
-            return Uint8Array.from(arrayLike);
+            return new Uint8Array(arrayLike);
         }
     }
 }
