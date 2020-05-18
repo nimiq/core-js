@@ -972,7 +972,11 @@ Client.ConsensusState = {
     /**
      * The client reached consensus with its peers
      */
-    ESTABLISHED: 'established'
+    ESTABLISHED: 'established',
+    /**
+     * The client has no connection to peers and lost consensus
+     */
+    LOST: 'lost',
 };
 
 Class.register(Client);
