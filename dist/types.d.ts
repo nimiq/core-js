@@ -153,11 +153,16 @@ declare class ClientBasicAddress {
     public peerAddress: PeerAddress;
     public peerId: PeerId;
     public services: string[];
+    public netAddress: NetAddress | null;
     constructor(address: PeerAddress);
     public toPlain(): {
         peerAddress: string,
         peerId: string,
         services: string[],
+        netAddress: {
+            ip: Uint8Array,
+            reliable: boolean,
+        } | null,
     };
 }
 
@@ -3402,7 +3407,7 @@ export class PeerAddress {
     public protocol: number;
     public services: number;
     public timestamp: number;
-    public netAddress: NetAddress;
+    public netAddress: NetAddress | null;
     public publicKey: PublicKey;
     public peerId: PeerId;
     public distance: number;
