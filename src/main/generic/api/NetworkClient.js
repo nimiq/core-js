@@ -165,12 +165,21 @@ Client.BasicAddress = class BasicAddress {
         return Services.toNameArray(Services.legacyProvideToCurrent(this._address.services));
     }
 
+    /** @type {NetAddress} */
+    get netAddress() {
+        return this._address.netAddress;
+    }
+
     /** @type {object} */
     toPlain() {
         return {
             peerAddress: this.peerAddress.toString(),
             peerId: this.peerId.toString(),
-            services: this.services
+            services: this.services,
+            netAddress: this.netAddress ? {
+                ip: this.netAddress.ip,
+                reliable: this.netAddress.reliable,
+            } : null,
         };
     }
 };
