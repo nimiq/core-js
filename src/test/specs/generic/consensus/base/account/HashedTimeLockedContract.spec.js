@@ -193,7 +193,7 @@ describe('HashedTimeLockedContract', () => {
 
             /*
             TODO: No longer fail, should create proper replacement tests
-            
+
             // timeout resolve: mismatch signature
             proof = new SerialBuffer(1 + signatureProof.serializedSize);
             proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
@@ -459,5 +459,76 @@ describe('HashedTimeLockedContract', () => {
             const account = new HashedTimeLockedContract(100);
             expect(() => account.toString()).not.toThrow();
         })().then(done, done.fail);
+    });
+
+    it('can plain data', () => {
+        const data = new SerialBuffer(Address.SERIALIZED_SIZE * 2 + Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + 6);
+        sender.serialize(data);
+        recipient.serialize(data);
+        data.writeUint8(Hash.Algorithm.BLAKE2B);
+        Hash.NULL.serialize(data);
+        data.writeUint8(2);
+        data.writeUint32(1000);
+
+        const plain = HashedTimeLockedContract.dataToPlain(data);
+
+        expect(plain.sender).toEqual(sender.toUserFriendlyAddress());
+        expect(plain.recipient).toEqual(recipient.toUserFriendlyAddress());
+        expect(plain.hashAlgorithm).toEqual('blake2b');
+        expect(plain.hashRoot).toEqual('0000000000000000000000000000000000000000000000000000000000000000');
+        expect(plain.hashCount).toEqual(2);
+        expect(plain.timeout).toEqual(1000);
+    });
+
+    it('can plain data', () => {
+        const keyPair = KeyPair.generate();
+        const addr = keyPair.publicKey.toAddress();
+        const hashRoot = Hash.blake2b(Hash.NULL.array);
+        let transaction = new ExtendedTransaction(sender, Account.Type.HTLC, addr, Account.Type.BASIC, 100, 0, 500, Transaction.Flag.NONE, new Uint8Array(0));
+
+        let signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+        let proof = new SerialBuffer(3 + 2 * Hash.SIZE.get(Hash.Algorithm.BLAKE2B) + signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.REGULAR_TRANSFER);
+        proof.writeUint8(Hash.Algorithm.BLAKE2B);
+        proof.writeUint8(1);
+        hashRoot.serialize(proof);
+        Hash.NULL.serialize(proof);
+        signatureProof.serialize(proof);
+        let plain = HashedTimeLockedContract.proofToPlain(proof);
+        expect(plain.type).toEqual('regular-transfer');
+        expect(plain.hashAlgorithm).toEqual('blake2b');
+        expect(plain.hashDepth).toEqual(1);
+        expect(plain.hashRoot).toEqual('89eb0d6a8a691dae2cd15ed0369931ce0a949ecafa5c3f93f8121833646e15c3');
+        expect(plain.preImage).toEqual('0000000000000000000000000000000000000000000000000000000000000000');
+        expect(plain.signer).toEqual(addr.toUserFriendlyAddress());
+        expect(plain.signature).toEqual(signatureProof.signature.toHex());
+        expect(plain.publicKey).toEqual(keyPair.publicKey.toHex());
+        expect(plain.pathLength).toEqual(0);
+
+        signatureProof = new SignatureProof(keyPair.publicKey, new MerklePath([]), Signature.create(keyPair.privateKey, keyPair.publicKey, transaction.serializeContent()));
+        proof = new SerialBuffer(1 + signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE);
+        signatureProof.serialize(proof);
+        plain = HashedTimeLockedContract.proofToPlain(proof);
+        expect(plain.type).toEqual('timeout-resolve');
+        expect(plain.creator).toEqual(addr.toUserFriendlyAddress());
+        expect(plain.creatorSignature).toEqual(signatureProof.signature.toHex());
+        expect(plain.creatorPublicKey).toEqual(keyPair.publicKey.toHex());
+        expect(plain.creatorPathLength).toEqual(0);
+
+        proof = new SerialBuffer(1 + 2 * signatureProof.serializedSize);
+        proof.writeUint8(HashedTimeLockedContract.ProofType.EARLY_RESOLVE);
+        signatureProof.serialize(proof);
+        signatureProof.serialize(proof);
+        plain = HashedTimeLockedContract.proofToPlain(proof);
+        expect(plain.type).toEqual('early-resolve');
+        expect(plain.signer).toEqual(addr.toUserFriendlyAddress());
+        expect(plain.signature).toEqual(signatureProof.signature.toHex());
+        expect(plain.publicKey).toEqual(keyPair.publicKey.toHex());
+        expect(plain.pathLength).toEqual(0);
+        expect(plain.creator).toEqual(addr.toUserFriendlyAddress());
+        expect(plain.creatorSignature).toEqual(signatureProof.signature.toHex());
+        expect(plain.creatorPublicKey).toEqual(keyPair.publicKey.toHex());
+        expect(plain.creatorPathLength).toEqual(0);
     });
 });
