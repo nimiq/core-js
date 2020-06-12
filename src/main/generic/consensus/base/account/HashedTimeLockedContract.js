@@ -369,7 +369,7 @@ class HashedTimeLockedContract extends Contract {
      */
     static dataToPlain(data) {
         try {
-            const buf = new SerialBuffer(proof);
+            const buf = new SerialBuffer(data);
 
             const sender = Address.unserialize(buf);
             const recipient = Address.unserialize(buf);
