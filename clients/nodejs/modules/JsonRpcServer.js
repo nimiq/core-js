@@ -258,11 +258,39 @@ class JsonRpcServer {
             throw new Error(`"${signer.toUserFriendlyAddress()}" can not sign transactions using this node.`);
         }
         let transaction;
-        if (fromType !== Nimiq.Account.Type.BASIC && fromType !== Nimiq.Account.Type.VESTING) {
-            throw new Error('Only transactions from basic or vesting accounts may be created using this function.');
-        } else if (fromType !== Nimiq.Account.Type.BASIC || toType !== Nimiq.Account.Type.BASIC || data.length != 0) {
+        if (fromType !== Nimiq.Account.Type.BASIC || toType !== Nimiq.Account.Type.BASIC || data.length != 0) {
+            let proof;
+            if (fromType === Nimiq.Account.Type.HTLC) {
+                if (!tx.proof) {
+                    throw new Error('For transactions from HTLCs, proof data is required.');
+                }
+                switch (tx.proof.type) {
+                    case Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
+                        const hashAlgorithm = tx.proof.hashAlgorithm;
+                        const hashDepth = tx.proof.hashDepth;
+                        const hashRoot = Nimiq.Hash.fromAny(tx.proof.hashRoot, hashAlgorithm);
+                        const preImage = Nimiq.Hash.fromAny(tx.proof.preImage, hashAlgorithm);
+
+                        proof = new Nimiq.SerialBuffer(1 + 1 + 1 + 2 * Nimiq.Hash.SIZE[hashAlgorithm] + Nimiq.SignatureProof.SINGLE_SIG_SIZE);
+                        proof.writeUint8(tx.proof.type);
+                        proof.writeUint8(hashAlgorithm);
+                        proof.writeUint8(hashDepth);
+                        hashRoot.serialize(proof);
+                        preImage.serialize(proof);
+                    }
+                    case Nimiq.HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE: {
+                        proof = new Nimiq.SerialBuffer(1 + Nimiq.SignatureProof.SINGLE_SIG_SIZE);
+                        proof.writeUint8(tx.proof.type);
+                    }
+                    default: throw new Error('Invalid proof type.');
+                }
+            } else {
+                proof = new Nimiq.SerialBuffer(Nimiq.SignatureProof.SINGLE_SIG_SIZE);
+            }
             transaction = new Nimiq.ExtendedTransaction(from, fromType, to, toType, value, fee, validityStartHeight, flags, data);
-            transaction.proof = Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent())).serialize();
+            Nimiq.SignatureProof.singleSig(wallet.publicKey, Nimiq.Signature.create(wallet.keyPair.privateKey, wallet.publicKey, transaction.serializeContent()))
+                .serialize(proof);
+            transaction.proof = proof;
         } else {
             transaction = wallet.createTransaction(to, value, fee, validityStartHeight);
         }
