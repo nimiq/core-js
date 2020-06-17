@@ -261,9 +261,7 @@ class JsonRpcServer {
         if (fromType !== Nimiq.Account.Type.BASIC || toType !== Nimiq.Account.Type.BASIC || data.length != 0) {
             let proof;
             if (fromType === Nimiq.Account.Type.HTLC) {
-                if (!tx.proof) {
-                    throw new Error('For transactions from HTLCs, proof data is required.');
-                }
+                if (!tx.proof) throw new Error('For transactions from HTLCs, proof data is required.');
                 switch (tx.proof.type) {
                     case Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER: {
                         const hashAlgorithm = tx.proof.hashAlgorithm;
@@ -271,16 +269,18 @@ class JsonRpcServer {
                         const hashRoot = Nimiq.Hash.fromAny(tx.proof.hashRoot, hashAlgorithm);
                         const preImage = Nimiq.Hash.fromAny(tx.proof.preImage, hashAlgorithm);
 
-                        proof = new Nimiq.SerialBuffer(1 + 1 + 1 + 2 * Nimiq.Hash.SIZE[hashAlgorithm] + Nimiq.SignatureProof.SINGLE_SIG_SIZE);
+                        proof = new Nimiq.SerialBuffer(1 + 1 + 1 + 2 * Nimiq.Hash.SIZE.get(hashAlgorithm) + Nimiq.SignatureProof.SINGLE_SIG_SIZE);
                         proof.writeUint8(tx.proof.type);
                         proof.writeUint8(hashAlgorithm);
                         proof.writeUint8(hashDepth);
                         hashRoot.serialize(proof);
                         preImage.serialize(proof);
+                        break;
                     }
                     case Nimiq.HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE: {
                         proof = new Nimiq.SerialBuffer(1 + Nimiq.SignatureProof.SINGLE_SIG_SIZE);
                         proof.writeUint8(tx.proof.type);
+                        break;
                     }
                     default: throw new Error('Invalid proof type.');
                 }
