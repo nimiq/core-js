@@ -39,8 +39,14 @@ class BufferUtils {
         }
         const uint8View = BufferUtils._toUint8View(buffer);
         return BufferUtils._ISO_8859_15_DECODER.decode(uint8View)
-            .replace('€', '¤').replace('Š', '¦').replace('š', '¨').replace('Ž', '´')
-            .replace('ž', '¸').replace('Œ', '¼').replace('œ', '½').replace('Ÿ', '¾');
+            .replace(/\u20ac/g, '\u00a4')  // € => ¤
+            .replace(/\u0160/g, '\u00a6')  // Š => ¦
+            .replace(/\u0161/g, '\u00a8')  // š => ¨
+            .replace(/\u017d/g, '\u00b4')  // Ž => ´
+            .replace(/\u017e/g, '\u00b8')  // ž => ¸
+            .replace(/\u0152/g, '\u00bc')  // Œ => ¼
+            .replace(/\u0153/g, '\u00bd')  // œ => ½
+            .replace(/\u0178/g, '\u00be'); // Ÿ => ¾
     }
 
     static _tripletToBase64(num) {
