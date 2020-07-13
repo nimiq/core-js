@@ -22,7 +22,6 @@ describe('VersionMessage', () => {
         expect(msg2.genesisHash.equals(msg1.genesisHash)).toBe(true);
         expect(msg2.headHash.equals(msg1.headHash)).toBe(true);
         expect(BufferUtils.equals(msg2.challengeNonce, msg1.challengeNonce)).toBe(true);
-        expect(msg2.userAgent !== msg1.userAgent).toBe(true);
     });
 
     it('is serializable and unserializable (with user-agent)', () => {
@@ -34,7 +33,7 @@ describe('VersionMessage', () => {
         expect(msg2.genesisHash.equals(msg1.genesisHash)).toBe(true);
         expect(msg2.headHash.equals(msg1.headHash)).toBe(true);
         expect(BufferUtils.equals(msg2.challengeNonce, msg1.challengeNonce)).toBe(true);
-        expect(BufferUtils.equals(msg2.userAgent, msg1.userAgent)).toBe(true);
+        expect(msg2.userAgent === msg1.userAgent).toBe(true);
     });
 
     it('must have well defined arguments', () => {

@@ -19,7 +19,7 @@ describe('BlockBody', () => {
         const blockBody2 = BlockBody.unserialize(blockBody1.serialize());
         expect(blockBody1.equals(blockBody2)).toBe(true);
         expect(BufferUtils.equals(blockBody1.serialize(), blockBody2.serialize())).toBe(true);
-        expect(BufferUtils.equals(blockBody1.hash(), blockBody2.hash())).toBe(true);
+        expect(blockBody1.hash().equals(blockBody2.hash())).toBe(true);
         expect(BufferUtils.equals(blockBody1.extraData, blockBody2.extraData)).toBe(true);
     });
 

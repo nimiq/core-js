@@ -76,7 +76,7 @@ describe('Block', () => {
         const block2 = Block.unserialize(block.serialize());
 
         expect(block2.serializedSize).toBe(size);
-        expect(BufferUtils.equals(block, block2)).toBe(true);
+        expect(block.equals(block2)).toBe(true);
     });
 
     it('is self plain', () => {

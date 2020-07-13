@@ -22,7 +22,7 @@ describe('Genesis', () => {
             for (const networkId in GenesisConfig.CONFIGS) {
                 const accounts = await Accounts.createVolatile();
                 await accounts.initialize(GenesisConfig.CONFIGS[networkId].GENESIS_BLOCK, GenesisConfig.CONFIGS[networkId].GENESIS_ACCOUNTS);
-                expect(BufferUtils.equals(await accounts.hash(), GenesisConfig.CONFIGS[networkId].GENESIS_BLOCK.accountsHash)).toBeTruthy(`networkId ${networkId}`);
+                expect((await accounts.hash()).equals(GenesisConfig.CONFIGS[networkId].GENESIS_BLOCK.accountsHash)).toBeTruthy(`networkId ${networkId}`);
             }
         })().then(done, done.fail);
     });

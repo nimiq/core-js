@@ -152,9 +152,9 @@ describe('BufferUtils', () => {
         const buffer3 = BufferUtils.fromAscii('test false');
         const buffer4 = new Uint16Array(buffer3.buffer);
         const buffer5 = BufferUtils.fromAscii('tess');
-        const buffer6 = [116, 101, 115, 115];
+        const buffer6 = new Uint8Array([116, 101, 115, 115]);
         const buffer7 = BufferUtils.fromAscii('uest');
-        const buffer8 = [];
+        const buffer8 = new Uint8Array(0);
         const buffer9 = BufferUtils.fromHex('e65e39616662f2c16d62dc08915e5a1d104619db8c2b9cf9b389f96c8dce9837');
         const buffer10 = BufferUtils.fromHex('e65e39616662f2c16d62dc08915e5a1d104619db9c2b9cf9b389f96c8dce9837');
 
