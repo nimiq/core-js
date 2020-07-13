@@ -1,6 +1,6 @@
 class BufferUtils {
     /**
-     * @param {*} buffer
+     * @param {Uint8Array} buffer
      * @return {string}
      */
     static toAscii(buffer) {
@@ -90,7 +90,7 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} buffer
+     * @param {Uint8Array} buffer
      * @return {string}
      */
     static toBase64(buffer) {
@@ -119,7 +119,7 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} buffer
+     * @param {Uint8Array} buffer
      * @return {string}
      */
     static toBase64Url(buffer) {
@@ -210,7 +210,7 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} buffer
+     * @param {Uint8Array} buffer
      * @return {string}
      */
     static toHex(buffer) {
@@ -235,7 +235,7 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} bytes
+     * @param {Uint8Array} buffer
      * @return {string}
      */
     static toBinary(buffer) {
@@ -355,14 +355,14 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} a
-     * @param {*} b
+     * @param {TypedArray} a
+     * @param {TypedArray} b
      * @return {boolean}
      */
     static equals(a, b) {
-        if ((a.byteLength || a.length) !== (b.byteLength || b.length)) return false;
         const viewA = BufferUtils._toUint8View(a);
         const viewB = BufferUtils._toUint8View(b);
+        if (viewA.length !== viewB.length) return false;
         for (let i = 0; i < viewA.length; i++) {
             if (viewA[i] !== viewB[i]) return false;
         }
@@ -370,8 +370,8 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} a
-     * @param {*} b
+     * @param {TypedArray} a
+     * @param {TypedArray} b
      * @return {number} -1 if a is smaller than b, 1 if a is larger than b, 0 if a equals b.
      */
     static compare(a, b) {
@@ -398,19 +398,19 @@ class BufferUtils {
     }
 
     /**
-     * @param {*} arrayLike
+     * @param {TypedArray|ArrayBuffer} arrayLike
      * @return {Uint8Array}
      * @private
      */
     static _toUint8View(arrayLike) {
         if (arrayLike instanceof Uint8Array) {
             return arrayLike;
-        } if (arrayLike instanceof ArrayBuffer) {
+        } else if (arrayLike instanceof ArrayBuffer) {
             return new Uint8Array(arrayLike);
         } else if (arrayLike.buffer instanceof ArrayBuffer) {
             return new Uint8Array(arrayLike.buffer);
         } else {
-            return new Uint8Array(arrayLike);
+            throw new Error('TypedArray or ArrayBuffer required');
         }
     }
 }
