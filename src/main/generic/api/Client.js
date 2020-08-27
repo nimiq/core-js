@@ -411,7 +411,7 @@ class Client {
         let fs = [];
         for (const {listener, addresses} of this._transactionListeners.values()) {
             if (addresses.contains(tx.sender) || addresses.contains(tx.recipient)) {
-                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + 1, block.timestamp);
+                details = details || new Client.TransactionDetails(tx, Client.TransactionState.CONFIRMED, block.hash(), block.height, (blockNow.height - block.height) + this._config.requiredBlockConfirmations, block.timestamp);
                 fs.push(async () => {
                     try {
                         await listener(details);
