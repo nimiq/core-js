@@ -73,7 +73,7 @@ class HashedTimeLockedContract extends Contract {
      */
     static fromPlain(plain) {
         if (!plain) throw new Error('Invalid account');
-        return new HashedTimeLockedContract(plain.balance, Address.fromAny(plain.sender), Address.fromAny(plain.recipient), Hash.fromAny(plain.hashRoot), plain.hashCount, plain.timeout, plain.totalAmount);
+        return new HashedTimeLockedContract(plain.balance, Address.fromAny(plain.sender), Address.fromAny(plain.recipient), Hash.fromAny(plain.hashRoot, Hash.Algorithm.fromString(plain.hashAlgorithm)), plain.hashCount, plain.timeout, plain.totalAmount);
     }
 
 
@@ -150,6 +150,7 @@ class HashedTimeLockedContract extends Contract {
         const plain = super.toPlain();
         plain.sender = this.sender.toPlain();
         plain.recipient = this.recipient.toPlain();
+        plain.hashAlgorithm = Hash.Algorithm.toString(this.hashRoot.algorithm);
         plain.hashRoot = this.hashRoot.toPlain();
         plain.hashCount = this.hashCount;
         plain.timeout = this.timeout;

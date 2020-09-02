@@ -532,7 +532,7 @@ describe('HashedTimeLockedContract', () => {
         expect(plain.creatorPathLength).toEqual(0);
     });
 
-    fit('can convert itself to and from plain', () => {
+    it('can convert itself to and from plain', () => {
         const keyPair1 = KeyPair.generate();
         const addr1 = keyPair1.publicKey.toAddress();
         const keyPair2 = KeyPair.generate();

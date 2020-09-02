@@ -335,6 +335,20 @@ Hash.Algorithm.toString = function(hashAlgorithm) {
 };
 
 /**
+ * @param {string} str
+ * @returns {Hash.Algorithm}
+ */
+Hash.Algorithm.fromString = function (str) {
+    switch (str) {
+        case 'blake2b': return Hash.Algorithm.BLAKE2B;
+        case 'argon2d': return Hash.Algorithm.ARGON2D;
+        case 'sha256': return Hash.Algorithm.SHA256;
+        case 'sha512': return Hash.Algorithm.SHA512;
+    }
+    throw new Error('Invalid string');
+}
+
+/**
  * @type {Map<Hash.Algorithm, number>}
  */
 Hash.SIZE = new Map();
