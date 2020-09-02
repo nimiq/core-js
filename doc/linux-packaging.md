@@ -8,8 +8,9 @@ Make sure you can build the `node.js` client from source code (i.e. you can succ
 
 1. Make sure you have `dpkg`, `jq` and `fakeroot` installed (otherwise, install them with `apt`).
 2. Run `PACKAGING=1 yarn`.
-3. Then run `yarn run build-deb`.
-4. The deb package will be located in the `dist/` directory.
+3. Run `PACKAGING=1 yarn build`.
+4. Then run `yarn run build-deb`.
+5. The deb package will be located in the `dist/` directory.
 
 Note: creating deb packages only has been tested extensively on Ubuntu and Debian.
 
@@ -17,7 +18,8 @@ Note: creating deb packages only has been tested extensively on Ubuntu and Debia
 
 1. Make sure you have `rpm-build` installed (otherwise, install it with `yum` or `dnf`).
 2. Run `PACKAGING=1 yarn`
-3. Then run `yarn run build-rpm`.
-4. The RPM package will be located in the `dist/` directory.
+3. Run `PACKAGING=1 yarn build`.
+4. Then run `yarn run build-rpm`.
+5. The RPM package will be located in the `dist/` directory.
 
 Note: creating RPM packages only has been tested extensively on Fedora.
