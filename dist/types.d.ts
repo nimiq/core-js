@@ -153,7 +153,7 @@ declare class ClientBasicAddress {
     public peerAddress: PeerAddress;
     public peerId: PeerId;
     public services: string[];
-    public netAddress: NetAddress | null;
+    public netAddress: NetAddress;
     constructor(address: PeerAddress);
     public toPlain(): {
         peerAddress: string,
@@ -175,6 +175,10 @@ declare class ClientAddressInfo extends ClientBasicAddress {
         peerAddress: string,
         peerId: string,
         services: string[],
+        netAddress: {
+            ip: Uint8Array,
+            reliable: boolean,
+        } | null,
         banned: boolean,
         connected: boolean,
     };
@@ -182,7 +186,6 @@ declare class ClientAddressInfo extends ClientBasicAddress {
 
 declare class ClientPeerInfo extends ClientBasicAddress {
     public connectionSince: number;
-    public netAddress: NetAddress;
     public bytesReceived: number;
     public bytesSent: number;
     public latency: number;
@@ -196,8 +199,11 @@ declare class ClientPeerInfo extends ClientBasicAddress {
         peerAddress: string,
         peerId: string,
         services: string[],
+        netAddress: {
+            ip: Uint8Array,
+            reliable: boolean,
+        } | null,
         connectionSince: number,
-        netAddress: string,
         bytesReceived: number,
         bytesSent: number,
         latency: number,

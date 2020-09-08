@@ -176,7 +176,7 @@ Client.BasicAddress = class BasicAddress {
             peerAddress: this.peerAddress.toString(),
             peerId: this.peerId.toString(),
             services: this.services,
-            netAddress: this.netAddress ? {
+            netAddress: this.netAddress.ip ? {
                 ip: this.netAddress.ip,
                 reliable: this.netAddress.reliable,
             } : null,
@@ -292,7 +292,6 @@ Client.PeerInfo = class PeerInfo extends Client.BasicAddress {
     toPlain() {
         const plain = super.toPlain();
         plain.connectionSince = this.connectionSince;
-        plain.netAddress = this.netAddress.toString();
         plain.bytesReceived = this.bytesReceived;
         plain.bytesSent = this.bytesSent;
         plain.latency = this.latency;
