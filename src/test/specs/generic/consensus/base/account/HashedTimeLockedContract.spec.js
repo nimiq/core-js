@@ -547,11 +547,11 @@ describe('HashedTimeLockedContract', () => {
         expect(revived.sender.equals(addr1)).toBe(true);
         expect(revived.recipient.equals(addr2)).toBe(true);
         expect(revived.balance).toBe(1e5);
-        expect(revived.hashRoot.equals(hashRoot)).toBe(true); // fails
-        expect(revived.hashRoot.algorithm).toBe(Hash.Algorithm.SHA256); // fails
+        expect(revived.hashRoot.equals(hashRoot)).toBe(true);
+        expect(revived.hashRoot.algorithm).toBe(Hash.Algorithm.SHA256);
         expect(revived.hashCount).toBe(1);
         expect(revived.totalAmount).toBe(1e5);
 
-        expect(htlc.equals(revived)).toBe(true); // fails
+        expect(htlc.equals(revived)).toBe(true);
     });
 });
