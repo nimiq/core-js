@@ -531,4 +531,27 @@ describe('HashedTimeLockedContract', () => {
         expect(plain.creatorPublicKey).toEqual(keyPair.publicKey.toHex());
         expect(plain.creatorPathLength).toEqual(0);
     });
+
+    it('can convert itself to and from plain', () => {
+        const keyPair1 = KeyPair.generate();
+        const addr1 = keyPair1.publicKey.toAddress();
+        const keyPair2 = KeyPair.generate();
+        const addr2 = keyPair2.publicKey.toAddress();
+
+        const hashRoot = Hash.sha256(Hash.NULL.array);
+
+        const htlc = new HashedTimeLockedContract(1e5, addr1, addr2, hashRoot, 1, 1000);
+        const plain = htlc.toPlain();
+        const revived = HashedTimeLockedContract.fromPlain(plain);
+
+        expect(revived.sender.equals(addr1)).toBe(true);
+        expect(revived.recipient.equals(addr2)).toBe(true);
+        expect(revived.balance).toBe(1e5);
+        expect(revived.hashRoot.equals(hashRoot)).toBe(true);
+        expect(revived.hashRoot.algorithm).toBe(Hash.Algorithm.SHA256);
+        expect(revived.hashCount).toBe(1);
+        expect(revived.totalAmount).toBe(1e5);
+
+        expect(htlc.equals(revived)).toBe(true);
+    });
 });

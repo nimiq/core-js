@@ -1015,6 +1015,7 @@ export class Hash extends Serializable {
         SHA256: 3;
         SHA512: 4;
         toString(hashAlgorithm: Hash.Algorithm): string;
+        fromString(str: string): Hash.Algorithm;
     };
     public static light(arr: Uint8Array): Hash;
     public static blake2b(arr: Uint8Array): Hash;
@@ -1408,6 +1409,7 @@ export class HashedTimeLockedContract extends Contract {
         balance: number,
         sender: string,
         recipient: string,
+        hashAlgorithm: string,
         hashRoot: string,
         hashCount: number,
         timeout: number,
