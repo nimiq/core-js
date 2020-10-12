@@ -73,7 +73,7 @@ class HashedTimeLockedContract extends Contract {
      */
     static fromPlain(plain) {
         if (!plain) throw new Error('Invalid account');
-        return new HashedTimeLockedContract(plain.balance, Address.fromAny(plain.sender), Address.fromAny(plain.recipient), Hash.fromAny(plain.hashRoot, Hash.Algorithm.fromString(plain.hashAlgorithm)), plain.hashCount, plain.timeout, plain.totalAmount);
+        return new HashedTimeLockedContract(plain.balance, Address.fromAny(plain.sender), Address.fromAny(plain.recipient), Hash.fromAny(plain.hashRoot, Hash.Algorithm.fromAny(plain.hashAlgorithm)), plain.hashCount, plain.timeout, plain.totalAmount);
     }
 
 
@@ -117,6 +117,11 @@ class HashedTimeLockedContract extends Contract {
     /** @type {Address} */
     get recipient() {
         return this._recipient;
+    }
+
+    /** @type {Hash.Algorithm} */
+    get hashAlgorithm() {
+        return this._hashRoot.algorithm;
     }
 
     /** @type {Hash} */

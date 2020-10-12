@@ -335,18 +335,19 @@ Hash.Algorithm.toString = function(hashAlgorithm) {
 };
 
 /**
- * @param {string} str
+ * @param {Hash.Algorithm|string} algorithm
  * @returns {Hash.Algorithm}
  */
-Hash.Algorithm.fromString = function (str) {
-    switch (str) {
+Hash.Algorithm.fromAny = function (algorithm) {
+    if (typeof algorithm === 'number') return algorithm;
+    switch (algorithm) {
         case 'blake2b': return Hash.Algorithm.BLAKE2B;
         case 'argon2d': return Hash.Algorithm.ARGON2D;
         case 'sha256': return Hash.Algorithm.SHA256;
         case 'sha512': return Hash.Algorithm.SHA512;
     }
-    throw new Error('Invalid string');
-}
+    throw new Error('Invalid hash algorithm');
+};
 
 /**
  * @type {Map<Hash.Algorithm, number>}
