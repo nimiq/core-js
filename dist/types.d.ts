@@ -1391,7 +1391,33 @@ export class HashedTimeLockedContract extends Contract {
         hashCount: number,
         timeout: number,
     } | {};
-    public static proofToPlain(proof: Uint8Array): object;
+    public static proofToPlain(proof: Uint8Array): {
+        type: 'regular-transfer',
+        hashAlgorithm: string,
+        hashDepth: number,
+        hashRoot: string,
+        preImage: string,
+        signer: string,
+        signature: string,
+        publicKey: string,
+        pathLength: number,
+    } | {
+        type: 'early-resolve',
+        signer: string,
+        signature: string,
+        publicKey: string,
+        pathLength: number,
+        creator: string,
+        creatorSignature: string,
+        creatorPublicKey: string,
+        creatorPathLength: number,
+    } | {
+        type: 'timeout-resolve',
+        creator: string,
+        creatorSignature: string,
+        creatorPublicKey: string,
+        creatorPathLength: number,
+    } | {};
     public serializedSize: number;
     public sender: Address;
     public recipient: Address;
