@@ -1,0 +1,34 @@
+name: Build + Test
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [ '12', '14' ]
+    name: Node ${{ matrix.node }} build
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2-beta
+      with:
+        node-version: ${{ matrix.node }}
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-modules-node${{ matrix.node }}-${{ hashFiles('**/yarn.lock') }}
+    - name: Install
+      run: yarn
+    - name: Lint
+      run: yarn lint
+    # - name: Lint Types
+    #   run: yarn lint-types
+    - name: Build
+      run: yarn gulp build-web # build-node was already executed during Install step
+    # - name: Test Node
+    #   run: yarn test-node
+    # - name: Test Browser
+    #   run: yarn test-browser
