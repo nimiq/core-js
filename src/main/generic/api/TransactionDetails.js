@@ -87,7 +87,7 @@ Client.TransactionDetails = class TransactionDetails {
 
     /** @type {{raw: Uint8Array}} */
     get proof() {
-        const o = Account.TYPE_MAP.get(this.recipientType).proofToPlain(this._transaction.proof);
+        const o = Account.TYPE_MAP.get(this.senderType).proofToPlain(this._transaction.proof);
         o.raw =  this._transaction.proof;
         return o;
     }
