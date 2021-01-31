@@ -800,6 +800,7 @@ class JsonRpcServer {
             value: tx.value,
             fee: tx.fee,
             data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
+            proof: Nimiq.BufferUtils.toHex(tx.proof.raw) || null,
             flags: tx.flags
         };
     }
