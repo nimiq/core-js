@@ -62,12 +62,12 @@ class PeerChannel extends Observable {
 
     /**
      * @param {Message.Type|Array.<Message.Type>} types
-     * @param {function()} timeoutCallback
+     * @param {function()} errorOrTimeoutCallback
      * @param {number} [msgTimeout]
      * @param {number} [chunkTimeout]
      */
-    expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout) {
-        this._conn.expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout);
+    expectMessage(types, errorOrTimeoutCallback, msgTimeout, chunkTimeout) {
+        this._conn.expectMessage(types, errorOrTimeoutCallback, msgTimeout, chunkTimeout);
     }
 
     /**

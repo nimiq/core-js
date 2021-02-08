@@ -174,15 +174,16 @@ class NetworkConnection extends Observable {
 
     /**
      * @param {Message.Type|Array.<Message.Type>} types
-     * @param {function()} timeoutCallback
+     * @param {function()} errorOrTimeoutCallback
      * @param {number} [msgTimeout]
      * @param {number} [chunkTimeout]
      */
-    expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout) {
+    expectMessage(types, errorOrTimeoutCallback, msgTimeout, chunkTimeout) {
         if (this._closed) {
+            setTimeout(errorOrTimeoutCallback);
             return;
         }
-        this._channel.expectMessage(types, timeoutCallback, msgTimeout, chunkTimeout);
+        this._channel.expectMessage(types, errorOrTimeoutCallback, msgTimeout, chunkTimeout);
     }
 
     /**

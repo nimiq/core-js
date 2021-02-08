@@ -57,24 +57,24 @@ class DataChannel extends Observable {
         }
 
         if (!success) {
-            expectedMsg.timeoutCallback();
+            expectedMsg.onErrorOrTimeout();
         }
     }
 
     /**
      * @param {Message.Type|Array.<Message.Type>} types
-     * @param {function()} timeoutCallback
+     * @param {function()} errorOrTimeoutCallback
      * @param {number} [msgTimeout]
      * @param {number} [chunkTimeout]
      */
-    expectMessage(types, timeoutCallback, msgTimeout = DataChannel.MESSAGE_TIMEOUT, chunkTimeout = DataChannel.CHUNK_TIMEOUT) {
+    expectMessage(types, errorOrTimeoutCallback, msgTimeout = DataChannel.MESSAGE_TIMEOUT, chunkTimeout = DataChannel.CHUNK_TIMEOUT) {
         if (!Array.isArray(types)) {
             types = [types];
         }
 
         if (types.length === 0) return;
 
-        const expectedMsg = new ExpectedMessage(types, timeoutCallback, msgTimeout, chunkTimeout);
+        const expectedMsg = new ExpectedMessage(types, errorOrTimeoutCallback, msgTimeout, chunkTimeout);
         for (const type of types) {
             this._expectedMessagesByType.set(type, expectedMsg);
         }
@@ -91,6 +91,10 @@ class DataChannel extends Observable {
         this._closed = true;
 
         this._timers.clearAll();
+
+        for (let expectedMsg of this._expectedMessagesByType.values()) {
+            expectedMsg.onErrorOrTimeout();
+        }
 
         this._close();
 
@@ -233,7 +237,7 @@ class DataChannel extends Observable {
                 this._expectedMessagesByType.delete(type);
             }
 
-            expectedMsg.timeoutCallback();
+            expectedMsg.onErrorOrTimeout();
         } else {
             Log.w(DataChannel, 'DataChannel receive timeout');
         }
@@ -308,16 +312,26 @@ Class.register(DataChannel);
 class ExpectedMessage {
     /**
      * @param {Array.<Message.Type>} types
-     * @param {function()} timeoutCallback
+     * @param {function()} errorOrTimeoutCallback
      * @param {number} msgTimeout
      * @param {number} chunkTimeout
      */
-    constructor(types, timeoutCallback, msgTimeout = DataChannel.MESSAGE_TIMEOUT, chunkTimeout = DataChannel.CHUNK_TIMEOUT) {
+    constructor(types, errorOrTimeoutCallback, msgTimeout = DataChannel.MESSAGE_TIMEOUT, chunkTimeout = DataChannel.CHUNK_TIMEOUT) {
         this.id = types.join(':');
         this.types = types;
-        this.timeoutCallback = timeoutCallback;
+        this._errorOrTimeoutCallback = errorOrTimeoutCallback;
+        this._errorOrTimeoutCallbackInvoked = false;
         this.msgTimeout = msgTimeout;
         this.chunkTimeout = chunkTimeout;
+    }
+
+    onErrorOrTimeout() {
+        if (this._errorOrTimeoutCallbackInvoked) {
+            return;
+        }
+        this._errorOrTimeoutCallbackInvoked = true;
+
+        this._errorOrTimeoutCallback();
     }
 }
 
