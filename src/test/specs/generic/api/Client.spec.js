@@ -266,4 +266,15 @@ describe('Client', () => {
         client._onConsensusFailed();
     });
 
+    it('can reset consensus', async(done) => {
+        const client = startClient('pico');
+        await client.waitForConsensusEstablished();
+        await client.addConsensusChangedListener(async (state) => {
+            if (state === Client.ConsensusState.ESTABLISHED) {
+                done();
+            }
+        });
+        await client.resetConsensus();
+    });
+
 });

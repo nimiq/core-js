@@ -57,6 +57,15 @@ class Client {
     }
 
     /**
+     * Resets the current consensus internal state
+     * @returns {Promise<void>}
+     */
+    resetConsensus() {
+        return this._consensusSynchronizer
+            .push(() => this._replaceConsensus(this._config.createConsensus()));
+    }
+
+    /**
      * Must be invoked in synchronizer
      * @private
      */
