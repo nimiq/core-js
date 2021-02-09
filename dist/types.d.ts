@@ -902,10 +902,10 @@ export class NumberUtils {
     public static UINT16_MAX: 65535;
     public static UINT32_MAX: 4294967295;
     public static UINT64_MAX: number;
-    public static isUint8(val: number): boolean;
-    public static isUint16(val: number): boolean;
-    public static isUint32(val: number): boolean;
-    public static isUint64(val: number): boolean;
+    public static isUint8(val: unknown): boolean;
+    public static isUint16(val: unknown): boolean;
+    public static isUint32(val: unknown): boolean;
+    public static isUint64(val: unknown): boolean;
     public static randomUint32(): number;
     public static randomUint64(): number;
     public static fromBinary(bin: string): number;

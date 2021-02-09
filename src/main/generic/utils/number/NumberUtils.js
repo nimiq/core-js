@@ -1,6 +1,6 @@
 class NumberUtils {
     /**
-     * @param {number} val
+     * @param {unknown} val
      * @return {boolean}
      */
     static isUint8(val) {
@@ -9,7 +9,7 @@ class NumberUtils {
     }
 
     /**
-     * @param {number} val
+     * @param {unknown} val
      * @return {boolean}
      */
     static isUint16(val) {
@@ -18,7 +18,7 @@ class NumberUtils {
     }
 
     /**
-     * @param {number} val
+     * @param {unknown} val
      * @return {boolean}
      */
     static isUint32(val) {
@@ -27,7 +27,7 @@ class NumberUtils {
     }
 
     /**
-     * @param {number} val
+     * @param {unknown} val
      * @return {boolean}
      */
     static isUint64(val) {
