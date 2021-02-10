@@ -153,7 +153,7 @@ declare class ClientBasicAddress {
     public peerAddress: PeerAddress;
     public peerId: PeerId;
     public services: string[];
-    public netAddress: NetAddress;
+    public netAddress: NetAddress | null;
     constructor(address: PeerAddress);
     public toPlain(): {
         peerAddress: string,

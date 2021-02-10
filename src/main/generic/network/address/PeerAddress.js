@@ -161,7 +161,7 @@ class PeerAddress {
         return this._timestamp;
     }
 
-    /** @type {NetAddress} */
+    /** @type {NetAddress | null} */
     get netAddress() {
         return this._netAddress.isPseudo() ? null : this._netAddress;
     }
