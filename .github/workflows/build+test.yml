@@ -24,11 +24,11 @@ jobs:
       run: yarn
     - name: Lint
       run: yarn lint
-    # - name: Lint Types
-    #   run: yarn lint-types
+    - name: Lint Types
+      run: yarn lint-types
     - name: Build
       run: yarn gulp build-web # build-node was already executed during Install step
-    # - name: Test Node
-    #   run: yarn test-node
+    - name: Test Node
+      run: yarn test-node
     # - name: Test Browser
     #   run: yarn test-browser
