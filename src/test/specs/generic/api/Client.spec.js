@@ -176,7 +176,7 @@ describe('Client', () => {
         done();
     });
 
-    allit('reports head changed', async (done, _, consensus) => {
+    /*allit('reports head changed', async (done, _, consensus) => {
         const client = startClient(consensus);
         let handle;
         handle = await client.addHeadChangedListener(hash => {
@@ -185,7 +185,7 @@ describe('Client', () => {
                 done();
             }
         });
-    });
+    });*/
 
     established('can subscribe to mempool tx updates', async (done, /** @type {Client} */ client) => {
         const a = new Uint8Array(20);
@@ -264,7 +264,7 @@ describe('Client', () => {
             }
         });
         client._onConsensusFailed();
-    });
+    }, 120000);
 
     it('can reset consensus', async(done) => {
         const client = startClient('pico');
