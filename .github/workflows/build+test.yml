@@ -33,24 +33,29 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        browser: [ 'Chrome' ]
-    name: Test on ${{ matrix.browser }}
+        chrome: [ 'stable', 'beta' ]
+    name: Test on Chrome (${{ matrix.chrome }})
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
         node-version: '14'
+    - uses: browser-actions/setup-chrome@latest
+      with:
+        chrome-version: ${{ matrix.chrome }}
     - uses: actions/cache@v2
       with:
         path: ~/.cache/yarn/
         key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
     - name: Install
       run: yarn
-    - name: Build Browser
+    - name: Build
       run: yarn gulp build-web
     - run: sudo apt-get install xvfb
-    - name: Test Browser
-      run: KARMA_BROWSERS=${{ matrix.browser }} xvfb-run --auto-servernum yarn test-browser
+    - name: Get Version
+      run: chrome --version
+    - name: Test
+      run: KARMA_BROWSERS=Chrome xvfb-run --auto-servernum yarn test-browser
 
   test_firefox:
     runs-on: ubuntu-20.04
