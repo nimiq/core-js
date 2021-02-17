@@ -5,21 +5,21 @@ on:
   - pull_request
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test_node:
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         node: [ '14' ]
-    name: Node ${{ matrix.node }} build
+    name: Test on node v${{ matrix.node }}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2-beta
+    - uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node }}
     - uses: actions/cache@v2
       with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-modules-node${{ matrix.node }}-${{ hashFiles('**/yarn.lock') }}
+        path: ~/.cache/yarn/
+        key: ${{ runner.os }}-yarn-node${{ matrix.node }}-${{ hashFiles('**/yarn.lock') }}
     - name: Install
       run: yarn
     - name: Lint
