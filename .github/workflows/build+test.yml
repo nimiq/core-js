@@ -29,11 +29,11 @@ jobs:
     - name: Test Node
       run: yarn test-node
 
-  test_browser:
+  test_chrome:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        browser: [ 'Chrome', 'Firefox' ]
+        browser: [ 'Chrome' ]
     name: Test on ${{ matrix.browser }}
     steps:
     - uses: actions/checkout@v2
@@ -51,3 +51,31 @@ jobs:
     - run: sudo apt-get install xvfb
     - name: Test Browser
       run: KARMA_BROWSERS=${{ matrix.browser }} xvfb-run --auto-servernum yarn test-browser
+
+  test_firefox:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        firefox: [ 'latest', 'latest-esr', 'latest-beta' ]
+    name: Test on Firefox (${{ matrix.firefox }})
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - uses: browser-actions/setup-firefox@v0.0.0
+      with:
+        firefox-version: ${{ matrix.firefox }}
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/yarn/
+        key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
+    - name: Install
+      run: yarn
+    - name: Build
+      run: yarn gulp build-web
+    - run: sudo apt-get install xvfb
+    - name: Get Version
+      run: firefox --version
+    - name: Test
+      run: KARMA_BROWSERS=Firefox xvfb-run --auto-servernum yarn test-browser
