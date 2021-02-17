@@ -84,3 +84,26 @@ jobs:
       run: firefox --version
     - name: Test
       run: KARMA_BROWSERS=Firefox xvfb-run --auto-servernum yarn test-browser
+
+  test_esm:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        browser: [ 'Chrome', 'Firefox' ]
+    name: Test ESM (${{ matrix.browser }})
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/yarn/
+        key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
+    - name: Install
+      run: yarn
+    - name: Build
+      run: yarn gulp build-web-module
+    - run: sudo apt-get install xvfb
+    - name: Test
+      run: USE_ESM=1 KARMA_BROWSERS=${{ matrix.browser }} xvfb-run --auto-servernum yarn test-browser
