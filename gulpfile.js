@@ -624,6 +624,7 @@ const RELEASE_ADDONS = [
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)
+        .pipe(eslint())
         .pipe(eslint({quiet: true}))
         .pipe(eslint.format())
         .pipe(eslint.failAfterError());
