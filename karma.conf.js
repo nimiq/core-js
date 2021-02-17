@@ -74,52 +74,8 @@ module.exports = function (config) {
         // how many browser should be started simultaneous
         concurrency: 1,
 
-        customLaunchers: {
-            'Travis_Chrome': {
-                base: 'Chrome',
-                flags: ['--no-sandbox']
-            }
-        },
-
-        sauceLabs: {
-            testName: 'Nimiq Core Tests',
-            startConnect: false,
-            tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
-            build: process.env.TRAVIS_BUILD_NUMBER,
-            tags: process.env.TRAVIS_BRANCH ? [process.env.TRAVIS_BRANCH, process.env.TRAVIS_PULL_REQUEST] : undefined
-        },
-
         browserNoActivityTimeout: 180000
     };
-
-    function sauceLabsConfig(platform, browserName, version, browserRead, versionRead) {
-        configuration.customLaunchers[`SL_${browserRead || browserName}_${versionRead || version}`] = {
-            base: 'SauceLabs',
-            browserName: browserName,
-            platform: platform,
-            version: version,
-            idleTimeout: configuration.browserNoActivityTimeout / 1000
-        };
-    }
-
-    // Safari
-    sauceLabsConfig('OS X 10.11', 'safari', '10.0', 'Safari');
-    sauceLabsConfig('macOS 10.12', 'safari', '10.1', 'Safari');
-    sauceLabsConfig('macOS 10.12', 'safari', '11.0', 'Safari', '11');
-
-    // Edge / Internet Explorer
-    sauceLabsConfig('Windows 7', 'internet explorer', '11.0', 'InternetExplorer', '11');
-    sauceLabsConfig('Windows 10', 'MicrosoftEdge', '14.14393', 'Edge', '14');
-    sauceLabsConfig('Windows 10', 'MicrosoftEdge', '15.15063', 'Edge', '15');
-    sauceLabsConfig('Windows 10', 'MicrosoftEdge', '16.16299', 'Edge', '16');
-    sauceLabsConfig('Windows 10', 'MicrosoftEdge', '18.17763', 'Edge', '18');
-
-    // Firefox
-    for (const version of [48, 52, 55, 56]) sauceLabsConfig('Windows 10', 'firefox', `${version}.0`, 'Firefox', version);
-
-    // Chrome
-    sauceLabsConfig('Windows 7', 'chrome', '56.0', 'Chrome', '56');
-    for (const version of [57, 58, 59, 60, 61, 62]) sauceLabsConfig('Windows 10', 'chrome', `${version}.0`, 'Chrome', version);
 
     if (process.env.USE_BABEL) {
         configuration.files[0] = 'dist/web-babel.js';
