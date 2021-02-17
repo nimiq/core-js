@@ -26,9 +26,28 @@ jobs:
       run: yarn lint
     - name: Lint Types
       run: yarn lint-types
-    - name: Build
-      run: yarn gulp build-web # build-node was already executed during Install step
     - name: Test Node
       run: yarn test-node
+
+  test_browser:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        browser: [ 'Chrome', 'Firefox' ]
+    name: Test on ${{ matrix.browser }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/yarn/
+        key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
+    - name: Install
+      run: yarn
+    - name: Build Browser
+      run: yarn gulp build-web
+    - run: sudo apt-get install xvfb
     - name: Test Browser
-      run: yarn test-browser
+      run: KARMA_BROWSERS=${{ matrix.browser }} xvfb-run --auto-servernum yarn test-browser
