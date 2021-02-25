@@ -356,7 +356,7 @@ class JsonRpcServer {
             transactionIndex: block ? block.transactions.findIndex(tx => tx.hash().toHex() === hash) : undefined,
             blockNumber: receipt.blockHeight,
             blockHash: receipt.blockHash.toHex(),
-            confirmations: (await this._client.getHeadHeight()) - receipt.blockHeight,
+            confirmations: (await this._client.getHeadHeight()) - receipt.blockHeight + 1,
             timestamp: block ? block.timestamp : undefined
         };
     }
