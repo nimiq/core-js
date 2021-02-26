@@ -743,7 +743,7 @@ class JsonRpcServer {
             accountsHash: block.accountsHash.toHex(),
             difficulty: block.difficulty,
             timestamp: block.timestamp,
-            confirmations: (await this._client.getHeadHeight()) - block.height
+            confirmations: (await this._client.getHeadHeight()) - block.height + 1
         };
         if (block.isFull()) {
             obj.miner = block.minerAddr.toHex();
