@@ -11,6 +11,7 @@
 /dist/web*
 /dist/node*
 /dist/doc/
+/dist/peer-key/
 .idea
 *.iml
 /database
