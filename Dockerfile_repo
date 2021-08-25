@@ -22,8 +22,8 @@ USER ${USER}
 # working directory (".").
 COPY --chown=nimiq:root . core
 
-# Build
-RUN cd core && yarn
+# Install & Build & Test
+RUN cd core && yarn --frozen-lockfile && yarn test-node
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim

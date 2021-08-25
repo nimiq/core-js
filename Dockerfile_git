@@ -24,8 +24,8 @@ ARG BRANCH=master
 # Clone
 RUN git clone --branch ${BRANCH} https://github.com/nimiq/core-js.git core
 
-# Build
-RUN cd core && yarn
+# Install & Build & Test
+RUN cd core && yarn --frozen-lockfile && yarn test-node
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim
