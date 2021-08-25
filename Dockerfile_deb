@@ -1,14 +1,17 @@
-FROM node:10-stretch
-
+#---------------------------- BUILD NIMIQ - BUILD ------------------------------
+FROM node:14-buster as builder
 # Get repo key and install it
 RUN wget -qO - https://www.nimiq.com/nimiq-signing-key.pub | apt-key add -
 
+#---------------------------- BUILD NIMIQ - NODE -------------------------------
+FROM node:14-buster-slim
+
 # Install the repo
+COPY --from=builder /etc/apt/trusted.gpg /etc/apt/
 RUN echo "deb [arch=amd64] http://repo.nimiq.com/deb stable main" > /etc/apt/sources.list.d/nimiq.list
 
-# Install dependencies
-RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y nimiq
+# Install nimiq
+RUN apt-get update && apt-get --no-install-recommends -y install nimiq && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
