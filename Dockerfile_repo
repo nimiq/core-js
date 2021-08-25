@@ -10,8 +10,8 @@ RUN useradd -m ${USER}
 
 # Create a working directory for the nimiq process
 ENV DATA_PATH=/nimiq
+ENV INSTALL_PATH=${DATA_PATH}/core
 RUN mkdir ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
-WORKDIR ${DATA_PATH}
 
 # Build environment as non-root user
 USER ${USER}
@@ -20,10 +20,12 @@ USER ${USER}
 # container. Assuming that this file is in its usual location within the
 # core repository, the build context can be simply set to the current
 # working directory (".").
-COPY --chown=nimiq:root . core
+COPY --chown=nimiq:root . ${INSTALL_PATH}
+WORKDIR ${INSTALL_PATH}/core
 
-# Install & Build & Test
-RUN cd core && yarn --frozen-lockfile && yarn test-node
+# Install, Build & Test
+RUN yarn --frozen-lockfile
+RUN yarn test-node
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim
@@ -34,14 +36,15 @@ RUN useradd -m ${USER}
 
 # Create a working directory for the nimiq process
 ENV DATA_PATH=/nimiq
+ENV INSTALL_PATH=${DATA_PATH}/core
 RUN mkdir ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
-WORKDIR ${DATA_PATH}
 
 # Execute client as non-root user
 USER ${USER}
 
 # Copy nimiq from builder
-COPY --from=builder /nimiq/core core
+COPY --from=builder --chown=nimiq:root ${INSTALL_PATH} ${INSTALL_PATH}
+WORKDIR ${INSTALL_PATH}
 
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:
@@ -52,4 +55,4 @@ COPY --from=builder /nimiq/core core
 #   current working directory)
 #     docker run nimiq/nodejs-client -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "./core/clients/nodejs/nimiq" ]
+ENTRYPOINT [ "./clients/nodejs/nimiq" ]
