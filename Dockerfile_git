@@ -20,9 +20,10 @@ USER ${USER}
 # One can override this using --build-arg when building the docker
 # image from this file.
 ARG BRANCH=master
+ARG REPO_URL=https://github.com/nimiq/core-js.git
 
 # Clone
-RUN git clone --branch ${BRANCH} https://github.com/nimiq/core-js.git ${INSTALL_PATH}
+RUN git clone --branch ${BRANCH} ${REPO_URL} ${INSTALL_PATH}
 WORKDIR ${INSTALL_PATH}/core
 
 # Install, Build & Test
