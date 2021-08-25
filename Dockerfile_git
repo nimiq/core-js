@@ -18,11 +18,10 @@ ARG REPO_URL
 ARG INSTALL_PATH
 
 # Create a working directory to build in
-RUN mkdir -p ${INSTALL_PATH}
+WORKDIR ${INSTALL_PATH}
 
 # Clone repo
 RUN git clone --branch ${BRANCH} ${REPO_URL} ${INSTALL_PATH}
-WORKDIR ${INSTALL_PATH}
 
 # Install, Build & Test
 RUN yarn --frozen-lockfile
