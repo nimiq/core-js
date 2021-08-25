@@ -22,7 +22,7 @@ USER ${USER}
 ARG BRANCH=master
 
 # Clone
-RUN git clone --branch ${BRANCH} https://github.com/nimiq/core-js.git core
+RUN git clone --branch ${BRANCH} https://github.com/nimiq/core-js.git ${INSTALL_PATH}
 WORKDIR ${INSTALL_PATH}/core
 
 # Install, Build & Test
