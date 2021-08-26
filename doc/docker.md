@@ -15,7 +15,7 @@ The Dockerfile tries to copy the entire *core* repository from the current build
 This container is specifically suited for development, since it will be created from the current repository state including any local changes.
 
 ## Building the Docker image
-```
+```bash
 docker build
   -t nimiq/nodejs-client
   -f docker/${DOCKERFILE}
@@ -29,7 +29,7 @@ You should replace ```${DOCKERFILE}``` with one of the Dockerfiles explained abo
 
 One can customize the created container easily to one's needs by (at least) the following options:
  - supply your own arguments to the entrypoint while creating the container, e.g.
-    ```
+    ```bash
       docker run
         nimiq/nodejs-client
         $ARG
@@ -38,7 +38,7 @@ One can customize the created container easily to one's needs by (at least) the 
  - just bind mount your own nimiq.conf to the container at /etc/nimiq/nimiq.conf
    then you can just create the container like (assuming the config is in the
    current working directory)
-    ```
+    ```bash
      docker run
        -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf
        nimiq/nodejs-client
@@ -46,17 +46,29 @@ One can customize the created container easily to one's needs by (at least) the 
     ```
  - (of course, you can combine and modify these options suitable to your needs)
 
-The -v flag allows for mapping a local system path into the container, i.e.
+The `-v` flag allows for mapping a local system path into the container, i.e.
 the nimiq.conf file in above example. You can also use this for the purpose
 of using your existing domain certificates.
 
-```
+```bash
 docker run
   -v /etc/letsencrypt:/etc/letsencrypt
   -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf
   nimiq/nodejs-client
   --cert=$CERT
   --key=$KEY
+  --config=/etc/nimiq/nimiq.conf
+```
+
+The `-v` flag also allows for mounting a named volume to the data directory.
+Named volumes are managed by docker and don't mess with your local filesystem.
+This way the data can be reused by different images and builds:
+
+```bash
+docker run
+  -v nimiq:/nimiq
+  -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf
+  nimiq/nodejs-client
   --config=/etc/nimiq/nimiq.conf
 ```
 
