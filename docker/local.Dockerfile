@@ -73,6 +73,9 @@ USER ${USER}
 WORKDIR ${DATA_PATH}
 ENV INSTALL_PATH=${INSTALL_PATH}
 
+# Documentation
+EXPOSE 8648 8649
+
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:
 # - supply your own arguments to the entrypoint while creating the container, e.g.

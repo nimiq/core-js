@@ -24,6 +24,9 @@ WORKDIR ${DATA_PATH}
 # Execute client as non-root user
 USER ${USER}
 
+# Documentation
+EXPOSE 8648 8649
+
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:
 # - supply your own arguments to the entrypoint while creating the container, e.g.
