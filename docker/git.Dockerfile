@@ -1,27 +1,32 @@
+
+# Build from master branch by default.
 # One can override this using --build-arg when building the docker image from this file.
+ARG REPO_URL=https://github.com/nimiq/core-js.git
+ARG BRANCH=master
 ARG DATA_PATH=/nimiq
-ARG INSTALL_PATH=/nimiq/core
+ARG INSTALL_PATH=/nimiq-core
 
 #---------------------------- BUILD NIMIQ - BUILD ------------------------------
 FROM node:14-buster as builder
 
 # Install build dependencies
-RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get --no-install-recommends -y install build-essential git-core && rm -rf /var/lib/apt/lists/*
 
 # We need build args now
+ARG BRANCH
+ARG REPO_URL
 ARG INSTALL_PATH
 
 # Create a working directory to build in
 WORKDIR ${INSTALL_PATH}
 
-# Try to copy the repository from the current build context into the
-# container. Assuming that this file is in its usual location within the
-# core repository, the build context can be simply set to the current
-# working directory (".").
-COPY . .
+# Clone repo
+RUN git clone --branch ${BRANCH} ${REPO_URL} ${INSTALL_PATH}
 
 # Install, Build & Test
 RUN yarn --frozen-lockfile
+RUN yarn lint
+RUN yarn lint-types
 RUN yarn test-node
 
 #---------------------------- BUILD NIMIQ - DEPS -------------------------------
@@ -35,7 +40,7 @@ WORKDIR ${INSTALL_PATH}
 RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
 
 # Copy files for yarn
-COPY package.json yarn.lock ./
+COPY --from=builder ${INSTALL_PATH}/package.json ${INSTALL_PATH}/yarn.lock ./
 
 # Install and build production dependencies
 RUN yarn install --production --frozen-lockfile
@@ -51,7 +56,7 @@ RUN useradd -m ${USER}
 ARG DATA_PATH
 RUN mkdir -p ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
 ARG INSTALL_PATH
-RUN mkdir -p ${INSTALL_PATH} && chown ${USER}:root ${DATA_PATH}
+RUN mkdir -p ${INSTALL_PATH} && chown ${USER}:root ${INSTALL_PATH}
 
 # Copy production dependencies from installer and built files from builder
 WORKDIR ${INSTALL_PATH}
@@ -65,7 +70,8 @@ COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/doc ./doc
 
 # Execute client as non-root user
 USER ${USER}
-WORKDIR ${INSTALL_PATH}
+WORKDIR ${DATA_PATH}
+ENV INSTALL_PATH=${INSTALL_PATH}
 
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:
@@ -76,4 +82,4 @@ WORKDIR ${INSTALL_PATH}
 #   current working directory)
 #     docker run nimiq/nodejs-client -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "./clients/nodejs/nimiq" ]
+ENTRYPOINT [ "/bin/sh", "-c", "${INSTALL_PATH}/clients/nodejs/nimiq ${@}", "--" ]

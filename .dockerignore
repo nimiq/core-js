@@ -34,4 +34,4 @@ packaging/BUILD/package.json
 packaging/BUILD/node-ui/
 packaging/npm/*
 !packaging/npm/README.md
-Dockerfile*
+/docker
