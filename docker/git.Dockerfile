@@ -48,9 +48,12 @@ RUN yarn install --production --frozen-lockfile
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim
 
+# Install tini - a tiny init for containers
+RUN apt-get update && apt-get --no-install-recommends -y install tini && rm -rf /var/lib/apt/lists/*
+
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
-RUN useradd -m ${USER}
+RUN groupadd -r ${USER} && useradd -r -g ${USER} -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
 
 # Create working and data directories for the nimiq process
 ARG DATA_PATH
@@ -80,6 +83,6 @@ ENV INSTALL_PATH=${INSTALL_PATH}
 # - just bind mount your own nimiq.conf to the container at /etc/nimiq/nimiq.conf
 #   then you can just create the container like (assuming the config is in the
 #   current working directory)
-#     docker run nimiq/nodejs-client -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf --config=/etc/nimiq.conf
+#     docker run -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf nimiq/nodejs-client --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "/bin/sh", "-c", "${INSTALL_PATH}/clients/nodejs/nimiq ${@}", "--" ]
+ENTRYPOINT [ "/usr/bin/tini", "--", "sh", "-c", "${INSTALL_PATH}/clients/nodejs/nimiq ${@}", "--"  ]

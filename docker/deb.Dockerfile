@@ -10,8 +10,8 @@ FROM node:14-buster-slim
 COPY --from=builder /etc/apt/trusted.gpg /etc/apt/
 RUN echo "deb [arch=amd64] http://repo.nimiq.com/deb stable main" > /etc/apt/sources.list.d/nimiq.list
 
-# Install nimiq
-RUN apt-get update && apt-get --no-install-recommends -y install nimiq && rm -rf /var/lib/apt/lists/*
+# Install nimiq and tini
+RUN apt-get update && apt-get --no-install-recommends -y install nimiq tini && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
@@ -31,6 +31,6 @@ USER ${USER}
 # - just bind mount your own nimiq.conf to the container at /etc/nimiq/nimiq.conf
 #   then you can just create the container like (assuming the config is in the
 #   current working directory)
-#     docker run nimiq/nodejs-client -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf --config=/etc/nimiq.conf
+#     docker run -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf nimiq/nodejs-client --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "/usr/bin/nimiq" ]
+ENTRYPOINT [ "/usr/bin/tini", "--", "/usr/bin/nimiq" ]
