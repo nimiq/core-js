@@ -1,3 +1,5 @@
+ARG DATA_PATH=/nimiq
+
 #---------------------------- BUILD NIMIQ - BUILD ------------------------------
 FROM node:14-buster as builder
 # Get repo key and install it
@@ -16,16 +18,17 @@ RUN apt-get update && apt-get --no-install-recommends -y install nimiq tini && r
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
 
-# Create a working directory for the nimiq process
-ENV DATA_PATH=/nimiq
-RUN mkdir ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
+# Create data directory for the nimiq process
+ARG DATA_PATH
+RUN mkdir -p ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
+VOLUME ${DATA_PATH}
 WORKDIR ${DATA_PATH}
 
 # Execute client as non-root user
 USER ${USER}
 
 # Documentation
-EXPOSE 8648 8649
+EXPOSE 8443 8648 8649
 
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:

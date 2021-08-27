@@ -1,6 +1,5 @@
 # One can override this using --build-arg when building the docker image from this file.
 ARG DATA_PATH=/nimiq
-ARG INSTALL_PATH=/nimiq-core
 
 #---------------------------- BUILD NIMIQ - BUILD ------------------------------
 FROM node:14-buster as builder
@@ -8,11 +7,8 @@ FROM node:14-buster as builder
 # Install build dependencies
 RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
 
-# We need build args now
-ARG INSTALL_PATH
-
-# Create a working directory to build in
-WORKDIR ${INSTALL_PATH}
+# Create build directory
+WORKDIR /build
 
 # Try to copy the repository from the current build context into the
 # container. Assuming that this file is in its usual location within the
@@ -29,9 +25,8 @@ RUN yarn test-node
 #---------------------------- BUILD NIMIQ - DEPS -------------------------------
 FROM node:14-buster as installer
 
-# Set working directory to install production dependencies in
-ARG INSTALL_PATH
-WORKDIR ${INSTALL_PATH}
+# Create build directory
+WORKDIR /build
 
 # Install build dependencies
 RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
@@ -52,29 +47,26 @@ RUN apt-get update && apt-get --no-install-recommends -y install tini && rm -rf 
 ENV USER=nimiq
 RUN groupadd -r ${USER} && useradd -r -g ${USER} -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
 
-# Create working and data directories for the nimiq process
+# Create data directory for the nimiq process
 ARG DATA_PATH
 RUN mkdir -p ${DATA_PATH} && chown ${USER}:root ${DATA_PATH}
-ARG INSTALL_PATH
-RUN mkdir -p ${INSTALL_PATH} && chown ${USER}:root ${INSTALL_PATH}
+VOLUME ${DATA_PATH}
+WORKDIR ${DATA_PATH}
 
 # Copy production dependencies from installer and built files from builder
-WORKDIR ${INSTALL_PATH}
-COPY --from=installer --chown=nimiq:root ${INSTALL_PATH}/package.json ${INSTALL_PATH}/yarn.lock ./
-COPY --from=installer --chown=nimiq:root ${INSTALL_PATH}/node_modules ./node_modules
-COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/*.md ./
-COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/build ./build
-COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/clients ./clients
-COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/dist ./dist
-COPY --from=builder --chown=nimiq:root ${INSTALL_PATH}/doc ./doc
+COPY --from=installer /build/package.json /build/yarn.lock  /usr/share/nimiq/
+COPY --from=installer /build/node_modules                   /usr/share/nimiq/node_modules
+COPY --from=builder   /build/*.md                           /usr/share/nimiq/
+COPY --from=builder   /build/build                          /usr/share/nimiq/build
+COPY --from=builder   /build/clients                        /usr/share/nimiq/clients
+COPY --from=builder   /build/dist                           /usr/share/nimiq/dist
+COPY --from=builder   /build/doc                            /usr/share/nimiq/doc
 
 # Execute client as non-root user
 USER ${USER}
-WORKDIR ${DATA_PATH}
-ENV INSTALL_PATH=${INSTALL_PATH}
 
 # Documentation
-EXPOSE 8648 8649
+EXPOSE 8443 8648 8649
 
 # Just execute the nimiq process. One can customize the created container easily
 # to one's needs by (at least) the following options:
@@ -85,4 +77,4 @@ EXPOSE 8648 8649
 #   current working directory)
 #     docker run -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf nimiq/nodejs-client --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "/usr/bin/tini", "--", "sh", "-c", "${INSTALL_PATH}/clients/nodejs/nimiq ${@}", "--"  ]
+ENTRYPOINT [ "/usr/bin/tini", "--", "/usr/share/nimiq/clients/nodejs/nimiq"  ]
