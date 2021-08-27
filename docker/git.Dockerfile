@@ -80,4 +80,4 @@ EXPOSE 8443 8648 8649
 #   current working directory)
 #     docker run -v $(pwd)/nimiq.conf:/etc/nimiq/nimiq.conf nimiq/nodejs-client --config=/etc/nimiq.conf
 # (- of course, you can combine and modify these options suitable to your needs)
-ENTRYPOINT [ "/usr/bin/tini", "--", "/usr/share/nimiq/clients/nodejs/nimiq"  ]
+ENTRYPOINT [ "/usr/bin/tini", "--", "/usr/share/nimiq/clients/nodejs/nimiq" ]
