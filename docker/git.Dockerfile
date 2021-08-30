@@ -36,9 +36,10 @@ RUN apt-get update && apt-get --no-install-recommends -y install build-essential
 
 # Copy files for yarn
 COPY --from=builder /build/package.json /build/yarn.lock ./
+COPY --from=builder /usr/local/share/.cache/yarn /usr/local/share/.cache/yarn
 
 # Install and build production dependencies
-RUN yarn install --production --frozen-lockfile
+RUN yarn install --production --frozen-lockfile --offline
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim
@@ -48,7 +49,7 @@ RUN apt-get update && apt-get --no-install-recommends -y install tini && rm -rf 
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
-RUN groupadd -r ${USER} && useradd -r -g ${USER} -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
+RUN groupadd -r -g 999 ${USER} && useradd -r -g ${USER} -u 999 -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
 
 # Create data directory for the nimiq process
 ARG DATA_PATH
