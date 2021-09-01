@@ -13,7 +13,9 @@ COPY --from=builder /etc/apt/trusted.gpg /etc/apt/
 RUN echo "deb [arch=amd64] http://repo.nimiq.com/deb stable main" > /etc/apt/sources.list.d/nimiq.list
 
 # Install nimiq and tini
-RUN apt-get update && apt-get --no-install-recommends -y install nimiq tini && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get --no-install-recommends -y install nimiq tini \
+    && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq

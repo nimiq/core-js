@@ -1,6 +1,6 @@
 # Docker
 
-The following Dockerfile(s) allow for creating simple Node.js client images. All of them are located in the ```docker``` directory. Depending on the desired build method and source origin, one can choose between the following Dockerfile(s):
+The following Dockerfile(s) allow for creating simple Node.js client images. All of them are located in the ```docker``` directory. The development files (git and local) require BuildKit. Depending on the desired build method and source origin, one can choose between the following Dockerfile(s):
 
 * **deb.Dockerfile**
 The Dockerfile will create a container which uses Node.js client from the latest stable Nimiq DEB package. 
@@ -16,6 +16,7 @@ This container is specifically suited for development, since it will be created 
 
 ## Building the Docker image
 ```bash
+export DOCKER_BUILDKIT=1    # required by {git,local}.Dockerfile
 docker build
   -t nimiq/nodejs-client
   -f docker/${DOCKERFILE}

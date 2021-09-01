@@ -1,11 +1,15 @@
+# syntax=docker/dockerfile:1.2
+
 # One can override this using --build-arg when building the docker image from this file.
 ARG DATA_PATH=/nimiq
 
-#---------------------------- BUILD NIMIQ - BUILD ------------------------------
-FROM node:14-buster as builder
+#---------------------------- BUILD NIMIQ - BASE -------------------------------
+FROM node:14-buster as base
 
 # Install build dependencies
-RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get --no-install-recommends -y install build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create build directory
 WORKDIR /build
@@ -16,37 +20,35 @@ WORKDIR /build
 # working directory (".").
 COPY . .
 
+#---------------------------- BUILD NIMIQ - BUILD ------------------------------
+FROM base as builder
+
 # Install, Build & Test
-RUN yarn --frozen-lockfile
+RUN --mount=type=cache,sharing=locked,target=/usr/local/share/.cache/yarn \
+    yarn --frozen-lockfile
 RUN yarn lint
 RUN yarn lint-types
 RUN yarn test-node
 
 #---------------------------- BUILD NIMIQ - DEPS -------------------------------
-FROM node:14-buster as installer
-
-# Create build directory
-WORKDIR /build
-
-# Install build dependencies
-RUN apt-get update && apt-get --no-install-recommends -y install build-essential && rm -rf /var/lib/apt/lists/*
-
-# Copy files for yarn
-COPY package.json yarn.lock ./
-COPY --from=builder /usr/local/share/.cache/yarn /usr/local/share/.cache/yarn
+FROM base as installer
 
 # Install and build production dependencies
-RUN yarn install --production --frozen-lockfile --offline
+RUN --mount=type=cache,sharing=locked,target=/usr/local/share/.cache/yarn \
+    yarn install --frozen-lockfile --production
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
 FROM node:14-buster-slim
 
 # Install tini - a tiny init for containers
-RUN apt-get update && apt-get --no-install-recommends -y install tini && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get --no-install-recommends -y install tini \
+    && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?
 ENV USER=nimiq
-RUN groupadd -r -g 999 ${USER} && useradd -r -g ${USER} -u 999 -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
+RUN groupadd -r -g 999 ${USER} \
+    && useradd -r -g ${USER} -u 999 -s /sbin/nologin -c "User with restricted privileges for Nimiq daemon" ${USER}
 
 # Create data directory for the nimiq process
 ARG DATA_PATH
