@@ -24,6 +24,17 @@ describe('SortedList', () => {
         expect(s.values()).toEqual([2,3,4,4,5,6,8]);
     });
 
+    it('correctly inserts elements (2)', () => {
+        let s = new SortedList([1,2,3,4]);
+
+        s.add(2);
+        expect(s.values()).toEqual([1,2,2,3,4]);
+
+        s = new SortedList([1,2,3,4]);
+        s.add(4);
+        expect(s.values()).toEqual([1,2,3,4,4]);
+    });
+
     it('can clear itself', () => {
         const s = new SortedList();
 
@@ -37,7 +48,7 @@ describe('SortedList', () => {
     });
 
     it('can indexOf', () => {
-        const s = new SortedList();
+        let s = new SortedList();
 
         s.add(3);
         s.add(1);
@@ -45,6 +56,12 @@ describe('SortedList', () => {
         expect(s.indexOf(3)).toBe(1);
         expect(s.indexOf(1)).toBe(0);
         expect(s.indexOf(2)).toBe(-1);
+
+        s = new SortedList([1,2,2,3,4,5]);
+
+        expect(s.indexOf(2)).toBe(1);
+        expect(s.indexOf(3)).toBe(3);
+        expect(s.indexOf(5)).toBe(5);
     });
 
     it('can shift', () => {
