@@ -5,6 +5,7 @@
 ARG REPO_URL=https://github.com/nimiq/core-js.git
 ARG BRANCH=master
 ARG DATA_PATH=/nimiq
+ARG PACKAGING=1
 
 #---------------------------- BUILD NIMIQ - BASE -------------------------------
 FROM node:14-buster as base
@@ -26,6 +27,7 @@ RUN git clone --branch ${BRANCH} ${REPO_URL} /build
 FROM base as builder
 
 # Install, Build & Test
+ARG PACKAGING
 RUN --mount=type=cache,sharing=locked,target=/usr/local/share/.cache/yarn \
     yarn --frozen-lockfile
 RUN yarn lint
@@ -36,6 +38,7 @@ RUN yarn test-node
 FROM base as installer
 
 # Install and build production dependencies
+ARG PACKAGING
 RUN --mount=type=cache,sharing=locked,target=/usr/local/share/.cache/yarn \
     yarn install --frozen-lockfile --production
 
