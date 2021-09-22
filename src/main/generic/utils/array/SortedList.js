@@ -14,7 +14,7 @@ class SortedList {
         let currentElement = null;
 
         while (a <= b) {
-            currentIndex = Math.round((a + b) / 2);
+            currentIndex = Math.floor((a + b) / 2);
             currentElement = this._list[currentIndex];
 
             if (this._compare(currentElement, o) < 0) {
@@ -24,6 +24,11 @@ class SortedList {
                 b = currentIndex - 1;
             }
             else {
+                // Might not be the first occurence though!
+                // Iterate back to find first.
+                while (currentIndex > 0 && this._compare(this._list[currentIndex - 1], o) == 0) {
+                    currentIndex--;
+                }
                 return currentIndex;
             }
         }
@@ -37,7 +42,7 @@ class SortedList {
         let currentElement = null;
 
         while (a <= b) {
-            currentIndex = Math.round((a + b) / 2);
+            currentIndex = Math.floor((a + b) / 2);
             currentElement = this._list[currentIndex];
 
             if (this._compare(currentElement, o) < 0) {
@@ -47,11 +52,11 @@ class SortedList {
                 b = currentIndex - 1;
             }
             else {
-                break;
+                return currentIndex;
             }
         }
 
-        return a;
+        return b + 1;
     }
 
     add(value) {
