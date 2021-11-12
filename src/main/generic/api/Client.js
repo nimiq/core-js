@@ -853,7 +853,6 @@ class Client {
                 return new Client.TransactionDetails(tx, Client.TransactionState.INVALIDATED);
             case BaseConsensus.SendTransactionResult.KNOWN:
             case BaseConsensus.SendTransactionResult.RELAYED:
-            case BaseConsensus.SendTransactionResult.PENDING_LOCAL:
                 return new Client.TransactionDetails(tx, Client.TransactionState.PENDING);
             case BaseConsensus.SendTransactionResult.ALREADY_MINED:
                 return this.getTransaction(tx.hash());
