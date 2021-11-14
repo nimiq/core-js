@@ -50,6 +50,7 @@ export class Client {
     public mempool: Client.Mempool;
     public _consensusState: Client.ConsensusState;
     constructor(config: Client.Configuration | object, consensus?: Promise<BaseConsensus>);
+    public resetConsensus(): Promise<void>;
     public getHeadHash(): Promise<Hash>;
     public getHeadHeight(): Promise<number>;
     public getHeadBlock(includeBody?: boolean): Promise<Block>;
