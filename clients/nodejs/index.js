@@ -7,12 +7,6 @@ const MetricsServer = require('./modules/MetricsServer.js');
 const config = require('./modules/Config.js')(argv);
 const openBrowserTab = require('./modules/NodeUtils.js').openBrowserTab;
 
-// Deprecated dumb config flag.
-if (config.dumb) {
-    console.error(`The '--dumb' flag is deprecated, use '--protocol=dumb' instead.`);
-    config.protocol = 'dumb';
-}
-
 if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && config.tls.cert && config.tls.key)) ||
     (config.protocol === 'ws' && !(config.host && config.port)) ||
     argv.help) {
@@ -39,22 +33,22 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '  --key=SSL_KEY_FILE         Private key file to use.\n' +
         '  --port=PORT                Specifies which port to listen on for connections.\n' +
         '  --protocol=TYPE            Set up the protocol to be used. Available protocols are\n' +
-        '                              - wss: WebSocket Secure, requires a FQDN, port,\n' +
-        '                                     and SSL certificate\n' +
+        '                              - wss (default): WebSocket Secure, requires a FQDN, port,\n' +
+        '                                    and SSL certificate\n' +
         '                              - ws: WebSocket, only requires public IP/FQDN and port\n' +
         '                              - dumb: discouraged as the number of dumb nodes might\n' +
-        '                                      be limited\n' +
+        '                                    be limited\n' +
         '\n' +
         'Options:\n' +
         '  --help                     Show this usage instructions.\n' +
         '  --log[=LEVEL]              Configure global log level. Not specifying a log\n' +
         '                             level will enable verbose log output.\n' +
-        '  --log-tag=TAG[:LEVEL]      Configure log level for a specific tag.\n' +
         '  --miner[=THREADS]          Activate mining on this node. The miner will be set\n' +
         '                             up to use THREADS parallel threads.\n' +
         '  --pool=SERVER:PORT         Mine shares for mining pool with address SERVER:PORT\n' +
         '  --device-data=DATA_JSON    Pass information about this device to the pool. Takes a\n' +
-        '                             valid JSON string. Only used when registering for a pool.\n' +
+        '                             valid JSON string, the format of which is defined by the\n' +
+        '                             pool operator. Only used when registering for a pool.\n' +
         '  --passive                  Do not actively connect to the network and do not\n' +
         '                             wait for connection establishment.\n' +
         '  --rpc[=PORT]               Start JSON-RPC server on port PORT (default: 8648).\n' +
@@ -62,12 +56,13 @@ if ((config.protocol === 'wss' && !(config.host && config.port && config.tls && 
         '           [:PASSWORD]       PORT (default: 8649). If PASSWORD is specified, it\n' +
         '                             is required to be used for username "metrics" via\n' +
         '                             Basic Authentication.\n' +
-        '  --ui[=PORT]                Serve a miner UI on port PORT (default: 8650).\n' +
+        '  --ui[=PORT]                Serve a UI on port PORT (default: 8650).\n' +
+        '                             The UI will be reachable at localhost:PORT.\n' +
         '  --statistics[=INTERVAL]    Output statistics like mining hashrate, current\n' +
         '                             account balance and mempool size every INTERVAL\n' +
         '                             seconds.\n' +
         '  --type=TYPE                Configure the consensus type to establish, one of\n' +
-        '                             full (default), light, or nano.\n' +
+        '                             full (default), light, nano or pico.\n' +
         '  --volatile                 Run in volatile mode. Consensus state is kept\n' +
         '                             in memory only and not written to disk.\n' +
         '  --reverse-proxy[=PORT]     This client is behind a reverse proxy running on PORT,IP\n' +

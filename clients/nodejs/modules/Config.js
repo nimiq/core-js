@@ -17,8 +17,8 @@ const TAG = 'Config';
  * @property {boolean} passive
  * @property {number} statistics
  * @property {{enabled: boolean, threads: string|number, throttleAfter: number, throttleWait: number, extraData: string}} miner
- * @property {{enabled: boolean, host: string, port: number, mode: string}} poolMining
- * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>, allowip: string|Array.<string>, username: string, password: string}} rpcServer
+ * @property {{enabled: boolean, host: string, port: number, mode: string, deviceData: object}} poolMining
+ * @property {{enabled: boolean, port: number, corsdomain: string|Array.<string>, allowip: string|Array.<string>, methods: Array.<string>, username: string, password: string}} rpcServer
  * @property {{enabled: boolean, port: number}} uiServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
@@ -106,7 +106,7 @@ const CONFIG_TYPES = {
     dumb: 'boolean', // deprecated
     type: {type: 'string', values: ['full', 'light', 'nano', 'pico']},
     volatile: 'boolean',
-    network: 'string',
+    network: {type: 'string', values: ['main', 'test', 'dev']},
     passive: 'boolean',
     statistics: 'number',
     miner: {
@@ -287,7 +287,14 @@ function readFromFile(file, oldConfig = merge({}, DEFAULT_CONFIG)) {
             return false;
         } else {
             config = merge(oldConfig, config);
+            if (config.dumb) {
+                Log.e('The \'dumb\' flag is deprecated, use \'protocol: "dumb"\' instead.');
+                config.protocol = 'dumb';
+            }
             if (config.reverseProxy.address && config.reverseProxy.addresses.length === 0) {
+                if (config.reverseProxy.address !== DEFAULT_CONFIG.reverseProxy.address) {
+                    Log.e('The \'address\' option for \'reverseProxy\' is deprecated, use \'addresses\' instead.');
+                }
                 config.reverseProxy.addresses.push(config.reverseProxy.address);
             }
             return config;
@@ -315,7 +322,10 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     if (typeof argv.cert === 'string') config.tls.cert = argv.cert;
     if (typeof argv.key === 'string') config.tls.key = argv.key;
     if (typeof argv.protocol === 'string') config.protocol = argv.protocol;
-    if (argv.dumb) config.dumb = argv.dumb; // deprecated
+    if (argv.dumb) {
+        Log.e('The \'--dumb\' flag is deprecated, use \'--protocol=dumb\' instead.');
+        config.protocol = 'dumb';
+    }
     if (typeof argv.type === 'string') config.type = argv.type;
     if (argv.volatile) config.volatile = argv.volatile;
     if (typeof argv.network === 'string') config.network = argv.network;
@@ -378,8 +388,10 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     }
     if (argv.log || argv.verbose) {
         config.log.level = 'verbose';
-        if (typeof argv.log === 'number') config.log.level = argv.log;
         if (typeof argv.log === 'string') config.log.level = argv.log;
+        if (argv.verbose) {
+            Log.e('The \'--verbose\' flag is deprecated, use \'--log\' instead.');
+        }
     }
 
     if (!validateObjectType(config)) {
