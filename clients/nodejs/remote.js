@@ -3,12 +3,13 @@ const Nimiq = require('../../dist/node.js');
 const chalk = require('chalk');
 const btoa = require('btoa');
 const readline = require('readline');
-const argv = require('minimist')(process.argv.slice(2));
+const argv = require('minimist')(process.argv.slice(2), { boolean: ['silent'] });
 
 let host = '127.0.0.1';
 let port = 8648;
 let user = null;
 let password = null;
+const silent = !!argv.silent;
 if (argv.host) host = argv.host;
 if (argv.port) port = parseInt(argv.port);
 if (argv.user) {
@@ -392,7 +393,7 @@ async function action(args, rl) {
     switch (args[0]) {
         // Miner
         case 'mining': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader();
             }
             const enabled = await jsonRpcFetch('mining');
@@ -463,7 +464,7 @@ async function action(args, rl) {
         }
         // Accounts
         case 'accounts': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(68);
             }
             const accounts = await jsonRpcFetch('accounts');
@@ -492,7 +493,7 @@ async function action(args, rl) {
             return;
         }
         case 'account': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(81);
             }
             if (args.length === 2) {
@@ -512,7 +513,7 @@ async function action(args, rl) {
         }
         // Blocks
         case 'block': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -542,7 +543,7 @@ async function action(args, rl) {
         }
         // Transactions
         case 'transaction': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(79);
             }
             if (args.length === 2) {
@@ -577,7 +578,7 @@ async function action(args, rl) {
             return;
         }
         case 'transaction.send': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(74);
             }
             if (args.length < 5 || args.length > 6) {
@@ -608,7 +609,7 @@ async function action(args, rl) {
             return;
         }
         case 'transaction.receipt': {
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(74);
             }
             if (args.length !== 2) {
@@ -639,7 +640,7 @@ async function action(args, rl) {
                 console.error('Specify account address');
                 return;
             }
-            if (!rl && !argv.silent) {
+            if (!rl && !silent) {
                 await displayInfoHeader(75);
             }
             const transactions = (await jsonRpcFetch('getTransactionsByAddress', args[1], args[2])).sort((a, b) => a.timestamp > b.timestamp);
