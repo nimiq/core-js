@@ -769,22 +769,22 @@ async function action(args, rl) {
             return;
         }
         case 'log': {
-            if (args.length < 2) {
-                args.push('verbose');
-            }
-            if (args.length < 3) {
-                args.splice(1, 0, '*');
-            }
             if (args.length > 3) {
                 console.error('Too many args');
                 return;
             }
-            args[2] = Nimiq.Log.Level.toString(Nimiq.Log.Level.get(args[2]));
-            JSON.stringify(await jsonRpcFetch('log', args[1], args[2]));
-            if (args[1] === '*') {
-                console.log(`Global log level set to ${args[2]}`);
+            let level = args[2] || (args[1] && Nimiq.Log.Level.get(args[1])
+                ? args[1] // user provided a single parameter which was the log level
+                : 'verbose');
+            const tag = args.length < 2 || args[1] === level
+                ? '*' // no tag provided
+                : args[1];
+            level = Nimiq.Log.Level.toString(Nimiq.Log.Level.get(level)); // normalize as string
+            await jsonRpcFetch('log', tag, level);
+            if (tag === '*') {
+                console.log(`Global log level set to ${level}`);
             } else {
-                console.log(`Log level for tag ${args[1]} set to ${args[2]}`);
+                console.log(`Log level for tag ${tag} set to ${level}`);
             }
             return;
         }
