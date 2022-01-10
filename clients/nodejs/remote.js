@@ -808,24 +808,27 @@ Options:
                             Defaults to 8648.
     --user USER             Use basic authentication with username USER.
                             The password will be prompted for.
+    --silent                Mute display of info headers in non-interactive
+                            mode.
 
 `);
             }
             console.log(`Actions:
+    help                    Display this help.
     account ADDR            Display details for account with address ADDR.
     accounts                List local accounts.
     accounts.create         Create a new Nimiq Account and store it in the
                             WalletStore of the Nimiq node.
     block BLOCK             Display details of block BLOCK.
     constant CONST [VAL]    Display value of constant CONST. If VAL is given,
-                            overrides constant const with value VAL.
+                            overrides constant CONST with value VAL.
     consensus.min_fee_per_byte [FEE]
                             Read or change the current min fee per byte setting.
-    help                    Display this help.
-    log [LEVEL] [TAG]       Set the log level for TAG to LEVEL. If LEVEL is
+    log [TAG] [LEVEL]       Set the log level for TAG to LEVEL. If LEVEL is
                             omitted, 'verbose' is assumed. If TAG is omitted,
                             '*' is assumed.
-    mining                  Display information on current mining settings.
+    mining                  Display information on current mining settings
+                            and state.
     mining.enabled [VAL]    Read or change enabled state of miner.
     mining.threads [VAL]    Read or change number of threads of miner.
     mining.hashrate         Read the current hashrate of miner.
@@ -857,15 +860,20 @@ Options:
                             properties. The sending account must be a local
                             account.
     transactions ADDR [LIMIT]
-                            Display at most LIMIT transactions involving address ADDR.
-    
+                            Display at most LIMIT transactions involving address
+                            ADDR.
+
 
 Most actions support output either in human-readable text form (default) or as
 JSON by appending '.json' to the action name. Addresses may be given in user-
 friendly address format, hex or base64 encoded. Blocks can be specified by hash
-in hex or base64 format or by the height on the main chain. Transactions are
-understood in hex or base64 format of their hash. Peers may be given as their
-peer id in hex or peer address.`);
+in hex or base64 format, by the height on the main chain, as 'latest' or as
+offset X from the latest block via 'latest-X'. Transactions are understood in
+hex or base64 format of their hash. Peers may be given as their peer id in hex
+or peer address.
+
+Some features might not be available, depending on the consensus type your
+network node is using.`);
     }
 }
 
@@ -883,7 +891,7 @@ function main(args) {
                         'mining.pool', 'peer', 'peer.json', 'peers', 'peers.json', 'transaction', 'transaction.json',
                         'transaction.receipt', 'transaction.receipt.json', 'transaction.send', 'transactions',
                         'transactions.json', 'mempool', 'mempool.content', 'mempool.content.json',
-                        'consensus.min_fee_per_byte', 'log', 'help'];
+                        'consensus.min_fee_per_byte', 'log', 'help', 'exit'];
                     const hits = completions.filter((c) => c.startsWith(line));
                     callback(null, [hits.length ? hits : completions, line]);
                 } else {
