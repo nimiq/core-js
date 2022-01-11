@@ -288,12 +288,12 @@ function readFromFile(file, oldConfig = merge({}, DEFAULT_CONFIG)) {
         } else {
             config = merge(oldConfig, config);
             if (config.dumb) {
-                Log.e('The \'dumb\' flag is deprecated, use \'protocol: "dumb"\' instead.');
+                Log.w('The \'dumb\' flag is deprecated, use \'protocol: "dumb"\' instead.');
                 config.protocol = 'dumb';
             }
             if (config.reverseProxy.address && config.reverseProxy.addresses.length === 0) {
                 if (config.reverseProxy.address !== DEFAULT_CONFIG.reverseProxy.address) {
-                    Log.e('The \'address\' option for \'reverseProxy\' is deprecated, use \'addresses\' instead.');
+                    Log.w('The \'address\' option for \'reverseProxy\' is deprecated, use \'addresses\' instead.');
                 }
                 config.reverseProxy.addresses.push(config.reverseProxy.address);
             }
@@ -323,7 +323,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
     if (typeof argv.key === 'string') config.tls.key = argv.key;
     if (typeof argv.protocol === 'string') config.protocol = argv.protocol;
     if (argv.dumb) {
-        Log.e('The \'--dumb\' flag is deprecated, use \'--protocol=dumb\' instead.');
+        Log.w('The \'--dumb\' flag is deprecated, use \'--protocol=dumb\' instead.');
         config.protocol = 'dumb';
     }
     if (typeof argv.type === 'string') config.type = argv.type;
@@ -390,7 +390,7 @@ function readFromArgs(argv, config = merge({}, DEFAULT_CONFIG)) {
         config.log.level = 'verbose';
         if (typeof argv.log === 'string') config.log.level = argv.log;
         if (argv.verbose) {
-            Log.e('The \'--verbose\' flag is deprecated, use \'--log\' instead.');
+            Log.w('The \'--verbose\' flag is deprecated, use \'--log\' instead.');
         }
     }
 
