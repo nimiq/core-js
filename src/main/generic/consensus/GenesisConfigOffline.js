@@ -37,6 +37,32 @@ class GenesisConfig {
         if (!GenesisConfig._config) throw new Error('GenesisConfig not initialized');
         return GenesisConfig._config.NETWORK_NAME;
     }
+
+    /**
+     * @param {number} networkId
+     * @return {string}
+     */
+    static networkIdToNetworkName(networkId) {
+        for (const key of Object.keys(GenesisConfig.CONFIGS)) {
+            const config = GenesisConfig.CONFIGS[key];
+            if (networkId === config.NETWORK_ID) {
+                return config.NETWORK_NAME;
+            }
+        }
+        throw new Error(`Unable to find networkName for networkId ${networkId}`);
+    }
+
+    /**
+     * @param {number|string} networkId
+     * @return {number}
+     */
+    static networkIdFromAny(networkId) {
+        if (typeof networkId === 'number') return networkId;
+        if (GenesisConfig.CONFIGS[networkId]) {
+            return GenesisConfig.CONFIGS[networkId].NETWORK_ID;
+        }
+        throw new Error(`Unable to find networkId for ${networkId}`);
+    }
 }
 Class.register(GenesisConfig);
 
