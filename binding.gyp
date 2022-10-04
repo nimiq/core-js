@@ -28,6 +28,8 @@
                     'conditions': [
                         ["target_arch=='x64'", {"sources": ["src/native/opt.c"]}],
                         ["target_arch!='x64'", {"sources": ["src/native/ref.c"]}],
+                        ["OS=='mac' and target_arch=='arm64'", {"xcode_settings": {"OTHER_CFLAGS": ["-march=armv8.5-a"]} }],
+                        ["OS=='mac' and target_arch!='arm64'", {"xcode_settings": {"OTHER_CFLAGS": ["-march=native"]} }],
                     ],
                     "defines": [
                         "ARGON2_NO_THREADS"
@@ -40,11 +42,6 @@
                         "-std=c99",
                         "-march=native"
                     ],
-                    "xcode_settings": {
-                        "OTHER_CFLAGS": [
-                            "-march=native"
-                        ]
-                    }
                 },
             ]
         }],
